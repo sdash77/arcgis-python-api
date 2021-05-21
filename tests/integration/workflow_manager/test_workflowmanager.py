@@ -806,43 +806,43 @@ class TestWorkflowManager(unittest.TestCase):
         searchid = uniqueness[0:22]
 
         # Act
-        actual = self.connection.workflow_manager.create_saved_search(name=name,
-                                                                      definition={
-                                                                          "q": "closed=0",
-                                                                          "start": 0,
-                                                                          "num": 50,
-                                                                          "fields": [
-                                                                              "assignedTo",
-                                                                              "jobName",
-                                                                              "currentStep",
-                                                                              "jobTemplateName",
-                                                                              "priority",
-                                                                              "dueDate",
-                                                                              "jobStatus"
-                                                                          ],
-                                                                          "displayNames": [
-                                                                              "Assigned To",
-                                                                              "Name",
-                                                                              "Current Step",
-                                                                              "Type",
-                                                                              "Priority",
-                                                                              "Due Date",
-                                                                              "Status"
-                                                                          ],
-                                                                          "sortFields": [
-                                                                              {
-                                                                                  "field": "jobName",
-                                                                                  "sortOrder": "Asc"
-                                                                              },
-                                                                              {
-                                                                                  "field": "priority",
-                                                                                  "sortOrder": "Asc"
-                                                                              }
-                                                                          ]
-                                                                      },
-                                                                      search_type='Standard',
-                                                                      sort_index=5000,
-                                                                      search_id=searchid)
+        actual = self.connection.workflow_manager.saved_searches.create(name=name,
+                                                                        definition={
+                                                                            "q": "closed=0",
+                                                                            "start": 0,
+                                                                            "num": 50,
+                                                                            "fields": [
+                                                                                "assignedTo",
+                                                                                "jobName",
+                                                                                "currentStep",
+                                                                                "jobTemplateName",
+                                                                                "priority",
+                                                                                "dueDate",
+                                                                                "jobStatus"
+                                                                            ],
+                                                                            "displayNames": [
+                                                                                "Assigned To",
+                                                                                "Name",
+                                                                                "Current Step",
+                                                                                "Type",
+                                                                                "Priority",
+                                                                                "Due Date",
+                                                                                "Status"
+                                                                            ],
+                                                                            "sortFields": [
+                                                                                {
+                                                                                    "field": "jobName",
+                                                                                    "sortOrder": "Asc"
+                                                                                },
+                                                                                {
+                                                                                    "field": "priority",
+                                                                                    "sortOrder": "Asc"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        search_type='Standard',
+                                                                        sort_index=5000,
+                                                                        search_id=searchid)
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
@@ -856,26 +856,26 @@ class TestWorkflowManager(unittest.TestCase):
         searchid = uniqueness[0:22]
 
         # Act
-        actual = self.connection.workflow_manager.create_saved_search(name=name,
-                                                                      definition={
-                                                                          "start": 0,
-                                                                          "fields": [
-                                                                              "job_status"
-                                                                          ],
-                                                                          "displayNames": [
-                                                                              "Status"
-                                                                          ],
-                                                                          "sortFields": [
-                                                                              {
-                                                                                  "field": "job_status",
-                                                                                  "sortOrder": "Asc"
-                                                                              }
-                                                                          ]
-                                                                      },
-                                                                      search_type='Chart',
-                                                                      color_ramp='Flower Field Inverse',
-                                                                      sort_index=2000,
-                                                                      search_id=searchid)
+        actual = self.connection.workflow_manager.saved_searches.create(name=name,
+                                                                        definition={
+                                                                            "start": 0,
+                                                                            "fields": [
+                                                                                "job_status"
+                                                                            ],
+                                                                            "displayNames": [
+                                                                                "Status"
+                                                                            ],
+                                                                            "sortFields": [
+                                                                                {
+                                                                                    "field": "job_status",
+                                                                                    "sortOrder": "Asc"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        search_type='Chart',
+                                                                        color_ramp='Flower Field Inverse',
+                                                                        sort_index=2000,
+                                                                        search_id=searchid)
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
@@ -893,45 +893,45 @@ class TestWorkflowManager(unittest.TestCase):
         searchid = uniqueness[0:22]
 
         # Act
-        search = self.connection.workflow_manager.create_saved_search(name=name,
-                                                                      definition={
-                                                                          "q": "closed=0",
-                                                                          "start": 0,
-                                                                          "num": 50,
-                                                                          "fields": [
-                                                                              "assignedTo",
-                                                                              "jobName",
-                                                                              "currentStep",
-                                                                              "jobTemplateName",
-                                                                              "priority",
-                                                                              "dueDate",
-                                                                              "jobStatus"
-                                                                          ],
-                                                                          "displayNames": [
-                                                                              "Assigned To",
-                                                                              "Name",
-                                                                              "Current Step",
-                                                                              "Type",
-                                                                              "Priority",
-                                                                              "Due Date",
-                                                                              "Status"
-                                                                          ],
-                                                                          "sortFields": [
-                                                                              {
-                                                                                  "field": "jobName",
-                                                                                  "sortOrder": "Asc"
-                                                                              },
-                                                                              {
-                                                                                  "field": "priority",
-                                                                                  "sortOrder": "Asc"
-                                                                              }
-                                                                          ]
-                                                                      },
-                                                                      search_type='Standard',
-                                                                      sort_index=5000,
-                                                                      search_id=searchid)
+        search = self.connection.workflow_manager.saved_searches.create(name=name,
+                                                                        definition={
+                                                                            "q": "closed=0",
+                                                                            "start": 0,
+                                                                            "num": 50,
+                                                                            "fields": [
+                                                                                "assignedTo",
+                                                                                "jobName",
+                                                                                "currentStep",
+                                                                                "jobTemplateName",
+                                                                                "priority",
+                                                                                "dueDate",
+                                                                                "jobStatus"
+                                                                            ],
+                                                                            "displayNames": [
+                                                                                "Assigned To",
+                                                                                "Name",
+                                                                                "Current Step",
+                                                                                "Type",
+                                                                                "Priority",
+                                                                                "Due Date",
+                                                                                "Status"
+                                                                            ],
+                                                                            "sortFields": [
+                                                                                {
+                                                                                    "field": "jobName",
+                                                                                    "sortOrder": "Asc"
+                                                                                },
+                                                                                {
+                                                                                    "field": "priority",
+                                                                                    "sortOrder": "Asc"
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        search_type='Standard',
+                                                                        sort_index=5000,
+                                                                        search_id=searchid)
 
-        actual = self.connection.workflow_manager.delete_saved_search(search)
+        actual = self.connection.workflow_manager.saved_searches.delete(search)
 
         # Assert
         self.assertIsInstance(actual, bool, "Incorrect return type")
@@ -942,7 +942,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         try:
-            self.connection.workflow_manager.delete_saved_search(test_id)
+            self.connection.workflow_manager.saved_searches.delete(test_id)
         except Exception as testException:
             assert True, "Expected error returned during test: " + testException.__str__()
 
@@ -958,26 +958,26 @@ class TestWorkflowManager(unittest.TestCase):
         searchid = uniqueness[0:22]
 
         # Act
-        self.connection.workflow_manager.create_saved_search(name=name,
-                                                             definition={
-                                                                 "start": 0,
-                                                                 "fields": [
-                                                                     "job_status"
-                                                                 ],
-                                                                 "displayNames": [
-                                                                     "Status"
-                                                                 ],
-                                                                 "sortFields": [
-                                                                     {
-                                                                         "field": "job_status",
-                                                                         "sortOrder": "Asc"
-                                                                     }
-                                                                 ]
-                                                             },
-                                                             search_type='Chart',
-                                                             color_ramp='Flower Field Inverse',
-                                                             sort_index=2000,
-                                                             search_id=searchid)
+        self.connection.workflow_manager.saved_searches.create(name=name,
+                                                               definition={
+                                                                   "start": 0,
+                                                                   "fields": [
+                                                                       "job_status"
+                                                                   ],
+                                                                   "displayNames": [
+                                                                       "Status"
+                                                                   ],
+                                                                   "sortFields": [
+                                                                       {
+                                                                           "field": "job_status",
+                                                                           "sortOrder": "Asc"
+                                                                       }
+                                                                   ]
+                                                               },
+                                                               search_type='Chart',
+                                                               color_ramp='Flower Field Inverse',
+                                                               sort_index=2000,
+                                                               search_id=searchid)
 
         search_lst = self.connection.workflow_manager.searches("All")
         search = [x for x in search_lst if x["searchId"] == searchid][0]
@@ -985,12 +985,11 @@ class TestWorkflowManager(unittest.TestCase):
         search["colorRamp"] = "Default"
         search["name"] = "Updated search  " + uniqueness
 
-        actual = self.connection.workflow_manager.update_saved_search(search)
+        actual = self.connection.workflow_manager.saved_searches.update(search)
 
         # Assert
         self.assertIsInstance(actual, bool, "Incorrect return type")
-        self.assertTrue(actual,  "Incorrectly updated search")
-
+        self.assertTrue(actual, "Incorrectly updated search")
 
     # endregion
 
@@ -2034,7 +2033,6 @@ class TestWorkflowManager(unittest.TestCase):
         # Create Job Template with specific table
         self.create_job_template_robust(template_name=template_name, table_name=table_name)
 
-
         # Act
         actual = self.connection.workflow_manager.table_definitions
         contains_table = False
@@ -2049,7 +2047,6 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertTrue(contains_table, "Incorrect return type")
 
     # endregion
-
 
 
 if __name__ == "__main__":

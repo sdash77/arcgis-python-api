@@ -5,6 +5,7 @@ import sys
 import urllib.parse
 import arcgis.gis
 import re
+import ujson as _ujson
 
 
 def _camelCase_to_underscore(name):
@@ -161,8 +162,12 @@ class WorkflowManagerAdmin:
 
         url = '{base}/checkStatus?token={token}'.format(base=self._url, token=self._gis._con.token)
 
-        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
-        return return_obj['success']
+        return_obj = _ujson.loads(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+        return return_obj
 
 class JobManager:
     """
@@ -266,17 +271,17 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         complete            Integer Percentage Complete
         ---------------     --------------------------------------------------------------------
-        notes               Job Notes
+        notes               Job Notes (string)
         ---------------     --------------------------------------------------------------------
-        parent              Parent Job
+        parent              Parent Job (string)
         ---------------     --------------------------------------------------------------------
-        location            Optional. Define an area of location for your job.
+        location            Optional Geometry. Define an area of location for your job.
         ---------------     --------------------------------------------------------------------
-        extended_properties Optional. Define additional properties on a job template specific to your business needs.
+        extended_properties Optional Dict. Define additional properties on a job template specific to your business needs.
         ---------------     --------------------------------------------------------------------
-        related_properties  Optional. Define additional 1-M properties on a job template specific to your business needs.
+        related_properties  Optional Dict. Define additional 1-M properties on a job template specific to your business needs.
         ---------------     --------------------------------------------------------------------
-        job_id              Optional. Define the unique jobId of the job to be created. Once defined, only one job can be created.
+        job_id              Optional string. Define the unique jobId of the job to be created. Once defined, only one job can be created.
         ===============     ====================================================================
 
         :return: Workflow Manager Job Object
@@ -316,9 +321,9 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_id              Job ID
+        job_id              Job ID (string)
         ---------------     --------------------------------------------------------------------
-        attachment_id       Attachment ID
+        attachment_id       Attachment ID (string)
         ===============     ====================================================================
 
         :return: status code
@@ -339,7 +344,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job ID
+        id                  Job ID (string)
         ===============     ====================================================================
 
         :return: Workflow Manager Job Diagram Object
@@ -357,9 +362,9 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job ID
+        id                  Job ID (string)
         ---------------     --------------------------------------------------------------------
-        get_ext_props        Boolean. If set to true will show the jobs extended properties.
+        get_ext_props       Optional Boolean. If set to true will show the jobs extended properties.
         ===============     ====================================================================
 
         :return: Workflow Manager Job Object
@@ -462,7 +467,6 @@ class JobManager:
             url = '{base}/jobs/{jobId}/update?token={token}'.format(base=self._url, jobId=job_id,
                                                                     token=self._gis._con.token)
             new_job = Job(current_job, self._gis, url)
-
             # remove existing properties if not updating.
             if "extended_properties" not in update_object:
                 new_job.extended_properties = None
@@ -592,6 +596,7 @@ class WorkflowManager:
             raise ValueError("An authenticated `GIS` is required.")
 
         self.job_manager = JobManager(item)
+        self.saved_searches_manager = SavedSearchesManager(item)
 
         self._url = self._wmx_server_url[0]
         if self._url is None:
@@ -1227,7 +1232,89 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_saved_search(self, name, search_type, folder=None, definition=None, color_ramp=None,
+    @property
+    def saved_searches(self):
+        """
+        The Saved Searches manager for a workflow item. See :class:`~arcgis.workflowmanager.SavedSearches`.
+        """
+
+        return self.saved_searches_manager
+
+    @property
+    def table_definitions(self):
+        """
+        Get the definitions of each extended properties table in a workflow item. The response will consist of an array
+        of table definitions. If the extended properties table is a feature service, its definition will include a
+        dictionary of feature service properties. Each table definition will also include definitions of the properties
+        it contains and list the associated job templates. This requires the adminBasic or adminAdvanced privileges.
+
+        :returns list
+        """
+
+        url = '{base}/tableDefinitions?token={token}'.format(base=self._url, token=self._gis._con.token)
+
+        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+
+        return return_obj['tableDefinitions']
+
+class SavedSearchesManager:
+    """
+    Represents a helper class for workflow manager saved searches
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                The Workflow Manager Item
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, item):
+        """initializer"""
+        if item is None:
+            raise ValueError("Item cannot be None")
+        self._item = item
+        self._gis = item._gis
+        if self._gis.users.me is None:
+            raise ValueError("An authenticated `GIS` is required.")
+
+        self._url = self._wmx_server_url[0]
+        if self._url is None:
+            raise ValueError("No WorkflowManager Registered with your Organization")
+        if not any(prov.itemid == '50a5f00bcc574358b15eab0e2bdadf39' for prov in self._gis.users.me.provisions):
+            raise ValueError("No Workflow Manager license is available for the current user")
+
+    def _handle_error(self, info):
+        """Basic error handler - separated into a function to allow for expansion in future releases"""
+        error_class = info[0]
+        error_text = info[1]
+        raise Exception(error_text)
+
+    @property
+    def _wmx_server_url(self):
+        """locates the WMX server"""
+        baseurl = self._gis._portal.resturl
+        res = self._gis._con.get(f"{baseurl}/portals/self/servers", {'f': 'json'})
+        for s in res['servers']:
+            server_functions = [x.strip() for x in s.get("serverFunction", "").lower().split(",")]
+            if 'workflowmanager' in server_functions:
+                self._url = s.get("url", None)
+                self._private_url = s.get("adminUrl", None)
+                if self._url is None:
+                    raise RuntimeError("Cannot find a WorkflowManager Server")
+                self._url += f"/workflow/{self._item.id}"
+                self._private_url += f"/workflow/{self._item.id}"
+                return self._url, self._private_url
+            else:
+                raise RuntimeError("Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                                   "Administrator to ensure Workflow Manager Server is properly configured.")
+        return None
+
+    def create(self, name, search_type, folder=None, definition=None, color_ramp=None,
                             sort_index=None, search_id=None):
         """
         Create a saved search or chart by specifying the search parameters in the json body.
@@ -1278,7 +1365,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def delete_saved_search(self, id):
+    def delete(self, id):
         """
         Deletes a saved search by ID
 
@@ -1303,7 +1390,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def update_saved_search(self, search):
+    def update(self, search):
         """
         Update a saved search or chart by specifying the update values in the json body.
         All the properties except for optional properties must be passed in the body to update the search or chart.
@@ -1369,27 +1456,6 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    @property
-    def table_definitions(self):
-        """
-        Get the definitions of each extended properties table in a workflow item. The response will consist of an array
-        of table definitions. If the extended properties table is a feature service, its definition will include a
-        dictionary of feature service properties. Each table definition will also include definitions of the properties
-        it contains and list the associated job templates. This requires the adminBasic or adminAdvanced privileges.
-
-        :returns list
-        """
-
-        url = '{base}/tableDefinitions?token={token}'.format(base=self._url, token=self._gis._con.token)
-
-        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
-        if 'error' in return_obj:
-            self._gis._con._handle_json_error(return_obj['error'], 0)
-        elif 'success' in return_obj:
-            return return_obj['success']
-
-        return return_obj['tableDefinitions']
-
 class Job(object):
     """
     Helper class for managing Workflow Manager jobs in a workflow item. This class is not created
@@ -1416,6 +1482,7 @@ class Job(object):
                      v is not None and not k.startswith('_')}
         if self._location is not None:
             post_dict["location"] = self.location
+            self._is_updating = False
         return_obj = json.loads(
             self._gis._con.post(self._url, post_dict, add_token=False, post_json=True, try_json=False,
                                 json_encode=False))
