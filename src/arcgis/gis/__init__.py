@@ -74,7 +74,8 @@ class GIS(object):
     Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
 
     The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
-    as well as the results of your analysis. To create a new map, call the map() method.
+    as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
+    Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
     The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
     or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
@@ -979,7 +980,8 @@ class GIS(object):
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel. See :class:`~arcgis.widgets.MapView` for more information.
 
-        Note: The map widget is only supported within a Jupyter Notebook.
+        Note: The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
+        Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
         ==================     ====================================================================
         **Argument**           **Description**
