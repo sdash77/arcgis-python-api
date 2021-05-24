@@ -5468,6 +5468,27 @@ def _simple_collection(raster, md_info=None):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+def _percentile(rasters=None, ignore_nodata=False, percentile=None,percentile_interpolation_type=None):
+    if rasters is None:
+        rasters = []
+    template_dict = {
+        "rasterFunction" : "Percentile",
+        "rasterFunctionArguments": {
+            "Rasters" : rasters,
+        }
+    }
+    if ignore_nodata is not None:
+        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+
+    if percentile is not None:
+        template_dict["rasterFunctionArguments"]['Percentile'] = percentile
+
+    if percentile_interpolation_type is not None:
+        template_dict["rasterFunctionArguments"]['InterpolatePercentile'] = percentile_interpolation_type
+
+    return template_dict
+
+
 def aggregate(raster,
               dimension=None,
               aggregation_function=None,
@@ -5476,7 +5497,10 @@ def aggregate(raster,
               interval_value=None,
               interval_unit=None,
               interval_ranges=None,
-              ignore_nodata=False
+              ignore_nodata=False,
+              dimensionless=False,
+              percentile_value=90,
+              percentile_interpolation_type="NEAREST"
               ):
     """
      Creates a new raster by applying an aggregation function
@@ -5606,8 +5630,42 @@ def aggregate(raster,
 
                             - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
                             - False : The function will result in NoData if there are any NoData values.
+
+    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values. 
+                          This parameter is only active if a single slice is selected to create a layer.
+
+                            - True : The layer will not have dimension values.
+                            - False : The layer will have dimension values. This is the default.
+
+    :param percentile_value: Optional double. The percentile to calculate. The default is 90, indicating 
+                             the 90th percentile.
+
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
+                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
+                             A value of 50 will produce essentially the same result as the median statistic. 
+                             This option is only honored if the aggregation_method parameter is set to PERCENTILE. 
+
+                             Example:
+                                90
+
+    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+                                          even number of values from the input raster to be calculated
+
+                                            - NEAREST : The nearest available value to the desired percentile will be used. 
+                                              In this case, the output pixel type will be the same as that of the input 
+                                              value raster. This is the default
+
+                                            - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                              percentile will be used. In this case, the output pixel type will be floating point.
+
+                                          Example:
+                                            NEAREST
     :return: the output raster with function applied on it
     """
+    if dimensionless is not None:
+        if dimensionless:
+            raster = multidimensional_filter(raster, dimensionless=dimensionless)
+
     from arcgis.raster._util import _local_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -5648,6 +5706,8 @@ def aggregate(raster,
                 opnum = 74 if ignore_nodata else 55
             elif aggregation_function.upper() == "VARIETY":
                 opnum = 75 if ignore_nodata else 58
+            elif aggregation_function.upper() == "PERCENTILE":
+                template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile(rasters=None, ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
 
             if opnum is None:
                 raise RuntimeError("Invalid aggregation_function")
