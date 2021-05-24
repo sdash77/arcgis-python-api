@@ -93,7 +93,8 @@ class GIS(object):
     been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
     file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
-    See https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/ for examples.
+    See `Working with different authentication schemes <https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/>`_
+    in the ARCGIS API for Python guide for examples.
 
 
     ================    ===============================================================
@@ -102,7 +103,7 @@ class GIS(object):
     url                 Optional string. If URL is None, then the URL will be ArcGIS
                         Online.  This should be a web address to either an ArcGIS Enterprise portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> (ArcGIS Enterprise example)
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> .A portal example is formatted in the form:
                         https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
     username            Optional string. The login user name (case-sensitive).
@@ -211,14 +212,14 @@ class GIS(object):
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
-    
+
     .. code-block:: python
 
         # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
-                  
+
     """
     _server_list = None
     _is_hosted_nb_home = False
@@ -511,7 +512,7 @@ class GIS(object):
 
         **The API Key manager is only available for ArcGIS Online**
 
-        :returns: APIKeyManager
+        :returns: :class:`~arcgis.gis._impl.APIKeyManager`
 
         """
         if self._portal.is_arcgisonline and self.version >= [8,2]:
@@ -683,13 +684,13 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
-    
+
     @_lazy_property
     def notebook_server(self) -> "List[NotebookServer]":
         """
         Provide access to the Notebook Server registerd with the organization or enterprise.
-        
-        :returns: List[`NotebookServer`] 
+
+        :returns: List[`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
@@ -768,7 +769,8 @@ class GIS(object):
 
         .. note::
             For examples of the property names and key/values to use when updating utility services,
-            refer to the Portal parameters section at https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm
+            refer to the `Common parameters <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm>`_
+            page in the ArcGIS REST API.
 
         .. code-block:: python
 
@@ -799,7 +801,7 @@ class GIS(object):
 
     @property
     def url(self):
-        """Readonly URL of the GIS you are connected to."""
+        """Read-only URL of your GIS connection."""
         if self._is_hosted_nb_home:
             return self._public_portal_url
         else:
@@ -1943,7 +1945,9 @@ class DatastoreManager(object):
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the item to be added on the server.
         ---------------     --------------------------------------------------------------------
-        item                Required dictionary. The dictionary representing the data item.  See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
+        item                Required dictionary. The dictionary representing the data item.
+                            See `Data Item <https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm>`_
+                            in the ArcGIS REST ApI documentation for more details.
         ===============     ====================================================================
 
 
@@ -3416,8 +3420,9 @@ class RoleManager(object):
         description            Required string. The custom role's description.
         ------------------     --------------------------------------------------------------------
         privileges             Optional string. An array of strings with predefined permissions within
-                               each privilege.  For supported privileges see
-                               https://developers.arcgis.com/rest/users-groups-and-items/privileges.htm
+                               each privilege.  For supported privileges see the
+                               `Privileges <https://developers.arcgis.com/rest/users-groups-and-items/privileges.htm>`_
+                               page in the ArcGIS REST API documentation.
         ==================     ====================================================================
 
 
@@ -3903,19 +3908,18 @@ class GroupManager(object):
         .. note::
             A few things that will be helpful to know.
 
-            1. The query syntax has many features that can't
-                be adequately described here.  The query syntax is
-               available in ArcGIS Help.  A short version of that URL
-                is http://bitly.com/1fJ8q31.
+            1.  The query syntax has many features that can't
+                be adequately described here. See the `Query (Feature Service) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-.htm>`_
+                in the ArcGIS REST API for more information.
 
             2. Searching without specifying a query parameter returns
                a list of all groups in your organization.
 
-            3. Most of the time when searching for groups, you'll want to
+            3.  Most of the time when searching for groups, you'll want to
                 search within your organization in ArcGIS Online
-                or within your Portal.  As a convenience, the method
+                or within your Portal. As a convenience, the method
                 automatically appends your organization id to the query by
-                default.  If you don't want the API to append to your query
+                default. If you don't want the API to append to your query
                 set outside_org to True.
 
         ================  ========================================================
@@ -4263,8 +4267,8 @@ class ContentManager(object):
         ==========================  =====================================================================
 
 
-        URL 1:  `Item and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
-
+        See `Item and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
+        in the ArcGIS REST API for more information.
         :return:
            The item if successfully added, None if unsuccessful.
         """
@@ -8024,8 +8028,8 @@ class User(dict):
 
         **Trial** accounts cannot modify esri_access property.
 
-        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
-        or https://bit.ly/2JsJV1i for more information.
+        Please see the `Enable Esri access <https://bit.ly/2JsJV1i>`_ on the Manage members page in ArcGIS Online
+        Resources for more information.
 
 
         """
@@ -8047,8 +8051,8 @@ class User(dict):
 
         **Trial** accounts cannot modify esri_access property.
 
-        Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
-        for more information.
+        Please see the `Enable Esri access <http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23>`_
+        section in the ArcGIS Online Resources for more information.
 
 
         ================  ==========================================================
@@ -8106,7 +8110,7 @@ class User(dict):
         From Esri websites, only Esri access-enabled accounts appear in
         your list of linked accounts.
 
-        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        See the `Sign in <http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm>`_ page in ArcGIS Online Resources for
         addtional information.
 
         ================  ==========================================================
@@ -8143,7 +8147,7 @@ class User(dict):
         When a user wishes to no longer have a linked account, the unlink method
         allows for the removal if linked accounts.
 
-        See: http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm for
+        See the `Sign in <http://doc.arcgis.com/en/arcgis-online/reference/sign-in.htm>`_ page in ArcGIS Online Resources for
         addtional information.
 
         ================  ==========================================================
@@ -8507,7 +8511,7 @@ class Item(dict):
 
     _uid = None
     _snapeshots = None
-    
+
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
         self._portal = gis._portal
@@ -8538,7 +8542,7 @@ class Item(dict):
         """
         Provides access to the Notebook Item's Snapshots. If the user is not
         the owner of the `Item`, the snapshots will be an empty list.
-        
+
         :returns: List[SnapShot]
         """
         if self._is_notebook and \
@@ -8554,7 +8558,7 @@ class Item(dict):
         return self.type.lower() == "notebook"
     #----------------------------------------------------------------------
     @_lazy_property
-    def _get_nbs_server(self):        
+    def _get_nbs_server(self):
         urls = self._gis._registered_servers()
         if self._gis._portal.is_arcgisonline:
             return urls
@@ -9026,8 +9030,9 @@ class Item(dict):
                              'Excel', 'geoPackage', or 'Vector Tile Package'.
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
-                            and the export parameters for each layer.  See https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm
-                            for guidance.
+                            and the export parameters for each layer.and the export parameters for each layer. See `Export Item
+                            <https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm>`_
+                            in the REST API for guidance.
         ---------------     --------------------------------------------------------------------
         wait                Optional boolean. Default is True, which forces a wait for the
                             export to complete; use False for when it is okay to proceed while
@@ -9916,7 +9921,8 @@ class Item(dict):
         =================  =====================================================================
 
 
-        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
+       See `Items and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_ in
+       the ArcGIS REST API documentation for more details.
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -10177,8 +10183,8 @@ class Item(dict):
         Retrieves the data associated with an item. Note that this call may
         return different results for different item types: some item types may
         even return *None*. See
-        `this REST API page <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
-        for more information.
+        `Working with users, groups, and items <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
+        in the ArcGIS REST API for more information.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -10253,7 +10259,7 @@ class Item(dict):
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
                             'Service2Data', 'Service2Service']. See
-                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_ in the REST API help
                             for more information on this parameter.
         ---------------     --------------------------------------------------------------------
         direction           Required string. One of ['forward', 'reverse']
@@ -10285,7 +10291,7 @@ class Item(dict):
         .. note::
             Relationships are not tied to an item. They are directional links from an origin item
             to a destination item and have a type. The type defines the valid origin and destination
-            item types as well as some rules. See Relationship types in REST API help for more information.
+            item types as well as some rules. See `Relationship types <https://bit.ly/2LAHNoK>`_ in REST API help for more information.
             Users don't have to own the items they relate unless so defined by the rules of the relationship
             type.
 
@@ -10302,7 +10308,7 @@ class Item(dict):
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
                             'Service2Data', 'Service2Service']. See
-                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_ in the REST API help
                             for more information on this parameter.
         ===============     ====================================================================
 
@@ -10336,7 +10342,7 @@ class Item(dict):
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
                             'Service2Data', 'Service2Service']. See
-                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_ in the REST API help
                             for more information on this parameter.
         ===============     ====================================================================
 
@@ -10383,7 +10389,8 @@ class Item(dict):
         **Argument**           **Description**
         -------------------    ---------------------------------------------------------------
         publish_parameters     Optional dictionary. containing publish instructions and customizations.
-                               Cannot be combined with overwrite.  See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm for details.
+                               Cannot be combined with overwrite.  See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+                               in the ArcGIS REST API for details.
         -------------------    ---------------------------------------------------------------
         address_fields         Optional dictionary. containing mapping of df columns to address fields,
                                eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
@@ -10420,7 +10427,8 @@ class Item(dict):
         :return:
             An arcgis.gis.Item object corresponding to the published web layer.
 
-        For publish_parameters, see https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
+        For publish_parameters, see `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+        in the ArcGIS REST API for more details.
         """
 
         import time
