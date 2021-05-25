@@ -2,6 +2,7 @@
 Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
 import os
+import time
 import datetime
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
@@ -84,10 +85,18 @@ class AGOLUsageReports(BasePortalAdmin):
             params['startTime'] = local_time_to_online(start_time)
         elif not start_time is None and isinstance(start_time, int):
             params['startTime'] = start_time
-        
+        count = 0
         resp = self._con.post(url, params)
         if 'itemId' in resp and future:
             from arcgis._impl._async.jobs import ItemStatusJob
+            
+            item = self._gis.content.get(resp['itemId']) 
+            while item is None:
+                time.sleep(1)
+                item = self._gis.content.get(resp['itemId']) 
+                if count == 15:
+                    raise Exception("The report cannot be generated, please resubmit the operation.")
+                count += 1
             item = self._gis.content.get(resp['itemId'])
             isj = ItemStatusJob(item=item, 
                                 task_name="Generate Report", 

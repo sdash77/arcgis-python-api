@@ -8994,20 +8994,30 @@ class Item(dict):
            The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
-        if file_name is None:
-            import re
-            file_name = self.name or self.title
-            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+        
         if not save_path:
             save_path = self._workdir
-        if data_path:
-
+        try:
             download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
-            if download_path == '':
-                return None
-            else:
-                return download_path
+        except Exception as e:
+            _log.debug(msg=str(e))
+            _log.debug(msg='Retrying download parsing name from title or name property.')
+            if file_name is None:
+                import re
+                file_name = self.name or self.title
+                file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+            if save_path is None:
+                save_path = tempfile.gettempdir()
+            download_path = self._portal.con.get(path=data_path, 
+                                                 file_name=file_name,
+                                                 out_folder=save_path, 
+                                                 try_json=False, 
+                                                 force_bytes=False)                
+        if download_path == '':
+            return None
+        else:
+            return download_path
 
     def export(self, title, export_format,
                parameters=None, wait=True, enforce_fld_vis=None,
