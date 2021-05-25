@@ -536,6 +536,7 @@ class _DeepCloner:
                         service_extent=self._service_extent,
                         search_existing=self._search_existing_items,
                         owner=self.owner,
+                        preserve_item_id=self._preserve_item_id,
                     )
 
                     for source_fs_definition in source_fs_definitions:
@@ -571,6 +572,7 @@ class _DeepCloner:
                         service_extent=self._service_extent,
                         search_existing=self._search_existing_items,
                         owner=self.owner,
+                        preserve_item_id=self._preserve_item_id,
                     )
 
                 else:
@@ -592,6 +594,7 @@ class _DeepCloner:
                         service_extent=self._service_extent,
                         search_existing=self._search_existing_items,
                         owner=self.owner,
+                        preserve_item_id=self._preserve_item_id,
                     )
             self._graph[item.id] = item_definition
             if "Workforce Project" in item.typeKeywords:
