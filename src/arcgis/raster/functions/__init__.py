@@ -5468,26 +5468,6 @@ def _simple_collection(raster, md_info=None):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def _percentile(rasters=None, ignore_nodata=False, percentile=None,percentile_interpolation_type=None):
-    if rasters is None:
-        rasters = []
-    template_dict = {
-        "rasterFunction" : "Percentile",
-        "rasterFunctionArguments": {
-            "Rasters" : rasters,
-        }
-    }
-    if ignore_nodata is not None:
-        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
-
-    if percentile is not None:
-        template_dict["rasterFunctionArguments"]['Percentile'] = percentile
-
-    if percentile_interpolation_type is not None:
-        template_dict["rasterFunctionArguments"]['InterpolatePercentile'] = percentile_interpolation_type
-
-    return template_dict
-
 
 def aggregate(raster,
               dimension=None,
@@ -5519,6 +5499,10 @@ def aggregate(raster,
                                 - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
 
                                 - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+
+                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. 
+                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the 
+                                  percentile_value parameter.
 
                                 - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
@@ -5662,11 +5646,8 @@ def aggregate(raster,
                                             NEAREST
     :return: the output raster with function applied on it
     """
-    if dimensionless is not None:
-        if dimensionless:
-            raster = multidimensional_filter(raster, dimensionless=dimensionless)
 
-    from arcgis.raster._util import _local_function_template
+    from arcgis.raster._util import _local_function_template, _percentile_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
        
@@ -5706,11 +5687,12 @@ def aggregate(raster,
                 opnum = 74 if ignore_nodata else 55
             elif aggregation_function.upper() == "VARIETY":
                 opnum = 75 if ignore_nodata else 58
-            elif aggregation_function.upper() == "PERCENTILE":
-                template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile(rasters=None, ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
 
             if opnum is None:
-                raise RuntimeError("Invalid aggregation_function")
+                if aggregation_function.upper() == "PERCENTILE":
+                    template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile_function_template(ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
+                else:
+                    raise RuntimeError("Invalid aggregation_function")
             else:
                 template_dict["rasterFunctionArguments"]["AggregationFunction"] = _local_function_template(opnum)
         if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
@@ -5771,7 +5753,14 @@ def aggregate(raster,
     #if where_clause is not None:
     #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dimensionless is not None:
+        if dimensionless:
+            aggregated_layer =  _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+            return multidimensional_filter(aggregated_layer, dimensionless=dimensionless)
+        else:
+            return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
 
 
 def compute_change(raster1,
