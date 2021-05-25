@@ -5664,6 +5664,13 @@ class ContentManager(object):
             owner_name = self._gis.users.me.username
         if isinstance(owner, User):
             owner_name = owner.username
+        if (preserve_item_id and self._gis.version < [8,2]) or \
+           (preserve_item_id and self._gis._portal.is_arcgisonline):
+            print("Cannot preserve ItemIds on ArcGIS Enterprise "
+                  "older than v10.9 or to ArcGIS Online organizations. \n"
+                  "`preserve_item_id` will be ignored.")
+            preserve_item_id = False
+            
         deep_cloner = clone._DeepCloner(self._gis, items, folder, 
                                         wgs84_extent, service_extent, 
                                         use_org_basemap, copy_data, copy_global_ids, 
