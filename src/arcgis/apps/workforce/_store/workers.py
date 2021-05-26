@@ -31,7 +31,7 @@ def get_workers(project):
         :param project:
         :returns: list of Workers
     """
-    return query_workers(project, '1=1')
+    return query_workers(project, "1=1")
 
 
 def query_workers(project, where):
@@ -40,17 +40,30 @@ def query_workers(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Workers
     """
-    worker_features = project.workers_layer.query(where, return_all_records=True).features
+    worker_features = project.workers_layer.query(
+        where, return_all_records=True
+    ).features
     return [workforce.Worker(project, feature) for feature in worker_features]
 
 
-def add_worker(project, feature=None, geometry=None, contact_number=None,
-               name=None, notes=None, status=None, title=None, user_id=None):
+def add_worker(
+    project,
+    feature=None,
+    geometry=None,
+    contact_number=None,
+    name=None,
+    notes=None,
+    status=None,
+    title=None,
+    user_id=None,
+):
     """
         Creates and adds a worker to the project
     """
     project._update_cached_objects()
-    worker = workforce.Worker(project, feature, geometry, contact_number, name, notes, status, title, user_id)
+    worker = workforce.Worker(
+        project, feature, geometry, contact_number, name, notes, status, title, user_id
+    )
     return add_workers(project, [worker])[0]
 
 
@@ -80,12 +93,28 @@ def add_workers(project, workers):
         # add worker named users to the project's group.
         max_add_per_call = 25
         for i in range(0, math.ceil(len(workers) / max_add_per_call)):
-            project.group.add_users([w.user_id for w in workers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call]])
+            project.group.add_users(
+                [
+                    w.user_id
+                    for w in workers[
+                        i * max_add_per_call : (i * max_add_per_call) + max_add_per_call
+                    ]
+                ]
+            )
     return workers
 
 
-def update_worker(project, worker, geometry=None, contact_number=None,
-                 name=None, notes=None, status=None, title=None, user_id=None):
+def update_worker(
+    project,
+    worker,
+    geometry=None,
+    contact_number=None,
+    name=None,
+    notes=None,
+    status=None,
+    title=None,
+    user_id=None,
+):
     """
         Updates a worker and submits the changes to the server
     """
@@ -137,8 +166,10 @@ def delete_workers(project, workers):
 
         # Remove worker named users from the project's group, unless they are also dispatchers.
         user_ids = [worker.user_id for worker in workers]
-        where = "{} in ({})".format(project._dispatcher_schema.user_id,
-                                    ','.join(["'{}'".format(user_id) for user_id in user_ids]))
+        where = "{} in ({})".format(
+            project._dispatcher_schema.user_id,
+            ",".join(["'{}'".format(user_id) for user_id in user_ids]),
+        )
         dispatchers = workforce._store.query_dispatchers(project, where)
         for dispatcher in dispatchers:
             user_ids.remove(dispatcher.user_id)

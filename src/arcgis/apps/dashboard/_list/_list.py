@@ -25,23 +25,24 @@ class List(_BaseWidget):
     description                 Optional string. Description for the widget.
     =========================   ===========================================
     """
-    def __init__(self, item, name='List', layer=0, title=None, description=None):
+
+    def __init__(self, item, name="List", layer=0, title=None, description=None):
         super().__init__(name, title, description)
 
-        if item.type not in ['Feature Service', 'mapWidget']:
+        if item.type not in ["Feature Service", "mapWidget"]:
             raise Exception("Please specify an item")
 
         self.item = item
         self.type = "listWidget"
         self.layer = layer
 
-        self._seperator_color = '#f0f0f0'
-        self._selection_color = '#0f0f0f'
-        self._selection_text_color = '#123210'
-        
+        self._seperator_color = "#f0f0f0"
+        self._selection_color = "#0f0f0f"
+        self._selection_text_color = "#123210"
+
         self._max_features = 25
         self._selection_mode = "single"
-        
+
         self._show_last_update = True
 
         self._nodata = NoDataProperties._nodata_init()
@@ -90,7 +91,7 @@ class List(_BaseWidget):
         :return: show last update or not.
         """
         return self._show_last_update
-    
+
     @show_last_update.setter
     def show_last_update(self, value):
         """
@@ -114,8 +115,8 @@ class List(_BaseWidget):
         """
         self._seperator_color = value
         if not isinstance(value, str):
-            self._seperator_color = '#f0f0f0'
-    
+            self._seperator_color = "#f0f0f0"
+
     @property
     def selection_color(self):
         """
@@ -130,7 +131,7 @@ class List(_BaseWidget):
         """
         self._selection_color = value
         if not isinstance(value, str):
-            self._selection_color = '#0f0f0f'
+            self._selection_color = "#0f0f0f"
 
     @property
     def selection_text_color(self):
@@ -146,14 +147,15 @@ class List(_BaseWidget):
         """
         self._selection_text_color = value
         if not isinstance(value, str):
-            self._selection_text_color = '#123210'    
+            self._selection_text_color = "#123210"
+
     @property
     def list_text(self):
         """
         :return: list text.
         """
         return self._list_text
-    
+
     @list_text.setter
     def list_text(self, value):
         """
@@ -161,15 +163,15 @@ class List(_BaseWidget):
         """
         self._list_text = value
         if not isinstance(value, str):
-            self._list_text = ''
-    
+            self._list_text = ""
+
     @property
     def list_icon(self):
         """
         :return: use icon for list or not.
         """
         return self._list_icon
-    
+
     @list_icon.setter
     def list_icon(self, value):
         """
@@ -194,67 +196,68 @@ class List(_BaseWidget):
         self._selection_mode = value
         if not isinstance(value, str):
             self._selection_mode = "single"
-    
+
     @property
     def no_data(self):
         """
         :return: Nodata Object, set various nodata properties
         """
         return self._nodata
-        
+
     def _convert_to_json(self):
-        if self.item.type == 'mapWidget':
+        if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
             widget_id = self.item._id
             layer_id = wlayer["id"]
-            self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._datasource = {"id": str(widget_id) + "#" + str(layer_id)}
         else:
             self._datasource = {
-                        "type": "featureServiceDataSource",
-                        "itemId": self.item.itemid,
-                        "layerId": 0,
-                        "table": True
-                    }
+                "type": "featureServiceDataSource",
+                "itemId": self.item.itemid,
+                "layerId": 0,
+                "table": True,
+            }
         json_data = {
-            "type":"listWidget",
-            "iconType":self._list_icon,
-            "selectionMode":self._selection_mode,
-            "separatorColor":self._seperator_color,
-            "selectionColor":self._selection_color,
-            "selectionTextColor":self._selection_text_color,
+            "type": "listWidget",
+            "iconType": self._list_icon,
+            "selectionMode": self._selection_mode,
+            "separatorColor": self._seperator_color,
+            "selectionColor": self._selection_color,
+            "selectionTextColor": self._selection_text_color,
             "events": [],
             "selectionMode": "multi",
-            "datasets":[
+            "datasets": [
                 {
-                    "type":"serviceDataset",
-                    "dataSource":self._datasource,
-                    "outFields":["*"],
-                    "groupByFields":[],
-                    "orderByFields":[],
-                    "statisticDefinitions":[],
-                    "maxFeatures":self._max_features,
-                    "querySpatialRelationship":"esriSpatialRelIntersects",
-                    "returnGeometry":False,
-                    "clientSideStatistics":False,
-                    "name":"main"
+                    "type": "serviceDataset",
+                    "dataSource": self._datasource,
+                    "outFields": ["*"],
+                    "groupByFields": [],
+                    "orderByFields": [],
+                    "statisticDefinitions": [],
+                    "maxFeatures": self._max_features,
+                    "querySpatialRelationship": "esriSpatialRelIntersects",
+                    "returnGeometry": False,
+                    "clientSideStatistics": False,
+                    "name": "main",
                 }
             ],
-            "id":self._id,
-            "name":self.name,
-            "showLastUpdate":self.show_last_update,
-            "noDataVerticalAlignment":self._nodata.alignment,
-            "showCaptionWhenNoData":self._nodata.show_title,
-            "showDescriptionWhenNoData":self._nodata.show_description
+            "id": self._id,
+            "name": self.name,
+            "showLastUpdate": self.show_last_update,
+            "noDataVerticalAlignment": self._nodata.alignment,
+            "showCaptionWhenNoData": self._nodata.show_title,
+            "showDescriptionWhenNoData": self._nodata.show_description,
         }
         if self.events.enable:
-            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["events"].append(
+                {"type": self.events.type, "actions": self.events.synced_widgets}
+            )
             json_data["selectionMode"] = self.events.selection_mode
 
         return json_data
 
 
 class Events(object):
-
     @classmethod
     def _create_events(cls, enable=False):
         events = Events()
@@ -284,7 +287,7 @@ class Events(object):
             self._selection_mode = value
         else:
             raise Exception("Please specify selection_mode from 'single' and 'multi'")
-    
+
     @property
     def enable(self):
         """
@@ -335,11 +338,21 @@ class Events(object):
                     self._actions.append({"type": action_type, "targetId": widget._id})
                 elif action_type == "filter":
                     if self._targetid is not None:
-                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":self._targetid})
+                        self._actions.append(
+                            {
+                                "type": action_type,
+                                "by": "whereClause",
+                                "targetId": self._targetid,
+                            }
+                        )
                     else:
-                        raise Exception("This operation is not suitable for given dataSource.")
+                        raise Exception(
+                            "This operation is not suitable for given dataSource."
+                        )
                 else:
-                    raise Exception("Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'")
+                    raise Exception(
+                        "Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'"
+                    )
             else:
                 raise Exception("Please select a map widget")
 
@@ -361,16 +374,31 @@ class Events(object):
             if isinstance(widgets, list):
                 for widget in widgets:
                     if widget.type == "mapWidget":
-                        raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                        raise Exception(
+                            "Use sync_map method to add actions for map widgets"
+                        )  ##duplicate or erase
                     else:
                         action_type = "filter"
-                        widget_id = str(widget._id)+'#main'
-                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+                        widget_id = str(widget._id) + "#main"
+                        self._actions.append(
+                            {
+                                "type": action_type,
+                                "by": "whereClause",
+                                "targetId": widget_id,
+                            }
+                        )
             else:
                 if widgets.type == "mapWidget":
-                    raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                    raise Exception(
+                        "Use sync_map method to add actions for map widgets"
+                    )  ##duplicate or erase
                 else:
                     action_type = "filter"
-                    widget_id = str(widgets._id)+'#main'
-                    self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
-
+                    widget_id = str(widgets._id) + "#main"
+                    self._actions.append(
+                        {
+                            "type": action_type,
+                            "by": "whereClause",
+                            "targetId": widget_id,
+                        }
+                    )

@@ -1,14 +1,14 @@
 import uuid
 
-class _BaseWidget(object):
 
+class _BaseWidget(object):
     def __init__(self, name, title, description):
-        
+
         self._title = ""
         self._name = ""
         self._description = ""
-        self._background_color = None #"#ffffff"
-        self._text_color = None #"#000000"
+        self._background_color = None  # "#ffffff"
+        self._text_color = None  # "#000000"
         self._id = str(uuid.uuid4())
         self._type = None
 
@@ -18,9 +18,10 @@ class _BaseWidget(object):
 
         self._width = 1
         self._height = 1
-    
+
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
+
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=900 height=300>"""
 
@@ -79,7 +80,7 @@ class _BaseWidget(object):
         Set widget description.
         """
         self._description = value
-    
+
     @property
     def text_color(self):
         """
@@ -147,15 +148,17 @@ class _BaseWidget(object):
             self._width = 0
         else:
             self._width = value
-    
-class Legend(object):
 
+
+class Legend(object):
     @classmethod
     def _create_legend(cls, visible=True, placement="bottom"):
         legend = Legend()
 
         if placement not in ["bottom", "side"]:
-            raise Exception("Please specify correct placement. Supported placement are 'bottom' and 'side'")
+            raise Exception(
+                "Please specify correct placement. Supported placement are 'bottom' and 'side'"
+            )
 
         legend._visibility = True
         legend._placement = "bottom"
@@ -196,14 +199,17 @@ class Legend(object):
 
 
 class NoDataProperties(object):
-
     @classmethod
-    def _nodata_init(cls, text="No Data", alignment="middle", show_title=True, show_description=True):
+    def _nodata_init(
+        cls, text="No Data", alignment="middle", show_title=True, show_description=True
+    ):
 
         nodata = NoDataProperties()
 
         if alignment not in ["top", "middle", "bottom"]:
-            raise Exception("Please specify correct alignment. Supported alignment are 'top', 'bottom' and 'middle'")
+            raise Exception(
+                "Please specify correct alignment. Supported alignment are 'top', 'bottom' and 'middle'"
+            )
 
         nodata._text = text
         nodata._alignment = alignment
@@ -223,7 +229,7 @@ class NoDataProperties(object):
         :return: No Data text.
         """
         return self._text
-    
+
     @text.setter
     def text(self, value):
         """
@@ -237,7 +243,7 @@ class NoDataProperties(object):
         :return: No Data text vertical alignment.
         """
         return self._alignment
-    
+
     @alignment.setter
     def alignment(self, value):
         """
@@ -245,14 +251,14 @@ class NoDataProperties(object):
         """
         if value in ["top", "middle", "bottom"]:
             self._alignment = str(value)
-    
+
     @property
     def show_title(self):
         """
         :return: No Data show title.
         """
         return self._show_title
-    
+
     @show_title.setter
     def show_title(self, value):
         """
@@ -277,13 +283,14 @@ class NoDataProperties(object):
 
 def _auto_calculate_width(elements):
     import arcgis
+
     available_width = 1
     remaining_elements = len(elements)
 
     for el in elements:
-        element_width = getattr(el, 'width', 1)
+        element_width = getattr(el, "width", 1)
         if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
-            element_width = el.get('width', 1)
+            element_width = el.get("width", 1)
 
         if element_width != 1:
             remaining_elements = remaining_elements - 1
@@ -294,9 +301,9 @@ def _auto_calculate_width(elements):
 
     for el in elements:
         if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
-            if el.get('width', 1) == 1:
-                el['width'] = available_width
-        elif getattr(el, 'width', 1) == 1:
+            if el.get("width", 1) == 1:
+                el["width"] = available_width
+        elif getattr(el, "width", 1) == 1:
             el.width = available_width
 
     return elements
@@ -304,13 +311,14 @@ def _auto_calculate_width(elements):
 
 def _auto_calculate_height(elements):
     import arcgis
+
     available_height = 1
     remaining_elements = len(elements)
 
     for el in elements:
-        element_height = getattr(el, 'height', 1)
+        element_height = getattr(el, "height", 1)
         if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
-            element_height = el.get('height', 1)
+            element_height = el.get("height", 1)
 
         if element_height != 1:
             remaining_elements = remaining_elements - 1
@@ -321,9 +329,9 @@ def _auto_calculate_height(elements):
 
     for el in elements:
         if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
-            if el.get('height', 1) == 1:
-                el['height'] = available_height
-        elif getattr(el, 'height', 1) == 1:
+            if el.get("height", 1) == 1:
+                el["height"] = available_height
+        elif getattr(el, "height", 1) == 1:
             el.height = available_height
 
     return elements
@@ -350,22 +358,24 @@ def add_row(elements, height=1):
         "elements": [],
         "width": 1,
         "height": height,
-        'widgets': []
+        "widgets": [],
     }
 
     for el in elements:
-        if not hasattr(el, '_id'):
-            json['widgets'] = json['widgets'] + el['widgets']
-            del el['widgets']
-            json['elements'].append(el)
+        if not hasattr(el, "_id"):
+            json["widgets"] = json["widgets"] + el["widgets"]
+            del el["widgets"]
+            json["elements"].append(el)
         else:
-            json['elements'].append({
-                'type': 'itemLayoutElement',
-                'id': el._id,
-                'height': el.height,
-                'width': el.width
-            })
-            json['widgets'].append(el)
+            json["elements"].append(
+                {
+                    "type": "itemLayoutElement",
+                    "id": el._id,
+                    "height": el.height,
+                    "width": el.width,
+                }
+            )
+            json["widgets"].append(el)
 
     return json
 
@@ -391,22 +401,23 @@ def add_column(elements, width=1):
         "elements": [],
         "width": width,
         "height": 1,
-        'widgets': []
+        "widgets": [],
     }
 
     for el in elements:
-        if not hasattr(el, '_id'):
-            json['widgets'] = json['widgets'] + el['widgets']
-            del el['widgets']
-            json['elements'].append(el)
+        if not hasattr(el, "_id"):
+            json["widgets"] = json["widgets"] + el["widgets"]
+            del el["widgets"]
+            json["elements"].append(el)
         else:
-            json['elements'].append({
-                'type': 'itemLayoutElement',
-                'id': el._id,
-                'height': el.height,
-                'width': el.width
-            })
-            json['widgets'].append(el)
+            json["elements"].append(
+                {
+                    "type": "itemLayoutElement",
+                    "id": el._id,
+                    "height": el.height,
+                    "width": el.width,
+                }
+            )
+            json["widgets"].append(el)
 
     return json
-

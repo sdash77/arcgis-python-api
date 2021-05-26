@@ -99,11 +99,29 @@ class Assignment(FeatureModel):
 
     """
 
-    def __init__(self, project, feature=None, geometry=None, assignment_type=None,
-            assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
-            declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority="none", status=None,
-            work_order_id=None, worker=None):
+    def __init__(
+        self,
+        project,
+        feature=None,
+        geometry=None,
+        assignment_type=None,
+        assigned_date=None,
+        assignment_read=None,
+        completed_date=None,
+        declined_comment=None,
+        declined_date=None,
+        description=None,
+        dispatcher=None,
+        due_date=None,
+        in_progress_date=None,
+        location=None,
+        notes=None,
+        paused_date=None,
+        priority="none",
+        status=None,
+        work_order_id=None,
+        worker=None,
+    ):
         super().__init__(project, project.assignments_layer, feature)
         self._schema = AssignmentSchema(project.assignments_layer)
         if feature:
@@ -113,27 +131,43 @@ class Assignment(FeatureModel):
             # forces GUIDs to upper case
             if feature.attributes[project._assignment_schema.worker_id]:
                 if self.project._is_v2_project:
-                    self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id].upper()]
+                    self.worker = self.project._cached_workers[
+                        feature.attributes[project._assignment_schema.worker_id].upper()
+                    ]
                 else:
-                    self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id]]
+                    self.worker = self.project._cached_workers[
+                        feature.attributes[project._assignment_schema.worker_id]
+                    ]
             else:
                 self.worker = None
             if feature.attributes[project._assignment_schema.dispatcher_id]:
                 # in case dispatcher for an existing assignment has been deleted
                 try:
                     if self.project._is_v2_project:
-                        self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id].upper()]
+                        self.dispatcher = self.project._cached_dispatchers[
+                            feature.attributes[
+                                project._assignment_schema.dispatcher_id
+                            ].upper()
+                        ]
                     else:
-                        self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                        self.dispatcher = self.project._cached_dispatchers[
+                            feature.attributes[project._assignment_schema.dispatcher_id]
+                        ]
                 except KeyError:
                     self.dispatcher = None
             else:
                 self.dispatcher = None
             if feature.attributes[project._assignment_schema.assignment_type]:
                 if self.project._is_v2_project:
-                    self.assignment_type = self.project._cached_assignment_types[feature.attributes[project._assignment_schema.assignment_type].upper()]
+                    self.assignment_type = self.project._cached_assignment_types[
+                        feature.attributes[
+                            project._assignment_schema.assignment_type
+                        ].upper()
+                    ]
                 else:
-                    self.assignment_type = self.project._cached_assignment_types[feature.attributes[project._assignment_schema.assignment_type]]
+                    self.assignment_type = self.project._cached_assignment_types[
+                        feature.attributes[project._assignment_schema.assignment_type]
+                    ]
             else:
                 self.assignment_type = None
         else:
@@ -168,11 +202,27 @@ class Assignment(FeatureModel):
     def __repr__(self):
         return "<Assignment {}>".format(self.object_id)
 
-    def update(self, geometry=None, assignment_type=None,
-            assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
-            declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority=None, status=None,
-            work_order_id=None, worker=None):
+    def update(
+        self,
+        geometry=None,
+        assignment_type=None,
+        assigned_date=None,
+        assignment_read=None,
+        completed_date=None,
+        declined_comment=None,
+        declined_date=None,
+        description=None,
+        dispatcher=None,
+        due_date=None,
+        in_progress_date=None,
+        location=None,
+        notes=None,
+        paused_date=None,
+        priority=None,
+        status=None,
+        work_order_id=None,
+        worker=None,
+    ):
         """
             Updates the assignment on the server
 
@@ -240,15 +290,33 @@ class Assignment(FeatureModel):
                                    The worker assigned to the assignment
             ==================     ====================================================================
         """
-        update_assignment(self.project, self, geometry, assignment_type, assigned_date, assignment_read,
-                          completed_date, declined_comment, declined_date, description,
-                          dispatcher, due_date, in_progress_date, location, notes, paused_date,
-                          priority, status, work_order_id, worker)
+        update_assignment(
+            self.project,
+            self,
+            geometry,
+            assignment_type,
+            assigned_date,
+            assignment_read,
+            completed_date,
+            declined_comment,
+            declined_date,
+            description,
+            dispatcher,
+            due_date,
+            in_progress_date,
+            location,
+            notes,
+            paused_date,
+            priority,
+            status,
+            work_order_id,
+            worker,
+        )
 
     def delete(self):
         """Deletes the assignment from the server"""
         delete_assignments(self.project, [self])
-    
+
     @property
     def _supports_assignment_read_field(self):
         return bool(self._schema.assignment_read)
@@ -273,14 +341,20 @@ class Assignment(FeatureModel):
         if self._supports_assignment_read_field:
             return bool(self._feature.attributes.get(self._schema.assignment_read))
         else:
-            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
+            warn(
+                "This Workforce Project does not support the assignment_read field.",
+                WorkforceWarning,
+            )
 
     @assignment_read.setter
     def assignment_read(self, value):
         if self._supports_assignment_read_field:
             self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
         else:
-            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
+            warn(
+                "This Workforce Project does not support the assignment_read field.",
+                WorkforceWarning,
+            )
 
     @property
     def assignment_type_code(self):
@@ -313,7 +387,9 @@ class Assignment(FeatureModel):
         else:
             raise ValidationError("Invalid Assignment Type", self)
         if self._assignment_type:
-            self._feature.attributes[self._schema.assignment_type] = self._assignment_type.code
+            self._feature.attributes[
+                self._schema.assignment_type
+            ] = self._assignment_type.code
         else:
             self._feature.attributes[self._schema.assignment_type] = None
 
@@ -373,9 +449,13 @@ class Assignment(FeatureModel):
         else:
             self._dispatcher = self.project._cached_dispatcher
         if self.project._is_v2_project:
-            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.global_id
+            self._feature.attributes[
+                self._schema.dispatcher_id
+            ] = self._dispatcher.global_id
         else:
-            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
+            self._feature.attributes[
+                self._schema.dispatcher_id
+            ] = self._dispatcher.object_id
 
     @property
     def due_date(self):
@@ -433,13 +513,7 @@ class Assignment(FeatureModel):
 
             `none`, `low`, `medium`, `high`, `critical`
         """
-        lut = {
-            0: "none",
-            1: "low",
-            2: "medium",
-            3: "high",
-            4: "critical"
-        }
+        lut = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
         if self._feature.attributes[self._schema.priority] is not None:
             return lut[self._feature.attributes[self._schema.priority]]
         else:
@@ -447,7 +521,7 @@ class Assignment(FeatureModel):
 
     @priority.setter
     def priority(self, value):
-        if (isinstance(value, int) and value >=0 and value <= 4) or value is None:
+        if (isinstance(value, int) and value >= 0 and value <= 4) or value is None:
             self._feature.attributes[self._schema.priority] = value
         elif isinstance(value, str):
             reduced_str = value.lower().replace(" ", "").replace("_", "")
@@ -466,7 +540,6 @@ class Assignment(FeatureModel):
         else:
             raise ValidationError("Invalid priority", self)
 
-
     @property
     def status(self):
         """
@@ -482,7 +555,7 @@ class Assignment(FeatureModel):
             3: "completed",
             4: "declined",
             5: "paused",
-            6: "canceled"
+            6: "canceled",
         }
         if self._feature.attributes[self._schema.status] is not None:
             try:
@@ -530,11 +603,23 @@ class Assignment(FeatureModel):
     def web_app_link(self):
         """Returns a link to the assignment in the Workforce web app"""
         if self.project.gis.properties["isPortal"]:
-            portal_url = self.project.gis.properties['portalHostname']
-            return "https://" + portal_url + "/apps/workforce/#/projects/" + self.project.id + "/dispatch/assignments/" + str(self.object_id)
+            portal_url = self.project.gis.properties["portalHostname"]
+            return (
+                "https://"
+                + portal_url
+                + "/apps/workforce/#/projects/"
+                + self.project.id
+                + "/dispatch/assignments/"
+                + str(self.object_id)
+            )
         else:
-            return "https://workforce.arcgis.com/projects/" + self.project.id + "/dispatch/assignments/" + str(self.object_id)
-        
+            return (
+                "https://workforce.arcgis.com/projects/"
+                + self.project.id
+                + "/dispatch/assignments/"
+                + str(self.object_id)
+            )
+
     @property
     def work_order_id(self):
         """Gets/Sets the work order id of the assignment"""
@@ -595,17 +680,29 @@ class Assignment(FeatureModel):
     def _validate_assignment_type(self):
         errors = []
         if self.assignment_type is None:
-            errors.append(ValidationError("An assignment must have an assignment type", self))
+            errors.append(
+                ValidationError("An assignment must have an assignment type", self)
+            )
         else:
             if self.assignment_type.name is None:
-                errors.append(ValidationError("Invalid assignment type name: cannot be None", self))
+                errors.append(
+                    ValidationError(
+                        "Invalid assignment type name: cannot be None", self
+                    )
+                )
             if self.assignment_type.code is None:
-                errors.append(ValidationError("Invalid assignment type code: cannot be None", self))
+                errors.append(
+                    ValidationError(
+                        "Invalid assignment type code: cannot be None", self
+                    )
+                )
         return errors
 
     def _validate_assignment_type_on_server(self):
         errors = []
-        assignment_type = self.project._cached_assignment_types.get(self.assignment_type_code, None)
+        assignment_type = self.project._cached_assignment_types.get(
+            self.assignment_type_code, None
+        )
         if assignment_type is None:
             errors.append(ValidationError("Unrecognized assignment type", self))
         return errors
@@ -613,7 +710,9 @@ class Assignment(FeatureModel):
     def _validate_location(self):
         errors = []
         if not self.location or self.location.isspace():
-            errors.append(ValidationError("Assignment cannot have an empty location", self))
+            errors.append(
+                ValidationError("Assignment cannot have an empty location", self)
+            )
         return errors
 
     def _validate_geometry(self):
@@ -649,7 +748,9 @@ class Assignment(FeatureModel):
         if self.dispatcher is not None:
             dispatcher = self.project._cached_dispatchers.get(self.dispatcher_id, None)
             if not dispatcher:
-                errors.append(ValidationError("Unrecognized dispatcher object_id", self))
+                errors.append(
+                    ValidationError("Unrecognized dispatcher object_id", self)
+                )
         return errors
 
     def _validate_status(self):

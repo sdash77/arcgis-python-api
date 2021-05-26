@@ -26,7 +26,7 @@ def get_tracks(project):
         :param project:
         :returns: list of Tracks
     """
-    return query_tracks(project, '1=1')
+    return query_tracks(project, "1=1")
 
 
 def add_tracks(project, tracks):
