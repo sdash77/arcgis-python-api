@@ -16,14 +16,20 @@ def add_features(feature_layer, features, use_global_ids=False):
     """
     if features:
         feature_set = FeatureSet(features)
-        response = feature_layer.edit_features(adds=feature_set, use_global_ids=use_global_ids)
-        add_results = response['addResults']
-        errors = [result['error'] for result in add_results if not result['success']]
+        response = feature_layer.edit_features(
+            adds=feature_set, use_global_ids=use_global_ids
+        )
+        add_results = response["addResults"]
+        errors = [result["error"] for result in add_results if not result["success"]]
         if errors:
             raise workforce.ServerError(errors)
         for feature, add_results in zip(features, add_results):
-            feature.attributes[feature_layer.properties('objectIdField')] = add_results['objectId']
-            feature.attributes[feature_layer.properties('globalIdField')] = add_results['globalId']
+            feature.attributes[feature_layer.properties("objectIdField")] = add_results[
+                "objectId"
+            ]
+            feature.attributes[feature_layer.properties("globalIdField")] = add_results[
+                "globalId"
+            ]
     return features
 
 
@@ -35,7 +41,11 @@ def update_features(feature_layer, features):
     """
     if features:
         response = feature_layer.edit_features(updates=FeatureSet(features))
-        errors = [result['error'] for result in response["updateResults"] if not result['success']]
+        errors = [
+            result["error"]
+            for result in response["updateResults"]
+            if not result["success"]
+        ]
         if errors:
             raise workforce.ServerError(errors)
     return features
@@ -48,10 +58,16 @@ def remove_features(feature_layer, features):
         :raises ServerError: Indicates that the server rejected the removals.
     """
     if features:
-        object_id_attr = feature_layer.properties['objectIdField']
-        object_ids = ','.join([str(feature.attributes[object_id_attr]) for feature in features])
+        object_id_attr = feature_layer.properties["objectIdField"]
+        object_ids = ",".join(
+            [str(feature.attributes[object_id_attr]) for feature in features]
+        )
         response = feature_layer.edit_features(deletes=object_ids)
-        errors = [result['error'] for result in response['deleteResults'] if not result['success']]
+        errors = [
+            result["error"]
+            for result in response["deleteResults"]
+            if not result["success"]
+        ]
         if errors:
             raise workforce.ServerError(errors)
 

@@ -74,7 +74,9 @@ class Project:
         """
             Updates the cached assignment types
         """
-        self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
+        self._cached_assignment_types = {
+            a.code: a for a in self.assignment_types.search()
+        }
 
     def _update_cached_objects(self):
         """
@@ -89,7 +91,11 @@ class Project:
                 self._cached_dispatcher = d
                 break
         else:
-            raise WorkforceError("'{}' is not a dispatcher, please authenticate as a dispatcher".format(self.gis.users.me.username))
+            raise WorkforceError(
+                "'{}' is not a dispatcher, please authenticate as a dispatcher".format(
+                    self.gis.users.me.username
+                )
+            )
 
     def __str__(self):
         return self.title
@@ -138,14 +144,12 @@ class Project:
         self.group.protected = False
         self.group.delete()
         for folder in self.gis.users.get(owner).folders:
-            if folder['title'] == title:
-                self.gis.content.delete_folder(folder['title'], owner=owner)
+            if folder["title"] == title:
+                self.gis.content.delete_folder(folder["title"], owner=owner)
 
     def _update_data(self):
         # this function is used by v1 projects only
-        self._item.update({
-            "text": json.dumps(self._item_data)
-        })
+        self._item.update({"text": json.dumps(self._item_data)})
 
     def update(self, summary=None):
         """
@@ -159,7 +163,7 @@ class Project:
         """
         item_properties = {}
         if summary:
-            item_properties['snippet'] = summary
+            item_properties["snippet"] = summary
         self._item.update(item_properties)
         if self._is_v2_project:
             self.gis.content.get(self.dispatcher_web_map_id).update(item_properties)
@@ -172,7 +176,11 @@ class Project:
     @property
     def _is_v2_project(self):
         try:
-            return self._item.type == "Feature Service" and int(self._item.properties['workforceProjectVersion'].split(".")[0]) >= 2
+            return (
+                self._item.type == "Feature Service"
+                and int(self._item.properties["workforceProjectVersion"].split(".")[0])
+                >= 2
+            )
         except:
             return False
 
@@ -206,34 +214,34 @@ class Project:
     @property
     def id(self):
         """The item id of the project"""
-        return self._item['id']
+        return self._item["id"]
 
     @property
     def title(self):
         """Gets the title of the project"""
-        return self._item['title']
+        return self._item["title"]
 
     @property
     def summary(self):
         """The title of the project"""
-        return self._item['snippet']
+        return self._item["snippet"]
 
     @summary.setter
     def summary(self, value):
-        self._item['snippet'] = value
+        self._item["snippet"] = value
 
     @property
     def owner_user_id(self):
         """The user id of the project owner."""
-        return self._item['owner']
+        return self._item["owner"]
 
     @property
     def version(self):
         """The version of the project"""
         if self._is_v2_project:
-            return self._item_data['workforceProjectVersion']
+            return self._item_data["workforceProjectVersion"]
         else:
-            return self._item_data['version']
+            return self._item_data["version"]
 
     @_lazy_property
     def assignments_item(self):
@@ -242,7 +250,7 @@ class Project:
             # this is the same item as workers_item, dispatchers_item for a v2 project - each points to the one FS
             return self.gis.content.get(self._item.id)
         else:
-            return self.gis.content.get(self._item_data['assignments']['serviceItemId'])
+            return self.gis.content.get(self._item_data["assignments"]["serviceItemId"])
 
     @property
     def assignments_layer_url(self):
@@ -250,15 +258,18 @@ class Project:
         if self._is_v2_project:
             return self._item.url + "/0"
         else:
-            return self._item_data['assignments']['url']
-    
+            return self._item_data["assignments"]["url"]
+
     @_lazy_property
     def assignment_types_item(self):
         """The assignment types :class:`~arcgis.gis.Item`"""
         if self._is_v2_project:
             return self.gis.content.get(self._item.id)
         else:
-            warn("This Workforce Project does not have an assignment types item", WorkforceWarning)
+            warn(
+                "This Workforce Project does not have an assignment types item",
+                WorkforceWarning,
+            )
 
     @property
     def assignment_types_table_url(self):
@@ -266,7 +277,10 @@ class Project:
         if self._is_v2_project:
             return self._item.url + "/3"
         else:
-            warn("This Workforce Project does not have an assignment types table", WorkforceWarning)
+            warn(
+                "This Workforce Project does not have an assignment types table",
+                WorkforceWarning,
+            )
 
     @_lazy_property
     def dispatchers_item(self):
@@ -274,7 +288,7 @@ class Project:
         if self._is_v2_project:
             return self.gis.content.get(self._item.id)
         else:
-            return self.gis.content.get(self._item_data['dispatchers']['serviceItemId'])
+            return self.gis.content.get(self._item_data["dispatchers"]["serviceItemId"])
 
     @property
     def dispatchers_layer_url(self):
@@ -282,7 +296,7 @@ class Project:
         if self._is_v2_project:
             return self._item.url + "/2"
         else:
-            return self._item_data['dispatchers']['url']
+            return self._item_data["dispatchers"]["url"]
 
     @_lazy_property
     def integrations_table_url(self):
@@ -290,13 +304,16 @@ class Project:
         if self._is_v2_project:
             return self._item.url + "/4"
         else:
-            warn("This Workforce Project does not have an integrations table", WorkforceWarning)
-            
+            warn(
+                "This Workforce Project does not have an integrations table",
+                WorkforceWarning,
+            )
+
     @_lazy_property
     def tracks_item(self):
         """The tracks :class:`~arcgis.gis.Item`"""
         if self._supports_tracks:
-            return self.gis.content.get(self._item_data['tracks']['serviceItemId'])
+            return self.gis.content.get(self._item_data["tracks"]["serviceItemId"])
         else:
             warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
@@ -304,7 +321,7 @@ class Project:
     def tracks_layer_url(self):
         """The tracks feature layer url"""
         if self._supports_tracks:
-            return self._item_data['tracks']['url']
+            return self._item_data["tracks"]["url"]
         else:
             warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
@@ -314,15 +331,15 @@ class Project:
         if self._is_v2_project:
             return self.gis.content.get(self._item.id)
         else:
-            return self.gis.content.get(self._item_data['workers']['serviceItemId'])
-    
+            return self.gis.content.get(self._item_data["workers"]["serviceItemId"])
+
     @property
     def workers_layer_url(self):
         """The workers feature layer url"""
         if self._is_v2_project:
             return self._item.url + "/1"
         else:
-            return self._item_data['workers']['url']
+            return self._item_data["workers"]["url"]
 
     @property
     def dispatcher_web_map_id(self):
@@ -331,38 +348,42 @@ class Project:
             # not all systems will support this new "Workforce2MapFeatureService" so we try/except. If the rel does
             # not exist, we can get the webmap out of the metadata
             try:
-                related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+                related_items = self._item.related_items(
+                    "WorkforceMap2FeatureService", "reverse"
+                )
                 for item in related_items:
                     if "Workforce Dispatcher" in item.typeKeywords:
                         return item.id
-                return self._item_data['workforceDispatcherMapId']
+                return self._item_data["workforceDispatcherMapId"]
             except Exception:
-                return self._item_data['workforceDispatcherMapId']
+                return self._item_data["workforceDispatcherMapId"]
         else:
-            return self._item_data['dispatcherWebMapId']
+            return self._item_data["dispatcherWebMapId"]
 
     @property
     def worker_web_map_id(self):
         """The worker webmap item id"""
         if self._is_v2_project:
             try:
-                related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+                related_items = self._item.related_items(
+                    "WorkforceMap2FeatureService", "reverse"
+                )
                 for item in related_items:
                     if "Workforce Worker" in item.typeKeywords:
                         return item.id
-                return self._item_data['workforceWorkerMapId']
+                return self._item_data["workforceWorkerMapId"]
             except Exception:
-                return self._item_data['workforceWorkerMapId']
+                return self._item_data["workforceWorkerMapId"]
         else:
-            return self._item_data['workerWebMapId']
+            return self._item_data["workerWebMapId"]
 
     @property
     def group_id(self):
         """The group id that all project items are part of"""
         if self._is_v2_project:
-            return self._item_data['workforceProjectGroupId']
+            return self._item_data["workforceProjectGroupId"]
         else:
-            return self._item_data['groupId']
+            return self._item_data["groupId"]
 
     @_lazy_property
     def owner(self):
@@ -388,16 +409,22 @@ class Project:
         if self._is_v2_project:
             return Table(self.assignment_types_table_url, self.gis)
         else:
-            warn("This Workforce Project does not have an assignment types table", WorkforceWarning)
-            
+            warn(
+                "This Workforce Project does not have an assignment types table",
+                WorkforceWarning,
+            )
+
     @_lazy_property
     def integrations_table(self):
         """The integrations :class:`~arcgis.features.Table`"""
         if self._is_v2_project:
             return Table(self.integrations_table_url, self.gis)
         else:
-            warn("This Workforce Project does not have an integrations table", WorkforceWarning)
-            
+            warn(
+                "This Workforce Project does not have an integrations table",
+                WorkforceWarning,
+            )
+
     @_lazy_property
     def tracks_layer(self):
         """The tracks :class:`~arcgis.features.FeatureLayer`"""
