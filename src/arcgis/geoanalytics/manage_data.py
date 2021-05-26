@@ -622,7 +622,7 @@ def clip_layer(
     }
 
     if output_name is None:
-        output_service_name = "Clip_Layers_" + _id_generator()
+        output_service_name = "Clip_Layer_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1032,7 +1032,7 @@ def calculate_fields(
     }
 
     if output_name is None:
-        output_service_name = "Calculate_Fields_" + _id_generator()
+        output_service_name = "Calculate_Field_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1142,7 +1142,7 @@ def copy_to_data_store(
     }
 
     if output_name is None:
-        output_service_name = "Data Store Copy_" + _id_generator()
+        output_service_name = "Copy_to_Data_Store_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

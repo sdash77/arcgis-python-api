@@ -633,7 +633,7 @@ def aggregate_points(
     if context is not None:
         params["context"] = context
     if output_name is None:
-        output_service_name = "Aggregate Points Analysis_" + _id_generator()
+        output_service_name = "Aggregate Points_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1061,7 +1061,7 @@ def join_features(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Join Features Analysis_" + _id_generator()
+        output_service_name = "Join_Features_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1301,7 +1301,7 @@ def reconstruct_tracks(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Reconstructed Tracks_" + _id_generator()
+        output_service_name = "Reconstruct_Tracks_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

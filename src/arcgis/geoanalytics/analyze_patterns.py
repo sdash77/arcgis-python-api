@@ -451,7 +451,7 @@ def gwr(
     input_layer = _prevent_bds_item(input_layer)
 
     if gis is None and _env.active_gis is None:
-        raise ValueError("A `GIS is required`")
+        raise ValueError("A GIS is required")
     elif gis is None and _env.active_gis:
         gis = _env.active_gis
     if gis.version < [8, 1]:
@@ -1125,7 +1125,7 @@ def calculate_density(
     tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Calculate Density Analysis_" + _id_generator()
+        output_service_name = "Calculate Density_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1316,7 +1316,7 @@ def find_hot_spots(
     tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Hotspot Analysis_" + _id_generator()
+        output_service_name = "Hot Spot_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1328,7 +1328,7 @@ def find_hot_spots(
         gis,
         output_name,
         output_service_name,
-        "Find Hotspots",
+        "Find Hot Spots",
         output_datastore=output_datastore,
     )
 

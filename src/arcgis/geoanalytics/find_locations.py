@@ -173,8 +173,8 @@ def geocode_locations(
         pass
     else:
         raise ValueError(
-            "Invalid input_layer input. Please pass an Item, "
-            + "Big DataStore Layer or Big DataStore URL to geocode."
+            "Invalid input_layer. Please provide an item, feature "
+            "service, or big data file share dataset to geocode."
         )
 
     params = {
@@ -438,7 +438,7 @@ def detect_incidents(
         gis,
         output_name,
         output_service_name,
-        "Detect Track Incidents",
+        "Detect Incidents",
         output_datastore=output_datastore,
     )
 
@@ -894,7 +894,7 @@ def find_similar_locations(
     }
 
     if output_name is None:
-        output_service_name = "Similar Locations_" + _id_generator()
+        output_service_name = "Find Similar Locations_" + _id_generator()
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

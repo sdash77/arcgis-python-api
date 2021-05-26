@@ -52,7 +52,9 @@ def _feature_input(self, input_layer):
 
     else:
         raise Exception(
-            "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported"
+            "Invalid format of input layer. The following formats "
+            "are supported: URL string, feature service item, feat"
+            "ure service instance or dictionary."
         )
 
     return input_param
@@ -100,7 +102,7 @@ def _create_output_service(
     ok = gis.content.is_service_name_available(output_name, "Feature Service")
     if not ok:
         raise RuntimeError(
-            "A Feature Service by this name already exists: " + output_name
+            "A feature service by this name already exists: " + output_name
         )
     if output_datastore is None:
         if arcgis.env.output_datastore is not None:
@@ -144,7 +146,7 @@ def _create_output_service(
     output_service = gis.content.create_service(
         output_name, create_params=createParameters, service_type="featureService"
     )
-    description = "Feature Service generated from running the " + task + " tool."
+    description = "Feature service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
         "tags": "Analysis Result, " + task,
