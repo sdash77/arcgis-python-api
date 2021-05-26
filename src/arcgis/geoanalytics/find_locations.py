@@ -11,28 +11,34 @@ from arcgis import env as _env
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
-from ._util import (_id_generator,
-                    _feature_input,
-                    _set_context,
-                    _create_output_service,
-                    GAJob,
-                    _prevent_bds_item)
+from ._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 import datetime
+
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def geocode_locations(input_layer,
-                      country=None,
-                      category=None,
-                      include_attributes=True,
-                      locator_parameters=None,
-                      output_name=None,
-                      geocode_service=None,
-                      geocode_parameters=None,
-                      gis=None,
-                      context=None,
-                      future=False):
+
+def geocode_locations(
+    input_layer,
+    country=None,
+    category=None,
+    include_attributes=True,
+    locator_parameters=None,
+    output_name=None,
+    geocode_service=None,
+    geocode_parameters=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images/geocode_locations/geocode_locations.png
 
@@ -143,43 +149,46 @@ def geocode_locations(input_layer,
     tbx = _import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = 'Geocoding_Results_' + _id_generator()
-        output_service_name = output_service_name.replace(' ', '_')
+        output_service_name = "Geocoding_Results_" + _id_generator()
+        output_service_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
 
     if isinstance(input_layer, str):
-        input_layer = {'url' : input_layer}
+        input_layer = {"url": input_layer}
     elif isinstance(input_layer, Item):
         input_layer = input_layer.layers[0]._lyr_dict
-        if 'type' in input_layer:
-            input_layer.pop('type')
+        if "type" in input_layer:
+            input_layer.pop("type")
     elif isinstance(input_layer, Layer):
         input_layer = input_layer._lyr_dict
-        if 'type' in input_layer:
-            input_layer.pop('type')
-    elif isinstance(input_layer, dict) and \
-         not "url" in input_layer:
-        raise ValueError("Invalid Input: input_layer dictionary" + \
-                         " must have format {'url' : <url>}")
+        if "type" in input_layer:
+            input_layer.pop("type")
+    elif isinstance(input_layer, dict) and not "url" in input_layer:
+        raise ValueError(
+            "Invalid Input: input_layer dictionary"
+            + " must have format {'url' : <url>}"
+        )
     elif isinstance(input_layer, dict) and "url" in input_layer:
         pass
     else:
-        raise ValueError("Invalid input_layer input. Please pass an Item, " + \
-                         "Big DataStore Layer or Big DataStore URL to geocode.")
+        raise ValueError(
+            "Invalid input_layer input. Please pass an Item, "
+            + "Big DataStore Layer or Big DataStore URL to geocode."
+        )
 
     params = {
-        "input_layer" : input_layer,
-        #"geocode_service" : geocode_service,
-        "geocode_parameters" : geocode_parameters,
-    #    "source_country" : source_country,
-        "category" : category,
-        "include_attributes" : include_attributes,
-        "locator_parameters" : locator_parameters,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "input_layer": input_layer,
+        # "geocode_service" : geocode_service,
+        "geocode_parameters": geocode_parameters,
+        #    "source_country" : source_country,
+        "category": category,
+        "include_attributes": include_attributes,
+        "locator_parameters": locator_parameters,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -188,28 +197,32 @@ def geocode_locations(input_layer,
 
     if geocode_service is None:
         for service in gis.properties.helperServices.geocode:
-            if 'batch' in service and service['batch'] == True:
+            if "batch" in service and service["batch"] == True:
                 geocode_service_url = service["url"]
                 break
         if geocode_service_url is None:
-            raise ValueError("A geocoder with batch enabled must be configured" + \
-                             " with this portal to use this service.")
-        params['geocode_service_url'] = geocode_service_url
+            raise ValueError(
+                "A geocoder with batch enabled must be configured"
+                + " with this portal to use this service."
+            )
+        params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
         geocode_service = geocode_service.url
-        params['geocode_service_url'] = geocode_service_url
+        params["geocode_service_url"] = geocode_service_url
     elif isinstance(geocode_service, str):
-        params['geocode_service_url'] = geocode_service
+        params["geocode_service_url"] = geocode_service
     else:
         raise ValueError("geocode_service_url must be a string or GeoCoder")
 
     if geocode_parameters is None:
         from arcgis.geoprocessing._tool import Toolbox
+
         analyze_geocode_url = gis.properties.helperServices.asyncGeocode.url
         tbx = Toolbox(url=analyze_geocode_url, gis=gis)
-        geocode_parameters = tbx.analyze_geocode_input(input_table=input_layer,
-                                                       geocode_service_url=geocode_service_url)
-        params['geocode_parameters'] = geocode_parameters
+        geocode_parameters = tbx.analyze_geocode_input(
+            input_table=input_layer, geocode_service_url=geocode_service_url
+        )
+        params["geocode_parameters"] = geocode_parameters
 
     if context is not None:
         params["context"] = context
@@ -217,21 +230,30 @@ def geocode_locations(input_layer,
         _set_context(params)
 
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name,
-                                            output_service_name, 'Geocoded Locations',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Geocoded Locations",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
-
 
     try:
         gpjob = tbx.geocode_locations(**params)
@@ -243,18 +265,21 @@ def geocode_locations(input_layer,
         output_service.delete()
         raise
 
-def detect_incidents(input_layer,
-                     track_fields,
-                     start_condition_expression,
-                     end_condition_expression=None,
-                     output_mode="AllFeatures",
-                     time_boundary_split=None,
-                     time_split_unit=None,
-                     time_reference=None,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False):
+
+def detect_incidents(
+    input_layer,
+    track_fields,
+    start_condition_expression,
+    end_condition_expression=None,
+    output_mode="AllFeatures",
+    time_boundary_split=None,
+    time_split_unit=None,
+    time_reference=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/detect_incidents/detect_incidents.png
@@ -388,12 +413,12 @@ def detect_incidents(input_layer,
         "start_condition_expression": start_condition_expression,
         "end_condition_expression": end_condition_expression,
         "output_mode": output_mode,
-        "time_boundary_split" : time_boundary_split,
-        "time_boundary_split_unit" : time_split_unit,
-        "time_boundary_reference" : time_reference,
+        "time_boundary_split": time_boundary_split,
+        "time_boundary_split_unit": time_split_unit,
+        "time_boundary_reference": time_reference,
         "output_name": output_name,
         "context": context,
-        'future' : future
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -401,22 +426,34 @@ def detect_incidents(input_layer,
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Detect_Incidents_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Detect_Incidents_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Detect Track Incidents",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
     if context is not None:
         params["context"] = context
@@ -426,7 +463,7 @@ def detect_incidents(input_layer,
     params = inspect_function_inputs(tbx.detect_incidents, **params)
 
     try:
-        params['future'] = True
+        params["future"] = True
         gpjob = tbx.detect_incidents(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
@@ -437,22 +474,24 @@ def detect_incidents(input_layer,
         raise
 
 
-def find_dwell_locations(input_layer,
-                         track_fields,
-                         distance_tolerance,
-                         distance_unit,
-                         time_tolerance,
-                         time_unit,
-                         summary_fields=None,
-                         method='Planar',
-                         dwell_type='DwellMeanCenters',
-                         output_name=None,
-                         gis=None,
-                         context=None,
-                         future=False,
-                         time_boundary_split=None,
-                         time_boundary_unit=None,
-                         time_boundary_ref=None):
+def find_dwell_locations(
+    input_layer,
+    track_fields,
+    distance_tolerance,
+    distance_unit,
+    time_tolerance,
+    time_unit,
+    summary_fields=None,
+    method="Planar",
+    dwell_type="DwellMeanCenters",
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    time_boundary_split=None,
+    time_boundary_unit=None,
+    time_boundary_ref=None,
+):
 
     """
 
@@ -601,44 +640,40 @@ def find_dwell_locations(input_layer,
 
     """
     gis = None
-    if gis is None and \
-       _env.active_gis is None:
+    if gis is None and _env.active_gis is None:
         raise ValueError("A `GIS is required`")
-    elif gis is None and \
-         _env.active_gis:
+    elif gis is None and _env.active_gis:
         gis = _env.active_gis
     if gis.version < [8, 1]:
         return None
-
 
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _arcgis.geoprocessing.import_toolbox(url, gis=gis)
     input_parameters = list(tbx.find_dwell_locations.__annotations__.keys())
 
-
     if output_name is None:
-        output_name = f'FDL_{_id_generator()}'.replace(' ', '_')
+        output_name = f"FDL_{_id_generator()}".replace(" ", "_")
     else:
-        output_name = output_name.replace(' ', '_')
-    #del output_name
+        output_name = output_name.replace(" ", "_")
+    # del output_name
 
     params = {
-        "input_layer" : input_layer,
-        "track_fields" : track_fields,
-        "distance_tolerance" : distance_tolerance,
-        "distance_tolerance_unit" : distance_unit,
-        "time_tolerance" : time_tolerance,
-        "time_tolerance_unit" : time_unit,
-        "summary_fields" : summary_fields,
-        "distance_method" : method,
-        "output_type" : dwell_type,
-        "output_name" : output_name,
-        "gis" : gis,
-        "context" : context,
-        "future" : future,
-        "time_boundary_split" : time_boundary_split,
-        "time_boundary_split_unit" : time_boundary_unit,
-        "time_boundary_reference" : time_boundary_ref
+        "input_layer": input_layer,
+        "track_fields": track_fields,
+        "distance_tolerance": distance_tolerance,
+        "distance_tolerance_unit": distance_unit,
+        "time_tolerance": time_tolerance,
+        "time_tolerance_unit": time_unit,
+        "summary_fields": summary_fields,
+        "distance_method": method,
+        "output_type": dwell_type,
+        "output_name": output_name,
+        "gis": gis,
+        "context": context,
+        "future": future,
+        "time_boundary_split": time_boundary_split,
+        "time_boundary_split_unit": time_boundary_unit,
+        "time_boundary_reference": time_boundary_ref,
     }
 
     for k in list(params.keys()):
@@ -646,30 +681,40 @@ def find_dwell_locations(input_layer,
             params.pop(k, None)
     ## Validate Input Parameters
     ##
-    valid_values = dict(tbx.choice_list['find_dwell_locations'])
+    valid_values = dict(tbx.choice_list["find_dwell_locations"])
     for k, v in params.items():
         if k in valid_values.keys():
             lookup = dict(zip([v.lower() for v in valid_values[k]], valid_values[k]))
 
             if v and v.lower() not in lookup:
-                raise ValueError(f"Value: {v} not supported at this version of `find_dwell_locations`")
+                raise ValueError(
+                    f"Value: {v} not supported at this version of `find_dwell_locations`"
+                )
             if v:
                 params[k] = lookup[v.lower()]
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis,
-                                            params['output_name'],
-                                            params['output_name'],
-                                            'Find Dwell Locations',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        params["output_name"],
+        params["output_name"],
+        "Find Dwell Locations",
+        output_datastore=output_datastore,
+    )
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -678,10 +723,10 @@ def find_dwell_locations(input_layer,
         _set_context(params)
 
     if hasattr(input_layer, "_lyr_dict"):
-        params['input_layer'] = input_layer._lyr_dict
+        params["input_layer"] = input_layer._lyr_dict
 
     try:
-        params['future'] = True
+        params["future"] = True
         gpjob = tbx.find_dwell_locations(**params)
         gpjob = GAJob(gpjob=gpjob, return_service=output_service)
         if future:
@@ -694,18 +739,20 @@ def find_dwell_locations(input_layer,
     return None
 
 
-def find_similar_locations(input_layer,
-                           search_layer,
-                           analysis_fields,
-                           most_or_least_similar="MostSimilar",
-                           match_method="AttributeValues",
-                           number_of_results=10,
-                           append_fields=None,
-                           output_name=None,
-                           gis=None,
-                           context=None,
-                           future=False,
-                           return_tuple=False):
+def find_similar_locations(
+    input_layer,
+    search_layer,
+    analysis_fields,
+    most_or_least_similar="MostSimilar",
+    match_method="AttributeValues",
+    number_of_results=10,
+    append_fields=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    return_tuple=False,
+):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
 
@@ -843,30 +890,41 @@ def find_similar_locations(input_layer,
         "output_name": output_name,
         "context": context,
         "return_tuple": return_tuple,
-        "process_info": ""#process_info
+        "process_info": "",  # process_info
     }
 
     if output_name is None:
-        output_service_name = 'Similar Locations_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Similar Locations_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
 
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Similar Locations', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Find Similar Locations",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
-
 
     if context is not None:
         params["context"] = context
@@ -874,7 +932,7 @@ def find_similar_locations(input_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.find_similar_locations, **params)
-    params['future'] = True
+    params["future"] = True
     try:
 
         gpjob = tbx.find_similar_locations(**params)
@@ -889,10 +947,11 @@ def find_similar_locations(input_layer,
         output_service.delete()
         raise
 
-find_similar_locations.__annotations__ = {
-    'most_or_least_similar': str,
-    'match_method': str,
-    'number_of_results': int,
-    'append_fields': str,
-    'output_name': str}
 
+find_similar_locations.__annotations__ = {
+    "most_or_least_similar": str,
+    "match_method": str,
+    "number_of_results": int,
+    "append_fields": str,
+    "output_name": str,
+}
