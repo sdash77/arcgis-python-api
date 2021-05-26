@@ -1060,6 +1060,9 @@ class GeoAccessor(object):
         if self._meta.source and \
            hasattr(self._meta.source, 'properties'):
             return self._meta.renderer
+        elif self.name is None:
+            self._meta.renderer = InsensitiveDict({})
+            return self._meta.renderer
         gt = self.geometry_type[0]
         base_renderer = {
             'labelingInfo' : None,
