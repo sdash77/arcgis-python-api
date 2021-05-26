@@ -2,7 +2,11 @@ from arcgis.apps.dashboard.dashboard import Dashboard
 from arcgis.apps.dashboard._serialchart._serial_chart import SerialChart
 from arcgis.apps.dashboard._header._header import Header
 from arcgis.apps.dashboard._sidepanel.side_panel import SidePanel
-from arcgis.apps.dashboard._side_widgets._addon import CategorySelector, NumberSelector, DatePicker
+from arcgis.apps.dashboard._side_widgets._addon import (
+    CategorySelector,
+    NumberSelector,
+    DatePicker,
+)
 from arcgis.apps.dashboard._embcontent._embcontent import EmbeddedContent
 from arcgis.apps.dashboard._richtext._richtext import RichText
 from arcgis.apps.dashboard._details._details import Details

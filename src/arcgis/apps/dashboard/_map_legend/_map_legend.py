@@ -22,7 +22,8 @@ class MapLegend(_BaseWidget):
     description                 Optional string. Description of the widget.
     =========================   ===========================================
     """
-    def __init__(self, map_widget, name='MapLegend', title="", description=""):
+
+    def __init__(self, map_widget, name="MapLegend", title="", description=""):
         super().__init__(name, title, description)
 
         self._map_widget = map_widget
@@ -44,6 +45,7 @@ class MapLegend(_BaseWidget):
 
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
+
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=900 height=300>"""
 
@@ -58,7 +60,7 @@ class MapLegend(_BaseWidget):
             "showLastUpdate": True,
             "noDataVerticalAlignment": "middle",
             "showCaptionWhenNoData": True,
-            "showDescriptionWhenNoData": True
+            "showDescriptionWhenNoData": True,
         }
 
         if self._background_color:

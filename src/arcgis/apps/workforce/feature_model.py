@@ -90,7 +90,7 @@ class FeatureModel(Model):
     def _validate_object_id(self):
         errors = []
         if self.project._is_v2_project and self.object_id is None:
-            errors.append(ValidationError('Model requires an object_id', self))
+            errors.append(ValidationError("Model requires an object_id", self))
         return errors
 
     def _get_datetime_attr(self, name):
