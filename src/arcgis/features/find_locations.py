@@ -314,7 +314,7 @@ def derive_new_locations(
     (STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain
     distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
-    The ``derive_new_locations`` method is very similar to the :meth:`~arcgis.features.find_existing_locations` method, the main difference is that
+    The ``derive_new_locations`` method is very similar to the ``find_existing_locations`` method, the main difference is that
     the result of ``derive_new_locations`` can contain partial features.
 
     * In both methods, the attribute expression  ``where`` and the spatial relationships within and contains return the same result.
