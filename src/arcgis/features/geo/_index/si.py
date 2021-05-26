@@ -1,6 +1,7 @@
-
 from rtree import RTreeError
 from rtree import RTree
+
+
 class SpatialIndex(RTree):
     """
     A simple wrapper around rtree's RTree Index

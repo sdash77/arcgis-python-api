@@ -7,6 +7,7 @@ from __future__ import division
 from .geodataframe import SpatialDataFrame
 from .geoseries import GeoSeries
 from .tools import spatial_join
+
 try:
     from .io import from_featureclass, to_featureclass, to_sqlite, from_layer
 except:

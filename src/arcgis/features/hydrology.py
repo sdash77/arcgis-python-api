@@ -24,8 +24,10 @@ def _evaluate_spatial_input(input_points):
         from arcgis.features.geo._accessor import _is_geoenabled
         from pandas import DataFrame
     except ImportError as ie:
-        _log.warning("One or more of the libraries needed for this feature is not available. "
-                     "Please resolve the following error: " + str(ie))
+        _log.warning(
+            "One or more of the libraries needed for this feature is not available. "
+            "Please resolve the following error: " + str(ie)
+        )
         raise ie
 
     if isinstance(input_points, FeatureSet):
@@ -35,14 +37,26 @@ def _evaluate_spatial_input(input_points):
         return input_points.spatial.to_featureset()
 
     elif isinstance(input_points, DataFrame) and not _is_geoenabled(input_points):
-        raise Exception('input_points is a DataFrame, but does not appear to be spatially enabled. Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)')
+        raise Exception(
+            "input_points is a DataFrame, but does not appear to be spatially enabled. Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)"
+        )
 
     else:
-        raise Exception('input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}'.format(type(input_points)))
+        raise Exception(
+            "input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}".format(
+                type(input_points)
+            )
+        )
 
 
-def trace_downstream(input_points, point_id_field=None, source_database='Finest', generalize=False,
-                     gis=None, future=False):
+def trace_downstream(
+    input_points,
+    point_id_field=None,
+    source_database="Finest",
+    generalize=False,
+    gis=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/trace_downstream/trace_downstream.png
@@ -108,42 +122,69 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
     # use helper function to evaluate the input points and convert them, if necessary, to a FeatureSet
     input_fs = _evaluate_spatial_input(input_points)
 
-    if input_fs.geometry_type != 'esriGeometryPoint':
-        raise Exception('input_points FeatureSet must be point esriGeometryPoint, not {}'.format(input_fs.geometry_type))
+    if input_fs.geometry_type != "esriGeometryPoint":
+        raise Exception(
+            "input_points FeatureSet must be point esriGeometryPoint, not {}".format(
+                input_fs.geometry_type
+            )
+        )
 
     input_fields = input_fs.fields
-    if point_id_field and point_id_field not in [f['name'] for f in input_fields] and len(input_fields):
-        input_fields_str = ','.join(input_fields)
-        raise Exception('The provided point_id_field {} does not appear to be in the input_points FeatureSet fields - {}'.format(point_id_field, input_fields_str))
+    if (
+        point_id_field
+        and point_id_field not in [f["name"] for f in input_fields]
+        and len(input_fields)
+    ):
+        input_fields_str = ",".join(input_fields)
+        raise Exception(
+            "The provided point_id_field {} does not appear to be in the input_points FeatureSet fields - {}".format(
+                point_id_field, input_fields_str
+            )
+        )
 
-    if source_database not in ['Finest', '10m', '30m', '90m']:
-        raise Exception('source_database must be either "Finest", "10m", "30m", or "90m". {} does not appear to be one of these.'.format(source_database))
+    if source_database not in ["Finest", "10m", "30m", "90m"]:
+        raise Exception(
+            'source_database must be either "Finest", "10m", "30m", or "90m". {} does not appear to be one of these.'.format(
+                source_database
+            )
+        )
 
     if gis is None and arcgis.env.active_gis is None:
-        raise Exception('GIS must be defined either by directly passing in a GIS object created using credentials, or one must already be created in the active Python session.')
+        raise Exception(
+            "GIS must be defined either by directly passing in a GIS object created using credentials, or one must already be created in the active Python session."
+        )
     elif gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.hydrology.url
     tbx = _import_toolbox(url, gis=gis)
     kwargs = {
-        "input_points" : input_fs,
-        "point_id_field" : point_id_field,
-        "source_database" : source_database,
-        "generalize" : generalize,
-        "gis" : gis,
-        "future" : future
+        "input_points": input_fs,
+        "point_id_field": point_id_field,
+        "source_database": source_database,
+        "generalize": generalize,
+        "gis": gis,
+        "future": future,
     }
     kwargs = inspect_function_inputs(tbx.trace_downstream, **kwargs)
-    kwargs['future'] = True
+    kwargs["future"] = True
     gpjob = tbx.trace_downstream(**kwargs)
     if future:
         return gpjob
     return gpjob.result()
 
-def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance_units='Meters',
-              source_database='Finest', generalize=False, gis=None, return_snapped_points=True,
-              future=False):
+
+def watershed(
+    input_points,
+    point_id_field=None,
+    snap_distance=10,
+    snap_distance_units="Meters",
+    source_database="Finest",
+    generalize=False,
+    gis=None,
+    return_snapped_points=True,
+    future=False,
+):
     """
     .. image:: _static/images/create_watersheds/create_watersheds.png
 
@@ -224,33 +265,47 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
     # use helper function to evaluate the input points and convert them, if necessary, to a FeatureSet
     input_fs = _evaluate_spatial_input(input_points)
 
-    if input_fs.geometry_type != 'esriGeometryPoint':
-        raise Exception('input_points FeatureSet must be point esriGeometryPoint, not {}.'.format(input_fs.geometry_type))
+    if input_fs.geometry_type != "esriGeometryPoint":
+        raise Exception(
+            "input_points FeatureSet must be point esriGeometryPoint, not {}.".format(
+                input_fs.geometry_type
+            )
+        )
 
     input_fields = input_fs.fields
-    if point_id_field and point_id_field not in [f['name'] for f in input_fields] and len(input_fields):
-        input_fields_str = ','.join(input_fields)
-        raise Exception('The provided point_id_field {} does not appear to be in the input_points FeatureSet fields - {}'.format(point_id_field, input_fields_str))
+    if (
+        point_id_field
+        and point_id_field not in [f["name"] for f in input_fields]
+        and len(input_fields)
+    ):
+        input_fields_str = ",".join(input_fields)
+        raise Exception(
+            "The provided point_id_field {} does not appear to be in the input_points FeatureSet fields - {}".format(
+                point_id_field, input_fields_str
+            )
+        )
 
     if gis is None and arcgis.env.active_gis is None:
-        raise Exception('GIS must be defined either by directly passing in a GIS object created using credentials, or one must already be created in the active Python session.')
+        raise Exception(
+            "GIS must be defined either by directly passing in a GIS object created using credentials, or one must already be created in the active Python session."
+        )
     elif gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.hydrology.url
     tbx = _import_toolbox(url, gis=gis)
     kwargs = {
-        "input_points" : input_fs,
-        "point_id_field" : point_id_field,
-        "snap_distance" : snap_distance,
-        "snap_distance_units" : snap_distance_units,
-        "source_database" : source_database,
-        "generalize" : generalize,
-        "gis" : gis,
-        "return_snapped_points" : return_snapped_points,
-        "future" : future
+        "input_points": input_fs,
+        "point_id_field": point_id_field,
+        "snap_distance": snap_distance,
+        "snap_distance_units": snap_distance_units,
+        "source_database": source_database,
+        "generalize": generalize,
+        "gis": gis,
+        "return_snapped_points": return_snapped_points,
+        "future": future,
     }
-    kwargs['future'] = True
+    kwargs["future"] = True
     kwargs = inspect_function_inputs(tbx.watershed, **kwargs)
     gpjob = tbx.watershed(**kwargs)
     if future:
