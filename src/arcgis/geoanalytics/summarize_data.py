@@ -862,7 +862,7 @@ def join_features(
     gis=None,
     context=None,
     future=False,
-    keep_all=None,
+    keep_target=None,
 ):
     """
     .. image:: _static/images/join_features_geo/join_features_geo.png
@@ -1013,7 +1013,7 @@ def join_features(
 
                                                                                                                 The default value is 'False'.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    keep_all                                                                                                    Optional boolean. Specifies whether all target features will be maintained in the output 
+    keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output 
                                                                                                                 feature class (known as a left outer join) or only those that have the specified 
                                                                                                                 relationships with the join features (inner join). This option is only available when the 
                                                                                                                 `join_operation` parameter is JoinOneToOne. False (inner join) is the default.
@@ -1062,7 +1062,7 @@ def join_features(
         "context": context,
         "gis": gis,
         "future": future,
-        "keep_all_target_features" : keep_all,
+        "keep_all_target_features": keep_target,
     }
     for key in list(params.keys()):
         value = params[key]
