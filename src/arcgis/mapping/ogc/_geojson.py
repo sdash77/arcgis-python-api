@@ -6,9 +6,11 @@ from arcgis.gis._impl._con._url_validator import validate_url
 from pathlib import Path
 from ._base import BaseOGC
 
+
 def _is_file(path):
     """checks if the data is a file"""
     return Path(path).is_file()
+
 
 ###########################################################################
 class GeoJSONLayer(BaseOGC):
@@ -40,26 +42,24 @@ class GeoJSONLayer(BaseOGC):
 
 
     """
+
     _type = "geojson"
     _url = ""
     _data = {}
-    #----------------------------------------------------------------------
-    def __init__(self, url=None, data=None,**kwargs):
+    # ----------------------------------------------------------------------
+    def __init__(self, url=None, data=None, **kwargs):
         """init"""
         super(GeoJSONLayer, self)
-        if url is None and \
-           data is None:
+        if url is None and data is None:
             raise Exception("A `url` or `data` must be given to proceed")
         if isinstance(data, str) and _is_file(data):
-            with open(data, 'r') as r:
+            with open(data, "r") as r:
                 self._data = json.loads(r.read())
         elif isinstance(data, str) and _is_file(data) == False:
             self._data = json.loads(data)
         elif isinstance(data, dict):
             self._data = dict(data)
-        elif url is None and \
-             data and \
-             not isinstance(data, (str, dict)):
+        elif url is None and data and not isinstance(data, (str, dict)):
             raise ValueError("`data` must be of type string or dict.")
         if url and validate_url(url) == False:
             raise ValueError(f"Invalid `url` : {url}")
@@ -67,45 +67,48 @@ class GeoJSONLayer(BaseOGC):
         self._type = "GeoJSON"
         self._copyright = kwargs.pop("copyright", "")
         self._title = kwargs.pop("title", "GeoJSON Layer")
-        self._id = kwargs.pop('id', uuid.uuid4().hex) # hidden input, but accepted
-        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._id = kwargs.pop("id", uuid.uuid4().hex)  # hidden input, but accepted
+        self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._opacity = kwargs.pop("opacity", 1)
-        if 'renderer' in kwargs:
-            r = kwargs.pop('renderer', None)
+        if "renderer" in kwargs:
+            r = kwargs.pop("renderer", None)
             if isinstance(r, dict):
                 self._renderer = InsensitiveDict(r)
             else:
                 self._renderer = None
         else:
             self._renderer = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def renderer(self) -> InsensitiveDict:
         """Gets/Sets the renderer for the layer"""
         return self._renderer
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @renderer.setter
-    def renderer(self, renderer:dict):
+    def renderer(self, renderer: dict):
         """Gets/Sets the renderer for the layer"""
         if isinstance(renderer, dict) and renderer:
             self._renderer = InsensitiveDict(renderer)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
         """Represents the MapView widget's JSON format"""
         lyr = {
-            "type" : self._type,
-            "url" : self._url,
-            "data" : self._data,
-            "copyright" : self._copyright,
-            "title" : self._title,
-            "id" : self._id,
-            "minScale" : self.scale[0],
-            "maxScale" : self.scale[1],
-            "opacity" : self._opacity
+            "type": self._type,
+            "url": self._url,
+            "data": self._data,
+            "copyright": self._copyright,
+            "title": self._title,
+            "id": self._id,
+            "minScale": self.scale[0],
+            "maxScale": self.scale[1],
+            "opacity": self._opacity,
         }
         if self._renderer:
-            lyr['renderer'] = self._renderer._json()
+            lyr["renderer"] = self._renderer._json()
         return lyr
 
     @property
@@ -136,7 +139,7 @@ class GeoJSONLayer(BaseOGC):
         if validate_url(value=data):
             self._url = data
         elif _is_file(data):
-            with open(data, 'r') as r:
+            with open(data, "r") as r:
                 self._data = r.read()
         elif isinstance(data, str):
             self._data = data

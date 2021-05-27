@@ -5,6 +5,14 @@ from ._georss import GeoRSSLayer
 from ._kml import KMLLayer
 from ._geojson import GeoJSONLayer
 from ._service import OGCCollection, OGCFeatureService
-__all__ = ['WMTSLayer', 'CSVLayer', 'GeoRSSLayer',
-           'KMLLayer', 'WMSLayer', 'GeoJSONLayer',
-           'OGCCollection', 'OGCFeatureService']
+
+__all__ = [
+    "WMTSLayer",
+    "CSVLayer",
+    "GeoRSSLayer",
+    "KMLLayer",
+    "WMSLayer",
+    "GeoJSONLayer",
+    "OGCCollection",
+    "OGCFeatureService",
+]
