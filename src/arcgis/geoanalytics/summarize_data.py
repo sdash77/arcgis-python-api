@@ -850,7 +850,7 @@ def join_features(
     join_operation="JoinOneToOne",
     join_fields=None,
     summary_fields=None,
-    spatial_relationship="Equals",
+    spatial_relationship=None,
     spatial_near_distance=None,
     spatial_near_distance_unit=None,
     temporal_relationship=None,
@@ -1018,7 +1018,7 @@ def join_features(
                                                                                                                 relationships with the join features (inner join). This option is only available when the 
                                                                                                                 `join_operation` parameter is JoinOneToOne. False (inner join) is the default.
                                                                                                                 
-                                                                                                                This parameter is available at ArcGIS GeoAnalytics Server **10.9+**.
+                                                                                                                This parameter is available at ArcGIS Enterprise **10.9+**.
     ==========================================================================================================  =============================================================================================
 
     :Returns: Output Features as Feature Layer Collection Item
