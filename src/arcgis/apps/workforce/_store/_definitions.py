@@ -4,7 +4,7 @@ Imports the layer and popup definitions to create services and webmaps for workf
 import json
 
 assignment_layer_definition_v1 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.3,
   "id" : 0,
@@ -586,7 +586,7 @@ assignment_layer_definition_v1 = json.loads(
 )
 
 assignment_layer_definition_v2 = json.loads(
-"""  
+    """  
 {
   "currentVersion" : 10.7, 
   "id" : 0, 
@@ -1287,7 +1287,7 @@ assignment_layer_definition_v2 = json.loads(
 )
 
 assignment_layer_popup_definition_v1 = json.loads(
-"""
+    """
 {
   "title": "{assignmentType}",
   "fieldInfos": [{
@@ -1527,7 +1527,7 @@ assignment_layer_popup_definition_v1 = json.loads(
 )
 
 assignment_layer_popup_definition_v2 = json.loads(
-"""
+    """
     {
     "title": "{assignmenttype}",
     "fieldInfos": [
@@ -1778,7 +1778,7 @@ assignment_layer_popup_definition_v2 = json.loads(
 )
 
 dispatcher_layer_definition_v1 = json.loads(
-"""
+    """
 {
   "currentVersion": 10.3,
   "id": 0,
@@ -1930,7 +1930,7 @@ dispatcher_layer_definition_v1 = json.loads(
 )
 
 dispatcher_table_definition_v2 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.7, 
   "id" : 2, 
@@ -2173,7 +2173,7 @@ dispatcher_table_definition_v2 = json.loads(
 )
 
 tracking_layer_definition_v1 = json.loads(
-"""
+    """
 {
   "currentVersion": 10.3,
   "id": 0,
@@ -2308,7 +2308,7 @@ tracking_layer_definition_v1 = json.loads(
 )
 
 worker_layer_definition_v1 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.3,
   "id" : 0,
@@ -2574,7 +2574,7 @@ worker_layer_definition_v1 = json.loads(
 )
 
 worker_layer_definition_v2 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.7, 
   "id" : 1, 
@@ -2964,7 +2964,7 @@ worker_layer_definition_v2 = json.loads(
 )
 
 worker_layer_popup_definition_v1 = json.loads(
-"""
+    """
 {
   "title": "{name}",
   "fieldInfos": [{
@@ -3078,7 +3078,7 @@ worker_layer_popup_definition_v1 = json.loads(
 )
 
 worker_layer_popup_definition_v2 = json.loads(
-"""
+    """
     {
     "title": "{name}",
     "fieldInfos": [
@@ -3201,10 +3201,11 @@ worker_layer_popup_definition_v2 = json.loads(
     "showAttachments": true,
     "mediaInfos": []
 }
-""")
+"""
+)
 
 assignment_type_table_definition_v2 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.7, 
   "id" : 3, 
@@ -3414,7 +3415,7 @@ assignment_type_table_definition_v2 = json.loads(
 )
 
 app_integration_table_definition_v2 = json.loads(
-"""
+    """
 {
   "currentVersion" : 10.7,
   "id" : 4,

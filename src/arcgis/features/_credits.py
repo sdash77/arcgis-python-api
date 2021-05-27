@@ -9,6 +9,7 @@ import arcgis as _arcgis
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 
+
 def _estimate_credits(task, parameters, gis=None):
     """
     Estimates the number of credits a spatial analysis operation will take.
@@ -27,21 +28,18 @@ def _estimate_credits(task, parameters, gis=None):
 
     """
 
-    if gis is None and \
-       _arcgis.env.active_gis:
+    if gis is None and _arcgis.env.active_gis:
         gis = _arcgis.env.active_gis
-    elif gis is None and \
-         _arcgis.env.active_gis is None:
+    elif gis is None and _arcgis.env.active_gis is None:
         raise Exception("A GIS must be provided and/or set as active.")
-    if gis.version >= [6,4] and \
-       gis._portal.is_arcgisonline:
-        url = gis.properties['helperServices']['creditEstimation']['url']
+    if gis.version >= [6, 4] and gis._portal.is_arcgisonline:
+        url = gis.properties["helperServices"]["creditEstimation"]["url"]
         gptask = "EstimateCredits"
         url = "{base}/{gptask}/execute".format(base=url, gptask=gptask)
         params = {
-            'f' : 'json',
-            'taskName' : task,
-            'taskParameters' : json.dumps(parameters)
+            "f": "json",
+            "taskName": task,
+            "taskParameters": json.dumps(parameters),
         }
         kwargs = locals()
         param_db = {
@@ -50,12 +48,22 @@ def _estimate_credits(task, parameters, gis=None):
             "credit_estimate": (str, "creditEstimate"),
         }
         return_values = [
-            {"name":"credit_estimate", "display_name":"creditEstimate", "type":str},
+            {"name": "credit_estimate", "display_name": "creditEstimate", "type": str},
         ]
-        res = _execute_gp_tool(gis, gptask, kwargs, param_db, return_values, False, url, webtool=True, add_token=False)
-        if 'cost' in res:
-            return float(res['cost'])
-        elif 'maximumCost' in res:
-            return float(res['maximumCost'])
+        res = _execute_gp_tool(
+            gis,
+            gptask,
+            kwargs,
+            param_db,
+            return_values,
+            False,
+            url,
+            webtool=True,
+            add_token=False,
+        )
+        if "cost" in res:
+            return float(res["cost"])
+        elif "maximumCost" in res:
+            return float(res["maximumCost"])
         return res
     return

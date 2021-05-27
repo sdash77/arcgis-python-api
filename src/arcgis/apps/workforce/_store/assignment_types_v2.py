@@ -24,17 +24,22 @@ def get_assignment_types_v2(project):
         :param project:
         :returns: A list of AssignmentTypes.
     """
-    return query_assignment_types(project, '1=1')
+    return query_assignment_types(project, "1=1")
 
 
-def query_assignment_types(project, where='1=1'):
+def query_assignment_types(project, where="1=1"):
     """ Executes a query against the assignment types table.
         :param project: The project in which to query assignment types.
         :param where: An ArcGIS where clause.
         :returns: list of Assignment Types
     """
-    assignment_type_features = project.assignment_types_table.query(where, return_all_records=True).features
-    return [workforce.AssignmentType(project, feature) for feature in assignment_type_features]
+    assignment_type_features = project.assignment_types_table.query(
+        where, return_all_records=True
+    ).features
+    return [
+        workforce.AssignmentType(project, feature)
+        for feature in assignment_type_features
+    ]
 
 
 def add_assignment_type_v2(project, name):

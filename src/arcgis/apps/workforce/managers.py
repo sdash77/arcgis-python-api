@@ -50,7 +50,7 @@ class AssignmentManager(object):
         """
         return get_assignment(self.project, object_id, global_id)
 
-    def search(self, where='1=1'):
+    def search(self, where="1=1"):
         """
         Searches the assignments in the project.
 
@@ -82,11 +82,28 @@ class AssignmentManager(object):
         """
         return add_assignments(self.project, assignments)
 
-    def add(self, feature=None, geometry=None, assignment_type=None,
-            assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
-            declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority="none", status=None,
-            work_order_id=None, worker=None):
+    def add(
+        self,
+        feature=None,
+        geometry=None,
+        assignment_type=None,
+        assigned_date=None,
+        assignment_read=None,
+        completed_date=None,
+        declined_comment=None,
+        declined_date=None,
+        description=None,
+        dispatcher=None,
+        due_date=None,
+        in_progress_date=None,
+        location=None,
+        notes=None,
+        paused_date=None,
+        priority="none",
+        status=None,
+        work_order_id=None,
+        worker=None,
+    ):
         """
         Creates and adds a new assignment to the project
 
@@ -154,11 +171,28 @@ class AssignmentManager(object):
 
         :return: :class:`~arcgis.apps.workforce.Assignment`
         """
-        return add_assignment(self.project, feature, geometry, assignment_type,
-        assigned_date, assignment_read, completed_date, declined_comment,
-        declined_date, description, dispatcher, due_date, in_progress_date,
-        location, notes, paused_date, priority, status,
-        work_order_id, worker)
+        return add_assignment(
+            self.project,
+            feature,
+            geometry,
+            assignment_type,
+            assigned_date,
+            assignment_read,
+            completed_date,
+            declined_comment,
+            declined_date,
+            description,
+            dispatcher,
+            due_date,
+            in_progress_date,
+            location,
+            notes,
+            paused_date,
+            priority,
+            status,
+            work_order_id,
+            worker,
+        )
 
     def batch_update(self, assignments):
         """
@@ -448,7 +482,7 @@ class DispatcherManager:
         """
         return get_dispatcher(self.project, object_id, global_id, user_id)
 
-    def search(self, where='1=1'):
+    def search(self, where="1=1"):
         """
         Searches the dispatchers in the project.
 
@@ -547,6 +581,7 @@ class TrackManager:
                             manage.
      ==================     ====================================================================
     """
+
     def __init__(self, project):
         if not project._supports_tracks:
             raise WorkforceError("This Workforce Project does not support tracks.")
@@ -569,7 +604,7 @@ class TrackManager:
         """
         return get_track(self.project, object_id, global_id)
 
-    def search(self, where='1=1'):
+    def search(self, where="1=1"):
         """
         Searches the tracks in the project.
 
@@ -695,6 +730,7 @@ class WorkerManager:
 
 
     """
+
     def __init__(self, project):
         self.project = project
 
@@ -717,7 +753,7 @@ class WorkerManager:
          """
         return get_worker(self.project, object_id, global_id, user_id)
 
-    def search(self, where='1=1'):
+    def search(self, where="1=1"):
         """
         Searches the workers in the project.
 
@@ -749,8 +785,17 @@ class WorkerManager:
           """
         return add_workers(self.project, workers)
 
-    def add(self, feature=None, geometry=None, contact_number=None,
-               name=None, notes=None, status="not_working", title=None, user_id=None):
+    def add(
+        self,
+        feature=None,
+        geometry=None,
+        contact_number=None,
+        name=None,
+        notes=None,
+        status="not_working",
+        title=None,
+        user_id=None,
+    ):
         """
             Creates and adds a new worker to the project.
 
@@ -777,7 +822,17 @@ class WorkerManager:
 
             :return: :class:`~arcgis.apps.workforce.Worker`
         """
-        return add_worker(self.project, feature, geometry, contact_number, name, notes, status, title, user_id)
+        return add_worker(
+            self.project,
+            feature,
+            geometry,
+            contact_number,
+            name,
+            notes,
+            status,
+            title,
+            user_id,
+        )
 
     def batch_update(self, workers):
         """
@@ -849,6 +904,7 @@ class AssignmentIntegrationManager:
                             manage.
      ==================     ====================================================================
     """
+
     def __init__(self, project):
         self.project = project
         # A version 2 Workforce project stores integrations in a table in its base feature layer collection
@@ -929,9 +985,24 @@ class AssignmentIntegrationManager:
         """
         if self.project._is_v2_project:
             if isinstance(assignment_types, list):
-                integration = [add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=a) for a in assignment_types]
+                integration = [
+                    add_integration(
+                        project=self.project,
+                        integration_id=integration_id,
+                        prompt=prompt,
+                        url_template=url_template,
+                        assignment_type=a,
+                    )
+                    for a in assignment_types
+                ]
             else:
-                integration = add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=assignment_types)
+                integration = add_integration(
+                    project=self.project,
+                    integration_id=integration_id,
+                    prompt=prompt,
+                    url_template=url_template,
+                    assignment_type=assignment_types,
+                )
             return integration
         else:
             integration = dict()
@@ -963,7 +1034,9 @@ class AssignmentIntegrationManager:
         else:
             for integration in integrations:
                 new_integration = self._validate(integration)
-                self.project._item_data["assignmentIntegrations"].append(new_integration)
+                self.project._item_data["assignmentIntegrations"].append(
+                    new_integration
+                )
             self.project._update_data()
             return integrations
 
@@ -978,7 +1051,11 @@ class AssignmentIntegrationManager:
         if self.project._is_v2_project:
             delete_integrations(project=self.project, integrations=integrations)
         else:
-            self.project._item_data["assignmentIntegrations"] = [e for e in self.project._item_data["assignmentIntegrations"] if e not in integrations]
+            self.project._item_data["assignmentIntegrations"] = [
+                e
+                for e in self.project._item_data["assignmentIntegrations"]
+                if e not in integrations
+            ]
             self.project._update_data()
 
     def _validate(self, integration):
@@ -986,8 +1063,13 @@ class AssignmentIntegrationManager:
         been modified in this validation method"""
         if "id" not in integration:
             raise ValidationError("Assignment integration must contain an id", self)
-        elif integration["id"] in [at["id"] for at in self.project._item_data["assignmentIntegrations"]]:
-            raise ValidationError("Assignment integration contains duplicate id for version 1 project", self)
+        elif integration["id"] in [
+            at["id"] for at in self.project._item_data["assignmentIntegrations"]
+        ]:
+            raise ValidationError(
+                "Assignment integration contains duplicate id for version 1 project",
+                self,
+            )
         if "prompt" not in integration:
             raise ValidationError("Assignment integration must contain a prompt", self)
         if "assignmentTypes" in integration:
@@ -995,19 +1077,34 @@ class AssignmentIntegrationManager:
             for key, value in copy_dict.items():
                 if isinstance(key, str):
                     if "urlTemplate" not in value:
-                        raise ValidationError("Assignment integration must contain a urlTemplate", self)
-                    if key not in [at.name for at in self.project.assignment_types.search()]:
-                        raise ValidationError("Invalid assignment type in integration", self)
+                        raise ValidationError(
+                            "Assignment integration must contain a urlTemplate", self
+                        )
+                    if key not in [
+                        at.name for at in self.project.assignment_types.search()
+                    ]:
+                        raise ValidationError(
+                            "Invalid assignment type in integration", self
+                        )
                     # swap the name for the code
-                    integration["assignmentTypes"][self.project.assignment_types.get(name=key).code] = integration[
-                        "assignmentTypes"].pop(key)
+                    integration["assignmentTypes"][
+                        self.project.assignment_types.get(name=key).code
+                    ] = integration["assignmentTypes"].pop(key)
                 elif isinstance(key, int):
-                    if key not in [at.code for at in self.project.assignment_types.search()]:
-                        raise ValidationError("Invalid assignment type in integration", self)
+                    if key not in [
+                        at.code for at in self.project.assignment_types.search()
+                    ]:
+                        raise ValidationError(
+                            "Invalid assignment type in integration", self
+                        )
                     elif "urlTemplate" not in value:
-                        raise ValidationError("Assignment integration must contain a urlTemplate", self)
+                        raise ValidationError(
+                            "Assignment integration must contain a urlTemplate", self
+                        )
                 else:
                     raise ValidationError("Invalid assignment type", self)
         elif "urlTemplate" not in integration:
-            raise ValidationError("Assignment integration must contain a urlTemplate", self)
+            raise ValidationError(
+                "Assignment integration must contain a urlTemplate", self
+            )
         return integration

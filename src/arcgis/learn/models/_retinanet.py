@@ -26,7 +26,7 @@ try:
     from fastai.core import ifnone
     from torchvision import models
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
-    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP, get_predictions
+    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP, get_predictions, AveragePrecision
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import SaveModelCallback, _resnet_family
@@ -114,6 +114,7 @@ class RetinaNet(ArcGISModel):
         self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors, n_bands=n_bands)
         self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios, device=self._device)
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
+        self.learn.metrics = [AveragePrecision(self, data.c-1)]
         self.learn.split([self._model.encoder[6], self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:

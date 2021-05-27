@@ -12,21 +12,21 @@ import json
 import warnings
 
 _look_up_types = {
-    "esriFieldTypeBlob" : "object",
-    "esriFieldTypeDate" : "datetime64",
-    "esriFieldTypeInteger" : "int64",
-    "esriFieldTypeSmallInteger" : "int32",
-    "esriFieldTypeDouble" : "float64",
-    "esriFieldTypeSingle" :  "float32",
-    "esriFieldTypeString" : "str",
-    "esriFieldTypeGeometry" : "object",
-    "esriFieldTypeOID" : "int64",
-    "esriFieldTypeGlobalID" : "str",
-    "esriFieldTypeRaster" : "object",
-    "esriFieldTypeGUID" : "str",
-    "esriFieldTypeXML" : "object"
+    "esriFieldTypeBlob": "object",
+    "esriFieldTypeDate": "datetime64",
+    "esriFieldTypeInteger": "int64",
+    "esriFieldTypeSmallInteger": "int32",
+    "esriFieldTypeDouble": "float64",
+    "esriFieldTypeSingle": "float32",
+    "esriFieldTypeString": "str",
+    "esriFieldTypeGeometry": "object",
+    "esriFieldTypeOID": "int64",
+    "esriFieldTypeGlobalID": "str",
+    "esriFieldTypeRaster": "object",
+    "esriFieldTypeGUID": "str",
+    "esriFieldTypeXML": "object",
 }
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 def from_layer(layer, **kwargs):
     """
     Converts a Feature Service Layer to a Pandas' DataFrame
@@ -47,18 +47,17 @@ def from_layer(layer, **kwargs):
     fields = []
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
-    if 'maxRecordCount' in layer.properties:
-        max_records = layer.properties['maxRecordCount']
+    if "maxRecordCount" in layer.properties:
+        max_records = layer.properties["maxRecordCount"]
     else:
         max_records = 1000
     service_count = layer.query(return_count_only=True)
     if service_count > max_records:
         frames = []
         oid_info = layer.query(return_ids_only=True)
-        for ids in chunks(oid_info['objectIds'], max_records):
+        for ids in chunks(oid_info["objectIds"], max_records):
             ids = [str(i) for i in ids]
-            sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
-                                  ",".join(ids))
+            sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
             frames.append(layer.query(where=sql).df)
         res = pd.concat(frames, ignore_index=True)
         res.reset_index(drop=True, inplace=True)
@@ -67,17 +66,15 @@ def from_layer(layer, **kwargs):
         res.reset_index(drop=True, inplace=True)
     dtypes = {}
     for field in layer.properties.fields:
-        dtypes[field['name']] = _look_up_types[field['type']]
-        if _look_up_types[field['type']] == 'datetime64':
-            res[field['name']] = pd.to_datetime(res[field['name']]/1000, unit='s')
+        dtypes[field["name"]] = _look_up_types[field["type"]]
+        if _look_up_types[field["type"]] == "datetime64":
+            res[field["name"]] = pd.to_datetime(res[field["name"]] / 1000, unit="s")
         del field
     return res
-#----------------------------------------------------------------------
-def to_layer(df,
-             layer,
-             update_existing=True,
-             add_new=False,
-             truncate=False):
+
+
+# ----------------------------------------------------------------------
+def to_layer(df, layer, update_existing=True, add_new=False, truncate=False):
     """
     Sends the Spatial DataFrame information to a published service
 
@@ -96,7 +93,7 @@ def to_layer(df,
     if not isinstance(layer, (Table, FeatureLayer)):
         raise ValueError("layer must be a FeatureLayer or Table Layer")
     if truncate:
-        layer.delete_features(where='1=1')
+        layer.delete_features(where="1=1")
         layer.edit_features(adds=df.to_featureset().features)
     elif update_existing:
         layer.edit_features(updates=df.to_featureset().features)
