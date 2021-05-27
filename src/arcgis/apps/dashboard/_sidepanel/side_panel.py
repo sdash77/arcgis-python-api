@@ -14,6 +14,7 @@ class SidePanel(object):
     description                 Optional string. Description of the widget.
     =========================   ===========================================
     """
+
     def __init__(self, title=None, description=None):
         # Side Panel starts here
 
@@ -27,9 +28,10 @@ class SidePanel(object):
         self._allow_sliding = False
 
         self._selectors = []
-    
+
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
+
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=300 height=300>"""
 
@@ -39,7 +41,7 @@ class SidePanel(object):
         :return: Title of the widget.
         """
         return self._title
-    
+
     @title.setter
     def title(self, value):
         """
@@ -47,14 +49,14 @@ class SidePanel(object):
         """
         if isinstance(value, str):
             self._title = value
-    
+
     @property
     def description(self):
         """
         :return: Description of the widget.
         """
         return self.description
-    
+
     @description.setter
     def description(self, value):
         """
@@ -77,7 +79,7 @@ class SidePanel(object):
         """
         self._text_color = value
         if not isinstance(value, str):
-            self._text_color = '#ffffff'
+            self._text_color = "#ffffff"
 
     @property
     def background_color(self):
@@ -93,8 +95,8 @@ class SidePanel(object):
         """
         self._background_color = value
         if not isinstance(value, str):
-            self._background_color = '#000000'
-    
+            self._background_color = "#000000"
+
     @property
     def allow_sliding(self):
         """
@@ -119,21 +121,21 @@ class SidePanel(object):
 
     def _convert_to_json(self):
         side_panel = {
-            'type': 'leftPanel',
-            'allowSliding': self._allow_sliding,
-            'selectors': [selector._convert_to_json() for selector in self._selectors]
+            "type": "leftPanel",
+            "allowSliding": self._allow_sliding,
+            "selectors": [selector._convert_to_json() for selector in self._selectors],
         }
 
         if self._background_color:
-            side_panel['backgroundColor'] = self._background_color
+            side_panel["backgroundColor"] = self._background_color
 
         if self._text_color:
-            side_panel['textColor'] = self._text_color
+            side_panel["textColor"] = self._text_color
 
         if self._title:
-            side_panel['title'] = self._title
-        
+            side_panel["title"] = self._title
+
         if self._description:
-            side_panel['description'] = self._description
-        
+            side_panel["description"] = self._description
+
         return side_panel

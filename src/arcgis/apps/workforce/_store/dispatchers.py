@@ -31,7 +31,7 @@ def get_dispatchers(project):
         :param project:
         :returns: list of Dispatchers
     """
-    return query_dispatchers(project, '1=1')
+    return query_dispatchers(project, "1=1")
 
 
 def query_dispatchers(project, where):
@@ -49,16 +49,13 @@ def add_dispatcher(project, feature=None, contact_number=None, name=None, user_i
     Adds a new dispatcher to the project
     """
     project._update_cached_objects()
-    dispatcher = workforce.Dispatcher(project,
-                                      feature,
-                                      contact_number,
-                                      name,
-                                      user_id
-                                      )
+    dispatcher = workforce.Dispatcher(project, feature, contact_number, name, user_id)
     return add_dispatchers(project, [dispatcher])[0]
 
 
-def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_id=None):
+def update_dispatcher(
+    project, dispatcher, contact_number=None, name=None, user_id=None
+):
     """
         Updates a dispatcher and submits changes to the server
     """
@@ -98,7 +95,14 @@ def add_dispatchers(project, dispatchers):
     # add dispatcher named users to the project's group.
     max_add_per_call = 25
     for i in range(0, math.ceil(len(dispatchers) / max_add_per_call)):
-        project.group.add_users([d.user_id for d in dispatchers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call]])
+        project.group.add_users(
+            [
+                d.user_id
+                for d in dispatchers[
+                    i * max_add_per_call : (i * max_add_per_call) + max_add_per_call
+                ]
+            ]
+        )
     return dispatchers
 
 
@@ -134,8 +138,10 @@ def delete_dispatchers(project, dispatchers):
 
         # Remove dispatcher named users from the project's group, unless they are also workers.
         user_ids = [dispatcher.user_id for dispatcher in dispatchers]
-        where = "{} in ({})".format(project._worker_schema.user_id,
-                                    ','.join(["'{}'".format(user_id) for user_id in user_ids]))
+        where = "{} in ({})".format(
+            project._worker_schema.user_id,
+            ",".join(["'{}'".format(user_id) for user_id in user_ids]),
+        )
         workers = workforce._store.query_workers(project, where)
         for worker in workers:
             user_ids.remove(worker.user_id)

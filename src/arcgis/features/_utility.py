@@ -23,6 +23,7 @@ class UtilityNetworkManager(object):
 
 
     """
+
     _con = None
     _gis = None
     _url = None
@@ -30,42 +31,45 @@ class UtilityNetworkManager(object):
     _property = None
     _version_guid = None
     _version_name = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, version, gis=None):
         """Constructor"""
         if gis is None:
             gis = env.active_gis
         self._gis = gis
         self._con = gis._portal.con
-        self._url =  url
+        self._url = url
         self._version = version
         self._version_guid = version._guid
         self._version_name = version.properties.versionName
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """initializer"""
         try:
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._property = PropertyMap(res)
         except Exception as e:
             self._property = PropertyMap({})
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties for the service"""
         if self._property is None:
             self._init()
         return self._property
-    #----------------------------------------------------------------------
-    def trace(self,
-              locations,
-              trace_type,
-              fields=None,
-              moment=None,
-              configuration=None,
-              result_type=None
-              ):
+
+    # ----------------------------------------------------------------------
+    def trace(
+        self,
+        locations,
+        trace_type,
+        fields=None,
+        moment=None,
+        configuration=None,
+        result_type=None,
+    ):
         """
         A trace refers to a pre-configured algorithm that systematically
         travels a network to return results. Generalized traces allow you to
@@ -83,18 +87,19 @@ class UtilityNetworkManager(object):
         """
         url = "%s/trace" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            "traceType" : trace_type,
-            "moment" : moment,
-            "traceLocations" : locations,
-            "traceConfiguration" : configuration,
-            "resultFields" : fields,
-            "resultType" : result_type
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "traceType": trace_type,
+            "moment": moment,
+            "traceLocations": locations,
+            "traceConfiguration": configuration,
+            "resultFields": fields,
+            "resultType": result_type,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def disable_topology(self):
         """
         Disables the network topology for a utility network. When the 
@@ -118,12 +123,13 @@ class UtilityNetworkManager(object):
         """
         url = "%s/disableTopology" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid
-        }        
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+        }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def enable_topology(self, error_count=10000):
         """
         Enabling the network topology for a utility network is done on the 
@@ -146,16 +152,13 @@ class UtilityNetworkManager(object):
         """
         if self._version_name.lower().find("default") == -1:
             raise Exception("Current version is not the `DEFAULT` version.")
-        
-        params = {'f' : 'json',
-                  'maxErrorCount' : error_count}
+
+        params = {"f": "json", "maxErrorCount": error_count}
         url = "%s/enableTopology" % self._url
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def disable_subnetwork_controller(self,
-                                      network_source_id,
-                                      global_id,
-                                      terminal_id):
+
+    # ----------------------------------------------------------------------
+    def disable_subnetwork_controller(self, network_source_id, global_id, terminal_id):
         """
         A subnetwork controller (or simply, a source or a sink) is the
         origin (or destination) of resource flow for a subpart of the
@@ -170,25 +173,27 @@ class UtilityNetworkManager(object):
 
         url = "%s/disableSubnetworkController" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            'networkSourceId' : network_source_id,
-            'featureGlobalId' : global_id,
-            'terminalId' : terminal_id
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "networkSourceId": network_source_id,
+            "featureGlobalId": global_id,
+            "terminalId": terminal_id,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def enable_subnetwork_controller(self,
-                                     network_source_id,
-                                     global_id,
-                                     terminal_id,
-                                     subnetwork_controller_name,
-                                     tier_name,
-                                     subnetwork_name=None,
-                                     description=None,
-                                     notes=None
-                                     ):
+
+    # ----------------------------------------------------------------------
+    def enable_subnetwork_controller(
+        self,
+        network_source_id,
+        global_id,
+        terminal_id,
+        subnetwork_controller_name,
+        tier_name,
+        subnetwork_name=None,
+        description=None,
+        notes=None,
+    ):
         """
         A subnetwork controller is the origin (or destination) of resource
         flow for a subpart of the network (e.g., a circuit breaker in
@@ -201,29 +206,32 @@ class UtilityNetworkManager(object):
 
         url = "%s/enableSubnetworkController" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            'networkSourceId' : network_source_id,
-            'featureGlobalId' : global_id,
-            'terminalID' : terminal_id,
-            'subnetworkControllerName' : subnetwork_controller_name,
-            'subnetworkName' : subnetwork_name,
-            'tierName' : tier_name,
-            'description' : description,
-            'notes' : notes
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "networkSourceId": network_source_id,
+            "featureGlobalId": global_id,
+            "terminalID": terminal_id,
+            "subnetworkControllerName": subnetwork_controller_name,
+            "subnetworkName": subnetwork_name,
+            "tierName": tier_name,
+            "description": description,
+            "notes": notes,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def export_subnetwork(self,
-                          domain_name,
-                          tier_name,
-                          subnetwork_name,
-                          trace_configuration=None,
-                          export_acknowlegement=False,
-                          fields=None,
-                          result_type=None,
-                          moment=None):
+
+    # ----------------------------------------------------------------------
+    def export_subnetwork(
+        self,
+        domain_name,
+        tier_name,
+        subnetwork_name,
+        trace_configuration=None,
+        export_acknowlegement=False,
+        fields=None,
+        result_type=None,
+        moment=None,
+    ):
         """
         The `export_subnetwork` operation is used to export information
         about a subnetwork into a JSON file. That information can then be
@@ -237,24 +245,24 @@ class UtilityNetworkManager(object):
 
         url = "%s/exportSubnetwork" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            "moment" : moment,
-            "domainNetworkName" : domain_name,
-            "tierName" : tier_name,
-            "subnetworkName" : subnetwork_name,
-            "exportAcknowledgement" : export_acknowlegement,
-            "traceConfiguration" : trace_configuration,
-            "resultFields" : fields,
-            "resultType" : result_type
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "moment": moment,
+            "domainNetworkName": domain_name,
+            "tierName": tier_name,
+            "subnetworkName": subnetwork_name,
+            "exportAcknowledgement": export_acknowlegement,
+            "traceConfiguration": trace_configuration,
+            "resultFields": fields,
+            "resultType": result_type,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def query_network_moments(self,
-                              moments_to_return="fullValidateTopology",
-                              moment=None
-                             ):
+
+    # ----------------------------------------------------------------------
+    def query_network_moments(
+        self, moments_to_return="fullValidateTopology", moment=None
+    ):
         """
         The `query_network_moments` operation returns the moments related
         to the network topology and operations against the topology. This
@@ -264,18 +272,18 @@ class UtilityNetworkManager(object):
         """
         url = "%s/queryNetworkMoments" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            "momentsToReturn" : moments_to_return,
-            "moment" : moment
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "momentsToReturn": moments_to_return,
+            "moment": moment,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def query_overrides(self,
-                        attribute_ids=None,
-                        all_attributes=False,
-                        all_connectivity=False):
+
+    # ----------------------------------------------------------------------
+    def query_overrides(
+        self, attribute_ids=None, all_attributes=False, all_connectivity=False
+    ):
         """
         Network attributes support the ability to have their values
         overridden without having to edit features and validate the network
@@ -290,21 +298,24 @@ class UtilityNetworkManager(object):
         """
         url = "%s/queryOverrides" % self._url
         params = {
-            "f" : "json",
-            "attributeIDs" : attribute_ids,
-            "allAttributes" : all_attributes,
-            "allConnectivity" : all_connectivity
+            "f": "json",
+            "attributeIDs": attribute_ids,
+            "allAttributes": all_attributes,
+            "allConnectivity": all_connectivity,
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def synthesize_association_geometries(self,
-                                          attachment_associations=False,
-                                          connectivity_associations=False,
-                                          containment_associations=False,
-                                          count=200,
-                                          extent=False,
-                                          out_sr=None,
-                                          moment=None):
+
+    # ----------------------------------------------------------------------
+    def synthesize_association_geometries(
+        self,
+        attachment_associations=False,
+        connectivity_associations=False,
+        containment_associations=False,
+        count=200,
+        extent=False,
+        out_sr=None,
+        moment=None,
+    ):
         """
         The `synthesize_association_geometries` operation is used to export
         geometries representing associations that are synthesized as line
@@ -319,19 +330,20 @@ class UtilityNetworkManager(object):
         """
         url = "%s/synthesizeAssociationGeometries"
         params = {
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
             "moment": moment,
             "attachmentAssociations": attachment_associations,
             "connectivityAssociations": connectivity_associations,
             "containmentAssociations": containment_associations,
-            "maxGeometryCount":  count,
+            "maxGeometryCount": count,
             "extent": extent,
-            "outSR":  out_sr,
-            "f" : "json"
+            "outSR": out_sr,
+            "f": "json",
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update_is_connected(self):
         """
 
@@ -344,16 +356,19 @@ class UtilityNetworkManager(object):
         owner.
         """
         url = "%s/updateIsConnected" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def update_subnetwork(self,
-                          domain_name,
-                          tier_name,
-                          subnetwork_name=None,
-                          all_subnetwork_tier=False,
-                          continue_on_failure=False,
-                          trace_configuration=None):
+
+    # ----------------------------------------------------------------------
+    def update_subnetwork(
+        self,
+        domain_name,
+        tier_name,
+        subnetwork_name=None,
+        all_subnetwork_tier=False,
+        continue_on_failure=False,
+        trace_configuration=None,
+    ):
         """
         A subnetwork is updated by calling the `update_subnetwork` operation.
         With this operation, one or all of the subnetworks in a single tier
@@ -368,22 +383,20 @@ class UtilityNetworkManager(object):
         """
         url = "%s/updateSubnetwork" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            "domainNetworkName" : domain_name,
-            "tierName" : tier_name,
-            "subnetworkName" : subnetwork_name,
-            "allSubnetworksInTier" : all_subnetwork_tier,
-            "continueOnFailure" : continue_on_failure,
-            "traceConfiguration" : trace_configuration
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "domainNetworkName": domain_name,
+            "tierName": tier_name,
+            "subnetworkName": subnetwork_name,
+            "allSubnetworksInTier": all_subnetwork_tier,
+            "continueOnFailure": continue_on_failure,
+            "traceConfiguration": trace_configuration,
         }
-        return self._con.post(url, params)['success']
-    #----------------------------------------------------------------------
-    def validate_topology(self,
-                          envelope,
-                          run_async=False,
-                          return_edits=False):
+        return self._con.post(url, params)["success"]
+
+    # ----------------------------------------------------------------------
+    def validate_topology(self, envelope, run_async=False, return_edits=False):
         """
         Validating the network topology for a utility network maintains
         consistency between feature editing space and network topology space.
@@ -396,19 +409,19 @@ class UtilityNetworkManager(object):
         """
         url = "%s/validateNetworkTopology" % self._url
         params = {
-            "f" : "json",
-            "gdbVersion" : self._version_name,
-            "sessionId" : self._version_guid,
-            "validateArea" : envelope,
-            "async" : run_async,
-            'returnEdits' : return_edits
-            
+            "f": "json",
+            "gdbVersion": self._version_name,
+            "sessionId": self._version_guid,
+            "validateArea": envelope,
+            "async": run_async,
+            "returnEdits": return_edits,
         }
         if run_async == False:
-            return self._con.post(url, params)['success']
+            return self._con.post(url, params)["success"]
         else:
             return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def apply_overrides(self, adds=None, deletes=None):
         """
         Network attributes support the ability to have their values
@@ -424,7 +437,5 @@ class UtilityNetworkManager(object):
 
         """
         url = "%s/applyOverrides"
-        params = {'f' : 'json',
-                  'adds' : adds,
-                  'deletes' : deletes}
+        params = {"f": "json", "adds": adds, "deletes": deletes}
         return self._con.post(url, params)

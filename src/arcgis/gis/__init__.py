@@ -5661,7 +5661,12 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
-    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, copy_global_ids=False, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
+    def clone_items(self, items, folder=None, 
+                    item_extent=None, use_org_basemap=False, 
+                    copy_data=True, copy_global_ids=False, 
+                    search_existing_items=True, 
+                    item_mapping=None, group_mapping=None, 
+                    owner=None, preserve_item_id=False):
         """ Clone content to the GIS by creating new items.
 
         .. note::
@@ -5710,6 +5715,10 @@ class ContentManager(object):
                                   be used rather than cloning the source group.
         ---------------------     --------------------------------------------------------------------
         owner                     Optional string. Defaults to the logged in user.
+        ---------------------     --------------------------------------------------------------------
+        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS 
+                                  Online, the clone item will attempt to keep the same item ids for the 
+                                  items if available.  ArcGIS Enterprise must be 10.9+. 
         =====================     ====================================================================
 
         :return:
@@ -5727,7 +5736,18 @@ class ContentManager(object):
             owner_name = self._gis.users.me.username
         if isinstance(owner, User):
             owner_name = owner.username
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, copy_global_ids, search_existing_items, item_mapping, group_mapping, owner_name)
+        if (preserve_item_id and self._gis.version < [8,2]) or \
+           (preserve_item_id and self._gis._portal.is_arcgisonline):
+            print("Cannot preserve ItemIds on ArcGIS Enterprise "
+                  "older than v10.9 or to ArcGIS Online organizations. \n"
+                  "`preserve_item_id` will be ignored.")
+            preserve_item_id = False
+            
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, 
+                                        wgs84_extent, service_extent, 
+                                        use_org_basemap, copy_data, copy_global_ids, 
+                                        search_existing_items, item_mapping, group_mapping, owner_name,
+                                        preserve_item_id=preserve_item_id)
         return deep_cloner.clone()
 
     def bulk_update(self, itemids, properties):
@@ -9064,20 +9084,30 @@ class Item(dict):
            The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
-        if file_name is None:
-            import re
-            file_name = self.name or self.title
-            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+        
         if not save_path:
             save_path = self._workdir
-        if data_path:
-
+        try:
             download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
-            if download_path == '':
-                return None
-            else:
-                return download_path
+        except Exception as e:
+            _log.debug(msg=str(e))
+            _log.debug(msg='Retrying download parsing name from title or name property.')
+            if file_name is None:
+                import re
+                file_name = self.name or self.title
+                file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+            if save_path is None:
+                save_path = tempfile.gettempdir()
+            download_path = self._portal.con.get(path=data_path, 
+                                                 file_name=file_name,
+                                                 out_folder=save_path, 
+                                                 try_json=False, 
+                                                 force_bytes=False)                
+        if download_path == '':
+            return None
+        else:
+            return download_path
 
     def export(self, title, export_format,
                parameters=None, wait=True, enforce_fld_vis=None,

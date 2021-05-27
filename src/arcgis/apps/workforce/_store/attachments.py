@@ -22,8 +22,8 @@ def add_attachment(assignment, file_path):
     """
     feature_layer = assignment.project.assignments_layer
     response = feature_layer.attachments.add(assignment.object_id, file_path)
-    if not response['addAttachmentResult']['success']:
-        raise workforce.ServerError([response['addAttachmentResult']['error']])
+    if not response["addAttachmentResult"]["success"]:
+        raise workforce.ServerError([response["addAttachmentResult"]["error"]])
 
 
 def delete_attachments(assignment, attachments):
@@ -34,10 +34,14 @@ def delete_attachments(assignment, attachments):
     """
     if attachments:
         feature_layer = assignment.project.assignments_layer
-        attachment_ids = ','.join([str(attachment.id) for attachment in attachments])
-        response = feature_layer.attachments.delete(assignment.object_id, attachment_ids)
-        errors = [result.error
-                  for result in response['deleteAttachmentResults']
-                  if not result['success']]
+        attachment_ids = ",".join([str(attachment.id) for attachment in attachments])
+        response = feature_layer.attachments.delete(
+            assignment.object_id, attachment_ids
+        )
+        errors = [
+            result.error
+            for result in response["deleteAttachmentResults"]
+            if not result["success"]
+        ]
         if errors:
             raise workforce.ServerError(errors)

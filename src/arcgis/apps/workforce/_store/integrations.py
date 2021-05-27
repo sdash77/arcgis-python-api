@@ -12,7 +12,9 @@ def get_integration(project, integration_id=None):
         :returns: Integration
     """
     if integration_id:
-        where = "{} = '{}'".format(project._integration_schema.integration_id, integration_id)
+        where = "{} = '{}'".format(
+            project._integration_schema.integration_id, integration_id
+        )
     else:
         where = "1=0"
     integrations = query_integrations(project, where)
@@ -29,17 +31,21 @@ def query_integrations(project, where):
     return [workforce.Integration(project, feature) for feature in features]
 
 
-def add_integration(project, feature=None, integration_id=None, prompt=None, url_template=None, assignment_type=None):
+def add_integration(
+    project,
+    feature=None,
+    integration_id=None,
+    prompt=None,
+    url_template=None,
+    assignment_type=None,
+):
     """
     Adds a new integration to the project
     """
     project._update_cached_objects()
-    integration = workforce.Integration(project,
-                                      feature,
-                                      integration_id,
-                                      prompt,
-                                      url_template,
-                                      assignment_type)
+    integration = workforce.Integration(
+        project, feature, integration_id, prompt, url_template, assignment_type
+    )
     return add_integrations(project, [integration])[0]
 
 
@@ -66,7 +72,14 @@ def add_integrations(project, integrations):
     return integrations
 
 
-def update_integration(project, integration, integration_id=None, prompt=None, url_template=None, assignment_type=None):
+def update_integration(
+    project,
+    integration,
+    integration_id=None,
+    prompt=None,
+    url_template=None,
+    assignment_type=None,
+):
     """
         Updates an integration and submits changes to the server
     """
@@ -96,7 +109,7 @@ def update_integrations(project, integrations):
             validate(integration._validate)
         features = [integration.feature for integration in integrations]
         update_features(project.integrations_table, features)
-    
+
     return integrations
 
 

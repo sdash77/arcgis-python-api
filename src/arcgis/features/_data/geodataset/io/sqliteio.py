@@ -7,21 +7,20 @@ import os
 import json
 import warnings
 from .fileops import to_featureclass
+
 SUPPORTED_FORMATS = []
 try:
     import arcpy
+
     HASARCPY = True
 except:
     HASARCPY = False
     # warnings.warn("ArcPy Missing, cannot perform sqlite operations")
 
-#----------------------------------------------------------------------
-def to_sqlite(df,
-              out_folder,
-              db_name,
-              table_name,
-              spatial_type="ST_GEOMETRY",
-              overwrite=True):
+# ----------------------------------------------------------------------
+def to_sqlite(
+    df, out_folder, db_name, table_name, spatial_type="ST_GEOMETRY", overwrite=True
+):
     """
     Creates a new sqlite database and imports the dataframe data to that
     database.
@@ -50,13 +49,15 @@ def to_sqlite(df,
             raise ValueError("Save folder does not exist")
         if os.path.isfile(sqldb) and overwrite:
             os.remove(sqldb)
-            db = arcpy.CreateSQLiteDatabase_management(out_database_name=sqldb,
-                                                           spatial_type=spatial_type)[0]
+            db = arcpy.CreateSQLiteDatabase_management(
+                out_database_name=sqldb, spatial_type=spatial_type
+            )[0]
         elif os.path.isfile(sqldb) and overwrite == False:
             db = sqldb
         elif os.path.isfile(sqldb) == False:
-            db = arcpy.CreateSQLiteDatabase_management(out_database_name=sqldb,
-                                                       spatial_type=spatial_type)[0]
+            db = arcpy.CreateSQLiteDatabase_management(
+                out_database_name=sqldb, spatial_type=spatial_type
+            )[0]
         return to_featureclass(df=df, out_location=db, out_name=table_name)
     else:
         raise ImportError("arcpy is required to perform this operation")

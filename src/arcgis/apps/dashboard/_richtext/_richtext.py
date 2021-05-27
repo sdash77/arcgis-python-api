@@ -20,7 +20,8 @@ class RichText(_BaseWidget):
     description                 Optional string. Description of the widget.
     =========================   ===========================================
     """
-    def __init__(self, html_text, name='RichText', title='', description=''):
+
+    def __init__(self, html_text, name="RichText", title="", description=""):
         super().__init__(name, title, description)
 
         self._type = "richTextWidget"
@@ -28,7 +29,7 @@ class RichText(_BaseWidget):
 
         self.text = html_text
         self._nodata = NoDataProperties._nodata_init()
-    
+
     @classmethod
     def _from_json(cls, widget_json):
         txt = widget_json["text"]
@@ -38,7 +39,7 @@ class RichText(_BaseWidget):
         rtxt = RichText(txt, name, title, description)
         rtxt._id = widget_json["id"]
         rtxt.no_data.alignment = widget_json["noDataVerticalAlignment"]
-        rtxt.no_data.show_title =  widget_json["showCaptionWhenNoData"]
+        rtxt.no_data.show_title = widget_json["showCaptionWhenNoData"]
         rtxt.no_data.show_description = widget_json["showDescriptionWhenNoData"]
 
         return rtxt
@@ -56,7 +57,7 @@ class RichText(_BaseWidget):
         :return: text field for rich text
         """
         return self._text
-    
+
     @text.setter
     def text(self, value):
         """
@@ -80,7 +81,7 @@ class RichText(_BaseWidget):
             "showLastUpdate": True,
             "noDataVerticalAlignment": self._nodata.alignment,
             "showCaptionWhenNoData": self._nodata.show_title,
-            "showDescriptionWhenNoData": self._nodata.show_description
+            "showDescriptionWhenNoData": self._nodata.show_description,
         }
 
         if self._text_color:

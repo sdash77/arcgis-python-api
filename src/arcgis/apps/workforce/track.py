@@ -35,7 +35,9 @@ class Track(FeatureModel):
             self.geometry = geometry
 
     def __str__(self):
-        return "{} at {}, {}".format(self.creator, self.geometry['x'], self.geometry['y'])
+        return "{} at {}, {}".format(
+            self.creator, self.geometry["x"], self.geometry["y"]
+        )
 
     def __repr__(self):
         return "<Track {}>".format(self.object_id)

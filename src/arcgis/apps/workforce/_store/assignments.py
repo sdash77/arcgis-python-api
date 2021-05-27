@@ -30,17 +30,19 @@ def get_assignments(project):
         :param project:
         :returns: list of Assignments
     """
-    return query_assignments(project, '1=1')
+    return query_assignments(project, "1=1")
 
 
-def query_assignments(project, where='1=1'):
+def query_assignments(project, where="1=1"):
     """ Executes a query against the assignments feature layer.
         :param project: The project in which to query assignments.
         :param where: An ArcGIS where clause.
         :returns: list of Assignments
     """
     assignments = []
-    assignment_features = project.assignments_layer.query(where, return_all_records=True).features
+    assignment_features = project.assignments_layer.query(
+        where, return_all_records=True
+    ).features
     # fetch assignment types, dispatchers, and workers
     project._update_cached_objects()
     # refresh cached objects
@@ -73,36 +75,54 @@ def add_assignments(project, assignments):
     return assignments
 
 
-def add_assignment(project, feature=None, geometry=None, assignment_type=None,
-            assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
-            declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority=None, status=None,
-            work_order_id=None, worker=None):
+def add_assignment(
+    project,
+    feature=None,
+    geometry=None,
+    assignment_type=None,
+    assigned_date=None,
+    assignment_read=None,
+    completed_date=None,
+    declined_comment=None,
+    declined_date=None,
+    description=None,
+    dispatcher=None,
+    due_date=None,
+    in_progress_date=None,
+    location=None,
+    notes=None,
+    paused_date=None,
+    priority=None,
+    status=None,
+    work_order_id=None,
+    worker=None,
+):
     """
     Adds a new assignment to the project
     """
     project._update_cached_objects()
-    assignment = workforce.Assignment(project,
-                                      feature,
-                                      geometry,
-                                      assignment_type,
-                                      assigned_date,
-                                      assignment_read,
-                                      completed_date,
-                                      declined_comment,
-                                      declined_date,
-                                      description,
-                                      dispatcher,
-                                      due_date,
-                                      in_progress_date,
-                                      location,
-                                      notes,
-                                      paused_date,
-                                      priority,
-                                      status,
-                                      work_order_id,
-                                      worker
-                                      )
+    assignment = workforce.Assignment(
+        project,
+        feature,
+        geometry,
+        assignment_type,
+        assigned_date,
+        assignment_read,
+        completed_date,
+        declined_comment,
+        declined_date,
+        description,
+        dispatcher,
+        due_date,
+        in_progress_date,
+        location,
+        notes,
+        paused_date,
+        priority,
+        status,
+        work_order_id,
+        worker,
+    )
 
     return add_assignments(project, [assignment])[0]
 
@@ -120,13 +140,30 @@ def update_assignments(project, assignments):
     features = [assignment.feature for assignment in assignments]
     update_features(project.assignments_layer, features)
     return assignments
-    
-    
-def update_assignment(project, assignment, geometry=None, assignment_type=None,
-            assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
-            declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority=None, status=None,
-            work_order_id=None, worker=None):
+
+
+def update_assignment(
+    project,
+    assignment,
+    geometry=None,
+    assignment_type=None,
+    assigned_date=None,
+    assignment_read=None,
+    completed_date=None,
+    declined_comment=None,
+    declined_date=None,
+    description=None,
+    dispatcher=None,
+    due_date=None,
+    in_progress_date=None,
+    location=None,
+    notes=None,
+    paused_date=None,
+    priority=None,
+    status=None,
+    work_order_id=None,
+    worker=None,
+):
     """
     Sets the properties of an assignment and updates the item on the server
     """
@@ -192,22 +229,28 @@ def delete_assignments(project, assignments):
 
 
 def dispatchers_for_assignment_features(project, features):
-    dispatcher_ids = [feature.attributes.get(project._assignment_schema.dispatcher_id)
-                      for feature in features]
+    dispatcher_ids = [
+        feature.attributes.get(project._assignment_schema.dispatcher_id)
+        for feature in features
+    ]
     dispatcher_ids = [did for did in dispatcher_ids if did is not None]
     if dispatcher_ids:
-        dispatchers_where = "{} IN ({})".format(project._dispatcher_schema.object_id,
-                                                ','.join(map(str, dispatcher_ids)))
+        dispatchers_where = "{} IN ({})".format(
+            project._dispatcher_schema.object_id, ",".join(map(str, dispatcher_ids))
+        )
         return query_dispatchers(project, dispatchers_where)
     return []
 
 
 def workers_for_assignment_features(project, features):
-    worker_ids = [feature.attributes.get(project._assignment_schema.worker_id)
-                  for feature in features]
+    worker_ids = [
+        feature.attributes.get(project._assignment_schema.worker_id)
+        for feature in features
+    ]
     worker_ids = [wid for wid in worker_ids if wid is not None]
     if worker_ids:
-        workers_where = "{} IN ({})".format(project._worker_schema.object_id,
-                                            ','.join(map(str, worker_ids)))
+        workers_where = "{} IN ({})".format(
+            project._worker_schema.object_id, ",".join(map(str, worker_ids))
+        )
         return workforce._store.query_workers(project, workers_where)
     return []
