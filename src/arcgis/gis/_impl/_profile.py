@@ -9,7 +9,7 @@ _log = logging.getLogger(__name__)
 ###########################################################################
 class ProfileManager(object):
     """
-    Allows for the controls and management of the
+    The ``ProfileManager`` class allows for the controls and management of the
     profiles stored on the local operating system.
     """
     _gis = None
@@ -146,9 +146,10 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def list(self, as_df=False):
         """
-        returns a list of profile names in the configuration file
+        The ``list`` method retrieves a list of profile names in the configuration file
 
-        :returns: List if `as_df=False` or Pandas DataFrame if `as_df=True`
+        :returns:
+            List if `as_df=False` or Pandas DataFrame if `as_df=True`
         """
         if self._cfg_exists and as_df == False:
             config = configparser.ConfigParser()
@@ -168,7 +169,7 @@ class ProfileManager(object):
     #--------------------------------------------------------------------------
     def get(self, profile):
         """
-        Returns the profile information for a given entry.
+        The ``get`` method retrieves the profile information for a given entry.
 
         ================  ====================================================================
         **Parameter**     **Description**
@@ -176,7 +177,8 @@ class ProfileManager(object):
         profile           Required String. The name of the profile to get the information about.
         ================  ====================================================================
 
-        :returns: Dict
+        :returns:
+            A dictionary
 
         """
         profile_file = self._cfg_file_path
@@ -206,7 +208,7 @@ class ProfileManager(object):
     #--------------------------------------------------------------------------
     def delete(self, profile):
         """
-        Deletes a profile from the .arcgisprofile file
+        The ``delete`` method deletes a profile permanently from the .arcgisprofile file
 
         ================  ====================================================================
         **Parameter**     **Description**
@@ -214,7 +216,8 @@ class ProfileManager(object):
         profile           Required String. The name of the profile to delete.
         ================  ====================================================================
 
-        :returns: Boolean
+        :returns:
+            A boolean indicating success (True), or failure (False)
         """
         import keyring
         profile_file = self._cfg_file_path
@@ -243,7 +246,7 @@ class ProfileManager(object):
                key_file=None, cert_file=None,
                client_id=None):
         """
-        Updates an existing profile in the credential manager.
+        The ``update`` method updates an existing profile in the credential manager.
 
         ================  ====================================================================
         **Parameter**     **Description**
@@ -263,7 +266,8 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating success (True), or failure (False)
 
         """
         if profile not in self.list():
@@ -277,7 +281,7 @@ class ProfileManager(object):
                key_file=None, cert_file=None,
                client_id=None):
         """
-        Adds a new entry into the Profile Store.
+        The ``create`` method adds a new entry into the Profile Store.
 
         ================  ====================================================================
         **Parameter**     **Description**
@@ -297,7 +301,8 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating success (True), or failure (False)
 
         """
         try:
@@ -326,7 +331,7 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def save_as(self, profile, gis):
         """
-        Saves and adds the provided `GIS` to the profile.
+        The ``save_as`` method saves and adds the provided :class:`~arcgis.gis.GIS` object to the profile.
         
         ================  ====================================================================
         **Parameter**     **Description**

@@ -71,16 +71,17 @@ class GIS(object):
     .. _gis:
 
     The ``GIS`` class is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment.
-    The GIS object provides helper objects to manage (search, create, retrieve) GIS resources such as content, users,
+    The ``GIS`` object provides helper objects to manage (search, create, retrieve) GIS resources such as content, users,
     and groups.
 
-    Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
+    Additionally, the ``GIS`` object has properties to query its state, which is accessible using the properties attribute.
 
-    The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
-    as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
-    Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
+    .. note::
+        The ``GIS`` provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
+        as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
+        Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
-    The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
+    The constructor constructs a ``GIS`` object given a url and user credentials to ArcGIS Online
     or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
     pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP, PKI, Integrated Windows Authentication
     (using NTLM and Kerberos) and Anonymous access.
@@ -92,9 +93,11 @@ class GIS(object):
     specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
     user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
     in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
-    (Note: Linux systems may need additional software installed and configured for proper security) Once a profile has
-    been saved, passing the profile parameter by itself uses the authorization credentials saved in the configuration
-    file/password manager by that profile name. Multiple profiles can be created and used in parallel.
+    .. note::
+        Linux systems may need additional software installed and configured for proper security.
+
+    Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials saved
+    in the configuration file/password manager by that profile name. Multiple profiles can be created and used in parallel.
 
     See `Working with different authentication schemes <https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/>`_
     in the ARCGIS API for Python guide for examples.
@@ -516,7 +519,8 @@ class GIS(object):
         .. note::
             **The API Key manager is only available for ArcGIS Online**
 
-        :returns: :class:`~arcgis.gis._impl.APIKeyManager`
+        :returns:
+            An :class:`~arcgis.gis._impl.APIKeyManager` object
 
         """
         if self._portal.is_arcgisonline and self.version >= [8,2]:
@@ -775,8 +779,7 @@ class GIS(object):
         ===============     ====================================================================
 
         :return:
-           A `Boolean <https://docs.python.org/3/library/stdtypes.html#boolean-values>`_ :
-           True if successfully updated, False if unsuccessful.
+           A boolean indicating success (True), or failure (False)
 
 
         .. note::
@@ -1113,7 +1116,7 @@ class Datastore(dict):
     @property
     def manifest(self):
         """
-        Gets or sets the manifest resource for bigdata fileshares, as a dictionary.
+        The ``manifest`` method retrieves or sets the manifest resource for bigdata fileshares, as a dictionary.
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -1357,7 +1360,7 @@ class GroupMigrationManager(object):
                items=None,
                future:bool=True):
         """
-        The ``create`` method exports a :class:`~arcgis.gis.Group` content to a **EPK Package Item**.
+        The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
 
         `EPK Items` are intended to migrate content from an enterprise deployment to a new
         enterprise. Once an `EPK Item` is created using this method, you can use the `load`
@@ -1382,7 +1385,7 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
 
         :returns:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when future=True
+            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
 
         """
         if self._gis.users.me.role == 'org_admin':
@@ -1446,7 +1449,7 @@ class GroupMigrationManager(object):
         ================  ===============================================================================
 
         :returns:
-            A dictionary --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when future=True
+            A dictionary --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
 
         """
         assert isinstance(epk_item, Item)
@@ -1522,7 +1525,7 @@ class DatastoreManager(object):
     The ``DatastoreManager`` class is a helper class for managing the GIS data stores in ArcGIS Enterprise.
     Instances of this class are returned from :class:`~arcgis.geoanalytics.get_datastores` and
     :class:`~arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
-    Users call methods on this :class:`~arcgis.gis.Datastpre` object to manage the datastores in a site
+    Users call methods on this :class:`~arcgis.gis.Datastore` object to manage the datastores in a site
     federated with the Enterprise portal.
 
     .. note::
@@ -1543,11 +1546,21 @@ class DatastoreManager(object):
     @property
     def config(self):
         """
-        Gets or sets the data store configuration properties, which affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy. When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
-        When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
-        Note:
-        If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
+       The ``config`` method retrieves and sets the data store configuration properties, which affect the behavior of
+       the data holdings of the server. The properties include `blockDataCopy`.
+
+       When this property is `False`, or not set at all, copying data to the site when publishing services from a
+       client application is allowed. This is the default behavior.
+
+        When this property is `True`, the client application is not allowed to copy data to the site when publishing.
+        Rather, the publisher is required to register data items through which the service being published can reference data.
+        Values: `True` | `False`
+
+        .. note::
+            If you specify the property as `True`, users will not be able to publish ``geoprocessing services`` and
+            ``geocode services`` from composite locators. These service types require data to be copied to the server.
+            As a workaround, you can temporarily set the property to `False`, publish the service, and then set the
+            property back to `True`.
         """
         params = {"f" : "json"}
         path = self._admin_url + "/data/config"
@@ -1786,7 +1799,7 @@ class DatastoreManager(object):
         ==================     ====================================================================
 
         :return:
-            :class:`~arcgis.gis.Datastore`
+            A :class:`~arcgis.gis.Datastore` object
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -1871,7 +1884,7 @@ class DatastoreManager(object):
 
 
         :return:
-            :class:`~arcgis.gis.Datastore`
+            A :class:`~arcgis.gis.Datastore` object
 
         """
         path = self._admin_url + "/data/registerItem"
@@ -2232,7 +2245,7 @@ class UserManager(object):
         ================  ===============================================================================
 
         :returns:
-            A dictionary
+            A Dictionary
 
         """
         user_li_lu = {
@@ -2320,7 +2333,7 @@ class UserManager(object):
             type. Additionally, the ``license_types`` is only available on ArcGIS Enterprise 10.7+.**
 
         :returns:
-            A list of available licenses
+            A List of available licenses
         """
 
         if self._gis.version < [6,4]:
@@ -3003,7 +3016,7 @@ class UserManager(object):
         **Note** : this is only supported by ArcGIS Online
 
         :returns:
-         An :class:`~arcgis.gis.InvitationManager' object
+         An :class:`~arcgis.gis.InvitationManager` object
 
         """
 
@@ -3211,7 +3224,8 @@ class UserManager(object):
         as_dict                Required Boolean. If True, the response comes back as a dictionary.
         ==================     ====================================================================
 
-        :returns: dictionary if `return_count` is False, else an integer
+        :returns:
+            A dictionary if `return_count` is False, else an integer
         """
         from arcgis.gis._impl import _search
         stype = "users"
@@ -3451,9 +3465,13 @@ class UserManager(object):
         return res
 
 class RoleManager(object):
-    """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS.
-       Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
-       property of the :class:`~arcgis.gis.UserManager`
+    """
+        The ``RoleManager`` class is a helper class to manage custom :class:`roles <arcgis.gis.Role>` for
+        :class:`~arcgis.gis.User` in a GIS. It is available as the :attr:`~arcgis.gis.UserManager.roles`
+        property of the :class:`~arcgis.gis.UserManager`
+
+        .. note::
+            Users don't create this class directly.
 
        .. code-block:: python
 
@@ -3473,7 +3491,8 @@ class RoleManager(object):
 
 
     def create(self, name, description, privileges=None):
-        """Creates a custom role with the specified parameters.
+        """
+            The ``create`` method creates a custom :class:`~arcgis.gis.Role` with the specified parameters.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3490,7 +3509,7 @@ class RoleManager(object):
 
 
         :return:
-           The custom :class:`role <arcgis.gis.Role>` if successfully created, None if unsuccessful.
+           The custom :class:`role <arcgis.gis.Role>` object if successfully created, None if unsuccessful.
         """
         if self.exists(role_name=name) == False:
             role_id = self._portal.create_role(name, description)
@@ -3514,7 +3533,7 @@ class RoleManager(object):
 
     def exists(self, role_name):
         """
-        Checks to see if a role exists given the declared role name.
+        The ``exists`` mehtod checks to see if a :class:`~arcgis.gis.Role` object exists given the declared role name.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3532,7 +3551,7 @@ class RoleManager(object):
 
     def all(self, max_roles=1000):
         """
-        Provides a list containing the default ``Viewer`` and ``Data Editor`` roles, plus any
+        The ``all`` method provides a list containing the default ``Viewer`` and ``Data Editor`` roles, plus any
         custom roles defined in the :class:`~arcgis.gis.GIS`. (The ``org_admin``, ``org_user``,
         and ``org_publisher`` default roles are not returned. See `Default roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm#ESRI_SECTION2_CB9BF0951AC647529EBB7CB09B8B3EDA>`_
         for detailed descriptions of each role.)
@@ -3571,7 +3590,7 @@ class RoleManager(object):
 
                 ['org_admin', 'org_publisher', 'org_user', 'Viewer', 'Data Editor', 'Analyzer', 'Sharing_analyst', 'Group_creator']
 
-        See :attr:`~arcgis.gis.UserManager.create` method of :class:`~arcgis.gis.UserManager` for using
+        See the :attr:`~arcgis.gis.UserManager.create` method of :class:`~arcgis.gis.UserManager` for using
         role information when creating users.
         """
         roles = self._portal.get_org_roles(max_roles)
@@ -3580,7 +3599,7 @@ class RoleManager(object):
 
     def get_role(self, role_id):
         """
-        Retrieves the role with the specified custom roleId.
+        The ``get_role`` method retrieves the :class:`~arcgis.gis.Role` object with the specified custom roleId.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3614,7 +3633,7 @@ class Role(object):
 
     @property
     def name(self):
-        """Gets and sets the name of the custom role."""
+        """The ``name`` method retrieves and sets the name of the custom role."""
         return self._name
 
     @name.setter
@@ -3625,7 +3644,7 @@ class Role(object):
 
     @property
     def description(self):
-        """Gets and sets the description of the custom role."""
+        """The ``description`` method retrieves and sets the description of the custom role."""
         return self._description
 
     @description.setter
@@ -3647,94 +3666,91 @@ class Role(object):
     @property
     def privileges(self):
         """
-        Get or sets the privileges for the custom role as a list of strings.
+        The ``privileges`` method retrieves and sets the privileges for the custom role as a list of strings.
 
-        Supported privileges with predefined permissions are:
+        Supported **Admististrator Privileges** with predefined permissions for:
 
-        *Administrative Privileges:*
+            *Members*
+                1. portal:admin:viewUsers: grants the ability to view full member account information within organization.
+                2. portal:admin:updateUsers: grants the ability to update member account information within organization.
+                3. portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
+                4. portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
+                5. portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
+                6. portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
+                7. portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
+                8. portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
 
-        Members
+            *Groups*
 
-        - portal:admin:viewUsers: grants the ability to view full member account information within organization.
-        - portal:admin:updateUsers: grants the ability to update member account information within organization.
-        - portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
-        - portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
-        - portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
-        - portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
-        - portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
-        - portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
+                1. portal:admin:viewGroups: grants the ability to view all groups within organization.
+                2. portal:admin:updateGroups: grants the ability to update groups within organization.
+                3. portal:admin:deleteGroups: grants the ability to delete groups within organization.
+                4. portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
+                5. portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
+                6. portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
 
-        Groups
+            *Content*
 
-        - portal:admin:viewGroups: grants the ability to view all groups within organization.
-        - portal:admin:updateGroups: grants the ability to update groups within organization.
-        - portal:admin:deleteGroups: grants the ability to delete groups within organization.
-        - portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
-        - portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
-        - portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
+                1. portal:admin:viewItems: grants the ability to view all content within organization.
+                2. portal:admin:updateItems: grants the ability to update content within organization.
+                3. portal:admin:deleteItems: grants the ability to delete content within organization.
+                4. portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
+                5. portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
+                6. portal:admin:shareToOrg: grants the ability to share other member's content to organization.
+                7. portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
 
-        Content
+            *ArcGIS Marketplace Subscriptions*
 
-        - portal:admin:viewItems: grants the ability to view all content within organization.
-        - portal:admin:updateItems: grants the ability to update content within organization.
-        - portal:admin:deleteItems: grants the ability to delete content within organization.
-        - portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
-        - portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
-        - portal:admin:shareToOrg: grants the ability to share other member's content to organization.
-        - portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
+                1. marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+                2. marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+                3. marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
 
-        ArcGIS Marketplace Subscriptions
+        **Publisher Privileges:**
 
-        - marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-        - marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-        - marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+            *Content*
 
-        *Publisher Privileges:*
+                1. portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
+                2. portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
+                3. portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
 
-        Content
+        **User Privileges:**
 
-        - portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
-        - portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
-        - portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
+            *Groups*
 
-        *User Privileges:*
+                1. portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
+                2. portal:user:joinGroup: grants the ability to join groups within organization.
+                3. portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
 
-        Groups
+            *Content*
 
-        - portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
-        - portal:user:joinGroup: grants the ability to join groups within organization.
-        - portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
+                1. portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
 
-        Content
+            *Sharing*
 
-        - portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
+                1. portal:user:shareToGroup: grants the ability to share content to groups.
+                2. portal:user:shareToOrg: grants the ability to share content to organization.
+                3. portal:user:shareToPublic: grants the ability to share content to all users of portal.
+                4. portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
+                5. portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
 
-        Sharing
+            *Premium Content*
 
-        - portal:user:shareToGroup: grants the ability to share content to groups.
-        - portal:user:shareToOrg: grants the ability to share content to organization.
-        - portal:user:shareToPublic: grants the ability to share content to all users of portal.
-        - portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
-        - portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
+                1. premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
+                2. premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
+                3. premium:user:geoenrichment: grants the ability to geoenrich features.
+                4. premium:user:demographics: grants the ability to make use of premium demographic data.
+                5. premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
+                6. premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
 
-        Premium Content
+            *Features*
 
-        - premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
-        - premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
-        - premium:user:geoenrichment: grants the ability to geoenrich features.
-        - premium:user:demographics: grants the ability to make use of premium demographic data.
-        - premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
-        - premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
+                1. features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
+                2. features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
 
-        Features
+            *Open Data*
 
-        - features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
-        - features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
-
-        Open Data
-
-        - opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
-        - opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
+                1. opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
+                2. opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
 
         """
         resp = self._portal.con.post('portals/self/roles/' + self.role_id + '/privileges', self._portal._postdata())
@@ -4016,7 +4032,7 @@ class GroupManager(object):
 
 
         :return:
-           A list of groups matching the specified query.
+           A List of :class:`~arcgis.gis.Group` objects matching the specified query.
         """
         grouplist = []
         groups = self._portal.search_groups(query, sort_field, sort_order, max_groups, outside_org, categories)
@@ -4515,7 +4531,7 @@ class ContentManager(object):
         renderer, and so on. ``analyze`` will suggest defaults for the renderer.
 
         In a typical workflow, the client will present portions of the ``analyze`` results to the user for editing
-        before making the call to :attr:`~arcgis.gis.ContentManager.generaate` or ``publish``.
+        before making the call to :attr:`~arcgis.gis.ContentManager.generate` or ``publish``.
 
         .. note::
             If the file to be analyzed currently exists in the portal as an item, callers can pass in its itemId.
@@ -4628,8 +4644,9 @@ class ContentManager(object):
                        tags=None,
                        snippet=None,
                        item_id=None):
-        """ The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
-            passed when calling ``create_service``.
+        """
+        The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
+        passed when calling ``create_service``.
 
 
         =======================    =============================================================
@@ -4868,10 +4885,10 @@ class ContentManager(object):
         ================    ===============================================================
 
         :returns:
-            Depends on the inputs.
-                  1. Dictionary for a standard search
-                  2. `return_count`=True an integer is returned
-                  3. `count_fields` is specified a list of dicts for each field specified
+            Depends on the inputs:
+                1. Dictionary for a standard search
+                2. `return_count`=True an integer is returned
+                3. `count_fields` is specified a list of dicts for each field specified
 
         """
         from arcgis.gis._impl import _search
@@ -5145,7 +5162,7 @@ class ContentManager(object):
                           the current user's content
         ================  ==========================================================================
 
-        Returns:
+        :returns:
             A boolean indicating success if the items were deleted (True), or failure if the items were not deleted
             (False)
         """
@@ -5690,8 +5707,8 @@ class ContentManager(object):
             ================  ======================================================================
 
             :return:
-                 True if the specified service_name is available for the
-               specified service_type, False if the service_name is unavailable.
+                True if the specified service_name is available for the
+                specified service_type, False if the service_name is unavailable.
 
         """
         path = "portals/self/isServiceNameAvailable"
@@ -5716,8 +5733,8 @@ class ContentManager(object):
         objects.
 
         .. note::
-        Cloning an item will create a copy of the item and for certain
-        item types a copy of the item dependencies in the GIS.
+            Cloning an item will create a copy of the item and for certain
+            item types a copy of the item dependencies in the :class:`~arcgis.gis.GIS`.
 
         For example, a web application created using Web AppBuilder
         or a Configurable App Template which is built from a web map
@@ -5727,7 +5744,7 @@ class ContentManager(object):
 
         .. note::
             The actions in the example above create an exact copy of the application, map, and layers
-        in the GIS.
+            in the :class:`~arcgis.gis.GIS`.
 
         =====================     ====================================================================
         **Argument**              **Description**
@@ -5963,7 +5980,7 @@ class ContentManager(object):
         =====================     ====================================================================
 
         :returns:
-            A dictionary of shared items
+            A dictionary of shared :class:`~arcgis.gis.Item` objects
 
         """
         url = "{base}content/users/{username}/shareItems".format(
@@ -6034,7 +6051,8 @@ class ContentManager(object):
                                   arcgis.gis.Group objects, or a list of group IDs.
         =====================     ====================================================================
 
-        :returns: dict
+        :returns:
+            A dictionary of unshared :class:`~arcgis.gis.Item` objects
 
         """
         res = True
@@ -6111,8 +6129,8 @@ class ContentManager(object):
 class CategorySchemaManager(object):
     """
     The ``CategorySchemaHelper`` class is for managing category schemas. An instance of this class, called `categories`,
-    is available as a property in the :class:`~arcgis.gis.ContentManager` and the :class:`~arcgis.gis.Groups` class. See
-    :attr:`~gis.ContentManager.categories` and :attr:`~arcgis.gis.Groups.categories` for more information.
+    is available as a property in the :class:`~arcgis.gis.ContentManager` and the :class:`~arcgis.gis.Group` class. See
+    :attr:`~gis.ContentManager.categories` and :attr:`~arcgis.gis.Group.categories` for more information.
 
     .. note::
         This class is not created by users directly.
@@ -6144,20 +6162,21 @@ class CategorySchemaManager(object):
     @property
     def schema(self):
         """
-        This property allows group owners/managers to manage the content
+        The ``schema`` property allows group owners/managers to manage the content
         categories for a group. These content categories are a hierarchical
         set of classes to help organize and browse group content.
 
-        Each group can have a maximum of 5 category trees with each
-        category schema can have up to 4 hierarchical levels. The maximum
-        number of categories a group can have in total is 200 with each
-        category of less than 100 characters title and 300 characters
-        description.
+        .. note::
+            Each group can have a maximum of 5 category trees with each
+            category schema can have up to 4 hierarchical levels. The maximum
+            number of categories a group can have in total is 200 with each
+            category of less than 100 characters title and 300 characters
+            description.
 
-        When getting this property, returns the content category schema
+        When getting ``schema``, returns the content category schema
         set on a group.
 
-        When setting this property, will update the group category schema
+        When setting ``schema``, will update the group category schema
         based on the `dict` this property is set to. See below.
 
         ==================  =========================================================
@@ -6259,10 +6278,11 @@ class CategorySchemaManager(object):
         ==================  =========================================================
 
 
-        :returns: A `dict` of `item_id` : `status`, with `status` being
-        whether the content categories were successfully added. If the `status` is
-        unsuccessfully updated, a message will provide information to help you debug
-        the issue.
+        :returns:
+            A `dict` of `item_id` : `status`, with `status` being
+            whether the content categories were successfully added. If the `status` is
+            unsuccessfully updated, a message will provide information to help you debug
+            the issue.
 
 
         """
@@ -6293,9 +6313,14 @@ class CategorySchemaManager(object):
 
 class ResourceManager(object):
     """
-    Helper class for managing resource files of an item. This class is not created by users directly.
-    An instance of this class, called 'resources', is available as a property of the Item object.
-    Users call methods on this 'resources' object to manage (add, remove, update, list, get) item resources.
+    The ``ResourceManager`` class is a helper class for managing resource files of an item.
+    An instance of this class is available as a property of the :class:`~arcgis.gis.Item` object
+    (See :attr:`~arcgis.gis.Item.resources` for more information on this property).
+    Users call methods on this :attr:`~arcgis.gis.Item.resources` object to manage
+    (add, remove, update, list, get) item resources.
+
+    .. note::
+        Users do not create this class directly.
     """
     _user_id = None
     def __init__(self, item, gis):
@@ -6312,7 +6337,12 @@ class ResourceManager(object):
             self._user_id = user.username
 
     def export(self, save_path=None, file_name=None):
-        """Export's the data's resources as a zip file"""
+        """
+            The ``export`` method export's the data's resources as a zip file
+
+        :returns:
+            A .zip file containing the data's resources
+        """
         url = 'content/users/'+ self._user_id +\
             '/items/' + self._item.itemid + "/resources/export"
         if save_path is None:
@@ -6328,10 +6358,13 @@ class ResourceManager(object):
         return resources
 
     def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False, access=None):
-        """The add resources operation adds new file resources to an existing item. For example, an image that is
+        """The ``add`` operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
-        include the size of added resource files. Each file added should be no more than 25 Mb.
+        include the size of added resource files.
+
+        .. note::
+            Each file added should be no more than 25 Mb.
 
         Supported item types that allow adding file resources are: Vector Tile Service, Vector Tile Package,
         Style, Code Attachment, Report Template, Web Mapping Application, Feature Service, Web Map,
@@ -6366,7 +6399,7 @@ class ResourceManager(object):
         ================  ===============================================================
 
         :return:
-            Python dictionary like the following if it succeeded:
+            Python dictionary in the following format (if successful):
             {
                 "success": True,
                 "itemId": "<item id>",
@@ -6409,7 +6442,7 @@ class ResourceManager(object):
         return resp
 
     def update(self, file, folder_name=None, file_name=None, text=None):
-        """The update resources operation allows you to update existing file resources of an item.
+        """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
         is updated to include the size of updated resource files.
 
@@ -6438,14 +6471,14 @@ class ResourceManager(object):
         ================  ===============================================================
 
         :return:
-            Python dictionary like the following if it succeeded:
+            If successful, a dictionary with  will be returned in the following format:
             {
                 "success": True,
                 "itemId": "<item id>",
                 "owner": "<owner username>",
                 "folder": "<folder id>" }
 
-            else like the following if it failed:
+            else a dictionary with error information will be returned in the following format:
             {"error": {
                         "code": 404,
                         "message": "Resource does not exist or is inaccessible.",
@@ -6476,8 +6509,11 @@ class ResourceManager(object):
 
     def list(self):
         """
-        Provides a lists all file resources of an existing item. This resource is only available to
-        the item owner and the organization administrator.
+        The ``list`` method provides a lists all file resources of an existing item.
+
+        .. note::
+            This resource is only available to
+            the item owner and the organization administrator.
 
         :return:
             A Python list of dictionaries of the form:
@@ -6518,8 +6554,10 @@ class ResourceManager(object):
 
     def get(self, file, try_json = True, out_folder = None, out_file_name = None):
         """
-        Gets a specific file resource of an existing item.  This operation is only
-        available to the item owner and the organization administrator.
+        The ``get`` method retrieves a specific file resource of an existing item.
+
+        .. note::
+            This operation is only available to the item owner and the organization administrator.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -6557,9 +6595,12 @@ class ResourceManager(object):
 
     def remove(self, file = None):
         """
-        Removes a single resource file or all resources. The item size is updated once
-        resource files are deleted. This operation is only available to the item owner
-        and the organization administrator.
+        The ``remove`` method removes a single resource file or all resources. The item size is updated once
+        resource files are deleted.
+
+        .. note::
+            This operation is only available to the item owner
+            and the organization administrator.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -6574,9 +6615,9 @@ class ResourceManager(object):
 
 
         :return:
-            If succeeded a boolean of True will be returned,
+            If successful, a boolean of True will be returned.
 
-            else a dictionary with error info
+            Else, a dictionary with error information will be returned in the following format:
             {"error": {"code": 404,
                         "message": "Resource does not exist or is inaccessible.",
                         "details": []
@@ -7533,7 +7574,7 @@ class GroupApplication(object):
         ``GroupApplication`` object is created. Group administrators choose to accept this application
         using the ``accept`` operation. This operation adds the applying user to the group then deletes the application.
         This operation also creates a notification for the user indicating that the user's group application was
-        accepted. This method is very similar to the :attr:`~arcgis.gis.GroupApplication.delete` method, which declines
+        accepted. This method is very similar to the :attr:`~arcgis.gis.GroupApplication.decline` method, which declines
         rather than accepts the application to join a group.
 
         .. note::
@@ -7560,7 +7601,7 @@ class GroupApplication(object):
         join a group.
 
         .. note::
-            The ``accept`` method is only available to group owners and admininistrators.
+            The ``delete`` method is only available to group owners and admininistrators.
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -7793,9 +7834,10 @@ class User(dict):
         The ``provisions`` property returns a list of all provisioned licenses for the current user.
 
         .. note::
-            The ``provisions method is only available in ArcGIS Enterprise 10.7+.
+            The ``provisions method`` is only available in ArcGIS Enterprise 10.7+.
 
-        :returns: A list contaning provisional licenses
+        :returns:
+            A list contaning provisional licenses
 
         """
         if self._gis.version < [6,4]:
@@ -7861,7 +7903,8 @@ class User(dict):
                 for b in bundles]
     #----------------------------------------------------------------------
     def get_thumbnail_link(self):
-        """ The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
+        """
+        ``The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
         :return:
            The thumbnail's URL.
@@ -8177,8 +8220,9 @@ class User(dict):
     def disable(self):
         """
         The ``disable`` method disables login access for the user.
+
         .. note::
-            It is only available to the administrator of the organization.
+            The ``disable`` method is only available to the administrator of the organization.
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -8200,7 +8244,7 @@ class User(dict):
         The ``enable`` method enables login access for the user.
 
         .. note::
-            It is only available to the administrator of the organization.
+            ``enable`` is only available to the administrator of the organization.
         """
         params = {"f" : "json"}
         url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self._user_id)
@@ -8216,18 +8260,23 @@ class User(dict):
     @property
     def esri_access(self):
         """
-        When getting, will return a string describing the current user's esri access
-        When setting, supply a *bool* to enable or disable esri_access for that user (Administrator privileges required)
+        The ``esri_access`` method will return a string describing the current user's Esri access.
+        When setting, supply a ``boolean`` to enable or disable ``esri_access`` for that :class:`~arcgis.gis.User`
+        object.
+
+        .. note::
+            Administrator privileges are required to enable or disable Esri access
 
         A member whose account has Esri access enabled can use My Esri and
         Community and Forums (GeoNet), access e-Learning on the Training
         website, and manage email communications from Esri. The member
         cannot enable or disable their own access to these Esri resources.
 
-        **Trial** accounts cannot modify esri_access property.
+        .. warning::
+            Trial accounts cannot modify esri_access property.
 
-        Please see the `Enable Esri access <https://bit.ly/2JsJV1i>`_ on the Manage members page in ArcGIS Online
-        Resources for more information.
+        Please see the `Enable Esri access <https://bit.ly/2JsJV1i>`_ section in the Manage members page in ArcGIS
+        Online Resources for more information.
 
 
         """
@@ -8276,7 +8325,7 @@ class User(dict):
         """The ``linked_accounts`` method retrieves all linked accounts for the current user as
         :class:`~arcgis.gis.User` objects
 
-        returns:
+        :returns:
             A list of :class:`~arcgis.gis.User` objects
         """
         if self._gis._portal.is_arcgisonline == False:
@@ -8638,9 +8687,9 @@ class User(dict):
 
     def items(self, folder=None, max_items=100):
         """
-        The ``item`` method provides a list of items in the specified folder. For content in the root folder, use
-        the default value of None for the folder argument. For other folders, pass in the folder
-        name as a string, or as a dictionary containing
+        The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
+        For content in the root folder, use he default value of None for the folder argument.
+        For other folders, pass in the folder name as a string, or as a dictionary containing
         the folder ID, such as the dictionary obtained from the folders property.
 
         ==================     ====================================================================
@@ -8654,7 +8703,7 @@ class User(dict):
 
 
         :return:
-           The list of items in the specified folder.
+           The list of :class:`~arcgis.gis.Item` objects in the specified folder.
 
         .. code-block:: python
 
@@ -8697,7 +8746,7 @@ class User(dict):
         """
         The ``notifications`` property retrieves the list of notifications available for the given user.
 
-        returns:
+        :returns:
             A list containing available notifications
         """
         from .._impl.notification import Notification
@@ -9284,8 +9333,9 @@ class Item(dict):
 
 
         :return:
-           An :class:`~arcgis.gis.Item` object or a dictionary.  Item is returned when wait=True. A dictionary describing the
-           status of the item is returned when wait=False.
+           An :class:`~arcgis.gis.Item` object or a dictionary.  Item is returned when `wait=True`.
+           A dictionary describing the status of the item is returned when `wait=False`. See the
+           :attr:`~arcgis.gis.Item.status` method for more information.
         """
         import time
         formats = ['Shapefile',
@@ -9348,10 +9398,12 @@ class Item(dict):
         return res
     #----------------------------------------------------------------------
     def status(self, job_id=None, job_type=None):
-        """ The ``status`` method provides the status of an Item in the following situations:
+        """
+        The ``status`` method provides the status of an Item in the following situations:
             1. Publishing an Item
             2. Adding an Item in async mode
-            3. Adding with a multipart upload. "Partial" is available for Add Item Multipart when only a part is uploaded and the Item is not committed.
+            3. Adding with a multipart upload. `Partial` is available for ``Add Item Multipart`` when only a part is uploaded
+            and the :class:`~arcgis.gis.Item` object is not committed.
 
 
         ===============     ====================================================================
@@ -9930,7 +9982,9 @@ class Item(dict):
                             deletion, a list of such Item objects are provided.
         ===============     ====================================================================
 
-        :return: A boolean containing True (for success) or False (for failure). When dry_run is used, a dictionary containing details of the item is returned.
+        :return:
+            A boolean indicating success (True), or failure (False). When ``dry_run`` is used, a dictionary containing
+            details of the item is returned.
 
         .. code-block:: python
 
@@ -9964,8 +10018,8 @@ class Item(dict):
             >> 'offending_items': [<Item title:"Chicago_accidents_WFS" type:WFS owner:sharing1>]}}
 
         .. note::
-            During the dry run, if you receive a list of offending items, attempt to delete them first before deleting
-            the current item. You can in turn call 'dry_run' on those items to ensure they can be deleted safely.
+            During the `dry run`, if you receive a list of offending items, attempt to delete them first before deleting
+            the current item. You can in turn call ``dry_run`` on those items to ensure they can be deleted safely.
         """
 
         try:
@@ -10476,8 +10530,11 @@ class Item(dict):
     def dependent_to(self):
         """
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
-        This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only with
-        an ArcGIS Enterprise."""
+
+        .. note::
+            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available
+             only with an ArcGIS Enterprise.
+        """
         return self._portal.get_item_dependents_to(self.itemid)
 
     _RELATIONSHIP_TYPES = frozenset(['Area2CustomPackage', 'Service2Layer', 'Map2Area',
@@ -10562,7 +10619,7 @@ class Item(dict):
 
 
         :return:
-           A Boolean: Returning True if the relationship was added, False if the add failed.
+           A boolean indicating success (True), or failure (False)
         """
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
@@ -10579,7 +10636,7 @@ class Item(dict):
 
     def delete_relationship(self, rel_item, rel_type):
         """
-        The ``delete_relationship`` deletes a relationship between this item and the rel_item.
+        The ``delete_relationship``method  deletes a relationship between this item and the rel_item.
 
 
         ===============     ====================================================================
@@ -10596,7 +10653,7 @@ class Item(dict):
 
 
         :return:
-           A boolean. True if the relationship was deleted, False if the deletion failed.
+           A boolean indicating success (True), or failure (False)
         """
         if not rel_type in self._RELATIONSHIP_TYPES:
             raise Error('Unsupported relationship type: ' + rel_type)
@@ -11048,7 +11105,7 @@ class Item(dict):
         ================  ===============================================================
 
         :return:
-           The item if successfully added, None if unsuccessful.
+           The :class:`~arcgis.gis.Item` object if successfully added, None if unsuccessful.
 
         """
 
@@ -11424,8 +11481,8 @@ class Item(dict):
         The `copy_item` method is allowed for the following:
 
            1. Original item being copied is owned by the user invoking the copy operation.
-           2. User is an administrator.
-           3. User has itemControl update capability.
+           2. The :class:`~arcgis.gis.User` object is an administrator.
+           3. The :class:`~arcgis.gis.User` object has itemControl update capability.
 
         Additionally, there are several caveats to the ``copy_item`` method. First, the new item created by the
         ``copy_item`` operation will have a system generated itemID. Additionally, hosted services are copied as
@@ -11817,7 +11874,8 @@ class Item(dict):
         .. note::
             The ``unregister`` method is available to the item owner and organization administrators.
 
-        :return: A boolean: True is successful or False upon failure.
+        :return:
+            A boolean indicating success (True), or failure (False)
 
 
         """

@@ -2,7 +2,7 @@ from arcgis._impl.common._isd import InsensitiveDict
 ###########################################################################
 class APIKey(object):
     """
-    The `APIKey` is a single instance of a registered access key for 
+    The ``APIKey`` class is a single instance of a registered access key for
     performing certian operations based on permissions.
     """
     _gis = None
@@ -20,6 +20,12 @@ class APIKey(object):
     #----------------------------------------------------------------------
     @property
     def properties(self):
+        """
+        The ``properties`` method retrieves the properties of the current APIKey object.
+
+        :returns:
+            A dictionary containin the properties (if any) of the current APIKey object.
+        """
         if self._properties is None:
             self._properties = InsensitiveDict(self._item.app_info)
         return self._properties
@@ -27,13 +33,20 @@ class APIKey(object):
     @property
     def apikey(self):
         """
-        Returns the API Key value for the current key.
+        The ``apikey`` method retrieves the API Key value for the current key.
         
-        :returns: String
+        :returns:
+            String
         """
         return self.properties.apiKey
     #----------------------------------------------------------------------
     def delete(self):
+        """
+        The ``delete`` method deletes the current APIKey object permanently.
+
+        :return:
+            A boolean indicating success (True), or failure (False)
+        """
         return self._item.delete()
     #----------------------------------------------------------------------
     def reset(self):
@@ -41,7 +54,8 @@ class APIKey(object):
         Resets the API Key for the Item. The call will return the information 
         with the new API Key information.
         
-        :returns: dict
+        :returns:
+            A dictionary with the APIKey object information
         
         """
         url = f"{self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/resetApiKey"
@@ -51,7 +65,7 @@ class APIKey(object):
     #----------------------------------------------------------------------
     def update(self, http_referers=None, privileges=None):
         """
-        Updates the API Key's properties
+        The ``update`` method updates the current APIKey object's properties
         
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -98,7 +112,8 @@ class APIKey(object):
                           configured.
         ================  ===============================================================================
         
-        :returns: dict
+        :returns:
+            A dictionary
         
         """
         url = f"{ self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/update"
@@ -114,7 +129,7 @@ class APIKey(object):
 ###########################################################################
 class APIKeyManager(object):
     """
-    Creates, manages and updates API Keys for ArcGIS Online
+    The ``APIKeyManager`` creates, manages and updates :class:`~arcgis.gis._impl.APIKey` objects for ArcGIS Online.
     """
     _gis = None
     _url = None
@@ -132,7 +147,10 @@ class APIKeyManager(object):
     #----------------------------------------------------------------------
     def get(self, api_key):
         """
-        Returns a Single API Key based on the Key Value
+        The ``get`` method retrieves an :class:`~arcgis.gis._impl.APIKey` object based on the Key Value.
+
+        :return:
+            An :class:`~arcgis.gis._impl.APIKey` object
         """
         for key in self.keys:
             if key.properties.apikey.lower() == api_key.lower():
@@ -147,7 +165,7 @@ class APIKeyManager(object):
                redirect_uris=None, 
                privileges=None):
         """
-        Generates a new API Key for the Organization.
+        The ``create`` method generates a new :class:`~arcgis.gis._impl.APIKey` objects for the Organization.
         
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -223,7 +241,8 @@ class APIKeyManager(object):
                           configured.
         ================  ===============================================================================
         
-        :returns: `APIKey`
+        :returns:
+            An :class:`~arcgis.gis._impl.APIKey` object
         """
         api_item = self._gis.content.add(
             {
@@ -246,7 +265,7 @@ class APIKeyManager(object):
     #----------------------------------------------------------------------
     def validate(self, api_key, privileges=None):
         """
-        Checks if an API has a specific privilege.
+        The ``validate`` method checks if an :class:`~arcgis.gis._impl.APIKey` object has a specific privilege.
         
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -257,7 +276,8 @@ class APIKeyManager(object):
                           a list of string values. 
         ================  ===============================================================================
         
-        :returns: bool
+        :returns:
+            A boolean indicating success (True), or failure (False)
         
         """
         if isinstance(privileges, (list, tuple)):
@@ -277,9 +297,12 @@ class APIKeyManager(object):
     @property
     def keys(self):
         """
-        Returns a tuple of API Keys Registered with the Organization
+        The ``keys`` method retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
+        Organization.
         
-        :returns: tuple
+        :returns:
+            A `tuple <https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences>`_ of
+            :class:`~arcgis.gis._impl.APIKey` objects
         
         """
         url = f"{self._base_url}portals/self/apiKeys"
