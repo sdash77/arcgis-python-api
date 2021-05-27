@@ -3,16 +3,18 @@ The root of all OAuth2 resources and operations.
 """
 import os
 import json
+
 ########################################################################
 class OAuth(object):
     """
     The root of all OAuth2 resources and operations.
     """
+
     _gis = None
     _con = None
     _portal = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -20,18 +22,21 @@ class OAuth(object):
         if self._gis is not None:
             self._con = gis._con
         self._portal = gis._portal
-    #----------------------------------------------------------------------
-    def authorize(self,
-                  client_id,
-                  response_type,
-                  redirect_uris,
-                  client_secret=None,
-                  state=None,
-                  expiration=None,
-                  display=None,
-                  locale=None,
-                  persist=True,
-                  ssl=True):
+
+    # ----------------------------------------------------------------------
+    def authorize(
+        self,
+        client_id,
+        response_type,
+        redirect_uris,
+        client_secret=None,
+        state=None,
+        expiration=None,
+        display=None,
+        locale=None,
+        persist=True,
+        ssl=True,
+    ):
         """
         The Authentication topic describes the overall OAuth2 authentication
         flow. This topic describes the user authorization step of that
@@ -118,28 +123,28 @@ class OAuth(object):
         """
         url = "%s/authorize" % self._url
         params = {
-            "f" : "json",
-            "redirect_uri" : redirect_uris,
-            "response_type" : response_type,
-            "client_id" : client_id
+            "f": "json",
+            "redirect_uri": redirect_uris,
+            "response_type": response_type,
+            "client_id": client_id,
         }
         if ssl:
-            params['ssl'] = ssl
+            params["ssl"] = ssl
         if persist:
-            params['persist'] = persist
+            params["persist"] = persist
         if locale:
-            params['locale'] = locale
+            params["locale"] = locale
         if display:
-            params['display'] = display
+            params["display"] = display
         if expiration:
-            params['expiration'] = expiration
+            params["expiration"] = expiration
         if state:
-            params['state'] = state
+            params["state"] = state
         if client_secret:
-            params['client_secret'] = client_secret
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+            params["client_secret"] = client_secret
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def apps(self, client_id):
         """
         An app registered with the portal. An app item can be registered by
@@ -154,9 +159,10 @@ class OAuth(object):
           as APPID.
         """
         url = "%s/apps/%s" % (self._url, client_id)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def register_device(self, client_id, expiration=None):
         """
         Registers a device, like mobile phone with a client id to access a
@@ -179,36 +185,28 @@ class OAuth(object):
           tokens for their org that supercedes the expiration parameter.
         """
         url = "%s/registerDevice" % self._url
-        params = {
-            "f" : "json",
-            "client_id" : client_id
-        }
+        params = {"f": "json", "client_id": client_id}
         if expiration:
-            params['expiration'] = expiration
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
-    def token(self,
-              client_id,
-              grant_type,
-              redirect_uri,
-              code=None,
-              refresh_token=None,
-              client_secret=None):
+            params["expiration"] = expiration
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def token(
+        self,
+        client_id,
+        grant_type,
+        redirect_uri,
+        code=None,
+        refresh_token=None,
+        client_secret=None,
+    ):
         """
         TODO: Update Docs
         """
-        params = {
-            "f" : "json",
-            "client_id" : client_id,
-            "grant_type" : grant_type
-        }
+        params = {"f": "json", "client_id": client_id, "grant_type": grant_type}
 
-    #----------------------------------------------------------------------
-    def register_app(self,
-                     item,
-                     redirect_uris,
-                     app_type="browser"):
+    # ----------------------------------------------------------------------
+    def register_app(self, item, redirect_uris, app_type="browser"):
         """
         The register app operation (POST only) registers an app item with
         the portal. App registration results in an APPID and APPSECRET
@@ -238,12 +236,9 @@ class OAuth(object):
         url = "%s/registerApp" % self._url
         itemid = item.id
         params = {
-            "f" : "json",
-            "itemid" : itemid,
-            "appType" : app_type,
-            "redirect_uris" : redirect_uris
+            "f": "json",
+            "itemid": itemid,
+            "appType": app_type,
+            "redirect_uris": redirect_uris,
         }
-        return self._con.post(path=url,
-                              postdata=params)
-
-
+        return self._con.post(path=url, postdata=params)
