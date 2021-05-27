@@ -49,19 +49,20 @@ class Header(object):
                                 string label and string url.
     =========================   ===========================================
     """
+
     def __init__(
-            self,
-            title=None,
-            subtitle=None,
-            margin=True,
-            size="medium",
-            logo_image_url=None,
-            logo_url=None,
-            background_image_url=None,
-            background_image_size="fit-width",
-            background_image_position="left",
-            signout_link=False,
-            menu_links=None
+        self,
+        title=None,
+        subtitle=None,
+        margin=True,
+        size="medium",
+        logo_image_url=None,
+        logo_url=None,
+        background_image_url=None,
+        background_image_size="fit-width",
+        background_image_position="left",
+        signout_link=False,
+        menu_links=None,
     ):
         # Header starts here.
 
@@ -81,7 +82,10 @@ class Header(object):
 
         self._background_image = background_image_url
         self._background_image_placement = ("fit-height", "left")
-        self.background_image_placement = (background_image_size, background_image_position)
+        self.background_image_placement = (
+            background_image_size,
+            background_image_position,
+        )
 
         self._sign_out_link = signout_link
         self._menu_links = []
@@ -95,6 +99,7 @@ class Header(object):
 
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
+
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=300 height=300>"""
 
@@ -223,7 +228,7 @@ class Header(object):
             "fit-height": ["left", "center", "right"],
             "fit-width": ["top", "middle", "bottom"],
             "fit-both": [],
-            "repeat": []
+            "repeat": [],
         }
 
         temp_position = None
@@ -320,34 +325,38 @@ class Header(object):
 
     def _convert_to_json(self):
         header_panel = {
-            'type': 'headerPanel',
-            'size': self.size,
-            'showSignOutMenu': self._sign_out_link,
-            'menuLinks': self._menu_links,
-            'showMargin': self.margin,
-            'selectors': [selector._convert_to_json() for selector in self._selectors]
+            "type": "headerPanel",
+            "size": self.size,
+            "showSignOutMenu": self._sign_out_link,
+            "menuLinks": self._menu_links,
+            "showMargin": self.margin,
+            "selectors": [selector._convert_to_json() for selector in self._selectors],
         }
 
         if self.title:
-            header_panel['title'] = self.title
+            header_panel["title"] = self.title
 
         if self.subtitle:
-            header_panel['subtitle'] = self.subtitle
+            header_panel["subtitle"] = self.subtitle
 
         if self._background_image:
-            header_panel['backgroundImageUrl'] = self._background_image
-            header_panel['backgroundImageSizing'] = self._background_image_placement[0]
-            header_panel['normalBackgroundImagePlacement'] = self._background_image_placement[1]
-            header_panel['horizontalBackgroundImagePlacement'] = self._background_image_placement[1]
+            header_panel["backgroundImageUrl"] = self._background_image
+            header_panel["backgroundImageSizing"] = self._background_image_placement[0]
+            header_panel[
+                "normalBackgroundImagePlacement"
+            ] = self._background_image_placement[1]
+            header_panel[
+                "horizontalBackgroundImagePlacement"
+            ] = self._background_image_placement[1]
 
         if self._logo_image_url:
-            header_panel['logoImageURL'] = self._logo_image_url
-            header_panel['logoURL'] = self._logo_url
+            header_panel["logoImageURL"] = self._logo_image_url
+            header_panel["logoURL"] = self._logo_url
 
         if self._text_color:
-            header_panel['titleTextColor'] = self._text_color
+            header_panel["titleTextColor"] = self._text_color
 
         if self._background_color:
-            header_panel['backgroundColor'] = self._background_color
+            header_panel["backgroundColor"] = self._background_color
 
         return header_panel

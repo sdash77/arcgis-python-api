@@ -34,7 +34,18 @@ class EmbeddedContent(_BaseWidget):
                                 a mapwidget.
     =========================   ===========================================
     """
-    def __init__(self, url, name='EmbeddedContent', title="", description="", content_type="document", refresh_interval=0, item=None, layer=0):
+
+    def __init__(
+        self,
+        url,
+        name="EmbeddedContent",
+        title="",
+        description="",
+        content_type="document",
+        refresh_interval=0,
+        item=None,
+        layer=0,
+    ):
         super().__init__(name, title, description)
 
         data_type = "features"
@@ -59,10 +70,11 @@ class EmbeddedContent(_BaseWidget):
         self._refresh_interval = refresh_interval
 
         self._no_data = NoDataProperties._nodata_init()
-    
+
     @classmethod
     def _from_json(cls, widget_json):
         from arcgis.apps.dashboard import EmbeddedContent
+
         gis = arcgis.env.active_gis
         itemid = widget_json["datasets"]["datasource"]["itemid"]
         name = widget_json["name"]
@@ -150,7 +162,7 @@ class EmbeddedContent(_BaseWidget):
                 "autoplay": False,
                 "loop": False,
                 "muted": False,
-                "controlsList": "nodownload"
+                "controlsList": "nodownload",
             },
             "datasets": [],
             "id": self._id,
@@ -160,27 +172,27 @@ class EmbeddedContent(_BaseWidget):
             "showLastUpdate": True,
             "noDataVerticalAlignment": self._no_data._alignment,
             "showCaptionWhenNoData": self._no_data._show_title,
-            "showDescriptionWhenNoData": self._no_data._show_description
+            "showDescriptionWhenNoData": self._no_data._show_description,
         }
 
         if self._no_data._text:
-            json_data['noDataText'] = self._no_data._text
+            json_data["noDataText"] = self._no_data._text
 
         if self._background_color:
-            json_data['backgroundColor'] = self._background_color
+            json_data["backgroundColor"] = self._background_color
 
         if self._text_color:
-            json_data['textColor'] = self._text_color
+            json_data["textColor"] = self._text_color
 
         if self.item:
-            json_data['datasets'] = [
+            json_data["datasets"] = [
                 {
                     "type": "serviceDataset",
                     "dataSource": {
                         "type": "featureServiceDataSource",
                         "itemId": self.item.itemid,
                         "layerId": self.layer,
-                        "table": True
+                        "table": True,
                     },
                     "outFields": ["*"],
                     "groupByFields": [],
@@ -190,7 +202,7 @@ class EmbeddedContent(_BaseWidget):
                     "querySpatialRelationship": "esriSpatialRelIntersects",
                     "returnGeometry": False,
                     "clientSideStatistics": False,
-                    "name": "main"
+                    "name": "main",
                 }
             ]
 

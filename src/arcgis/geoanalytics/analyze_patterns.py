@@ -16,35 +16,39 @@ from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox
-from ._util import (_id_generator,
-                    _feature_input,
-                    _set_context,
-                    _create_output_service,
-                    GAJob,
-                    _prevent_bds_item)
+from ._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 
-_log=_logging.getLogger(__name__)
+_log = _logging.getLogger(__name__)
 
 _use_async = True
-#--------------------------------------------------------------------------
-def forest(input_layer,
-           var_prediction,
-           var_explanatory,
-           trees,
-           max_tree_depth=None,
-           random_vars=None,
-           sample_size=100,
-           min_leaf_size=None,
-           prediction_type="train",
-           features_to_predict=None,
-           validation=10,
-           importance_tbl=False,
-           exp_var_matching=None,
-           output_name=None,
-           gis=None,
-           context=None,
-           future=False,
-           return_tuple=False):
+# --------------------------------------------------------------------------
+def forest(
+    input_layer,
+    var_prediction,
+    var_explanatory,
+    trees,
+    max_tree_depth=None,
+    random_vars=None,
+    sample_size=100,
+    min_leaf_size=None,
+    prediction_type="train",
+    features_to_predict=None,
+    validation=10,
+    importance_tbl=False,
+    exp_var_matching=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    return_tuple=False,
+):
     """
     .. image:: _static/images/forest/forest.png
 
@@ -251,79 +255,87 @@ def forest(input_layer,
                                       output_name='train and predict number of 911 calls')
 
     """
-    allowed_prediction_types = {
-        'train' : "Train",
-        'trainandpredict' : 'TrainAndPredict'
-    }
+    allowed_prediction_types = {"train": "Train", "trainandpredict": "TrainAndPredict"}
 
     input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
         raise ValueError("Invalid Prediction type.")
     else:
         prediction_type = allowed_prediction_types[prediction_type.lower()]
-    gis=_arcgis.env.active_gis if gis is None else gis
-
-
+    gis = _arcgis.env.active_gis if gis is None else gis
 
     if gis.version < [7]:
         return None
-    url=gis.properties.helperServices.geoanalytics.url
+    url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
     kwargs = {
-        "in_features" : input_layer,
-        "variable_predict" : var_prediction,
-        "explanatory_variables" : var_explanatory,
-        "number_of_trees" : trees,
-        "maximum_tree_depth" : max_tree_depth,
-        "random_variables" : random_vars,
-        "sample_size" : sample_size,
-        "minimum_leaf_size" : min_leaf_size,
-        "prediction_type" : prediction_type,
-        "features_to_predict" : features_to_predict or "",
-        "percentage_for_validation" : validation,
-        "create_variable_importance_table" : importance_tbl,
-        "explanatory_variable_matching" : exp_var_matching,
-        "output_trained_name" : output_name,
-        "gis" : gis,
-        "context" : context,
-        "future" : future,
-        "return_tuple" : return_tuple
+        "in_features": input_layer,
+        "variable_predict": var_prediction,
+        "explanatory_variables": var_explanatory,
+        "number_of_trees": trees,
+        "maximum_tree_depth": max_tree_depth,
+        "random_variables": random_vars,
+        "sample_size": sample_size,
+        "minimum_leaf_size": min_leaf_size,
+        "prediction_type": prediction_type,
+        "features_to_predict": features_to_predict or "",
+        "percentage_for_validation": validation,
+        "create_variable_importance_table": importance_tbl,
+        "explanatory_variable_matching": exp_var_matching,
+        "output_trained_name": output_name,
+        "gis": gis,
+        "context": context,
+        "future": future,
+        "return_tuple": return_tuple,
     }
-    params={}
+    params = {}
     for key, value in kwargs.items():
         if value is not None:
-            params[key]=value
+            params[key] = value
 
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
     if output_name is None:
-        output_service_name='Forest Based Regression_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = "Forest Based Regression_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
 
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression',
-                                          output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Forest Based Classification And Regression",
+        output_datastore=output_datastore,
+    )
     if output_service:
-        params['output_trained_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_trained_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_trained_name'] = output_service_name
+        params["output_trained_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
-    if features_to_predict is None and prediction_type == 'TrainAndPredict':
+    if features_to_predict is None and prediction_type == "TrainAndPredict":
         params["features_to_predict"] = _prevent_bds_item(input_layer)
 
-    params = inspect_function_inputs(tbx.forest_based_classification_and_regression, **params)
+    params = inspect_function_inputs(
+        tbx.forest_based_classification_and_regression, **params
+    )
 
     try:
         gpjob = tbx.forest_based_classification_and_regression(**params)
@@ -339,21 +351,25 @@ def forest(input_layer,
         output_service.delete()
         raise
     return
-#--------------------------------------------------------------------------
-def gwr(input_layer,
-        explanatory_variables,
-        dependent_variable,
-        model_type='Continuous',
-        neighborhood_selection_method='UserDefined',
-        neighborhood_type='NumberOfNeighbors',
-        distance_band=None,
-        distance_band_unit=None,
-        number_of_neighbors=None,
-        local_weighting_scheme='BiSquare',
-        output_name=None,
-        context=None,
-        gis=None,
-        future=False):
+
+
+# --------------------------------------------------------------------------
+def gwr(
+    input_layer,
+    explanatory_variables,
+    dependent_variable,
+    model_type="Continuous",
+    neighborhood_selection_method="UserDefined",
+    neighborhood_type="NumberOfNeighbors",
+    distance_band=None,
+    distance_band_unit=None,
+    number_of_neighbors=None,
+    local_weighting_scheme="BiSquare",
+    output_name=None,
+    context=None,
+    gis=None,
+    future=False,
+):
     """
     This tool performs GeographicallyWeightedRegression (GWR), which is a
     local form of linear regression used to model spatially varying
@@ -434,58 +450,57 @@ def gwr(input_layer,
     """
     input_layer = _prevent_bds_item(input_layer)
 
-    if gis is None and \
-       _env.active_gis is None:
-        raise ValueError("A `GIS is required`")
-    elif gis is None and \
-         _env.active_gis:
+    if gis is None and _env.active_gis is None:
+        raise ValueError("A GIS is required")
+    elif gis is None and _env.active_gis:
         gis = _env.active_gis
-    if gis.version < [8,1]:
+    if gis.version < [8, 1]:
         return None
-
 
     url = gis.properties.helperServices.geoanalytics.url
 
     if output_name is None:
-        output_trained_name = f'GWR_{_id_generator()}'.replace(' ', '_')
+        output_trained_name = f"GWR_{_id_generator()}".replace(" ", "_")
     else:
-        output_trained_name = output_name.replace(' ', '_')
+        output_trained_name = output_name.replace(" ", "_")
 
     kwargs = {
-        "input_layer" : input_layer,
-        "explanatory_variables" : explanatory_variables,
-        "dependent_variable" : dependent_variable,
-        "model_type" : model_type,
-        "neighborhood_selection_method" : neighborhood_selection_method,
-        "neighborhood_type" : neighborhood_type,
-        "distance_band" : distance_band,
-        "distance_band_unit" : distance_band_unit,
-        "number_of_neighbors" : number_of_neighbors,
-        "local_weighting_scheme" : local_weighting_scheme,
-        "output_trained_name" : output_trained_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "input_layer": input_layer,
+        "explanatory_variables": explanatory_variables,
+        "dependent_variable": dependent_variable,
+        "model_type": model_type,
+        "neighborhood_selection_method": neighborhood_selection_method,
+        "neighborhood_type": neighborhood_type,
+        "distance_band": distance_band,
+        "distance_band_unit": distance_band_unit,
+        "number_of_neighbors": number_of_neighbors,
+        "local_weighting_scheme": local_weighting_scheme,
+        "output_trained_name": output_trained_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
 
     tbx = import_toolbox(url, gis=gis)
 
     allowed_keys = list(tbx.geographically_weighted_regression.__annotations__.keys())
     params = {}
-    for k,v in kwargs.items():
+    for k, v in kwargs.items():
         if k in allowed_keys:
-            if k == 'explanatory_variables' and \
-               isinstance(explanatory_variables, (list, tuple)):
+            if k == "explanatory_variables" and isinstance(
+                explanatory_variables, (list, tuple)
+            ):
                 params[k] = ",".join(explanatory_variables)
-            elif k == 'dependent_variable' and \
-                 isinstance(dependent_variable, (list, tuple)):
+            elif k == "dependent_variable" and isinstance(
+                dependent_variable, (list, tuple)
+            ):
                 params[k] = ",".join(dependent_variable)
             else:
                 params[k] = v
     ## Validate Input Parameters
     ##
-    valid_values = dict(tbx.choice_list['geographically_weighted_regression'])
-    for k,v in params.items():
+    valid_values = dict(tbx.choice_list["geographically_weighted_regression"])
+    for k, v in params.items():
         if k in valid_values.keys():
             lookup = dict(zip([v.lower() for v in valid_values[k]], valid_values[k]))
 
@@ -494,24 +509,28 @@ def gwr(input_layer,
             if v:
                 params[k] = lookup[v.lower()]
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis,
-                                            params['output_trained_name'],
-                                            params['output_trained_name'],
-                                            'Generalized Weighted Regression',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        params["output_trained_name"],
+        params["output_trained_name"],
+        "Generalized Weighted Regression",
+        output_datastore=output_datastore,
+    )
     if output_service:
-            params['output_trained_name'] = _json.dumps(
-                {
-                    "serviceProperties": {"name" : output_trained_name,
-                                          "serviceUrl" : output_service.url},
-                    "itemProperties": {"itemId" : output_service.itemid}
-                }
-            )
+        params["output_trained_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_trained_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_trained_name'] = output_trained_name
+        params["output_trained_name"] = output_trained_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_trained_name}'"
 
     if context is not None:
@@ -520,10 +539,10 @@ def gwr(input_layer,
         _set_context(params)
 
     if hasattr(input_layer, "_lyr_dict"):
-        params['input_layer'] = input_layer._lyr_dict
+        params["input_layer"] = input_layer._lyr_dict
 
     try:
-        params['future'] = True
+        params["future"] = True
         gpjob = tbx.geographically_weighted_regression(**params)
         gpjob = GAJob(gpjob=gpjob, return_service=output_service)
         if future:
@@ -534,20 +553,24 @@ def gwr(input_layer,
         output_service.delete()
         raise
     return None
-#--------------------------------------------------------------------------
-def glr(input_layer,
-        var_dependent,
-        var_explanatory,
-        regression_family="Continuous",
-        features_to_predict=None,
-        gen_coeff_table=False,
-        exp_var_matching=None,
-        dep_mapping=None,
-        output_name=None,
-        gis=None,
-        context=None,
-        future=False,
-        return_tuple=False):
+
+
+# --------------------------------------------------------------------------
+def glr(
+    input_layer,
+    var_dependent,
+    var_explanatory,
+    regression_family="Continuous",
+    features_to_predict=None,
+    gen_coeff_table=False,
+    exp_var_matching=None,
+    dep_mapping=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    return_tuple=False,
+):
     """
     .. image:: _static/images/glr/glr.png
 
@@ -679,71 +702,82 @@ def glr(input_layer,
 
     """
 
-
     _allowed_regression_family = {
-        "continuous" : "Continuous",
-        "binary" : "Binary",
-        "count" : "Count"
+        "continuous": "Continuous",
+        "binary": "Binary",
+        "count": "Count",
     }
     kwargs = {
-        "input_layer" : input_layer,
-        "dependent_variable" : var_dependent,
-        "explanatory_variables" : var_explanatory,
-        "regression_family" : regression_family,
-        "features_to_predict" : features_to_predict or "",
-        "generate_coefficient_table" : gen_coeff_table,
-        "explanatory_variable_matching" : exp_var_matching,
-        "dependent_mapping" : dep_mapping,
-        "output_name" : output_name,
-        "gis" : gis,
-        "context" : context,
-        "future" : future,
-        "return_tuple" : return_tuple
+        "input_layer": input_layer,
+        "dependent_variable": var_dependent,
+        "explanatory_variables": var_explanatory,
+        "regression_family": regression_family,
+        "features_to_predict": features_to_predict or "",
+        "generate_coefficient_table": gen_coeff_table,
+        "explanatory_variable_matching": exp_var_matching,
+        "dependent_mapping": dep_mapping,
+        "output_name": output_name,
+        "gis": gis,
+        "context": context,
+        "future": future,
+        "return_tuple": return_tuple,
     }
     input_layer = _prevent_bds_item(input_layer)
     if regression_family.lower() in _allowed_regression_family:
         regression_family = _allowed_regression_family[regression_family.lower()]
-        if 'regression_family' in kwargs:
-            kwargs['regression_family'] = _allowed_regression_family[regression_family.lower()]
+        if "regression_family" in kwargs:
+            kwargs["regression_family"] = _allowed_regression_family[
+                regression_family.lower()
+            ]
     else:
         raise ValueError("Invalid regression_family.")
 
-    gis=_arcgis.env.active_gis if gis is None else gis
+    gis = _arcgis.env.active_gis if gis is None else gis
 
     if gis.version < [7]:
         return None
-    url=gis.properties.helperServices.geoanalytics.url
+    url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
     # begin creating parameters to pass into the tools
-    params={}
+    params = {}
     for key, value in kwargs.items():
         if value is not None:
-            params[key]=value
+            params[key] = value
 
     if isinstance(var_explanatory, list):
-        var_explanatory = ', '.join(var_explanatory)
+        var_explanatory = ", ".join(var_explanatory)
         params["explanatory_variables"] = var_explanatory
 
-
     if output_name is None:
-        output_service_name='GLR_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = "GLR_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression',output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Generalized Linear Regression",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
-
 
     if context is not None:
         params["context"] = context
@@ -753,7 +787,7 @@ def glr(input_layer,
     ## strip out unsupported inputs
     ##
     params = inspect_function_inputs(tbx.generalized_linear_regression, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.generalized_linear_regression(**params)
         if future:
@@ -768,7 +802,8 @@ def glr(input_layer,
         raise
     return
 
-#--------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
 def find_point_clusters(
     input_layer,
     method,
@@ -781,7 +816,8 @@ def find_point_clusters(
     future=False,
     time_method=None,
     search_duration=None,
-    duration_unit=None):
+    duration_unit=None,
+):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
 
@@ -852,44 +888,54 @@ def find_point_clusters(
     """
     input_layer = _prevent_bds_item(input_layer)
 
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
-
     if output_name is None:
-        output_service_name='Find Point Clusters_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = "Find Point Clusters_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
 
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Find Point Clusters",
+        output_datastore=output_datastore,
+    )
 
-    params={
-        "input_layer" : input_layer,
-        "cluster_method" : method,
-        "min_features_cluster" : min_feature_clusters,
-        "search_distance" : search_distance,
-        "search_distance_unit" : distance_unit,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+    params = {
+        "input_layer": input_layer,
+        "cluster_method": method,
+        "min_features_cluster": min_feature_clusters,
+        "search_distance": search_distance,
+        "search_distance_unit": distance_unit,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
-
 
     if context is not None:
         params["context"] = context
@@ -913,7 +959,9 @@ def find_point_clusters(
         raise
 
     return
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def calculate_density(
     input_layer,
     fields=None,
@@ -932,7 +980,8 @@ def calculate_density(
     output_name=None,
     gis=None,
     context=None,
-    future=False):
+    future=False,
+):
     """
     .. image:: _static/images/calculate_density/calculate_density.png
 
@@ -1075,46 +1124,56 @@ def calculate_density(
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
-
     if output_name is None:
-        output_service_name = 'Calculate Density Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Calculate Density_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name,
-                                            'Calculate Density', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Calculate Density",
+        output_datastore=output_datastore,
+    )
 
     params = {
-        "input_layer" : input_layer,
-        "fields" : fields,
-        "weight" : weight,
-        "bin_type" : bin_type,
-        "bin_size" : bin_size,
-        "bin_size_unit" : bin_size_unit,
-        "time_step_interval" : time_step_interval,
-        "time_step_interval_unit" : time_step_interval_unit,
-        "time_step_repeat_interval" : time_step_repeat_interval,
-        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
-        "time_step_reference" : time_step_reference,
-        "radius" : radius,
-        "radius_unit" : radius_unit,
-        "area_units" : area_units,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "input_layer": input_layer,
+        "fields": fields,
+        "weight": weight,
+        "bin_type": bin_type,
+        "bin_size": bin_size,
+        "bin_size_unit": bin_size_unit,
+        "time_step_interval": time_step_interval,
+        "time_step_interval_unit": time_step_interval_unit,
+        "time_step_repeat_interval": time_step_repeat_interval,
+        "time_step_repeat_interval_unit": time_step_repeat_interval_unit,
+        "time_step_reference": time_step_reference,
+        "radius": radius,
+        "radius_unit": radius_unit,
+        "area_units": area_units,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -1124,8 +1183,8 @@ def calculate_density(
 
     params = inspect_function_inputs(tbx.calculate_density, **params)
     try:
-        params['future'] = True
-        gpjob = tbx.calculate_density( **params)
+        params["future"] = True
+        gpjob = tbx.calculate_density(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
@@ -1133,20 +1192,24 @@ def calculate_density(
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def find_hot_spots(point_layer,
-                   bin_size=5,
-                   bin_size_unit="Miles",
-                   neighborhood_distance=5,
-                   neighborhood_distance_unit="Miles",
-                   time_step_interval=None,
-                   time_step_interval_unit=None,
-                   time_step_alignment=None,
-                   time_step_reference=None,
-                   output_name=None,
-                   gis=None,
-                   context=None,
-                   future=False):
+
+
+# --------------------------------------------------------------------------
+def find_hot_spots(
+    point_layer,
+    bin_size=5,
+    bin_size_unit="Miles",
+    neighborhood_distance=5,
+    neighborhood_distance_unit="Miles",
+    time_step_interval=None,
+    time_step_interval_unit=None,
+    time_step_alignment=None,
+    time_step_reference=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
 
@@ -1248,45 +1311,56 @@ def find_hot_spots(point_layer,
 
     """
     point_layer = _prevent_bds_item(point_layer)
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
 
-
     if output_name is None:
-        output_service_name='Hotspot Analysis_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = "Hot Spot_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Find Hot Spots",
+        output_datastore=output_datastore,
+    )
 
-    params={
-        "point_layer" : point_layer,
-        "bin_size" : bin_size,
-        "bin_size_unit" : bin_size_unit,
-        "neighborhood_distance" : neighborhood_distance,
-        "neighborhood_distance_unit" : neighborhood_distance_unit,
-        "time_step_interval" : time_step_interval,
-        "time_step_interval_unit" : time_step_interval_unit,
-        "time_step_alignment" : time_step_alignment,
-        "time_step_reference" : time_step_reference,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+    params = {
+        "point_layer": point_layer,
+        "bin_size": bin_size,
+        "bin_size_unit": bin_size_unit,
+        "neighborhood_distance": neighborhood_distance,
+        "neighborhood_distance_unit": neighborhood_distance_unit,
+        "time_step_interval": time_step_interval,
+        "time_step_interval_unit": time_step_interval_unit,
+        "time_step_alignment": time_step_alignment,
+        "time_step_reference": time_step_reference,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
-    if params['context'] is None:
-        del params['context']
+    if params["context"] is None:
+        del params["context"]
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -1297,7 +1371,7 @@ def find_hot_spots(point_layer,
     params = inspect_function_inputs(tbx.find_hot_spots, **params)
 
     try:
-        params['future'] = True
+        params["future"] = True
         gpjob = tbx.find_hot_spots(**params)
         if future:
 
@@ -1307,19 +1381,23 @@ def find_hot_spots(point_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def create_space_time_cube(point_layer: _FeatureSet,
-                           bin_size: float,
-                           bin_size_unit: str,
-                           time_step_interval: int,
-                           time_step_interval_unit: str,
-                           time_step_alignment: str=None,
-                           time_step_reference: _datetime=None,
-                           summary_fields: str=None,
-                           output_name: str=None,
-                           context: str=None,
-                           gis=None,
-                           future: bool=False) -> DataFile:
+
+
+# --------------------------------------------------------------------------
+def create_space_time_cube(
+    point_layer: _FeatureSet,
+    bin_size: float,
+    bin_size_unit: str,
+    time_step_interval: int,
+    time_step_interval_unit: str,
+    time_step_alignment: str = None,
+    time_step_reference: _datetime = None,
+    summary_fields: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+    future: bool = False,
+) -> DataFile:
     """
     .. image:: _static/images/create_space_time_cube/create_space_time_cube.png
     ``create_space_time_cube`` works with a layer of point features that are time enabled.
@@ -1422,24 +1500,22 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                    output_name="spacecube")
     """
 
-
     point_layer = _prevent_bds_item(point_layer)
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url, gis=gis)
     params = {
-        'bin_size': bin_size,
-        'bin_size_unit': bin_size_unit,
-        'context': context,
-        'output_name': output_name,
-        'point_layer': point_layer,
-        'summary_fields': summary_fields,
-        'time_step_alignment': time_step_alignment,
-        'time_step_interval': time_step_interval,
-        'time_step_interval_unit': time_step_interval_unit,
-        'time_step_reference': time_step_reference
+        "bin_size": bin_size,
+        "bin_size_unit": bin_size_unit,
+        "context": context,
+        "output_name": output_name,
+        "point_layer": point_layer,
+        "summary_fields": summary_fields,
+        "time_step_alignment": time_step_alignment,
+        "time_step_interval": time_step_interval,
+        "time_step_interval_unit": time_step_interval_unit,
+        "time_step_reference": time_step_reference,
     }
-
 
     if context is not None:
         params["context"] = context
@@ -1447,11 +1523,9 @@ def create_space_time_cube(point_layer: _FeatureSet,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.create_space_time_cube, **params)
-    params['future'] = True
+    params["future"] = True
     gpjob = tbx.create_space_time_cube(**params)
     if future:
         output_service = None
         return GAJob(gpjob=gpjob, return_service=output_service)
     return gpjob.result()
-
-

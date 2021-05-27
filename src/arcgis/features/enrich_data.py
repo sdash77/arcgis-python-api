@@ -9,20 +9,23 @@ travel time or distance from a location.
 import arcgis as _arcgis
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
-#--------------------------------------------------------------------------
-def enrich_layer(input_layer,
-                 data_collections=[],
-                 analysis_variables=[],
-                 country=None,
-                 buffer_type=None,
-                 distance=None,
-                 units=None,
-                 output_name=None,
-                 context=None,
-                 gis=None,
-                 estimate=False,
-                 return_boundaries=False,
-                 future=False):
+
+# --------------------------------------------------------------------------
+def enrich_layer(
+    input_layer,
+    data_collections=[],
+    analysis_variables=[],
+    country=None,
+    buffer_type=None,
+    distance=None,
+    units=None,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    return_boundaries=False,
+    future=False,
+):
     """
     .. image:: _static/images/enrich_layer/enrich_layer.png
 
@@ -103,33 +106,39 @@ def enrich_layer(input_layer,
 
     """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "data_collections" : data_collections,
-        "analysis_variables" : analysis_variables,
-        "country" : country,
-        "buffer_type" : buffer_type,
-        "distance" : distance,
-        "units" : units,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "return_boundaries" : return_boundaries,
-        "future" : future
+        "input_layer": input_layer,
+        "data_collections": data_collections,
+        "analysis_variables": analysis_variables,
+        "country": country,
+        "buffer_type": buffer_type,
+        "distance": distance,
+        "units": units,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "return_boundaries": return_boundaries,
+        "future": future,
     }
 
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.enrich_layer,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.enrich_layer, **kwargs
+    )
 
     if isinstance(buffer_type, str):
-        if buffer_type != 'StraightLine':
-            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            buffer_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == buffer_type][0]
-            if 'buffer_type' in params:
-                params['buffer_type'] = buffer_type
+        if buffer_type != "StraightLine":
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            buffer_type = [
+                i
+                for i in route_service.retrieve_travel_modes()["supportedTravelModes"]
+                if i["name"] == buffer_type
+            ][0]
+            if "buffer_type" in params:
+                params["buffer_type"] = buffer_type
         else:
             pass
 
