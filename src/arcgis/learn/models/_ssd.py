@@ -29,7 +29,7 @@ try:
     from torchvision import models
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, postprocess
-    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou, AveragePrecision
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family, _change_tail
@@ -216,6 +216,7 @@ class SingleShotDetector(ArcGISModel):
                 backbone_split = cnn_config(self._orig_backbone)['split']
 
             self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+            self.learn.metrics = [AveragePrecision(self, data.c-1)]
             self._arcgis_init_callback() # make first conv weights learnable
 
             if focal_loss:
