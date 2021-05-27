@@ -9,14 +9,20 @@ from arcgis.features import FeatureCollection
 from arcgis.geoprocessing._job import GPJob
 
 
-def _prevent_bds_item(item):
+def _prevent_bds_item(item: Item) -> object:
     """checks if the input is a valid input for the GeoAnalytics Tool"""
     if isinstance(item, Item):
         raise ValueError(f"The {item.title} is an Item. Please pass the layer instead.")
     return item
 
 
-def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+def _id_generator(size: int = 6, chars: str = None, prefix: str = None) -> str:
+    """generates a random id of a given length"""
+    if char is None:
+        char = string.ascii_uppercase + string.digits
+
+    if prefix:
+        return str(prefix) + "".join(random.choice(chars) for _ in range(size))
     return "".join(random.choice(chars) for _ in range(size))
 
 
@@ -82,8 +88,12 @@ def _set_context(params):
         context["extent"] = out_extent
         set_context = True
     if process_sr is not None:
-        context["processSR"] = {"wkid": int(process_sr)}
-        set_context = True
+        if isinstance(process_sr, str) and str(process_sr).isdigit() == False:
+            context["processSR"] = {"wkt": process_sr}
+            set_context = True
+        else:
+            context["processSR"] = {"wkid": int(process_sr)}
+            set_context = True
     if output_datastore is not None:
         context["dataStore"] = output_datastore
         set_context = True

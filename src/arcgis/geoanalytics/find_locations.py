@@ -149,7 +149,7 @@ def geocode_locations(
     tbx = _import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Geocoding_Results_" + _id_generator()
+        output_service_name = _id_generator(prefix="Geocoding_Results_")
         output_service_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -426,7 +426,7 @@ def detect_incidents(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Detect_Incidents_" + _id_generator()
+        output_service_name = _id_generator(prefix="Detect_Incidents_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -652,7 +652,8 @@ def find_dwell_locations(
     input_parameters = list(tbx.find_dwell_locations.__annotations__.keys())
 
     if output_name is None:
-        output_name = f"FDL_{_id_generator()}".replace(" ", "_")
+        uid = _id_generator(prefix="FDL_")
+        output_name = uid.replace(" ", "_")
     else:
         output_name = output_name.replace(" ", "_")
     # del output_name
@@ -894,7 +895,7 @@ def find_similar_locations(
     }
 
     if output_name is None:
-        output_service_name = "Find Similar Locations_" + _id_generator()
+        output_service_name = _id_generator(prefix="Find Similar Locations_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
