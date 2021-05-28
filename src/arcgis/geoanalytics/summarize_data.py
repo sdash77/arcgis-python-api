@@ -1016,7 +1016,7 @@ def join_features(
     keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output 
                                                                                                                 feature class (known as a left outer join) or only those that have the specified 
                                                                                                                 relationships with the join features (inner join). This option is only available when the 
-                                                                                                                `join_operation` parameter is JoinOneToOne. False (inner join) is the default.
+                                                                                                                `join_operation` parameter is `JoinOneToOne`. False (inner join) is the default.
                                                                                                                 
                                                                                                                 This parameter is available at ArcGIS Enterprise **10.9+**.
     ==========================================================================================================  =============================================================================================
