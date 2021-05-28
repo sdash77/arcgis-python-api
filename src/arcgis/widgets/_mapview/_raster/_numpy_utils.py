@@ -4,5 +4,6 @@ def is_numpy_array(image):
     """
     return "numpy" in str(type(image)) and "array" in str(type(image))
 
+
 def get_hash_numpy_array(image):
     return hash(str(image.tostring()))
