@@ -744,11 +744,13 @@ def overlay_data(
                             |                                    | * Polygon— Polygon                                                                |
                             +------------------------------------+-----------------------------------------------------------------------------------+
     ----------------------  -------------------------------------------------------------------------------
-    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features.
-                            This option should only be modified if you're not interested in self-intersection between
-                            features for the input layer and self-intersection between features for the overlay layer.
-                            Setting this value to false will improve performance. This parameter is only used when
-                            ``include_overlaps`` is Intersect with 10.6 and 10.6.1.
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain 
+                            overlapping features. The default is `True`. Change this parameter to `False` 
+                            if you don't want self-intersecting features for the input layer or the 
+                            overlay layer. Setting this to `false` will also improve performance. For 10.6 
+                            and 10.6.1, this parameter is only used when `overlayType` is `Intersect`. 
+                            The parameter is not used for 10.7 or later and will always be `True`.
+
 
                             The default value is 'True'.
     ----------------------  -------------------------------------------------------------------------------
