@@ -37,7 +37,8 @@ class Feed(Task):
     def stop(self):
         """
        Stop the Feed for the given id
-       :return: response of feed stop
+       Return True if the Feed was successfully stopped.
+       :return: boolean
        """
         return self._util._stop("feed", self._id)
 
@@ -61,7 +62,8 @@ class Feed(Task):
     def delete(self):
         """
         Deletes an existing feed instance
-        :return: response for Feed item deleted
+        :return: A boolean containing True (for success) or
+         False (for failure) a dictionary with details is returned.
         """
         return self._util._delete("feed", self._id)
 
