@@ -40,7 +40,8 @@ class RealTimeAnalytics(Task):
     def stop(self):
         """
        Stop the Real-Time Analytics for the given id
-       :return: response of realtime_analytics stop
+       Return True if the the Real-Time Analytics was successfully stopped.
+       :return: boolean
        """
         return self._util._stop("analytics/realtime", self._id)
 
@@ -64,7 +65,8 @@ class RealTimeAnalytics(Task):
     def delete(self):
         """
         Deletes an existing Real-Time Analytics task instance
-        :return: response for Real-Time Analytics item deleted
+        :return: A boolean containing True (for success) or
+         False (for failure) a dictionary with details is returned.
         """
         return self._util._delete("analytics/realtime", self._id)
 

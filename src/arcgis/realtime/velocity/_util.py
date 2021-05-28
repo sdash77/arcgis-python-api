@@ -27,7 +27,7 @@ class _Util:
         gis._con.get(<url>, <params>)
 
         :param path: feeds | realtime | bigdata
-        :return: endpoint response
+        :return: Endpoint response
         """
         url = f'{self._base_url}{path}'
         response = self._gis._con.get(url, self._params)
@@ -42,7 +42,7 @@ class _Util:
         gis._con.put(<url>, <params>, <payload>)
 
         :param path: feeds | realtime | bigdata
-        :return: endpoint response
+        :return: Endpoint response
         """
         path = f'{type}/{id}/'
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
@@ -62,7 +62,7 @@ class _Util:
         gis._con.post(<url>, <params>, <payload>)
 
         :param path: feeds | realtime | bigdata
-        :return: endpoint response
+        :return: Endpoint response
         """
         path = f'{type}/{id}/'
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
@@ -88,7 +88,7 @@ class _Util:
         url = f'{self._base_url}{path}'
         response = self._gis._con.delete(url, self._params)
 
-        return self._parse_response(response)
+        return self._parse_response(response, return_boolean_for_success=True)
 
     # ----------------------------------------------------------------------
     def _get(self, type, id):
@@ -96,7 +96,7 @@ class _Util:
          Generic task operation to get item by id
         :param type: feed | realtime | bigdata
         :param id: unique id of a task
-        :return: endpoint response for start task
+        :return: Endpoint response for start task
         """
         path = f'{type}/{id}'
         return self._get_request(path)
@@ -107,7 +107,7 @@ class _Util:
          Generic start task operation
         :param type: feed | realtime | bigdata
         :param id: unique id of a task
-        :return: endpoint response for start task
+        :return: Endpoint response for start task
         """
         path = f'{type}/{id}/start'
         return self._get_request(path)
@@ -118,10 +118,15 @@ class _Util:
         Generic stop task operation
         :param type: feed | realtime | bigdata
         :param id: unique id of a task
-        :return: endpoint response for stop task
+        Return True if the task was successfully stopped.
+
+        :returns: boolean
+         a dictionary with error details.
         """
         path = f'{type}/{id}/stop'
-        return self._get_request(path)
+        response = self._get_request(path)
+
+        return response.get('status') == 'success'
 
     # ----------------------------------------------------------------------
     def _status(self, type, id):
@@ -149,13 +154,14 @@ class _Util:
         """
         :param type: feed | realtime | bigdata
         :param id: unique id of a task
-        :return:  endpoint response for delete task
+        :return: A bool containing True (for success) or
+         False (for failure) a dictionary with details is returned.
         """
         path = f'{type}/{id}'
         return self._delete_request(path)
 
     # ----------------------------------------------------------------------
-    def _parse_response(self, response):
+    def _parse_response(self, response, return_boolean_for_success = False):
         """
         :param response: Result object of an endpoint
         :return: Result or raise exception if status has an 'error' attribute
@@ -169,4 +175,7 @@ class _Util:
                 else:
                     return response
         else:
-            return response
+            if return_boolean_for_success == True:
+                return True
+            else:
+                return response

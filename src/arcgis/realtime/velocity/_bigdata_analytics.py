@@ -40,7 +40,8 @@ class BigDataAnalytics(Task):
     def stop(self):
         """
        Stop the Big Data Analytics for the given id
-       :return: response of bigdata_analytics stop
+       Return True if the Big Data Analytics was successfully stopped.
+       :return: boolean
        """
         return self._util._stop("analytics/bigdata", self._id)
 
@@ -64,7 +65,8 @@ class BigDataAnalytics(Task):
     def delete(self):
         """
         Deletes an existing Big Data Analytics instance
-        :return: response for Big Data Analytics item deleted
+        :return: A boolean containing True (for success) or
+         False (for failure) a dictionary with details is returned.
         """
         return self._util._delete("analytics/bigdata", self._id)
 
