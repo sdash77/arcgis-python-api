@@ -747,7 +747,7 @@ def overlay_data(
     include_overlaps        Optional boolean. Determines whether input features in the same dataset contain 
                             overlapping features. The default is `True`. Change this parameter to `False` 
                             if you don't want self-intersecting features for the input layer or the 
-                            overlay layer. Setting this to `false` will also improve performance. For 10.6 
+                            overlay layer. Setting this to `False` will also improve performance. For 10.6 
                             and 10.6.1, this parameter is only used when `overlayType` is `Intersect`. 
                             The parameter is not used for 10.7 or later and will always be `True`.
 
