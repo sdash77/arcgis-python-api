@@ -2249,7 +2249,8 @@ class FeatureLayer(Layer):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = [
+        status_allowed = [v.lower() for v in [
+            "Executing",
             "Pending",
             "InProgress",
             "Completed",
@@ -2262,12 +2263,12 @@ class FeatureLayer(Layer):
             "ProvisioningReplica",
             "UnRegisteringReplica",
             "CompletedWithErrors",
-        ]
+        ]]
         status = con.get(url, params)
-        while status["status"] in status_allowed and status["status"] != "Completed":
-            if status["status"] == "Completed":
+        while status["status"].lower() in status_allowed and status["status"].lower() != "completed":
+            if status["status"].lower() == "completed":
                 return status
-            elif status["status"] == "CompletedWithErrors":
+            elif status["status"].lower() == "completedwitherrors":
                 break
             elif "fail" in status["status"].lower():
                 break
