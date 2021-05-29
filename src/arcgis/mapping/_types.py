@@ -1171,9 +1171,13 @@ class WebMap(HasTraits, collections.OrderedDict):
     @_lazy_property
     def forms(self):
         """
-        The smart forms corresponding to each layer and table in the webmap
-        :return: an instance of :class:`arcgis.mapping.forms.FormCollection`
+        The smart forms corresponding to each layer and table in the web map.
+
+        :return: :class:`~arcgis.mapping.forms.FormCollection`
+
         .. code-block:: python
+
+            # Usage Example: Updating property of a form.
             wm = WebMap()
             wm.add_layer(table)
             forms = wm.forms
@@ -1824,77 +1828,99 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        file_format            Required String. Specifies the output file format. Valid types
-                                include ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
-                                 | ``SVG`` | ``SVGZ``.
+        file_format            | Required `string <https://docs.python.org/3/library/stdtypes.html#str>`_.
+                               Specifies the output file format. Valid types:
+                               ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
+                               | ``SVG`` | ``SVGZ``.
         ------------------     --------------------------------------------------------------------
-        extent                 Required dictionary. Specify the extent to be printed. Example:
-                                ``{'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                                    'xmin': -15199645.40582486,
-                                    'ymin': 3395607.5273594954,
-                                    'xmax': -11354557.134968376,
-                                    'ymax': 5352395.451459487}``
-                                The spatial reference of the extent object is optional; when it is
-                                not provided, it is assumed to be in the map's spatial reference.
-                                When the aspect ratio of the map extent is different than the size
-                                of the map on the output page or the ``output_dimensions``,
-                                you might notice more features on the output map.
-        ------------------     --------------------------------------------------------------------
-        dpi                    Optional integer. Specify the print resolution of the output file.
-                                dpi stands for 'dots per inch'. A higher number implies better
-                                resolution and a larger file size.
-        ------------------     --------------------------------------------------------------------
-        output_dimensions      Optional tuple of integers. Specify the dimensions of the output file.
-                                in pixels. If the ``layout_template`` is not ``MAP_ONLY``, the
-                                specific layout template chosen takes precedence over this pararmeter.
-        ------------------     --------------------------------------------------------------------
-        scale                  Optional float. Specify the map scale to be printed. The map scale
-                                at which you want your map to be printed. This parameteer is optional
-                                but recommended for getting optimal results. The scale property is
-                                especially useful when map services in this web map have
-                                scale-dependent layers or reference scales set. Since the map that
-                                you are viewing on the web app may be smaller than the size of the
-                                output map (for example, 8.5 x 11 in. or A4 size), the scale of the
-                                output map will be different and you could see differences in
-                                features and/or symbols in the web application as compared with
-                                the output map.
+        extent                 | Required `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
 
-                                When scale is used, it takes precedence over the extent, but the
-                                output map is drawn at the requested scale centered on the center
-                                of the extent.
+                               Specify the extent to be printed.
+
+                               .. code-block:: python
+
+                                   # Example Usage:
+
+                                   >>> extent = {'spatialReference': {'latestWkid': 3857,
+                                                                      'wkid': 102100},
+                                                 'xmin': -15199645.40582486,
+                                                 'ymin': 3395607.5273594954,
+                                                 'xmax': -11354557.134968376,
+                                                 'ymax': 5352395.451459487}
+
+                               The spatial reference of the extent object is optional; when it is
+                               not provided, it is assumed to be in the map's spatial reference.
+                               When the aspect ratio of the map extent is different than the size
+                               of the map on the output page or the ``output_dimensions``,
+                               you might notice more features on the output map.
         ------------------     --------------------------------------------------------------------
-        rotation               Optional float. Specify the number of degrees by which the map frame
-                                will be rotated, measured counterclockwise from the north. To rotate
-                                 clockwise, use a negative value.
+        dpi                    | Optional `integer <https://docs.python.org/3/library/functions.html#int>`_.
+
+                               Specify the print resolution of the output file. ``dpi`` stands for
+                               *dots per inch*. A higher number implies better resolution and a
+                               larger file size.
         ------------------     --------------------------------------------------------------------
-        spatial_reference      Optional dictionary. Specify the spatial reference in which map should
-                                be printed. When not specified, the following is the order of
-                                precedence:
+        output_dimensions      | Optional `tuple <https://docs.python.org/3/library/stdtypes.html?highlight=tuple#tuple>`_ of `integers <https://docs.python.org/3/library/functions.html#int>`_.
+                               Specify the dimensions of the output file in pixels. If the
+                               ``layout_template`` is not ``MAP_ONLY``, the specific layout
+                               template chosen takes precedence over this paramter.
+        ------------------     --------------------------------------------------------------------
+        scale                  | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
+                               Specify the map scale to be printed. The map scale at which you
+                               want your map to be printed. This parameter is optional but
+                               recommended for optimal results. The ``scale`` property is
+                               especially useful when map services in the web map have
+                               scale-dependent layers or reference scales set. Since the map that
+                               you are viewing on the web app may be smaller than the size of the
+                               output map (for example, 8.5 x 11 in. or A4 size), the scale of the
+                               output map will be different and you could see differences in
+                               features and/or symbols in the web application as compared with
+                               the output map.
+
+                               When scale is used, it takes precedence over the extent, but the
+                               output map is drawn at the requested scale centered on the center
+                               of the extent.
+        ------------------     --------------------------------------------------------------------
+        rotation               | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
+                               Specify the number of degrees by which the map frame will be
+                               rotated, measured counterclockwise from the north. To rotate
+                               clockwise, use a negative value.
+        ------------------     --------------------------------------------------------------------
+        spatial_reference      | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
+                               Specify the spatial reference in which map should be printed. When
+                               not specified, the following is the order of precedence:
 
                                  - read from the ``extent`` parameter
                                  - read from the base map layer of your web map
-                                 - read from the ``layout_template`` chosen.
+                                 - read from the ``layout_template`` chosen
         ------------------     --------------------------------------------------------------------
-        layout_template        Optional string. The default value ``MAP_ONLY`` does not use any
-                                template. Some example values: ``A4 Landscape`` | ``Letter ANSI A Portrait``
-                                To get the list of available templates run
-                                ``arcgis.mapping.get_layout_templates()``.
+        layout_template        | Optional `string <https://docs.python.org/3/tutorial/introduction.html#strings>`_.
+                               The default value ``MAP_ONLY`` does not use any template. To get the
+                               list of available templates run :meth:`~arcgis.mapping.get_layout_templates()`.
         ------------------     --------------------------------------------------------------------
-        time_extent            Optional list. If there is a time-aware layer and you want it
-                                to be drawn at a specified time, specify this property. This order
-                                list can have one or two elements. Add two elements (``startTime``
-                                followed by ``endTime``) to represent a time extent, or provide
-                                only one time element to represent a time instant. Times are always
-                                in UTC.
+        time_extent            | Optional `list <https://docs.python.org/3/tutorial/introduction.html#lists>`_.
+                               If there is a time-aware layer and you want it
+                               to be drawn at a specified time, specify this property. This order
+                               list can have one or two elements. Add two elements (``startTime``
+                               followed by ``endTime``) to represent a time extent, or provide
+                               only one time element to represent a time instant.
+                               Times are always in UTC.
 
-                                Example: ``[1199145600000, 1230768000000]`` to represent Tuesday,
-                                1 January 2008 00:00:00 UTC to Thursday, 1 January 2009 00:00:00 UTC
+
+                               .. code-block:: python
+
+                                   # Example Usage to represent Tues. Jan 1, 2008 00:00:00 UTC:
+                                   # to Thurs. Jan 1, 2009 00:00:00 UTC.
+
+                                   >>> time_extent = [1199145600000, 1230768000000]
         ------------------     --------------------------------------------------------------------
-        layout_options         Optional dictionary. This defines settings for different available
-                                page layout elements and is only needed when an available
-                                ``layout_template`` is chosen. Page layout elements include title,
-                                copyright text, scale bar, author name, and custom text elements.
-                                For more details, see https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm#ESRI_SECTION1_58F5F403FCF048C2A5EBEF921BB97A10
+        layout_options         | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
+                               This defines settings for different available page layout elements
+                               and is only needed when an available ``layout_template`` is chosen.
+                               Page layout elements include ``title``, ``copyright text``,
+                               ``scale bar``, ``author name``, and ``custom text elements``.
+                               For more details, see
+                               `ExportWebMap specification. <https://developers.arcgis.com/rest/services-reference/enterprise/exportwebmap-specification.htm>`_
         ==================     ====================================================================
 
         :return: URL to the file which can be downloaded and printed.

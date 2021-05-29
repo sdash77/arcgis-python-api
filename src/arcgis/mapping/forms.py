@@ -16,15 +16,16 @@ class FormCollection:
         -- it controls the appearance and behavior of your data collection experience in ArcGIS Field Maps
         and Map Viewer Beta.  These forms can then be used in the ArcGIS Field Maps mobile app and other applications.
         A form is stored as "formInfo" in the layer JSON on the webmap.
-        This class will create a :class:`arcgis.mapping.forms.FormInfo` object for each layer or table in the webmap/item data and return it
+        This class will create a :class:`~arcgis.mapping.forms.FormInfo` object for each layer or table in the webmap/item data and return it
         as a list. You can then modify the :class:`~arcgis.mapping.forms.FormInfo` object to add and edit your form.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        parent                 Required :class:`arcgis.mapping.WebMap` or :class:`arcgis.gis.Item`.
+        parent                 Required :class:`~arcgis.mapping.WebMap` or :class:`~arcgis.gis.Item`.
                                This is the object which contains the layer, either an item of type
-                               `Feature Layer Collection` or a WebMap, where the forms are located.
+                               :class:`Feature Layer Collection <arcgis.features.FeatureLayerCollection>`
+                               or a :class:`Web Map <arcgis.mapping.WebMap>`, where the forms are located.
                                This is needed to save your form changes to the backend.
         ==================     ====================================================================
 
