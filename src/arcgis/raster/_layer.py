@@ -4569,7 +4569,7 @@ class ImageryLayer(Layer):
             else:
                 if numarray.dtype == 'uint8':
                     numarray[numarray.mask]=255
-                elif data.dtype == 'float32':
+                elif numarray.dtype == 'float32':
                     numarray[numarray.mask]=np.nan
                 if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
                     imgnew = plt.imshow(numarray)
