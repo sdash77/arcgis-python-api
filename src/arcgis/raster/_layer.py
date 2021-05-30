@@ -4480,6 +4480,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor((origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th)
             rowEnd = math.ceil((origin["y"] - dataSourceExtent["ymin"] - resolution["y"]) / resolution["y"]/ th)
             from matplotlib import pyplot as plt
+            from numpy import ma
             img = []
             numarray = None
             numpylist = []
@@ -4491,7 +4492,7 @@ class ImageryLayer(Layer):
                     if numarray is None:
                         numarray = num
                     else:
-                        numarray = np.concatenate((numarray, num), axis=1)
+                        numarray = np.ma.concatenate((numarray, num), axis=1)
                     if mask_array is None:
                         mask_array = valid_mask
                     else:
@@ -4507,7 +4508,7 @@ class ImageryLayer(Layer):
                     numarray = ele                    
                 else:
                     #imgnew = plt.imshow(ele)
-                    numarray = np.concatenate((numarray,ele), axis=0)
+                    numarray = np.ma.concatenate((numarray,ele), axis=0)
 
             for index,ele in enumerate(masklist):
                 if index == 0:
@@ -4517,7 +4518,6 @@ class ImageryLayer(Layer):
                     mask_array = np.concatenate((mask_array,ele), axis=0)
             num_bands = self.band_count
             try:
-                numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
                 
                 if numarray.dtype != 'uint8' or (numarray.dtype  == 'float' and(numarray.min() < 0 or 1 < numarray.max())):
                     band_arr_list = []
@@ -4540,15 +4540,43 @@ class ImageryLayer(Layer):
                     if num_bands == 1 and numarray.ndim == 2:
                         stretched_img = band_arr_list[0]
                     else:
-                        stretched_img = np.dstack(band_arr_list)
+                        stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
                 pass
-            
-            if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
-                imgnew = plt.imshow(numarray)
+
+            #numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
+            custom_cmap=None
+            if num_bands == 1:
+                colormap_list=[]
+                colormap_dict = self.colormap()
+                if colormap_dict is not None:
+                    if "colormap" in colormap_dict.keys():
+                        colormap_list = colormap_dict['colormap']
+
+                    if colormap_list is not None and colormap_list!=[]:
+                        import matplotlib.colors
+                        cmap_np = np.array(colormap_list)
+                        colors = cmap_np[:,1:]/255
+                        custom_cmap = matplotlib.colors.ListedColormap(colors)
+
+            if numarray.mask.ndim ==2:
+                mask = (numarray.mask == False)
             else:
-                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+                mask = (numarray.mask[:,:,1] == False)
+            numarray = numarray[np.ix_(mask.any(1), mask.any(0))]
+
+            if custom_cmap is not None:
+                imgnew = plt.imshow(numarray, cmap = custom_cmap)
+            else:
+                if numarray.dtype == 'uint8':
+                    numarray[numarray.mask]=255
+                elif numarray.dtype == 'float32':
+                    numarray[numarray.mask]=np.nan
+                if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
+                    imgnew = plt.imshow(numarray)
+                else:
+                    imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             plt.axis('off')
             imgnew.axes.get_xaxis().set_visible(False)
             imgnew.axes.get_yaxis().set_visible(False)
@@ -4579,6 +4607,11 @@ class ImageryLayer(Layer):
             result, data, valid_mask = lerc.decode(res)
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
+            data, valid_mask = np.broadcast_arrays(data, valid_mask)
+            data.setflags(write=True)
+            valid_mask = (valid_mask == False)
+            from numpy import ma
+            data = ma.masked_array(data, valid_mask)
             if data.shape[0]>3 and len(data.shape)==3:
                 data = data[0:3] #Extract first 3 bands
             if len(data) == 2:
