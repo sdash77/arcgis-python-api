@@ -11,6 +11,7 @@ from zipfile import ZipFile
 
 import arcgis
 from arcgis.features import FeatureLayer
+from arcgis.raster.analytics import copy_raster
 
 from .._utils.tabular_data import TabularDataObject , explain_prediction
 
@@ -630,7 +631,7 @@ class MLModel(object):
             explanatory_rasters=None,
             datefield=None,
             distance_features=None,
-            output_layer_name="Prediction Layer",
+            output_layer_name=None,
             gis=None,
             prediction_type='features',
             output_raster_path=None,
@@ -724,7 +725,7 @@ class MLModel(object):
             if not output_raster_path:
                 raise Exception("Please specify output_raster_folder_path to save the output.")
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index)
+            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index,output_layer_name,gis)
 
     def _predict_features(
             self,
@@ -827,7 +828,7 @@ class MLModel(object):
                 online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None):
+    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None,output_layer_name=None, gis=None):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -983,5 +984,12 @@ class MLModel(object):
 
         processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
         processed_raster.save(output_folder_path)
-
+        if output_layer_name:
+            copy_raster_op = copy_raster(input_raster=output_folder_path,
+                                         output_name=output_layer_name.replace(" ", ""),
+                                         raster_type_name="Raster Dataset",
+                                         gis=gis,
+                                         tiles_only=True)
+            print('The Published Item ID is : ',copy_raster_op.id)
+            return
         return True
