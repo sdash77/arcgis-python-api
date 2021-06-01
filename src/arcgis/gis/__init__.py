@@ -2697,14 +2697,8 @@ class UserManager(object):
         groups=None,
     ):
         """
-<<<<<<< HEAD
         The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
         or built-in users in an ArcGIS Online organization account.
-=======
-        This operation is used to pre-create built-in or enterprise accounts within the portal,
-        or built-in users in an ArcGIS Online organization account. Only an administrator
-        can call this method.
->>>>>>> origin/master
 
         .. note::
             Only an administrator can call this method.
@@ -4000,12 +3994,8 @@ class RoleManager(object):
 
 
 class Role(object):
-<<<<<<< HEAD
     """The ``Role`` class is used to represent a role in a GIS, either ArcGIS Online or ArcGIS Enterprise."""
-=======
-    """A custom role in the GIS."""
 
->>>>>>> origin/master
     def __init__(self, gis, role_id, role):
         """Create a custom role"""
         self._gis = gis
@@ -4691,13 +4681,6 @@ class ContentManager(object):
                 "reason": {"message": "{msg}".format(msg=e.args[0])},
             }
         return False
-<<<<<<< HEAD
-    #----------------------------------------------------------------------
-    def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None, item_id=None,
-            **kwargs):
-        """ The ``add`` method adds content to the GIS by creating an :class:`~arcgis.gis.Item`.
-=======
 
     # ----------------------------------------------------------------------
     def add(
@@ -4711,8 +4694,8 @@ class ContentManager(object):
         item_id=None,
         **kwargs,
     ):
-        """ Adds content to the GIS by creating an item.
->>>>>>> origin/master
+        """
+        The ``add`` method adds content to the GIS by creating an :class:`~arcgis.gis.Item`.
 
         .. note::
             Content can be a file (such as a service definition, shapefile,
@@ -5096,29 +5079,7 @@ class ContentManager(object):
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
         return gis._con.post(path=surl, postdata=params, files=files)
-<<<<<<< HEAD
-    #----------------------------------------------------------------------
-    def create_service(self, name,
-                       service_description="",
-                       has_static_data=False,
-                       max_record_count = 1000,
-                       supported_query_formats = "JSON",
-                       capabilities = None,
-                       description = "",
-                       copyright_text = "",
-                       wkid=102100,
-                       create_params=None,
-                       service_type="featureService",
-                       owner=None, folder=None,
-                       item_properties=None,
-                       is_view=False,
-                       tags=None,
-                       snippet=None,
-                       item_id=None):
-        """
-        The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
-        passed when calling ``create_service``.
-=======
+
 
     # ----------------------------------------------------------------------
     def create_service(
@@ -5142,9 +5103,9 @@ class ContentManager(object):
         snippet=None,
         item_id=None,
     ):
-        """ Creates a service in the Portal.
->>>>>>> origin/master
-
+        """
+        The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
+        passed when calling ``create_service``.
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -5505,16 +5466,7 @@ class ContentManager(object):
                 items["results"] = items["results"][:max_items]
             return items
 
-<<<<<<< HEAD
-    def search(self,
-               query, item_type=None,
-               sort_field='avgRating', sort_order='desc',
-               max_items=10, outside_org=False,
-               categories=None,
-               category_filters=None):
-        """
-        The ``search`` method searches for portal items.
-=======
+
     def search(
         self,
         query,
@@ -5526,8 +5478,8 @@ class ContentManager(object):
         categories=None,
         category_filters=None,
     ):
-        """ Searches for portal items.
->>>>>>> origin/master
+        """
+        The ``search`` method searches for portal items.
 
         .. note::
             A few things that will be helpful to know...
@@ -6317,20 +6269,8 @@ class ContentManager(object):
         postdata = {"f": "pjson", "name": service_name, "type": service_type}
 
         res = self._portal.con.post(path, postdata)
-<<<<<<< HEAD
         return res['available']
 
-    def clone_items(self, items, folder=None, 
-                    item_extent=None, use_org_basemap=False, 
-                    copy_data=True, copy_global_ids=False, 
-                    search_existing_items=True, 
-                    item_mapping=None, group_mapping=None, 
-                    owner=None, preserve_item_id=False):
-        """
-        The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
-        objects.
-=======
-        return res["available"]
 
     def clone_items(
         self,
@@ -6346,8 +6286,9 @@ class ContentManager(object):
         owner=None,
         preserve_item_id=False,
     ):
-        """ Clone content to the GIS by creating new items.
->>>>>>> origin/master
+        """
+        The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
+        objects.
 
         .. note::
             Cloning an item will create a copy of the item and for certain
@@ -6966,17 +6907,12 @@ class ResourceManager(object):
             self._user_id = user.username
 
     def export(self, save_path=None, file_name=None):
-<<<<<<< HEAD
         """
-            The ``export`` method export's the data's resources as a zip file
+        The ``export`` method export's the data's resources as a zip file
 
         :returns:
             A .zip file containing the data's resources
         """
-        url = 'content/users/'+ self._user_id +\
-            '/items/' + self._item.itemid + "/resources/export"
-=======
-        """Export's the data's resources as a zip file"""
         url = (
             "content/users/"
             + self._user_id
@@ -6984,7 +6920,7 @@ class ResourceManager(object):
             + self._item.itemid
             + "/resources/export"
         )
->>>>>>> origin/master
+
         if save_path is None:
             save_path = tempfile.gettempdir()
         if file_name is None:
@@ -7004,10 +6940,7 @@ class ResourceManager(object):
         )
         return resources
 
-<<<<<<< HEAD
-    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False, access=None):
-        """The ``add`` operation adds new file resources to an existing item. For example, an image that is
-=======
+
     def add(
         self,
         file=None,
@@ -7017,8 +6950,8 @@ class ResourceManager(object):
         archive=False,
         access=None,
     ):
-        """The add resources operation adds new file resources to an existing item. For example, an image that is
->>>>>>> origin/master
+        """
+        The ``add`` operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
         include the size of added resource files.
@@ -7502,20 +7435,13 @@ class Group(dict):
 
     @property
     def homepage(self):
-<<<<<<< HEAD
         """
         The ``homepage`` method retrieves the URL to the HTML page for the group.
 
         :return:
             A URL linking to the group HTML page.
         """
-        return "{}{}{}".format(self._gis.url,
-                               "/home/group.html?id=",
-                               self.groupid)
-=======
-        """Gets the URL to the HTML page for the group."""
         return "{}{}{}".format(self._gis.url, "/home/group.html?id=", self.groupid)
->>>>>>> origin/master
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
@@ -7643,17 +7569,11 @@ class Group(dict):
 
     @property
     def migration(self):
-<<<<<<< HEAD
         """
-            The ``migration`` method allows users and groups to migrate content of a `Group` to a new Organaization or
-            Portal.
+        The ``migration`` method allows users and groups to migrate content of a `Group` to a new Organaization or
+        Portal.
         """
-        if self._gis.version > [7,3] and \
-           self._gis._portal.is_arcgisonline == False:
-=======
-        """provides to to migrate content of a `Group` to a new Organaization or Portal"""
         if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline == False:
->>>>>>> origin/master
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
@@ -8581,17 +8501,11 @@ class User(dict):
     # ----------------------------------------------------------------------
     @property
     def tasks(self):
-<<<<<<< HEAD
         """
         The ``tasks`` property retrieves the users tasks, effectively serving as sesource manager for user's tasks.
         See :class:`~arcgis.gis.tasks.TaskManager` for more information on task managers.
         """
-        if str(self.role).lower() == 'org_admin' or \
-           self._gis.properties['user']:
-=======
-        """The resource manager for user's tasks. See :class:`~arcgis.gis.tasks.TaskManager`."""
         if str(self.role).lower() == "org_admin" or self._gis.properties["user"]:
->>>>>>> origin/master
             url = f"{self._gis._portal.resturl}community/users/{self.username}/tasks"
             from .tasks import TaskManager
 
@@ -8741,15 +8655,10 @@ class User(dict):
 
     @property
     def homepage(self):
-<<<<<<< HEAD
-        """The ``homepage`` property retrieves the URL to the HTML page for the user."""
-        return "{}{}{}".format(self._gis.url,
-                               "/home/user.html?user=",
-                               self._user_id)
-=======
-        """Gets the URL to the HTML page for the user."""
+        """
+        The ``homepage`` property retrieves the URL to the HTML page for the user.
+        """
         return "{}{}{}".format(self._gis.url, "/home/user.html?user=", self._user_id)
->>>>>>> origin/master
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
@@ -8832,16 +8741,10 @@ class User(dict):
 
     @property
     def groups(self):
-<<<<<<< HEAD
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
-        return [Group(self._gis, group['id']) for group in self['groups']]
-    #----------------------------------------------------------------------
-=======
-        """Gets a list of Group objects the current user belongs to."""
         return [Group(self._gis, group["id"]) for group in self["groups"]]
 
-    # ----------------------------------------------------------------------
->>>>>>> origin/master
+
     def update_license_type(self, user_type):
         """
 
@@ -8903,24 +8806,8 @@ class User(dict):
                 return res["success"]
             return res
         else:
-<<<<<<< HEAD
             raise Exception("The operation delete_thumbnail is not supported on this portal.")
-    #----------------------------------------------------------------------
-    def reset(self,
-              password=None,
-              new_password=None,
-              new_security_question=None,
-              new_security_answer=None,
-              reset_by_email=False):
-        """
-        The ``reset`` method resets a user's password, security question, and/or security answer.
-        If a new security question is specified, a new security answer should be provided.
-=======
-            raise Exception(
-                "The operation delete_thumbnail is not supported on this portal."
-            )
 
-    # ----------------------------------------------------------------------
     def reset(
         self,
         password=None,
@@ -8929,16 +8816,14 @@ class User(dict):
         new_security_answer=None,
         reset_by_email=False,
     ):
-        """ Resets a user's password, security question, and/or security answer.
+        """
+        The ``reset`` method resets a user's password, security question, and/or security answer.
+        If a new security question is specified, a new security answer should be provided.
 
         .. note::
             This function does not apply to those using enterprise accounts
             that come from an enterprise such as ActiveDirectory, LDAP, or SAML.
             It only has an effect on built-in users.
-
-            If a new security question is specified, a new security answer should
-            be provided.
->>>>>>> origin/master
 
         .. note::
             To reset the password by email, set `reset_by_email` to True and `password`
@@ -8985,12 +8870,7 @@ class User(dict):
             return resp.get("success")
         return False
 
-<<<<<<< HEAD
-    def update(self, access=None, preferred_view=None, description=None, tags=None,
-               thumbnail=None, fullname=None, email=None, culture=None, region=None,
-               first_name=None, last_name=None, security_question=None, security_answer=None):
-        """ The ``update`` method updates this user's properties based on the arguments passed when calling ``update``.
-=======
+
     def update(
         self,
         access=None,
@@ -9007,8 +8887,8 @@ class User(dict):
         security_question=None,
         security_answer=None,
     ):
-        """ Updates this user's properties.
->>>>>>> origin/master
+        """
+        The ``update`` method updates this user's properties based on the arguments passed when calling ``update``.
 
         .. note::
             Only pass in arguments for properties you want to update.
@@ -10052,16 +9932,7 @@ class Item(dict):
 
     @property
     def homepage(self):
-<<<<<<< HEAD
         """The ``homepage`` property gets the URL to the HTML page for the item."""
-        return "{}{}{}".format(self._gis.url,
-                               "/home/item.html?id=",
-                               self.itemid)
-
-    def copy_feature_layer_collection(self, service_name, layers=None, tables=None, folder=None,
-                                      description=None, snippet=None, owner=None):
-=======
-        """Gets the URL to the HTML page for the item."""
         return "{}{}{}".format(self._gis.url, "/home/item.html?id=", self.itemid)
 
     def copy_feature_layer_collection(
@@ -10074,7 +9945,6 @@ class Item(dict):
         snippet=None,
         owner=None,
     ):
->>>>>>> origin/master
         """
         The ``copy_feature_layer_collection`` method allows users to copy existing Feature Layer Collections and select the
         layers/tables that the user wants in the service. It is quite similar to the ``copy`` method, but only copies
