@@ -31,9 +31,11 @@ except Exception as e:
 module_skip = False
 parameter = []
 parameter_fl = []
+parameter_text = []
 authorization_data = {}
 check_ms = False
 current_path = ""
+success_flag = False
 if not HAS_DEPS:
     print("**Environment fails**")
     raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.""")
@@ -41,10 +43,9 @@ if not HAS_DEPS:
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import data,data_folder, setuposenviron, data_folder_ms
-    from arcgis.learn import prepare_data, prepare_tabulardata
+    from integration.arcgis_learn.properties import data,data_folder, setuposenviron, data_folder_ms, data_inference_only
+    from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
-
 
 accuracy_values = {"attributes":
                 {"Date": "",
@@ -61,7 +62,40 @@ accuracy_values = {"attributes":
                  "pointcnn":0,
                  "yolov3":0,
                  "fullyconnected":0,
-                 "machine_learning":0
+                 "machine_learning":0,
+                 "pix2pix":0,
+                 "cyclegan":0,
+                 "hededgedetector":0,
+                 "bdcnedgedetector":0,
+                 "imagecaptioner":0,
+                 "siammask":0,
+                 "changedetection":0,
+                 "mtre":0,
+                 "sequencetosequence":0,
+                 "timeseriesmodel":0,
+                 "zeroshotclassifier":0,
+                 "questionanswering":0,
+                 "textsummarizer":0,
+                 "texttranslator":0,
+                 "textgenerator":0,
+                 "fillmask":0
+                 }}
+
+success_stat = {"attributes":
+                {"Date": "",
+                "total": 0,
+                "pass": 0,
+                "fail": 0,
+                "od_total": 5,
+                "od": 0,
+                "pc_total": 10,
+                 "pc":0,
+                 "co_total":1,
+                 "co":0,
+                 "text_total":8,
+                 "text":0,
+                 "others_total":5,
+                 "others":0
                  }}
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
@@ -75,13 +109,24 @@ def setUpModule():
 
 def updateAccuracyResults():
     gis = GIS("https://deldev.maps.arcgis.com", authorization_data["for_update_accuracy_results"]["username"], authorization_data["for_update_accuracy_results"]["password"])
-    item = gis.content.get('ea43a502dac5457598458562d6172af2')
+    item = gis.content.get('f2d12f9c5d1c4b168c6e40f0056400e5')
     data = item.tables[0]
     global accuracy_values
     data.edit_features(adds=[accuracy_values])
 
 
+def updateModelStats():
+    gis = GIS("https://deldev.maps.arcgis.com", authorization_data["for_update_accuracy_results"]["username"], authorization_data["for_update_accuracy_results"]["password"])
+    item = gis.content.get('a8c6eb0abe534cd9ac69d9839e2f642d')
+    data = item.tables[0]
+    global success_stat
+    ind = list(data.query().sdf["ObjectId"])
+    data.edit_features(deletes=ind[:])
+    data.edit_features(adds=[success_stat])
+
 def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, current_path):
+    global success_flag
+    success_flag = False
     gis = GIS(url="https://geosaurus.maps.arcgis.com",username= authorization_data["for_common_test_using_fl"]["username"], password= authorization_data["for_common_test_using_fl"]["password"])
     calgary_no_southland_solar = gis.content.search(**query)[
         0]
@@ -144,7 +189,7 @@ def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parame
     if os.environ["run_inference"] == "1":
         model_object.predict(feature_layer, output_layer_name='prediction_layer_rf')
 
-
+    success_flag = True
 
 
 def convertdate(dates):
@@ -156,10 +201,27 @@ def convertdate(dates):
 
 
 def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, current_path, num_epochs):
-    data = prepare_data(**preparedata)
+    global success_flag
+    success_flag = False
+    if model_test == "sequencetosequence_test":
+        data = prepare_textdata(**preparedata)
+    elif model_test == "timeseriesmodel_test":
+        from arcgis.learn import prepare_tabulardata
+        import pandas as pd
+        from sklearn.model_selection import train_test_split
+        cali_rainfall_df1 = pd.read_csv(preparedata["path"])
+        cali_rainfall_df1_sorted = cali_rainfall_df1.sort_values(by='date')
+        test_size = 12
+        train, test = train_test_split(cali_rainfall_df1_sorted, test_size = test_size, shuffle=False)
+        data = prepare_tabulardata(train, variable_predict='prcp_mm_', index_field='date', seed=42)
+    else:
+        data = prepare_data(**preparedata)
     # data.show_batch()
     # Check model with all default backbone
-    model_object = model_type(data)
+    if model_test == "timeseriesmodel_test":
+        model_object = model_type(data, seq_len=12)
+    else:   
+        model_object = model_type(data)
 
 
     # model_object.show_results()
@@ -167,11 +229,15 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
 
     # Fit for 1 epochs without LR.
     model_object.fit(1)
-    # Fit for 1 epochs with LR.
+    # # Fit for 1 epochs with LR.
     model_object.fit(1, lr=0.001)
 
     # save model
-    model_object.save(f'{model_test}')
+    d_path = os.path.join(data_folder, data_path, "models", model_test)
+    if model_test == "timeseriesmodel_test":
+        pass
+    else:
+        model_save_path = model_object.save(f'{d_path}')
 
     # Check model with all supported backbones
     if os.environ['run_backbones'] == "1":
@@ -203,9 +269,36 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
             elif regression_parameter == "compute_precision_recall":
                 result = model_object.compute_precision_recall().loc["precision", :].max()
             elif regression_parameter == "psnr_metric":
-                result = model_object.compute_metrics()[-1]
+                result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "f1_score":
                 result = model_object.f1_score()
+            elif regression_parameter == "compute_metrics":
+                if model_test == "siammask_test":
+                    result = float(model_object.compute_metrics()['mean_IOU'])
+                elif model_test == "cyclegan_test":
+                    result = float(model_object.compute_metrics()['FID_A'])
+                else:
+                    result = float(model_object.compute_metrics()["SSIM"])
+            elif regression_parameter == "bleu_score":
+                result = float(model_object.bleu_score()["BLEU"])
+            elif regression_parameter == "get_model_metrics":
+                result = model_object.get_model_metrics()["seq2seq_acc"]
+            elif regression_parameter == "mIOU":
+                result = model_object.mIOU()["0"]
+            elif regression_parameter == "edge_detection":
+                result = model_object.compute_precision_recall()["Precision"]
+            elif regression_parameter == "precision_recall_score":
+                result = model_object.precision_recall_score()["Change"]["precision"]
+            elif regression_parameter == "r2_score":
+                sdf_forecasted = model_object.predict(train, prediction_type='dataframe', number_of_predictions=test_size)
+                sdf_forecasted = sdf_forecasted.tail(test_size)
+                sdf_forecasted = sdf_forecasted[['date','prcp_mm__results']]
+                sdf_forecasted['actual'] = test[test.columns[-1]].values
+                sdf_forecasted = sdf_forecasted.set_index(sdf_forecasted.columns[0]) 
+                from sklearn.metrics import r2_score
+                import sklearn.metrics as metrics
+                result = r2_score(sdf_forecasted['actual'],sdf_forecasted['prcp_mm__results'])
+                success_flag = True
             else:
                 result = 0.0
 
@@ -235,12 +328,12 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
                                  "tags": "deeplearning, Detect object using deep learning", 'overwrite': 'True'}, data=model_path,
                 folder="model_inference")
 
-            detect_objects_model = Model(model_package)
-            detect_objects_model.install()
+            detect_objecmodel_object = Model(model_package)
+            detect_objecmodel_object.install()
             input_raster = gis.content.get(inferencing_image_server["input_raster"])
 
             detect_objects(input_raster.url,
-                           model=detect_objects_model,
+                           model=detect_objecmodel_object,
                            model_arguments=inferencing_image_server["model_arguments"],
                            output_name='test_model_'+output_name,
                            folder="model_inference",
@@ -336,15 +429,59 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         else:
             pass
 
+    if model_test == "timeseriesmodel_test":
+        success_flag = True
+        return
 
     # Load from saved model.
-    model_object.load(f'{model_test}')
+    model_object.load(str(model_save_path)+ os.sep + f"{model_test}.emd")
 
     # From model with and without data bunch.
-    model_object = model_type.from_model(os.path.join(current_path,data_path, f'models/{model_test}/{model_test}.emd'))
-    model_object = model_type.from_model(os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.emd'),
+    model_object = model_type.from_model(str(model_save_path)+ os.sep + f"{model_test}.emd")
+    model_object = model_type.from_model(str(model_save_path)+ os.sep + f"{model_test}.emd",
                                          data)
+                       
+    success_flag = True
 
+def CommonTestTextModels(model_name, model, data, labels):
+    global accuracy_values
+    global success_flag
+    success_flag = False
+    result = 0
+    if model_name == "zeroshotclassifier":
+        model = model()
+        # single label classification
+        predictions = model.predict(data[0], labels[0])
+        # Multi-Label classification
+        predictions = model.predict(data, labels)
+        result = predictions[0]['scores'][0]
+        # Multi-Lingual Data
+        predictions = model.predict(data[-1], labels[-1])
+        
+    elif model_name == "questionanswering":
+        model = model()
+        predictions = model.get_answer(labels, context=data)
+        result = predictions[0]['score']
+    elif model_name == "textsummarizer":
+        model = model()
+        predictions = model.summarize(data, max_length=100)
+    elif model_name == "texttranslator":
+        model = model(source_language="en", target_language="fr")
+        predictions = model.translate([data[1]])
+    elif model_name == "textgenerator":
+        model = model()
+        predictions = model.generate_text(data, num_return_sequences=2, max_length=25)
+    elif model_name == "fillmask":
+        model = model(backbone="roberta-base")
+        predictions = model.predict_token(data, num_suggestions=2)
+        result = predictions[0][0]['score']
+    else:
+        result = 0
+    
+    accuracy_values["attributes"][model_name] = result
+
+    
+    success_flag = True
 
 def update_parameter():
     check_ms = False
@@ -366,6 +503,12 @@ def update_parameter_fl():
             parameter_fl.append([key, val["gis_content_search"], val["model"], val["prepare_tabular_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["datapath"],val["model_test"], data_folder])
     return parameter_fl
 
+def text_models():
+    for key, val in data_inference_only.items():
+        parameter_text.append([key, val["model_name"], val["model"], val["data"], val["labels"]])
+    return parameter_text
+
+
 class TestTraining(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -376,6 +519,32 @@ class TestTraining(unittest.TestCase):
         print("Test: " + self._testMethodName)
 
     def tearDown(self):
+        global success_flag
+        global success_stat
+        success_stat["attributes"]["total"] = success_stat["attributes"]["total"] + 1
+        test_name = self._testMethodName.split("_")[-1]
+
+        
+        if success_flag:
+            success_stat["attributes"]["pass"] = success_stat["attributes"]["pass"] + 1
+            if test_name == "ms":
+                pass
+            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn"]:
+                success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
+            elif test_name in ["unet", "deeplab", "pspnet", "superres", "pix2pix", "pointcnn", "hededgedetector", "bdcnedgedetector", "changedetection", "mtre"]:
+                success_stat["attributes"]["pc"] = success_stat["attributes"]["pc"] + 1
+            elif test_name in ["fc"]:
+                success_stat["attributes"]["co"] = success_stat["attributes"]["co"] + 1
+            elif test_name in ["ner", "sequencetosequence", "zeroshotclassifier", "questionanswering", "textsummarizer", "texttranslator", "textgenerator", "fillmask"]:
+                success_stat["attributes"]["text"] = success_stat["attributes"]["text"] + 1
+            elif test_name in ["fcn", "ml", "imagecaptioner", "siammask", "timeseriesmodel"]:
+                success_stat["attributes"]["others"] = success_stat["attributes"]["others"] + 1
+            print("Method is successful")
+            print(self._testMethodName)
+        else:
+            success_stat["attributes"]["fail"] = success_stat["attributes"]["fail"] + 1
+            print("Method is a failure")
+            print(self._testMethodName)
         torch.cuda.empty_cache()
         for key, val in data.items():
             os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
@@ -399,13 +568,21 @@ class TestTraining(unittest.TestCase):
     def test_fl(self, name,query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path):
         CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path)
 
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    @parameterized.expand(text_models, skip_on_empty=True)
+    def test_text_models(self,key, model_name, model, data, labels):
+        CommonTestTextModels(model_name, model, data, labels)
+    
     @classmethod
     def tearDownClass(cls):
         torch.cuda.empty_cache()
         for key, val in data.items():
-            os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
-            if "datapath_ms" in val.keys():
-                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
+            try:
+                os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+                if "datapath_ms" in val.keys():
+                    os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
+            except:
+                continue
         print("\n All Tests have completed.")
         print("==================================================================")
 
@@ -418,10 +595,14 @@ def tearDownModule():
     if os.environ['run_nightly'] == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
+        updateModelStats()
     for key, val in data.items():
-        os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
-        if "datapath_ms" in val.keys():
-            os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
+        try:
+            os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
+            if "datapath_ms" in val.keys():
+                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
+        except:
+            continue
 
     print("**End Common Arcgis Learn module Training**")
 

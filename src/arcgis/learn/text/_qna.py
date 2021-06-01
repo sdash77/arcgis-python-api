@@ -1,13 +1,11 @@
 import traceback
-import warnings
-warnings.filterwarnings("ignore", module='transformers')
 from .._data import _raise_fastai_import_error
+from ._inference_only_models import InferenceOnlyModel
 HAS_TRANSFORMER = True
 
 try:
     import torch
     from transformers import pipeline, logging
-    from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
     EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys()]
@@ -17,7 +15,7 @@ except Exception as e:
     EXPECTED_MODEL_TYPES = []
 
 
-class QuestionAnswering:
+class QuestionAnswering(InferenceOnlyModel):
     """
     Creates a `QuestionAnswering` Object.
     Based on the Hugging Face transformers library
@@ -31,31 +29,37 @@ class QuestionAnswering:
 
                             To learn more about the available models for
                             question-answering task, kindly visit:-
-                            https://huggingface.co/models?filter=question-answering
+                            https://huggingface.co/models?pipeline_tag=question-answering
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    pretrained_path         Option str. Path to a directory, where pretrained
+                            model files are saved. 
+                            If pretrained_path is provided, the model is
+                            loaded from that path on the local disk.
+    ---------------------   -------------------------------------------
+    working_dir             Option str. Path to a directory on local filesystem.
+                            If directory is not present, it will be created.
+                            This directory is used as the location to save the 
+                            model.
     =====================   ===========================================
 
     :returns: `QuestionAnswering` Object
     """
 
-    #: supported transformer backbones
+    #: supported transformer architectures
     supported_backbones = EXPECTED_MODEL_TYPES
 
-    def __init__(self, backbone=None):
+    def __init__(self, backbone=None, **kwargs):
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
+        super().__init__(backbone=backbone, task="question-answering", **kwargs)
 
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
-        self._device = _get_device_id()
-        self._task = "question-answering"
-        try:
-            self.model = pipeline(self._task, model=backbone, device=self._device)
-        except Exception as e:
-            error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
-                             f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
-            raise Exception(error_message)
-
-    def get_answer(self, text_or_list, context, **kwargs):
+    def get_answer(self, text_or_list, context, show_progress=True, **kwargs):
         """
         Find answers for the asked questions from the given passage/context
 
@@ -67,6 +71,9 @@ class QuestionAnswering:
         ---------------------   -------------------------------------------
         context                 Required string. The context associated with
                                 the question(s) which contains the answers.
+        ---------------------   -------------------------------------------
+        show_progress           optional Bool. If set to True, will display a
+                                progress bar depicting the items processed so far.
         =====================   ===========================================
 
         **kwargs**
@@ -102,8 +109,10 @@ class QuestionAnswering:
         kwargs_dict["max_question_len"] = kwargs.get("max_question_length", 64)
         kwargs_dict["handle_impossible_answer"] = kwargs.get("impossible_answer", False)
 
-        if not isinstance(text_or_list, (list, tuple)): text_or_list = [text_or_list]
-        for i in progress_bar(range(len(text_or_list))):
+        if not isinstance(text_or_list, (list, tuple)):
+            text_or_list = [text_or_list]
+
+        for i in progress_bar(range(len(text_or_list)), display=show_progress):
             results.append(self.model(question=text_or_list[i], context=context, **kwargs_dict))
 
         return self._process_result(results, text_or_list)
@@ -120,3 +129,4 @@ class QuestionAnswering:
                 processed_results.append(item_list)
 
         return processed_results
+

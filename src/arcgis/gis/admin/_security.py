@@ -433,7 +433,7 @@ class OAuth(BasePortalAdmin):
         associated with an application. Use the Get App Info operation to
         obtain the existing OAuth properties that can be edited.
         """
-        url = "%s/getAppInfo" % self._url
+        url = "%s/updateAppInfo" % self._url
         params = {"f" : "json",
                   "appInfo" : value}
         return self._con.post(path=url, postdata=params)

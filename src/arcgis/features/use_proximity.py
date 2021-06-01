@@ -7,28 +7,33 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
+import logging
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
-#--------------------------------------------------------------------------
-def connect_origins_to_destinations(origins_layer,
-                                    destinations_layer,
-                                    measurement_type="DrivingTime",
-                                    origins_layer_route_id_field=None,
-                                    destinations_layer_route_id_field=None,
-                                    time_of_day=None,
-                                    time_zone_for_time_of_day="GeoLocal",
-                                    output_name=None,
-                                    context=None,
-                                    gis=None,
-                                    estimate=False,
-                                    point_barrier_layer=None,
-                                    line_barrier_layer=None,
-                                    polygon_barrier_layer=None,
-                                    future=False,
-                                    route_shape='FollowStreets',
-                                    include_route_layers=False):
+
+_logger = logging.getLogger()
+# --------------------------------------------------------------------------
+def connect_origins_to_destinations(
+    origins_layer,
+    destinations_layer,
+    measurement_type="DrivingTime",
+    origins_layer_route_id_field=None,
+    destinations_layer_route_id_field=None,
+    time_of_day=None,
+    time_zone_for_time_of_day="GeoLocal",
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+    future=False,
+    route_shape="FollowStreets",
+    include_route_layers=False,
+):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
 
@@ -216,52 +221,72 @@ def connect_origins_to_destinations(origins_layer,
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "origins_layer" : origins_layer,
-        "destinations_layer" : destinations_layer,
-        "measurement_type" : measurement_type,
-        "origins_layer_route_id_field" : origins_layer_route_id_field,
-        "destinations_layer_route_id_field" : destinations_layer_route_id_field,
-        "time_of_day" : time_of_day,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "point_barrier_layer" : point_barrier_layer,
-        "line_barrier_layer" : line_barrier_layer,
-        "polygon_barrier_layer"  : polygon_barrier_layer,
-        "future" : future,
-        "route_shape" : route_shape,
-        "include_route_layers" : include_route_layers
+        "origins_layer": origins_layer,
+        "destinations_layer": destinations_layer,
+        "measurement_type": measurement_type,
+        "origins_layer_route_id_field": origins_layer_route_id_field,
+        "destinations_layer_route_id_field": destinations_layer_route_id_field,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "point_barrier_layer": point_barrier_layer,
+        "line_barrier_layer": line_barrier_layer,
+        "polygon_barrier_layer": polygon_barrier_layer,
+        "future": future,
+        "route_shape": route_shape,
+        "include_route_layers": include_route_layers,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations, **kwargs
+    )
+    try:
 
-    if isinstance(measurement_type, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == measurement_type:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                measurement_type = tm
-                params['measurement_type'] = measurement_type
+        if (
+            isinstance(measurement_type, str)
+            and str(measurement_type).lower() != "straightline"
+        ):
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes().get(
+                "supportedTravelModes", []
+            )
+            tm = [
+                i
+                for i in travelmodes
+                if i["name"].lower() == str(measurement_type).lower()
+            ]
+            if tm:
+                params["measurement_type"] = tm[0]
+            else:
+                params["measurement_type"] = measurement_type
+    except Exception as e:
+        msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params["measurement_type"] = measurement_type
 
     return gis._tools.featureanalysis.connect_origins_to_destinations(**params)
-#--------------------------------------------------------------------------
-def create_buffers(input_layer,
-                   distances=[],
-                   field=None,
-                   units="Meters",
-                   dissolve_type="None",
-                   ring_type="Disks",
-                   side_type="Full",
-                   end_type="Round",
-                   output_name=None,
-                   context=None,
-                   gis=None,
-                   estimate=False,
-                   future=False):
+
+
+# --------------------------------------------------------------------------
+def create_buffers(
+    input_layer,
+    distances=[],
+    field=None,
+    units="Meters",
+    dissolve_type="None",
+    ring_type="Disks",
+    side_type="Full",
+    end_type="Round",
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/create_buffers/create_buffers.png
 
@@ -402,42 +427,47 @@ def create_buffers(input_layer,
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "distances" : distances,
-        "field" : field,
-        "units" : units,
-        "dissolve_type" : dissolve_type,
-        "ring_type" : ring_type,
-        "side_type" : side_type,
-        "end_type" : end_type,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "future" : future
+        "input_layer": input_layer,
+        "distances": distances,
+        "field": field,
+        "units": units,
+        "dissolve_type": dissolve_type,
+        "ring_type": ring_type,
+        "side_type": side_type,
+        "end_type": end_type,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_buffers,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.create_buffers, **kwargs
+    )
     return gis._tools.featureanalysis.create_buffers(**params)
-#--------------------------------------------------------------------------
-def create_drive_time_areas(input_layer,
-                            break_values=[5, 10, 15],
-                            break_units="Minutes",
-                            travel_mode="Driving",
-                            overlap_policy="Overlap",
-                            time_of_day=None,
-                            time_zone_for_time_of_day="GeoLocal",
-                            output_name=None,
-                            context=None,
-                            gis=None,
-                            estimate=False,
-                            point_barrier_layer=None,
-                            line_barrier_layer=None,
-                            polygon_barrier_layer=None,
-                            future=False,
-                            travel_direction="AwayFromFacility",
-                            show_holes=False,
-                            include_reachable_streets=False):
+
+
+# --------------------------------------------------------------------------
+def create_drive_time_areas(
+    input_layer,
+    break_values=[5, 10, 15],
+    break_units="Minutes",
+    travel_mode="Driving",
+    overlap_policy="Overlap",
+    time_of_day=None,
+    time_zone_for_time_of_day="GeoLocal",
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+    future=False,
+    travel_direction="AwayFromFacility",
+    show_holes=False,
+    include_reachable_streets=False,
+):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -627,65 +657,79 @@ def create_drive_time_areas(input_layer,
                                        output_name='create_drive_time_areas',
                                        context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}}) """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "break_values" : break_values,
-        "break_units" : break_units,
-        "travel_mode" : travel_mode,
-        "overlap_policy" : overlap_policy,
-        "time_of_day" : time_of_day,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "point_barrier_layer" : point_barrier_layer,
-        "line_barrier_layer" : line_barrier_layer,
-        "polygon_barrier_layer" : polygon_barrier_layer,
-        "future" : future,
-        "travel_direction" : travel_direction,
-        "show_holes" : show_holes,
-        "include_reachable_streets" : include_reachable_streets
+        "input_layer": input_layer,
+        "break_values": break_values,
+        "break_units": break_units,
+        "travel_mode": travel_mode,
+        "overlap_policy": overlap_policy,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "point_barrier_layer": point_barrier_layer,
+        "line_barrier_layer": line_barrier_layer,
+        "polygon_barrier_layer": polygon_barrier_layer,
+        "future": future,
+        "travel_direction": travel_direction,
+        "show_holes": show_holes,
+        "include_reachable_streets": include_reachable_streets,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_drive_time_areas,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.create_drive_time_areas, **kwargs
+    )
 
-    if isinstance(travel_mode, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == travel_mode:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                travel_mode = tm
-                params['travel_mode'] = travel_mode
+    try:
+        if isinstance(travel_mode, str):
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes().get(
+                "supportedTravelModes", []
+            )
+            tm = [i for i in travelmodes if i["name"] == travel_mode]
+            if tm:
+                params["travel_mode"] = tm[0]
+            else:
+                params["travel_mode"] = travel_mode
+    except Exception as e:
+        msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params["travel_mode"] = travel_mode
     if time_of_day:
-        params['time_of_day'] = _date_handler(time_of_day)
+        params["time_of_day"] = _date_handler(time_of_day)
     if include_reachable_streets:
         if not output_name or not bool(output_name.strip()):
-            raise Exception("output_name must be specified when include_reachable_streets is True.")
+            raise Exception(
+                "output_name must be specified when include_reachable_streets is True."
+            )
 
     return gis._tools.featureanalysis.create_drive_time_areas(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def find_nearest(
     analysis_layer,
-        near_layer,
-        measurement_type="StraightLine",
-        max_count=100,
-        search_cutoff=2147483647,
-        search_cutoff_units=None,
-        time_of_day=None,
-        time_zone_for_time_of_day="GeoLocal",
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        include_route_layers=None,
-        point_barrier_layer=None,
-        line_barrier_layer=None,
-        polygon_barrier_layer=None,
-        future=False):
+    near_layer,
+    measurement_type="StraightLine",
+    max_count=100,
+    search_cutoff=2147483647,
+    search_cutoff_units=None,
+    time_of_day=None,
+    time_zone_for_time_of_day="GeoLocal",
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    include_route_layers=None,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+    future=False,
+):
     """
     .. image:: _static/images/find_nearest/find_nearest.png
 
@@ -843,62 +887,81 @@ def find_nearest(
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "analysis_layer" : analysis_layer,
-        "near_layer" : near_layer,
-        "measurement_type" : measurement_type,
-        "max_count" : max_count,
-        "search_cutoff" : search_cutoff,
-        "search_cutoff_units" : search_cutoff_units,
-        "time_of_day" : time_of_day,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "include_route_layers" : include_route_layers,
-        "point_barrier_layer" : point_barrier_layer,
-        "line_barrier_layer" : line_barrier_layer,
-        "polygon_barrier_layer" : polygon_barrier_layer,
-        "future" : future
+        "analysis_layer": analysis_layer,
+        "near_layer": near_layer,
+        "measurement_type": measurement_type,
+        "max_count": max_count,
+        "search_cutoff": search_cutoff,
+        "search_cutoff_units": search_cutoff_units,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "include_route_layers": include_route_layers,
+        "point_barrier_layer": point_barrier_layer,
+        "line_barrier_layer": line_barrier_layer,
+        "polygon_barrier_layer": polygon_barrier_layer,
+        "future": future,
     }
 
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest,
-                                     **kwargs)
-    params['estimate'] = estimate
-    if isinstance(measurement_type, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == measurement_type:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                measurement_type = tm
-                params['measurement_type'] = measurement_type
-    params['time_of_day'] = _date_handler(time_of_day)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.find_nearest, **kwargs
+    )
+    params["estimate"] = estimate
+    try:
+        if (
+            isinstance(measurement_type, str)
+            and str(measurement_type).lower() != "straightline"
+        ):
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes().get(
+                "supportedTravelModes", []
+            )
+            tm = [
+                i
+                for i in travelmodes
+                if i["name"].lower() == str(measurement_type).lower()
+            ]
+            if tm:
+                params["measurement_type"] = tm[0]
+            else:
+                params["measurement_type"] = measurement_type
+    except Exception as e:
+        msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params["measurement_type"] = measurement_type
+    params["time_of_day"] = _date_handler(time_of_day)
     return gis._tools.featureanalysis.find_nearest(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def plan_routes(
     stops_layer,
-        route_count,
-        max_stops_per_route,
-        route_start_time,
-        start_layer,
-        start_layer_route_id_field=None,
-        return_to_start=True,
-        end_layer=None,
-        end_layer_route_id_field=None,
-        travel_mode="Driving Time",
-        stop_service_time=0,
-        max_route_time=525600,
-        include_route_layers=False,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        point_barrier_layer=None,
-        line_barrier_layer=None,
-        polygon_barrier_layer=None,
-        future=False):
+    route_count,
+    max_stops_per_route,
+    route_start_time,
+    start_layer,
+    start_layer_route_id_field=None,
+    return_to_start=True,
+    end_layer=None,
+    end_layer_route_id_field=None,
+    travel_mode="Driving Time",
+    stop_service_time=0,
+    max_route_time=525600,
+    include_route_layers=False,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/plan_routes/plan_routes.png
@@ -1160,39 +1223,48 @@ def plan_routes(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "stops_layer" : stops_layer,
-        "route_count" : route_count,
-        "max_stops_per_route" : max_stops_per_route,
-        "route_start_time" : route_start_time,
-        "start_layer" : start_layer,
-        "start_layer_route_id_field" : start_layer_route_id_field,
-        "return_to_start" : return_to_start,
-        "end_layer" : end_layer,
-        "end_layer_route_id_field" : end_layer_route_id_field,
-        "travel_mode" : travel_mode,
-        "stop_service_time" : stop_service_time,
-        "max_route_time" : max_route_time,
-        "include_route_layers" : include_route_layers,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "point_barrier_layer" : point_barrier_layer,
-        "line_barrier_layer" : line_barrier_layer,
-        "polygon_barrier_layer" : polygon_barrier_layer,
-        "future" : future
+        "stops_layer": stops_layer,
+        "route_count": route_count,
+        "max_stops_per_route": max_stops_per_route,
+        "route_start_time": route_start_time,
+        "start_layer": start_layer,
+        "start_layer_route_id_field": start_layer_route_id_field,
+        "return_to_start": return_to_start,
+        "end_layer": end_layer,
+        "end_layer_route_id_field": end_layer_route_id_field,
+        "travel_mode": travel_mode,
+        "stop_service_time": stop_service_time,
+        "max_route_time": max_route_time,
+        "include_route_layers": include_route_layers,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "point_barrier_layer": point_barrier_layer,
+        "line_barrier_layer": line_barrier_layer,
+        "polygon_barrier_layer": polygon_barrier_layer,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes,
-                                     **kwargs)
-    params['estimate'] = estimate
-
-    if isinstance(travel_mode, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == travel_mode:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                travel_mode = tm
-                params['travel_mode'] = travel_mode
-    params['route_start_time'] = _date_handler(route_start_time)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.plan_routes, **kwargs
+    )
+    params["estimate"] = estimate
+    try:
+        if isinstance(travel_mode, str):
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes().get(
+                "supportedTravelModes", []
+            )
+            tm = [i for i in travelmodes if i["name"] == travel_mode]
+            if tm:
+                params["travel_mode"] = tm[0]
+            else:
+                params["travel_mode"] = travel_mode
+    except Exception as e:
+        msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params["travel_mode"] = travel_mode
+    params["route_start_time"] = _date_handler(route_start_time)
     return gis._tools.featureanalysis.plan_routes(**params)

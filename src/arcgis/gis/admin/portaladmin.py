@@ -170,7 +170,7 @@ class PortalAdminManager(BasePortalAdmin):
 
 
         :returns: List of Tasks
-        
+
         """
         _tasks = []
         num = 100
@@ -311,7 +311,57 @@ class PortalAdminManager(BasePortalAdmin):
             url = self._gis._portal.resturl + "portals/self/webhooks"
             self._whm = WebhookManager(url=url, gis=self._gis)
         return self._whm
+    #----------------------------------------------------------------------
+    @property
+    def mode(self) -> dict:
+        """
+        Gets/Set the mode of the ArcGIS Enterprise deployment.  When obtaining
+        the mode, it returns information about the current state of the system.
 
+
+        :returns: dict
+        """
+        url = self._url + "/mode"
+        params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @mode.setter
+    def mode(self, mode:dict):
+        """
+        Gets/Set the mode of the ArcGIS Enterprise deployment.  When obtaining
+        the mode, it returns information about the current state of the system.
+
+        ================  ===============================================================================
+        **Key**           **Description**
+        ----------------  -------------------------------------------------------------------------------
+        read_only         Required Boolean.  A boolean that specifies whether the Enterprise portal is
+                          in read-only mode. Read-only mode will block requests to modify or create any
+                          data, including content, users, groups, or site settings.
+                          The default value is false.
+        ----------------  -------------------------------------------------------------------------------
+        message           Optional String. Sets a custom message to be displayed whenever an attempt to
+                          modify or update content or site settings is made through the API.
+        ================  ===============================================================================
+
+        **Usage Example**
+
+        gis.admin.mode({'read_only' : False})
+        assert gis.admin.mode['isReadOnly'] == False
+
+        """
+        url = f"{self._url}/mode/update"
+        if mode is None:
+            mode = {
+                'read_only' : False,
+                'message' : ""
+            }
+        params = {'f' : 'json',
+                  'isReadOnly' : mode.pop('read_only', False)}
+        if 'message' in mode:
+            params['description'] = mode.pop('message', "")
+        res = self._con.post(url, params)
+        if "status" is res and res['status'] != "success":
+            raise RuntimeError(res)
     #----------------------------------------------------------------------
     def history(self, start_date, num=100, save_folder=None):
         """

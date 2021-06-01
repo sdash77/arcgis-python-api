@@ -13,6 +13,7 @@ try:
     import pandas as pd
     import torch.nn as nn
     from transformers import logging
+    logging.get_logger('filelock').setLevel(logging.ERROR)
     from fastai.train import to_fp16
     from fastprogress.fastprogress import progress_bar
     from fastai.basic_train import Learner, DatasetType

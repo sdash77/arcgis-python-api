@@ -7,6 +7,7 @@ import arcgis.env
 import logging
 from ..features import FeatureSet
 from ..geometry import Geometry
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -35,12 +36,14 @@ class Geocoder(_GISResource):
         super(Geocoder, self).__init__(location, gis)
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
+
             self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
+        except:
+            pass
         try:
             self._address_field = self.properties.singleLineAddressField.name
         except:
-            pass #print("Geocoder does not support single line address input")
+            pass  # print("Geocoder does not support single line address input")
 
     @classmethod
     def fromitem(cls, item):
@@ -49,27 +52,31 @@ class Geocoder(_GISResource):
         :param item: an Item of type 'Geocoding Service'
         :return: Geocoder
         """
-        if not item.type == 'Geocoding Service':
-            raise TypeError("item must be a type of Geocoding Service, not " + item.type)
+        if not item.type == "Geocoding Service":
+            raise TypeError(
+                "item must be a type of Geocoding Service, not " + item.type
+            )
 
         return cls(item.url, item._gis)
 
-    def _geocode(self,
-                 address,
-                 search_extent=None,
-                 location=None,
-                 distance=None,
-                 out_sr=None,
-                 category=None,
-                 out_fields="*",
-                 max_locations=20,
-                 magic_key=None,
-                 for_storage=False,
-                 as_featureset=False,
-                 match_out_of_range=True,
-                 location_type='street',
-                 lang_code=None,
-                 source_country=None):
+    def _geocode(
+        self,
+        address,
+        search_extent=None,
+        location=None,
+        distance=None,
+        out_sr=None,
+        category=None,
+        out_fields="*",
+        max_locations=20,
+        magic_key=None,
+        for_storage=False,
+        as_featureset=False,
+        match_out_of_range=True,
+        location_type="street",
+        lang_code=None,
+        source_country=None,
+    ):
         """
         The geocode method geocodes one location per request.
 
@@ -199,59 +206,73 @@ class Geocoder(_GISResource):
             elif isinstance(address, dict):
                 params.update(address)
             else:
-                print("address should be a string (single line address) or dictionary "
-                      "(with address fields as keys)")
+                print(
+                    "address should be a string (single line address) or dictionary "
+                    "(with address fields as keys)"
+                )
 
         if not magic_key is None:
-            params['magicKey'] = magic_key
+            params["magicKey"] = magic_key
         if not search_extent is None:
-            params['searchExtent'] = search_extent
-        if not location is None and \
-                isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params["searchExtent"] = search_extent
+        if not location is None and isinstance(location, list):
+            params["location"] = "%s,%s" % (location[0], location[1])
         elif location is not None:
-            params['location'] = location
+            params["location"] = location
         if not distance is None:
-            params['distance'] = distance
+            params["distance"] = distance
         if not out_sr is None:
-            params['outSr'] = out_sr
+            params["outSr"] = out_sr
         if not category is None:
-            params['category'] = category
+            params["category"] = category
         if out_fields is None:
-            params['outFields'] = "*"
+            params["outFields"] = "*"
         else:
-            params['outFields'] = out_fields
+            params["outFields"] = out_fields
         if not max_locations is None:
-            params['maxLocations'] = max_locations
+            params["maxLocations"] = max_locations
         if not for_storage is None:
-            params['forStorage'] = for_storage
+            params["forStorage"] = for_storage
         if not match_out_of_range is None:
-            params['matchOutOfRange'] = match_out_of_range
+            params["matchOutOfRange"] = match_out_of_range
         if not location_type is None:
-            params['locationType'] = location_type
+            params["locationType"] = location_type
         if lang_code:
-            params['langCode'] = lang_code
+            params["langCode"] = lang_code
         if source_country:
-            params['sourceCountry'] = source_country
+            params["sourceCountry"] = source_country
         resp = self._con.post(url, params, token=self._token)
 
         if resp is not None and as_featureset:
             features = []
-            sr = resp['spatialReference']
-            for c in resp['candidates']:
-                geom = c['location']
-                geom['spatialReference'] = sr
-                features.append({'geometry' : Geometry(geom), 'attributes' : c['attributes']})
+            sr = resp["spatialReference"]
+            for c in resp["candidates"]:
+                geom = c["location"]
+                geom["spatialReference"] = sr
+                features.append(
+                    {"geometry": Geometry(geom), "attributes": c["attributes"]}
+                )
 
-            return FeatureSet(features=features, spatial_reference=sr)#resp['candidates']
+            return FeatureSet(
+                features=features, spatial_reference=sr
+            )  # resp['candidates']
         elif resp is not None and as_featureset == False:
-            return resp['candidates']
+            return resp["candidates"]
         else:
             return []
 
-    def _reverse_geocode(self, location, distance=None, out_sr=None, lang_code=None,
-                         return_intersection=False, for_storage=False, as_featureset=False,
-                         feature_types=None, location_type='street'):
+    def _reverse_geocode(
+        self,
+        location,
+        distance=None,
+        out_sr=None,
+        lang_code=None,
+        return_intersection=False,
+        for_storage=False,
+        as_featureset=False,
+        feature_types=None,
+        location_type="street",
+    ):
         """
         The reverseGeocode operation determines the address at a particular
         x/y location. You pass the coordinates of a point location to the
@@ -262,54 +283,55 @@ class Geocoder(_GISResource):
         Input:
            location - a list defined as [X,Y] or a JSON Point
         """
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         url = self.url + "/reverseGeocode"
         if isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params["location"] = "%s,%s" % (location[0], location[1])
         elif isinstance(location, dict):
-            params['location'] = location
+            params["location"] = location
         else:
             raise Exception("Invalid location")
 
         if distance is not None:
-            params['distance'] = distance
+            params["distance"] = distance
         if out_sr is not None:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if lang_code is not None:
-            params['langCode'] = lang_code
+            params["langCode"] = lang_code
         if return_intersection:
-            params['returnIntersection'] = return_intersection
+            params["returnIntersection"] = return_intersection
         if for_storage:
-            params['forStorage'] = for_storage
+            params["forStorage"] = for_storage
         if feature_types:
             if isinstance(feature_types, list):
                 feature_types = ",".join(feature_types)
-            params['featureTypes'] = feature_types
+            params["featureTypes"] = feature_types
         if location_type:
-            params['locationType'] = location_type
+            params["locationType"] = location_type
 
         resp = self._con.post(url, params, token=self._token)
         if resp is not None and as_featureset:
-            geom = copy.copy(resp['location'])
-            del resp['location']
-            fs = FeatureSet(features=[{'geometry' : Geometry(geom),
-                                       "attributes" : resp['address']}])
+            geom = copy.copy(resp["location"])
+            del resp["location"]
+            fs = FeatureSet(
+                features=[{"geometry": Geometry(geom), "attributes": resp["address"]}]
+            )
             return fs
         return resp
 
-    def _batch_geocode(self,
-                       addresses,
-                       source_country=None,
-                       category=None,
-                       out_sr=None,
-                       as_featureset=False,
-                       match_out_of_range=True,
-                       location_type='street',
-                       search_extent=None,
-                       lang_code='EN',
-                       preferred_label_values=None):
+    def _batch_geocode(
+        self,
+        addresses,
+        source_country=None,
+        category=None,
+        out_sr=None,
+        as_featureset=False,
+        match_out_of_range=True,
+        location_type="street",
+        search_extent=None,
+        lang_code="EN",
+        preferred_label_values=None,
+    ):
         """
         The batch_geocode() method geocodes an entire list of addresses.
         Geocoding many addresses at once is also known as bulk geocoding.
@@ -358,16 +380,14 @@ class Geocoder(_GISResource):
             valid WKID values, see Projected coordinate systems and
             Geographic coordinate systems.
         """
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         url = self.url + "/geocodeAddresses"
         if out_sr is not None:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if source_country is not None:
-            params['sourceCountry'] = source_country
+            params["sourceCountry"] = source_country
         if category is not None:
-            params['category'] = category
+            params["category"] = category
 
         addr_recordset = []
 
@@ -381,69 +401,84 @@ class Geocoder(_GISResource):
                 attributes.update(address)
             else:
                 print("Unsupported address: " + str(address))
-                print("address should be a string (single line address) or dictionary "
-                      "(with address fields as keys)")
+                print(
+                    "address should be a string (single line address) or dictionary "
+                    "(with address fields as keys)"
+                )
 
             addr_rec = {"attributes": attributes}
             addr_recordset.append(addr_rec)
 
-        params['addresses'] = {"records": addr_recordset}
-        params['matchOutOfRange'] = match_out_of_range
-        params['locationType'] = location_type
+        params["addresses"] = {"records": addr_recordset}
+        params["matchOutOfRange"] = match_out_of_range
+        params["locationType"] = location_type
         if search_extent is not None:
-            params['searchExtent'] = search_extent
-        params['langCode'] = lang_code
+            params["searchExtent"] = search_extent
+        params["langCode"] = lang_code
         if preferred_label_values is not None:
-            params['preferredLabelValues'] = preferred_label_values
+            params["preferredLabelValues"] = preferred_label_values
 
         resp = self._con.post(url, params)
         if resp is not None and as_featureset:
-            sr = resp['spatialReference']
+            sr = resp["spatialReference"]
 
             matches = [None] * len(addresses)
-            locations = resp['locations']
+            locations = resp["locations"]
             for idx, location in enumerate(locations):
-                geom = copy.copy(location['location'])
-                if 'spatialReference' not in geom:
-                    geom['spatialReference'] = sr
-                att = location['attributes']
-                matches[idx] = {'geometry': Geometry(geom),
-                                "attributes" : att }
+                geom = copy.copy(location["location"])
+                if "spatialReference" not in geom:
+                    geom["spatialReference"] = sr
+                att = location["attributes"]
+                matches[idx] = {"geometry": Geometry(geom), "attributes": att}
             return FeatureSet(features=matches, spatial_reference=sr)
         elif resp is not None and as_featureset == False:
             matches = [None] * len(addresses)
-            locations = resp['locations']
+            locations = resp["locations"]
             for idx, location in enumerate(locations):
                 matches[idx] = location
             return matches
         else:
             return []
 
-    def _find_best_match(self,
-                         address,
-                         search_extent=None,
-                         location=None,
-                         distance=None,
-                         out_sr=None,
-                         category=None,
-                         out_fields="*",
-                         magic_key=None,
-                         for_storage=False):
+    def _find_best_match(
+        self,
+        address,
+        search_extent=None,
+        location=None,
+        distance=None,
+        out_sr=None,
+        category=None,
+        out_fields="*",
+        magic_key=None,
+        for_storage=False,
+    ):
         """Returns the (latitude, longitude) or (y, x) coordinates of the best match for specified address"""
-        candidates = self._geocode(address, search_extent, location, distance,
-                                   out_sr, category, out_fields, 1, magic_key, for_storage)
+        candidates = self._geocode(
+            address,
+            search_extent,
+            location,
+            distance,
+            out_sr,
+            category,
+            out_fields,
+            1,
+            magic_key,
+            for_storage,
+        )
         if candidates:
-            location = candidates[0]['location']
-            return location['y'], location['x']
+            location = candidates[0]["location"]
+            return location["y"], location["x"]
 
-    def _suggest(self,
-                 text,
-                 location=None,
-                 distance=None,
-                 category=None,
-                 search_extent=None,
-                 max_suggestions=5,
-                 country_code=None):
+    def _suggest(
+        self,
+        text,
+        location=None,
+        distance=None,
+        category=None,
+        search_extent=None,
+        max_suggestions=5,
+        country_code=None,
+    ):
         """
         The suggest operation is performed on a geocoder.
         The result of this operation is a resource representing a list of
@@ -499,28 +534,24 @@ class Geocoder(_GISResource):
            category - The category parameter is only supported by geocode
             services published using StreetMap Premium locators.
         """
-        params = {
-            "f": "json",
-            "text": text
-        }
+        params = {"f": "json", "text": text}
         url = self.url + "/suggest"
 
         if isinstance(location, list):
-            params['location'] = "%s,%s" % (location[0], location[1])
+            params["location"] = "%s,%s" % (location[0], location[1])
         elif isinstance(location, dict):
-            params['location'] = dict(location)
+            params["location"] = dict(location)
 
         if not category is None:
-            params['category'] = category
-        if not distance is None and \
-                isinstance(distance, (int, float)):
-            params['distance'] = distance
+            params["category"] = category
+        if not distance is None and isinstance(distance, (int, float)):
+            params["distance"] = distance
         if search_extent:
-            params['searchExtent'] = search_extent
+            params["searchExtent"] = search_extent
         if max_suggestions is not None and isinstance(max_suggestions, int):
-            params['maxSuggestions'] = max_suggestions
+            params["maxSuggestions"] = max_suggestions
         if country_code and isinstance(country_code, str):
-            params['countryCode'] = country_code
+            params["countryCode"] = country_code
         resp = self._con.post(url, params, token=self._token)
         return resp
 
@@ -537,25 +568,28 @@ def get_geocoders(gis):
     """
     geocoders = []
     try:
-        geocode_services = gis.properties['helperServices']['geocode']
+        geocode_services = gis.properties["helperServices"]["geocode"]
         for geocode_service in geocode_services:
             try:
-                geocoders.append(Geocoder(geocode_service['url'], gis))
+                geocoders.append(Geocoder(geocode_service["url"], gis))
             except RuntimeError as runtime_error:
-                _LOGGER.warning('Unable to use Geocoder at ' + geocode_service['url'])
+                _LOGGER.warning("Unable to use Geocoder at " + geocode_service["url"])
                 _LOGGER.warning(str(runtime_error))
     except KeyError:
         pass
     return geocoders
 
-#----------------------------------------------------------------------
-def analyze_geocode_input(input_table_or_item,
-                          geocode_service_url=None,
-                          column_names=None,
-                          input_file_parameters=None,
-                          locale="en",
-                          context=None,
-                          gis=None):
+
+# ----------------------------------------------------------------------
+def analyze_geocode_input(
+    input_table_or_item,
+    geocode_service_url=None,
+    column_names=None,
+    input_file_parameters=None,
+    locale="en",
+    context=None,
+    gis=None,
+):
     """
     The analyze_geocode_input function takes in a geocode input (either a table or file of
     addresses) and returns an output dictionary that includes a suggested field mapping. It supports CSV,
@@ -664,8 +698,8 @@ def analyze_geocode_input(input_table_or_item,
     if geocode_service_url is None:
         gcs = gis.properties.helperServices.geocode
         for gc in gcs:
-            if 'batch' in gc and gc['batch']:
-                geocode_service_url = gc['url']
+            if "batch" in gc and gc["batch"]:
+                geocode_service_url = gc["url"]
                 break
             del gc
         del gcs
@@ -674,66 +708,83 @@ def analyze_geocode_input(input_table_or_item,
     elif isinstance(geocode_service_url, str) == False:
         raise ValueError("Invalid geocoder service given.")
     if geocode_service_url is None:
-        raise ValueError("The registered geocoders are not valid to use with this tool.")
+        raise ValueError(
+            "The registered geocoders are not valid to use with this tool."
+        )
 
-    kwargs = {"geocode_service_url" : geocode_service_url,
-              "input_table" : "",
-              "input_file_item" : None,
-              "column_names" : column_names,
-              "input_file_parameters" : input_file_parameters,
-              "locale" : locale,
-              "context" : context}
-
+    kwargs = {
+        "geocode_service_url": geocode_service_url,
+        "input_table": "",
+        "input_file_item": None,
+        "column_names": column_names,
+        "input_file_parameters": input_file_parameters,
+        "locale": locale,
+        "context": context,
+    }
 
     if isinstance(input_table_or_item, Item):
-        kwargs['input_file_item'] = {'itemid' : input_table_or_item.itemid}
+        kwargs["input_file_item"] = {"itemid": input_table_or_item.itemid}
         if input_file_parameters is None:
-            kwargs['input_file_parameters'] = json.dumps({"fileType": input_table_or_item.type.lower(),
-                                               "headerRowExists":"true",
-                                               "columnDelimiter":"",
-                                               "textQualifier":""})
+            kwargs["input_file_parameters"] = json.dumps(
+                {
+                    "fileType": input_table_or_item.type.lower(),
+                    "headerRowExists": "true",
+                    "columnDelimiter": "",
+                    "textQualifier": "",
+                }
+            )
     elif isinstance(input_table_or_item, str):
-        kwargs['input_file_item'] = {'itemid' : input_table_or_item}
+        kwargs["input_file_item"] = {"itemid": input_table_or_item}
         if input_file_parameters is None:
-            item = gis.content.search('id: %s' % input_table_or_item)[0]
-            kwargs['input_file_parameters'] = json.dumps({"fileType": item.type.lower(),
-                                                          "headerRowExists":"true",
-                                                          "columnDelimiter":"",
-                                                          "textQualifier":""})
+            item = gis.content.search("id: %s" % input_table_or_item)[0]
+            kwargs["input_file_parameters"] = json.dumps(
+                {
+                    "fileType": item.type.lower(),
+                    "headerRowExists": "true",
+                    "columnDelimiter": "",
+                    "textQualifier": "",
+                }
+            )
     elif isinstance(input_table_or_item, dict):
         if "url" in input_table_or_item:
-            kwargs['input_table'] = input_table_or_item
+            kwargs["input_table"] = input_table_or_item
         elif "itemid" in input_table_or_item:
-            kwargs['input_file_item'] = input_table_or_item
+            kwargs["input_file_item"] = input_table_or_item
             if input_file_parameters is None:
-                item = gis.content.search('id: %s' % input_table_or_item['itemid'])[0]
-                kwargs['input_file_parameters'] = json.dumps({"fileType": item.type.lower(),
-                                                              "headerRowExists":"true",
-                                                              "columnDelimiter":"",
-                                                              "textQualifier":""})
+                item = gis.content.search("id: %s" % input_table_or_item["itemid"])[0]
+                kwargs["input_file_parameters"] = json.dumps(
+                    {
+                        "fileType": item.type.lower(),
+                        "headerRowExists": "true",
+                        "columnDelimiter": "",
+                        "textQualifier": "",
+                    }
+                )
     elif isinstance(input_table_or_item, Layer):
         lyr_dict = input_table_or_item._lyr_dict
-        if 'type' in lyr_dict:
+        if "type" in lyr_dict:
             lyr_dict.pop("type")
-        kwargs['input_table'] = lyr_dict
-    for k,v in list(kwargs.items()):
+        kwargs["input_table"] = lyr_dict
+    for k, v in list(kwargs.items()):
         if v is None:
             kwargs.pop(k)
     return tbx.analyze_geocode_input(**kwargs)
 
-#----------------------------------------------------------------------
-def geocode_from_items(input_data,
-                       output_type='Feature Layer',
-                       geocode_service_url=None,
-                       geocode_parameters=None,
-                       country=None,
-                       output_fields=None,
-                       header_rows_to_skip=1,
-                       output_name=None,
-                       category=None,
-                       context=None,
-                       gis=None
-                       ):
+
+# ----------------------------------------------------------------------
+def geocode_from_items(
+    input_data,
+    output_type="Feature Layer",
+    geocode_service_url=None,
+    geocode_parameters=None,
+    country=None,
+    output_fields=None,
+    header_rows_to_skip=1,
+    output_name=None,
+    category=None,
+    context=None,
+    gis=None,
+):
     """
     The Batch Geocode geocodes a table or file of addresses and returns the geocoded results. It
     supports CSV, XLS or table input. The task geocodes the entire file regardless of size.
@@ -832,18 +883,18 @@ def geocode_from_items(input_data,
     locator_parameters = None
 
     kwargs = {
-        "geocode_parameters" : geocode_parameters,
-        "geocode_service_url" : geocode_service_url,
-        "output_type" : output_type,
-        "input_table" : "",
-        "input_file_item" : None,
-        "source_country" : country,
-        "category" : category,
-        "output_fields" : output_fields,
-        "header_rows_to_skip" : header_rows_to_skip,
-        "output_name" : output_name,
-        "context" : context,
-        "locator_parameters" : locator_parameters
+        "geocode_parameters": geocode_parameters,
+        "geocode_service_url": geocode_service_url,
+        "output_type": output_type,
+        "input_table": "",
+        "input_file_item": None,
+        "source_country": country,
+        "category": category,
+        "output_fields": output_fields,
+        "header_rows_to_skip": header_rows_to_skip,
+        "output_name": output_name,
+        "context": context,
+        "locator_parameters": locator_parameters,
     }
 
     _item_type = "SERVICE"
@@ -853,133 +904,178 @@ def geocode_from_items(input_data,
 
     if output_type is None:
         output_type = "CSV"
-    if output_type.lower() == 'xlsx':
-        output_type = 'XLS'
+    if output_type.lower() == "xlsx":
+        output_type = "XLS"
     if output_type.lower() == "feature layer":
         output_type = "Feature Service"
-    if output_type not in ['CSV', 'XLS', "Feature Service"]:
+    if output_type not in ["CSV", "XLS", "Feature Service"]:
         raise ValueError("Invalid output_type: %s" % output_type)
 
     if geocode_service_url is None:
         gcs = gis.properties.helperServices.geocode
         for gc in gcs:
-            if 'batch' in gc and gc['batch']:
-                geocode_service_url = gc['url']
-                kwargs['geocode_service_url'] = gc['url']
+            if "batch" in gc and gc["batch"]:
+                geocode_service_url = gc["url"]
+                kwargs["geocode_service_url"] = gc["url"]
                 break
             del gc
         del gcs
     elif isinstance(geocode_service_url, Geocoder):
         geocode_service_url = geocode_service_url.url
-        kwargs['geocode_service_url'] = geocode_service_url.url
+        kwargs["geocode_service_url"] = geocode_service_url.url
     elif isinstance(geocode_service_url, str) == False:
         raise ValueError("Invalid geocoder service given.")
     if geocode_service_url is None:
-        raise ValueError("The registered geocoders are not valid to use with this tool.")
+        raise ValueError(
+            "The registered geocoders are not valid to use with this tool."
+        )
 
     if isinstance(input_data, Item):
         _item_type = input_data.type
-        kwargs['input_file_item'] = {'itemid' : input_data.itemid}
+        kwargs["input_file_item"] = {"itemid": input_data.itemid}
     elif isinstance(input_data, dict):
-        if 'url' in input_data:
+        if "url" in input_data:
             _item_type = "SERVICE"
-            kwargs['input_table'] = input_data
-        elif 'itemid' in input_data:
-            item = gis.content.search("id: %s" % input_data['itemid'])[0]
+            kwargs["input_table"] = input_data
+        elif "itemid" in input_data:
+            item = gis.content.search("id: %s" % input_data["itemid"])[0]
             _item_type = item.type
-            kwargs['input_file_item'] = input_data
+            kwargs["input_file_item"] = input_data
         pass
     elif isinstance(input_data, str):
         item = gis.content.search("id: %s" % input_data)[0]
         _item_type = item.type
-        kwargs['input_file_item'] = {'itemid' : input_data}
+        kwargs["input_file_item"] = {"itemid": input_data}
     elif isinstance(input_data, Layer):
         lyr = input_data._lyr_dict
-        if 'type' in lyr:
-            del lyr['type']
-        kwargs['input_table'] = lyr
+        if "type" in lyr:
+            del lyr["type"]
+        kwargs["input_table"] = lyr
     else:
         raise ValueError("Invalid input_data")
 
     # Figure out input_data
-    if geocode_parameters is None and \
-       _item_type in ['CSV', 'csv', 'XLS',
-                      'xls', 'XLSX', 'xlsx']:
+    if geocode_parameters is None and _item_type in [
+        "CSV",
+        "csv",
+        "XLS",
+        "xls",
+        "XLSX",
+        "xlsx",
+    ]:
         import json
+
         if header_rows_to_skip is None:
             hre = "false"
         else:
             hre = "true"
-        kwargs['geocode_parameters'] = analyze_geocode_input(
-            input_table_or_item=kwargs['input_file_item'],
+        kwargs["geocode_parameters"] = analyze_geocode_input(
+            input_table_or_item=kwargs["input_file_item"],
             geocode_service_url=geocode_service_url,
-            gis=gis)
+            gis=gis,
+        )
 
-    if output_type == "Feature Layer" and \
-       output_name is None:
+    if output_type == "Feature Layer" and output_name is None:
         if output_name is None:
-            output_service = _create_output_service(gis=gis,
-                               output_name='Geocoded_Feature_Service_ %' % uid,
-                              output_service_name='Geocoded_Feature_Service_ %' % uid,
-                              task='Geocoding')
-        else:#output_type == 'Feature Layer':
-            output_service = _create_output_service(gis=gis,
-                                     output_name='Geocoded_Feature_Service_%s' % uid,
-                                     output_service_name='Geocoded_Feature_Service_%s' % uid,
-                                     task='Geocoding')
-        kwargs['output_name'] = json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
-    elif output_type in ['XLS', 'xls', 'XLSX', 'xlsx']:
+            output_service = _create_output_service(
+                gis=gis,
+                output_name="Geocoded_Feature_Service_ %" % uid,
+                output_service_name="Geocoded_Feature_Service_ %" % uid,
+                task="Geocoding",
+            )
+        else:  # output_type == 'Feature Layer':
+            output_service = _create_output_service(
+                gis=gis,
+                output_name="Geocoded_Feature_Service_%s" % uid,
+                output_service_name="Geocoded_Feature_Service_%s" % uid,
+                task="Geocoding",
+            )
+        kwargs["output_name"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
+    elif output_type in ["XLS", "xls", "XLSX", "xlsx"]:
         if output_name:
-            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
-                                                   "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
-                                                   "tags":"Analysis Result, Geocode Locations From Table",
-                                                   "snippet":"Excel File generated from Geocode Locations From Table","folderId":""}}
+            kwargs["output_name"] = {
+                "itemProperties": {
+                    "title": "Geocoded Results %s" % output_name,
+                    "description": "Geocoded results for %s generated from running the Geocode Locations from Table solution."
+                    % output_name,
+                    "tags": "Analysis Result, Geocode Locations From Table",
+                    "snippet": "Excel File generated from Geocode Locations From Table",
+                    "folderId": "",
+                }
+            }
         else:
-            output_name = 'Geocoded_Result_ %' % uid
-            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
-                                                       "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
-                                                       "tags":"Analysis Result, Geocode Locations From Table",
-                                                       "snippet":"Excel File generated from Geocode Locations From Table","folderId":""}}
-    elif output_type in ['CSV', 'csv']:
+            output_name = "Geocoded_Result_ %" % uid
+            kwargs["output_name"] = {
+                "itemProperties": {
+                    "title": "Geocoded Results %s" % output_name,
+                    "description": "Geocoded results for %s generated from running the Geocode Locations from Table solution."
+                    % output_name,
+                    "tags": "Analysis Result, Geocode Locations From Table",
+                    "snippet": "Excel File generated from Geocode Locations From Table",
+                    "folderId": "",
+                }
+            }
+    elif output_type in ["CSV", "csv"]:
         if output_name:
-            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
-                                                   "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
-                                                   "tags":"Analysis Result, Geocode Locations From Table",
-                                                   "snippet":"CSV File generated from Geocode Locations From Table","folderId":""}}
+            kwargs["output_name"] = {
+                "itemProperties": {
+                    "title": "Geocoded Results %s" % output_name,
+                    "description": "Geocoded results for %s generated from running the Geocode Locations from Table solution."
+                    % output_name,
+                    "tags": "Analysis Result, Geocode Locations From Table",
+                    "snippet": "CSV File generated from Geocode Locations From Table",
+                    "folderId": "",
+                }
+            }
         else:
-            output_name = 'Geocoded_Result_%s' % uid
-            kwargs['output_name'] = {"itemProperties":{"title":"Geocoded Results %s" % output_name,
-                                                       "description":"Geocoded results for %s generated from running the Geocode Locations from Table solution." % output_name,
-                                                       "tags":"Analysis Result, Geocode Locations From Table",
-                                                       "snippet":"CSV File generated from Geocode Locations From Table","folderId":""}}
+            output_name = "Geocoded_Result_%s" % uid
+            kwargs["output_name"] = {
+                "itemProperties": {
+                    "title": "Geocoded Results %s" % output_name,
+                    "description": "Geocoded results for %s generated from running the Geocode Locations from Table solution."
+                    % output_name,
+                    "tags": "Analysis Result, Geocode Locations From Table",
+                    "snippet": "CSV File generated from Geocode Locations From Table",
+                    "folderId": "",
+                }
+            }
 
-    for k,v in list(kwargs.items()):
+    for k, v in list(kwargs.items()):
         if v is None:
             kwargs.pop(k)
     res = tbx.batch_geocode(**kwargs)
-    if 'itemId' in res:
-        return gis.content.get(res['itemId'])
+    if "itemId" in res:
+        return gis.content.get(res["itemId"])
     else:
         return res
 
-def geocode(address,
-            search_extent=None,
-            location=None,
-            distance=None,
-            out_sr=None,
-            category=None,
-            out_fields="*",
-            max_locations=20,
-            magic_key=None,
-            for_storage=False,
-            geocoder=None,
-            as_featureset=False,
-            match_out_of_range=True,
-            location_type='street',
-            lang_code=None,
-            source_country=None):
+
+def geocode(
+    address,
+    search_extent=None,
+    location=None,
+    distance=None,
+    out_sr=None,
+    category=None,
+    out_fields="*",
+    max_locations=20,
+    magic_key=None,
+    for_storage=False,
+    geocoder=None,
+    as_featureset=False,
+    match_out_of_range=True,
+    location_type="street",
+    lang_code=None,
+    source_country=None,
+):
     """
     The geocode function geocodes one location per request.
 
@@ -1117,14 +1213,21 @@ def geocode(address,
         match_out_of_range=match_out_of_range,
         location_type=location_type,
         lang_code=lang_code,
-        source_country=source_country)
+        source_country=source_country,
+    )
 
 
-def reverse_geocode(location, distance=None,
-                    out_sr=None, lang_code=None,
-                    return_intersection=False,
-                    for_storage=False, geocoder=None,
-                    feature_types=None, roof_top='street'):
+def reverse_geocode(
+    location,
+    distance=None,
+    out_sr=None,
+    lang_code=None,
+    return_intersection=False,
+    for_storage=False,
+    geocoder=None,
+    feature_types=None,
+    roof_top="street",
+):
     """
     The reverse_geocode operation determines the address at a particular
     x/y location. You pass the coordinates of a point location to the
@@ -1198,27 +1301,31 @@ def reverse_geocode(location, distance=None,
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
         assert isinstance(geocoder, Geocoder)
-    return geocoder._reverse_geocode(location=location,
-                                     distance=distance,
-                                     out_sr=out_sr,
-                                     lang_code=lang_code,
-                                     return_intersection=return_intersection,
-                                     for_storage=for_storage,
-                                     feature_types=feature_types,
-                                     location_type=roof_top)
+    return geocoder._reverse_geocode(
+        location=location,
+        distance=distance,
+        out_sr=out_sr,
+        lang_code=lang_code,
+        return_intersection=return_intersection,
+        for_storage=for_storage,
+        feature_types=feature_types,
+        location_type=roof_top,
+    )
 
 
-def batch_geocode(addresses,
-                  source_country=None,
-                  category=None,
-                  out_sr=None,
-                  geocoder=None,
-                  as_featureset=False,
-                  match_out_of_range=True,
-                  location_type='street',
-                  search_extent=None,
-                  lang_code='EN',
-                  preferred_label_values=None):
+def batch_geocode(
+    addresses,
+    source_country=None,
+    category=None,
+    out_sr=None,
+    geocoder=None,
+    as_featureset=False,
+    match_out_of_range=True,
+    location_type="street",
+    search_extent=None,
+    lang_code="EN",
+    preferred_label_values=None,
+):
     """
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
@@ -1318,18 +1425,20 @@ def batch_geocode(addresses,
         location_type,
         search_extent,
         lang_code,
-        preferred_label_values
+        preferred_label_values,
     )
 
 
-def suggest(text,
-            location=None,
-            distance=None,
-            category=None,
-            geocoder=None,
-            search_extent=None,
-            max_suggestions=5,
-            country_code=None):
+def suggest(
+    text,
+    location=None,
+    distance=None,
+    category=None,
+    geocoder=None,
+    search_extent=None,
+    max_suggestions=5,
+    country_code=None,
+):
     """
     The result of this operation is a resource representing a list of
     suggested matches for the input text. This resource provides the
@@ -1429,4 +1538,5 @@ def suggest(text,
         category,
         search_extent=search_extent,
         max_suggestions=max_suggestions,
-        country_code=country_code)
+        country_code=country_code,
+    )

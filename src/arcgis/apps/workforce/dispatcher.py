@@ -44,7 +44,9 @@ class Dispatcher(FeatureModel):
 
     """
 
-    def __init__(self, project, feature=None, contact_number=None, name=None, user_id=None):
+    def __init__(
+        self, project, feature=None, contact_number=None, name=None, user_id=None
+    ):
         super().__init__(project, project.dispatchers_layer, feature)
         self._schema = DispatcherSchema(project.dispatchers_layer)
         if not feature:
@@ -124,12 +126,18 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        where = "{} = '{}'".format(self.project._assignment_schema.dispatcher_id,self.id)
+        where = "{} = '{}'".format(
+            self.project._assignment_schema.dispatcher_id, self.id
+        )
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
-            errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))
+            errors.append(
+                ValidationError("Cannot remove a Dispatcher that has assignments", self)
+            )
         if self.user_id == self.project.owner_user_id:
-            errors.append(ValidationError("Cannot remove the project owner's Dispatcher", self))
+            errors.append(
+                ValidationError("Cannot remove the project owner's Dispatcher", self)
+            )
         return errors
 
     def _validate_name(self):
@@ -141,7 +149,9 @@ class Dispatcher(FeatureModel):
     def _validate_user_id(self):
         errors = []
         if not self.user_id or self.user_id.isspace():
-            errors.append(ValidationError("Dispatcher cannot have an empty user_id", self))
+            errors.append(
+                ValidationError("Dispatcher cannot have an empty user_id", self)
+            )
         return errors
 
     def _validate_user_id_on_server(self):
@@ -151,8 +161,14 @@ class Dispatcher(FeatureModel):
             message = "The Dispatcher must have an accessible named user_id"
             errors.append(ValidationError(message, self))
 
-        dispatchers = [d for d in self.project._cached_dispatchers.values() if d.user_id == self.user_id]
-        duplicate_dispatchers = [d for d in dispatchers if d.object_id != self.object_id]
+        dispatchers = [
+            d
+            for d in self.project._cached_dispatchers.values()
+            if d.user_id == self.user_id
+        ]
+        duplicate_dispatchers = [
+            d for d in dispatchers if d.object_id != self.object_id
+        ]
         if duplicate_dispatchers:
             message = "There cannot be multiple Dispatchers with the same user_id"
             errors.append(ValidationError(message, self))

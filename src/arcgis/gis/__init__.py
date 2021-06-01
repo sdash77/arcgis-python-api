@@ -74,7 +74,8 @@ class GIS(object):
     Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
 
     The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
-    as well as the results of your analysis. To create a new map, call the map() method.
+    as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
+    Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
     The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
     or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
@@ -204,6 +205,20 @@ class GIS(object):
         gis = GIS(url="https://pkienterprise.esri.com/portal",
                   cert_file="C:\\users\\someuser\\mycert.pfx", password="password1")
 
+    .. code-block:: python
+
+        # Usage Exmaple 7: Login with token (actual token abbreviated for this illustration)
+
+        gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
+                  referer="https://www.arcgis.com")
+    
+    .. code-block:: python
+
+        # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
+
+        gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
+                  referer="https")
+                  
     """
     _server_list = None
     _is_hosted_nb_home = False
@@ -258,7 +273,7 @@ class GIS(object):
                 if not self._config_is_in_new_format(config):
                     answer = input("Warning: profiles in {} appear to be in "\
                                    "the <v1.3 format, and must be deleted before "\
-                        "continuing. Delete? [y/n]".format(cfg_file_path))
+                                   "continuing. Delete? [y/n]".format(cfg_file_path))
                     if "y" in answer.lower():
                         os.remove(cfg_file_path)
                         config = configparser.ConfigParser()
@@ -330,7 +345,7 @@ class GIS(object):
             self._expiration = 60
         try:
             self._portal = _portalpy.Portal(self._url, self._username,
-                                           self._password, self._key_file,
+                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
@@ -340,6 +355,19 @@ class GIS(object):
                                            referer=self._referer,
                                            custom_auth=custom_auth, #token=self._utoken,
                                            client_secret=client_secret,
+                                           trust_env=kwargs.get("trust_env", None))
+            if self._portal.is_kubernetes:
+                from .kubernetes._sharing import KbertnetesPy
+                self._portal = KbertnetesPy(self._url, self._username,
+                                           self._password, self._key_file,
+                                           self._cert_file,
+                                           proxy_host=self._proxy_host,
+                                           proxy_port=self._proxy_port,
+                                           verify_cert=self._verify_cert,
+                                           client_id=self._client_id,
+                                           expiration=self._expiration,
+                                           referer=self._referer,
+                                           custom_auth=custom_auth,
                                            trust_env=kwargs.get("trust_env", None))
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -382,7 +410,7 @@ class GIS(object):
                                       props['customBaseUrl'])
                 self._url = url
                 pp =  _portalpy.Portal(url,
-                                      self._username,
+                                       self._username,
                                       self._password,
                                       self._key_file,
                                       self._cert_file,
@@ -428,7 +456,11 @@ class GIS(object):
                     import warnings
                     warnings.warn("You are logged on as %s with an administrator role, proceed with caution." % \
                                   self.users.me.username)
-                if self.properties.isPortal == True:
+                if self.properties.isPortal and self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                elif self.properties.isPortal == True and self._portal.is_kubernetes == False:
                     from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
@@ -624,7 +656,7 @@ class GIS(object):
             "a GIS() object with the standard user/password, cert_file, etc. "\
             "See https://bit.ly/2DT1156 for more information."
         _log.warning('Authenticating in GIS("home") mode failed.'\
-                    '{}'.format(mitigation_msg))
+                     '{}'.format(mitigation_msg))
         raise RuntimeError("{}\n-----\n{}".format(err_msg, mitigation_msg))
 
     def _uri_validator(self, x):
@@ -668,6 +700,29 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+    
+    @_lazy_property
+    def notebook_server(self) -> "List[NotebookServer]":
+        """
+        Provide access to the Notebook Server registerd with the organization or enterprise.
+        
+        :returns: List[`NotebookServer`] 
+        """
+        if self._portal.is_arcgisonline:
+            urls = self._registered_servers()
+            url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
+            if url:
+                from arcgis.gis.nb import NotebookServer
+                url = f"https://{url[0]}/admin"
+                return [NotebookServer(url=url, gis=self)]
+        else:
+            try:
+                from arcgis.gis.nb import NotebookServer
+                return [server for server in self.admin.servers.list() \
+                           if isinstance(server, NotebookServer)]
+            except:
+                return []
+        return []
 
     @property
     def datastore(self):
@@ -795,8 +850,27 @@ class GIS(object):
     def _registered_servers(self):
         """returns servers registered with enterprise/portal"""
         params = {'f' : 'json'}
-        url = f"{self._portal.resturl}portals/self/servers"
+        if self._portal.is_arcgisonline == False:
+            url = f"{self._portal.resturl}portals/self/servers"
+        else:
+            url = f"{self._portal.resturl}portals/self/urls"
         return self._con.get(url, params=params)
+    #----------------------------------------------------------------------
+    @property
+    def servers(self) -> dict:
+        """
+        Returns the servers registered with ArcGIS Entperise.  For ArcGIS
+        Online, the return value is `None`.
+
+        :returns: dict
+        """
+        if self._portal.is_arcgisonline:
+            return None
+        elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
+
+            url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
+            params = {'f' : 'json'}
+        return self._con.get(url, params)
     #----------------------------------------------------------------------
     @property
     def org_settings(self):
@@ -882,7 +956,7 @@ class GIS(object):
     #----------------------------------------------------------------------
     def __str__(self):
         return 'GIS @ {url} version:{version}'.format(url=self.url,
-                                    version=".".join([str(i) for i in self._product_version]))
+                                                      version=".".join([str(i) for i in self._product_version]))
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
@@ -906,7 +980,8 @@ class GIS(object):
         provided, the map is centered at the matched address instead and the map is zoomed
         to the specified zoomlevel. See :class:`~arcgis.widgets.MapView` for more information.
 
-        Note: The map widget is only supported within a Jupyter Notebook.
+        Note: The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
+        Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1323,8 +1398,8 @@ class GroupMigrationManager(object):
             else:
                 items = None
             params = {
-                      'itemIdList' : items
-                      }
+                'itemIdList' : items
+            }
 
             params['async'] = json.dumps(True)
             res = self._gis._con.post(url, params)
@@ -1384,7 +1459,7 @@ class GroupMigrationManager(object):
         if isinstance(epk_item, Item) and \
            epk_item.type == 'Export Package':
             res = self._from_package(item=epk_item,
-                                      item_id_list=item_ids,
+                                     item_id_list=item_ids,
                                       preview_only=False,
                                       run_async=True,
                                       overwrite=overwrite,
@@ -1808,7 +1883,7 @@ class DatastoreManager(object):
             cs['info']['folder'] = folder
         params = {
             'f' : 'json',
-        'item' : json.dumps(cs)
+            'item' : json.dumps(cs)
         }
 
         status, msg = self._validate_item(item=params['item'])
@@ -2170,7 +2245,7 @@ class UserManager(object):
             "fieldWorkerUT" : "fieldWorkerUT"
         }
         role_lu = {
-             "administrator" : "org_admin",
+            "administrator" : "org_admin",
              "org_admin" : "org_admin",
              "publisher" : "org_publisher",
              "org_publisher" : "org_publisher",
@@ -2183,7 +2258,7 @@ class UserManager(object):
         if self._gis.version > [7, 3]:
             if settings is None or \
                (isinstance(settings, dict) and \
-               len(settings) == 0):
+                len(settings) == 0):
                 cs = self.user_settings
                 if cs and len(cs) > 0:
                     self._delete_user_settings()
@@ -2301,7 +2376,7 @@ class UserManager(object):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`counts` is not implemented at version %s of Enterprise" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         url = "portals/self/users/counts"
         lu = {
@@ -2389,30 +2464,31 @@ class UserManager(object):
                provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise do not allow accounts from an enterprise identity store to be registered
-            automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The username must be unique and 6-24 characters long.
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter if
+                          This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to them.
+                          the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2458,26 +2534,43 @@ class UserManager(object):
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7)
-                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
+                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          for full details.)
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
-                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
-                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
+                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          for full details.)
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (ArcGIS Online only)
+                          which means unlimited. (10.7+)
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
+                          user. (10.7+)
         ================  ===============================================================================
 
         :return:
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
-        """
-        kwargs = locals()
+        """ 
+        kwargs = {
+            "username" : username, 
+            "password" : password, 
+            "firstname" : firstname,
+            "lastname" : lastname, 
+            "email" : email, 
+            "description" : description, 
+            "role" : role,
+            "provider" : provider, 
+            "idp_username" : idp_username, 
+            "level" : level, 
+            "thumbnail" : thumbnail, 
+            "user_type" : user_type, 
+            "credits" : credits,
+            "groups" : groups            
+        }
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
@@ -2501,30 +2594,31 @@ class UserManager(object):
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level=1
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
-            to the automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The username must be unique and 6-24 characters long.
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
                           This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to them.
+                          the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2560,7 +2654,7 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline:
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                 ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
-                         '''</p>
+                '''</p>
 <p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
 <p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
 <p>If you have difficulty signing in, please contact ''' + self._gis.properties.user.fullName + \
@@ -2633,12 +2727,12 @@ class UserManager(object):
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
-            to the automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -2740,7 +2834,7 @@ class UserManager(object):
         elif role.lower() in role_lookup:
             role = role_lookup[role.lower()]
 
-        if self._gis._portal.is_arcgisonline:
+        if self._gis._portal.is_arcgisonline or (self._gis._portal.is_kubernetes and provider != 'enterprise'):
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                 ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
                 '''</p>
@@ -2753,19 +2847,18 @@ class UserManager(object):
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
             if credits == -1 and self._gis.version >= [7,2] and \
-                self._gis.properties['defaultUserCreditAssignment'] != -1:
+               self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
             if not groups and \
-               self.user_settings and \
                'groups' in self.user_settings and \
                self.user_settings['groups']:
-                groups = [g for g in self.user_settings['groups']]
-
+                groups = [self._gis.groups.get(g)
+                          for g in self.user_settings['groups']]
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
                     {
-                    'username': username,
+                        'username': username,
                     'firstname': firstname,
                     'lastname': lastname,
                     'fullname': firstname + ' ' + lastname,
@@ -2777,9 +2870,9 @@ class UserManager(object):
 
                     }
                     ],
-                        "apps":[],
+                                   "apps":[],
                         "appBundles":[]
-                },
+                        },
                 #'message' : email_text
             }
             if idp_username is not None:
@@ -2799,8 +2892,8 @@ class UserManager(object):
                 else:
                     new_user = self.get(username)
                     if self.user_settings and \
-                    'userType' in self.user_settings and \
-                       not self.user_settings['userType'] == 'arcgisonly':
+                       'userType' in self.user_settings and \
+                    not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
                         user_params = {"f":"json",
                                        "token":"token",
@@ -2809,6 +2902,30 @@ class UserManager(object):
                         return new_user
                     else:
                         return new_user
+        elif self._gis._portal.is_kubernetes and provider == 'enterprise':
+            createuser_url = self._portal.url + "/admin/orgs/0123456789ABCDEF/security/users/createUser"
+            params = {
+                'f': 'json',
+                'username' : username,
+                'password' : password,
+                'firstname' : firstname,
+                'lastname' : lastname,
+                'email' : email,
+                'description' : description,
+                'role' : role,
+                'provider' : provider,
+                'idpUsername' : idp_username,
+                "userLicenseTypeId": user_type
+            }
+            self._portal.con.post(createuser_url, params)
+            user = self.get(username)
+            for grp in groups:
+                grp.add_users([username])
+            if thumbnail is not None:
+                ret = user.update(thumbnail=thumbnail)
+                if not ret:
+                    _log.error('Unable to update the thumbnail for  ' + username)
+            return user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
@@ -2833,7 +2950,6 @@ class UserManager(object):
                 if not ret:
                     _log.error('Unable to update the thumbnail for  ' + username)
             return user
-
     #----------------------------------------------------------------------
     def invite(self,
                email, role='org_user',
@@ -2852,7 +2968,8 @@ class UserManager(object):
                           Other possible values are org_publisher, org_admin, org_viewer.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. The default is 2.
-                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          for full details.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -3112,7 +3229,7 @@ class UserManager(object):
         group_id = None
         if max_items == -1:
             max_items = _search(gis=self._gis, query=query, stype=stype,
-                          max_items=0, start=start, sort_field=sort_field,
+                                max_items=0, start=start, sort_field=sort_field,
                           sort_order=sort_order, group_id=group_id, as_dict=as_dict)['total']
         so = {
             'DESC' : 'DESC',
@@ -3188,8 +3305,9 @@ class UserManager(object):
             A few things that will be helpful to know.
 
             1. The query syntax has quite a few features that can't
-               be adequately described here.  Please refer the ArcGIS REST
-               API reference from here: https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm.
+               be adequately described here.  Please refer to the ArcGIS REST
+               API `Search Reference <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_
+               for details on the search engine used with this method.
 
             2. Searching without specifying a query parameter returns
                a list of all users in your organization.
@@ -3384,7 +3502,7 @@ class RoleManager(object):
                 role_data = {
                     "id": role_id,
                     "name": name,
-                  "description": description
+                    "description": description
                 }
                 role = Role(self._gis, role_id, role_data)
                 role.privileges = privileges
@@ -3979,7 +4097,7 @@ class ContentManager(object):
             path += '/' + folder_id
 
         url = "{base}{path}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
-                                                                          path=path,
+                                                           path=path,
                                                                           itemid=itemid)
         file = {'file': None}
         params = {
@@ -4030,7 +4148,7 @@ class ContentManager(object):
         if all(messages):
             # commit the addition
             url = "{base}{path}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
-                                                                             path=path,
+                                                              path=path,
                                                                              itemid=itemid)
             params = {
                 'f' : "json",
@@ -4042,7 +4160,7 @@ class ContentManager(object):
             res = self._gis._con.post(url, params)
             if 'success' in res:
                 url = "{base}{path}/items/{itemid}/status".format(base=self._gis._portal.resturl,
-                                                                                path=path,
+                                                                  path=path,
                                                                                 itemid=itemid)
                 import time
                 params = {'f' : 'json'}
@@ -4098,7 +4216,7 @@ class ContentManager(object):
         """
         params = {'f' : 'json'}
         url = "{resturl}content/users/{username}/items/{itemid}/canDelete".format(resturl=self._portal.resturl,
-                                                                           username=item.owner,
+                                                                                  username=item.owner,
                                                                            itemid=item.itemid)
         try:
             res = self._portal.con.post(url, params)
@@ -4589,7 +4707,7 @@ class ContentManager(object):
         =================  =====================================================================
 
         :return:
-             The item for the service if successfully created, None if unsuccessful.
+             The :class:`~arcgis.gis.Item` for the service if successfully created, None if unsuccessful.
         """
         if capabilities is None:
             if service_type == 'imageService':
@@ -4735,7 +4853,7 @@ class ContentManager(object):
         group_id = None
         if max_items == -1:
             max_items = _search(gis=self._gis, query=query, stype=stype,
-                          max_items=0, bbox=bbox,
+                                max_items=0, bbox=bbox,
                           categories=categories, category_filter=category_filter,
                           start=start, sort_field=sort_field,
                           sort_order=sort_order, count_fields=count_fields,
@@ -4811,8 +4929,9 @@ class ContentManager(object):
             A few things that will be helpful to know...
 
             1. The query syntax has many features that can't be adequately
-               described here.  The query syntax is available in ArcGIS Help.
-               A short version of that URL is http://bitly.com/1fJ8q31.
+               described here.  Please see the ArcGIS REST API `Search
+               Reference <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_
+               for full details on search engine used with this method.
 
             2. Most of the time when searching for items, you'll want to
                search within your organization in ArcGIS Online
@@ -4826,8 +4945,8 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
-        item_type         Optional string. Set type of item to search.
-                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
+        item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
+                          for comprehensive list of values (the type column).
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
@@ -4849,7 +4968,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A list of items matching the specified query.
+            A list of :class:`items <arcgis.gis.Item>` matching the specified query.
         """
         if max_items > 10000:
             raise Exception(("Use `advanced_search` fo"
@@ -4899,7 +5018,7 @@ class ContentManager(object):
             elif accountid:
                 query = 'accountid:' + accountid
         itemlist = self.advanced_search(query=query, max_items=max_items,
-                             categories=categories,
+                                        categories=categories,
                              start=1, sort_field=sort_field,
                              sort_order=sort_order)['results']
         return itemlist
@@ -5006,7 +5125,7 @@ class ContentManager(object):
                                             self._gis.users.me.username)
         params = {
             'f' : 'json',
-        'items' : ""
+            'items' : ""
         }
         ditems = []
         for item in items:
@@ -5311,8 +5430,8 @@ class ContentManager(object):
 
 
         :return:
-           A feature collection or feature layer that can be used for analysis,
-           visualization, or published to the GIS as an item.
+           A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
+           that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
         """
         if item_id and self._gis.version <= [7,1]:
             item_id = None
@@ -5542,7 +5661,12 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
-    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, copy_global_ids=False, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
+    def clone_items(self, items, folder=None, 
+                    item_extent=None, use_org_basemap=False, 
+                    copy_data=True, copy_global_ids=False, 
+                    search_existing_items=True, 
+                    item_mapping=None, group_mapping=None, 
+                    owner=None, preserve_item_id=False):
         """ Clone content to the GIS by creating new items.
 
         .. note::
@@ -5591,6 +5715,10 @@ class ContentManager(object):
                                   be used rather than cloning the source group.
         ---------------------     --------------------------------------------------------------------
         owner                     Optional string. Defaults to the logged in user.
+        ---------------------     --------------------------------------------------------------------
+        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS 
+                                  Online, the clone item will attempt to keep the same item ids for the 
+                                  items if available.  ArcGIS Enterprise must be 10.9+. 
         =====================     ====================================================================
 
         :return:
@@ -5608,7 +5736,18 @@ class ContentManager(object):
             owner_name = self._gis.users.me.username
         if isinstance(owner, User):
             owner_name = owner.username
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, copy_global_ids, search_existing_items, item_mapping, group_mapping, owner_name)
+        if (preserve_item_id and self._gis.version < [8,2]) or \
+           (preserve_item_id and self._gis._portal.is_arcgisonline):
+            print("Cannot preserve ItemIds on ArcGIS Enterprise "
+                  "older than v10.9 or to ArcGIS Online organizations. \n"
+                  "`preserve_item_id` will be ignored.")
+            preserve_item_id = False
+            
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, 
+                                        wgs84_extent, service_extent, 
+                                        use_org_basemap, copy_data, copy_global_ids, 
+                                        search_existing_items, item_mapping, group_mapping, owner_name,
+                                        preserve_item_id=preserve_item_id)
         return deep_cloner.clone()
 
     def bulk_update(self, itemids, properties):
@@ -5878,14 +6017,14 @@ class ContentManager(object):
             params['items'] = ",".join(sitems)
             res = self._gis._con.post(url, params)
         if everyone is not None and \
-            org is not None:
+           org is not None:
             for item in items:
                 if isinstance(item, Item):
                     item.share(everyone=everyone, org=org)
                 elif isinstance(item, str):
                     Item(gis=self._gis, itemid=item).share(everyone=everyone, org=org)
         elif everyone is not None and \
-            org is None:
+             org is None:
             for item in items:
                 if isinstance(item, Item):
                     org = item.shared_with['org']
@@ -5895,7 +6034,7 @@ class ContentManager(object):
                     org = usitem.shared_with['org']
                     usitem.share(everyone=everyone, org=org)
         elif everyone is None and \
-            org is not None:
+             org is not None:
             for item in items:
                 if isinstance(item, Item):
                     everyone = item.shared_with['everyone']
@@ -6112,7 +6251,7 @@ class ResourceManager(object):
     def export(self, save_path=None, file_name=None):
         """Export's the data's resources as a zip file"""
         url = 'content/users/'+ self._user_id +\
-                    '/items/' + self._item.itemid + "/resources/export"
+            '/items/' + self._item.itemid + "/resources/export"
         if save_path is None:
             save_path = tempfile.gettempdir()
         if file_name is None:
@@ -6513,7 +6652,7 @@ class Group(dict):
         from ._impl._search import _search
         if return_count:
             return _search(gis=self._gis,
-                       query=query, stype="group_content",
+                           query=query, stype="group_content",
                        max_items=max_items,
                        bbox=bbox,
                        categories=categories,
@@ -6753,8 +6892,8 @@ class Group(dict):
                     users.append(u.username)
         n = 25
         results = {
-                "notAdded": [ ]
-            }
+            "notAdded": [ ]
+        }
         if users:
             users_added = [self._portal.add_group_users(users[i * n:(i + 1) * n], self.groupid, [])['notAdded'] for i in range((len(users) + n - 1) // n )]
             [results['notAdded'].extend(a) for a in users_added]
@@ -6812,7 +6951,7 @@ class Group(dict):
 
         """
         params = {
-           "admins" : managers or [],
+            "admins" : managers or [],
            "users" : users or [],
            "f" : "json"
         }
@@ -7491,7 +7630,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`user_types` is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
@@ -7553,7 +7692,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("Provisions is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         provs = []
         url = "%s/community/users/%s/provisionedListings" % (self._portal.resturl, self.username)
@@ -7590,7 +7729,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`bundles` is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         from arcgis.gis.admin._license import Bundle
         url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
@@ -7609,7 +7748,7 @@ class User(dict):
         return [Bundle(url="{base}content/listings/{id}".format(base=self._gis._portal.resturl,
                                                                 id=b["id"]),
                        properties=b,
-                    gis=self._gis)
+                       gis=self._gis)
                 for b in bundles]
     #----------------------------------------------------------------------
     def get_thumbnail_link(self):
@@ -7784,7 +7923,9 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         new_security_answer    Optional string. The new security question answer if desired.
         ---------------------  ---------------------------------------------------------
-        reset_by_email         Optional Boolean.  If True, the `user` will be reset by email. The default is False.
+        reset_by_email         | Optional Boolean.  If True, the `user` will be reset by email. The default is False.
+
+                               **NOTE:** Not available with ArcGIS on Kubernetes.
         =====================  =========================================================
 
         :return:
@@ -8276,7 +8417,7 @@ class User(dict):
                 entitle = []
             if len(entitle) > 0:
                 l.revoke(username=self.username,
-                             entitlements="*",
+                         entitlements="*",
                              suppress_email=True)
         for bundle in self._gis.admin.license.bundles:
             bundle.revoke(users=self.username)
@@ -8459,7 +8600,8 @@ class Item(dict):
     """
 
     _uid = None
-
+    _snapeshots = None
+    
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
         self._portal = gis._portal
@@ -8484,7 +8626,35 @@ class Item(dict):
             self.tables = None
             self['layers'] = None
             self['tables'] = None
-
+    #----------------------------------------------------------------------
+    @property
+    def snapshots(self) -> list:
+        """
+        Provides access to the Notebook Item's Snapshots. If the user is not
+        the owner of the `Item`, the snapshots will be an empty list.
+        
+        :returns: List[SnapShot]
+        """
+        if self._is_notebook and \
+           self._gis.notebook_server and \
+           self.owner == self._gis.users.me.username and \
+           len(self._gis.notebook_server) > 0:
+            nbs = self._gis.notebook_server[0]
+            return nbs.notebooks.snapshots.list(self)
+        return []
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _is_notebook(self) -> bool:
+        return self.type.lower() == "notebook"
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _get_nbs_server(self):        
+        urls = self._gis._registered_servers()
+        if self._gis._portal.is_arcgisonline:
+            return urls
+        else:
+            return urls
+    #----------------------------------------------------------------------
     @_lazy_property
     def resources(self):
         """
@@ -8516,7 +8686,7 @@ class Item(dict):
         return self.type ==  'Feature Collection' or \
                self.type == 'Feature Service' or \
                self.type == 'Big Data File Share' or \
-            self.type == 'Image Service' or \
+               self.type == 'Image Service' or \
             self.type == 'Map Service' or \
             self.type == 'Globe Service' or \
             self.type == 'Scene Service' or \
@@ -8914,20 +9084,30 @@ class Item(dict):
            The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
-        if file_name is None:
-            import re
-            file_name = self.name or self.title
-            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+        
         if not save_path:
             save_path = self._workdir
-        if data_path:
-
+        try:
             download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
-            if download_path == '':
-                return None
-            else:
-                return download_path
+        except Exception as e:
+            _log.debug(msg=str(e))
+            _log.debug(msg='Retrying download parsing name from title or name property.')
+            if file_name is None:
+                import re
+                file_name = self.name or self.title
+                file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
+            if save_path is None:
+                save_path = tempfile.gettempdir()
+            download_path = self._portal.con.get(path=data_path, 
+                                                 file_name=file_name,
+                                                 out_folder=save_path, 
+                                                 try_json=False, 
+                                                 force_bytes=False)                
+        if download_path == '':
+            return None
+        else:
+            return download_path
 
     def export(self, title, export_format,
                parameters=None, wait=True, enforce_fld_vis=None,
@@ -9499,26 +9679,28 @@ class Item(dict):
                         raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
-
+        elif isinstance(groups, Group):
+            group_ids = groups.id
         elif isinstance(groups, str):
             #old API - groups sent as comma separated group ids
             group_ids = groups
         if self.owner == self._gis.users.me.username:
 
             url = "{resturl}content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
-                                                                      owner=self.owner)
+                                                                     owner=self.owner)
             params = {
                 'f' : 'json',
                 'items' : self.id,
                 "groups": group_ids,
                 "everyone": everyone,
-                "account": org
+                "account": org,
+                'confirmItemControl' : allow_members_to_edit
+
             }
             if allow_members_to_edit:
-                params['owner'] = self.owner
                 params['confirmItemControl'] = allow_members_to_edit  # True
         else:
-            url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
+            url = "{resturl}content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
                                                                   itemid=self.itemid)
             params = {
                 'f' : 'json',
@@ -9526,6 +9708,10 @@ class Item(dict):
                 "everyone": everyone,
                 "account": org
             }
+
+            if allow_members_to_edit:
+                if 'portal:admin:createUpdateCapableGroup' in self._gis.users.me.privileges:
+                    params['confirmItemControl'] = allow_members_to_edit  # True
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
@@ -9954,7 +10140,11 @@ class Item(dict):
             params['name'] = self.title.replace(' ', '_')
         if self.type == 'Map Service':
             params['name'] = self.title.replace(' ', '_')
-        if date_range.lower() in ['24h', '1d']:
+        if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
+            params['period'] = '1d'
+            params['startTime'] = int(date_range[0].timestamp() * 1000)
+            params['endTime'] = int(date_range[1].timestamp() * 1000)
+        elif date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
         elif date_range.lower() == '7d':
@@ -10292,6 +10482,8 @@ class Item(dict):
         .. note::
             ArcGIS does not permit overwriting if you published multiple hosted feature layers from the same data item.
 
+        .. note::
+            ArcGIS for Enterprise for Kubernetes does not support publishing service definition file generated by ArcMap.
 
         ===================    ===============================================================
         **Argument**           **Description**
@@ -10341,7 +10533,14 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-
+        if str(output_type).lower() in ['ogc', 'ogcfeatureservice']:
+            output_type = "OGCFeatureService"
+            file_type = 'featureService'
+            scrubbed = re.sub('\W+','', self.title)
+            if publish_parameters is None:
+                publish_parameters = {}
+            publish_parameters.update({"name" : publish_parameters.get("name", scrubbed)})
+            build_initial_cache = False
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == "GeoPackage":
@@ -10666,7 +10865,7 @@ class Item(dict):
     def create_tile_service(self,
                             title,
                             min_scale,
-                             max_scale,
+                            max_scale,
                              cache_info=None,
                              build_cache=False):
         """
@@ -10732,7 +10931,7 @@ class Item(dict):
                   "tilingSchema":{"tileCacheInfo": cache_info,
                                   "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
                                   "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
-                                      "packetSize":128}},"cacheOnDemand":True,
+                                                      "packetSize":128}},"cacheOnDemand":True,
                   "cacheOnDemandMinScale":144448,
                   "capabilities":"Map,ChangeTracking"}
             params = {
@@ -10962,7 +11161,7 @@ class Item(dict):
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
                                                                      self._user_id,
-                                                        self.id)
+                                                                     self.id)
         params = {"f" : "json"}
         ps = []
         try:
@@ -10976,7 +11175,7 @@ class Item(dict):
     #----------------------------------------------------------------------
     def _create_proxy(self,
                       url:str=None,
-                     hit_interval:int=None,
+                      hit_interval:int=None,
                      interval_length:int=60,
                      proxy_params:dict=None) -> dict:
         """

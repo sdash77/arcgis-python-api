@@ -354,6 +354,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
         #self._check_requisites()
+        if (hasattr(self.learn.data, 'emd') and (self._learning_rate is None)):
+            return self.learn.data.emd['mIoU'] # if model is loaded without data then reads the miou value from emd
         num_classes = torch.arange(self._orient_data.c)
         miou = compute_miou(self, self._orient_data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:

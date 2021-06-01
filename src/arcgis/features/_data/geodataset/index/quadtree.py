@@ -31,8 +31,9 @@ THE SOFTWARE.
 
 __version__ = "0.30.0"
 
-#PYTHON VERSION CHECK
+# PYTHON VERSION CHECK
 import sys
+
 PYTHON3 = int(sys.version[0]) == 3
 if PYTHON3:
     xrange = range
@@ -59,7 +60,6 @@ class _QuadNode(object):
     def __init__(self, item, rect):
         self.item = item
         self.rect = rect
-
 
 
 class _QuadTree(object):
@@ -112,15 +112,23 @@ class _QuadTree(object):
                     self.children[3]._intersect(rect, results)
         # search node at this level
         for node in self.nodes:
-            if (node.rect[2] >= rect[0] and node.rect[0] <= rect[2] and
-                node.rect[3] >= rect[1] and node.rect[1] <= rect[3]):
+            if (
+                node.rect[2] >= rect[0]
+                and node.rect[0] <= rect[2]
+                and node.rect[3] >= rect[1]
+                and node.rect[1] <= rect[3]
+            ):
                 results.add(node.item)
         return results
 
     def _insert_into_children(self, item, rect):
         # if rect spans center then insert here
-        if (rect[0] <= self.center[0] and rect[2] >= self.center[0] and
-            rect[1] <= self.center[1] and rect[3] >= self.center[1]):
+        if (
+            rect[0] <= self.center[0]
+            and rect[2] >= self.center[0]
+            and rect[1] <= self.center[1]
+            and rect[3] >= self.center[1]
+        ):
             node = _QuadNode(item, rect)
             self.nodes.append(node)
         else:
@@ -146,14 +154,20 @@ class _QuadTree(object):
         y1 = self.center[1] - quartheight
         y2 = self.center[1] + quartheight
         new_depth = self._depth + 1
-        self.children = [_QuadTree(x1, y1, halfwidth, halfheight,
-                                   self.max_items, self.max_depth, new_depth),
-                         _QuadTree(x1, y2, halfwidth, halfheight,
-                                   self.max_items, self.max_depth, new_depth),
-                         _QuadTree(x2, y1, halfwidth, halfheight,
-                                   self.max_items, self.max_depth, new_depth),
-                         _QuadTree(x2, y2, halfwidth, halfheight,
-                                   self.max_items, self.max_depth, new_depth)]
+        self.children = [
+            _QuadTree(
+                x1, y1, halfwidth, halfheight, self.max_items, self.max_depth, new_depth
+            ),
+            _QuadTree(
+                x1, y2, halfwidth, halfheight, self.max_items, self.max_depth, new_depth
+            ),
+            _QuadTree(
+                x2, y1, halfwidth, halfheight, self.max_items, self.max_depth, new_depth
+            ),
+            _QuadTree(
+                x2, y2, halfwidth, halfheight, self.max_items, self.max_depth, new_depth
+            ),
+        ]
         nodes = self.nodes
         self.nodes = []
         for node in nodes:
@@ -196,7 +210,16 @@ class Index(_QuadTree):
     ['duck', 'python']
     """
 
-    def __init__(self, bbox=None, x=None, y=None, width=None, height=None, max_items=MAX_ITEMS, max_depth=MAX_DEPTH):
+    def __init__(
+        self,
+        bbox=None,
+        x=None,
+        y=None,
+        width=None,
+        height=None,
+        max_items=MAX_ITEMS,
+        max_depth=MAX_DEPTH,
+    ):
         """
         Initiate by specifying either 1) a bbox to keep track of, or 2) with an xy centerpoint and a width and height.
 
@@ -218,15 +241,17 @@ class Index(_QuadTree):
         """
         if bbox:
             x1, y1, x2, y2 = bbox
-            width, height = abs(x2-x1), abs(y2-y1)
-            midx, midy = x1+width/2.0, y1+height/2.0
+            width, height = abs(x2 - x1), abs(y2 - y1)
+            midx, midy = x1 + width / 2.0, y1 + height / 2.0
             super(Index, self).__init__(midx, midy, width, height, max_items, max_depth)
 
         elif all([x, y, width, height]):
             super(Index, self).__init__(x, y, width, height, max_items, max_depth)
 
         else:
-            raise Exception("Either the bbox argument must be set, or the x, y, width, and height arguments must be set")
+            raise Exception(
+                "Either the bbox argument must be set, or the x, y, width, and height arguments must be set"
+            )
 
     def insert(self, item, bbox):
         """

@@ -1,11 +1,11 @@
 import traceback
 from .._data import _raise_fastai_import_error
+from ._inference_only_models import InferenceOnlyModel
 HAS_TRANSFORMER = True
 
 try:
     import torch
     from transformers import pipeline, logging
-    from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING
     EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys()]
@@ -15,7 +15,7 @@ except Exception as e:
     EXPECTED_MODEL_TYPES = []
 
 
-class ZeroShotClassifier:
+class ZeroShotClassifier(InferenceOnlyModel):
     """
     Creates a `ZeroShotClassifier` Object.
     Based on the Hugging Face transformers library
@@ -29,31 +29,37 @@ class ZeroShotClassifier:
 
                             To learn more about the available models for
                             zero-shot-classification task, kindly visit:-
-                            https://huggingface.co/models?search=nli
+                            https://huggingface.co/models?pipeline_tag=zero-shot-classification
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    pretrained_path         Option str. Path to a directory, where pretrained
+                            model files are saved. 
+                            If pretrained_path is provided, the model is
+                            loaded from that path on the local disk.
+    ---------------------   -------------------------------------------
+    working_dir             Option str. Path to a directory on local filesystem.
+                            If directory is not present, it will be created.
+                            This directory is used as the location to save the 
+                            model.
     =====================   ===========================================
 
     :returns: `ZeroShotClassifier` Object
     """
 
-    #: supported transformer backbones
+    #: supported transformer architectures
     supported_backbones = EXPECTED_MODEL_TYPES
 
-    def __init__(self, backbone=None):
+    def __init__(self, backbone=None, **kwargs):
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
-
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
-        self._device = _get_device_id()
-        self._task = "zero-shot-classification"
-        try:
-            self.model = pipeline(self._task, model=backbone, device=self._device)
-        except Exception as e:
-            error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
-                             f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
-            raise Exception(error_message)
+        super().__init__(backbone=backbone, task="zero-shot-classification", **kwargs)
         
-    def predict(self, text_or_list, candidate_labels, **kwargs):
+    def predict(self, text_or_list, candidate_labels, show_progress=True, **kwargs):
         """
         Predicts the class label(s) for the input text
 
@@ -67,6 +73,9 @@ class ZeroShotClassifier:
                                 class labels to classify each sequence into.
                                 Can be a single label, a string of
                                 comma-separated labels, or a list of labels.
+        ---------------------   -------------------------------------------
+        show_progress           optional Bool. If set to True, will display a
+                                progress bar depicting the items processed so far.
         =====================   ===========================================
 
         **kwargs**
@@ -94,11 +103,11 @@ class ZeroShotClassifier:
         results = []
         multi_class = kwargs.get("multi_class", False)
         hypothesis = kwargs.get("hypothesis", "This example is {}.")
-        if not isinstance(text_or_list, (list, tuple)): text_or_list = [text_or_list]
-        for i in progress_bar(range(len(text_or_list))):
+        if not isinstance(text_or_list, (list, tuple)):
+            text_or_list = [text_or_list]
+
+        for i in progress_bar(range(len(text_or_list)), display=show_progress):
             result = self.model(text_or_list[i], candidate_labels,
                                 multi_class=multi_class, hypothesis_template=hypothesis)
             results.append(result)
-        from IPython.display import clear_output
-        clear_output()
         return results
