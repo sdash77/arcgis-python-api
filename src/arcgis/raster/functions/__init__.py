@@ -5621,7 +5621,7 @@ def aggregate(raster,
                             - True : The layer will not have dimension values.
                             - False : The layer will have dimension values. This is the default.
 
-    :param percentile_value: Optional double. The percentile to calculate. The default is 90, indicating 
+    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating 
                              the 90th percentile.
 
                              The values can range from 0 to 100. The 0th percentile is essentially equivalent 
