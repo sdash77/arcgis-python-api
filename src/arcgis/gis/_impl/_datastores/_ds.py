@@ -7,6 +7,7 @@ from arcgis import env as _env
 from arcgis.gis._impl._jb import StatusJob
 from arcgis.gis import Item
 import concurrent.futures
+
 ###########################################################################
 class PortalDataStore(object):
     """
@@ -25,28 +26,28 @@ class PortalDataStore(object):
         retrieve a list of previously published layers, and delete bulk-published layers.
 
     """
+
     _con = None
     _gis = None
     _url = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "< PortalDataStore @ {url} >".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "< PortalDataStore @ {url} >".format(url=self._url)
-    #----------------------------------------------------------------------
-    def describe(self,
-                 item,
-                 server_id,
-                 path,
-                 store_type="datastore"):
+
+    # ----------------------------------------------------------------------
+    def describe(self, item, server_id, path, store_type="datastore"):
         """
         The ``describe`` method is used to list the contents of a data store. A
         client can use it multiple times to discover the contents of the
@@ -74,25 +75,30 @@ class PortalDataStore(object):
         if isinstance(item, Item):
             item = item.id
         params = {
-            "datastoreId" : item,
-            "serverId" : server_id,
-            "path" : path,
-            "type" : store_type,
-            "f" : "json"
+            "datastoreId": item,
+            "serverId": server_id,
+            "path": path,
+            "type": store_type,
+            "f": "json",
         }
         url = f"{self._url}/describe"
         res = self._con.get(url, params)
-        _time.sleep(.5)
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+        _time.sleep(0.5)
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        futureobj = executor.submit(
+            self._status, **{"job_id": res["jobId"], "key": res["key"]}
+        )
         executor.shutdown(False)
-        return StatusJob(future=futureobj,
-                         op='Describe DataStore',
-                         jobid=res['jobId'],
-                         gis=self._gis,
-                         notify=_env.verbose,
-                         extra_marker="")
-    #----------------------------------------------------------------------
+        return StatusJob(
+            future=futureobj,
+            op="Describe DataStore",
+            jobid=res["jobId"],
+            gis=self._gis,
+            notify=_env.verbose,
+            extra_marker="",
+        )
+
+    # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
         """
         Checks the status of an export job
@@ -102,24 +108,27 @@ class PortalDataStore(object):
         params = {}
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
-            params['f'] = 'json'
+            params["f"] = "json"
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete", "succeeded"]:
                 res = self._con.post(url, params)
-                if res['status'] == "failed":
+                if res["status"] == "failed":
                     raise Exception(res)
             count = 0
-            while res['status'] in ["completed", "complete", "succeeded"] and \
-                  not 'result' in res and \
-                  count < 10:
+            while (
+                res["status"] in ["completed", "complete", "succeeded"]
+                and not "result" in res
+                and count < 10
+            ):
                 res = self._con.post(url, params)
-                if 'result' in res:
+                if "result" in res:
                     return res
                 count += 1
             return res
         else:
             raise Exception(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -129,15 +138,13 @@ class PortalDataStore(object):
             A list of the :class:`~arcgis.gis.DataStore` object properties
          """
         if self._properties is None:
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             res = self._con.get(self._url, params)
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
-    def register(self,
-                 item,
-                 server_id,
-                 bind=False):
+
+    # ----------------------------------------------------------------------
+    def register(self, item, server_id, bind=False):
         """
 
         The ``register`` method allows for :class:`~arcgis.gis.Datastore` objects to be added to an ArcGIS Server
@@ -176,18 +183,15 @@ class PortalDataStore(object):
         elif isinstance(item, str):
             item_id = item
         url = "{base}/addToServer".format(base=self._url)
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id,
-            'serverId' : server_id
-        }
+        params = {"f": "json", "datastoreId": item_id, "serverId": server_id}
         if not bind is None:
-            params['bindToServerDatastore'] = bind
+            params["bindToServerDatastore"] = bind
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _all_datasets(self):
         """
@@ -201,15 +205,15 @@ class PortalDataStore(object):
 
         """
         url = "{base}/allDatasets".format(base=self._url)
-        params = {
-            'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
-        elif 'status' in res:
-            return res['status'] == 'success'
+        if "success" in res:
+            return res["success"]
+        elif "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete_layers(self, item):
         """
         The ``delete_layers`` method removes all layers published from the :class:`~arcgis.gis.Datastore` object.
@@ -233,23 +237,21 @@ class PortalDataStore(object):
         else:
             item_id = item
             item = self._gis.content.get(item_id)
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id
-        }
+        params = {"f": "json", "datastoreId": item_id}
         url = f"{self._url}/allDatasets/deleteLayers"
         res = self._con.post(url, params)
-        if res['success'] == True:
-            status = item.status(self, job_id=res['jobId'])
-            while status["status"].lower() != 'completed':
-                status = item.status(self, job_id=res['jobId'])
-                if status['status'].lower() == "failed":
+        if res["success"] == True:
+            status = item.status(self, job_id=res["jobId"])
+            while status["status"].lower() != "completed":
+                status = item.status(self, job_id=res["jobId"])
+                if status["status"].lower() == "failed":
                     return False
                 else:
                     _time.sleep(2)
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def layers(self, item):
         """
         The ``layers`` operation returns a list of layers bulk published from a
@@ -278,21 +280,16 @@ class PortalDataStore(object):
             item = self._gis.content.get(item_id)
 
         url = "{base}/allDatasets/getLayers".format(base=self._url)
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id
-        }
+        params = {"f": "json", "datastoreId": item_id}
         res = self._con.post(url, params)
         if "layerAndDatasets" in res:
             return res["layerAndDatasets"]
         return []
-    #----------------------------------------------------------------------
-    def publish(self,
-                config:dict,
-                server_id,
-                folder=None,
-                description=None,
-                tags:list=None):
+
+    # ----------------------------------------------------------------------
+    def publish(
+        self, config: dict, server_id, folder=None, description=None, tags: list = None
+    ):
         """
         The ``publish`` operation is used to publish scene layers by reference to data in a
         :class:`~arcgis.gis.Datastore`.
@@ -325,21 +322,29 @@ class PortalDataStore(object):
             tags = ",".join([str(t) for t in tags])
 
         params = {
-            "serviceConfiguration" : config,
-            "serverId" : server_id,
-            "serverFolder" : folder,
-            "description" : description,
-            "tags" : tags,
-            "f" : "json"
+            "serviceConfiguration": config,
+            "serverId": server_id,
+            "serverFolder": folder,
+            "description": description,
+            "tags": tags,
+            "f": "json",
         }
         res = self._con.post(url, params)
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        futureobj = executor.submit(
+            self._status, **{"job_id": res["jobId"], "key": res["key"]}
+        )
         executor.shutdown(False)
-        return StatusJob(future=futureobj, op='Publish',
-                         jobid=res['jobId'], gis=self._gis,
-                         notify=_env.verbose, extra_marker="")
-    #----------------------------------------------------------------------
+        return StatusJob(
+            future=futureobj,
+            op="Publish",
+            jobid=res["jobId"],
+            gis=self._gis,
+            notify=_env.verbose,
+            extra_marker="",
+        )
+
+    # ----------------------------------------------------------------------
     def servers(self, item):
         """
         The ``servers`` property returns a list of your servers that a given
@@ -366,22 +371,22 @@ class PortalDataStore(object):
             item = self._gis.content.get(item_id)
 
         url = self._url + "/getServers"
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id
-        }
+        params = {"f": "json", "datastoreId": item_id}
         res = self._con.post(url, params)
-        if 'servers' in res:
-            return res['servers']
+        if "servers" in res:
+            return res["servers"]
         return res
-    #----------------------------------------------------------------------
-    def publish_layers(self,
-                       item,
-                       srv_config:dict,
-                       server_id,
-                       folder=None,
-                       server_folder=None,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def publish_layers(
+        self,
+        item,
+        srv_config: dict,
+        server_id,
+        folder=None,
+        server_folder=None,
+        future=False,
+    ):
         """
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
         :class:`~arcgis.gis.DataStore` object onto your ArcGIS Server, resulting in at least one
@@ -426,10 +431,13 @@ class PortalDataStore(object):
                 base = item.title.lower().replace(" ", "")
             server_folder = f"{base}{uuid.uuid4().hex[:3]}"
         if folder is None:
-            from arcgis.gis  import UserManager, User, ContentManager
+            from arcgis.gis import UserManager, User, ContentManager
+
             isinstance(self._gis, GIS)
             cm = self._gis.content
-            folder = cm.create_folder(folder=f"srvc_folder_{uuid.uuid4().hex[:5]}")['id']
+            folder = cm.create_folder(folder=f"srvc_folder_{uuid.uuid4().hex[:5]}")[
+                "id"
+            ]
         if isinstance(item, Item):
             item_id = item.id
         else:
@@ -437,28 +445,27 @@ class PortalDataStore(object):
             item = self._gis.content.get(item_id)
         url = self._url + "/allDatasets/publishLayers"
         params = {
-            'f' : 'json',
-            'datastoreId' : item_id,
-            'templateSvcConfig' : srv_config,
-            'portalFolderId' : folder,
-            'serverId' : server_id,
-            'serverFolder' : server_folder,
+            "f": "json",
+            "datastoreId": item_id,
+            "templateSvcConfig": srv_config,
+            "portalFolderId": folder,
+            "serverId": server_id,
+            "serverFolder": server_folder,
         }
         res = self._con.post(url, params)
-        if res['success'] == True:
+        if res["success"] == True:
             status = item.status()
-            while status["status"].lower() != 'completed':
+            while status["status"].lower() != "completed":
                 status = item.status()
-                if status['status'].lower() == "failed":
+                if status["status"].lower() == "failed":
                     return False
                 else:
                     _time.sleep(2)
             return True
         return False
-    #----------------------------------------------------------------------
-    def unregister(self,
-                   item,
-                   server_id):
+
+    # ----------------------------------------------------------------------
+    def unregister(self, item, server_id):
         """
         The ``unregister`` method removes the :class:`~arcgis.gis.Datastore` association from a server.
 
@@ -471,19 +478,14 @@ class PortalDataStore(object):
         elif isinstance(item, str):
             item_id = item
         url = self._url + "/removeFromServer"
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id,
-            'serverId' : server_id
-        }
+        params = {"f": "json", "datastoreId": item_id, "serverId": server_id}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def refresh_server(self,
-                       item,
-                       server_id):
+
+    # ----------------------------------------------------------------------
+    def refresh_server(self, item, server_id):
         """
         Th ``refresh_server`` method updates the server with newly configured inforamtion.
 
@@ -519,21 +521,14 @@ class PortalDataStore(object):
             item_id = item
 
         url = self._url + "/refreshServer"
-        params = {
-            'f' : 'json',
-            'datastoreId' : item_id,
-            'serverId' : server_id
-        }
+        params = {"f": "json", "datastoreId": item_id, "serverId": server_id}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def validate(self,
-                 server_id,
-                 item=None,
-                 config=None,
-                 future=False):
+
+    # ----------------------------------------------------------------------
+    def validate(self, server_id, item=None, config=None, future=False):
         """
         The ``validate`` method ensures that your ArcGIS Server can connect and use
         the datasets stored within a given data store. A :class:`~arcgis.gis.Datastore` can be validated by using either
@@ -571,20 +566,18 @@ class PortalDataStore(object):
             item_id = None
 
         url = self._url + "/validate"
-        params = {
-                'f' : 'json',
-                'serverId' : server_id
-            }
+        params = {"f": "json", "serverId": server_id}
         if item:
-            params['datastoreId'] = item_id
+            params["datastoreId"] = item_id
         elif config:
             import json
-            params['datastore'] = json.dumps(config)
+
+            params["datastore"] = json.dumps(config)
         else:
             raise ValueError("Invalid parameters, an item or config is required.")
         res = self._con.post(url, params)
-        if 'status' in res:
-            if res['status'] == 'success':
+        if "status" in res:
+            if res["status"] == "success":
                 return True
-            return res['status']
+            return res["status"]
         return res

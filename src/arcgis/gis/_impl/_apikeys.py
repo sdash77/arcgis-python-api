@@ -1,23 +1,29 @@
 from arcgis._impl.common._isd import InsensitiveDict
+
 ###########################################################################
 class APIKey(object):
     """
     The ``APIKey`` class is a single instance of a registered access key for
     performing certian operations based on permissions.
     """
+
     _gis = None
     _item = None
     _properties = None
+
     def __init__(self, item, gis):
         self._item = item
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<API Key {self._item.title}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return self.__str__()    
-    #----------------------------------------------------------------------
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -29,7 +35,8 @@ class APIKey(object):
         if self._properties is None:
             self._properties = InsensitiveDict(self._item.app_info)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def apikey(self):
         """
@@ -39,7 +46,8 @@ class APIKey(object):
             String
         """
         return self.properties.apiKey
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The ``delete`` method deletes the current APIKey object permanently.
@@ -48,7 +56,8 @@ class APIKey(object):
             A boolean indicating success (True), or failure (False)
         """
         return self._item.delete()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def reset(self):
         """
         Resets the API Key for the Item. The call will return the information 
@@ -59,10 +68,11 @@ class APIKey(object):
         
         """
         url = f"{self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/resetApiKey"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         self._properties = None
         return self._gis._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, http_referers=None, privileges=None):
         """
         The ``update`` method updates the current APIKey object's properties
@@ -119,32 +129,40 @@ class APIKey(object):
         url = f"{ self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/update"
         if http_referers is None and privileges is None:
             return self.properties
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         if http_referers:
-            params['httpReferrers'] = http_referers
+            params["httpReferrers"] = http_referers
         if privileges:
-            params['priveleges'] = privileges
+            params["priveleges"] = privileges
         self._properties = None
         return self._gis._con.post(url, params)
+
+
 ###########################################################################
 class APIKeyManager(object):
     """
     The ``APIKeyManager`` creates, manages and updates :class:`~arcgis.gis._impl.APIKey` objects for ArcGIS Online.
     """
+
     _gis = None
     _url = None
+
     def __init__(self, gis):
         from .. import GIS
+
         assert isinstance(gis, GIS)
-        self._gis = gis 
+        self._gis = gis
         self._base_url = f"{ self._gis._portal.resturl}"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<API Key Manager @ {self._gis._portal.resturl}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, api_key):
         """
         The ``get`` method retrieves an :class:`~arcgis.gis._impl.APIKey` object based on the Key Value.
@@ -156,14 +174,17 @@ class APIKeyManager(object):
             if key.properties.apikey.lower() == api_key.lower():
                 return key
         return None
-    #----------------------------------------------------------------------
-    def create(self, 
-               title, 
-               tags, 
-               description=None, 
-               http_referers=None, 
-               redirect_uris=None, 
-               privileges=None):
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        title,
+        tags,
+        description=None,
+        http_referers=None,
+        redirect_uris=None,
+        privileges=None,
+    ):
         """
         The ``create`` method generates a new :class:`~arcgis.gis._impl.APIKey` objects for the Organization.
         
@@ -246,23 +267,28 @@ class APIKeyManager(object):
         """
         api_item = self._gis.content.add(
             {
-                'title' : title,
-                'type' : "API Key",
-                'tags' : tags,
-                'description' : description or "",
+                "title": title,
+                "type": "API Key",
+                "tags": tags,
+                "description": description or "",
             }
         )
         if privileges is None:
-            privileges = ["premium:user:geocode:temporary",
-                          "premium:user:networkanalysis:routing",
-                          "premium:user:networkanalysis:servicearea",
-                          "portal:apikey:basemaps"]
-        result = api_item.register(app_type='apikey', 
-                                   redirect_uris=redirect_uris, 
-                                   http_referers=http_referers, 
-                                   privileges=privileges)        
+            privileges = [
+                "premium:user:geocode:temporary",
+                "premium:user:networkanalysis:routing",
+                "premium:user:networkanalysis:servicearea",
+                "portal:apikey:basemaps",
+            ]
+        result = api_item.register(
+            app_type="apikey",
+            redirect_uris=redirect_uris,
+            http_referers=http_referers,
+            privileges=privileges,
+        )
         return APIKey(item=api_item, gis=self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate(self, api_key, privileges=None):
         """
         The ``validate`` method checks if an :class:`~arcgis.gis._impl.APIKey` object has a specific privilege.
@@ -282,18 +308,19 @@ class APIKeyManager(object):
         """
         if isinstance(privileges, (list, tuple)):
             privileges = ",".join(privileges)
-        
+
         url = f"{self._base_url}oauth2/validateApiKey"
         params = {
-            "f" : "json",
-            "key" : api_key.properties.apiKey,
-            "privilege" : privileges
+            "f": "json",
+            "key": api_key.properties.apiKey,
+            "privilege": privileges,
         }
-        res = self._gis._con.post(url, params)    
-        if 'valid' in res:
-            return res['valid']
+        res = self._gis._con.post(url, params)
+        if "valid" in res:
+            return res["valid"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def keys(self):
         """
@@ -307,23 +334,24 @@ class APIKeyManager(object):
         """
         url = f"{self._base_url}portals/self/apiKeys"
         start = 0
-        params = {
-            "f" : "json",
-            "num" : 100,
-            "start" : start
-        }
+        params = {"f": "json", "num": 100, "start": start}
         from .. import Item
+
         res = self._gis._con.post(url, params)
-        k = [APIKey(Item(gis=self._gis, itemid=k['itemId']), 
-                    gis=self._gis) \
-             for k in res["apiKeys"]]
-        while res['nextStart'] > 0:
+        k = [
+            APIKey(Item(gis=self._gis, itemid=k["itemId"]), gis=self._gis)
+            for k in res["apiKeys"]
+        ]
+        while res["nextStart"] > 0:
             start += 100
-            params['start'] = start
+            params["start"] = start
             res = self._gis._con.post(url, params)
-            k.extend(k = [APIKey(Item(gis=self._gis, itemid=k['itemId']), 
-                                 gis=self._gis) \
-                          for k in res["apiKeys"]])
-            if res['nextStart'] <= 0:
+            k.extend(
+                k=[
+                    APIKey(Item(gis=self._gis, itemid=k["itemId"]), gis=self._gis)
+                    for k in res["apiKeys"]
+                ]
+            )
+            if res["nextStart"] <= 0:
                 break
         return tuple(k)

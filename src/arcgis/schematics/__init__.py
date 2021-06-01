@@ -8,13 +8,17 @@ datasets.
 from arcgis.gis import Layer
 
 """This class provides access to diagrams and schematic layers, as well as diagram templates."""
+
+
 class SchematicLayers(Layer):
     def __init__(self, url, gis=None):
         super(SchematicLayers, self).__init__(url, gis)
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
+
             self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
+        except:
+            pass
 
     @property
     def diagrams(self):
@@ -23,11 +27,11 @@ class SchematicLayers(Layer):
         under a schematic service. It is returned as an array of Schematic
         Diagram resource by the REST API.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         exportURL = self._url + "/diagrams"
-        return self._con.get(path=exportURL,
-                             params=params, token=self._token)
-    #----------------------------------------------------------------------
+        return self._con.get(path=exportURL, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     @property
     def folders(self):
         """
@@ -36,11 +40,11 @@ class SchematicLayers(Layer):
         schematic service. It is returned as an array of <Schematic Folder Object>
         by the REST API.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         exportURL = self._url + "/folders"
-        return self._con.get(path=exportURL,
-                         params=params, token=self._token)
-    #----------------------------------------------------------------------
+        return self._con.get(path=exportURL, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     @property
     def layers(self):
         """
@@ -48,11 +52,11 @@ class SchematicLayers(Layer):
         under a schematic service published by ArcGIS Server. It is returned
         as an array of Schematic Layer resources by the REST API.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         exportURL = self._url + "/schematicLayers"
-        return self._con.get(path=exportURL,
-                         params=params, token=self._token)
-    #----------------------------------------------------------------------
+        return self._con.get(path=exportURL, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     @property
     def templates(self):
         """
@@ -61,13 +65,14 @@ class SchematicLayers(Layer):
         service. It is returned as an array of Schematic Diagram Template
         resources by the REST API.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         exportURL = self._url + "/templates"
-        return self._con.get(path=exportURL,
-                                 params=params, token=self._token)
-    #----------------------------------------------------------------------
-    def search_diagrams(self,whereClause=None,relatedObjects=None,
-                       relatedSchematicObjects=None):
+        return self._con.get(path=exportURL, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
+    def search_diagrams(
+        self, whereClause=None, relatedObjects=None, relatedSchematicObjects=None
+    ):
         """
         The Schematic Search Diagrams operation is performed on the schematic
         service resource. The result of this operation is an array of Schematic
@@ -103,7 +108,7 @@ class SchematicLayers(Layer):
                                       SCHEMATICTID field in the schematic
                                       feature class.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         if whereClause:
             params["where"] = whereClause
         if relatedObjects:
@@ -112,5 +117,4 @@ class SchematicLayers(Layer):
             params["relatedSchematicObjects"] = relatedSchematicObjects
 
         exportURL = self._url + "/searchDiagrams"
-        return self._con.get(path=exportURL,
-                             params=params, token=self._token)
+        return self._con.get(path=exportURL, params=params, token=self._token)

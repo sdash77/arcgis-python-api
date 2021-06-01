@@ -1,4 +1,5 @@
 from arcgis._impl.common._mixins import PropertyMap
+
 ###########################################################################
 class CertificateManager(object):
     """
@@ -9,19 +10,23 @@ class CertificateManager(object):
         This resource is
         available via HTTPS only.
     """
+
     _gis = None
     _con = None
     _url = None
     _properties = None
+
     def __init__(self, gis):
         self._url = gis._portal.resturl + "portals/self/certificates"
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
-        result = self._con.get(self._url, {'f': 'json'})
+        result = self._con.get(self._url, {"f": "json"})
         self._properties = PropertyMap(result)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -32,7 +37,8 @@ class CertificateManager(object):
         """
         self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def add(self, name, domain, certificate):
         """
         The ``add`` method allows allows administrators to
@@ -61,19 +67,21 @@ class CertificateManager(object):
         """
         url = self._url + "/register"
         params = {
-            'f' : 'json',
-            'name' : name,
-            'domain' : domain,
-            'certificate' : certificate
+            "f": "json",
+            "name": name,
+            "domain": domain,
+            "certificate": certificate,
         }
         import json
+
         res = self._con.post(url, params, try_json=False)
         res = res.replace(",}", "}")
         res = json.loads(res)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, cert_id):
         """
         A ``get`` method retrieves the certificate information for a single certificate
@@ -105,14 +113,15 @@ class CertificateManager(object):
         """
         found_cert_id = None
         for cert in self.certificates:
-            if cert_id.lower() == cert['id'].lower():
-                found_cert_id = cert['id']
+            if cert_id.lower() == cert["id"].lower():
+                found_cert_id = cert["id"]
                 break
         if found_cert_id:
             url = self._url + "/{found_cert_id}".format(found_cert_id=found_cert_id)
-            return self._con.get(url, {'f' : 'json'})
+            return self._con.get(url, {"f": "json"})
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self, cert_id):
         """
         The ``delete`` method unregisters the certificate from the organization.
@@ -128,12 +137,13 @@ class CertificateManager(object):
 
         """
         url = self._url + "/{cert_id}/unregister".format(cert_id=cert_id)
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, cert_id, name=None, domain=None, certificate=None):
         """
         The ``update`` operation allows organization
@@ -157,21 +167,23 @@ class CertificateManager(object):
 
         """
         url = self._url + "/{cert_id}/update".format(cert_id=cert_id)
-        params = {'f' : 'json'}
+        params = {"f": "json"}
 
         if not name is None:
-            params['name'] = name
+            params["name"] = name
         if not domain is None:
-            params['domain'] = domain
+            params["domain"] = domain
         if not certificate is None:
-            params['certificate'] = certificate
+            params["certificate"] = certificate
         import json  # HANDLES BUG IN API
+
         res = self._con.post(url, params, try_json=False)
         res = json.loads(res.replace(",}", "}"))
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def certificates(self):
         """
