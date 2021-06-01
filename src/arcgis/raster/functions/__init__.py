@@ -6106,19 +6106,20 @@ def _simple_collection(raster, md_info=None):
 
 
 
-def aggregate(raster,
-              dimension=None,
-              aggregation_function=None,
-              aggregation_definition_type="ALL",
-              interval_keyword=None,
-              interval_value=None,
-              interval_unit=None,
-              interval_ranges=None,
-              ignore_nodata=False,
-              dimensionless=False,
-              percentile_value=90,
-              percentile_interpolation_type="NEAREST"
-              ):
+def aggregate(
+    raster,
+    dimension=None,
+    aggregation_function=None,
+    aggregation_definition_type="ALL",
+    interval_keyword=None,
+    interval_value=None,
+    interval_unit=None,
+    interval_ranges=None,
+    ignore_nodata=False,
+    dimensionless=False,
+    percentile_value=90,
+    percentile_interpolation_type="NEAREST"
+    ):
     """
      Creates a new raster by applying an aggregation function
     :param raster: Input Raster. 
