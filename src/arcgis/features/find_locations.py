@@ -20,15 +20,16 @@ import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 def find_existing_locations(
-        input_layers=None,
-        expressions=None,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layers=None,
+    expressions=None,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/find_existing_locations/find_existing_locations.png
 
@@ -279,26 +280,30 @@ def find_existing_locations(
         expressions = []
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layers" : input_layers,
-        "expressions" : expressions,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "future" : future
+        "input_layers": input_layers,
+        "expressions": expressions,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_existing_locations,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.find_existing_locations, **kwargs
+    )
     return gis._tools.featureanalysis.find_existing_locations(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def derive_new_locations(
-        input_layers=[],
-        expressions=[],
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layers=[],
+    expressions=[],
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/derive_new_locations/derive_new_locations.png
 
@@ -539,33 +544,36 @@ def derive_new_locations(
 
     """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layers" : input_layers,
-        "expressions" : expressions,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "future" : future
+        "input_layers": input_layers,
+        "expressions": expressions,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.derive_new_locations,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.derive_new_locations, **kwargs
+    )
 
     return gis._tools.featureanalysis.derive_new_locations(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def find_similar_locations(
-        input_layer,
-        search_layer,
-        analysis_fields=[],
-        input_query=None,
-        number_of_results=0,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layer,
+    search_layer,
+    analysis_fields=[],
+    input_query=None,
+    number_of_results=0,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
 
@@ -663,29 +671,34 @@ def find_similar_locations(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "search_layer" : search_layer,
-        "analysis_fields" : analysis_fields,
-        "input_query" : input_query,
-        "number_of_results" : number_of_results,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "future" : future
+        "input_layer": input_layer,
+        "search_layer": search_layer,
+        "analysis_fields": analysis_fields,
+        "input_query": input_query,
+        "number_of_results": number_of_results,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_similar_locations,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.find_similar_locations, **kwargs
+    )
 
     return gis._tools.featureanalysis.find_similar_locations(**params)
-#--------------------------------------------------------------------------
-def find_centroids(input_layer,
-                   point_location=False,
-                   output_name=None,
-                   context=None,
-                   gis=None,
-                   estimate=False,
-                   future=False):
+
+
+# --------------------------------------------------------------------------
+def find_centroids(
+    input_layer,
+    point_location=False,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/find_centroids/find_centroids.png
 
@@ -728,51 +741,60 @@ def find_centroids(input_layer,
                                   output_name='find centroids')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if gis._portal.is_arcgisonline == False and gis.version < [7,3]:
-        raise Exception("find_centroids is only available on ArcGIS Online and ArcGIS Enterprise 10.8.0+")
+    if gis._portal.is_arcgisonline == False and gis.version < [7, 3]:
+        raise Exception(
+            "find_centroids is only available on ArcGIS Online and ArcGIS Enterprise 10.8.0+"
+        )
     kwargs = {
-        "input_layer" : input_layer,
-        "point_location" : point_location,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "estimate" : estimate,
-        "future" : future
+        "input_layer": input_layer,
+        "point_location": point_location,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_centroids,
-                                          **kwargs)
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis.find_centroids, **kwargs)
-    if 'context' not in params_tool and 'context' in params:
-        del params['context']
+    params_tool = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.find_centroids, **kwargs
+    )
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis.find_centroids, **kwargs
+    )
+    if "context" not in params_tool and "context" in params:
+        del params["context"]
     return gis._tools.featureanalysis.find_centroids(**params)
-#--------------------------------------------------------------------------
-def choose_best_facilities(goal='Allocate',
-                           demand_locations_layer=None,
-                           demand=1,
-                           demand_field=None,
-                           max_travel_range=2147483647,
-                           max_travel_range_field=None,
-                           max_travel_range_units='Minutes',
-                           travel_mode='Driving Time',
-                           time_of_day=None,
-                           time_zone_for_time_of_day='GeoLocal',
-                           travel_direction='FacilityToDemand',
-                           required_facilities_layer=None,
-                           required_facilities_capacity=2147483647,
-                           required_facilities_capacity_field=None,
-                           candidate_facilities_layer=None,
-                           candidate_count=1,
-                           candidate_facilities_capacity=2147483647,
-                           candidate_facilities_capacity_field=None,
-                           percent_demand_coverage=100,
-                           output_name=None,
-                           context=None,
-                           gis=None,
-                           estimate=False,
-                           point_barrier_layer=None,
-                           line_barrier_layer=None,
-                           polygon_barrier_layer=None,
-                           future=False):
+
+
+# --------------------------------------------------------------------------
+def choose_best_facilities(
+    goal="Allocate",
+    demand_locations_layer=None,
+    demand=1,
+    demand_field=None,
+    max_travel_range=2147483647,
+    max_travel_range_field=None,
+    max_travel_range_units="Minutes",
+    travel_mode="Driving Time",
+    time_of_day=None,
+    time_zone_for_time_of_day="GeoLocal",
+    travel_direction="FacilityToDemand",
+    required_facilities_layer=None,
+    required_facilities_capacity=2147483647,
+    required_facilities_capacity_field=None,
+    candidate_facilities_layer=None,
+    candidate_count=1,
+    candidate_facilities_capacity=2147483647,
+    candidate_facilities_capacity_field=None,
+    percent_demand_coverage=100,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+    future=False,
+):
     """
     .. image:: _static/images/choose_best_facilities/choose_best_facilities.png
 
@@ -1019,65 +1041,75 @@ def choose_best_facilities(goal='Allocate',
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    kwargs = {'goal': goal,
-              'demand_locations_layer': demand_locations_layer,
-              'demand': demand,
-              'demand_field': demand_field,
-              'max_travel_range': max_travel_range,
-              'max_travel_range_field': max_travel_range_field,
-              'max_travel_range_units': max_travel_range_units,
-              'travel_mode': travel_mode,
-              'time_of_day': time_of_day,
-              'time_zone_for_time_of_day': time_zone_for_time_of_day,
-              'travel_direction': travel_direction,
-              'required_facilities_layer': required_facilities_layer,
-              'required_facilities_capacity': required_facilities_capacity,
-              'required_facilities_capacity_field' : required_facilities_capacity_field,
-              'candidate_facilities_layer': candidate_facilities_layer,
-              'candidate_count': candidate_count,
-              'candidate_facilities_capacity': candidate_facilities_capacity,
-              'candidate_facilities_capacity_field': candidate_facilities_capacity_field,
-              'percent_demand_coverage': percent_demand_coverage,
-              'output_name': output_name,
-              'context': context,
-              'gis': gis,
-              'estimate': estimate,
-              'point_barrier_layer': point_barrier_layer,
-              'line_barrier_layer': line_barrier_layer,
-              'polygon_barrier_layer': polygon_barrier_layer,
-              'future': future}
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.choose_best_facilities,
-                                     **kwargs)
+    kwargs = {
+        "goal": goal,
+        "demand_locations_layer": demand_locations_layer,
+        "demand": demand,
+        "demand_field": demand_field,
+        "max_travel_range": max_travel_range,
+        "max_travel_range_field": max_travel_range_field,
+        "max_travel_range_units": max_travel_range_units,
+        "travel_mode": travel_mode,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "travel_direction": travel_direction,
+        "required_facilities_layer": required_facilities_layer,
+        "required_facilities_capacity": required_facilities_capacity,
+        "required_facilities_capacity_field": required_facilities_capacity_field,
+        "candidate_facilities_layer": candidate_facilities_layer,
+        "candidate_count": candidate_count,
+        "candidate_facilities_capacity": candidate_facilities_capacity,
+        "candidate_facilities_capacity_field": candidate_facilities_capacity_field,
+        "percent_demand_coverage": percent_demand_coverage,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "point_barrier_layer": point_barrier_layer,
+        "line_barrier_layer": line_barrier_layer,
+        "polygon_barrier_layer": polygon_barrier_layer,
+        "future": future,
+    }
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.choose_best_facilities, **kwargs
+    )
     try:
         if isinstance(travel_mode, str):
-            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
-            tm = [i for i in travelmodes if i['name'] == travel_mode]
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes().get(
+                "supportedTravelModes", []
+            )
+            tm = [i for i in travelmodes if i["name"] == travel_mode]
             if tm:
-                params['travel_mode'] = tm[0]
+                params["travel_mode"] = tm[0]
             else:
-                params['travel_mode'] = travel_mode
+                params["travel_mode"] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)
 
     return gis._tools.featureanalysis.choose_best_facilities(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def create_viewshed(
-        input_layer,
-        dem_resolution="Finest",
-        maximum_distance=None,
-        max_distance_units="Meters",
-        observer_height=None,
-        observer_height_units="Meters",
-        target_height=None,
-        target_height_units="Meters",
-        generalize=True,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layer,
+    dem_resolution="Finest",
+    maximum_distance=None,
+    max_distance_units="Meters",
+    observer_height=None,
+    observer_height_units="Meters",
+    target_height=None,
+    target_height_units="Meters",
+    generalize=True,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/create_viewshed/create_viewshed.png
 
@@ -1190,36 +1222,41 @@ def create_viewshed(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    kwargs = {'input_layer': input_layer,
-              'dem_resolution': dem_resolution,
-              'maximum_distance': maximum_distance,
-              'max_distance_units': max_distance_units,
-              'observer_height': observer_height,
-              'observer_height_units': observer_height_units,
-              'target_height': target_height,
-              'target_height_units': target_height_units,
-              'generalize': generalize,
-              'output_name': output_name,
-              'context': context,
-              'gis': gis,
-              'estimate': estimate,
-              'future': future
-              }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis.create_viewshed,
-                                     **kwargs)
+    kwargs = {
+        "input_layer": input_layer,
+        "dem_resolution": dem_resolution,
+        "maximum_distance": maximum_distance,
+        "max_distance_units": max_distance_units,
+        "observer_height": observer_height,
+        "observer_height_units": observer_height_units,
+        "target_height": target_height,
+        "target_height_units": target_height_units,
+        "generalize": generalize,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
+    }
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis.create_viewshed, **kwargs
+    )
     return gis._tools.featureanalysis.create_viewshed(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def create_watersheds(
-        input_layer,
-        search_distance=None,
-        search_units="Meters",
-        source_database="FINEST",
-        generalize=True,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layer,
+    search_distance=None,
+    search_units="Meters",
+    source_database="FINEST",
+    generalize=True,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/create_watersheds/create_watersheds.png
 
@@ -1305,36 +1342,40 @@ def create_watersheds(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "search_distance" : search_distance,
-        "search_units" : search_units,
-        "source_database" : source_database,
-        "generalize" : generalize,
-        'output_name': output_name,
-        'context': context,
-        'gis': gis,
-        'estimate': estimate,
-        'future': future
+        "input_layer": input_layer,
+        "search_distance": search_distance,
+        "search_units": search_units,
+        "source_database": source_database,
+        "generalize": generalize,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_watersheds,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.create_watersheds, **kwargs
+    )
 
     return gis._tools.featureanalysis.create_watersheds(**params)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def trace_downstream(
-        input_layer,
-        split_distance=None,
-        split_units="Kilometers",
-        max_distance=None,
-        max_distance_units="Kilometers",
-        bounding_polygon_layer=None,
-        source_database=None,
-        generalize=True,
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+    input_layer,
+    split_distance=None,
+    split_units="Kilometers",
+    max_distance=None,
+    max_distance_units="Kilometers",
+    bounding_polygon_layer=None,
+    source_database=None,
+    generalize=True,
+    output_name=None,
+    context=None,
+    gis=None,
+    estimate=False,
+    future=False,
+):
     """
     .. image:: _static/images/trace_downstream/trace_downstream.png
 
@@ -1422,21 +1463,22 @@ def trace_downstream(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
-        "input_layer" : input_layer,
-        "split_distance" : split_distance,
-        "split_units" : split_units,
-        "max_distance" : max_distance,
-        "max_distance_units" : max_distance_units,
-        "bounding_polygon_layer" : bounding_polygon_layer,
-        "source_database" : source_database,
-        "generalize" : generalize,
-        'output_name': output_name,
-        'context': context,
-        'gis': gis,
-        'estimate': estimate,
-        'future': future
+        "input_layer": input_layer,
+        "split_distance": split_distance,
+        "split_units": split_units,
+        "max_distance": max_distance,
+        "max_distance_units": max_distance_units,
+        "bounding_polygon_layer": bounding_polygon_layer,
+        "source_database": source_database,
+        "generalize": generalize,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "estimate": estimate,
+        "future": future,
     }
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.trace_downstream,
-                                     **kwargs)
+    params = inspect_function_inputs(
+        fn=gis._tools.featureanalysis._tbx.trace_downstream, **kwargs
+    )
 
     return gis._tools.featureanalysis.trace_downstream(**params)

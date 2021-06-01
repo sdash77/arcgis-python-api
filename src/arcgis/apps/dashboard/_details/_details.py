@@ -27,9 +27,18 @@ class Details(_BaseWidget):
                                 to display.
     =========================   ===========================================
     """
-    def __init__(self, item, name='Details', layer=0, title="", description="", max_features_displayed=50):
+
+    def __init__(
+        self,
+        item,
+        name="Details",
+        layer=0,
+        title="",
+        description="",
+        max_features_displayed=50,
+    ):
         super().__init__(name, title, description)
-        if item.type not in ['Feature Service', 'mapWidget']:
+        if item.type not in ["Feature Service", "mapWidget"]:
             raise Exception("Please specify an item")
 
         self.item = item
@@ -45,7 +54,7 @@ class Details(_BaseWidget):
         self._show_attachment = True
 
         self._no_data = NoDataProperties._nodata_init()
-    
+
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
@@ -136,18 +145,18 @@ class Details(_BaseWidget):
         self._show_attachment = bool(value)
 
     def _convert_to_json(self):
-        if self.item.type == 'mapWidget':
+        if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
             widget_id = self.item._id
             layer_id = wlayer["id"]
-            self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._datasource = {"id": str(widget_id) + "#" + str(layer_id)}
         else:
             self._datasource = {
-                        "type": "featureServiceDataSource",
-                        "itemId": self.item.itemid,
-                        "layerId": 0,
-                        "table": True
-                    }
+                "type": "featureServiceDataSource",
+                "itemId": self.item.itemid,
+                "layerId": 0,
+                "table": True,
+            }
         json_data = {
             "type": "detailsWidget",
             "showTitle": self._show_title,
@@ -162,19 +171,19 @@ class Details(_BaseWidget):
             "showLastUpdate": True,
             "noDataVerticalAlignment": self._no_data._alignment,
             "showCaptionWhenNoData": self._no_data._show_title,
-            "showDescriptionWhenNoData": self._no_data._show_description
+            "showDescriptionWhenNoData": self._no_data._show_description,
         }
 
         if self._no_data._text:
-            json_data['noDataText'] = self._no_data._text
+            json_data["noDataText"] = self._no_data._text
 
         if self._background_color:
-            json_data['backgroundColor'] = self._background_color
+            json_data["backgroundColor"] = self._background_color
 
         if self._text_color:
-            json_data['textColor'] = self._text_color
+            json_data["textColor"] = self._text_color
 
-        json_data['datasets'] = [
+        json_data["datasets"] = [
             {
                 "type": "serviceDataset",
                 "dataSource": self._datasource,
@@ -186,7 +195,7 @@ class Details(_BaseWidget):
                 "querySpatialRelationship": "esriSpatialRelIntersects",
                 "returnGeometry": False,
                 "clientSideStatistics": False,
-                "name": "main"
+                "name": "main",
             }
         ]
 

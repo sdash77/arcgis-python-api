@@ -25,11 +25,12 @@ class Gauge(_BaseWidget):
     description                 Optional string. Description for the widget.
     =========================   ===========================================
     """
-    def __init__(self, item, name='Gauge', layer=0, title='', description=''):
+
+    def __init__(self, item, name="Gauge", layer=0, title="", description=""):
         super().__init__(name, title, description)
         # General Block
 
-        if item.type not in ['Feature Service', 'mapWidget']:
+        if item.type not in ["Feature Service", "mapWidget"]:
             raise Exception("Please specify an item")
 
         self.item = item
@@ -42,11 +43,11 @@ class Gauge(_BaseWidget):
         self._nodata = NoDataProperties._nodata_init()
         self._novalue = NoDataProperties._nodata_init()
 
-        self._data = GaugeData._create_data(data_item = item)
+        self._data = GaugeData._create_data(data_item=item)
         self._mindata = GaugeData._create_data(data_item=item, value_type="fixedvalue")
         self._maxdata = GaugeData._create_data(data_item=item, value_type="fixedvalue")
-        self ._gauge = GaugeProperties._gauge_init()
-    
+        self._gauge = GaugeProperties._gauge_init()
+
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
@@ -72,7 +73,7 @@ class Gauge(_BaseWidget):
         :return: Gauge options object. Set gauge properties.
         """
         return self._gauge
-    
+
     @property
     def no_data(self):
         """
@@ -100,7 +101,7 @@ class Gauge(_BaseWidget):
         :return: show last update or not.
         """
         return self._show_last_update
-    
+
     @show_last_update.setter
     def show_last_update(self, value):
         """
@@ -121,28 +122,32 @@ class Gauge(_BaseWidget):
         self._mazdata_statistic_defintion = []
 
         if self._gauge.style == "meter":
-            self._arrows.append({
-                    "id":"value",
-                    "color":None,
-                    "axis":"ticks",
-                    "alpha":1,
-                    "borderAlpha":1,
-                    "radius":"100%",
-                    "innerRadius":0,
-                    "nailRadius":0,
-                    "startWidth":8
-                })
+            self._arrows.append(
+                {
+                    "id": "value",
+                    "color": None,
+                    "axis": "ticks",
+                    "alpha": 1,
+                    "borderAlpha": 1,
+                    "radius": "100%",
+                    "innerRadius": 0,
+                    "nailRadius": 0,
+                    "startWidth": 8,
+                }
+            )
         if self._gauge.style == "progress":
-            self._bands.append({
-                            "alpha":1,
-                            "color":"#bee8ff",
-                            "startValue":0,
-                            "endValue":1,
-                            "radius":"100%",
-                            "innerRadius":"75%",
-                            "colorThresholds":[]
-                        })
-        
+            self._bands.append(
+                {
+                    "alpha": 1,
+                    "color": "#bee8ff",
+                    "startValue": 0,
+                    "endValue": 1,
+                    "radius": "100%",
+                    "innerRadius": "75%",
+                    "colorThresholds": [],
+                }
+            )
+
         if self._gauge.shape == "horseshoe":
             self._gauge_start_angle = -90
             self._gauge_end_angle = 90
@@ -151,237 +156,258 @@ class Gauge(_BaseWidget):
             self._gauge_end_angle = 120
         else:
             self._gauge_start_angle = 0
-            self._gauge_end_angle = 360       
+            self._gauge_end_angle = 360
 
-        self._axes.append({
-                    "id":"main",
-                    "style":self._gauge.style,
-                    "startAngle":self._gauge_start_angle,
-                    "endAngle":self._gauge_end_angle,
-                    "startValue":0,
-                    "endValue":1,
-                    "labelsEnabled":True,
-                    "labelOffset":0,
-                    "color":"#8400a8",
-                    "inside":True,
-                    "gridInside":True,
-                    "axisAlpha":0,
-                    "axisColor":"#8400a8",
-                    "axisThickness":0,
-                    "tickAlpha":0,
-                    "tickColor":"#8400a8",
-                    "tickLength":0,
-                    "tickThickness":0,
-                    "minorTickLength":0,
-                    "radius":"80%",
-                    "bottomText":"",
-                    "bands":self._bands
-                })
+        self._axes.append(
+            {
+                "id": "main",
+                "style": self._gauge.style,
+                "startAngle": self._gauge_start_angle,
+                "endAngle": self._gauge_end_angle,
+                "startValue": 0,
+                "endValue": 1,
+                "labelsEnabled": True,
+                "labelOffset": 0,
+                "color": "#8400a8",
+                "inside": True,
+                "gridInside": True,
+                "axisAlpha": 0,
+                "axisColor": "#8400a8",
+                "axisThickness": 0,
+                "tickAlpha": 0,
+                "tickColor": "#8400a8",
+                "tickLength": 0,
+                "tickThickness": 0,
+                "minorTickLength": 0,
+                "radius": "80%",
+                "bottomText": "",
+                "bands": self._bands,
+            }
+        )
         if self._gauge.style == "meter":
-            self._axes.append({
-                    "id":"ticks",
-                    "style":self._gauge.style,
-                    "startAngle":self._gauge_start_angle,
-                    "endAngle":self._gauge_end_angle,
-                    "startValue":0,
-                    "endValue":1,
-                    "labelsEnabled":False,
-                    "labelOffset":0,
-                    "color":"#8400a8",
-                    "inside":True,
-                    "gridInside":True,
-                    "axisAlpha":0.7,
-                    "axisColor":"#005ce6",
-                    "axisThickness":3,
-                    "tickAlpha":0.7,
-                    "tickColor":"#005ce6",
-                    "tickLength":-12,
-                    "tickThickness":3,
-                    "minorTickLength":-10,
-                    "radius":"80%",
-                    "bottomText":"",
-                    "bands":self._bands
-                })
-            self._axes.append(                {
-                    "id":"labels",
-                    "style":self._gauge.style,
-                    "startAngle":self._gauge_start_angle,
-                    "endAngle":self._gauge_end_angle,
-                    "startValue":0,
-                    "endValue":1,
-                    "labelsEnabled":True,
-                    "labelOffset":32,
-                    "fontSize":20,
-                    "color":"#ff5500",
-                    "inside":False,
-                    "gridInside":True,
-                    "axisAlpha":0,
-                    "axisColor":"#8400a8",
-                    "axisThickness":0,
-                    "tickAlpha":0,
-                    "tickColor":"#8400a8",
-                    "tickLength":0,
-                    "tickThickness":0,
-                    "minorTickLength":0,
-                    "radius":"80%",
-                    "bottomText":"",
-                    "bands":self._bands
-                })
-        if self._data.value_type == 'statistic':
-            self._data_statistic_defintion.append({
-                "onStatisticField":self._data.statistics_field,
-                "outStatisticFieldName":"value",
-                "statisticType":self._data.statistic
-            })
+            self._axes.append(
+                {
+                    "id": "ticks",
+                    "style": self._gauge.style,
+                    "startAngle": self._gauge_start_angle,
+                    "endAngle": self._gauge_end_angle,
+                    "startValue": 0,
+                    "endValue": 1,
+                    "labelsEnabled": False,
+                    "labelOffset": 0,
+                    "color": "#8400a8",
+                    "inside": True,
+                    "gridInside": True,
+                    "axisAlpha": 0.7,
+                    "axisColor": "#005ce6",
+                    "axisThickness": 3,
+                    "tickAlpha": 0.7,
+                    "tickColor": "#005ce6",
+                    "tickLength": -12,
+                    "tickThickness": 3,
+                    "minorTickLength": -10,
+                    "radius": "80%",
+                    "bottomText": "",
+                    "bands": self._bands,
+                }
+            )
+            self._axes.append(
+                {
+                    "id": "labels",
+                    "style": self._gauge.style,
+                    "startAngle": self._gauge_start_angle,
+                    "endAngle": self._gauge_end_angle,
+                    "startValue": 0,
+                    "endValue": 1,
+                    "labelsEnabled": True,
+                    "labelOffset": 32,
+                    "fontSize": 20,
+                    "color": "#ff5500",
+                    "inside": False,
+                    "gridInside": True,
+                    "axisAlpha": 0,
+                    "axisColor": "#8400a8",
+                    "axisThickness": 0,
+                    "tickAlpha": 0,
+                    "tickColor": "#8400a8",
+                    "tickLength": 0,
+                    "tickThickness": 0,
+                    "minorTickLength": 0,
+                    "radius": "80%",
+                    "bottomText": "",
+                    "bands": self._bands,
+                }
+            )
+        if self._data.value_type == "statistic":
+            self._data_statistic_defintion.append(
+                {
+                    "onStatisticField": self._data.statistics_field,
+                    "outStatisticFieldName": "value",
+                    "statisticType": self._data.statistic,
+                }
+            )
 
-        if self.item.type == 'mapWidget':
+        if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
             widget_id = self.item._id
             layer_id = wlayer["id"]
-            self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._datasource = {"id": str(widget_id) + "#" + str(layer_id)}
         else:
             self._datasource = {
-                        "type": "featureServiceDataSource",
-                        "itemId": self.item.itemid,
-                        "layerId": 0,
-                        "table": True
-                    }
-        self._datasets.append({
-                    "type":"serviceDataset",
-                    "dataSource":self._datasource,
-                    "outFields":["*"],
-                    "groupByFields":[],
-                    "orderByFields":[],
-                    "statisticDefinitions":self._data_statistic_defintion,
-                    "querySpatialRelationship":"esriSpatialRelIntersects",
-                    "returnGeometry":False,
-                    "clientSideStatistics":False,
-                    "name":"main"
-                })
+                "type": "featureServiceDataSource",
+                "itemId": self.item.itemid,
+                "layerId": 0,
+                "table": True,
+            }
+        self._datasets.append(
+            {
+                "type": "serviceDataset",
+                "dataSource": self._datasource,
+                "outFields": ["*"],
+                "groupByFields": [],
+                "orderByFields": [],
+                "statisticDefinitions": self._data_statistic_defintion,
+                "querySpatialRelationship": "esriSpatialRelIntersects",
+                "returnGeometry": False,
+                "clientSideStatistics": False,
+                "name": "main",
+            }
+        )
         if self._mindata.value_type == "fixedvalue":
-            self._datasets.append({
-                    "type":"staticDataset",
-                    "data":self._mindata.min_value,
-                    "name":"min"
-                })
+            self._datasets.append(
+                {
+                    "type": "staticDataset",
+                    "data": self._mindata.min_value,
+                    "name": "min",
+                }
+            )
 
         elif self.mindata.value_type in ["statistic", "feature"]:
             if self.mindata.value_type == "statistic":
-                self._mindata_statistic_defintion.append({
-                            "onStatisticField":self._mindata.statistics_field,
-                            "outStatisticFieldName":"value",
-                            "statisticType":self._mindata.statistic
-                        })
-            self._datasets.append({
-                    "type":"serviceDataset",
-                    "dataSource":{
-                        "type":"featureServiceDataSource",
-                        "itemId":self.item.itemid,
-                        "layerId":0,
-                        "table":False
+                self._mindata_statistic_defintion.append(
+                    {
+                        "onStatisticField": self._mindata.statistics_field,
+                        "outStatisticFieldName": "value",
+                        "statisticType": self._mindata.statistic,
+                    }
+                )
+            self._datasets.append(
+                {
+                    "type": "serviceDataset",
+                    "dataSource": {
+                        "type": "featureServiceDataSource",
+                        "itemId": self.item.itemid,
+                        "layerId": 0,
+                        "table": False,
                     },
-                    "outFields":["*"],
-                    "groupByFields":[],
-                    "orderByFields":[],
-                    "statisticDefinitions":self._mindata_statistic_defintion,
-                    "querySpatialRelationship":"esriSpatialRelIntersects",
-                    "returnGeometry":False,
-                    "clientSideStatistics":False,
-                    "name":"min"
-                })
+                    "outFields": ["*"],
+                    "groupByFields": [],
+                    "orderByFields": [],
+                    "statisticDefinitions": self._mindata_statistic_defintion,
+                    "querySpatialRelationship": "esriSpatialRelIntersects",
+                    "returnGeometry": False,
+                    "clientSideStatistics": False,
+                    "name": "min",
+                }
+            )
 
         if self._maxdata.value_type == "fixedvalue":
-            self._datasets.append({
-                    "type":"staticDataset",
-                    "data":self._maxdata.max_value,
-                    "name":"max"
-                })
+            self._datasets.append(
+                {
+                    "type": "staticDataset",
+                    "data": self._maxdata.max_value,
+                    "name": "max",
+                }
+            )
         elif self.maxdata.value_type in ["statistic", "feature"]:
             if self.maxdata.value_type == "statistic":
-                self._maxdata_statistic_defintion.append({
-                            "onStatisticField":self._maxdata.statistics_field,
-                            "outStatisticFieldName":"value",
-                            "statisticType":self._maxdata.statistic
-                        })
-            self._datasets.append({
-                    "type":"serviceDataset",
-                    "dataSource":{
-                        "type":"featureServiceDataSource",
-                        "itemId":self.item.itemid,
-                        "layerId":0,
-                        "table":False
-                    },
-                    "outFields":["*"],
-                    "groupByFields":[],
-                    "orderByFields":[],
-                    "statisticDefinitions":self._maxdata_statistic_defintion,
-                    "querySpatialRelationship":"esriSpatialRelIntersects",
-                    "returnGeometry":False,
-                    "clientSideStatistics":False,
-                    "name":"max"
-                })
-        json_data = {
-            "type":"gaugeWidget",
-            "style":self._gauge.style,
-            "displayAsPercentage":False,
-            "valueConversion":{
-                "factor":self._data.factor,
-                "offset":self._data.offset
-            },
-            "minimumConversion":{
-                "factor":self._mindata.factor,
-                "offset":self._mindata.offset
-            },
-            "maximumConversion":{
-                "factor":self._maxdata.factor,
-                "offset":self._maxdata.offset
-            },
-            "valueFormat":{
-                "name":"value",
-                "type":"decimal",
-                "prefix":True,
-                "pattern":"#,###.#"
-            },
-            "percentageFormat":{
-                "name":"percentage",
-                "type":"decimal",
-                "prefix":False,
-                "pattern":"#.#%"
-            },
-            "arrows":self._arrows,
-            "axes":self._axes,
-            "labels":[
+                self._maxdata_statistic_defintion.append(
+                    {
+                        "onStatisticField": self._maxdata.statistics_field,
+                        "outStatisticFieldName": "value",
+                        "statisticType": self._maxdata.statistic,
+                    }
+                )
+            self._datasets.append(
                 {
-                    "id":"value",
-                    "align":"center",
-                    "color":"#ff0000",
-                    "size":12,
-                    "y":"40%"
+                    "type": "serviceDataset",
+                    "dataSource": {
+                        "type": "featureServiceDataSource",
+                        "itemId": self.item.itemid,
+                        "layerId": 0,
+                        "table": False,
+                    },
+                    "outFields": ["*"],
+                    "groupByFields": [],
+                    "orderByFields": [],
+                    "statisticDefinitions": self._maxdata_statistic_defintion,
+                    "querySpatialRelationship": "esriSpatialRelIntersects",
+                    "returnGeometry": False,
+                    "clientSideStatistics": False,
+                    "name": "max",
+                }
+            )
+        json_data = {
+            "type": "gaugeWidget",
+            "style": self._gauge.style,
+            "displayAsPercentage": False,
+            "valueConversion": {
+                "factor": self._data.factor,
+                "offset": self._data.offset,
+            },
+            "minimumConversion": {
+                "factor": self._mindata.factor,
+                "offset": self._mindata.offset,
+            },
+            "maximumConversion": {
+                "factor": self._maxdata.factor,
+                "offset": self._maxdata.offset,
+            },
+            "valueFormat": {
+                "name": "value",
+                "type": "decimal",
+                "prefix": True,
+                "pattern": "#,###.#",
+            },
+            "percentageFormat": {
+                "name": "percentage",
+                "type": "decimal",
+                "prefix": False,
+                "pattern": "#.#%",
+            },
+            "arrows": self._arrows,
+            "axes": self._axes,
+            "labels": [
+                {
+                    "id": "value",
+                    "align": "center",
+                    "color": "#ff0000",
+                    "size": 12,
+                    "y": "40%",
                 }
             ],
-            "valueField":self._data.value_field,
-            "noValueVerticalAlignment":self._novalue.alignment,
-            "showCaptionWhenNoValue":self._novalue.show_title,
-            "showDescriptionWhenNoValue":self._novalue.show_description,
-            "valueType":self._data.value_type,
-            "backgroundColor":self._background_color,
-            "textColor":self._text_color,
-            "datasets":self._datasets,
-            "id":self._id,
-            "name":self.name,
-            "caption":self.title,
-            "description":self.description,
-            "showLastUpdate":self.show_last_update,
-            "noDataText":self._nodata.text,
-            "noDataVerticalAlignment":self._nodata.alignment,
-            "showCaptionWhenNoData":self._nodata.show_title,
-            "showDescriptionWhenNoData":self._nodata.show_description
-        }            
+            "valueField": self._data.value_field,
+            "noValueVerticalAlignment": self._novalue.alignment,
+            "showCaptionWhenNoValue": self._novalue.show_title,
+            "showDescriptionWhenNoValue": self._novalue.show_description,
+            "valueType": self._data.value_type,
+            "backgroundColor": self._background_color,
+            "textColor": self._text_color,
+            "datasets": self._datasets,
+            "id": self._id,
+            "name": self.name,
+            "caption": self.title,
+            "description": self.description,
+            "showLastUpdate": self.show_last_update,
+            "noDataText": self._nodata.text,
+            "noDataVerticalAlignment": self._nodata.alignment,
+            "showCaptionWhenNoData": self._nodata.show_title,
+            "showDescriptionWhenNoData": self._nodata.show_description,
+        }
         return json_data
 
 
 class GaugeData(object):
-
     @classmethod
     def _create_data(cls, data_item=None, value_type="statistic"):
         data = GaugeData()
@@ -417,8 +443,10 @@ class GaugeData(object):
         if value in ["fixedvalue", "statistic", "feature"]:
             self._value_type = str(value)
         else:
-            raise Exception("Select correct value type. Supported value types are 'fixedvalue', 'statistic', 'feature'")
-    
+            raise Exception(
+                "Select correct value type. Supported value types are 'fixedvalue', 'statistic', 'feature'"
+            )
+
     @property
     def min_value(self):
         """
@@ -466,7 +494,7 @@ class GaugeData(object):
         Set statistic for data.
         """
         if self._value_type == "statistic":
-            if value in ['count', 'avg', 'min', 'max', 'stddev', 'sum']:
+            if value in ["count", "avg", "min", "max", "stddev", "sum"]:
                 self._statistic = value
         else:
             raise Exception("Can set statistic only for reference type 'statistic'")
@@ -498,21 +526,21 @@ class GaugeData(object):
         Set value conversion offset.
         """
         self._offset = value
-    
+
     @property
     def objectid_field(self):
         """
         :return: object ID field name.
         """
         return self._item.tables[0].properties["objectIdField"]
-    
+
     @property
     def statistics_field(self):
         """
         :return: Statistics field name.
         """
         return self._statistics_field
-        
+
     @property
     def value_field(self):
         """
@@ -533,14 +561,14 @@ class GaugeData(object):
                 raise Exception("Please select a numeric field")
         else:
             raise Exception("Can add value field only for value type 'feature'")
-    
+
     @property
     def filters(self):
         """
         :return: filters associated with widget
         """
         return self._filters
-    
+
     def add_filter(self, field, join, condition, **kwargs):
         """
         Add filters associated with widget.
@@ -550,31 +578,63 @@ class GaugeData(object):
             self._filter_join = join
         else:
             raise Exception("Please select from 'AND', 'OR'")
-        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+        if condition in [
+            "between",
+            "not between",
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+            "is null",
+            "is not null",
+        ]:
             self._filter_condition = condition
         else:
             raise Exception("Please select the right condition")
 
         if condition in ["between", "not between"]:
-            self._val1 = kwargs.get('start')
-            self._val2 = kwargs.get('end')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+            self._val1 = kwargs.get("start")
+            self._val2 = kwargs.get("end")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "start": self._val1,
+                    "end": self._val2,
+                }
+            )
         else:
             raise Exception("Please provide 'start' and 'end' values as parameters")
 
-        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
-            self._val = kwargs.get('value')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        if condition in [
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+        ]:
+            self._val = kwargs.get("value")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "value": self._val,
+                }
+            )
         else:
             raise Exception("Please provide a 'value' parameter for comparison")
-         
+
     def _field_type(self, field_name):
         f_type = self._item.tables[0].query().sdf[field_name].dtype
         return f_type
-    
+
 
 class GaugeProperties(object):
-
     @classmethod
     def _gauge_init(cls, style="progress", shape="horseshoe"):
         gauge = GaugeProperties()
@@ -622,6 +682,10 @@ class GaugeProperties(object):
             if self._style == "progress":
                 self._shape = str(value)
             else:
-                raise Exception("'circle' shape can only be selected for style 'progress'")
+                raise Exception(
+                    "'circle' shape can only be selected for style 'progress'"
+                )
         else:
-            raise Exception("Please select gauge shape from 'circle', 'horseshoe', 'halfdonut'")
+            raise Exception(
+                "Please select gauge shape from 'circle', 'horseshoe', 'halfdonut'"
+            )

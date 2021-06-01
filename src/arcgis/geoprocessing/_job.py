@@ -3,8 +3,10 @@ import datetime
 from concurrent.futures import Future
 import logging
 import json
+
 _log = logging.getLogger(__name__)
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
+
 
 class GPJob(object):
     """
@@ -34,6 +36,7 @@ class GPJob(object):
     ================  ===============================================================
 
     """
+
     _future = None
     _jobid = None
     _url = None
@@ -45,7 +48,7 @@ class GPJob(object):
     _start_time = None
     _end_time = None
     _item_properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
         initializer
@@ -60,7 +63,8 @@ class GPJob(object):
         self._jobid = jobid
         self._url = task_url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def ellapse_time(self):
         """
@@ -70,31 +74,36 @@ class GPJob(object):
             return self._end_time - self._start_time
         else:
             return datetime.datetime.now() - self._start_time
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _set_end_time(self, future):
         """sets the finish time"""
         self._end_time = datetime.datetime.now()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _notify(self, future):
         """prints finished method"""
         jobid = str(self).replace("<", "").replace(">", "")
         try:
             res = future.result()
-            infomsg = '{jobid} finished successfully.'.format(jobid=jobid)
+            infomsg = "{jobid} finished successfully.".format(jobid=jobid)
             _log.info(infomsg)
             print(infomsg)
         except Exception as e:
             msg = str(e)
-            msg = '{jobid} failed: {msg}'.format(jobid=jobid, msg=msg)
+            msg = "{jobid} failed: {msg}".format(jobid=jobid, msg=msg)
             _log.info(msg)
             print(msg)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<%s GP Job: %s>" % (self.task, self._jobid)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<%s GP Job: %s>" % (self.task, self._jobid)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def task(self):
         """Returns the task name.
@@ -103,7 +112,8 @@ class GPJob(object):
         if self._task_name is None:
             self._task_name = os.path.basename(self._url)
         return self._task_name
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def messages(self):
         """
@@ -112,15 +122,14 @@ class GPJob(object):
         :returns: List
         """
         url = self._url + "/jobs/%s" % self._jobid
-        params = {'f' : 'json',
-                  'returnMessages': True}
-
+        params = {"f": "json", "returnMessages": True}
 
         res = self._gis._con.post(url, params)
-        if 'messages' in res:
-            return res['messages']
+        if "messages" in res:
+            return res["messages"]
         return []
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def status(self):
         """
@@ -129,15 +138,14 @@ class GPJob(object):
         :returns: String
         """
         url = self._url + "/jobs/%s" % self._jobid
-        params = {'f' : 'json',
-                  'returnMessages': True}
-
+        params = {"f": "json", "returnMessages": True}
 
         res = self._gis._con.post(url, params)
-        if 'jobStatus' in res:
-            return res['jobStatus']
+        if "jobStatus" in res:
+            return res["jobStatus"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def cancel(self):
         """
         Attempt to cancel the call. If the call is currently being executed
@@ -153,20 +161,21 @@ class GPJob(object):
             return False
         try:
             url = self._url + "/jobs/%s/cancel" % self._jobid
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             res = self._gis._con.post(url, params)
-            if 'jobStatus' in res:
-                self._future.set_result({'jobStatus' : 'esriJobCancelled'})
+            if "jobStatus" in res:
+                self._future.set_result({"jobStatus": "esriJobCancelled"})
                 self._future.cancel()
                 return True
-            self._future.set_result({'jobStatus' : 'esriJobCancelled'})
+            self._future.set_result({"jobStatus": "esriJobCancelled"})
             self._future.cancel()
-            #self._future.set_result({'jobStatus' : 'esriJobCancelled'})
+            # self._future.set_result({'jobStatus' : 'esriJobCancelled'})
             return res
         except:
             self._future.cancel()
         return True
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def cancelled(self):
         """
         Return True if the call was successfully cancelled.
@@ -174,7 +183,8 @@ class GPJob(object):
         :returns: boolean
         """
         return self._future.cancelled()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def running(self):
         """
         Return True if the call is currently being executed and cannot be cancelled.
@@ -182,7 +192,8 @@ class GPJob(object):
         :returns: boolean
         """
         return self._future.running()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def done(self):
         """
         Return True if the call was successfully cancelled or finished running.
@@ -190,7 +201,8 @@ class GPJob(object):
         :returns: boolean
         """
         return self._future.done()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def result(self):
         """
         Return the value returned by the call. If the call hasn't yet completed
@@ -212,21 +224,35 @@ class GPJob(object):
         """handles the ortho imagery response"""
         import arcgis
 
-        if hasattr(result, '_fields'):
+        if hasattr(result, "_fields"):
             r = {}
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if isinstance(value, dict) and 'featureSet' in value:
+                if isinstance(value, dict) and "featureSet" in value:
                     r[key] = arcgis.features.FeatureCollection(value)
-                elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
+                elif (
+                    isinstance(value, dict)
+                    and "url" in value
+                    and value["url"].lower().find("imageserver")
+                ):
                     return value["url"]
-                elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
-                    return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
-                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
-                    if not value['itemId'] in iids:
-                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
-                        iids.append(value['itemId'])
+                elif (
+                    isinstance(value, dict)
+                    and "url" in value
+                    and value["url"].lower().find("featureserver")
+                ):
+                    return arcgis.features.FeatureLayerCollection(
+                        url=value["url"], gis=self._gis
+                    )
+                elif (
+                    isinstance(value, dict)
+                    and "itemId" in value
+                    and len(value["itemId"]) > 0
+                ):
+                    if not value["itemId"] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value["itemId"])
+                        iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
             if len(r) == 1:
@@ -235,106 +261,134 @@ class GPJob(object):
             return r
         else:
             value = result
-            if self.task == 'AlterProcessingStates':
+            if self.task == "AlterProcessingStates":
                 if isinstance(value, dict):
                     return value
                 elif isinstance(value, str):
-                    processing_states = value.replace("'",'"')
-                    processing_states=json.loads( processing_states.replace('u"','"'))
+                    processing_states = value.replace("'", '"')
+                    processing_states = json.loads(processing_states.replace('u"', '"'))
                     return processing_states
 
             if isinstance(value, DataFile):
                 return self._gis._con.post(value.to_dict()["url"], {})
             if isinstance(value, (RasterData, LinearUnit)):
                 return value
-            elif isinstance(value, str) and value.lower().find('imageserver') >-1:
+            elif isinstance(value, str) and value.lower().find("imageserver") > -1:
                 return value
             elif isinstance(value, (dict, tuple, list)) == False:
                 return value
-            elif 'itemId' in value and \
-               len(value['itemId']) > 0:
-                itemid = value['itemId']
+            elif "itemId" in value and len(value["itemId"]) > 0:
+                itemid = value["itemId"]
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
             elif isinstance(value, dict) and "items" in value:
-                itemid = list(value['items'].keys())[0]
+                itemid = list(value["items"].keys())[0]
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
-            elif self.task == 'QueryCameraInfo':
+            elif self.task == "QueryCameraInfo":
                 import pandas as pd
-                columns = value['schema']
-                data = value['content']
+
+                columns = value["schema"]
+                data = value["content"]
                 return pd.DataFrame(data, columns=columns)
-            elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
+            elif (
+                isinstance(value, dict)
+                and "url" in value
+                and value["url"].lower().find("imageserver")
+            ):
                 return value["url"]
-            elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
-                return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
-            elif isinstance(value, dict) and 'featureSet' in value:
+            elif (
+                isinstance(value, dict)
+                and "url" in value
+                and value["url"].lower().find("featureserver")
+            ):
+                return arcgis.features.FeatureLayerCollection(
+                    url=value["url"], gis=self._gis
+                )
+            elif isinstance(value, dict) and "featureSet" in value:
                 return arcgis.features.FeatureCollection(value)
             return value
         return result
 
     def _process_ra(self, result):
         import arcgis
+
         if isinstance(result, arcgis.features.FeatureLayer):
             if self._item_properties:
                 _item_properties = {
                     "properties": {
-                        "jobUrl": self._url + '/jobs/' + self._jobid,
+                        "jobUrl": self._url + "/jobs/" + self._jobid,
                         "jobType": "GPServer",
                         "jobId": self._jobid,
-                        "jobStatus": "completed"
+                        "jobStatus": "completed",
                     }
                 }
                 self._return_item.update(item_properties=_item_properties)
             return self._return_item
-        if hasattr(result, '_fields'):
+        if hasattr(result, "_fields"):
             r = {}
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if isinstance(value, dict) and 'featureSet' in value:
+                if isinstance(value, dict) and "featureSet" in value:
                     r[key] = arcgis.features.FeatureCollection(value)
-                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
-                    if not value['itemId'] in iids:
-                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                elif (
+                    isinstance(value, dict)
+                    and "itemId" in value
+                    and len(value["itemId"]) > 0
+                ):
+                    if not value["itemId"] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value["itemId"])
                         if self._item_properties:
                             _item_properties = {
                                 "properties": {
-                                    "jobUrl": self._url + '/jobs/' + self._jobid,
+                                    "jobUrl": self._url + "/jobs/" + self._jobid,
                                     "jobType": "GPServer",
                                     "jobId": self._jobid,
-                                    "jobStatus": "completed"
+                                    "jobStatus": "completed",
                                 }
                             }
                             r[key].update(item_properties=_item_properties)
-                        iids.append(value['itemId'])
+                        iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
-            if (self.task == "CalculateDistance" or
-                self.task == "DetermineOptimumTravelCostNetwork" or
-                self.task == "FlowDirection" or
-                self.task == "CalculateTravelCost"):
+            if (
+                self.task == "CalculateDistance"
+                or self.task == "DetermineOptimumTravelCostNetwork"
+                or self.task == "FlowDirection"
+                or self.task == "CalculateTravelCost"
+            ):
                 m = {}
-                if isinstance (r,dict):
+                if isinstance(r, dict):
                     for key, value in r.items():
-                        m[key[0:key.rindex('_')+1]+'service'] = r[key]
-                    r=m
+                        m[key[0 : key.rindex("_") + 1] + "service"] = r[key]
+                    r = m
 
-            if(self.task == 'InterpolatePoints'):
-                if "process_info" in  r.keys():
-                    process_info = r['process_info']
-                    html_final="<b>The following table contains cross validation statistics:</b><br></br><table style='width: 250px;margin-left: 2.5em;'><tbody>"
+            if self.task == "InterpolatePoints":
+                if "process_info" in r.keys():
+                    process_info = r["process_info"]
+                    html_final = "<b>The following table contains cross validation statistics:</b><br></br><table style='width: 250px;margin-left: 2.5em;'><tbody>"
                     for row in process_info:
-                        temp_dict=json.loads(row)
-                        if isinstance(temp_dict["message"],list):
-                            html_final+="<tr><td>"+temp_dict["message"][0]+"</td><td style='float:right'>"+temp_dict["params"][temp_dict["message"][1].split("${")[1].split("}")[0]]+"</td></tr>"
+                        temp_dict = json.loads(row)
+                        if isinstance(temp_dict["message"], list):
+                            html_final += (
+                                "<tr><td>"
+                                + temp_dict["message"][0]
+                                + "</td><td style='float:right'>"
+                                + temp_dict["params"][
+                                    temp_dict["message"][1].split("${")[1].split("}")[0]
+                                ]
+                                + "</td></tr>"
+                            )
 
-                    html_final+="</tbody></table><br></br>"
+                    html_final += "</tbody></table><br></br>"
                     from IPython.display import HTML
+
                     process_info_html = HTML(html_final)
-                    r['process_info'] = process_info_html
-                    r['output_raster'].update(item_properties={"description":html_final})
+                    r["process_info"] = process_info_html
+                    r["output_raster"].update(
+                        item_properties={"description": html_final}
+                    )
 
             return_value_names = []
             for key, value in r.items():
@@ -348,7 +402,8 @@ class GPJob(object):
                 for return_value in return_value_names:
                     ret_names.append(return_value)
                 import collections
-                NamedTuple = collections.namedtuple('FunctionOutput', ret_names)
+
+                NamedTuple = collections.namedtuple("FunctionOutput", ret_names)
                 function_output = NamedTuple(**r)
                 return function_output
 
@@ -356,58 +411,62 @@ class GPJob(object):
             return result
         else:
             value = result
-            if isinstance(value, dict) and 'itemId' in value and \
-               len(value['itemId']) > 0:
-                itemid = value['itemId']
+            if (
+                isinstance(value, dict)
+                and "itemId" in value
+                and len(value["itemId"]) > 0
+            ):
+                itemid = value["itemId"]
                 item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
                 if self._item_properties:
                     _item_properties = {
                         "properties": {
-                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
                             "jobType": "GPServer",
                             "jobId": self._jobid,
-                            "jobStatus": "completed"
+                            "jobStatus": "completed",
                         }
                     }
                     item.update(item_properties=_item_properties)
                 return item
-            elif isinstance(value, dict) and 'url' in value:
+            elif isinstance(value, dict) and "url" in value:
                 return value["url"]
-            elif isinstance(value, dict) and 'contentList' in value:
+            elif isinstance(value, dict) and "contentList" in value:
                 if value is "":
                     return None
                 elif isinstance(value["contentList"], str):
                     return json.loads(value["contentList"])
-                return value['contentList']
-            elif isinstance(value, dict) and 'modelInfo' in value:
+                return value["contentList"]
+            elif isinstance(value, dict) and "modelInfo" in value:
                 try:
-                    dict_output =  json.loads(value["modelInfo"])
+                    dict_output = json.loads(value["modelInfo"])
                     return dict_output
                 except:
                     return value
-            elif isinstance(value, dict) and 'result' in value:
+            elif isinstance(value, dict) and "result" in value:
                 return value["result"]
             elif isinstance(value, dict) and "items" in value:
-                itemid = list(value['items'].keys())[0]
+                itemid = list(value["items"].keys())[0]
                 item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
                 if self._item_properties:
                     _item_properties = {
                         "properties": {
-                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
                             "jobType": "GPServer",
                             "jobId": self._jobid,
-                            "jobStatus": "completed"
+                            "jobStatus": "completed",
                         }
                     }
                     item.update(item_properties=_item_properties)
                 return item
-            elif isinstance(value, dict) and 'featureSet' in value:
+            elif isinstance(value, dict) and "featureSet" in value:
                 return arcgis.features.FeatureCollection(value)
             elif isinstance(value, list) and value is not None:
                 output_model_list = []
                 from arcgis.learn import Model
+
                 for element in value:
-                    if isinstance(element,dict):
+                    if isinstance(element, dict):
                         if "id" in element.keys():
                             item = arcgis.gis.Item(gis=self._gis, itemid=element["id"])
                             output_model_list.append(Model(item))
@@ -418,64 +477,97 @@ class GPJob(object):
                 if self._item_properties:
                     _item_properties = {
                         "properties": {
-                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
                             "jobType": "GPServer",
                             "jobId": self._jobid,
-                            "jobStatus": "completed"
+                            "jobStatus": "completed",
                         }
                     }
                     item.update(item_properties=_item_properties)
         return result
 
-
     def _process_fa(self, result):
         import arcgis
+
         HAS_ITEM = False
-        if hasattr(result, '_fields'):
+        if hasattr(result, "_fields"):
             r = {}
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations',
-                                 'SummarizeNearby', "InterpolatePoints"] and \
-                   isinstance(value, dict) and 'featureSet' in value:
+                if (
+                    self.task
+                    in [
+                        "AggregatePoints",
+                        "ConnectOriginsToDestinations",
+                        "SummarizeNearby",
+                        "InterpolatePoints",
+                    ]
+                    and isinstance(value, dict)
+                    and "featureSet" in value
+                ):
                     r[key] = arcgis.features.FeatureCollection(value)
-                elif isinstance(value, dict) and 'featureSet' in value:
+                elif isinstance(value, dict) and "featureSet" in value:
                     HAS_ITEM = True
                     r[key] = arcgis.features.FeatureCollection(value)
-                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
-                    if not value['itemId'] in iids:
+                elif (
+                    isinstance(value, dict)
+                    and "itemId" in value
+                    and len(value["itemId"]) > 0
+                ):
+                    if not value["itemId"] in iids:
                         HAS_ITEM = True
-                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
-                        iids.append(value['itemId'])
+                        r[key] = arcgis.gis.Item(self._gis, value["itemId"])
+                        iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
-                elif HAS_ITEM == False and \
-                     (self.task in ['AggregatePoints', 'CreateWatersheds', 'PlanRoutes',
-                                   'ConnectOriginsToDestinations',
-                                   'SummarizeNearby', "InterpolatePoints"] or \
-                      self.task == 'ConnectOriginsToDestinations'):
+                elif HAS_ITEM == False and (
+                    self.task
+                    in [
+                        "AggregatePoints",
+                        "CreateWatersheds",
+                        "PlanRoutes",
+                        "ConnectOriginsToDestinations",
+                        "SummarizeNearby",
+                        "InterpolatePoints",
+                    ]
+                    or self.task == "ConnectOriginsToDestinations"
+                ):
                     r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
             return r
         else:
             value = result
-            if 'itemId' in value and \
-               len(value['itemId']) > 0:
-                itemid = value['itemId']
+            if "itemId" in value and len(value["itemId"]) > 0:
+                itemid = value["itemId"]
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
-            elif self.task.lower() == 'createroutelayers':
-                return [arcgis.gis.Item(gis=self._gis, itemid=itemid) for itemid in result['items']]
-            elif isinstance(value, dict) and "items" in value and len(set(value['items'].keys())) == 1:
-                itemid = list(value['items'].keys())[0]
+            elif self.task.lower() == "createroutelayers":
+                return [
+                    arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                    for itemid in result["items"]
+                ]
+            elif (
+                isinstance(value, dict)
+                and "items" in value
+                and len(set(value["items"].keys())) == 1
+            ):
+                itemid = list(value["items"].keys())[0]
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
-            elif isinstance(value, dict) and "items" in value and len(set(value['items'].keys())) > 1:
-                return [arcgis.gis.Item(gis=self._gis, itemid=itemid) for itemid in result['items']]
-            elif isinstance(value, dict) and 'featureSet' in value:
+            elif (
+                isinstance(value, dict)
+                and "items" in value
+                and len(set(value["items"].keys())) > 1
+            ):
+                return [
+                    arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                    for itemid in result["items"]
+                ]
+            elif isinstance(value, dict) and "featureSet" in value:
                 return arcgis.features.FeatureCollection(value)
             return value
         return result
+
 
 class RAJob(GPJob):
     """
@@ -494,29 +586,34 @@ class RAJob(GPJob):
     ================  ===============================================================
 
     """
+
     _item = None
     _gpjob = None
-    #----------------------------------------------------------------------
-    def __init__(self, gpjob:GPJob, item:"Item"=None):
+    # ----------------------------------------------------------------------
+    def __init__(self, gpjob: GPJob, item: "Item" = None):
         """
         initializer
         """
         self._gpjob = gpjob
         self._item = item
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<%s Raster Analysis Job: %s>" % (self.task, self._jobid)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<%s Raster Analysis Job: %s>" % (self.task, self._jobid)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def task(self):
         """Returns the task name.
         :returns: string
         """
         return self._gpjob.task
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def messages(self):
         """
@@ -525,7 +622,8 @@ class RAJob(GPJob):
         :returns: List
         """
         return self._gpjob.messages
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def status(self):
         """
@@ -534,14 +632,16 @@ class RAJob(GPJob):
         :returns: String
         """
         return self._gpjob.status
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def elapse_time(self):
         """
         Returns the Ellapse Time for the Job
         """
         return self._gpjob.ellapse_time
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def result(self):
         """
         Return the value returned by the call. If the call hasn't yet completed
@@ -553,12 +653,14 @@ class RAJob(GPJob):
             return self._gpjob.result()
         except Exception as e:
             from arcgis.gis import Item
+
             if isinstance(self._item, Item):
                 self._item.delete()
             elif isinstance(self._item, (tuple, list)):
                 [i.delete() for i in self._item if isinstance(i, Item)]
             raise e
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def cancel(self):
         """
         Attempt to cancel the call. If the call is currently being executed
@@ -571,12 +673,14 @@ class RAJob(GPJob):
         res = self._gpjob.cancel()
         if self.cancelled():
             from arcgis.gis import Item
+
             if isinstance(self._item, Item):
                 self._item.delete()
             elif isinstance(self._item, (tuple, list)):
                 [i.delete() for i in self._item if isinstance(i, Item)]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def cancelled(self):
         """
         Return True if the call was successfully cancelled.
@@ -584,7 +688,8 @@ class RAJob(GPJob):
         :returns: boolean
         """
         return self._gpjob.cancelled()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def running(self):
         """
         Return True if the call is currently being executed and cannot be cancelled.
@@ -592,7 +697,8 @@ class RAJob(GPJob):
         :returns: boolean
         """
         return self._gpjob.running()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def done(self):
         """
         Return True if the call was successfully cancelled or finished running.

@@ -10,6 +10,7 @@ from .index.rtree import Rect
 try:
     import arcpy
     from arcpy import da
+
     HASARCPY = True
 except:
     HASARCPY = False
@@ -20,6 +21,7 @@ try:
     import pandas as pd
     from pandas import Series, DataFrame
     from pandas.core.indexing import _NDFrameIndexer
+
     try:
         from pandas.util.decorators import cache_readonly
     except:
@@ -41,7 +43,9 @@ except:
     class _NDFrameIndexer:
         pass
 
+
 from ....geometry import _types
+
 
 def _convert_array_args(args):
     if HASARCPY:
@@ -55,6 +59,7 @@ def _convert_array_args(args):
 
 class _CoordinateIndexer(_NDFrameIndexer):
     """ Indexing by coordinate slices """
+
     def _getitem_tuple(self, tup):
         obj = self.obj
         xs, ys = tup
@@ -67,35 +72,40 @@ class _CoordinateIndexer(_NDFrameIndexer):
         if xs.step is not None or ys.step is not None:
             warn("Ignoring step - full interval is used.")
         xmin, ymin, xmax, ymax = obj.total_bounds
-        bbox = Rect(xs.start or xmin,
-                   ys.start or ymin,
-                   xs.stop or xmax,
-                   ys.stop or ymax)
+        bbox = Rect(
+            xs.start or xmin, ys.start or ymin, xs.stop or xmax, ys.stop or ymax
+        )
         idx = obj.intersects(bbox)
         return obj[idx]
+
+
 def _is_empty(x):
     try:
         return x.is_empty
     except:
         return False
+
+
 ########################################################################
 class GeoSeries(BaseSpatialPandas, Series):
     """
     Represents a column containing geometries
     """
+
     _sindex = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
         """Constructor"""
         if not OLD_PANDAS:
             args = _convert_array_args(args)
-        sr = kwargs.pop('sr', {'wkid' : 4326})
+        sr = kwargs.pop("sr", {"wkid": 4326})
 
         super(GeoSeries, self).__init__(*args, **kwargs)
         self.sr = sr
         self._delete_index()
+
     def __new__(cls, *args, **kwargs):
-        kwargs.pop('sr', None)
+        kwargs.pop("sr", None)
         if OLD_PANDAS:
             args = _convert_array_args(args)
             arr = Series.__new__(cls, *args, **kwargs)
@@ -105,14 +115,17 @@ class GeoSeries(BaseSpatialPandas, Series):
             return arr
         else:
             return arr.view(GeoSeries)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def append(self, *args, **kwargs):
-        return self._wrapped_pandas_method('append', *args, **kwargs)
-    #----------------------------------------------------------------------
+        return self._wrapped_pandas_method("append", *args, **kwargs)
+
+    # ----------------------------------------------------------------------
     @property
     def geometry(self):
         return self
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
@@ -121,7 +134,8 @@ class GeoSeries(BaseSpatialPandas, Series):
             val.sr = self.sr
             val._delete_index()
         return val
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @classmethod
     def from_featureclass(cls, filepath):
         """
@@ -142,26 +156,29 @@ class GeoSeries(BaseSpatialPandas, Series):
         g = GeoSeries(geoms)
         g.sr = arcpy.Describe(filepath).spatialReference.factoryCode
         return g
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         """Returns a GeoSeries of GeoJSON Dictionary
         """
         return self.apply(lambda x: x.__geo_interface__)
+
     @property
     def _constructor(self):
         return GeoSeries
+
     def __getitem__(self, key):
-        return self._wrapped_pandas_method('__getitem__', key)
+        return self._wrapped_pandas_method("__getitem__", key)
 
     def sort_index(self, *args, **kwargs):
-        return self._wrapped_pandas_method('sort_index', *args, **kwargs)
+        return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
     def take(self, *args, **kwargs):
-        return self._wrapped_pandas_method('take', *args, **kwargs)
+        return self._wrapped_pandas_method("take", *args, **kwargs)
 
     def select(self, *args, **kwargs):
-        return self._wrapped_pandas_method('select', *args, **kwargs)
+        return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @property
     def _can_hold_na(self):
@@ -174,7 +191,7 @@ class GeoSeries(BaseSpatialPandas, Series):
             object.__setattr__(self, name, getattr(other, name, None))
         return self
 
-    def copy(self, order='C'):
+    def copy(self, order="C"):
         """
         Make a copy of this GeoSeries object
 
@@ -187,8 +204,9 @@ class GeoSeries(BaseSpatialPandas, Series):
         -------
         copy : GeoSeries
         """
-        return GeoSeries(self.values.copy(order), index=self.index,
-                      name=self.name).__finalize__(self)
+        return GeoSeries(
+            self.values.copy(order), index=self.index, name=self.name
+        ).__finalize__(self)
 
     def isnull(self):
         """Null values in a GeoSeries are represented by empty geometric objects"""
@@ -196,30 +214,29 @@ class GeoSeries(BaseSpatialPandas, Series):
         val = self.apply(_is_empty)
         return np.logical_or(non_geo_null, val)
 
-    def fillna(self, value=None, method=None, inplace=False,
-               **kwargs):
+    def fillna(self, value=None, method=None, inplace=False, **kwargs):
         """Fill NA/NaN values with a geometry (empty polygon by default).
 
         "method" is currently not implemented for pandas <= 0.12.
         """
         if value is None:
-            value = arcpy.Point(0,0)
-        return super(GeoSeries, self).fillna(value=value, method=method,
-                                             inplace=inplace, **kwargs)
+            value = arcpy.Point(0, 0)
+        return super(GeoSeries, self).fillna(
+            value=value, method=method, inplace=inplace, **kwargs
+        )
 
-    def align(self, other, join='outer', level=None, copy=True,
-              fill_value=None, **kwargs):
+    def align(
+        self, other, join="outer", level=None, copy=True, fill_value=None, **kwargs
+    ):
         if fill_value is None:
-            fill_value = arcpy.Point(0,0)
-        left, right = super(GeoSeries, self).align(other, join=join,
-                                                   level=level, copy=copy,
-                                                   fill_value=fill_value,
-                                                   **kwargs)
+            fill_value = arcpy.Point(0, 0)
+        left, right = super(GeoSeries, self).align(
+            other, join=join, level=level, copy=copy, fill_value=fill_value, **kwargs
+        )
         if isinstance(other, GeoSeries):
             return GeoSeries(left), GeoSeries(right)
-        else: # It is probably a Series, let's keep it that way
+        else:  # It is probably a Series, let's keep it that way
             return GeoSeries(left), right
-
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -233,17 +250,13 @@ class GeoSeries(BaseSpatialPandas, Series):
         else:
             return False
 
-    def plot(self,
-             map_widget,
-             style=None,
-             cmap=None,
-             **kwargs):
+    def plot(self, map_widget, style=None, cmap=None, **kwargs):
         """
         Draws a Geometry Series on a Map object.
         """
         raise NotImplementedError("Series plotting is not implemented currently.")
 
-    #plot.__doc__ = plot_series.__doc__
+    # plot.__doc__ = plot_series.__doc__
 
     def to_json(self, **kwargs):
         """
@@ -255,7 +268,8 @@ class GeoSeries(BaseSpatialPandas, Series):
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 
+
 try:
-    GeoSeries._create_indexer('cx', _CoordinateIndexer)
+    GeoSeries._create_indexer("cx", _CoordinateIndexer)
 except:
     pass

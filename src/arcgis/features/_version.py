@@ -5,6 +5,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayerCollection, FeatureLayer
 
+
 class VersionManager(object):
     """
     VersionManager allows users to manage the branch versioning for FeatureLayerCollection
@@ -26,48 +27,49 @@ class VersionManager(object):
     ===============     ====================================================================
 
     """
+
     _con = None
     _flc = None
     _gis = None
     _json = None
     _versions = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, flc=None):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
         else:
-            raise ValueError('gis must be of type GIS')
+            raise ValueError("gis must be of type GIS")
         self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
-        elif flc is None or \
-           isinstance(flc, FeatureLayerCollection) == False:
+        elif flc is None or isinstance(flc, FeatureLayerCollection) == False:
             furl = os.path.dirname(url) + "/FeatureServer"
-            self._flc = FeatureLayerCollection(url=furl,
-                                               gis=self._gis)
+            self._flc = FeatureLayerCollection(url=furl, gis=self._gis)
         else:
             self._flc = flc
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<VersionManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the service properties"""
         if self._properties is None:
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
-    def create(self, name,
-               permission='public',
-               description=""):
+
+    # ----------------------------------------------------------------------
+    def create(self, name, permission="public", description=""):
         """
         Create the named version off of DEFAULT. The version is associated
         with the specified feature service. During creation, the description
@@ -91,19 +93,20 @@ class VersionManager(object):
 
         """
         params = {
-            'f' : 'json',
-            'versionName' : name,
-            'description' : description,
-            'accessPermission' : permission
+            "f": "json",
+            "versionName": name,
+            "description": description,
+            "accessPermission": permission,
         }
         url = self._url + "/create"
         res = self._con.post(url, params)
         self._versions = None
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         else:
             return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def purge(self, version, owner=None):
         """
         Removes a lock from a version
@@ -124,15 +127,13 @@ class VersionManager(object):
         if isinstance(version, Version):
             version = version.properties.versionName
         url = "%s/purgeLock" % self._url
-        params = {
-            'f': 'json',
-            "versionName": version
-        }
+        params = {"f": "json", "versionName": version}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def locks(self):
         """
@@ -146,26 +147,27 @@ class VersionManager(object):
         except:
             return []
         return []
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def all(self):
         """returns all visible versions on a service"""
-        if self._versions is None or \
-           len(self._versions) == 0:
+        if self._versions is None or len(self._versions) == 0:
             url = "%s/versions" % self._url
-            params = {'f':'json'}
+            params = {"f": "json"}
             res = self._con.get(url, params)
             self._versions = []
-            if 'versions' in res:
-                for v in res['versions']:
-                    guid = v['versionGuid'][1:-1]
+            if "versions" in res:
+                for v in res["versions"]:
+                    guid = v["versionGuid"][1:-1]
                     vurl = "%s/versions/%s" % (self._url, guid)
-                    self._versions.append(Version(url=vurl,
-                                                  flc=self._flc,
-                                                  gis=self._gis))
+                    self._versions.append(
+                        Version(url=vurl, flc=self._flc, gis=self._gis)
+                    )
             return self._versions
         return self._versions
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def search(self, owner=None, show_hidden=False):
         """
         For the specified feature service, return the info of all versions
@@ -186,13 +188,10 @@ class VersionManager(object):
 
         """
         url = "%s/versionInfos" % self._url
-        params = {
-            'ownerFilter' : owner,
-            'includeHidden' : show_hidden,
-            'f' : 'json'
-        }
+        params = {"ownerFilter": owner, "includeHidden": show_hidden, "f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, version, mode=None):
         """
         Finds and Locations a Version by it's name
@@ -216,11 +215,13 @@ class VersionManager(object):
 
         """
         for v in self.all:
-            if version.lower() == v.properties['versionName'].lower():
+            if version.lower() == v.properties["versionName"].lower():
                 if mode:
                     v.mode = mode
                 return v
         return
+
+
 ########################################################################
 class Version(object):
     """
@@ -251,6 +252,7 @@ class Version(object):
     ===============     ====================================================================
 
     """
+
     _flc = None
     _gis = None
     _url = None
@@ -259,13 +261,8 @@ class Version(object):
     _save = None
     _properties = None
     _validation = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 flc,
-                 gis=None,
-                 session_guid=None,
-                 mode=None):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
             self.mode = mode
@@ -273,19 +270,23 @@ class Version(object):
         self._save = False
         if gis is None:
             from arcgis import env
+
             self._gis = env.active_gis
         self._gis = gis
         self._con = self._gis._portal.con
         if session_guid is None:
-            self._guid = "{%s-%s-%s-%s-%s}" % (uuid.uuid4().hex[:8],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:4],
-                                               uuid.uuid4().hex[:12])
+            self._guid = "{%s-%s-%s-%s-%s}" % (
+                uuid.uuid4().hex[:8],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:4],
+                uuid.uuid4().hex[:12],
+            )
         else:
             self._guid = session_guid
         self._flc = flc
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def validation(self):
         """
@@ -295,14 +296,20 @@ class Version(object):
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
-            ms = MapImageLayer(url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis)
-            if 'validationserver' in ms.properties.supportedExtensions.lower():
+
+            ms = MapImageLayer(
+                url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis
+            )
+            if "validationserver" in ms.properties.supportedExtensions.lower():
                 from arcgis.features._validation import ValidationManager
+
                 url = os.path.dirname(self._flc.url) + "/ValidationServer"
-                self._validation = ValidationManager(url=url, version=self, gis=self._gis)
+                self._validation = ValidationManager(
+                    url=url, version=self, gis=self._gis
+                )
         return self._validation
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def parcel_fabric(self):
         """
@@ -310,46 +317,59 @@ class Version(object):
 
         :returns: ParcelFabricManager
         """
-        if "controllerDatasetLayers" in self._flc.properties and \
-           "parcelLayerId" in self._flc.properties.controllerDatasetLayers:
+        if (
+            "controllerDatasetLayers" in self._flc.properties
+            and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
+        ):
             from arcgis.features._parcel import ParcelFabricManager
+
             url = os.path.dirname(self._flc.url) + "/ParcelFabricServer"
-            return ParcelFabricManager(url=url, gis=self._gis,
-                                       version=self, flc=self._flc)
+            return ParcelFabricManager(
+                url=url, gis=self._gis, version=self, flc=self._flc
+            )
         return
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def utility(self):
         """provides access to the utility service manager"""
 
-        if "controllerDatasetLayers" in self._flc.properties and \
-           "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers:
+        if (
+            "controllerDatasetLayers" in self._flc.properties
+            and "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers
+        ):
             from arcgis.features._utility import UtilityNetworkManager
+
             url = "%s/UtilityNetworkServer" % os.path.dirname(self._flc.url)
-            return UtilityNetworkManager(url=url,
-                                         version=self)
+            return UtilityNetworkManager(url=url, version=self)
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Version {name} @ {guid}>".format(name=self.properties.versionName,
-                                                  guid=self.properties.versionGuid)
-    #----------------------------------------------------------------------
+        return "<Version {name} @ {guid}>".format(
+            name=self.properties.versionName, guid=self.properties.versionGuid
+        )
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the service properties"""
         if self._properties is None:
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def layers(self):
         """returns the layers in the FeatureLayerCollection"""
         return self._flc.layers
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def mode(self):
         """
@@ -364,23 +384,28 @@ class Version(object):
 
 
         """
-        if "isBeingEdited" in self.properties and \
-           self.properties.isBeingEdited and \
-           "isBeingRed" in self.properties and \
-           self.properties.isBeingRead:
-            self._mode = 'edit'
-            return 'edit'
-        elif "isBeingEdited" in self.properties and \
-             self.properties.isBeingEdited == False and \
-             "isBeingRed" in self.properties and \
-             self.properties.isBeingRead:
-            self._mode = 'read'
-            return 'read'
+        if (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited
+            and "isBeingRed" in self.properties
+            and self.properties.isBeingRead
+        ):
+            self._mode = "edit"
+            return "edit"
+        elif (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+            and "isBeingRed" in self.properties
+            and self.properties.isBeingRead
+        ):
+            self._mode = "read"
+            return "read"
         else:
             self._mode = None
             return None
         return self._mode
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @mode.setter
     def mode(self, value):
         """
@@ -400,28 +425,27 @@ class Version(object):
         # None means reading is stopped and edit is stopped.
         value = str(value).lower()
         if value != str(self.mode).lower():
-            if value == 'edit':
-                if 'isBeingRead' in self.properties and \
-                   self.properties.isBeingRead == False:
+            if value == "edit":
+                if (
+                    "isBeingRead" in self.properties
+                    and self.properties.isBeingRead == False
+                ):
                     self._mode = None
                     self.start_reading()
                     self._properties = None
                 if self.start_editing():
-                    self._mode = 'edit'
-            elif value == 'read':
-                if 'isBeingEdited' in self.properties and \
-                   self.properties.isBeingEdited:
+                    self._mode = "edit"
+            elif value == "read":
+                if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
                     self.stop_editing(save=self.save_edits)
                     self._properties = None
                 if self.start_reading():
                     self._mode = value
-            elif value in [None, 'none']:
-                if 'isBeingEdited' in self.properties and \
-                   self.properties.isBeingEdited:
+            elif value in [None, "none"]:
+                if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
                     self.stop_editing(save=self.save_edits)
                     self._properties = None
-                if 'isBeingRead' in self.properties and \
-                   self.properties.isBeingRead:
+                if "isBeingRead" in self.properties and self.properties.isBeingRead:
                     self._properties = None
                     self.stop_reading()
                     self._properties = None
@@ -429,7 +453,8 @@ class Version(object):
                     self._properties = None
                 self._mode = None
             self._properties = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes the current version
@@ -439,19 +464,20 @@ class Version(object):
         """
         url = "%s/delete" % os.path.dirname(os.path.dirname(self._url))
         params = {
-            'f' : 'json',
-            'versionName' : self.properties.versionName,
-            'sessionID' : self._guid
+            "f": "json",
+            "versionName": self.properties.versionName,
+            "sessionID": self._guid,
         }
         try:
             res = self._con.post(url, params)
         except:
             params.pop("sessionID")
             res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def save_edits(self):
         """
@@ -460,7 +486,8 @@ class Version(object):
         When set to true, any edits performed on the version will be saved.
         """
         return self._save
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @save_edits.setter
     def save_edits(self, value):
         """
@@ -470,35 +497,37 @@ class Version(object):
         """
         if value != self._save:
             self._save = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start_editing(self):
         """
         Starts an edit session for the current user.
 
         :returns: boolean
         """
-        if 'isBeingEdited' in self.properties and \
-           self.properties.isBeingEdited == False:
-            if 'isBeingRead' in self.properties and \
-               self.properties.isBeingRead == False:
+        if (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+        ):
+            if (
+                "isBeingRead" in self.properties
+                and self.properties.isBeingRead == False
+            ):
                 self.start_reading()
                 self._properties = None
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
+            params = {"f": "json", "sessionID": self._guid}
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
-            if res['success']:
-                self._mode = 'edit'
+            if res["success"]:
+                self._mode = "edit"
                 self._properties = None
             self._properties = None
-            return res['success']
-        elif 'isBeingEdited' in self.properties and \
-             self.properties.isBeingEdited:
+            return res["success"]
+        elif "isBeingEdited" in self.properties and self.properties.isBeingEdited:
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop_editing(self, save=None):
         """
         Starts an edit session for the current user.
@@ -515,27 +544,25 @@ class Version(object):
 
         """
         self._properties = None
-        if 'isBeingEdited' in self.properties and \
-           self.properties.isBeingEdited:
+        if "isBeingEdited" in self.properties and self.properties.isBeingEdited:
             self._mode = None
             if save is None:
                 save = self.save_edits
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid,
-            'saveEdits': save
-            }
+            params = {"f": "json", "sessionID": self._guid, "saveEdits": save}
             url = "%s/stopEditing" % self._url
             res = self._con.post(url, params)
-            if res['success']:
-                self._mode = 'read'
+            if res["success"]:
+                self._mode = "read"
             self._properties = None
-            return res['success']
-        elif 'isBeingEdited' in self.properties and \
-             self.properties.isBeingEdited == False:
+            return res["success"]
+        elif (
+            "isBeingEdited" in self.properties
+            and self.properties.isBeingEdited == False
+        ):
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start_reading(self):
         """
         Start reading represents a long-term service session. When `start_reading`
@@ -546,24 +573,21 @@ class Version(object):
 
         """
         self._properties = None
-        if 'isBeingRead' in self.properties and \
-           self.properties.isBeingRead:
+        if "isBeingRead" in self.properties and self.properties.isBeingRead:
             return True
-        elif ('isBeingRead' in self.properties and \
-             self.properties.isBeingRead == False) or \
-             'isBeingRead' not in self.properties:
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
+        elif (
+            "isBeingRead" in self.properties and self.properties.isBeingRead == False
+        ) or "isBeingRead" not in self.properties:
+            params = {"f": "json", "sessionID": self._guid}
             url = "%s/startReading" % self._url
             res = self._con.post(url, params)
-            if res['success']:
-                self._mode = 'read'
+            if res["success"]:
+                self._mode = "read"
                 self._properties = None
-            return res['success']
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop_reading(self):
         """
         Stops and releases a reading session.
@@ -574,20 +598,18 @@ class Version(object):
         self._properties = None
         if self.properties.isBeingRead:
 
-            params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-            }
+            params = {"f": "json", "sessionID": self._guid}
             url = "%s/stopReading" % self._url
             res = self._con.post(url, params)
-            if res['success']:
+            if res["success"]:
                 self._mode = None
             self._properties = None
-            return res['success']
+            return res["success"]
         elif self.properties.isBeingRead == False:
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete_forward_edits(self, moment):
         """
         If the input moment does not match a specific moment (a moment
@@ -611,19 +633,14 @@ class Version(object):
 
         """
         url = "%s/deleteForwardEdits" % self._url
-        params = {
-            'f' : "json",
-            'sessionID' : self._guid,
-            'moment' : moment
-        }
+        params = {"f": "json", "sessionID": self._guid, "moment": moment}
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def reconcile(self,
-                  end_with_conflict=False,
-                  with_post=False):
+
+    # ----------------------------------------------------------------------
+    def reconcile(self, end_with_conflict=False, with_post=False):
         """
         Reconcile a version against the DEFAULT version. The reconcile
         operation requires that you are the only user currently editing the
@@ -646,18 +663,19 @@ class Version(object):
         ==================     ====================================================================
 
         """
-        if self._mode == 'edit':
+        if self._mode == "edit":
             params = {
-               'f' : 'json',
-               "sessionID" : self._guid,
-               'abortIfConflicts' : end_with_conflict,
-               'withPost' : with_post
+                "f": "json",
+                "sessionID": self._guid,
+                "abortIfConflicts": end_with_conflict,
+                "withPost": with_post,
             }
             url = "%s/reconcile" % self._url
             res = self._con.post(url, params)
-            return res['success']
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def restore(self, rows):
         """
         The `restore` method allows users to restore rows from a common
@@ -689,24 +707,16 @@ class Version(object):
 
         """
         url = "%s/restoreRows" % self._url
-        params = {
-            'f' : "json",
-            'sessionID' : self._guid,
-            'rows' : rows
-        }
+        params = {"f": "json", "sessionID": self._guid, "rows": rows}
 
         res = self._con.post(url, params)
 
-        if 'success' in res:
-            return res['success'], res.get("moment", "")
+        if "success" in res:
+            return res["success"], res.get("moment", "")
         return res
 
-    #----------------------------------------------------------------------
-    def alter(self,
-              owner=None,
-              version=None,
-              description=None,
-              permission=None):
+    # ----------------------------------------------------------------------
+    def alter(self, owner=None, version=None, description=None, permission=None):
         """
         The ```alter``` operation changes the geodatabase version's name,
         description, and access permissions.
@@ -730,26 +740,22 @@ class Version(object):
 
         """
         url = "%s/alter" % self._url
-        params = {
-            'f' : 'json'
-        }
-        if owner or\
-           version or\
-           description or\
-           permission:
+        params = {"f": "json"}
+        if owner or version or description or permission:
             if owner:
-                params['ownerName'] = owner
+                params["ownerName"] = owner
             if version:
-                params['versionName'] = version
+                params["versionName"] = version
             if description:
-                params['description'] = description
+                params["description"] = description
             if permission:
-                params['accessPermission'] = permission
-            res  = self._con.post(url, params)
+                params["accessPermission"] = permission
+            res = self._con.post(url, params)
             self._properties = None
-            return res['success']
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def differences(self, result_type="objectIds", moment=None):
         """
         The ```differences``` operation allows you to view differences between
@@ -779,13 +785,10 @@ class Version(object):
 
         """
         url = "%s/differences" % self._url
-        params = {
-            "f" : "json",
-            "sessionID" : self._guid,
-            "resultType" : result_type
-        }
+        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def conflicts(self):
         """
         The ```conflicts``` operation allows you to view the conflicts by layer
@@ -794,13 +797,11 @@ class Version(object):
         are in conflicts will also be returned as they existed in the branch,
         ancestor, and default versions.
         """
-        params = {
-            'f' : 'json',
-            'sessionID' : self._guid
-        }
+        params = {"f": "json", "sessionID": self._guid}
         url = "%s/conflicts" % self._url
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def inspect(self, conflicts, inspect_all=False, set_inspected=False):
         """
         The ```inspect``` operation allows the client to annotate conflicts
@@ -846,15 +847,16 @@ class Version(object):
         """
         url = "%s/inspectConflicts" % self._url
         params = {
-            'f' : 'json',
-            'sessionId' : self._guid,
-            'inspectAll' : inspect_all,
-            'conflicts' : conflicts,
-            'setInspected' : set_inspected
+            "f": "json",
+            "sessionId": self._guid,
+            "inspectAll": inspect_all,
+            "conflicts": conflicts,
+            "setInspected": set_inspected,
         }
         res = self._con.post(url, params)
-        return res['success']
-    #----------------------------------------------------------------------
+        return res["success"]
+
+    # ----------------------------------------------------------------------
     def post(self):
         """
         The Post operation allows the client to post the changes in their
@@ -866,23 +868,22 @@ class Version(object):
         :return: Boolean
 
         """
-        if self._mode == 'edit':
+        if self._mode == "edit":
             url = "%s/post" % self._url
-            params = {
-                "f" : "json",
-                "sessionID" : self._guid
-            }
+            params = {"f": "json", "sessionID": self._guid}
             res = self._con.post(url, params)
-            return res['success']
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __enter__(self):
-        if self._mode == 'edit':
+        if self._mode == "edit":
             self.start_editing()
-        elif self.mode == 'read':
+        elif self.mode == "read":
             self.start_reading()
         return self
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __exit__(self, type, value, traceback):
         self._properties = None
         if self.properties.isLocked:
@@ -892,20 +893,23 @@ class Version(object):
                 self.stop_editing(self.save_edits)
             if self.properties.isBeingRead:
                 if self._mode != "read":
-                    self._mode = 'read'
+                    self._mode = "read"
                 self.stop_reading()
-        if self._mode == 'edit':
+        if self._mode == "edit":
             self.stop_editing(save=self.save_edits)
-        elif self._mode == 'read':
+        elif self._mode == "read":
             self.stop_reading()
-    #----------------------------------------------------------------------
-    def edit(self,
-             layer,
-             adds=None,
-             updates=None,
-             deletes=None,
-             use_global_ids=False,
-             rollback_on_failure=True):
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        layer,
+        adds=None,
+        updates=None,
+        deletes=None,
+        use_global_ids=False,
+        rollback_on_failure=True,
+    ):
         """
         The `edit` operation allows users to apply changes to the current version. The edit
         session must be in the mode of `edit` or an exception will be raised.
@@ -944,13 +948,17 @@ class Version(object):
         :returns: dictionary
 
         """
-        if self._mode == 'edit':
-            return layer.edit_features(adds=adds,
-                                       updates=updates,
-                                       deletes=deletes,
-                                       gdb_version=self.properties.versionName,
-                                       use_global_ids=use_global_ids,
-                                       rollback_on_failure=rollback_on_failure)
+        if self._mode == "edit":
+            return layer.edit_features(
+                adds=adds,
+                updates=updates,
+                deletes=deletes,
+                gdb_version=self.properties.versionName,
+                use_global_ids=use_global_ids,
+                rollback_on_failure=rollback_on_failure,
+            )
         else:
-            raise Exception("Version must be in `edit` mode inorder to apply edits to this version.")
+            raise Exception(
+                "Version must be in `edit` mode inorder to apply edits to this version."
+            )
         return None
