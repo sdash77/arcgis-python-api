@@ -4,23 +4,28 @@ Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 """
 from requests import auth
 from requests import cookies
+
 try:
     from requests_negotiate_sspi import HttpNegotiateAuth
+
     HAS_SSPI = True
 except ImportError:
     HAS_SSPI = False
-    
+
 try:
 
     from requests_kerberos import HTTPKerberosAuth
+
     HAS_KERBEROS = True
 except ImportError:
     HAS_KERBEROS = False
 from requests_ntlm import HttpNtlmAuth
 from requests_toolbelt.auth import _digest_auth_compat as auth_compat, http_proxy_digest
 
+
 class GuessAuth(auth.AuthBase):
     """Guesses the auth type by the WWW-Authentication header."""
+
     _try_auth_count = None
 
     def __init__(self, username, password):
@@ -39,7 +44,7 @@ class GuessAuth(auth.AuthBase):
         r.content
         r.raw.release_conn()
         prep = r.request.copy()
-        if not hasattr(prep, '_cookies'):
+        if not hasattr(prep, "_cookies"):
             prep._cookies = cookies.RequestsCookieJar()
         cookies.extract_cookies_to_jar(prep._cookies, r.request, r.raw)
         prep.prepare_cookies(prep._cookies)
@@ -64,8 +69,7 @@ class GuessAuth(auth.AuthBase):
         # Check that the attr exists because much older versions of requests
         # set this attribute lazily. For example:
         # https://github.com/kennethreitz/requests/blob/33735480f77891754304e7f13e3cdf83aaaa76aa/requests/auth.py#L59
-        if (hasattr(self.auth, 'num_401_calls') and
-                self.auth.num_401_calls is None):
+        if hasattr(self.auth, "num_401_calls") and self.auth.num_401_calls is None:
             self.auth.num_401_calls = 1
         # Digest auth would resend the request by itself. We can take a
         # shortcut here.
@@ -83,8 +87,7 @@ class GuessAuth(auth.AuthBase):
         # Check that the attr exists because much older versions of requests
         # set this attribute lazily. For example:
         # https://github.com/kennethreitz/requests/blob/33735480f77891754304e7f13e3cdf83aaaa76aa/requests/auth.py#L59
-        if (hasattr(self.auth, 'num_401_calls') and
-                self.auth.num_401_calls is None):
+        if hasattr(self.auth, "num_401_calls") and self.auth.num_401_calls is None:
             self.auth.num_401_calls = 1
         # Digest auth would resend the request by itself. We can take a
         # shortcut here.
@@ -102,8 +105,7 @@ class GuessAuth(auth.AuthBase):
         # Check that the attr exists because much older versions of requests
         # set this attribute lazily. For example:
         # https://github.com/kennethreitz/requests/blob/33735480f77891754304e7f13e3cdf83aaaa76aa/requests/auth.py#L59
-        if (hasattr(self.auth, 'num_401_calls') and
-                self.auth.num_401_calls is None):
+        if hasattr(self.auth, "num_401_calls") and self.auth.num_401_calls is None:
             self.auth.num_401_calls = 1
         # Digest auth would resend the request by itself. We can take a
         # shortcut here.
@@ -112,19 +114,19 @@ class GuessAuth(auth.AuthBase):
     def handle_401(self, r, **kwargs):
         """Resends a request with auth headers, if needed."""
 
-        www_authenticate = r.headers.get('www-authenticate', '').lower()
+        www_authenticate = r.headers.get("www-authenticate", "").lower()
 
-        if 'basic' in www_authenticate:
+        if "basic" in www_authenticate:
             return self._handle_basic_auth_401(r, kwargs)
 
-        if 'digest' in www_authenticate:
+        if "digest" in www_authenticate:
             return self._handle_digest_auth_401(r, kwargs)
         ##########################################
         ##                                       #
         ##  Handles the NTLM/Kerberos Handshake  #
         ##                                       #
         ##########################################
-        if www_authenticate.find('ntlm') > -1 and self.username and self.password:
+        if www_authenticate.find("ntlm") > -1 and self.username and self.password:
             if self._try_auth_count == 0:
                 self._try_auth_count += 1
                 self.auth = HttpNtlmAuth(self.username, self.password)
@@ -135,15 +137,14 @@ class GuessAuth(auth.AuthBase):
                 return self._handle_kerb_auth_401(r, kwargs)
             else:
                 raise Exception("Could not login to the site.")
-        elif www_authenticate.find('ntlm') > -1:
+        elif www_authenticate.find("ntlm") > -1:
             if HAS_SSPI:
 
-                self.auth = HttpNegotiateAuth(username=self.username,
-                                              password=self.password)
+                self.auth = HttpNegotiateAuth(
+                    username=self.username, password=self.password
+                )
             else:
-                self.auth = HttpNtlmAuth(username=self.username,
-                                         password=self.password)
-
+                self.auth = HttpNtlmAuth(username=self.username, password=self.password)
 
     def __call__(self, request):
         if self.auth is not None:
@@ -154,5 +155,5 @@ class GuessAuth(auth.AuthBase):
         except AttributeError:
             pass
 
-        request.register_hook('response', self.handle_401)
+        request.register_hook("response", self.handle_401)
         return request
