@@ -5,32 +5,40 @@ import datetime
 from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
+
 ###########################################################################
 class BaseTask(object):
     """
     Base Schedule Class
     """
+
     _url = None
     _gis = None
     _con = None
     _properties = None
-    def __init__(self, url:str, gis:GIS):
+
+    def __init__(self, url: str, gis: GIS):
         self._url = url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         if self._properties is None:
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = InsensitiveDict(res)
         return self._properties
+
+
 ###########################################################################
 class Run(BaseTask):
     """
@@ -44,20 +52,24 @@ class Run(BaseTask):
     gis                    Required GIS. The GIS object.
     ==================     ====================================================================
     """
+
     _gis = None
     _url = None
-    #----------------------------------------------------------------------
-    def __init__(self, url:str, gis:GIS):
+    # ----------------------------------------------------------------------
+    def __init__(self, url: str, gis: GIS):
         super(Run, self)
         self._url = url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self.properties.runId}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
         Removes the Task from the System.
@@ -66,15 +78,14 @@ class Run(BaseTask):
 
         """
         url = f"{self._url}/delete"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._gis._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def update(self,
-               status:str=None,
-               description:str=None):
+
+    # ----------------------------------------------------------------------
+    def update(self, status: str = None, description: str = None):
         """
         Updates the Run's Status Message and Result Message.
 
@@ -91,27 +102,29 @@ class Run(BaseTask):
         :returns: Bool
 
         """
-        params = {'f' : 'json'}
-        status_values = ["scheduled", "executing","succeeded", "failed", "skipped"]
+        params = {"f": "json"}
+        status_values = ["scheduled", "executing", "succeeded", "failed", "skipped"]
         if status is None and description is None:
             return False
         if status and status.lower() in status_values:
-            params['status'] = status.lower()
+            params["status"] = status.lower()
         elif status and status.lower() not in status_values:
             raise ValueError("Invalid status")
         elif status is None:
-            params['status'] = self.properties.status
+            params["status"] = self.properties.status
         if description:
-            params['result'] = description
+            params["result"] = description
         elif description is None:
-            params['result'] = self.properties.result
+            params["result"] = self.properties.result
 
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
-        if 'success' in res:
+        if "success" in res:
             self._properties = None
-            return res['success']
+            return res["success"]
         return res
+
+
 ###########################################################################
 class Task(BaseTask):
     """
@@ -126,19 +139,24 @@ class Task(BaseTask):
     ==================     ====================================================================
 
     """
+
     _url = None
     _gis = None
-    def __init__(self, url:str, gis:GIS):
+
+    def __init__(self, url: str, gis: GIS):
         super(Task, self)
         self._url = url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<Task @ {self.properties.id}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
         Removes the Task from the System.
@@ -147,13 +165,14 @@ class Task(BaseTask):
 
         """
         url = f"{self._url}/delete"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._gis._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def enable(self, enabled:bool) -> bool:
+
+    # ----------------------------------------------------------------------
+    def enable(self, enabled: bool) -> bool:
         """
         The `enable` method allows administrators to enable or disable the scheduled task..
 
@@ -167,7 +186,7 @@ class Task(BaseTask):
         :returns: Bool
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         if enabled == True:
             url = f"{self._url}/enable"
         elif enabled == False:
@@ -175,10 +194,11 @@ class Task(BaseTask):
         else:
             raise ValueError("`enabled` must be a boolean value")
         res = self._gis._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start(self) -> bool:
         """
         Starts a task if it is actively running.
@@ -187,7 +207,8 @@ class Task(BaseTask):
 
         """
         return self.update(is_active=True)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop(self) -> bool:
         """
         Stops a task if it is actively running.
@@ -196,18 +217,21 @@ class Task(BaseTask):
 
         """
         return self.update(is_active=False)
-    #----------------------------------------------------------------------
-    def update(self,
-               item:Item=None,
-               cron:str=None,
-               task_type:str=None,
-               occurences:int=10,
-               start_date:datetime.datetime=None,
-               end_date:datetime.datetime=None,
-               title:str=None,
-               parameters:dict=None,
-               task_url:str=None,
-               is_active:bool=None) -> bool:
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        item: Item = None,
+        cron: str = None,
+        task_type: str = None,
+        occurences: int = 10,
+        start_date: datetime.datetime = None,
+        end_date: datetime.datetime = None,
+        title: str = None,
+        parameters: dict = None,
+        task_url: str = None,
+        is_active: bool = None,
+    ) -> bool:
         """
         Updates the current Task
 
@@ -238,16 +262,18 @@ class Task(BaseTask):
         :returns: bool or Dict on error.
 
         """
-        SPECIALS = {"reboot":   '@reboot',
-                    "hourly":   '0 * * * *',
-                    "daily":    '0 0 * * *',
-                    "weekly":   '0 0 * * 0',
-                    "monthly":  '0 0 1 * *',
-                    "yearly":   '0 0 1 1 *',
-                    "annually": '0 0 1 1 *',
-                    "midnight": '0 0 * * *'}
+        SPECIALS = {
+            "reboot": "@reboot",
+            "hourly": "0 * * * *",
+            "daily": "0 0 * * *",
+            "weekly": "0 0 * * 0",
+            "monthly": "0 0 1 * *",
+            "yearly": "0 0 1 1 *",
+            "annually": "0 0 1 1 *",
+            "midnight": "0 0 * * *",
+        }
         params = {
-            "title" : title or self.properties.title,
+            "title": title or self.properties.title,
             "type": task_type or self.properties.type,
             "taskUrl": task_url or "",
             "parameters": parameters,
@@ -255,65 +281,66 @@ class Task(BaseTask):
             "minute": None,
             "hour": None,
             "dayOfMonth": None,
-            "month" : None,
+            "month": None,
             "dayOfWeek": None,
             "maxOccurrences": occurences or self.properties.maxOccurrences,
-            "isActive" : None,
-            "f": "json"
+            "isActive": None,
+            "f": "json",
         }
         if is_active is None:
-            params.pop('isActive', None)
+            params.pop("isActive", None)
         else:
-            params['isActive'] = json.dumps(is_active)
+            params["isActive"] = json.dumps(is_active)
         if task_url is None:
-            params.pop('taskUrl', None)
+            params.pop("taskUrl", None)
         if cron is None:
-            params['minute'] = self.properties.cronSchedule.minute
-            params['hour'] = self.properties.cronSchedule.hour
-            params['dayOfMonth'] = self.properties.cronSchedule.dayOfMonth
-            params['month'] = self.properties.cronSchedule.month
-            params['dayOfWeek'] = self.properties.cronSchedule.dayOfWeek
+            params["minute"] = self.properties.cronSchedule.minute
+            params["hour"] = self.properties.cronSchedule.hour
+            params["dayOfMonth"] = self.properties.cronSchedule.dayOfMonth
+            params["month"] = self.properties.cronSchedule.month
+            params["dayOfWeek"] = self.properties.cronSchedule.dayOfWeek
         elif isinstance(cron, str) and cron in SPECIALS:
             cron = SPECIALS[cron].split(" ")
-            params['minute'] = cron[0]
-            params['hour'] = cron[1]
-            params['dayOfMonth'] = cron[2]
-            params['month'] = cron[3]
-            params['dayOfWeek'] = cron[4]
+            params["minute"] = cron[0]
+            params["hour"] = cron[1]
+            params["dayOfMonth"] = cron[2]
+            params["month"] = cron[3]
+            params["dayOfWeek"] = cron[4]
         else:
             cron = cron.split(" ")
-            params['minute'] = cron[0]
-            params['hour'] = cron[1]
-            params['dayOfMonth'] = cron[2]
-            params['month'] = cron[3]
-            params['dayOfWeek'] = cron[4]
+            params["minute"] = cron[0]
+            params["hour"] = cron[1]
+            params["dayOfMonth"] = cron[2]
+            params["month"] = cron[3]
+            params["dayOfWeek"] = cron[4]
 
         if isinstance(item, Item):
-            params['itemId'] = item.itemid
+            params["itemId"] = item.itemid
         elif item:
-            params['itemId'] = item
+            params["itemId"] = item
         else:
-            params['itemId'] = self.properties.itemId
+            params["itemId"] = self.properties.itemId
 
         if start_date:
-            params['startDate'] = local_time_to_online(dt=start_date)
+            params["startDate"] = local_time_to_online(dt=start_date)
         else:
-            params.pop('startDate', None)
+            params.pop("startDate", None)
         if end_date:
-            params['endDate']= local_time_to_online(dt=end_date)
+            params["endDate"] = local_time_to_online(dt=end_date)
         else:
-            params.pop('endDate', None)
+            params.pop("endDate", None)
         if parameters:
-            params['parameters'] = json.dumps(parameters)
-        elif 'parameters' in self.properties:
-            params['parameters'] = self.properties.parameters
+            params["parameters"] = json.dumps(parameters)
+        elif "parameters" in self.properties:
+            params["parameters"] = self.properties.parameters
         url = f"{self._url}/update"
         res = self._gis._con.post(url, params)
-        if 'success' in res:
+        if "success" in res:
             self._properties = None
-            return res['success']
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def runs(self):
         """
@@ -323,13 +350,15 @@ class Task(BaseTask):
         """
         runs = []
         url = f"{self._url}/runs"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._gis._con.get(url, params)
-        for t in res['runs']:
+        for t in res["runs"]:
             run_url = f"{self._url}/runs/{t['runId']}"
             runs.append(Run(url=run_url, gis=self._gis))
             del t
         return runs
+
+
 ###########################################################################
 class TaskManager(object):
     """
@@ -350,21 +379,25 @@ class TaskManager(object):
 
 
     """
+
     _tasks = None
 
-    def __init__(self, url:str, user:User, gis:GIS):
+    def __init__(self, url: str, user: User, gis: GIS):
         """initializer"""
         self._url = url
         self._user = user
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<User {self._user.username} Tasks>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
-    def search(self, item:Item=None, active:bool=None, types:str=None):
+
+    # ----------------------------------------------------------------------
+    def search(self, item: Item = None, active: bool = None, types: str = None):
         """
         This property allows users to search for tasks based on criteria.
 
@@ -382,45 +415,46 @@ class TaskManager(object):
         :returns: List of Tasks
 
         """
-        if item is None and \
-           active is None and \
-           types is None:
+        if item is None and active is None and types is None:
             return self.all
         else:
             _tasks = []
             url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"
             params = {
-                'num' : 100,
-                'start' : 1,
+                "num": 100,
+                "start": 1,
             }
             if item:
-                params['itemId'] = item.itemid
+                params["itemId"] = item.itemid
             if not active is None:
-                params['active'] = active
+                params["active"] = active
             if types:
-                params['types'] = types
+                params["types"] = types
             res = self._gis._con.get(url, params)
-            for t in res['tasks']:
+            for t in res["tasks"]:
                 url = f"{self._url}/{t['id']}"
                 _tasks.append(Task(url=url, gis=self._gis))
-            while res['nextStart'] != -1:
-                params['start'] = res['nextStart']
+            while res["nextStart"] != -1:
+                params["start"] = res["nextStart"]
                 res = self._gis._con.get(url, params)
-                for t in res['tasks']:
+                for t in res["tasks"]:
                     url = f"{self._url}/{t['id']}"
                     _tasks.append(Task(url=url, gis=self._gis))
             return _tasks
         return []
-    #----------------------------------------------------------------------
-    def create(self,
-               item:Item,
-               cron:str,
-               task_type:str,
-               occurences:int=10,
-               start_date:datetime.datetime=None,
-               end_date:datetime.datetime=None,
-               title:str=None,
-               parameters:dict=None) -> Task:
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        item: Item,
+        cron: str,
+        task_type: str,
+        occurences: int = 10,
+        start_date: datetime.datetime = None,
+        end_date: datetime.datetime = None,
+        title: str = None,
+        parameters: dict = None,
+    ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.
 
@@ -470,66 +504,71 @@ class TaskManager(object):
         :returns: Task
 
         """
-        SPECIALS = {"reboot":   '@reboot',
-                    "hourly":   '0 * * * *',
-                    "daily":    '0 0 * * *',
-                    "weekly":   '0 0 * * 0',
-                    "monthly":  '0 0 1 * *',
-                    "yearly":   '0 0 1 1 *',
-                    "annually": '0 0 1 1 *',
-                    "midnight": '0 0 * * *'}
+        SPECIALS = {
+            "reboot": "@reboot",
+            "hourly": "0 * * * *",
+            "daily": "0 0 * * *",
+            "weekly": "0 0 * * 0",
+            "monthly": "0 0 1 * *",
+            "yearly": "0 0 1 1 *",
+            "annually": "0 0 1 1 *",
+            "midnight": "0 0 * * *",
+        }
         url = f"{self._url}/createTask"
         params = {
-            "f" : "json",
-            "title" : title,
-            "type" : task_type,
-            "parameters" : None,
-            "itemId" : None,
-            "startDate" : start_date,
-            "endDate" : end_date,
-            "minute" : None,
-            "hour" : None,
-            "dayOfMonth" : None,
-            "month" : None,
-            "dayOfWeek" : None,
-            "maxOccurrences" : occurences
+            "f": "json",
+            "title": title,
+            "type": task_type,
+            "parameters": None,
+            "itemId": None,
+            "startDate": start_date,
+            "endDate": end_date,
+            "minute": None,
+            "hour": None,
+            "dayOfMonth": None,
+            "month": None,
+            "dayOfWeek": None,
+            "maxOccurrences": occurences,
         }
         if isinstance(item, Item):
-            params['itemId'] = item.itemid
+            params["itemId"] = item.itemid
         else:
-            params['itemId'] = item
+            params["itemId"] = item
         if title is None:
-            params.pop('title', None)
+            params.pop("title", None)
         if start_date:
-            params['startDate'] = local_time_to_online(dt=start_date)
+            params["startDate"] = local_time_to_online(dt=start_date)
         else:
-            params.pop('startDate', None)
+            params.pop("startDate", None)
         if end_date:
-            params['endDate']= local_time_to_online(dt=end_date)
+            params["endDate"] = local_time_to_online(dt=end_date)
         else:
-            params.pop('endDate', None)
+            params.pop("endDate", None)
         if cron in SPECIALS:
             cron = SPECIALS[cron]
         if cron:
-            cron = cron.split(' ')
+            cron = cron.split(" ")
             while len(cron) < 5:
                 cron.append("*")
-            params.update({
-                "minute" : cron[0],
-                "hour" : cron[1],
-                "dayOfMonth" : cron[2],
-                "month" : cron[3],
-                "dayOfWeek" : cron[4]
-            })
+            params.update(
+                {
+                    "minute": cron[0],
+                    "hour": cron[1],
+                    "dayOfMonth": cron[2],
+                    "month": cron[3],
+                    "dayOfWeek": cron[4],
+                }
+            )
         if parameters:
-            params['parameters'] = json.dumps(parameters)
+            params["parameters"] = json.dumps(parameters)
         res = self._gis._con.post(url, params)
 
-        if 'success' in res and res['success']:
+        if "success" in res and res["success"]:
             url = f"{self._url}/{res['taskId']}"
             return Task(url, gis=self._gis)
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def all(self) -> list:
         """returns all the current user's tasks"""
@@ -537,21 +576,22 @@ class TaskManager(object):
             self._tasks = []
             url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"
             params = {
-                'num' : 100,
-                'start' : 1,
+                "num": 100,
+                "start": 1,
             }
             res = self._gis._con.get(url, params)
-            for t in res['tasks']:
+            for t in res["tasks"]:
                 url = f"{self._url}/{t['id']}"
                 self._tasks.append(Task(url=url, gis=self._gis))
-            while res['nextStart'] != -1:
-                params['start'] = res['nextStart']
+            while res["nextStart"] != -1:
+                params["start"] = res["nextStart"]
                 res = self._gis._con.get(url, params)
-                for t in res['tasks']:
+                for t in res["tasks"]:
                     url = f"{self._url}/{t['id']}"
                     self._tasks.append(Task(url=url, gis=self._gis))
         return self._tasks
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def count(self) -> int:
         """
@@ -561,11 +601,8 @@ class TaskManager(object):
         """
         url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"
         params = {
-            'num' : 1,
-            'start' : 1,
+            "num": 1,
+            "start": 1,
         }
         res = self._gis._con.get(url, params)
-        return res['total']
-
-
-
+        return res["total"]

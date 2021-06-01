@@ -12,6 +12,11 @@ try:
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _get_device
+    from ._ssd_utils import AveragePrecision
+    import types
+    from torch.jit.annotations import List, Dict
+    from torchvision.models.detection.roi_heads import fastrcnn_loss
+    from torchvision.models.detection.transform import resize_boxes
 
     HAS_FASTAI = True
 
@@ -86,11 +91,14 @@ class MyFasterRCNN():
             model.transform.image_mean = [0]*len(data._extract_bands)
             model.transform.image_std = [1]*len(data._extract_bands)
 
+        model.roi_heads.nms_thresh = 0.1
+        model.roi_heads.score_thresh = 0.2
+
         self.model = model
 
         return model
     
-    def on_batch_begin(self, learn, model_input_batch, model_target_batch):
+    def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
         """
         This fuction is dedicated to put the inputs and outputs of the model before training. This is equivalent to fastai
         on_batch_begin function. In this function you will get the inputs and targets with applied transormations. You should
@@ -116,6 +124,15 @@ class MyFasterRCNN():
         #during training after each epoch, validation loss is required on validation set of datset.
         #torchvision FasterRCNN model gives losses only on training mode that is why set your model in train mode
         #such that you can get losses for your validation datset as well after each epoch.
+        train = kwargs.get('train')
+        if train:
+            self.model.roi_heads.train_val = False
+            self.model.train_val = False
+            self.model.transform.train_val = False
+        else:
+            self.model.roi_heads.train_val = True
+            self.model.train_val = True
+            self.model.transform.train_val = True
         learn.model.train()
 
         target_list = []
@@ -156,6 +173,9 @@ class MyFasterRCNN():
         
         xb - tensor with shape [N, C, H, W]
         """
+        self.model.roi_heads.train_val = False
+        self.model.train_val = False
+        self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
         self.thresh = self.model.roi_heads.score_thresh
         self.model.roi_heads.nms_thresh = nms_overlap
@@ -172,6 +192,9 @@ class MyFasterRCNN():
     
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
 
+        self.model.roi_heads.train_val = False
+        self.model.train_val = False
+        self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
         self.thresh = self.model.roi_heads.score_thresh
         self.model.roi_heads.nms_thresh = nms_overlap
@@ -188,6 +211,8 @@ class MyFasterRCNN():
         
         return loss for the model
         """
+        if isinstance(model_output, tuple):
+            model_output = model_output[1]
         #FasterRCNN model return loss in traing mode by feding input to the model it does not require target to compute the loss
         final_loss = 0.
         for i in model_output.values():
@@ -212,9 +237,9 @@ class MyFasterRCNN():
         [Number_of_bboxes_in_image, 4], label should be the tensor of shape[Number_of_bboxes_in_image,] and score should be
         the tensor of shape[Number_of_bboxes_in_image,].
         """
-
-        self.model.roi_heads.score_thresh = self.thresh
-        self.model.roi_heads.nms_thresh = self.nms_thres
+        if not self.model.roi_heads.train_val:
+            self.model.roi_heads.score_thresh = self.thresh
+            self.model.roi_heads.nms_thresh = self.nms_thres
 
         post_processed_pred = []
         for p in pred:
@@ -228,6 +253,89 @@ class MyFasterRCNN():
             post_processed_pred.append((bbox.data.to(device), label.to(device), score.to(device)))
             
         return post_processed_pred
+
+
+def forward_roi(self, features, proposals, image_shapes, targets=None):
+        
+            """
+            Arguments:
+                features (List[Tensor])
+                proposals (List[Tensor[N, 4]])
+                image_shapes (List[Tuple[H, W]])
+                targets (List[Dict])
+            """
+            
+            train_val = getattr(self, "train_val", False)
+
+            if targets is not None:
+                for t in targets:
+                    
+                    floating_point_types = (torch.float, torch.double, torch.half)
+                    assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
+                    assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
+                    
+            if self.training:
+                proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+            else:
+                labels = None
+                regression_targets = None
+                matched_idxs = None
+
+            box_features = self.box_roi_pool(features, proposals, image_shapes)
+            box_features = self.box_head(box_features)
+            class_logits, box_regression = self.box_predictor(box_features)
+
+            result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+            losses = {}
+            if self.training:
+                assert labels is not None and regression_targets is not None
+                loss_classifier, loss_box_reg = fastrcnn_loss(
+                    class_logits, box_regression, labels, regression_targets)
+                losses = {
+                    "loss_classifier": loss_classifier,
+                    "loss_box_reg": loss_box_reg
+                }
+            if not self.training or train_val:
+                
+                boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, proposals, image_shapes)
+                num_images = len(boxes)
+                for i in range(num_images):
+                    result.append(
+                        {
+                            "boxes": boxes[i],
+                            "labels": labels[i],
+                            "scores": scores[i],
+                        }
+                    )
+
+            return result, losses
+
+
+def postprocess_transform(self, result, image_shapes, original_image_sizes):
+
+        train_val = getattr(self, "train_val", False)
+
+        if not self.training or train_val:
+            for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
+                boxes = pred["boxes"]
+                boxes = resize_boxes(boxes, im_s, o_im_s)
+                result[i]["boxes"] = boxes
+
+        elif self.training:
+            return result
+
+        return result
+if HAS_FASTAI:
+    @torch.jit.unused
+    def eager_outputs_modified(self, losses, detections):
+
+        train_val = getattr(self, "train_val", False)
+
+        if train_val:
+            return detections, losses
+        elif self.training:
+            return losses
+        return detections
 
 class FasterRCNN(ModelExtension):
     """
@@ -339,6 +447,11 @@ class FasterRCNN(ModelExtension):
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
             idx = self._freeze()
+
+        self.learn.model.roi_heads.forward = types.MethodType(forward_roi, self.learn.model.roi_heads)
+        self.learn.model.eager_outputs = types.MethodType(eager_outputs_modified, self.learn.model)
+        self.learn.model.transform.postprocess = types.MethodType(postprocess_transform, self.learn.model.transform)
+        self.learn.metrics = [AveragePrecision(self, data.c-1)]
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 

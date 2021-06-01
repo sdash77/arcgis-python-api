@@ -6,6 +6,7 @@ from ...gis import GIS
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
+
 ########################################################################
 class AGOLAdminManager(object):
     """
@@ -19,6 +20,7 @@ class AGOLAdminManager(object):
     :param metadata: the metadata manager object (optional)
     :param collaborations: the CollaborationManager object (optional)
     """
+
     _con = None
     _gis = None
     _ux = None
@@ -33,12 +35,8 @@ class AGOLAdminManager(object):
     _usage = None
     _category_schema = None
     _certificates = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 gis,
-                 ux=None,
-                 metadata=None,
-                 collaborations=None):
+    # ----------------------------------------------------------------------
+    def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""
         self._gis = gis
         self._con = gis._con
@@ -46,21 +44,26 @@ class AGOLAdminManager(object):
         self._collaborations = collaborations
         self._metadata = metadata
         self.resources = PortalResourceManager(gis=self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._gis._portal.resturl)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._gis._portal.resturl)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+
+    # ----------------------------------------------------------------------
     @property
     def ux(self):
         """returns a UX/UI manager"""
         if self._ux is None:
             from ._ux import UX
+
             self._ux = UX(gis=self._gis)
         return self._ux
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _user_experience_program(self):
         """
@@ -75,8 +78,9 @@ class AGOLAdminManager(object):
         collected is used to identify or contact members of your
         organization.
         """
-        return self._gis.properties['eueiEnabled']
-    #----------------------------------------------------------------------
+        return self._gis.properties["eueiEnabled"]
+
+    # ----------------------------------------------------------------------
     @_user_experience_program.setter
     def _user_experience_program(self, value):
         """
@@ -101,12 +105,12 @@ class AGOLAdminManager(object):
 
         """
         if value != self.user_experience_program:
-            self._gis.update_properties({
-                "clearEmptyFields" : True,
-                "eueiEnabled" : value
-            })
+            self._gis.update_properties(
+                {"clearEmptyFields": True, "eueiEnabled": value}
+            )
             self._gis._get_properties(True)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def collaborations(self):
         """
@@ -115,9 +119,11 @@ class AGOLAdminManager(object):
         """
         if self._collaborations is None:
             from ._collaboration import CollaborationManager
+
             self._collaborations = CollaborationManager(gis=self._gis)
         return self._collaborations
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def category_schema(self):
         """
@@ -126,9 +132,11 @@ class AGOLAdminManager(object):
         """
         if self._category_schema is None:
             from ._catagoryschema import CategoryManager
+
             self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def idp(self):
         """
@@ -136,17 +144,20 @@ class AGOLAdminManager(object):
         """
         if self._idp is None:
             from ._idp import IdentityProviderManager
+
             self._idp = IdentityProviderManager(gis=self._gis)
         return self._idp
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def location_tracking(self):
         """
         The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
         """
         return LocationTrackingManager(self._gis)
+
     @property
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers
@@ -154,9 +165,11 @@ class AGOLAdminManager(object):
         """
         if self._sp is None:
             from ._socialproviders import SocialProviders
+
             self._sp = SocialProviders(gis=self._gis)
         return self._sp
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def credits(self):
         """
@@ -164,9 +177,11 @@ class AGOLAdminManager(object):
         """
         if self._credits is None:
             from ._creditmanagement import CreditManager
+
             self._credits = CreditManager(gis=self._gis)
         return self._credits
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
         """
@@ -174,19 +189,22 @@ class AGOLAdminManager(object):
         """
         if self._metadata is None:
             from ._metadata import MetadataManager
+
             self._metadata = MetadataManager(gis=self._gis)
         return self._metadata
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def password_policy(self):
         """tools to manage a Site's password policy"""
         if self._pp is None:
             from ._security import PasswordPolicy
+
             url = "%s/portals/self/securityPolicy" % (self._gis._portal.resturl)
-            self._pp = PasswordPolicy(url=url,
-                                      gis=self._gis)
+            self._pp = PasswordPolicy(url=url, gis=self._gis)
         return self._pp
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def usage_reports(self):
         """
@@ -194,11 +212,15 @@ class AGOLAdminManager(object):
         """
         if self._ur is None:
             from ._usage import AGOLUsageReports
-            url = "%sportals/%s/usage" % (self._gis._portal.resturl,
-                                          self._gis.properties.id)
+
+            url = "%sportals/%s/usage" % (
+                self._gis._portal.resturl,
+                self._gis.properties.id,
+            )
             self._ur = AGOLUsageReports(url=url, gis=self._gis)
         return self._ur
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def license(self):
         """
@@ -207,21 +229,32 @@ class AGOLAdminManager(object):
         """
         if self._license is None:
             from ._license import LicenseManager
+
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def urls(self):
         """
         returns the URLs to the Hosting and Tile Server for ArcGIS Online
         """
-        res = self._gis._con.get(path="%s/portals/%s/urls" % (self._gis._portal.resturl,
-                                                              self._gis.properties.id),
-                                      params={'f': 'json'})
+        res = self._gis._con.get(
+            path="%s/portals/%s/urls"
+            % (self._gis._portal.resturl, self._gis.properties.id),
+            params={"f": "json"},
+        )
         return res
-    #----------------------------------------------------------------------
-    def scheduled_tasks(self, item:"Item"=None, active:bool=None, user:"User"=None, types:str=None):
+
+    # ----------------------------------------------------------------------
+    def scheduled_tasks(
+        self,
+        item: "Item" = None,
+        active: bool = None,
+        user: "User" = None,
+        types: str = None,
+    ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
@@ -245,42 +278,45 @@ class AGOLAdminManager(object):
         _tasks = []
         num = 100
         url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {'f' : 'json', 'start' : 1, 'num' : num }
+        params = {"f": "json", "start": 1, "num": num}
         if item:
-            params['itemId'] = item.itemid
+            params["itemId"] = item.itemid
         if not active is None:
-            params['active'] = active
+            params["active"] = active
         if user:
-            params['userFilter'] = user.username
+            params["userFilter"] = user.username
         if types:
-            params['types'] = types
+            params["types"] = types
         res = self._con.get(url, params)
-        start = res['nextStart']
-        _tasks.extend(res['tasks'])
+        start = res["nextStart"]
+        _tasks.extend(res["tasks"])
         while start != -1:
-            params['start'] = start
-            params['num'] = num
+            params["start"] = start
+            params["num"] = num
             res = self._con.get(url, params)
-            if len(res['tasks']) == 0:
+            if len(res["tasks"]) == 0:
                 break
-            _tasks.extend(res['tasks'])
-            start = res['nextStart']
-        return _tasks    
-    #----------------------------------------------------------------------
-    def history(self, 
-                start_date, 
-                to_date=None, 
-                num=100, 
-                all_events=True, 
-                event_ids=None,
-                event_types=None, 
-                actors=None, 
-                owners=None,
-                actions=None, 
-                ips=None,
-                sort_order='asc',
-                data_format='csv',
-                save_folder=None):
+            _tasks.extend(res["tasks"])
+            start = res["nextStart"]
+        return _tasks
+
+    # ----------------------------------------------------------------------
+    def history(
+        self,
+        start_date,
+        to_date=None,
+        num=100,
+        all_events=True,
+        event_ids=None,
+        event_types=None,
+        actors=None,
+        owners=None,
+        actions=None,
+        ips=None,
+        sort_order="asc",
+        data_format="csv",
+        save_folder=None,
+    ):
         """
         Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
 
@@ -343,71 +379,76 @@ class AGOLAdminManager(object):
         """
         import tempfile, json
         from arcgis._impl.common._utils import _date_handler
+
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         if num == 0:
             raise ValueError("`num` cannot be zero.")
         url = "{url}portals/self/history".format(url=self._gis._portal.resturl)
         params = {
-            'f' : data_format,
-            'num' : num,
+            "f": data_format,
+            "num": num,
             #'start' : "",
-            'all' : all_events,
-            'id' : event_ids,
-            'types' : event_types,
-            'actors' : actors,
-            'owners' : owners,
-            'actions' : actions,
-            'fromDate' : json.dumps(start_date, default=_date_handler),
-            'sortOrder' : sort_order,
-            'ips' : ips
+            "all": all_events,
+            "id": event_ids,
+            "types": event_types,
+            "actors": actors,
+            "owners": owners,
+            "actions": actions,
+            "fromDate": json.dumps(start_date, default=_date_handler),
+            "sortOrder": sort_order,
+            "ips": ips,
         }
-        
+
         for k in list(params.keys()):
             if params[k] is None:
                 del params[k]
         if to_date:
-            params['toDate'] = json.dumps(to_date, 
-                                          default=_date_handler)
-            
-        if data_format == 'csv':
-            params['f'] = 'csv'
-            params['num'] = 10000
-            params['all'] = True
-            return self._gis._con.post(url, params,
-                                       file_name="history.csv",
-                                       out_folder=save_folder,
-                                       try_json=False)
-        elif data_format in [ 'df']:
+            params["toDate"] = json.dumps(to_date, default=_date_handler)
+
+        if data_format == "csv":
+            params["f"] = "csv"
+            params["num"] = 10000
+            params["all"] = True
+            return self._gis._con.post(
+                url,
+                params,
+                file_name="history.csv",
+                out_folder=save_folder,
+                try_json=False,
+            )
+        elif data_format in ["df"]:
             import pandas as _pd
-            params['f'] = 'json'
+
+            params["f"] = "json"
             data = []
-            
+
             res = self._gis._con.post(url, params)
-            data.extend(res['items'])
-            while len(res['items']) > 0 and res['nextKey']:
-                params['start'] = res['nextKey']
+            data.extend(res["items"])
+            while len(res["items"]) > 0 and res["nextKey"]:
+                params["start"] = res["nextKey"]
                 res = self._gis._con.post(url, params)
-                data.extend(res['items'])
+                data.extend(res["items"])
                 if num > 0 and len(data) >= num:
                     data = data[:num]
                     break
             return _pd.DataFrame(data)
-        elif data_format in ['raw', 'json']:
-            params['f'] = 'json'
+        elif data_format in ["raw", "json"]:
+            params["f"] = "json"
             data = []
-            
+
             res = self._gis._con.post(url, params)
-            data.extend(res['items'])
-            while len(res['items']) > 0 and res['nextKey']:
-                params['start'] = res['nextKey']
+            data.extend(res["items"])
+            while len(res["items"]) > 0 and res["nextKey"]:
+                params["start"] = res["nextKey"]
                 res = self._gis._con.post(url, params)
-                data.extend(res['items'])
+                data.extend(res["items"])
                 if num > 0 and len(data) >= num:
                     data = data[:num]
                     break
             return data
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def certificates(self):
         """
@@ -415,6 +456,6 @@ class AGOLAdminManager(object):
         """
         if self._certificates is None:
             from .._impl import CertificateManager
+
             self._certificates = CertificateManager(gis=self._gis)
         return self._certificates
-

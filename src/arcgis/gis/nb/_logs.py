@@ -8,10 +8,11 @@ class LogManager(object):
     Logs are the records written by the various components of Notebook server.
     You can query the logs and change various log settings.
     """
+
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -20,29 +21,34 @@ class LogManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<LogManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<LogManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def clean(self):
         """
         Deletes all the log files on all server machines in the site. This is an irreversible
@@ -56,15 +62,15 @@ class LogManager(object):
 
         """
         params = {
-            "f" : "json",
+            "f": "json",
         }
         url = "{}/clean".format(self._url)
-        res = self._con.post(url,
-                             params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(url, params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """
@@ -72,16 +78,15 @@ class LogManager(object):
 
         :returns: PropertyMap
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/settings"
         try:
             res = self._con.get(url, params)
             return PropertyMap(res)
         except:
             return ""
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
     def settings(self, value):
         """
@@ -95,7 +100,7 @@ class LogManager(object):
 
         :returns: PropertyMap
         """
-        params = {'f':'json'}
+        params = {"f": "json"}
         current = dict(self.settings)
         allowed_keys = list(current.keys())
         for k in allowed_keys:
@@ -105,20 +110,23 @@ class LogManager(object):
                 params[k] = current[k]
         url = self._url + "/settings/edit"
         res = self._gis._con.post(url, params)
-    #----------------------------------------------------------------------
-    def query(self,
-              start_time=None,
-              end_time=None,
-              since_server_start=False,
-              level="WARNING",
-              services="*",
-              machines="*",
-              server="*",
-              codes=None,
-              process_IDs=None,
-              export=False,
-              export_type="CSV", #CSV or TAB
-              out_path=None):
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        start_time=None,
+        end_time=None,
+        since_server_start=False,
+        level="WARNING",
+        services="*",
+        machines="*",
+        server="*",
+        codes=None,
+        process_IDs=None,
+        export=False,
+        export_type="CSV",  # CSV or TAB
+        out_path=None,
+    ):
         """
         The query operation on the logs resource provides a way to
         aggregate, filter, and page through logs across the entire site.
@@ -173,55 +181,45 @@ class LogManager(object):
 
         """
 
-
         if codes is None:
             codes = []
         if process_IDs is None:
             process_IDs = []
-        allowed_levels = ("SEVERE", "WARNING", "INFO",
-                          "FINE", "VERBOSE", "DEBUG")
-        qFilter = {
-            "services": "*",
-            "machines": "*",
-            "server" : "*"
-        }
+        allowed_levels = ("SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        qFilter = {"services": "*", "machines": "*", "server": "*"}
         if len(process_IDs) > 0:
-            qFilter['processIds'] = process_IDs
+            qFilter["processIds"] = process_IDs
         if len(codes) > 0:
-            qFilter['codes'] = codes
+            qFilter["codes"] = codes
         params = {
-            "f" : "json",
-            "sinceServerStart" : since_server_start,
-            "pageSize" : 10000
+            "f": "json",
+            "sinceServerStart": since_server_start,
+            "pageSize": 10000,
         }
         url = "{url}/query".format(url=self._url)
-        if start_time is not None and \
-           isinstance(start_time, datetime):
-            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        if end_time is not None and \
-           isinstance(end_time, datetime):
-            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
+        if start_time is not None and isinstance(start_time, datetime):
+            params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+        if end_time is not None and isinstance(end_time, datetime):
+            params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
         if level.upper() in allowed_levels:
-            params['level'] = level
+            params["level"] = level
         if server != "*":
-            qFilter['server'] = server.split(',')
+            qFilter["server"] = server.split(",")
         if services != "*":
-            qFilter['services'] = services.split(',')
+            qFilter["services"] = services.split(",")
         if machines != "*":
-            qFilter['machines'] = machines.split(",")
-        params['filter'] = qFilter
-        if export is True and \
-           out_path is not None:
+            qFilter["machines"] = machines.split(",")
+        params["filter"] = qFilter
+        if export is True and out_path is not None:
 
-            messages = self._con.get(url,
-                                     params)
-            with open(name=out_path, mode='wb') as f:
+            messages = self._con.get(url, params)
+            with open(name=out_path, mode="wb") as f:
                 hasKeys = False
                 if export_type == "TAB":
-                    csvwriter = csv.writer(f, delimiter='\t')
+                    csvwriter = csv.writer(f, delimiter="\t")
                 else:
                     csvwriter = csv.writer(f)
-                for message in messages['logMessages']:
+                for message in messages["logMessages"]:
                     if hasKeys == False:
                         csvwriter.writerow(message.keys())
                         hasKeys = True
@@ -230,9 +228,4 @@ class LogManager(object):
             del messages
             return out_path
         else:
-            return self._con.get(url,
-                                 params)
-
-
-
-
+            return self._con.get(url, params)

@@ -14,14 +14,14 @@ class SystemManager(BaseServer):
     resources such as server properties, server directories, the
     configuration store, Web Adaptors, and licenses.
     """
+
     _json = None
     _json_dict = None
     _con = None
     _url = None
     _resources = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """
         Constructor
 
@@ -38,8 +38,7 @@ class SystemManager(BaseServer):
 
         """
 
-        super(SystemManager, self).__init__(gis=gis,
-                                     url=url)
+        super(SystemManager, self).__init__(gis=gis, url=url)
         self._con = gis
         if url.lower().endswith("/system"):
             self._url = url
@@ -47,22 +46,26 @@ class SystemManager(BaseServer):
             self._url = url + "/system"
         if initialize:
             self._init(gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def server_properties(self):
         """
         Gets the server properties for the site as an object.
         """
-        return ServerProperties(url=self._url + "/properties",
-                                connection=self._con,
-                                initialize=True)
-    #----------------------------------------------------------------------
+        return ServerProperties(
+            url=self._url + "/properties", connection=self._con, initialize=True
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def _directories(self):
         """
@@ -70,25 +73,27 @@ class SystemManager(BaseServer):
         """
         directs = []
         url = self._url + "/directories"
-        params = {
-            "f" : "json"
-        }
-        res = self._con.get(path=url,
-                            params=params)
-        for direct in res['directories']:
+        params = {"f": "json"}
+        res = self._con.get(path=url, params=params)
+        for direct in res["directories"]:
             directs.append(
-                ServerDirectory(url=url + "/%s" % direct["name"],
-                                connection=self._con,
-                                initialize=True))
+                ServerDirectory(
+                    url=url + "/%s" % direct["name"],
+                    connection=self._con,
+                    initialize=True,
+                )
+            )
         return directs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def directories(self):
         """
         :returns:
             The server directory object in a list.
         """
         return DirectoryManager(system=self)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _get_directory(self, name):
         """
         Retrieves a single directory registered with ArcGIS Server.
@@ -104,25 +109,27 @@ class SystemManager(BaseServer):
 
         """
         url = self._url + "/directories"
-        params = {
-            "f" : "json"
-        }
-        res = self._con.get(path=url,
-                            params=params)
-        for direct in res['directories']:
-            if name.lower() == direct['name'].lower():
-                return ServerDirectory(url=url + "/%s" % direct["name"],
-                                       connection=self._con,
-                                       initialize=True)
+        params = {"f": "json"}
+        res = self._con.get(path=url, params=params)
+        for direct in res["directories"]:
+            if name.lower() == direct["name"].lower():
+                return ServerDirectory(
+                    url=url + "/%s" % direct["name"],
+                    connection=self._con,
+                    initialize=True,
+                )
         return None
-    #----------------------------------------------------------------------
-    def _register(self,
-                 name,
-                 physical_path,
-                 directory_type,
-                 max_age,
-                 cleanup_mode="NONE",
-                 description=None):
+
+    # ----------------------------------------------------------------------
+    def _register(
+        self,
+        name,
+        physical_path,
+        directory_type,
+        max_age,
+        cleanup_mode="NONE",
+        description=None,
+    ):
         """
         Registers a new server directory. While registering the server
         directory, you can also specify the directory's cleanup parameters.
@@ -153,22 +160,21 @@ class SystemManager(BaseServer):
         """
         url = self._url + "/directories/register"
         params = {
-            'f' : 'json',
-            "name" : name,
-            "physicalPath" : physical_path,
-            "directoryType" : directory_type,
-            "cleanupMode" : cleanup_mode,
-            "maxFileAge" : max_age
+            "f": "json",
+            "name": name,
+            "physicalPath": physical_path,
+            "directoryType": directory_type,
+            "cleanupMode": cleanup_mode,
+            "maxFileAge": max_age,
         }
         if description:
-            params['description'] = description
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+            params["description"] = description
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def licenses(self):
         """
@@ -178,12 +184,10 @@ class SystemManager(BaseServer):
         about license levels or expiration properties.
         """
         url = self._url + "/licenses"
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(path=url,
-                             postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     @property
     def platform_services(self):
         """
@@ -192,17 +196,16 @@ class SystemManager(BaseServer):
         url = self._url + "/platformservices"
         return PlatformServiceManager(url=url, connection=self._con)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def jobs(self):
         """
         Gets the Jobs object.
         """
         url = self._url + "/jobs"
-        return Jobs(url=url,
-                    connection=self._con,
-                    initialize=True)
-    #----------------------------------------------------------------------
+        return Jobs(url=url, connection=self._con, initialize=True)
+
+    # ----------------------------------------------------------------------
     @property
     def web_adaptors(self):
         """
@@ -215,12 +218,10 @@ class SystemManager(BaseServer):
         instructions, see Configuring the Web Adaptor after installation.
         """
         url = self._url + "/webadaptors"
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     @property
     def web_adaptors_configuration(self):
         """
@@ -231,12 +232,10 @@ class SystemManager(BaseServer):
         incoming requests to the server.
         """
         url = self._url + "/webadaptors/config"
-        params = {
-            "f" : "json"
-        }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def update_web_adaptors_configuration(self, config):
         """
         You can use this operation to change the Web Adaptor configuration
@@ -255,21 +254,14 @@ class SystemManager(BaseServer):
 
         """
         url = self._url + "/webadaptors/config/update"
-        params = {
-            "f" : "json",
-            "webAdaptorConfig" : config
-        }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "webAdaptorConfig": config}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
-    def update_web_adaptor(self,
-                           wa_id,
-                           description,
-                           http_port,
-                           https_port):
+
+    # ----------------------------------------------------------------------
+    def update_web_adaptor(self, wa_id, description, http_port, https_port):
         """
         This operation allows you to update the description, HTTP port, and
         HTTPS port of a Web Adaptor that is registered with the server.
@@ -299,17 +291,17 @@ class SystemManager(BaseServer):
         """
         url = self._url + "/webadaptors/{w}/update".format(w=wa_id)
         params = {
-            'f' : 'json',
-            'description' : description,
-            'httpPort' : http_port,
-            'httpsPort' : https_port
+            "f": "json",
+            "description": description,
+            "httpPort": http_port,
+            "httpsPort": https_port,
         }
-        res = self._con.post(path=url,
-                              postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unregister_webadaptor(self, wa_id):
         """
         Unregistering a Web Adaptor removes the Web Adaptor from the ArcGIS
@@ -327,17 +319,16 @@ class SystemManager(BaseServer):
             A boolean indicating success (True).
 
         """
-        url = self._url + "/webadaptors/{waid}/update".format(
-            waid=wa_id)
+        url = self._url + "/webadaptors/{waid}/update".format(waid=wa_id)
         params = {
-            "f" : "json",
+            "f": "json",
         }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def configuration_store(self):
         """
@@ -345,9 +336,9 @@ class SystemManager(BaseServer):
         """
         url = self._url + "/configstore"
 
-        return ConfigurationStore(url=url,
-                                  connection=self._con)
-    #----------------------------------------------------------------------
+        return ConfigurationStore(url=url, connection=self._con)
+
+    # ----------------------------------------------------------------------
     def clear_cache(self):
         """
         This operation clears the cache on all REST handlers in the system.
@@ -358,14 +349,14 @@ class SystemManager(BaseServer):
             A boolean indicating success (True).
 
         """
-        params = {'f': 'json'}
+        params = {"f": "json"}
         url = self._url + "/handlers/rest/cache/clear"
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def deployment(self):
         """
@@ -395,21 +386,21 @@ class SystemManager(BaseServer):
         this property will restart all machines in the site.
         """
         url = self._url + "/deployment"
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
-    def _edit_services_directory(self,
-                                allowed_origins,
-                                arcgis_com_map,
-                                arcgis_com_map_text,
-                                jsapi_arcgis,
-                                jsapi_arcgis_css,
-                                jsapi_arcgis_css2,
-                                jsapi_arcgis_sdk,
-                                service_dir_enabled):
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def _edit_services_directory(
+        self,
+        allowed_origins,
+        arcgis_com_map,
+        arcgis_com_map_text,
+        jsapi_arcgis,
+        jsapi_arcgis_css,
+        jsapi_arcgis_css2,
+        jsapi_arcgis_sdk,
+        service_dir_enabled,
+    ):
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
         enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
@@ -452,31 +443,31 @@ class SystemManager(BaseServer):
 
         """
         params = {
-            "f" : "json",
+            "f": "json",
             "allowedOrigins": allowed_origins,
-            "arcgis.com.map" : arcgis_com_map,
-            "arcgis.com.map.text" : arcgis_com_map_text,
-            "jsapi.arcgis" : jsapi_arcgis,
-            "jsapi.arcgis.css" : jsapi_arcgis_css,
-            "jsapi.arcgis.css2" : jsapi_arcgis_css2,
-            "jsapi.arcgis.sdk" : jsapi_arcgis_sdk,
-            "servicesDirEnabled" : service_dir_enabled
+            "arcgis.com.map": arcgis_com_map,
+            "arcgis.com.map.text": arcgis_com_map_text,
+            "jsapi.arcgis": jsapi_arcgis,
+            "jsapi.arcgis.css": jsapi_arcgis_css,
+            "jsapi.arcgis.css2": jsapi_arcgis_css2,
+            "jsapi.arcgis.sdk": jsapi_arcgis_sdk,
+            "servicesDirEnabled": service_dir_enabled,
         }
         url = self._url + "/handlers/rest/servicesdirectory/edit"
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _services_directory(self):
         """returns the Server directory properties"""
         url = self._url + "/handlers/rest/servicesdirectory"
-        params = {'f' : 'json'}
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     @property
     def handlers(self):
         """
@@ -491,19 +482,20 @@ class SystemManager(BaseServer):
         operations on the REST handler such as clearing the cache.
         """
         url = self._url + "/handlers"
-        params = {"f" : "json"}
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     @property
     def rest_handler(self):
         """
         Gets a list of resources accessible throught the REST API.
         """
         url = self._url + "/handlers/rest"
-        params = {'f': 'json'}
-        return self._con.get(path=url,
-                             params=params)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+
 ########################################################################
 class PlatformServiceManager(BaseServer):
     """
@@ -526,6 +518,7 @@ class PlatformServiceManager(BaseServer):
     ==================     ====================================================================
 
     """
+
     _cp = None
     _mb = None
     _ss = None
@@ -533,11 +526,8 @@ class PlatformServiceManager(BaseServer):
     _url = None
     _json = None
     _json_dict = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 connection,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
         """
         ==================     ====================================================================
         **Argument**           **Description**
@@ -551,22 +541,22 @@ class PlatformServiceManager(BaseServer):
         ==================     ====================================================================
 
         """
-        super(PlatformServiceManager, self).__init__(connection=connection,
-                                                     url=url)
+        super(PlatformServiceManager, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         from arcgis._impl.common._mixins import PropertyMap
+
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = PropertyMap(result)
@@ -576,7 +566,8 @@ class PlatformServiceManager(BaseServer):
         except:
             self._json_dict = {}
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, service):
         """
         Returns a single instance of a Platform Service
@@ -597,11 +588,13 @@ class PlatformServiceManager(BaseServer):
 
         if "platformservices" in self._json_dict:
             for ps in self._json_dict["platformservices"]:
-                if ps['type'].lower() == service.lower():
-                    return PlatformService(url="%s/%s" % (self._url, ps['id']),
-                                           gis=self._con)
+                if ps["type"].lower() == service.lower():
+                    return PlatformService(
+                        url="%s/%s" % (self._url, ps["id"]), gis=self._con
+                    )
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         Returns all Platform Services on the enterprise configuration.
@@ -614,15 +607,24 @@ class PlatformServiceManager(BaseServer):
         if service is None:
             if "platformservices" in self._json_dict:
                 for ps in self._json_dict["platformservices"]:
-                    services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
-                                                    connection=self._con))
+                    services.append(
+                        PlatformService(
+                            url="%s/%s" % (self._url, ps["id"]), connection=self._con
+                        )
+                    )
         else:
             if "platformservices" in self._json_dict:
                 for ps in self._json_dict["platformservices"]:
-                    if ps['type'].lower() == service.lower():
-                        services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
-                                                    connection=self._con))
+                    if ps["type"].lower() == service.lower():
+                        services.append(
+                            PlatformService(
+                                url="%s/%s" % (self._url, ps["id"]),
+                                connection=self._con,
+                            )
+                        )
         return services
+
+
 ########################################################################
 class PlatformService(BaseServer):
     """
@@ -635,9 +637,10 @@ class PlatformService(BaseServer):
 
 
     """
+
     _url = None
     _con = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, connection, initialize=False):
         """
         Constructor
@@ -660,53 +663,57 @@ class PlatformService(BaseServer):
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start(self):
         """
         The Start method allows for the running of the service.
         """
-        params = {'f': "json"}
+        params = {"f": "json"}
         url = "%s/start" % self._url
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop(self):
         """
         The Start method allows for the running of the service.
         """
-        params = {'f': "json"}
+        params = {"f": "json"}
         url = "%s/stop" % self._url
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def status(self):
         """
         The status resource allows you to view the status of the service.
         The
         """
-        params = {'f': "json"}
+        params = {"f": "json"}
         url = "%s/status" % self._url
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def health(self):
         """
         The health check operation allows you to view the health of the service.
         """
-        params = {'f': "json"}
+        params = {"f": "json"}
         url = "%s/health" % self._url
         return self._con.get(url, params)
+
+
 ########################################################################
 class ConfigurationStore(BaseServer):
     """
     A utility class for managing the Configuration Store of this server.
     """
+
     _con = None
     _url = None
     _json = None
     _json_dict = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 connection,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
         """
         Constructor
 
@@ -722,13 +729,13 @@ class ConfigurationStore(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ConfigurationStore, self).__init__(connection=connection,
-                                                 url=url)
+        super(ConfigurationStore, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def recover(self):
         """
         Recovers the Configuration Store of the site.
@@ -749,17 +756,13 @@ class ConfigurationStore(BaseServer):
 
         """
         url = self._url + "/recover"
-        params = {"f" : "json"}
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
-    def edit(self,
-             type_value,
-             connection,
-             move=True,
-             run_async=False,
-             *,
-             local_path=None):
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self, type_value, connection, move=True, run_async=False, *, local_path=None
+    ):
         """
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
@@ -799,19 +802,20 @@ class ConfigurationStore(BaseServer):
         """
         url = self._url + "/edit"
         params = {
-            "f" : "json",
-            "type" : type_value,
-            "connectionString" : connection,
-            "move" : move,
-            "runAsync" : run_async
+            "f": "json",
+            "type": type_value,
+            "connectionString": connection,
+            "move": move,
+            "runAsync": run_async,
         }
         if local_path:
-            params['localRepositoryPath'] = local_path
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+            params["localRepositoryPath"] = local_path
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
+
 ########################################################################
 class Jobs(BaseServer):
     """
@@ -820,15 +824,14 @@ class Jobs(BaseServer):
     that support asynchronous execution are run, the server creates a new
     job entry that can be queried for its current status and messages.
     """
+
     _con = None
     _json = None
     _jobs = None
     _json_dict = None
     _url = None
-    #----------------------------------------------------------------------
-    def __init__(self, url,
-                 connection,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
         """
         Constructor
 
@@ -844,13 +847,13 @@ class Jobs(BaseServer):
         ==================     ====================================================================
 
         """
-        super(Jobs, self).__init__(connection=connection,
-                                   url=url)
+        super(Jobs, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def jobs(self):
         """
@@ -859,7 +862,8 @@ class Jobs(BaseServer):
         if self._jobs is None:
             self._init()
         return self._jobs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, job_id):
         """
         A job represents the asynchronous execution of an operation. You
@@ -877,11 +881,10 @@ class Jobs(BaseServer):
 
         """
         url = self._url + "/%s" % job_id
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(path=url,
-                             params=params)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+
 ########################################################################
 class ServerProperties(BaseServer):
     """
@@ -977,15 +980,13 @@ class ServerProperties(BaseServer):
         Example: http://mycompany.com/gis
 
     """
+
     _con = None
     _url = None
     _json = None
     _json_dict = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 connection,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
         """
         Constructor
 
@@ -1001,21 +1002,23 @@ class ServerProperties(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ServerProperties, self).__init__(connection=connection,
-                                               url=url)
-        if url.lower().endswith('/properties'):
+        super(ServerProperties, self).__init__(connection=connection, url=url)
+        if url.lower().endswith("/properties"):
             self._url = url
         else:
             self._url = url + "/properties"
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def update(self, properties):
         """
         This operation allows you to update the server properties. See the ServerProperties
@@ -1035,15 +1038,13 @@ class ServerProperties(BaseServer):
         url = self._url + "/update"
         if properties is None:
             properties = {}
-        params = {
-            "f" : "json",
-            "properties" : properties
-        }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "properties": properties}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
+
 ########################################################################
 class DirectoryManager(object):
     """
@@ -1055,16 +1056,21 @@ class DirectoryManager(object):
     directories. If you no longer need the server directory, you must
     remove the directory by using the Unregister Directory operation.
     """
+
     _system = None
+
     def __init__(self, system):
         self._system = system
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._system._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._system._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._system._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._system._url)
+
+    # ----------------------------------------------------------------------
     def all(self):
         """
         Provides a configuration of this server directory.
@@ -1077,16 +1083,19 @@ class DirectoryManager(object):
             A dictionary of this server directory configuration properties.
         """
         return self._system._directories
-    #----------------------------------------------------------------------
-    def edit_services_directory(self,
-            allowedOrigins,
-            arcgis_com_map,
-            arcgis_com_map_text,
-            jsapi_arcgis,
-            jsapi_arcgis_css,
-            jsapi_arcgis_css2,
-            jsapi_arcgis_sdk,
-            serviceDirEnabled):
+
+    # ----------------------------------------------------------------------
+    def edit_services_directory(
+        self,
+        allowedOrigins,
+        arcgis_com_map,
+        arcgis_com_map_text,
+        jsapi_arcgis,
+        jsapi_arcgis_css,
+        jsapi_arcgis_css2,
+        jsapi_arcgis_sdk,
+        serviceDirEnabled,
+    ):
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
         enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
@@ -1129,14 +1138,18 @@ class DirectoryManager(object):
             A boolean indicating success (True).
 
         """
-        return self._system._edit_services_directory(allowedOrigins, arcgis_com_map,
-                                                     arcgis_com_map_text,
-                                                     jsapi_arcgis,
-                                                     jsapi_arcgis_css,
-                                                     jsapi_arcgis_css2,
-                                                     jsapi_arcgis_sdk,
-                                                     serviceDirEnabled)
-    #----------------------------------------------------------------------
+        return self._system._edit_services_directory(
+            allowedOrigins,
+            arcgis_com_map,
+            arcgis_com_map_text,
+            jsapi_arcgis,
+            jsapi_arcgis_css,
+            jsapi_arcgis_css2,
+            jsapi_arcgis_sdk,
+            serviceDirEnabled,
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1146,7 +1159,7 @@ class DirectoryManager(object):
         """
         return self._system._services_directory
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def get(self, name):
         """
         Retrieves a single directory registered with ArcGIS Server.
@@ -1161,14 +1174,17 @@ class DirectoryManager(object):
             The directory object.
         """
         return self._system._get_directory(name=name)
-    #----------------------------------------------------------------------
-    def add(self,
-            name,
-            physicalPath,
-            directoryType,
-            maxFileAge,
-            cleanupMode="NONE",
-            description=None):
+
+    # ----------------------------------------------------------------------
+    def add(
+        self,
+        name,
+        physicalPath,
+        directoryType,
+        maxFileAge,
+        cleanupMode="NONE",
+        description=None,
+    ):
         """
         Registers a new server directory. While registering the server
         directory, you can also specify the directory's cleanup parameters.
@@ -1196,8 +1212,11 @@ class DirectoryManager(object):
             A boolean indicating success (True).
 
         """
-        return self._system._register(name, physicalPath, directoryType,
-                                      maxFileAge, cleanupMode, description)
+        return self._system._register(
+            name, physicalPath, directoryType, maxFileAge, cleanupMode, description
+        )
+
+
 ########################################################################
 class ServerDirectory(BaseServer):
     """
@@ -1228,6 +1247,7 @@ class ServerDirectory(BaseServer):
     All the output server directories are automatically virtualized (they
     can be accessed over a URL) for you through the ArcGIS Server REST API.
     """
+
     _con = None
     _url = None
     _json = None
@@ -1240,11 +1260,8 @@ class ServerDirectory(BaseServer):
     _maxFileAge = None
     _description = None
     _virtualPath = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 connection,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, connection, initialize=False):
         """
         Constructor
 
@@ -1260,21 +1277,23 @@ class ServerDirectory(BaseServer):
         ==================     ====================================================================
 
         """
-        super(ServerDirectory, self).__init__(connection=connection,
-                                              url=url)
+        super(ServerDirectory, self).__init__(connection=connection, url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
-    def edit(self,
-             physical_path,
-             cleanup_mode,
-             max_age,
-             description,
-             *,
-             use_local_dir=None,
-             local_dir=None):
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        physical_path,
+        cleanup_mode,
+        max_age,
+        description,
+        *,
+        use_local_dir=None,
+        local_dir=None
+    ):
         """
         The server directory's edit operation allows you to change the path
         and clean up properties of the directory. This operation updates
@@ -1317,22 +1336,22 @@ class ServerDirectory(BaseServer):
         """
         url = self._url + "/edit"
         params = {
-            "f" : "json",
-            "physicalPath" : physical_path,
-            "cleanupMode" : cleanup_mode,
-            "maxFileAge" : max_age,
-            "description" : description
+            "f": "json",
+            "physicalPath": physical_path,
+            "cleanupMode": cleanup_mode,
+            "maxFileAge": max_age,
+            "description": description,
         }
         if not use_local_dir is None and isinstance(use_local_dir, bool):
-            params['useLocalDir'] = use_local_dir
+            params["useLocalDir"] = use_local_dir
         if not local_dir is None:
-            params['localDirectoryPath'] = local_dir
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+            params["localDirectoryPath"] = local_dir
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def clean(self):
         """
         Cleans the content (files and folders) within the directory that
@@ -1348,15 +1367,13 @@ class ServerDirectory(BaseServer):
 
         """
         url = self._url + "/clean"
-        params = {
-            "f" : "json"
-        }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json"}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def recover(self):
         """
         Recovers the shared server directories of the site.
@@ -1377,10 +1394,10 @@ class ServerDirectory(BaseServer):
 
         """
         url = self._url + "/recover"
-        params = {'f': 'json'}
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     def unregister(self):
         """
         Unregisters a server directory. Once a directory has been
@@ -1392,11 +1409,8 @@ class ServerDirectory(BaseServer):
 
         """
         url = self._url + "/unregister"
-        params = {
-            "f" : "json"
-        }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json"}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res

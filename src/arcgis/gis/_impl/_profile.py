@@ -12,27 +12,42 @@ class ProfileManager(object):
     Allows for the controls and management of the
     profiles stored on the local operating system.
     """
+
     _gis = None
     _os = None
     _cfg_file_path = None
     #######################################################################
     def __init__(self):
         self._os = platform.system()
-        self._cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
+        self._cfg_file_path = os.path.expanduser("~") + "/.arcgisprofile"
         self._cfg_exists = os.path.isfile(self._cfg_file_path)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
         """ Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
         one profile, it is in the new format
         """
-        return any([profile_data for profile_data in config.values() \
-                    if "date_modified" in profile_data])
-    #----------------------------------------------------------------------
-    def _update_profile_data_in_config(self, config, profile, url=None,
-                                       username=None, key_file=None,
-                                       cert_file=None, client_id=None):
+        return any(
+            [
+                profile_data
+                for profile_data in config.values()
+                if "date_modified" in profile_data
+            ]
+        )
+
+    # ----------------------------------------------------------------------
+    def _update_profile_data_in_config(
+        self,
+        config,
+        profile,
+        url=None,
+        username=None,
+        key_file=None,
+        cert_file=None,
+        client_id=None,
+    ):
         """Updates the specific profile in the config object to include
         any of the user defined arguments. This will overwrite old values.
         ***USE THIS FUNCTION INSTEAD OF MANUALLY MODIFYING PROFILE DATA***
@@ -52,16 +67,19 @@ class ProfileManager(object):
         if client_id is not None:
             config[profile]["client_id"] = client_id
             self._add_timestamp_to_profile_data_in_config(config, profile)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _add_timestamp_to_profile_data_in_config(self, config, profile):
         """Sets the 'date_modified' field to this moment's datetime"""
         config[profile]["date_modified"] = str(_datetime.datetime.now())
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _write_config(self, config, cfg_file_path):
         """write the config object to the .arcgisprofile file"""
         with open(cfg_file_path, "w") as writer:
             config.write(writer)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _securely_store_password(self, profile, password):
         """Securely stores the password in an O.S. specific store via the
         keyring package. Can be retrieved later with just the profile name.
@@ -69,13 +87,15 @@ class ProfileManager(object):
         If keyring is not properly set up system-wide, raise a RuntimeError
         """
         import keyring
+
         if self._current_keyring_is_recommended():
-            return keyring.set_password("arcgis_python_api_profile_passwords",
-                                        profile,
-                                        password)
+            return keyring.set_password(
+                "arcgis_python_api_profile_passwords", profile, password
+            )
         else:
             raise RuntimeError(self._get_keyring_failure_message())
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _securely_get_password(self, profile):
         """Securely gets the profile specific password stored via keyring
 
@@ -83,38 +103,46 @@ class ProfileManager(object):
         found through keyring, log the respective warning and return 'None'
         """
         import keyring
+
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
             password = keyring.get_password(
-                "arcgis_python_api_profile_passwords", profile)
+                "arcgis_python_api_profile_passwords", profile
+            )
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
 
         if password is None:
-            _log.warn("Profile {0} does not have a password on file through "\
-                      "keyring. If you are expecting this behavior (PKI or "\
-                      "IWA authentication, entering password through "\
-                      "run-time prompt, etc.), please ignore this message. "\
-                      "If you would like to store your password in the {0} "\
-                      "profile, run GIS(profile = '{0}', password = ...). "\
-                      "See the API doc for more details. "\
-                      "(http://bit.ly/2CK2wG8)".format(profile))
+            _log.warn(
+                "Profile {0} does not have a password on file through "
+                "keyring. If you are expecting this behavior (PKI or "
+                "IWA authentication, entering password through "
+                "run-time prompt, etc.), please ignore this message. "
+                "If you would like to store your password in the {0} "
+                "profile, run GIS(profile = '{0}', password = ...). "
+                "See the API doc for more details. "
+                "(http://bit.ly/2CK2wG8)".format(profile)
+            )
         return password
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _securely_delete_password(self, profile):
         """Securely deletes the profile specific password via keyring
 
         If keyring is not properly set up system-wide, log a warning
         """
         import keyring
+
         if self._current_keyring_is_recommended():
             return keyring.delete_password(
-                "arcgis_python_api_profile_passwords", profile)
+                "arcgis_python_api_profile_passwords", profile
+            )
         else:
             _log.warn(self._get_keyring_failure_message())
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _current_keyring_is_recommended(self):
         """The keyring project recommends 4 secure keyring backends. The
         defaults on Windows/OSX should be the recommended backends, but Linux
@@ -123,27 +151,35 @@ class ProfileManager(object):
         configured backend
         """
         import keyring
-        supported_keyrings = [ keyring.backends.OS_X.Keyring,
-                               keyring.backends.SecretService.Keyring,
-                               keyring.backends.Windows.WinVaultKeyring,
-                               keyring.backends.kwallet.DBusKeyring,
-                               keyring.backends.chainer.ChainerBackend ]
+
+        supported_keyrings = [
+            keyring.backends.OS_X.Keyring,
+            keyring.backends.SecretService.Keyring,
+            keyring.backends.Windows.WinVaultKeyring,
+            keyring.backends.kwallet.DBusKeyring,
+            keyring.backends.chainer.ChainerBackend,
+        ]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _get_keyring_failure_message(self):
         """An informative failure msg about the backend keyring being used"""
         import keyring
-        return "Keyring backend being used ({}) either failed to install "\
-               "or is not recommended by the keyring project (i.e. it is "\
-               "not secure). This means you can not use stored passwords "\
-               "through GIS's persistent profiles. Note that extra system-"\
-               "wide steps must be taken on a Linux machine to use the python "\
-               "keyring module securely. Read more about this at the "\
-               "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
-               "for Python doc (http://bit.ly/2CK2wG8)."\
-               "".format(keyring.get_keyring())
-    #----------------------------------------------------------------------
+
+        return (
+            "Keyring backend being used ({}) either failed to install "
+            "or is not recommended by the keyring project (i.e. it is "
+            "not secure). This means you can not use stored passwords "
+            "through GIS's persistent profiles. Note that extra system-"
+            "wide steps must be taken on a Linux machine to use the python "
+            "keyring module securely. Read more about this at the "
+            "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "
+            "for Python doc (http://bit.ly/2CK2wG8)."
+            "".format(keyring.get_keyring())
+        )
+
+    # ----------------------------------------------------------------------
     def list(self, as_df=False):
         """
         returns a list of profile names in the configuration file
@@ -156,16 +192,20 @@ class ProfileManager(object):
             return config.sections()
         elif self._cfg_exists and as_df:
             import pandas as pd
+
             all_profiles = []
 
             for p in self.list():
                 p_dict = self.get(p)
-                p_dict['profile'] = p  # add a new column to DF that lists the profile name
+                p_dict[
+                    "profile"
+                ] = p  # add a new column to DF that lists the profile name
                 all_profiles.append(p_dict)
 
             return pd.DataFrame(data=all_profiles)
         return []
-    #--------------------------------------------------------------------------
+
+    # --------------------------------------------------------------------------
     def get(self, profile):
         """
         Returns the profile information for a given entry.
@@ -187,23 +227,23 @@ class ProfileManager(object):
             values = {}
             for key in keys:
                 try:
-                    if key == 'date_modified':
+                    if key == "date_modified":
 
                         values[key] = _datetime.datetime.strptime(
-                            config.get(
-                                profile,
-                                key),
-                            "%Y-%m-%d %H:%M:%S.%f")
+                            config.get(profile, key), "%Y-%m-%d %H:%M:%S.%f"
+                        )
                     else:
                         values[key] = config.get(profile, key)
                 except:
                     values[key] = None
             return values
         else:
-            _log.warn("Profile does not exist. Use the `ProfileManage.list()` to see a list of available login credentials.")
+            _log.warn(
+                "Profile does not exist. Use the `ProfileManage.list()` to see a list of available login credentials."
+            )
         return None
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def delete(self, profile):
         """
         Deletes a profile from the .arcgisprofile file
@@ -217,18 +257,22 @@ class ProfileManager(object):
         :returns: Boolean
         """
         import keyring
+
         profile_file = self._cfg_file_path
         if self._cfg_exists:
             profiles = self.list()
             if profile in profiles:
                 config = configparser.ConfigParser()
-                with open(profile_file, 'r') as reader:
+                with open(profile_file, "r") as reader:
                     config.read_file(reader)
                 data = dict(config.items(profile))
                 try:
-                    keyring.delete_password(service_name="arcgis_python_api_profile_passwords",
-                                            username=profile)
-                except: pass
+                    keyring.delete_password(
+                        service_name="arcgis_python_api_profile_passwords",
+                        username=profile,
+                    )
+                except:
+                    pass
                 config.remove_section(section=profile)
                 with open(profile_file, "w") as f:
                     config.write(f)
@@ -237,11 +281,18 @@ class ProfileManager(object):
             else:
                 raise ValueError("Profile not found.")
         return False
-    #----------------------------------------------------------------------
-    def update(self, profile, url=None,
-               username=None, password=None,
-               key_file=None, cert_file=None,
-               client_id=None):
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        profile,
+        url=None,
+        username=None,
+        password=None,
+        key_file=None,
+        cert_file=None,
+        client_id=None,
+    ):
         """
         Updates an existing profile in the credential manager.
 
@@ -267,15 +318,27 @@ class ProfileManager(object):
 
         """
         if profile not in self.list():
-            raise ValueError("Could not find profile {}. Use `create` to generate a new profile.".format(profile))
+            raise ValueError(
+                "Could not find profile {}. Use `create` to generate a new profile.".format(
+                    profile
+                )
+            )
         _log.info("Updating profile {} ...".format(profile))
-        return self.create(profile, url, username, password, key_file, cert_file, client_id)
+        return self.create(
+            profile, url, username, password, key_file, cert_file, client_id
+        )
 
-    #----------------------------------------------------------------------
-    def create(self, profile, url=None,
-               username=None, password=None,
-               key_file=None, cert_file=None,
-               client_id=None):
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        profile,
+        url=None,
+        username=None,
+        password=None,
+        key_file=None,
+        cert_file=None,
+        client_id=None,
+    ):
         """
         Adds a new entry into the Profile Store.
 
@@ -308,13 +371,15 @@ class ProfileManager(object):
                 _log.info("Adding new profile {} to config...".format(profile))
                 config.add_section(profile)
                 self._add_timestamp_to_profile_data_in_config(config, profile)
-            self._update_profile_data_in_config(config=config,
-                                                profile=profile,
-                                                url=url,
-                                                username=username,
-                                                key_file=key_file,
-                                                cert_file=cert_file,
-                                                client_id=client_id)
+            self._update_profile_data_in_config(
+                config=config,
+                profile=profile,
+                url=url,
+                username=username,
+                key_file=key_file,
+                cert_file=cert_file,
+                client_id=client_id,
+            )
             if password is not None:
                 self._securely_store_password(profile, password)
             self._write_config(config, self._cfg_file_path)
@@ -323,7 +388,8 @@ class ProfileManager(object):
         except:
             _log.warn(self._get_keyring_failure_message())
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def save_as(self, profile, gis):
         """
         Saves and adds the provided `GIS` to the profile.
@@ -340,6 +406,7 @@ class ProfileManager(object):
 
         """
         from arcgis.gis import GIS
+
         url = gis._url
         u = gis._username
         p = gis._password
@@ -351,35 +418,56 @@ class ProfileManager(object):
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
-            self._update_profile_data_in_config(config, profile=profile, url=url, username=u,
-                                               key_file=kf, cert_file=cf, client_id=ci)
+            self._update_profile_data_in_config(
+                config,
+                profile=profile,
+                url=url,
+                username=u,
+                key_file=kf,
+                cert_file=cf,
+                client_id=ci,
+            )
             if p is not None:
                 self._securely_store_password(profile, p)
             self._write_config(config, cfg_file_path)
             return True
         else:
-            return self.create(profile=profile, url=url, username=u,
-                        key_file=kf, cert_file=cf, client_id=ci)
-        
+            return self.create(
+                profile=profile,
+                url=url,
+                username=u,
+                key_file=kf,
+                cert_file=cf,
+                client_id=ci,
+            )
+
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _retrieve(self, profile):
         """gets the login information"""
-        url, username, password, key_file, cert_file, client_id = None, None, None, None, None, None
+        url, username, password, key_file, cert_file, client_id = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
         if profile.lower() in [p.lower() for p in self.list()]:
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
-            if config.has_option(profile,   "url"):
+            if config.has_option(profile, "url"):
                 url = config[profile]["url"]
-            if config.has_option(profile,   "username"):
-                username =  config[profile]["username"]
-            if config.has_option(profile,   "key_file"):
-                key_file =  config[profile]["key_file"]
-            if config.has_option(profile,   "cert_file"):
+            if config.has_option(profile, "username"):
+                username = config[profile]["username"]
+            if config.has_option(profile, "key_file"):
+                key_file = config[profile]["key_file"]
+            if config.has_option(profile, "cert_file"):
                 cert_file = config[profile]["cert_file"]
-            if config.has_option(profile,   "client_id"):
+            if config.has_option(profile, "client_id"):
                 client_id = config[profile]["client_id"]
 
             password = self._securely_get_password(profile)

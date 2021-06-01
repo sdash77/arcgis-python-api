@@ -28,4 +28,5 @@ from ._catagoryschema import CategoryManager
 from ._idp import IdentityProviderManager
 from ._wh import WebhookManager, Webhook
 from ._usage import AGOLUsageReports
-__all__ = ['PortalAdminManager', 'AGOLAdminManager']
+
+__all__ = ["PortalAdminManager", "AGOLAdminManager"]
