@@ -2,19 +2,20 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 class SiteManager(object):
     """
     Provides the ability to update and restore notebook sites.
 
     """
+
     _nb = None
     _url = None
     _gis = None
     _con = None
     _properties = None
 
-
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, notebook, gis):
         """Constructor"""
         self._url = url
@@ -25,29 +26,34 @@ class SiteManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<SiteManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<SiteManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export_site(self, location):
         """
         ArcGIS Notebook Server provides this operation to back up the site's
@@ -78,11 +84,11 @@ class SiteManager(object):
 
         """
         url = "{base}/exportSite".format(base=self._url)
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
-    def import_site(self,
-                    location):
+
+    # ----------------------------------------------------------------------
+    def import_site(self, location):
         """
         ArcGIS Notebook Server provides this operation to restore a site
         configuration from a backup. The backup will have been created and
@@ -108,9 +114,9 @@ class SiteManager(object):
 
         """
         url = "{base}/importSite".format(base=self._url)
-        params = {'f' : 'json'}
-        params['EXPORT_LOCATION'] = location
+        params = {"f": "json"}
+        params["EXPORT_LOCATION"] = location
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status']
+        if "status" in res:
+            return res["status"]
         return res

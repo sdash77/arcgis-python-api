@@ -9,23 +9,22 @@ import json
 import six
 from .._common import BaseServer
 from urllib.parse import quote
+
 ########################################################################
 class ReportManager(BaseServer):
     """
     A utility class for managing usage reports for ArcGIS Server.
 
     """
+
     _con = None
     _json_dict = None
     _url = None
     _json = None
     _metrics = None
     _reports = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor
 
         ==================     ====================================================================
@@ -41,20 +40,23 @@ class ReportManager(BaseServer):
 
         """
         super(ReportManager, self).__init__(url=url, gis=gis)
-        if url.lower().endswith('/usagereports'):
+        if url.lower().endswith("/usagereports"):
             self._url = url
         else:
             self._url = url + "/usagereports"
         self._con = gis
         if initialize:
             self._init(gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def list(self):
         """Retrieves a list of reports on the server.
 
@@ -65,14 +67,14 @@ class ReportManager(BaseServer):
         if self.properties is None:
             self._init()
         self._reports = []
-        if isinstance(self.properties['metrics'], list):
-            for r in self.properties['metrics']:
+        if isinstance(self.properties["metrics"], list):
+            for r in self.properties["metrics"]:
                 url = f"{self._url}/{quote(str(r['reportname']))}"
-                self._reports.append(Report(url=url,
-                                            gis=self._con))
+                self._reports.append(Report(url=url, gis=self._con))
                 del url
         return self._reports
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """
@@ -88,17 +90,12 @@ class ReportManager(BaseServer):
         in days), unless the max_history parameter is 0, for which the
         statistics are persisted forever.
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/settings"
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
-    def edit(self,
-             interval,
-             enabled=True,
-             max_history=0):
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def edit(self, interval, enabled=True, max_history=0):
         """
         Edits the usage reports settings that are applied to the entire site.
 
@@ -126,23 +123,25 @@ class ReportManager(BaseServer):
 
         """
         params = {
-            "f" : "json",
-            "maxHistory" : max_history,
-            "enabled" : enabled,
-            "samplingInterval" : interval
+            "f": "json",
+            "maxHistory": max_history,
+            "enabled": enabled,
+            "samplingInterval": interval,
         }
         url = self._url + "/settings/edit"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
-    def create(self,
-               reportname,
-               queries,
-               metadata=None,
-               since="LAST_DAY",
-               from_value=None,
-               to_value=None,
-               aggregation_interval=None):
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        reportname,
+        queries,
+        metadata=None,
+        since="LAST_DAY",
+        from_value=None,
+        to_value=None,
+        aggregation_interval=None,
+    ):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
@@ -313,42 +312,39 @@ class ReportManager(BaseServer):
         url = self._url + "/add"
         temp = False
         params = {
-
-            "reportname" : reportname,
-            "since" : since,
+            "reportname": reportname,
+            "since": since,
         }
-        if  not metadata:
-            params['metadata'] = {
-                "temp" : temp,
-                "title" : reportname,
-                "managerReport" : False,
-
+        if not metadata:
+            params["metadata"] = {
+                "temp": temp,
+                "title": reportname,
+                "managerReport": False,
             }
         else:
-            params['metadata'] = metadata
+            params["metadata"] = metadata
         if isinstance(queries, dict):
             params["queries"] = [queries]
         elif isinstance(queries, list):
             params["queries"] = queries
         if aggregation_interval:
-            params['aggregationInterval'] = aggregation_interval
+            params["aggregationInterval"] = aggregation_interval
         if since.lower() == "custom":
-            params['to'] = to_value
-            params['from'] = from_value
-        p = {"f" : "json",'usagereport' : params}
-        res = self._con.post(path=url,
-                             postdata=p)
+            params["to"] = to_value
+            params["from"] = from_value
+        p = {"f": "json", "usagereport": params}
+        res = self._con.post(path=url, postdata=p)
         #  Refresh the metrics object
         self._init()
         for report in self.list():
             if str(report.reportname).lower() == reportname.lower():
                 return report
         return res
-    #----------------------------------------------------------------------
-    def quick_report(self,
-                     since="LAST_WEEK",
-                     queries="services/",
-                     metrics="RequestsFailed"):
+
+    # ----------------------------------------------------------------------
+    def quick_report(
+        self, since="LAST_WEEK", queries="services/", metrics="RequestsFailed"
+    ):
         """
         Generates an on the fly usage report for a service, services, or folder.
 
@@ -433,26 +429,24 @@ class ReportManager(BaseServer):
                                              'metric-type': 'RequestsFailed', 'data': [None, None, 1 ... , 0]}]]}}
         """
         from uuid import uuid4
-        queries = {
-            "resourceURIs": queries.split(','),
-            "metrics" : metrics.split(',')
-        }
+
+        queries = {"resourceURIs": queries.split(","), "metrics": metrics.split(",")}
         reportname = uuid4().hex
         metadata = {
-                "temp" : True,
-                "title" : reportname,
-                "managerReport" : False,
-
-            }
-        res = self.create(reportname=reportname,
-                                       queries=queries,
-                                       since=since,
-                                       metadata=metadata)
+            "temp": True,
+            "title": reportname,
+            "managerReport": False,
+        }
+        res = self.create(
+            reportname=reportname, queries=queries, since=since, metadata=metadata
+        )
         if isinstance(res, Report):
             data = res.query()
             res.delete()
             return data
         return res
+
+
 ########################################################################
 class Report(BaseServer):
     """
@@ -467,6 +461,7 @@ class Report(BaseServer):
     gathered for a collection of server resources, such as folders and
     services).
     """
+
     _con = None
     _url = None
     _json = None
@@ -477,9 +472,8 @@ class Report(BaseServer):
     _aggregationInterval = None
     _queries = None
     _metadata = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """
         Constructor
 
@@ -500,7 +494,8 @@ class Report(BaseServer):
         self._url = url
         if initialize:
             self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def edit(self):
         """
         Edits the usage report. To edit a usage report, submit
@@ -521,18 +516,15 @@ class Report(BaseServer):
             "queries": self._queries,
             "since": self._since,
             "metadata": self._metadata,
-            "to" : self._to,
-            "from" : self._from,
-            "aggregationInterval" : self._aggregationInterval
+            "to": self._to,
+            "from": self._from,
+            "aggregationInterval": self._aggregationInterval,
         }
-        params = {
-            "f" : "json",
-            "usagereport" : json.dumps(usagereport_dict)
-        }
+        params = {"f": "json", "usagereport": json.dumps(usagereport_dict)}
         url = self._url + "/edit"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes this usage report.
@@ -542,11 +534,11 @@ class Report(BaseServer):
         """
         url = self._url + "/delete"
         params = {
-            "f" : "json",
+            "f": "json",
         }
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def query(self, query_filter=None):
         """
         Retrieves server usage data for this report. This operation
@@ -591,10 +583,6 @@ class Report(BaseServer):
         """
         if query_filter is None:
             query_filter = {"machines": "*"}
-        params = {
-            "f" : "json",
-            "filter" : query_filter,
-            "filterType" : 'json'
-        }
+        params = {"f": "json", "filter": query_filter, "filterType": "json"}
         url = self._url + "/data"
         return self._con.get(path=url, params=params)

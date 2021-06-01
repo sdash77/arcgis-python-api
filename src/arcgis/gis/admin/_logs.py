@@ -3,6 +3,7 @@ Allows access to the Portal Logs
 """
 from .. import GIS
 from ._base import BasePortalAdmin
+
 ########################################################################
 class Logs(BasePortalAdmin):
     """
@@ -18,11 +19,12 @@ class Logs(BasePortalAdmin):
     ================  ===============================================================
 
     """
+
     _gis = None
     _url = None
     _con = None
     _portal = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         if isinstance(gis, GIS):
@@ -32,7 +34,8 @@ class Logs(BasePortalAdmin):
             self._con = gis._con
         else:
             raise ValueError("gis object must be of type GIS")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def clean(self):
         """
         Deletes all the log files on the machine hosting Portal for ArcGIS.
@@ -57,13 +60,13 @@ class Logs(BasePortalAdmin):
 
         """
         url = "%s/clean" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         res = self._con.post(path=url, postdata=params)
-        if isinstance(res, dict) and \
-           'status' in res:
-            return res['status'] == "success"
+        if isinstance(res, dict) and "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """
@@ -92,9 +95,10 @@ class Logs(BasePortalAdmin):
 
         """
         url = "%s/settings" % self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
     def settings(self, value):
         """
@@ -110,20 +114,23 @@ class Logs(BasePortalAdmin):
            None
         """
         url = "%s/settings/edit" % self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         if isinstance(value, dict):
-            for k,v in value.items():
+            for k, v in value.items():
                 params[k] = v
         else:
             raise ValueError("Value must be a dictionary")
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def query(self,
-              start_time,
-              end_time=None,
-              level="WARNING",
-              query_filter="*",
-              page_size=1000):
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        start_time,
+        end_time=None,
+        level="WARNING",
+        query_filter="*",
+        page_size=1000,
+    ):
         """
         The query operation allows you to aggregate, filter, and page
         through logs written by the portal.
@@ -192,6 +199,7 @@ class Logs(BasePortalAdmin):
         """
         from datetime import datetime
         from six import integer_types, string_types
+
         url = "%s/query" % self._url
         if isinstance(start_time, datetime):
             start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -199,9 +207,13 @@ class Logs(BasePortalAdmin):
             try:
                 datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
             except:
-                raise Exception("Invalid start_time string, must be in the format YYYY-MM-DDTHH:MM:SS")
+                raise Exception(
+                    "Invalid start_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
+                )
         elif isinstance(start_time, tuple(list(integer_types) + [float])):
-            start_time = datetime.utcfromtimestamp(start_time).strftime("%Y-%m-%dT%H:%M:%S")
+            start_time = datetime.utcfromtimestamp(start_time).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            )
         if end_time is None:
             end_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         elif isinstance(end_time, datetime):
@@ -210,20 +222,21 @@ class Logs(BasePortalAdmin):
             try:
                 datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
             except:
-                raise Exception("Invalid end_time string, must be in the format YYYY-MM-DDTHH:MM:SS")
+                raise Exception(
+                    "Invalid end_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
+                )
         elif isinstance(end_time, tuple(list(integer_types) + [float])):
             end_time = datetime.utcfromtimestamp(end_time).strftime("%Y-%m-%dT%H:%M:%S")
         if query_filter == "*":
-            query_filter = {"codes":[], "users":[], "source": "*"}
+            query_filter = {"codes": [], "users": [], "source": "*"}
         params = {
-            "startTime" : start_time,
-            "endTime" : end_time,
-            "level" : level,
-            "f" : "json",
-            "filterType" : "json",
-            "pageSize" : page_size
-
+            "startTime": start_time,
+            "endTime": end_time,
+            "level": level,
+            "f": "json",
+            "filterType": "json",
+            "pageSize": page_size,
         }
         if query_filter:
-            params['filter'] = query_filter
+            params["filter"] = query_filter
         return self._con.get(path=url, params=params)

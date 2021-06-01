@@ -4,6 +4,7 @@ Contains the base class that all server object inherit from.
 from urllib.request import HTTPError
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
+
 ###########################################################################
 class KubeSecurityCert(object):
     _con = None
@@ -11,20 +12,21 @@ class KubeSecurityCert(object):
     _json_dict = None
     _json = None
     _properties = None
-    def __init__(self, url:str, gis:GIS) -> "KubeSecurityIngress":
+
+    def __init__(self, url: str, gis: GIS) -> "KubeSecurityIngress":
         """class initializer"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -36,13 +38,16 @@ class KubeSecurityCert(object):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> InsensitiveDict:
         """
@@ -51,22 +56,26 @@ class KubeSecurityCert(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def url(self) -> str:
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
-    def url(self, value:str):
+    def url(self, value: str):
         """gets/sets the service url"""
         self._url = value
         self._refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def identity_certs(self) -> list:
         """
@@ -75,10 +84,11 @@ class KubeSecurityCert(object):
         :returns: List
         """
         url = self._url + "/identity"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params).get("certificates", [])
-    #----------------------------------------------------------------------
-    def remove_identity_cert(self, cert_id:str) -> bool:
+
+    # ----------------------------------------------------------------------
+    def remove_identity_cert(self, cert_id: str) -> bool:
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
@@ -89,10 +99,11 @@ class KubeSecurityCert(object):
 
         """
         url = self._url + f"/identity/{cert_id}/delete"
-        params = {'f' : 'json'}
-        return self._con.post(url, params).get("status", 'failed') == 'success'
-    #----------------------------------------------------------------------
-    def load_identity_cert(self, pfx:str, password:str, name:str) -> bool:
+        params = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
+    def load_identity_cert(self, pfx: str, password: str, name: str) -> bool:
         """
         Imports an existing identity certificate in PKCS #12 (.pfx) format
         into the keystore. An imported certificate can be assigned to the
@@ -102,31 +113,29 @@ class KubeSecurityCert(object):
         :returns: bool
         """
         params = {
-            'f' : 'json',
-            'certificateName' : name,
-            'certificatePassword' : password,
+            "f": "json",
+            "certificateName": name,
+            "certificatePassword": password,
         }
-        files = {'certificatePfxFile' : pfx}
+        files = {"certificatePfxFile": pfx}
         url = self._url + "/identity/import"
-        ret = self._gis._con.post(path=url,
-                                  postdata=params,
-                                  files=files)
-        return ret.get('status', 'false') == 'success'
-    #----------------------------------------------------------------------
+        ret = self._gis._con.post(path=url, postdata=params, files=files)
+        return ret.get("status", "false") == "success"
+
+    # ----------------------------------------------------------------------
     @property
     def trust_certs(self) -> list:
         """
         Lists all the trust certificates configured with the organization
         :returns: list
         """
-        params = {
-            'f' : 'json'
-        }
+        params = {"f": "json"}
 
         url = self._url + "/trust"
         return self._con.get(url, params).get("certificates", [])
-    #----------------------------------------------------------------------
-    def load_trust_cert(self, cert:str, name:str) -> bool:
+
+    # ----------------------------------------------------------------------
+    def load_trust_cert(self, cert: str, name: str) -> bool:
         """
         This operation imports a trust certificate, in either PEM
         (.cer or .crt files) or a binary (.der) format. Once a trust
@@ -135,17 +144,13 @@ class KubeSecurityCert(object):
 
         :returns: bool
         """
-        params = {
-            'f' : 'json',
-            'certificateName' : name
-        }
-        files = {'trustCertificateFile' : cert}
+        params = {"f": "json", "certificateName": name}
+        files = {"trustCertificateFile": cert}
         url = self._url + "/trust/import"
-        ret = self._gis._con.post(path=url,
-                                  postdata=params,
-                                  files=files)
-        return ret.get('status', 'false') == 'success'
-    def get_cert(self, cert_type:str, cert_id:str) -> dict:
+        ret = self._gis._con.post(path=url, postdata=params, files=files)
+        return ret.get("status", "false") == "success"
+
+    def get_cert(self, cert_type: str, cert_id: str) -> dict:
         """
         Obtains a single certificate for a given type and ID
 
@@ -159,19 +164,20 @@ class KubeSecurityCert(object):
 
         :return: Dict
         """
-        if cert_type.lower() == 'trust':
+        if cert_type.lower() == "trust":
 
             url = self._url + f"/trust/{cert_id}"
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             return self._con.get(url, params)
-        elif cert_type.lower() == 'identity':
+        elif cert_type.lower() == "identity":
             url = self._url + f"/identity{cert_id}"
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             return self._con.get(url, params)
         else:
             raise ValueError("Invalid certificate type.")
-    #----------------------------------------------------------------------
-    def remove_trust_cert(self, cert_id:str) -> bool:
+
+    # ----------------------------------------------------------------------
+    def remove_trust_cert(self, cert_id: str) -> bool:
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
@@ -182,33 +188,37 @@ class KubeSecurityCert(object):
 
         """
         url = self._url + f"/trust/{cert_id}/delete"
-        params = {'f' : 'json'}
-        return self._con.post(url, params).get("status", 'failed') == 'success'
+        params = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+
 ###########################################################################
 class KubeSecuritySAML(object):
     """
     Returns the currently configured security information for the Ingress
     controller.
     """
+
     _con = None
     _url = None
     _json_dict = None
     _json = None
     _properties = None
-    def __init__(self, url:str, gis:GIS) -> "KubeSecurityIngress":
+
+    def __init__(self, url: str, gis: GIS) -> "KubeSecurityIngress":
         """class initializer"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -220,13 +230,16 @@ class KubeSecuritySAML(object):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> InsensitiveDict:
         """
@@ -235,22 +248,26 @@ class KubeSecuritySAML(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def url(self) -> str:
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
-    def url(self, value:str):
+    def url(self, value: str):
         """gets/sets the service url"""
         self._url = value
         self._refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self) -> dict:
         """
@@ -260,47 +277,49 @@ class KubeSecuritySAML(object):
 
         """
         return dict(self.properties)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value:dict):
+    def settings(self, value: dict):
         """
         This get/sets the SAML certification information.
 
         :returns: dict
         """
         url = self.url + "/update"
-        params = {
-            'f' : 'json',
-            'ingressSecurityConfig' : value
-        }
+        params = {"f": "json", "ingressSecurityConfig": value}
         res = self._con.post(url, params)
-        if res.get('status', 'failed') == 'success':
+        if res.get("status", "failed") == "success":
             self._refresh()
+
+
 ###########################################################################
 class KubeSecurityIngress(object):
     """
     Returns the currently configured security information for the Ingress
     controller.
     """
+
     _con = None
     _url = None
     _json_dict = None
     _json = None
     _properties = None
-    def __init__(self, url:str, gis:GIS) -> "KubeSecurityIngress":
+
+    def __init__(self, url: str, gis: GIS) -> "KubeSecurityIngress":
         """class initializer"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -312,13 +331,16 @@ class KubeSecurityIngress(object):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> InsensitiveDict:
         """
@@ -327,22 +349,26 @@ class KubeSecurityIngress(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def url(self) -> str:
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
-    def url(self, value:str):
+    def url(self, value: str):
         """gets/sets the service url"""
         self._url = value
         self._refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self) -> dict:
         """
@@ -352,46 +378,48 @@ class KubeSecurityIngress(object):
 
         """
         return dict(self.properties)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value:dict):
+    def settings(self, value: dict):
         """
         gets/sets the ingress configuration properties
 
         :returns: dict
         """
         url = self.url + "/update"
-        params = {
-            'f' : 'json',
-            'samlSecurityConfig' : value
-        }
+        params = {"f": "json", "samlSecurityConfig": value}
         res = self._con.post(url, params)
-        if res.get('status', 'failed') == 'success':
+        if res.get("status", "failed") == "success":
             self._refresh()
+
+
 ###########################################################################
 class KubeSecurityConfig(object):
     """
     Allows the user to manage the security configuration for an ArcGIS Enterprise for Kubernetes deployment.
     """
+
     _con = None
     _url = None
     _json_dict = None
     _json = None
     _properties = None
-    def __init__(self, url:str, gis:GIS) -> "KubeSecurityConfig":
+
+    def __init__(self, url: str, gis: GIS) -> "KubeSecurityConfig":
         """class initializer"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -403,13 +431,16 @@ class KubeSecurityConfig(object):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> InsensitiveDict:
         """
@@ -418,42 +449,43 @@ class KubeSecurityConfig(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def url(self) -> str:
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
-    def url(self, value:str):
+    def url(self, value: str):
         """gets/sets the service url"""
         self._url = value
         self._refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self) -> dict:
         """gets/sets the current secutiry settings for the deployment"""
         return dict(self.properties)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value:dict):
+    def settings(self, value: dict):
         """gets/sets the current secutiry settings for the deployment"""
         url = self.url + "/update"
-        params = {
-            'f' : 'json',
-            'securityConfig' : value
-        }
+        params = {"f": "json", "securityConfig": value}
         res = self._con.post(url, params)
-        if res.get('status', 'failed') == 'success':
+        if res.get("status", "failed") == "success":
             self._refresh()
-    #----------------------------------------------------------------------
-    def test(self,
-             user_store:dict=None,
-             role_store:dict=None) -> bool:
+
+    # ----------------------------------------------------------------------
+    def test(self, user_store: dict = None, role_store: dict = None) -> bool:
         """
         Users can test the connection to a user or role (group) store.
 
@@ -474,17 +506,17 @@ class KubeSecurityConfig(object):
         :returns: boolean
         """
         url = f"{self._url}/testIdentityStore"
-        params = {'f' : 'json',
-                  }
+        params = {
+            "f": "json",
+        }
         if user_store:
-            params['userStoreConfig'] = user_store
+            params["userStoreConfig"] = user_store
         if role_store:
-            params['roleStoreConfig'] = role_store
-        return self._con.post(url, params).get('status', "fail") == 'success'
-    #----------------------------------------------------------------------
-    def update_stores(self,
-             user_store:dict=None,
-             role_store:dict=None) -> bool:
+            params["roleStoreConfig"] = role_store
+        return self._con.post(url, params).get("status", "fail") == "success"
+
+    # ----------------------------------------------------------------------
+    def update_stores(self, user_store: dict = None, role_store: dict = None) -> bool:
         """
         Users can modify the user or role (group) identity stores.
 
@@ -499,17 +531,20 @@ class KubeSecurityConfig(object):
         :returns: boolean
         """
         url = f"{self._url}/updateIdentityStore"
-        params = {'f' : 'json',
-                  }
+        params = {
+            "f": "json",
+        }
         if user_store:
-            params['userStoreConfig'] = user_store
+            params["userStoreConfig"] = user_store
         if role_store:
-            params['roleStoreConfig'] = role_store
-        return self._con.post(url, params).get('status', "fail") == 'success'
+            params["roleStoreConfig"] = role_store
+        return self._con.post(url, params).get("status", "fail") == "success"
+
 
 ###########################################################################
 class KubeSecurity(object):
     """Allows users to configure the Security settings on the kubernetes infrastructure"""
+
     _con = None
     _url = None
     _json_dict = None
@@ -519,20 +554,21 @@ class KubeSecurity(object):
     _ingress = None
     _saml = None
     _certs = None
-    def __init__(self, url:str, gis:GIS) -> "KubeSecurity":
+
+    def __init__(self, url: str, gis: GIS) -> "KubeSecurity":
         """class initializer"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -544,13 +580,16 @@ class KubeSecurity(object):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -559,22 +598,26 @@ class KubeSecurity(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def url(self):
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
     def url(self, value):
         """gets/sets the service url"""
         self._url = value
         self._refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def configuration(self) -> "KubeSecurityConfig":
         """Returns the currently active security configuration for an ArcGIS Enterprise for Kubernetes deployment"""
@@ -582,7 +625,8 @@ class KubeSecurity(object):
             url = self._url + "/config"
             self._config = KubeSecurityConfig(url=url, gis=self._gis)
         return self._config
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def ingress(self) -> "KubeSecurityIngress":
         """Returns a manager to configure the ingress settings.
@@ -593,7 +637,8 @@ class KubeSecurity(object):
             url = self._url + "/ingress"
             self._ingress = KubeSecurityIngress(url, gis=self._gis)
         return self._ingress
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def saml(self) -> "KubeSecuritySAML":
         """
@@ -605,7 +650,8 @@ class KubeSecurity(object):
             url = self._url + "/saml"
             self._saml = KubeSecuritySAML(url, gis=self._gis)
         return self._saml
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def certificates(self) -> "KubeSecurityCert":
         if self._certs is None:

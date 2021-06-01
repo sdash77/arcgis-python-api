@@ -4,6 +4,7 @@ Controls the Uploads of file to AGS/AGO
 from __future__ import absolute_import
 from urllib.parse import urlparse, urlencode
 import os
+
 ########################################################################
 class Uploads(object):
     """
@@ -17,15 +18,17 @@ class Uploads(object):
     service, it is recommended that the service be secured to allow only
     authenticated users access to this capability.
     """
+
     _url = None
     _con = None
     _json_dict = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, connection, url, **kwargs):
         self._url = url
         self._con = connection
-        initialize = kwargs.pop('initialize', True)
-    #----------------------------------------------------------------------
+        initialize = kwargs.pop("initialize", True)
+
+    # ----------------------------------------------------------------------
     @property
     def info(self):
         """
@@ -33,11 +36,10 @@ class Uploads(object):
         service.
         """
         url = self._url + "/info"
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def upload(self, filePath, description=None):
         """
         This operation uploads an item to the server. Each uploaded item is
@@ -55,17 +57,15 @@ class Uploads(object):
            filePath - The file to be uploaded.
            description	- An optional description for the uploaded item.
         """
-        params = {
-            "f" : "json"}
+        params = {"f": "json"}
         if description is not None:
-            params['description'] = str(description)
+            params["description"] = str(description)
         url = self._url + "/upload"
         files = {}
-        files['file'] = filePath
-        return self._con.post(path=url,
-                          postdata=params,
-                          files=files)
-    #----------------------------------------------------------------------
+        files["file"] = filePath
+        return self._con.post(path=url, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
     def delete(self, itemID):
         """
         This operation deletes an item.
@@ -74,11 +74,10 @@ class Uploads(object):
            itemID - unique ID of item
         """
         url = self._url + "/%s/delete" % itemID
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def download(self, itemID, savePath):
         """
         downloads an item to local disk
@@ -90,14 +89,12 @@ class Uploads(object):
         if os.path.isdir(savePath) == False:
             os.makedirs(savePath)
         url = self._url + "/%s/download" % itemID
-        params = {
-        }
+        params = {}
         if len(params.keys()):
-            url =  url + "?%s" % urlencode(params)
-        return self._con.get(path=url,
-                         params=params,
-                         out_folder=savePath)
-    #----------------------------------------------------------------------
+            url = url + "?%s" % urlencode(params)
+        return self._con.get(path=url, params=params, out_folder=savePath)
+
+    # ----------------------------------------------------------------------
     @property
     def uploads(self):
         """
@@ -105,7 +102,6 @@ class Uploads(object):
         """
         url = self._url
         params = {
-            "f" : "json",
-
+            "f": "json",
         }
         return self._con.get(path=url, params=params)

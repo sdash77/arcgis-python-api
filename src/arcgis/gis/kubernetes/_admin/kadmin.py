@@ -5,10 +5,12 @@ from ._datastores import DataStores
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
 
+
 class KubernetesAdmin(_BaseKube):
     """
     Kubernetes Administration Class
     """
+
     _url = None
     _gis = None
     _con = None
@@ -24,7 +26,7 @@ class KubernetesAdmin(_BaseKube):
     _metadata = None
     _organizations = None
     _category_schema = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """class initializer"""
         super(KubernetesAdmin, self)
@@ -32,15 +34,15 @@ class KubernetesAdmin(_BaseKube):
         self._gis = gis
         self._con = gis._con
         self._init(gis._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -52,7 +54,8 @@ class KubernetesAdmin(_BaseKube):
         except:
             self._json_dict = {}
             self._properties = InsensitiveDict({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def logs(self):
         """provides access to the Kubernetes Logs"""
@@ -60,15 +63,17 @@ class KubernetesAdmin(_BaseKube):
             url = f"{self._url}/logs"
             self._log = LogManager(url, gis=self._gis)
         return self._log
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def mode(self):
         if self._mode is None:
             from ._mode import Mode
-            self._mode = Mode(url=f"{self._url}/mode",
-                              gis=self._gis)
+
+            self._mode = Mode(url=f"{self._url}/mode", gis=self._gis)
         return self._mode
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def datastores(self):
         """
@@ -78,10 +83,12 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._ds is None:
             from ._datastores import DataStores
+
             url = self._url + "/data"
             self._ds = DataStores(url=url, gis=self._gis)
         return self._ds
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def system(self):
         """
@@ -94,10 +101,12 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._sm is None:
             from ._system import SystemManager
+
             url = self._url + "/system"
             self._sm = SystemManager(url=url, gis=self._gis)
         return self._sm
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def license(self):
         """
@@ -106,18 +115,22 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._license is None:
             from arcgis.gis.admin._license import LicenseManager
+
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def category_schema(self):
         """This resource allows for the setting and manipulating of catagory schemas."""
         if self._category_schema is None:
             from arcgis.gis.admin._catagoryschema import CategoryManager
+
             self._category_schema = CategoryManager(gis=self._gis)
         return self._category_schema
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _idp(self):
         """
@@ -125,10 +138,18 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._idp is None:
             from arcgis.gis.admin._idp import IdentityProviderManager
+
             self._idp = IdentityProviderManager(gis=self._gis)
         return self._idp
-    #----------------------------------------------------------------------
-    def scheduled_tasks(self, item:Item=None, active:bool=None, user:User=None, types:str=None):
+
+    # ----------------------------------------------------------------------
+    def scheduled_tasks(
+        self,
+        item: Item = None,
+        active: bool = None,
+        user: User = None,
+        types: str = None,
+    ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
@@ -152,35 +173,37 @@ class KubernetesAdmin(_BaseKube):
         _tasks = []
         num = 100
         url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        params = {'f' : 'json', 'start' : 1, 'num' : num }
+        params = {"f": "json", "start": 1, "num": num}
         if item:
-            params['itemId'] = item.itemid
+            params["itemId"] = item.itemid
         if not active is None:
-            params['active'] = active
+            params["active"] = active
         if user:
-            params['userFilter'] = user.username
+            params["userFilter"] = user.username
         if types:
-            params['types'] = types
+            params["types"] = types
         res = self._con.get(url, params)
-        start = res['nextStart']
-        _tasks.extend(res['tasks'])
+        start = res["nextStart"]
+        _tasks.extend(res["tasks"])
         while start != -1:
-            params['start'] = start
-            params['num'] = num
+            params["start"] = start
+            params["num"] = num
             res = self._con.get(url, params)
-            if len(res['tasks']) == 0:
+            if len(res["tasks"]) == 0:
                 break
-            _tasks.extend(res['tasks'])
-            start = res['nextStart']
+            _tasks.extend(res["tasks"])
+            start = res["nextStart"]
         return _tasks
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _location_tracking(self):
         """
         The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
         """
         return LocationTrackingManager(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def social_providers(self):
         """
@@ -189,9 +212,11 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._sp is None:
             from arcgis.gis.admin._socialproviders import SocialProviders
+
             self._sp = SocialProviders(gis=self._gis)
         return self._sp
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
         """
@@ -200,38 +225,44 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._metadata is None:
             from arcgis.gis.admin._metadata import MetadataManager
+
             self._metadata = MetadataManager(gis=self._gis)
         return self._metadata
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def organizations(self):
         """Provides access to the Organizations settings"""
         if self._organizations is None:
             from ._organizations import KubeOrganizations
+
             url = f"{self._url}/orgs"
             self._organizations = KubeOrganizations(url=url, gis=self._gis)
         return self._organizations
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def services(self):
         """Provides access to managing the services on the site"""
         if self._services is None:
             from ._services import ServicesManager
+
             url = f"{self._url}/services"
             self._services = ServicesManager(url, gis=self._gis)
         return self._services
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def uploads(self):
         """Gets an object to work with the site uploads."""
         if self._uploads is None:
             from ._uploads import Uploads
+
             url = self._url + "/uploads"
-            self._uploads = Uploads(url=url,
-                                    gis=self._con,
-                                    initialize=True)
+            self._uploads = Uploads(url=url, gis=self._con, initialize=True)
         return self._uploads
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def security(self) -> "KubeSecurity":
         """
@@ -241,7 +272,7 @@ class KubernetesAdmin(_BaseKube):
         """
         if self._security is None:
             from arcgis.gis.kubernetes._admin._security import KubeSecurity
+
             url = self._url + "/security"
-            self._security = KubeSecurity(url=url,
-                                          gis=self._gis)
+            self._security = KubeSecurity(url=url, gis=self._gis)
         return self._security

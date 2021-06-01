@@ -1,4 +1,3 @@
-
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
@@ -14,13 +13,13 @@ class LogManager(_BaseKube):
     and check error messages for helping to determine the nature of an issue.
 
     """
+
     _url = None
     _con = None
     _json_dict = None
     _json = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor
 
 
@@ -34,24 +33,23 @@ class LogManager(_BaseKube):
 
         """
         connection = gis
-        super(LogManager, self).__init__(gis=gis,
-                                  url=url)
+        super(LogManager, self).__init__(gis=gis, url=url)
         self._url = url
-        if hasattr(connection, '_con'):
+        if hasattr(connection, "_con"):
             self._con = connection._con
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
-    def clean(self,
-              start_time=None,
-              end_time=None,
-              level=None):
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    def clean(self, start_time=None, end_time=None, level=None):
         """
         Deletes all the log files on all server machines in the site. This is an irreversible
         operation.
@@ -90,35 +88,34 @@ class LogManager(_BaseKube):
 
         """
         params = {
-            "f" : "json",
+            "f": "json",
         }
         if start_time:
-            params['startTime'] = start_time
+            params["startTime"] = start_time
         if end_time:
-            params['endTime'] = end_time
+            params["endTime"] = end_time
         if level:
-            params['logLevel'] = level
+            params["logLevel"] = level
         url = "{}/clean".format(self._url)
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
-        elif 'success' in res:
-            return res['success'] == 'true'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
+        elif "success" in res:
+            return res["success"] == "true"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """Gets the current log settings. """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/settings"
         try:
             return self._con.get(url, params)
         except:
             return ""
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def edit(self, level="WARNING"):
         """
         Provides log editing capabilities for the entire site.
@@ -136,30 +133,40 @@ class LogManager(_BaseKube):
 
         """
         url = self._url + "/settings/edit"
-        allowed_levels = ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        allowed_levels = (
+            "OFF",
+            "SEVERE",
+            "WARNING",
+            "INFO",
+            "FINE",
+            "VERBOSE",
+            "DEBUG",
+        )
         current_settings = self.settings
         current_settings["f"] = "json"
 
         if level.upper() in allowed_levels:
-            current_settings['logLevel'] = level.upper()
+            current_settings["logLevel"] = level.upper()
 
-        res = self._con.post(path=url,
-                             postdata=current_settings)
-        if 'success' in res:
-            return res['success'] == 'true'
+        res = self._con.post(path=url, postdata=current_settings)
+        if "success" in res:
+            return res["success"] == "true"
         return res
-    #----------------------------------------------------------------------
-    def query(self,
-              start_time=None,
-              end_time=None,
-              level="WARNING",
-              log_code=None,
-              users=None,
-              request_ids=None,
-              service_types=None,
-              source=None,
-              show_stack_traces=True,
-              num=1000):
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        start_time=None,
+        end_time=None,
+        level="WARNING",
+        log_code=None,
+        users=None,
+        request_ids=None,
+        service_types=None,
+        source=None,
+        show_stack_traces=True,
+        num=1000,
+    ):
         """
         The query operation on the logs resource provides a way to
         aggregate, filter, and page through logs across the entire site.
@@ -216,40 +223,33 @@ class LogManager(_BaseKube):
 
         """
 
-        allowed_levels = ("SEVERE", "WARNING", "INFO",
-                          "FINE", "VERBOSE", "DEBUG")
-        params = {
-            "f" : "json",
-            "num" : num
-        }
-        params['start'] = 1
+        allowed_levels = ("SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        params = {"f": "json", "num": num}
+        params["start"] = 1
         url = "{url}/query".format(url=self._url)
-        if start_time is not None and \
-           isinstance(start_time, datetime):
-            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
-        if end_time is not None and \
-           isinstance(end_time, datetime):
-            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+        if start_time is not None and isinstance(start_time, datetime):
+            params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+        if end_time is not None and isinstance(end_time, datetime):
+            params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
         if level.upper() in allowed_levels:
-            params['logLevel'] = level
+            params["logLevel"] = level
         if log_code is not None:
-            params['logCode'] = log_code
+            params["logCode"] = log_code
         if users:
-            params['users'] = users
+            params["users"] = users
         if request_ids:
-            params['requestIDs'] = request_ids
+            params["requestIDs"] = request_ids
         if service_types:
-            params['serviceTypes'] = service_types
+            params["serviceTypes"] = service_types
         if source:
-            params['source'] = source
+            params["source"] = source
         if show_stack_traces is not None:
-            params['showStackTraces'] = show_stack_traces
+            params["showStackTraces"] = show_stack_traces
         res = self._con.get(url, params)
-        messages = res['messages']
-        #['messages', 'total', 'start', 'num', 'nextStart', 'query']
-        while res['nextStart'] != -1:
-            params['start'] = res['nextStart']
+        messages = res["messages"]
+        # ['messages', 'total', 'start', 'num', 'nextStart', 'query']
+        while res["nextStart"] != -1:
+            params["start"] = res["nextStart"]
             res = self._con.get(url, params)
-            messages.extend(res['messages'])
+            messages.extend(res["messages"])
         return messages
-
