@@ -18,8 +18,8 @@ def _prevent_bds_item(item: Item) -> object:
 
 def _id_generator(size: int = 6, chars: str = None, prefix: str = None) -> str:
     """generates a random id of a given length"""
-    if char is None:
-        char = string.ascii_uppercase + string.digits
+    if chars is None:
+        chars = string.ascii_uppercase + string.digits
 
     if prefix:
         return str(prefix) + "".join(random.choice(chars) for _ in range(size))
