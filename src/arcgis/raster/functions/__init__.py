@@ -4817,7 +4817,7 @@ def raster_collection_function(
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -4863,7 +4863,7 @@ def raster_collection_function(
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -4872,7 +4872,7 @@ def raster_collection_function(
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -6150,7 +6150,7 @@ def aggregate(
 
                                 - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
-                                You may also pass custom aggregaation function. 
+                                You may also pass custom aggregation function. 
                                 Create an RFT object out of the raster function template item on the portal and 
                                 specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
                                 aggregation_method.
@@ -6168,7 +6168,7 @@ def aggregate(
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -6214,7 +6214,7 @@ def aggregate(
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -6223,7 +6223,7 @@ def aggregate(
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -6265,7 +6265,7 @@ def aggregate(
                              The values can range from 0 to 100. The 0th percentile is essentially equivalent 
                              to the minimum statistic, and the 100th percentile is equivalent to maximum. 
                              A value of 50 will produce essentially the same result as the median statistic. 
-                             This option is only honored if the aggregation_method parameter is set to PERCENTILE. 
+                             This option is only honored if the aggregation_function parameter is set to PERCENTILE. 
 
                              Example:
                                 90
