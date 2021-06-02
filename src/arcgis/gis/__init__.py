@@ -9512,6 +9512,11 @@ class Item(dict):
                                want the service to be owned by another user, pass in this value.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.copy_feature_layer_collection(service_name="service_name", layers="1,4,5,8")
 
         :return:
            If successful, returns an :class:`~arcgis.gis.Item` object. Otherwise, returns None on failure.
@@ -9667,6 +9672,12 @@ class Item(dict):
         file_name           Optional string. The name of the file.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
+
         :return:
            The download path if data was available, otherwise None.
         """
@@ -9756,6 +9767,12 @@ class Item(dict):
         overwrite           Optional Boolean. If the export Item exists, the item will be
                             replaced with the new one.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.export("hurricane_data", "CSV", wait =True, tags= "Hurricane, Natural Disasters")
 
         :return:
            An :class:`~arcgis.gis.Item` object or a dictionary.  Item is returned when `wait=True`.
@@ -9848,6 +9865,12 @@ class Item(dict):
                             below. Values: `publish`, `generateFeatures`, `export`, and `createService`
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.status(job_type="generateFeatures")
+
         :return:
            The status of a publishing :class:`~arcgis.gis.Item` object.
         """
@@ -9871,9 +9894,9 @@ class Item(dict):
 
         .. code-block:: python
 
-            response = item.get_thumbnail()
-            f = open(filename, 'wb')
-            f.write(response)
+            >>> response = item.get_thumbnail()
+            >>> f = open(filename, 'wb')
+            >>> f.write(response)
 
         """
         thumbnail_file = self.thumbnail
@@ -10195,6 +10218,12 @@ class Item(dict):
         target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.reassign_to("User1234")
+
         :return:
             A boolean indicating success (True) with the ID of the reassigned item, or failure (False).
 
@@ -10343,6 +10372,12 @@ class Item(dict):
         allow_members_to_edit   Optional boolean. Default is False, to allow item to be
                                 shared with groups that allow shared update
         ======================  ========================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.share(org = True, allow_members_to_edit = True)
 
         :return:
             A dictionary with a key titled "`notSharedWith`",containing array of groups with which the item could not be
@@ -10737,6 +10772,12 @@ class Item(dict):
             <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
             in the ArcGIS REST API documentation for more details.
 
+        .. code-block:: python
+
+            # Usage Example
+
+            item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
+                            tags = "Hurricanes, USA, Natural Disasters")
         :return:
            A boolean indicating success (True) or failure (False).
         """
@@ -11132,6 +11173,12 @@ class Item(dict):
         direction           Required string. One of ['forward', 'reverse']
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.related_items("Service2Service", "forward")
+
         :return:
            The list of related items.
         """
@@ -11180,6 +11227,13 @@ class Item(dict):
                             for more information on this parameter.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.add_relationship(reL_item=item2, rel_type='Map2FeatureCollection')
+            <True>
+
         :return:
            A boolean indicating success (True), or failure (False)
         """
@@ -11198,7 +11252,7 @@ class Item(dict):
 
     def delete_relationship(self, rel_item, rel_type):
         """
-        The ``delete_relationship``method  deletes a relationship between this item and the rel_item.
+        The ``delete_relationship`` method  deletes a relationship between this item and the rel_item.
 
 
         ===============     ====================================================================
@@ -11306,6 +11360,16 @@ class Item(dict):
                                during the `publish` process.
 
         ===================    ===============================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.publish(address_fields= { "CountryCode" : "Country"},
+            >>>               output_type="Tiles",
+            >>>               file_type="CSV",
+            >>>               item_id=9311d21a9a2047d19c0faaebd6f2cca6
+            >>>             )
 
         :return:
             An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
@@ -11662,6 +11726,12 @@ class Item(dict):
                           move to.
         ================  ===============================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.move("C:\Projects\ARCGIS\ArcGis_data\")
+
         :return:
             A json object in the following format:
             {
@@ -11719,6 +11789,12 @@ class Item(dict):
                           built at publishing time.  This will increase the time it takes
                           to publish the service.
         ================  ===============================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.create_tile_service(title="SeasideHeightsNJTiles", min_scale= 70000.0,max_scale=80000.0)
 
         :return:
            The :class:`~arcgis.gis.Item` object if successfully added, None if unsuccessful.
@@ -12033,6 +12109,12 @@ class Item(dict):
         comment             Required string. Text to be added as a comment to a specific item.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.add_comment("Detailed Comment on the Item")
+
         :return:
            Comment ID if successful, None if failure occurs.
         """
@@ -12322,6 +12404,13 @@ class Item(dict):
                                    those layers.  If nothing is provided, all layers will be
                                    visible.
 
+                                   .. code-block:: python
+                                        # Example Usage #1:
+                                        >>> item.copy(title="Atlantic_Hurricanes",
+                                        >>>           layers=[0,3])
+                                       # Example Usage #2:
+                                        >>> item.copy(title="Weather_Data",
+                                        >>>          layers = [9])
         =======================    =============================================================
 
          .. code-block:: python
@@ -12635,6 +12724,16 @@ class Item(dict):
                                 configured.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.register(app_type = "browser",
+            >>>             redirect_uris = [ "https://app.example.com", "urn:ietf:wg:oauth:2.0:oob" ],
+            >>>             http_referers = [ "https://foo.com", "https://bar.com" ],
+            >>>            privileges = [portal:apikey:basemaps, portal:app:access:item:itemId,
+            >>>                         premium:user:geocode, premium:user:networkanalysis]
+                              )
         :return: A dictionary
 
         """
