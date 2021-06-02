@@ -1137,6 +1137,8 @@ def reconstruct_tracks(
     time_split_unit=None,
     context=None,
     future=False,
+    arcade_split=None,
+    split_boundary=None,
 ):
     """
     .. image:: _static/images/reconstruct_tracks/reconstruct_tracks.png
@@ -1262,6 +1264,24 @@ def reconstruct_tracks(
     future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                                                                             The default value is 'False'.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    arcade_split                                                                            Optional String.  An expression that splits tracks based on values, 
+                                                                                            geometry, or time values. Expressions that validate to true will be 
+                                                                                            split. This parameter is only available with ArcGIS Enterprise 10.9 
+                                                                                            and later.  The default is `None`.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    split_boundary                                                                          Optional String.  
+    
+                                                                                            Specifies how the track segment between two features is created 
+                                                                                            when a track is split. The split type is applied to split 
+                                                                                            expressions, distance splits, and time splits. This parameter 
+                                                                                            is only available with ArcGIS Enterprise 10.9 and later.
+
+                                                                                            - `Gap` - No segment is created between the two features. This is the default when `None` is specified.
+                                                                                            - `FinishLast` - A segment is created between the two features that ends after the split.
+                                                                                            - `StartNext` - A segment is created between the two features that ends before the split.
+                                                                                            
+                                                                                            The default is `None`.
     ======================================================================================  ===============================================================
 
     :returns: feature layer collection item
@@ -1303,6 +1323,8 @@ def reconstruct_tracks(
         "context": context,
         "gis": gis,
         "future": future,
+        "arcade_split": arcade_split,
+        "split_boundary_option": split_boundary,
     }
     for key in list(params.keys()):
         value = params[key]
