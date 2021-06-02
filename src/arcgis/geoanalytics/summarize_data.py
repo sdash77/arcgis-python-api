@@ -1277,7 +1277,7 @@ def reconstruct_tracks(
                                                                                             expressions, distance splits, and time splits. This parameter 
                                                                                             is only available with ArcGIS Enterprise 10.9 and later.
 
-                                                                                            - `Gap` - No segment is created between the two features.
+                                                                                            - `Gap` - No segment is created between the two features. This is the default when `None` is specified.
                                                                                             - `FinishLast` - A segment is created between the two features that ends after the split.
                                                                                             - `StartNext` - A segment is created between the two features that ends before the split.
                                                                                             
