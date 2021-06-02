@@ -86,6 +86,7 @@ class GIS(object):
     Additionally, the ``GIS`` object has properties to query its state, which is accessible using the properties attribute.
 
     .. note::
+
         The ``GIS`` provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
         as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
         Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
@@ -102,13 +103,16 @@ class GIS(object):
     specifying a profile name. The profile stores all of the authorization credentials (except the password) in the
     user's home directory in an unencrypted config file named .arcgisprofile. The profile securely stores the password
     in an O.S. specific password manager through the `keyring <https://pypi.python.org/pypi/keyring>`_ python module.
+
     .. note::
         Linux systems may need additional software installed and configured for proper security.
 
     Once a profile has been saved, passing the profile parameter by itself uses the authorization credentials saved
-    in the configuration file/password manager by that profile name. Multiple profiles can be created and used in parallel.
+    in the configuration file/password manager by that profile name. Multiple profiles can be created and used in
+    parallel.
 
-    See `Working with different authentication schemes <https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/>`_
+    See `Working with different authentication schemes
+    <https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/>`_
     in the ARCGIS API for Python guide for examples.
 
 
@@ -936,7 +940,8 @@ class GIS(object):
 
         .. note::
             For examples of the property names and key/values to use when updating utility services,
-            refer to the `Common parameters <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm>`_
+            refer to the `Common parameters
+            <https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm>`_
             page in the ArcGIS REST API.
 
         .. code-block:: python
@@ -1143,7 +1148,7 @@ class GIS(object):
         to the specified zoomlevel. See :class:`~arcgis.widgets.MapView` for more information.
 
         .. note::
-            Note: The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
+            The map widget is only supported within a Jupyter Notebook. IE11 is no longer supported.
             Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
         ==================     ====================================================================
@@ -1156,23 +1161,34 @@ class GIS(object):
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ------------------     --------------------------------------------------------------------
         geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
-                               See the `Understanding geocoders <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
+                               See the `Understanding geocoders
+                               <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
                                page in the ArcGIS API for Python guide for more information.
         ==================     ====================================================================
 
 
-        :return:
-          The map widget (the widget is displayed in Jupyter Notebook when queried).
-
         .. note::
-            Note: If the Jupyter Notebook server is running over http, you need to
+            If the Jupyter Notebook server is running over http, you need to
             configure your ArcGIS Enterprise portal or ArcGIS Online organization to allow your host and port; or else
             you will run into CORS issues when displaying this map widget.
 
             This can be accomplished by signing into your ArcGIS Enterprise portal or ArcGIS Online organization in a
             browser, then navigating to:
 
-            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888
+            (replace with the host/port you are running on)
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis = GIS(url="http://pythonplayground.esri.com/portal",
+                          username="user1", password="password1")
+
+            >>> gis.map("Durham,NC")
+
+        :return:
+          The map widget (the widget is displayed in Jupyter Notebook when queried).
         """
         try:
             from arcgis.widgets import MapView
@@ -1247,486 +1263,6 @@ class GIS(object):
             mapwidget.zoom = zoomlevel
 
         return mapwidget
-
-
-###########################################################################
-class Datastore(dict):
-    """
-    The ``Datastore`` class represents a datastore (folder, database or bigdata fileshare) within the GIS's data store.
-    See the :class:`~arcgis.gis.server.admin.administration.Datastore` for more information on datastores.
-    """
-
-    def __init__(self, datastore, path):
-        dict.__init__(self)
-        self._datastore = datastore
-        self._portal = datastore._portal
-        self._admin_url = datastore._admin_url
-
-        self.datapath = path
-
-        params = {"f": "json"}
-        path = self._admin_url + "/data/items" + self.datapath
-
-        datadict = self._portal.con.post(path, params, verify_cert=False)
-
-        if datadict:
-            self.__dict__.update(datadict)
-            super(Datastore, self).update(datadict)
-
-    def __getattr__(
-        self, name
-    ):  # support group attributes as group.access, group.owner, group.phone etc
-        try:
-            return dict.__getitem__(self, name)
-        except:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
-            )
-
-    def __getitem__(
-        self, k
-    ):  # support group attributes as dictionary keys on this object, eg. group['owner']
-        try:
-            return dict.__getitem__(self, k)
-        except KeyError:
-            params = {"f": "json"}
-            path = self._admin_url + "/data/items" + self.datapath
-
-            datadict = self._portal.con.post(path, params, verify_cert=False)
-            super(Datastore, self).update(datadict)
-            self.__dict__.update(datadict)
-            return dict.__getitem__(self, k)
-
-    def __str__(self):
-        return self.__repr__()
-        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        # return '\n'.join(state)
-
-    def __repr__(self):
-        return '<%s title:"%s" type:"%s">' % (type(self).__name__, self.path, self.type)
-
-    @property
-    def manifest(self):
-        """
-        The ``manifest`` method retrieves or sets the manifest resource for bigdata fileshares, as a dictionary.
-        """
-        data_item_manifest_url = (
-            self._admin_url + "/data/items" + self.datapath + "/manifest"
-        )
-
-        params = {
-            "f": "json",
-        }
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
-        return res
-
-    @manifest.setter
-    def manifest(self, value):
-        """
-        The ``manifest`` property updates the manifest resource for bigdata file shares.
-        """
-        manifest_upload_url = (
-            self._admin_url + "/data/items" + self.datapath + "/manifest/update"
-        )
-
-        with _tempinput(json.dumps(value)) as tempfilename:
-            # Build the files list (tuples)
-            files = []
-            files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
-
-            postdata = {"f": "pjson"}
-
-            resp = self._portal.con.post(
-                manifest_upload_url, postdata, files, verify_cert=False
-            )
-
-            if resp["status"] == "success":
-                return True
-            else:
-                print(str(resp))
-                return False
-
-    @property
-    def ref_count(self):
-        """
-        The ``ref_count`` property lets the total number of references to this data item that exists on the server.
-        This property can be used to determine if this data item can be safely deleted or taken down for maintenance.
-        """
-        data_item_manifest_url = self._admin_url + "/data/computeTotalRefCount"
-
-        params = {"f": "json", "itemPath": self.datapath}
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
-        return res["totalRefCount"]
-
-    def delete(self):
-        """
-        The ``delete`` method unregisters this data item from the datastore.
-
-        :return:
-           A boolean indicating success (True) or failure (False).
-
-        """
-        params = {"f": "json", "itempath": self.datapath, "force": True}
-        path = self._admin_url + "/data/unregisterItem"
-
-        resp = self._portal.con.post(path, params, verify_cert=False)
-        if resp:
-            return resp.get("success")
-        else:
-            return False
-
-    def update(self, item):
-        """
-        The ``update`` method edits this data item to update its connection information.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item                Required dictionary. The representation of the updated item.
-        ===============     ====================================================================
-
-
-        :return:
-           A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json", "item": item}
-        path = self._admin_url + "/data/items" + self.datapath + "/edit"
-
-        resp = self._portal.con.post(path, params, verify_cert=False)
-        if resp["status"] == "success":
-            return True
-        else:
-            return False
-
-    # ----------------------------------------------------------------------
-    def regenerate(self):
-        """
-        The ``regenerate`` method is used to regenerate the manifest for a big data file share. You can
-        regenerate a manifest if you have added new data or if you have
-        uploaded a hints file using the edit resource.
-
-        :returns:
-            A boolean indicating success (True), or failure (False)
-
-        """
-        url = self._admin_url + "/data/items" + self.datapath + "/manifest/regenerate"
-        params = {"f": "json"}
-        res = self._portal.con.post(url, params)
-        if isinstance(res, dict):
-            if "success" in res:
-                return res["success"]
-            if "status" in res:
-                return res["status"] == "success"
-        return res
-
-    # ----------------------------------------------------------------------
-    def validate(self):
-        """
-        The ``validate`` method is used to validate that this data item's path (for file shares) or
-        connection string (for databases) is accessible to every server node in the site.
-
-        :return:
-           A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json"}
-        path = self._admin_url + "/data/items" + self.datapath
-
-        datadict = self._portal.con.post(path, params, verify_cert=False)
-
-        params = {"f": "json", "item": datadict}
-        path = self._admin_url + "/data/validateDataItem"
-
-        res = self._portal.con.post(path, params, verify_cert=False)
-        if isinstance(res, dict):
-            if "success" in res:
-                return res["success"]
-            if "status" in res:
-                return res["status"] == "success"
-        return res
-
-    @property
-    def datasets(self):
-        """
-        The ``datasets`` property retrieves the datasets in the data store, returning them as a dictionary
-        (currently implemented for big data file shares).
-
-        :return:
-            A dictionary
-
-        """
-        data_item_manifest_url = (
-            self._admin_url + "/data/items" + self.datapath + "/manifest"
-        )
-
-        params = {
-            "f": "json",
-        }
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
-
-        return res["datasets"]
-
-
-###########################################################################
-class GroupMigrationManager(object):
-    """
-    The ``GroupMigrationManager`` class allows groups to export and import data to and from EPK files.
-    """
-
-    _con = None
-    _gis = None
-    _group = None
-
-    def __init__(self, group):
-        """initializer"""
-        assert isinstance(group, Group)
-        self._group = group
-        self._gis = group._gis
-        self._con = group._gis._con
-
-    # ----------------------------------------------------------------------
-    def _from_package(
-        self,
-        item,
-        item_id_list=None,
-        preview_only=False,
-        run_async=False,
-        overwrite=False,
-        folder_id=None,
-        folder_owner=None,
-    ):
-        """
-        Imports an EPK Item to a Group.  This will import items associated with this group.
-
-        :returns: Boolean
-        """
-        if self._gis.users.me.role == "org_admin":
-            try_json = True
-            if preview_only:
-                try_json = False
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
-            if isinstance(item, Item):
-                item = item.itemid
-            params = {
-                "f": "json",
-                "itemId": item,
-            }
-            if item_id_list:
-                params["itemIdList"] = item_id_list
-            if overwrite is not None:
-                params["overwriteExistingItems"] = overwrite
-            if preview_only:
-                params["previewOnly"] = preview_only
-            if run_async:
-                params["async"] = run_async
-            if folder_id and self._gis.version >= [8, 4]:
-                params["folderId"] = folder_id
-            if folder_owner and self._gis.version >= [8, 4]:
-                params["folderOwnerUsername"] = folder_owner
-            return self._con.post(url, params, try_json=try_json)
-
-        else:
-            raise Exception("Must be an administror to perform this action")
-        pass
-
-    # ----------------------------------------------------------------------
-    def _status(self, job_id, key=None):
-        """
-        Checks the status of an export job
-        """
-        import time
-
-        params = {}
-        if job_id:
-            url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
-            params["f"] = "json"
-            res = self._con.post(url, params)
-            while res["status"] not in ["completed", "complete"]:
-                res = self._con.post(url, params)
-                if res["status"] == "failed":
-                    raise Exception(res)
-                time.sleep(2)
-            return res
-        else:
-            raise Exception(res)
-
-    # ----------------------------------------------------------------------
-    def create(self, items=None, future: bool = True):
-        """
-        The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
-
-        `EPK Items` are intended to migrate content from an enterprise deployment to a new
-        enterprise. Once an `EPK Item` is created using this method, you can use the `load`
-        to ingest the package's content into the target enterprise. If your package
-        contains web maps, web-mapping applications, and/or associated web layers, during
-        the import operation, the method will takes care of swizzling the service URLs and
-        item IDs correctly.
-
-        .. note::
-            There are some limits to this functionality. Packages should be under 10 GB in size
-            and only hosted feature layers, web maps, web-mapping apps, and other text-based
-            items are supported. You need to have **administrative** privileges to run this
-            operation.
-
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
-        ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
-        ==================     ====================================================================
-
-        :returns:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
-
-        """
-        if self._gis.users.me.role == "org_admin":
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
-            if items and isinstance(items, (list, tuple)):
-                items = ",".join([i.id if isinstance(i, Item) else i for i in items])
-            else:
-                items = None
-            params = {"itemIdList": items}
-
-            params["async"] = json.dumps(True)
-            res = self._gis._con.post(url, params)
-            executor = concurrent.futures.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._status, **{"job_id": res["jobId"], "key": res["key"]}
-            )
-            executor.shutdown(False)
-            job = StatusJob(
-                future=futureobj,
-                op="Export Group Content",
-                jobid=res["jobId"],
-                gis=self._gis,
-                notify=arcgis.env.verbose,
-            )
-            if future:
-                return job
-            else:
-                return job.result()
-        else:
-            raise Exception("Must be an administror to perform this action")
-
-    # ----------------------------------------------------------------------
-    def load(
-        self,
-        epk_item,
-        item_ids: list = None,
-        overwrite: bool = True,
-        future: bool = True,
-        folder_id: str = None,
-        folder_owner: str = None,
-    ):
-        """
-        The ``load`` method imports the EPK content into the current :class:`~arcgis.gis.Group`.
-
-        .. note::
-            Administrative privileges are required to run this operation.
-            Once imported, items will be owned by the importer, and will have
-            to be manually reassigned to the proper owner if needed.
-
-
-        ================  ===============================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
-        ----------------  -------------------------------------------------------------------------------
-        item_ids          Optional list. A list of item IDs to import to the organization.
-        ----------------  -------------------------------------------------------------------------------
-        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use
-                          already, it will delete the old item and replace it with this one.
-        ----------------  -------------------------------------------------------------------------------
-        future            Optional bool. When True, the `load` will return a `Job` object and will not
-                          pause the current thread.  When `False` `load` will occur in a synchronous
-                          fashion pausing the thread.  If you are loading large amounts of data, set
-                          future to `True` to reduce time.
-        ----------------  -------------------------------------------------------------------------------
-        folder_id         Optional String. In ArcGIS Online and Enterprise 10.9+, a user can specify the destination folder ID for the items.
-        ----------------  -------------------------------------------------------------------------------
-        folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
-        ================  ===============================================================================
-
-        :returns:
-            A dictionary --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
-
-        """
-        assert isinstance(epk_item, Item)
-        if isinstance(item_ids, list):
-            item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
-        if isinstance(epk_item, Item) and epk_item.type == "Export Package":
-            res = self._from_package(
-                item=epk_item,
-                item_id_list=item_ids,
-                preview_only=False,
-                run_async=True,
-                overwrite=overwrite,
-                folder_id=folder_id,
-                folder_owner=folder_owner,
-            )
-            executor = concurrent.futures.ThreadPoolExecutor(1)
-            futureobj = executor.submit(
-                self._status, **{"job_id": res["jobId"], "key": res["key"]}
-            )
-            executor.shutdown(False)
-            job = StatusJob(
-                future=futureobj,
-                op="Export Group Content",
-                jobid=res["jobId"],
-                gis=self._gis,
-                notify=arcgis.env.verbose,
-            )
-            if future:
-                return job
-            else:
-                return job.result()
-        else:
-            raise Exception(f"Invalid Item {epk_item.type}")
-        return None
-
-    # ----------------------------------------------------------------------
-    def inspect(self, epk_item) -> dict:
-        """
-        The ``inspect`` method retrieves the contents of the EPK Package
-
-        ================  ===============================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
-
-        ================  ===============================================================================
-
-        :returns:
-            A dictionary containing the contents of the EPK Package
-
-        """
-        if isinstance(epk_item, Item) and epk_item.type == "Export Package":
-            try:
-                import time
-
-                self._from_package(epk_item.itemid, preview_only=True, run_async=False)
-                time.sleep(2)
-            except:
-                pass
-            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/importPreview/{epk_item.itemid}"
-            params = {"f": "json", "start": 1, "num": 25}
-            res = self._con.post(url, params)
-            results = res["results"]
-            while res["nextStart"] > 0:
-                params["start"] = res["nextStart"]
-                res = self._con.post(url, params)
-                results.extend(res["results"])
-                if res["nextStart"] == -1:
-                    break
-            res["results"] = results
-            return res
-
-        else:
-            raise Exception("Invalid Item Type.")
-        return None
 
 
 ###########################################################################
@@ -9587,6 +9123,7 @@ class Item(dict):
 
     Items that have layers (eg FeatureLayerCollection items and ImageryLayer items) and tables have
     the dynamic ``layers`` and ``tables`` properties to get to the individual layers/tables in this item.
+
     """
 
     _uid = None
@@ -9655,7 +9192,7 @@ class Item(dict):
     @_lazy_property
     def resources(self):
         """
-        The ``resources`` proerty returns the Item's Resource Manager
+        The ``resources`` property returns the Item's Resource Manager
 
         :returns: A :class:`~arcgis.gis.ResourceManager` object
         """
@@ -9946,9 +9483,9 @@ class Item(dict):
         owner=None,
     ):
         """
-        The ``copy_feature_layer_collection`` method allows users to copy existing Feature Layer Collections and select the
-        layers/tables that the user wants in the service. It is quite similar to the ``copy`` method, but only copies
-        the selected Feature Layer Collections.
+        The ``copy_feature_layer_collection`` method allows users to copy existing Feature Layer Collections and select
+        the layers/tables that the user wants in the service. It is quite similar to the ``copy`` method, but only
+        copies the selected Feature Layer Collections.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -10130,7 +9667,6 @@ class Item(dict):
         file_name           Optional string. The name of the file.
         ===============     ====================================================================
 
-
         :return:
            The download path if data was available, otherwise None.
         """
@@ -10183,7 +9719,7 @@ class Item(dict):
     ):
         """
         The ``export`` method is used to export a service item to the specified export format.
-        Hpwever, it is available only to users with an organizational subscription and can only be invoked by the
+        However, it is available only to users with an organizational subscription and can only be invoked by the
         service item owner or an administrator, unless a Location Tracking Service or Location Tracking View is used.
         The ``export`` method is useful for long running exports that could hold up a script.
 
@@ -10193,13 +9729,13 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         title               Required string. The desired name of the exported service item.
         ---------------     --------------------------------------------------------------------
-        export_format       Required string. The format to export the data to. Allowed types: 'Shapefile',
-                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML',
-                             'Excel', 'geoPackage', or 'Vector Tile Package'.
+        export_format       Required string. The format to export the data to. Allowed types: `Shapefile`,
+                            `CSV`, `File Geodatabase`, `Feature Collection`, `GeoJson`, `Scene Package`, `KML`,
+                             `Excel`, `geoPackage`, or `Vector Tile Package`.
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
-                            and the export parameters for each layer.and the export parameters for each layer. See `Export Item
-                            <https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm>`_
+                            and the export parameters for each layer.and the export parameters for each layer. See
+                            `Export Item <https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm>`_
                             in the REST API for guidance.
         ---------------     --------------------------------------------------------------------
         wait                Optional boolean. Default is True, which forces a wait for the
@@ -10220,7 +9756,6 @@ class Item(dict):
         overwrite           Optional Boolean. If the export Item exists, the item will be
                             replaced with the new one.
         ===============     ====================================================================
-
 
         :return:
            An :class:`~arcgis.gis.Item` object or a dictionary.  Item is returned when `wait=True`.
@@ -10294,11 +9829,11 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def status(self, job_id=None, job_type=None):
         """
-        The ``status`` method provides the status of an Item in the following situations:
-            1. Publishing an Item
-            2. Adding an Item in async mode
-            3. Adding with a multipart upload. `Partial` is available for ``Add Item Multipart`` when only a part is uploaded
-            and the :class:`~arcgis.gis.Item` object is not committed.
+        The ``status`` method provides the status of an :class:`~arcgis.gis.Item` in the following situations:
+            1. Publishing an :class:`~arcgis.gis.Item`
+            2. Adding an :class:`~arcgis.gis.Item` in async mode
+            3. Adding with a multipart upload. `Partial` is available for ``Add Item Multipart`` when only a part is
+            uploaded and the :class:`~arcgis.gis.Item` object is not committed.
 
 
         ===============     ====================================================================
@@ -10310,9 +9845,8 @@ class Item(dict):
         job_type            Optional string. The type of asynchronous job for which the status
                             has to be checked. Default is none, which checks the item's status.
                             This parameter is optional unless used with the operations listed
-                            below. Values: `publish`, generateFeatures, export, and createService
+                            below. Values: `publish`, `generateFeatures`, `export`, and `createService`
         ===============     ====================================================================
-
 
         :return:
            The status of a publishing :class:`~arcgis.gis.Item` object.
@@ -10891,13 +10425,13 @@ class Item(dict):
         ================  =========================================================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
-        groups            Optional list of group names as strings, or a list of arcgis.gis.Group objects,
+        groups            Optional list of group names as strings, or a list of :class:`~arcgis.gis.Group` objects,
                           or a comma-separated list of group IDs.
         ================  =========================================================================================
 
 
         :return:
-            A Dictionary containing the key "notUnsharedFrom" containing array of groups from which the item
+            A Dictionary containing the key `notUnsharedFrom` containing array of groups from which the item
             could not be unshared.
         """
         try:
@@ -11022,8 +10556,8 @@ class Item(dict):
 
     def create_thumbnail(self, update=True):
         """
-        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's symbology
-        and the print service registered for the enterprise.
+        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
+        symbology and the print service registered for the enterprise.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -11129,8 +10663,8 @@ class Item(dict):
         return res
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
-        """ The ``update`` method updates an item in a Portal.
-
+        """
+        The ``update`` method updates an item in a Portal.
 
         .. note::
             The content can be a file (such as a layer package, geoprocessing package,
@@ -11164,9 +10698,9 @@ class Item(dict):
         =================  =====================================================================
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
-        type               Optional string. Indicates type of item, see URL 1 below for valid values.
+        type               Optional string. Indicates type of item, see the link below for valid values.
         -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
@@ -11199,8 +10733,9 @@ class Item(dict):
 
 
        .. note::
-            See `Items and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_ in
-            the ArcGIS REST API documentation for more details.
+            See `Items and Item Types
+            <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
+            in the ArcGIS REST API documentation for more details.
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -11245,7 +10780,7 @@ class Item(dict):
         """
 
         .. note::
-            The ``usage`` method is avaiable for ArcGIS Online Only.
+            The ``usage`` method is available for ArcGIS Online Only.
 
         For item owners and administrators, the ``usage`` method provides usage details about an item that help you
         gauge its popularity. Usage details show how many times the item has been used for the time
@@ -11254,7 +10789,7 @@ class Item(dict):
         the average number of views, requests, or downloads per day.
 
         Views refers to the number of times the item has been viewed or opened. For maps, scenes,
-        nonhosted layers, and web apps, the view count is increased by one when you open the item
+        non-hosted layers, and web apps, the view count is increased by one when you open the item
         page or open the item in Map Viewer. For example, if you opened the item page for a map
         image layer and clicked Open in Map Viewer, the count would increase by two. For other items
         such as mobile apps, KML, and so on, the view count is increased by one when you open the
@@ -11487,7 +11022,8 @@ class Item(dict):
 
         .. note::
             This call may return different results for different item types: some item types may even return *None*. See
-            `Working with users, groups, and items <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
+            `Working with users, groups, and items
+            <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
             in the ArcGIS REST API for more information.
 
         ===============     ====================================================================
@@ -11498,7 +11034,6 @@ class Item(dict):
                             (use json.dumps(data) to convert the dictionary to a string),
                             otherwise the data is returned as a string.
         ===============     ====================================================================
-
 
         :return:
            Dependent on the content type of the data.
@@ -11597,7 +11132,6 @@ class Item(dict):
         direction           Required string. One of ['forward', 'reverse']
         ===============     ====================================================================
 
-
         :return:
            The list of related items.
         """
@@ -11646,7 +11180,6 @@ class Item(dict):
                             for more information on this parameter.
         ===============     ====================================================================
 
-
         :return:
            A boolean indicating success (True), or failure (False)
         """
@@ -11680,6 +11213,11 @@ class Item(dict):
                             for more information on this parameter.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            item.delete_relationship(item2, 'Map2FeatureCollection')
 
         :return:
            A boolean indicating success (True), or failure (False)
@@ -11737,14 +11275,13 @@ class Item(dict):
         **Argument**           **Description**
         -------------------    ---------------------------------------------------------------
         publish_parameters     Optional dictionary. containing publish instructions and customizations.
-                               Cannot be combined with overwrite.  See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+                               Cannot be combined with overwrite.
+                               See `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
                                in the ArcGIS REST API for details.
         -------------------    ---------------------------------------------------------------
         address_fields         Optional dictionary. containing mapping of df columns to address fields,
-                               eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
         -------------------    ---------------------------------------------------------------
         output_type            Optional string.  Only used when a feature service is published as a tile service.
-                               eg: output_type='Tiles'
         -------------------    ---------------------------------------------------------------
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
                                Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
@@ -11768,15 +11305,14 @@ class Item(dict):
                                If the `item_id` is already being used, an error will be raised
                                during the `publish` process.
 
-                               Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===================    ===============================================================
-
 
         :return:
             An :class:`~arcgis.gis.Item` object corresponding to the published web layer.
 
         .. note::
-            For publish_parameters, see `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+            For publish_parameters, see `Publish Item
+            <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
             in the ArcGIS REST API for more details.
         """
 
@@ -12128,10 +11664,12 @@ class Item(dict):
 
         :return:
             A json object in the following format:
-            {"success": true | false,
-               "itemId": "<item id>",
-               "owner": "<owner username>",
-               "folder": "<folder id>"}
+            {
+            "success": true | false,
+            "itemId": "<item id>",
+            "owner": "<owner username>",
+            "folder": "<folder id>"
+            }
 
         """
         owner_name = self._user_id
@@ -12169,13 +11707,10 @@ class Item(dict):
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         title             Required string. The name of the new service.
-                          Example: "SeasideHeightsNJTiles"
         ----------------  ---------------------------------------------------------------
         min_scale         Required float. The smallest scale at which to view data.
-                          Example: 577790.0
         ----------------  ---------------------------------------------------------------
         max_scale         Required float. The largest scale at which to view data.
-                          Example: 80000.0
         ----------------  ---------------------------------------------------------------
         cache_info        Optional dictionary. If not none, administrator provides the
                           tile cache info for the service. The default is the ArcGIS Online scheme.
@@ -12498,9 +12033,8 @@ class Item(dict):
         comment             Required string. Text to be added as a comment to a specific item.
         ===============     ====================================================================
 
-
         :return:
-           Comment ID if successful, None if failure occurrs.
+           Comment ID if successful, None if failure occurs.
         """
         params = {"f": "json", "comment": comment}
         url = "%s/sharing/rest/content/items/%s/addComment" % (
@@ -12682,8 +12216,9 @@ class Item(dict):
         include_private=False,
     ):
         """
-        The ``copy_item`` operation creates a new `Item` that is a copy of the original `Item` on the server side. It is
-        quite similar to the ``copy`` method, but only creates a new `Item`.
+        The ``copy_item`` operation creates a new :class:`~arcgis.gis.Item` that is a copy of the original
+        :class:`~arcgis.gis.Item` on the server side. It is
+        quite similar to the ``copy`` method, but only creates a new :class:`~arcgis.gis.Item`.
 
         The `copy_item` method is allowed for the following:
 
@@ -12767,15 +12302,6 @@ class Item(dict):
             3. Sharing content by reference with groups
             4. Creating backup items.
 
-        **Usage Example**
-
-        >>> item.copy()
-        <Item title:"gisslideshow - Copy 94452b" type:Microsoft Powerpoint owner:geoguy>
-        >>> item.copy(title="GIS_Tutorial")
-        <Item title:"GIS_Tutorial" type:Microsoft Powerpoint owner:geoguy>
-        >>> item.copy()
-        <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
-
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -12796,9 +12322,20 @@ class Item(dict):
                                    those layers.  If nothing is provided, all layers will be
                                    visible.
 
-                                   Example: layers=[0,3]
-                                   Example 2: layers=[9]
         =======================    =============================================================
+
+         .. code-block:: python
+
+            **Usage Example**
+
+            >>> item.copy()
+            <Item title:"gisslideshow - Copy 94452b" type:Microsoft Powerpoint owner:geoguy>
+
+            >>> item.copy(title="GIS_Tutorial")
+            <Item title:"GIS_Tutorial" type:Microsoft Powerpoint owner:geoguy>
+
+            >>> item.copy()
+            <Item title:"NZTiles - Copy 021a06" type:Vector Tile Layer owner:geoguy>
 
         :returns: An :class:`~arcgis.gis.Item` object
 
@@ -13075,55 +12612,28 @@ class Item(dict):
                             custom URI scheme where the code can be delivered.
 
                             The value is a JSON string array.
-
-                            Example:
-
-                            [
-                                "https://app.example.com",
-                                "urn:ietf:wg:oauth:2.0:oob"
-                            ]
         ---------------     --------------------------------------------------------------------
         http_referers       Optional List. A list of the http referrers for which usage of the
-                            API Key will be restricted to.
+                            :class:`~arcgis.gis._impl.APIKey` will be restricted to.
 
-                            **Example**
-
-                            ```
-                            [
-                            "https://foo.com",
-                            "https://bar.com"
-                            ]
-                            ```
-
-                            Note: Http Referrers can be configured for non apiKey type apps as
-                            well. The list configured here will be used to validate the app
-                            tokens sent in while accessing the sharing API. The referrer checks
-                            will not be applied to user tokens.
+                            .. note::
+                                Http Referrers can be configured for non apiKey type apps as
+                                well. The list configured here will be used to validate the app
+                                tokens sent in while accessing the sharing API. The referrer checks
+                                will not be applied to user tokens.
         ---------------     --------------------------------------------------------------------
         privileges          Optional List. A list of the privileges that will be available for
-                            this API key.
+                            this :class:`~arcgis.gis._impl.APIKey`.
 
-                            **Example**
-
-                            ```
-
-                            [
-                                 "portal:apikey:basemaps",
-                                 "portal:app:access:item:itemId",
-                                 "premium:user:geocode",
-                                 "premium:user:networkanalysis"
-                            ]
-
-                            ```
-                            Note: Privileges can be configured for non  `API Key` type apps as
-                            well. The list configured here will be used to grant access to items
-                            when item endpoint is accessed with app tokens. The checks will not
-                            be applied to user tokens and they can continue accessing items
-                            based on the current item sharing model. With app tokens, all items
-                            of app owner can be accessed if the privileges list is not
-                            configured.
+                            .. note::
+                                Privileges can be configured for non  `API Key` type apps as
+                                well. The list configured here will be used to grant access to items
+                                when item endpoint is accessed with app tokens. The checks will not
+                                be applied to user tokens and they can continue accessing items
+                                based on the current item sharing model. With app tokens, all items
+                                of app owner can be accessed if the privileges list is not
+                                configured.
         ===============     ====================================================================
-
 
         :return: A dictionary
 
