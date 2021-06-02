@@ -6153,7 +6153,7 @@ def aggregate(
                                 You may also pass custom aggregation function. 
                                 Create an RFT object out of the raster function template item on the portal and 
                                 specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
-                                aggregation_method.
+                                aggregation_function.
 
     :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
                                         will be aggregated.
