@@ -14,10 +14,16 @@ import numpy as np
 from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
-from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names, read_feather
+from ._io.fileops import (
+    to_featureclass,
+    from_featureclass,
+    _sanitize_column_names,
+    read_feather,
+)
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
 def _is_geoenabled(df):
@@ -29,36 +35,45 @@ def _is_geoenabled(df):
     :returns: boolean
     """
     try:
-        if isinstance(df, pd.DataFrame) and \
-           hasattr(df, 'spatial') and \
-           df.spatial.name and \
-           df[df.spatial.name].dtype.name.lower() == 'geometry':
+        if (
+            isinstance(df, pd.DataFrame)
+            and hasattr(df, "spatial")
+            and df.spatial.name
+            and df[df.spatial.name].dtype.name.lower() == "geometry"
+        ):
             return True
         else:
             return False
     except:
         return False
+
+
 ###########################################################################
 @pd.api.extensions.register_series_accessor("geom")
 class GeoSeriesAccessor:
     """
     """
+
     _data = None
     _index = None
     _name = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, obj):
         """initializer"""
         self._validate(obj)
         self._data = obj.values
         self._index = obj.index
         self._name = obj.name
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def _validate(obj):
         if not is_geometry_type(obj):
-            raise AttributeError("Cannot use 'geom' accessor on objects of "
-                                 "dtype '{}'.".format(obj.dtype))
+            raise AttributeError(
+                "Cannot use 'geom' accessor on objects of "
+                "dtype '{}'.".format(obj.dtype)
+            )
+
     ##---------------------------------------------------------------------
     ##   Accessor Properties
     ##---------------------------------------------------------------------
@@ -69,9 +84,9 @@ class GeoSeriesAccessor:
 
         :returns: float in a series
         """
-        return pd.Series(self._data.area, name='area', index=self._index)
+        return pd.Series(self._data.area, name="area", index=self._index)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """
@@ -79,8 +94,9 @@ class GeoSeriesAccessor:
 
         :returns: arcpy.Geometry in a series
         """
-        return pd.Series(self._data.as_arcpy, name='as_arcpy', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.as_arcpy, name="as_arcpy", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def as_shapely(self):
         """
@@ -88,8 +104,9 @@ class GeoSeriesAccessor:
 
         :returns: shapely.Geometry in a series
         """
-        return pd.Series(self._data.as_shapely, name='as_shapely', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.as_shapely, name="as_shapely", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def centroid(self):
         """
@@ -97,8 +114,9 @@ class GeoSeriesAccessor:
 
         :returns: tuple (x,y) in series
         """
-        return pd.Series(self._data.centroid, name='centroid', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.centroid, name="centroid", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def extent(self):
         """
@@ -106,8 +124,9 @@ class GeoSeriesAccessor:
 
         :returns: tuple (xmin,ymin,xmax,ymax) in series
         """
-        return pd.Series(self._data.extent, name='extent', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.extent, name="extent", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def first_point(self):
         """
@@ -115,8 +134,9 @@ class GeoSeriesAccessor:
 
         :returns: Geometry
         """
-        return pd.Series(self._data.first_point, name='first_point', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.first_point, name="first_point", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def geoextent(self):
         """
@@ -124,10 +144,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of Floats
         """
-        #res = self._data.geoextent
-        #res.index = self._index
-        return pd.Series(self._data.geoextent, name='geoextent', index=self._index)
-    #----------------------------------------------------------------------
+        # res = self._data.geoextent
+        # res.index = self._index
+        return pd.Series(self._data.geoextent, name="geoextent", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
         """
@@ -135,8 +156,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        return pd.Series(self._data.geometry_type, name='geometry_type', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.geometry_type, name="geometry_type", index=self._index
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
         """
@@ -144,8 +168,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        return pd.Series(self._data.hull_rectangle, name='hull_rectangle', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.hull_rectangle, name="hull_rectangle", index=self._index
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def has_z(self):
         """
@@ -153,8 +180,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Boolean
         """
-        return pd.Series(self._data.has_z, name='has_z', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.has_z, name="has_z", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def has_m(self):
         """
@@ -162,8 +190,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Boolean
         """
-        return pd.Series(self._data.has_m, name='has_m', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.has_m, name="has_m", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def is_empty(self):
         """
@@ -171,8 +200,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        return pd.Series(self._data.is_empty, name='is_empty', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.is_empty, name="is_empty", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def is_multipart(self):
         """
@@ -180,8 +210,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        return pd.Series(self._data.is_multipart, name='is_multipart', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.is_multipart, name="is_multipart", index=self._index
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def is_valid(self):
         """
@@ -189,8 +222,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        return pd.Series(self._data.is_valid, name='is_valid', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.is_valid, name="is_valid", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def JSON(self):
         """
@@ -198,8 +232,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        return pd.Series(self._data.JSON, name='JSON', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.JSON, name="JSON", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def label_point(self):
         """
@@ -207,8 +242,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Geometries
         """
-        return pd.Series(self._data.label_point, name='label_point', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.label_point, name="label_point", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def last_point(self):
         """
@@ -216,8 +252,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Geometry
         """
-        return pd.Series(self._data.last_point, name='last_point', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.last_point, name="last_point", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def length(self):
         """
@@ -225,8 +262,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of float
         """
-        return pd.Series(self._data.length, name='length', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.length, name="length", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def length3D(self):
         """
@@ -234,8 +272,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of float
         """
-        return pd.Series(self._data.length3D, name='length3D', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.length3D, name="length3D", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def part_count(self):
         """
@@ -243,8 +282,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Integer
         """
-        return pd.Series(self._data.part_count, name='part_count', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.part_count, name="part_count", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def point_count(self):
         """
@@ -252,8 +292,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Integer
         """
-        return pd.Series(self._data.part_count, name='point_count', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.part_count, name="point_count", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def spatial_reference(self):
         """
@@ -261,8 +302,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of SpatialReference
         """
-        return pd.Series(self._data.spatial_reference, name='spatial_reference', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.spatial_reference, name="spatial_reference", index=self._index
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def true_centroid(self):
         """
@@ -270,8 +314,11 @@ class GeoSeriesAccessor:
 
         :returns: Series of Points
         """
-        return pd.Series(self._data.true_centroid, name='true_centroid', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.true_centroid, name="true_centroid", index=self._index
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def WKB(self):
         """
@@ -279,8 +326,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Bytes
         """
-        return pd.Series(self._data.WKB, name='WKB', index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.WKB, name="WKB", index=self._index)
+
+    # ----------------------------------------------------------------------
     @property
     def WKT(self):
         """
@@ -288,7 +336,8 @@ class GeoSeriesAccessor:
 
         :returns: Series of String
         """
-        return pd.Series(self._data.WKT, name='WKT', index=self._index)
+        return pd.Series(self._data.WKT, name="WKT", index=self._index)
+
     ##---------------------------------------------------------------------
     ##  Accessor Geometry Method
     ##---------------------------------------------------------------------
@@ -311,20 +360,21 @@ class GeoSeriesAccessor:
 
         :returns: a tuple of angle and distance to another point using a measurement type.
         """
-        res = self._data.angle_distance_to(**{'second_geometry' : second_geometry,
-                                               'method' : method})
-        return pd.Series(res, index=self._index, name='angle_distance_to')
-    #----------------------------------------------------------------------
+        res = self._data.angle_distance_to(
+            **{"second_geometry": second_geometry, "method": method}
+        )
+        return pd.Series(res, index=self._index, name="angle_distance_to")
+
+    # ----------------------------------------------------------------------
     def boundary(self):
         """
         Constructs the boundary of the geometry.
 
         :returns: arcgis.geometry.Polyline
         """
-        return pd.Series(self._data.boundary(),
-                         index=self._index,
-                         name='boundary')
-    #----------------------------------------------------------------------
+        return pd.Series(self._data.boundary(), index=self._index, name="boundary")
+
+    # ----------------------------------------------------------------------
     def buffer(self, distance):
         """
         Constructs a polygon at a specified distance from the geometry.
@@ -339,10 +389,13 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polygon
         """
-        return pd.Series(self._data.buffer(**{'distance' : distance}),
-                         index=self._index,
-                         name='buffer')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.buffer(**{"distance": distance}),
+            index=self._index,
+            name="buffer",
+        )
+
+    # ----------------------------------------------------------------------
     def clip(self, envelope):
         """
         Constructs the intersection of the geometry and the specified extent.
@@ -357,10 +410,11 @@ class GeoSeriesAccessor:
         :returns: output geometry clipped to extent
 
         """
-        return pd.Series(self._data.clip(**{'envelope' : envelope}),
-                         index=self._index,
-                         name='clip')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.clip(**{"envelope": envelope}), index=self._index, name="clip"
+        )
+
+    # ----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
         Indicates if the base geometry contains the comparison geometry.
@@ -379,21 +433,25 @@ class GeoSeriesAccessor:
 
         :returns: boolean
         """
-        return pd.Series(self._data.contains(**{'second_geometry' : second_geometry,
-                                                'relation' : relation}),
-                         name='contains',
-                         index=self._index)
+        return pd.Series(
+            self._data.contains(
+                **{"second_geometry": second_geometry, "relation": relation}
+            ),
+            name="contains",
+            index=self._index,
+        )
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return pd.Series(self._data.convex_hull(),
-                         index=self._index,
-                         name='convex_hull')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.convex_hull(), index=self._index, name="convex_hull"
+        )
+
+    # ----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
         Indicates if the two geometries intersect in a geometry of a lesser
@@ -408,10 +466,13 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return pd.Series(self._data.crosses(**{'second_geometry' : second_geometry}),
-                         name='crosses',
-                         index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.crosses(**{"second_geometry": second_geometry}),
+            name="crosses",
+            index=self._index,
+        )
+
+    # ----------------------------------------------------------------------
     def cut(self, cutter):
         """
         Splits this geometry into a part left of the cutting polyline, and
@@ -426,10 +487,11 @@ class GeoSeriesAccessor:
         :returns: a list of two geometries
 
         """
-        return pd.Series(self._data.cut(**{'cutter' : cutter}),
-                         index=self._index,
-                         name='cut')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.cut(**{"cutter": cutter}), index=self._index, name="cut"
+        )
+
+    # ----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
         Creates a new geometry with added vertices
@@ -457,12 +519,15 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return pd.Series(self._data.densify(**{'method' : method,
-                                               'distance' : distance,
-                                               'deviation' : deviation}),
-                         index=self._index,
-                         name='densify')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.densify(
+                **{"method": method, "distance": distance, "deviation": deviation}
+            ),
+            index=self._index,
+            name="densify",
+        )
+
+    # ----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
         Constructs the geometry that is composed only of the region unique
@@ -479,10 +544,13 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return pd.Series(self._data.difference(**{'second_geometry' : second_geometry}),
-                         index=self._index,
-                         name='difference')
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.difference(**{"second_geometry": second_geometry}),
+            index=self._index,
+            name="difference",
+        )
+
+    # ----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
         Indicates if the base and comparison geometries share no points in
@@ -497,9 +565,10 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        res = self._data.disjoint(**{'second_geometry' : second_geometry})
-        return pd.Series(res, index=self._index, name='disjoint')
-    #----------------------------------------------------------------------
+        res = self._data.disjoint(**{"second_geometry": second_geometry})
+        return pd.Series(res, index=self._index, name="disjoint")
+
+    # ----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
         Returns the minimum distance between two geometries. If the
@@ -515,11 +584,10 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        res = self._data.distance_to(**{'second_geometry' : second_geometry})
-        return pd.Series(res,
-                         index=self._index,
-                         name='distance_to')
-    #----------------------------------------------------------------------
+        res = self._data.distance_to(**{"second_geometry": second_geometry})
+        return pd.Series(res, index=self._index, name="distance_to")
+
+    # ----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
         Indicates if the base and comparison geometries are of the same
@@ -536,10 +604,13 @@ class GeoSeriesAccessor:
 
 
         """
-        return pd.Series(self._data.equals(**{'second_geometry' : second_geometry}),
-                         name='equals',
-                         index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.equals(**{"second_geometry": second_geometry}),
+            name="equals",
+            index=self._index,
+        )
+
+    # ----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
         Creates a new simplified geometry using a specified maximum offset
@@ -554,11 +625,10 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        res = self._data.generalize(**{'max_offset' : max_offset})
-        return pd.Series(res,
-                         index=self._index,
-                         name='generalize')
-    #----------------------------------------------------------------------
+        res = self._data.generalize(**{"max_offset": max_offset})
+        return pd.Series(res, index=self._index, name="generalize")
+
+    # ----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
@@ -581,12 +651,10 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        res = self._data.get_area(**{'method' : method,
-                                      'units' : units})
-        return pd.Series(res,
-                         index=self._index,
-                         name='get_area')
-    #----------------------------------------------------------------------
+        res = self._data.get_area(**{"method": method, "units": units})
+        return pd.Series(res, index=self._index, name="get_area")
+
+    # ----------------------------------------------------------------------
     def get_length(self, method, units):
         """
         Returns the length of the feature using a measurement type.
@@ -608,12 +676,10 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        res = self._data.get_length(**{'method' : method,
-                                       'units' : units})
-        return pd.Series(res,
-                         index=self._index,
-                         name='get_length')
-    #----------------------------------------------------------------------
+        res = self._data.get_length(**{"method": method, "units": units})
+        return pd.Series(res, index=self._index, name="get_length")
+
+    # ----------------------------------------------------------------------
     def get_part(self, index=None):
         """
         Returns an array of point objects for a particular part of geometry
@@ -630,11 +696,10 @@ class GeoSeriesAccessor:
         :return: arcpy.Array
 
         """
-        res = self._data.get_part(**{'index' : index})
-        return pd.Series(res,
-                         index=self._index,
-                         name='get_part')
-    #----------------------------------------------------------------------
+        res = self._data.get_part(**{"index": index})
+        return pd.Series(res, index=self._index, name="get_part")
+
+    # ----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
         Constructs a geometry that is the geometric intersection of the two
@@ -660,11 +725,15 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return pd.Series(self._data.intersect(**{'second_geometry' : second_geometry,
-                                                'dimension' : dimension}),
-                         name='intersect',
-                         index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.intersect(
+                **{"second_geometry": second_geometry, "dimension": dimension}
+            ),
+            name="intersect",
+            index=self._index,
+        )
+
+    # ----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
         Returns a measure from the start point of this line to the in_point.
@@ -681,12 +750,12 @@ class GeoSeriesAccessor:
         :return: float
 
         """
-        res = self._data.measure_on_line(**{'second_geometry' : second_geometry,
-                                            'as_percentage' : as_percentage})
-        return pd.Series(res,
-                         index=self._index,
-                         name='measure_on_line')
-    #----------------------------------------------------------------------
+        res = self._data.measure_on_line(
+            **{"second_geometry": second_geometry, "as_percentage": as_percentage}
+        )
+        return pd.Series(res, index=self._index, name="measure_on_line")
+
+    # ----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
         Indicates if the intersection of the two geometries has the same
@@ -702,11 +771,14 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return pd.Series(self._data.overlaps(**{'second_geometry' : second_geometry}),
-                         name='overlaps',
-                         index=self._index)
-    #----------------------------------------------------------------------
-    def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
+        return pd.Series(
+            self._data.overlaps(**{"second_geometry": second_geometry}),
+            name="overlaps",
+            index=self._index,
+        )
+
+    # ----------------------------------------------------------------------
+    def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
@@ -729,13 +801,12 @@ class GeoSeriesAccessor:
 
 
         """
-        res = self._data.point_from_angle_and_distance(**{'angle' : angle,
-                                                           'distance' : distance,
-                                                           'method' : method})
-        return pd.Series(res,
-                         index=self._index,
-                         name='point_from_angle_and_distance')
-    #----------------------------------------------------------------------
+        res = self._data.point_from_angle_and_distance(
+            **{"angle": angle, "distance": distance, "method": method}
+        )
+        return pd.Series(res, index=self._index, name="point_from_angle_and_distance")
+
+    # ----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
         Returns a point on a line at a specified distance from the beginning
@@ -756,12 +827,12 @@ class GeoSeriesAccessor:
         :return: Geometry
 
         """
-        res = self._data.position_along_line(**{'value' : value,
-                                                'use_percentage' : use_percentage})
-        return pd.Series(res,
-                         index=self._index,
-                         name='position_along_line')
-    #----------------------------------------------------------------------
+        res = self._data.position_along_line(
+            **{"value": value, "use_percentage": use_percentage}
+        )
+        return pd.Series(res, index=self._index, name="position_along_line")
+
+    # ----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
@@ -777,14 +848,16 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Geometry
         """
-        res = self._data.project_as(**{'spatial_reference' : spatial_reference,
-                                       'transformation_name' : transformation_name})
-        return pd.Series(res,
-                         index=self._index,
-                         name='project_as')
-    #----------------------------------------------------------------------
-    def query_point_and_distance(self, second_geometry,
-                                 use_percentage=False):
+        res = self._data.project_as(
+            **{
+                "spatial_reference": spatial_reference,
+                "transformation_name": transformation_name,
+            }
+        )
+        return pd.Series(res, index=self._index, name="project_as")
+
+    # ----------------------------------------------------------------------
+    def query_point_and_distance(self, second_geometry, use_percentage=False):
         """
         Finds the point on the polyline nearest to the in_point and the
         distance between those points. Also returns information about the
@@ -803,14 +876,13 @@ class GeoSeriesAccessor:
         :return: tuple
 
         """
-        res = self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
-                                                      'use_percentage' : use_percentage})
-        return pd.Series(res,
-                         index=self._index,
-                         name='query_point_and_distance')
-    #----------------------------------------------------------------------
-    def segment_along_line(self, start_measure,
-                           end_measure, use_percentage=False):
+        res = self._data.query_point_and_distance(
+            **{"second_geometry": second_geometry, "use_percentage": use_percentage}
+        )
+        return pd.Series(res, index=self._index, name="query_point_and_distance")
+
+    # ----------------------------------------------------------------------
+    def segment_along_line(self, start_measure, end_measure, use_percentage=False):
         """
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
@@ -834,13 +906,16 @@ class GeoSeriesAccessor:
         :returns: Geometry
 
         """
-        res = self._data.segment_along_line(**{'start_measure' : start_measure,
-                                               'end_measure' : end_measure,
-                                               'use_percentage' : use_percentage})
-        return pd.Series(res,
-                         index=self._index,
-                         name='segment_along_line')
-    #----------------------------------------------------------------------
+        res = self._data.segment_along_line(
+            **{
+                "start_measure": start_measure,
+                "end_measure": end_measure,
+                "use_percentage": use_percentage,
+            }
+        )
+        return pd.Series(res, index=self._index, name="segment_along_line")
+
+    # ----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
         Returns a new point based on in_point snapped to this geometry.
@@ -854,12 +929,11 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
 
         """
-        res = self._data.snap_to_line(**{'second_geometry' : second_geometry})
-        return pd.Series(res,
-                         index=self._index,
-                         name='snap_to_line')
-    #----------------------------------------------------------------------
-    def symmetric_difference (self, second_geometry):
+        res = self._data.snap_to_line(**{"second_geometry": second_geometry})
+        return pd.Series(res, index=self._index, name="snap_to_line")
+
+    # ----------------------------------------------------------------------
+    def symmetric_difference(self, second_geometry):
         """
         Constructs the geometry that is the union of two geometries minus the
         instersection of those geometries.
@@ -874,11 +948,10 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        res = self._data.symmetric_difference(**{'second_geometry' : second_geometry})
-        return pd.Series(res,
-                         index=self._index,
-                         name='symmetric_difference')
-    #----------------------------------------------------------------------
+        res = self._data.symmetric_difference(**{"second_geometry": second_geometry})
+        return pd.Series(res, index=self._index, name="symmetric_difference")
+
+    # ----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
         Indicates if the boundaries of the geometries intersect.
@@ -892,10 +965,13 @@ class GeoSeriesAccessor:
 
         :return: boolean
         """
-        return pd.Series(self._data.touches(**{'second_geometry' : second_geometry}),
-                         name='touches',
-                         index=self._index)
-    #----------------------------------------------------------------------
+        return pd.Series(
+            self._data.touches(**{"second_geometry": second_geometry}),
+            name="touches",
+            index=self._index,
+        )
+
+    # ----------------------------------------------------------------------
     def union(self, second_geometry):
         """
         Constructs the geometry that is the set-theoretic union of the input
@@ -910,11 +986,10 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        res = self._data.union(**{'second_geometry' : second_geometry})
-        return pd.Series(res,
-                         index=self._index,
-                         name='union')
-    #----------------------------------------------------------------------
+        res = self._data.union(**{"second_geometry": second_geometry})
+        return pd.Series(res, index=self._index, name="union")
+
+    # ----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
         Indicates if the base geometry is within the comparison geometry.
@@ -935,19 +1010,24 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return pd.Series(self._data.within(**{'second_geometry' : second_geometry,
-                                                'relation' : relation}),
-                         name='within',
-                         index=self._index)
+        return pd.Series(
+            self._data.within(
+                **{"second_geometry": second_geometry, "relation": relation}
+            ),
+            name="within",
+            index=self._index,
+        )
 
 
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 def is_geometry_type(obj):
-    t = getattr(obj, 'dtype', obj)
+    t = getattr(obj, "dtype", obj)
     try:
         return isinstance(t, GeoType) or issubclass(t, GeoType)
     except Exception:
         return False
+
+
 ###########################################################################
 @register_dataframe_accessor("spatial")
 class GeoAccessor(object):
@@ -955,6 +1035,7 @@ class GeoAccessor(object):
     The DataFrame Accessor is a namespace that performs dataset operations.
     This includes visualization, spatial indexing, IO and dataset level properties.
     """
+
     _sr = None
     _viz = None
     _data = None
@@ -967,12 +1048,13 @@ class GeoAccessor(object):
     _renderer = None
     _HASARCPY = None
     _HASSHAPELY = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, obj):
         self._data = obj
         self._index = obj.index
         self._name = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _meta(self):
         """
@@ -990,13 +1072,18 @@ class GeoAccessor(object):
 
         """
         from arcgis.features.geo._tools import _metadata
-        if 'metadata' in self._data.attrs and self._data.attrs['metadata'] and \
-           isinstance(self._data.attrs['metadata'], _metadata._Metadata):
-            return self._data.attrs['metadata']
+
+        if (
+            "metadata" in self._data.attrs
+            and self._data.attrs["metadata"]
+            and isinstance(self._data.attrs["metadata"], _metadata._Metadata)
+        ):
+            return self._data.attrs["metadata"]
         else:
             self._meta = _metadata._Metadata()
             return self._meta
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @_meta.setter
     def _meta(self, source):
         """
@@ -1014,16 +1101,21 @@ class GeoAccessor(object):
 
         """
         from ._tools import _metadata
-        if not 'metadata' in self._data.attrs and \
-           isinstance(source, _metadata._Metadata): # creates the attrs entry
-            self._data.attrs['metadata'] = source
-        elif 'metadata' in self._data.attrs and \
-             isinstance(source, _metadata._Metadata) and \
-             source != self._data.attrs['metadata']: # sets the new metadata value
-            self._data.attrs['metadata'] = source
-        elif source is None: # resets/drops the source
-            self._data.attrs['metadata'] = _metadata._Metadata()
-    #----------------------------------------------------------------------
+
+        if not "metadata" in self._data.attrs and isinstance(
+            source, _metadata._Metadata
+        ):  # creates the attrs entry
+            self._data.attrs["metadata"] = source
+        elif (
+            "metadata" in self._data.attrs
+            and isinstance(source, _metadata._Metadata)
+            and source != self._data.attrs["metadata"]
+        ):  # sets the new metadata value
+            self._data.attrs["metadata"] = source
+        elif source is None:  # resets/drops the source
+            self._data.attrs["metadata"] = _metadata._Metadata()
+
+    # ----------------------------------------------------------------------
     @property
     def renderer(self):
         """
@@ -1034,7 +1126,8 @@ class GeoAccessor(object):
         if self._meta.renderer is None:
             self._meta.renderer = self._build_renderer()
         return self._meta.renderer
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @renderer.setter
     def renderer(self, renderer):
         """
@@ -1054,69 +1147,87 @@ class GeoAccessor(object):
         else:
             raise ValueError("renderer must be a dictionary type.")
         self._meta.renderer = renderer
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _build_renderer(self):
         """sets the default symbology"""
-        if self._meta.source and \
-           hasattr(self._meta.source, 'properties'):
+        if self._meta.source and hasattr(self._meta.source, "properties"):
+            return self._meta.renderer
+        elif self.name is None:
+            self._meta.renderer = InsensitiveDict({})
             return self._meta.renderer
         gt = self.geometry_type[0]
         base_renderer = {
-            'labelingInfo' : None,
-            'label' : "",
-            'description' : "",
-            'type' : 'simple',
-            'symbol' : None
+            "labelingInfo": None,
+            "label": "",
+            "description": "",
+            "type": "simple",
+            "symbol": None,
         }
-        if gt.lower() in ['point', 'multipoint']:
-            base_renderer['symbol'] = {"color":[0,128,0,128],
-                         "size":18,"angle":0,
-                         "xoffset":0,"yoffset":0,
-                         "type":"esriSMS",
-                         "style":"esriSMSCircle",
-                         "outline":{"color":[0,128,0,255],"width":1,
-                                    "type":"esriSLS","style":"esriSLSSolid"}
-                         }
+        if gt.lower() in ["point", "multipoint"]:
+            base_renderer["symbol"] = {
+                "color": [0, 128, 0, 128],
+                "size": 18,
+                "angle": 0,
+                "xoffset": 0,
+                "yoffset": 0,
+                "type": "esriSMS",
+                "style": "esriSMSCircle",
+                "outline": {
+                    "color": [0, 128, 0, 255],
+                    "width": 1,
+                    "type": "esriSLS",
+                    "style": "esriSLSSolid",
+                },
+            }
 
-        elif gt.lower() =='polyline':
-            base_renderer['symbol'] = {
-                        "type": "esriSLS",
-                        "style": "esriSLSSolid",
-                        "color": [0,128,0,128],
-                        "width": 1
-                    }
-        elif gt.lower() =='polygon':
-            base_renderer['symbol'] = {
-                        "type": "esriSFS",
-                        "style": "esriSFSSolid",
-                        "color": [0,128,0,128],
-                        "outline": {
-                            "type": "esriSLS",
-                            "style": "esriSLSSolid",
-                            "color": [110,110,110,255],
-                            "width": 1
-                        }
-                    }
+        elif gt.lower() == "polyline":
+            base_renderer["symbol"] = {
+                "type": "esriSLS",
+                "style": "esriSLSSolid",
+                "color": [0, 128, 0, 128],
+                "width": 1,
+            }
+        elif gt.lower() == "polygon":
+            base_renderer["symbol"] = {
+                "type": "esriSFS",
+                "style": "esriSFSSolid",
+                "color": [0, 128, 0, 128],
+                "outline": {
+                    "type": "esriSLS",
+                    "style": "esriSLSSolid",
+                    "color": [110, 110, 110, 255],
+                    "width": 1,
+                },
+            }
         self._meta.renderer = InsensitiveDict(base_renderer)
         return self._meta.renderer
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _repr_svg_(self):
         """draws the dataframe as SVG features"""
 
         if self.name:
             fn = lambda g, n: getattr(g, n, None)() if g is not None else None
-            vals = np.vectorize(fn, otypes='O')(self._data['SHAPE'], 'svg')
+            vals = np.vectorize(fn, otypes="O")(self._data["SHAPE"], "svg")
             svg = "\n".join(vals.tolist())
-            svg_top = '<svg xmlns="http://www.w3.org/2000/svg" ' \
+            svg_top = (
+                '<svg xmlns="http://www.w3.org/2000/svg" '
                 'xmlns:xlink="http://www.w3.org/1999/xlink" '
+            )
             if len(self._data) == 0:
-                return svg_top + '/>'
+                return svg_top + "/>"
             else:
                 # Establish SVG canvas that will fit all the data + small space
                 xmin, ymin, xmax, ymax = self.full_extent
                 if xmin == xmax and ymin == ymax:
                     # This is a point; buffer using an arbitrary size
-                    xmin, ymin, xmax, ymax = xmin - .001, ymin - .001, xmax + .001, ymax + .001
+                    xmin, ymin, xmax, ymax = (
+                        xmin - 0.001,
+                        ymin - 0.001,
+                        xmax + 0.001,
+                        ymax + 0.001,
+                    )
                 else:
                     # Expand bounds by a fraction of the data ranges
                     expand = 0.04  # or 4%, same as R plots
@@ -1140,17 +1251,11 @@ class GeoAccessor(object):
                     'width="{1}" height="{2}" viewBox="{0}" '
                     'preserveAspectRatio="xMinYMin meet">'
                     '<g transform="{3}">{4}</g></svg>'
-                    ).format(view_box,
-                             width,
-                             height,
-                             transform,
-                             svg)
+                ).format(view_box, width, height, transform, svg)
         return
+
     @staticmethod
-    def from_feather(path,
-                     spatial_column="SHAPE",
-                     columns=None,
-                     use_threads=True):
+    def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
         Load a feather-format object from the file path.
 
@@ -1184,11 +1289,14 @@ class GeoAccessor(object):
         :returns: pd.DataFrame
 
         """
-        return read_feather(path=path,
-                            spatial_column=spatial_column,
-                            columns=columns,
-                            use_threads=use_threads)
-    #----------------------------------------------------------------------
+        return read_feather(
+            path=path,
+            spatial_column=spatial_column,
+            columns=columns,
+            use_threads=use_threads,
+        )
+
+    # ----------------------------------------------------------------------
     def set_geometry(self, col, sr=None, inplace=True):
         """Assigns the geometry column by name or by list
 
@@ -1215,59 +1323,65 @@ class GeoAccessor(object):
         """
         from ._array import GeoArray
 
-        if isinstance(col, str) and  \
-           col in self._data.columns and \
-           self._data[col].dtype.name.lower() != 'geometry':
+        if (
+            isinstance(col, str)
+            and col in self._data.columns
+            and self._data[col].dtype.name.lower() != "geometry"
+        ):
             idx = self._data[col].first_valid_index()
             if sr is None:
                 try:
                     g = self._data.iloc[idx][col]
                     if isinstance(g, dict):
-                        self._sr = SpatialReference(Geometry(g['spatialReference']))
+                        self._sr = SpatialReference(Geometry(g["spatialReference"]))
                     else:
-                        self._sr = SpatialReference(g['spatialReference'])
+                        self._sr = SpatialReference(g["spatialReference"])
                 except:
-                    self._sr = SpatialReference({'wkid' : 4326})
+                    self._sr = SpatialReference({"wkid": 4326})
             self._name = col
-            #q = self._data[col].isna()
-            #self._data.loc[q, "SHAPE"] = None
+            # q = self._data[col].isna()
+            # self._data.loc[q, "SHAPE"] = None
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 self._data[col] = GeoArray(self._data[col])
-        elif isinstance(col, str) and  \
-             col in self._data.columns and \
-             self._data[col].dtype.name.lower() == 'geometry':
+        elif (
+            isinstance(col, str)
+            and col in self._data.columns
+            and self._data[col].dtype.name.lower() == "geometry"
+        ):
             self._name = col
-            #self._data[col] = self._data[col]
-        elif isinstance(col, str) and \
-             col not in self._data.columns:
-            raise ValueError(
-                "Column {name} does not exist".format(name=col))
+            # self._data[col] = self._data[col]
+        elif isinstance(col, str) and col not in self._data.columns:
+            raise ValueError("Column {name} does not exist".format(name=col))
         elif isinstance(col, pd.Series):
-            self._data['SHAPE'] = GeoArray(col.values)
+            self._data["SHAPE"] = GeoArray(col.values)
             self._name = "SHAPE"
         elif isinstance(col, GeoArray):
-            self._data['SHAPE'] = col
+            self._data["SHAPE"] = col
             self._name = "SHAPE"
         elif isinstance(col, (list, tuple)):
-            self._data['SHAPE'] = GeoArray(values=col)
+            self._data["SHAPE"] = GeoArray(values=col)
             self._name = "SHAPE"
         else:
             raise ValueError(
-                "Column {name} is not valid. Please ensure it is of type Geometry".format(name=col))
+                "Column {name} is not valid. Please ensure it is of type Geometry".format(
+                    name=col
+                )
+            )
 
         if not inplace:
             return self._data.copy()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def name(self):
         """returns the name of the geometry column"""
         if self._name is None:
             try:
                 cols = [c.lower() for c in self._data.columns.tolist()]
-                if any(self._data.dtypes == 'geometry'):
-                    name = self._data.dtypes[self._data.dtypes == 'geometry'].index[0]
+                if any(self._data.dtypes == "geometry"):
+                    name = self._data.dtypes[self._data.dtypes == "geometry"].index[0]
                     self.set_geometry(name)
                 elif "shape" in cols:
                     idx = cols.index("shape")
@@ -1276,7 +1390,7 @@ class GeoAccessor(object):
                 raise Exception("Spatial column not defined, please use `set_geometry`")
         return self._name
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def validate(self, strict=False):
         """
         Determines if the Geo Accessor is Valid with Geometries in all values
@@ -1294,10 +1408,11 @@ class GeoAccessor(object):
             q = self._data[self.name].notna()
             return all(pd.unique(self._data[q][self.name].geom.is_valid))
         return True
-    #----------------------------------------------------------------------
-    def join(self, right_df,
-             how='inner', op='intersects',
-             left_tag="left", right_tag="right"):
+
+    # ----------------------------------------------------------------------
+    def join(
+        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
+    ):
         """
         Joins the current DataFrame to another spatially enabled dataframes based
         on spatial location based.
@@ -1335,20 +1450,28 @@ class GeoAccessor(object):
         :returns:
           Spatially enabled Pandas' DataFrame
         """
-        allowed_hows = ['left', 'right', 'inner']
-        allowed_ops = ['contains', 'within', 'intersects']
+        allowed_hows = ["left", "right", "inner"]
+        allowed_ops = ["contains", "within", "intersects"]
         if how not in allowed_hows:
-            raise ValueError("`how` is an invalid inputs of %s, but should be %s" % (how, allowed_hows))
+            raise ValueError(
+                "`how` is an invalid inputs of %s, but should be %s"
+                % (how, allowed_hows)
+            )
         if op not in allowed_ops:
-            raise ValueError("`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops))
+            raise ValueError(
+                "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
+            )
         if self.sr != right_df.spatial.sr:
             raise Exception("Difference Spatial References, aborting operation")
-        index_left = 'index_{}'.format(left_tag)
-        index_right = 'index_{}'.format(right_tag)
-        if (any(self._data.columns.isin([index_left, index_right]))
-            or any(right_df.columns.isin([index_left, index_right]))):
-            raise ValueError("'{0}' and '{1}' cannot be names in the frames being"
-                             " joined".format(index_left, index_right))
+        index_left = "index_{}".format(left_tag)
+        index_right = "index_{}".format(right_tag)
+        if any(self._data.columns.isin([index_left, index_right])) or any(
+            right_df.columns.isin([index_left, index_right])
+        ):
+            raise ValueError(
+                "'{0}' and '{1}' cannot be names in the frames being"
+                " joined".format(index_left, index_right)
+            )
         # Setup the Indexes in temporary coumns
         #
         left_df = self._data.copy(deep=True)
@@ -1370,9 +1493,11 @@ class GeoAccessor(object):
 
         tree_idx = right_df.spatial.sindex("quadtree")
 
-        idxmatch = (left_df[self.name]
-                    .apply(lambda x: x.extent)
-                    .apply(lambda x: list(tree_idx.intersect(x))))
+        idxmatch = (
+            left_df[self.name]
+            .apply(lambda x: x.extent)
+            .apply(lambda x: list(tree_idx.intersect(x)))
+        )
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
         if idxmatch.shape[0] > 0:
             # if output from join has overlapping geometries
@@ -1386,75 +1511,86 @@ class GeoAccessor(object):
             def find_contains(a1, a2):
                 return a1.contains(a2)
 
-            predicate_d = {'intersects': find_intersects,
-                           'contains': find_contains,
-                           'within': find_contains}
+            predicate_d = {
+                "intersects": find_intersects,
+                "contains": find_contains,
+                "within": find_contains,
+            }
 
             check_predicates = np.vectorize(predicate_d[op])
 
-            result = (
-                pd.DataFrame(
-                          np.column_stack(
-                              [l_idx,
-                               r_idx,
-                               check_predicates(
-                                   left_df[self.name]
-                                   .apply(lambda x: x)[l_idx],
-                                   right_df[right_df.spatial._name][r_idx])
-                               ]))
+            result = pd.DataFrame(
+                np.column_stack(
+                    [
+                        l_idx,
+                        r_idx,
+                        check_predicates(
+                            left_df[self.name].apply(lambda x: x)[l_idx],
+                            right_df[right_df.spatial._name][r_idx],
+                        ),
+                    ]
+                )
             )
 
-            result.columns = ['_key_left', '_key_right', 'match_bool']
-            result = pd.DataFrame(result[result['match_bool']==1]).drop('match_bool', axis=1)
+            result.columns = ["_key_left", "_key_right", "match_bool"]
+            result = pd.DataFrame(result[result["match_bool"] == 1]).drop(
+                "match_bool", axis=1
+            )
         else:
             # when output from the join has no overlapping geometries
-            result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
+            result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
         if op == "within":
             # within implemented as the inverse of contains; swap names
             left_df, right_df = right_df, left_df
-            result = result.rename(columns={'_key_left': '_key_right',
-                                            '_key_right': '_key_left'})
+            result = result.rename(
+                columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+            )
 
-        if how == 'inner':
-            result = result.set_index('_key_left')
-            joined = (
-                      left_df
-                      .merge(result, left_index=True, right_index=True)
-                      .merge(right_df.drop(right_df.spatial.name, axis=1),
-                          left_on='_key_right', right_index=True,
-                          suffixes=('_%s' % left_tag, '_%s' % right_tag))
-                     )
-            joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
+        if how == "inner":
+            result = result.set_index("_key_left")
+            joined = left_df.merge(result, left_index=True, right_index=True).merge(
+                right_df.drop(right_df.spatial.name, axis=1),
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % left_tag, "_%s" % right_tag),
+            )
+            joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
             joined.index.name = None
-        elif how == 'left':
-            result = result.set_index('_key_left')
-            joined = (
-                      left_df
-                      .merge(result, left_index=True, right_index=True, how='left')
-                      .merge(right_df.drop(right_df.spatial.name, axis=1),
-                          how='left', left_on='_key_right', right_index=True,
-                          suffixes=('_%s' % left_tag, '_%s' % right_tag))
-                     )
-            joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
+        elif how == "left":
+            result = result.set_index("_key_left")
+            joined = left_df.merge(
+                result, left_index=True, right_index=True, how="left"
+            ).merge(
+                right_df.drop(right_df.spatial.name, axis=1),
+                how="left",
+                left_on="_key_right",
+                right_index=True,
+                suffixes=("_%s" % left_tag, "_%s" % right_tag),
+            )
+            joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
             joined.index.name = None
         else:  # 'right join'
             joined = (
-                      left_df
-                      .drop(left_df.spatial._name, axis=1)
-                      .merge(result.merge(right_df,
-                          left_on='_key_right', right_index=True,
-                          how='right'), left_index=True,
-                          right_on='_key_left', how='right')
-                      .set_index('index_y')
-                     )
-            joined = joined.drop(['_key_left', '_key_right'], axis=1)
+                left_df.drop(left_df.spatial._name, axis=1)
+                .merge(
+                    result.merge(
+                        right_df, left_on="_key_right", right_index=True, how="right"
+                    ),
+                    left_index=True,
+                    right_on="_key_left",
+                    how="right",
+                )
+                .set_index("index_y")
+            )
+            joined = joined.drop(["_key_left", "_key_right"], axis=1)
         try:
             joined.spatial.set_geometry(self.name)
         except:
             raise Exception("Could not create spatially enabled dataframe.")
         joined.reset_index(drop=True, inplace=True)
         return joined
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def plot(self, map_widget=None, **kwargs):
         """
 
@@ -2045,16 +2181,21 @@ class GeoAccessor(object):
 
         # small helper to consolidate the plotting function
         def _plot_map_widget(mp_wdgt):
-            plot(df=self._data,
-                 map_widget=mp_wdgt,
-                 name=kwargs.pop('name', "Feature Collection Layer"),
-                 renderer_type=kwargs.pop("renderer_type", None),
-                 symbol_type=kwargs.pop('symbol_type', None),
-                 symbol_style=kwargs.pop('symbol_style', None),
-                 col=kwargs.pop('col', None),
-                 colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', None) or kwargs.pop('palette', 'jet'),
-                 alpha=kwargs.pop('alpha', 1),
-                 **kwargs)
+            plot(
+                df=self._data,
+                map_widget=mp_wdgt,
+                name=kwargs.pop("name", "Feature Collection Layer"),
+                renderer_type=kwargs.pop("renderer_type", None),
+                symbol_type=kwargs.pop("symbol_type", None),
+                symbol_style=kwargs.pop("symbol_style", None),
+                col=kwargs.pop("col", None),
+                colors=kwargs.pop("cmap", None)
+                or kwargs.pop("colors", None)
+                or kwargs.pop("pallette", None)
+                or kwargs.pop("palette", "jet"),
+                alpha=kwargs.pop("alpha", 1),
+                **kwargs
+            )
 
         # small helper to address zoom level
         def _adjust_zoom(mp_wdgt):
@@ -2097,11 +2238,11 @@ class GeoAccessor(object):
             self._data.columns = orig_col
             # zoom the map widget to the extent of the data
             map_widget.extent = {
-                'spatialReference': self._data.spatial.sr,
-                'xmin': self._data.spatial.full_extent[0],
-                'ymin': self._data.spatial.full_extent[1],
-                'xmax': self._data.spatial.full_extent[2],
-                'ymax': self._data.spatial.full_extent[3]
+                "spatialReference": self._data.spatial.sr,
+                "xmin": self._data.spatial.full_extent[0],
+                "ymin": self._data.spatial.full_extent[1],
+                "xmax": self._data.spatial.full_extent[2],
+                "ymax": self._data.spatial.full_extent[3],
             }
 
             # adjust the zoom level so the map displays the data as expected
@@ -2109,8 +2250,11 @@ class GeoAccessor(object):
 
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
-    #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True):
+
+    # ----------------------------------------------------------------------
+    def to_featureclass(
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+    ):
         """
         Exports a geo enabled dataframe to a feature class.
 
@@ -2141,15 +2285,21 @@ class GeoAccessor(object):
         :returns: String
 
         """
-        if location and not str(os.path.dirname(location)).lower() in ['memory', 'in_memory']:
+        if location and not str(os.path.dirname(location)).lower() in [
+            "memory",
+            "in_memory",
+        ]:
             location = os.path.abspath(path=location)
-        return to_featureclass(self,
-                               location=location,
-                               overwrite=overwrite,
-                               has_z=has_z,
-                               sanitize_columns=sanitize_columns,
-                               has_m=has_m)
-    #----------------------------------------------------------------------
+        return to_featureclass(
+            self,
+            location=location,
+            overwrite=overwrite,
+            has_z=has_z,
+            sanitize_columns=sanitize_columns,
+            has_m=has_m,
+        )
+
+    # ----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
         Exports a geo enabled dataframe to a table.
@@ -2169,19 +2319,16 @@ class GeoAccessor(object):
         """
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
-        return run_and_hide(to_table, **{"geo":self,
-                                                "location":location,
-                                                "overwrite":overwrite})
-        #return to_table(geo=self,
+
+        return run_and_hide(
+            to_table, **{"geo": self, "location": location, "overwrite": overwrite}
+        )
+        # return to_table(geo=self,
         #                location=location,
         #                overwrite=overwrite)
 
-    #----------------------------------------------------------------------
-    def to_featurelayer(self,
-                        title,
-                        gis=None,
-                        tags=None,
-                        folder=None):
+    # ----------------------------------------------------------------------
+    def to_featurelayer(self, title, gis=None, tags=None, folder=None):
         """
         publishes a spatial dataframe to a new feature layer
 
@@ -2203,15 +2350,19 @@ class GeoAccessor(object):
 
         """
         from arcgis import env
+
         if gis is None:
             gis = env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
         return content.import_data(self._data, folder=folder, title=title, tags=tags)
+
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_df(df, address_column="address", geocoder=None, sr=None, geometry_column=None):
+    def from_df(
+        df, address_column="address", geocoder=None, sr=None, geometry_column=None
+    ):
         """
         Returns a SpatialDataFrame from a dataframe with an address column.
 
@@ -2247,24 +2398,27 @@ class GeoAccessor(object):
         import arcgis
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
         from arcgis.geometry import Geometry
+
         if geometry_column:
             from arcgis.features import GeoAccessor, GeoSeriesAccessor
+
             if sr is None:
                 try:
                     valid_index = df[geometry_column].first_valid_index()
                 except:
-                    raise ValueError("Column provided is all NULL, please provide a valid column")
+                    raise ValueError(
+                        "Column provided is all NULL, please provide a valid column"
+                    )
                 g = Geometry(df[geometry_column].iloc[valid_index])
                 sr = g.spatial_reference
-                if isinstance(sr, Iterable) and \
-                   'wkid' in sr:
-                    sr = sr['wkid'] or 4326
-                elif isinstance(sr, Iterable) and \
-                     'wkt' in sr:
-                    sr = sr['wkt'] or 4326
+                if isinstance(sr, Iterable) and "wkid" in sr:
+                    sr = sr["wkid"] or 4326
+                elif isinstance(sr, Iterable) and "wkt" in sr:
+                    sr = sr["wkt"] or 4326
                 else:
                     sr = 4326
             from ._array import GeoArray
+
             df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
@@ -2282,35 +2436,42 @@ class GeoAccessor(object):
                 for i in range(0, N, batch_size):
                     start = i
                     stop = i + batch_size if i + batch_size < N else N
-                    res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
+                    res = batch_geocode(
+                        list(df[start:stop][address_column]), geocoder=geocoder
+                    )
                     for index in range(len(res)):
                         try:
                             address = df.iloc[index][address_column]
-                        except: # for older versions, fall back to `df.loc`
+                        except:  # for older versions, fall back to `df.loc`
                             address = df.loc[df.index[index]][address_column]
                         try:
-                            loc = res[index]['location']
-                            x = loc['x']
-                            y = loc['y']
-                            geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y, 'spatialReference': sr}))
+                            loc = res[index]["location"]
+                            x = loc["x"]
+                            y = loc["y"]
+                            geoms.append(
+                                arcgis.geometry.Geometry(
+                                    {"x": x, "y": y, "spatialReference": sr}
+                                )
+                            )
 
                         except:
                             x, y = None, None
                             try:
-                                loc = geocode(address, geocoder=geocoder)[0]['location']
-                                x = loc['x']
-                                y = loc['y']
+                                loc = geocode(address, geocoder=geocoder)[0]["location"]
+                                x = loc["x"]
+                                y = loc["y"]
                             except:
-                                print('Unable to geocode address: ' + address)
+                                print("Unable to geocode address: " + address)
                                 pass
                             geoms.append(None)
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                df['SHAPE'] = geoms
+                df["SHAPE"] = geoms
                 df.spatial.set_geometry("SHAPE")
             return df
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_xy(df, x_column, y_column, sr=4326):
@@ -2334,9 +2495,10 @@ class GeoAccessor(object):
 
         """
         from ._io.fileops import _from_xy
-        return _from_xy(df=df, x_column=x_column,
-                        y_column=y_column, sr=sr)
-    #----------------------------------------------------------------------
+
+        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_layer(layer):
         """
@@ -2363,16 +2525,22 @@ class GeoAccessor(object):
 
         """
         import json
+
         try:
             from arcgis.features.geo._io.serviceops import from_layer
+
             return from_layer(layer=layer)
         except ImportError:
             raise ImportError("Could not load `from_layer`.")
         except json.JSONDecodeError as je:
-            raise Exception("Malformed response from server, could not load the dataset: %s" % str(je))
+            raise Exception(
+                "Malformed response from server, could not load the dataset: %s"
+                % str(je)
+            )
         except Exception as e:
             raise Exception("Could not load the dataset: %s" % str(e))
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(location, **kwargs):
         """
@@ -2405,7 +2573,8 @@ class GeoAccessor(object):
         :returns: pandas.core.frame.DataFrame
         """
         return from_featureclass(filename=location, **kwargs)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_table(filename, **kwargs):
         """
@@ -2452,10 +2621,11 @@ class GeoAccessor(object):
             :returns: pd.DataFrame
         """
         from arcgis.features.geo._io.fileops import from_table
+
         return from_table(filename, **kwargs)
 
-    #----------------------------------------------------------------------
-    def sindex(self, stype='quadtree', reset=False, **kwargs):
+    # ----------------------------------------------------------------------
+    def sindex(self, stype="quadtree", reset=False, **kwargs):
         """
         Creates a spatial index for the given dataset.
 
@@ -2468,32 +2638,40 @@ class GeoAccessor(object):
 
         """
         from arcgis.features.geo._index._impl import SpatialIndex
+
         c = 0
-        filename = kwargs.pop('filename', None)
+        filename = kwargs.pop("filename", None)
         if reset:
             self._sindex = None
             self._sfname = None
             self._stype = None
         if self._sindex:
             return self._sindex
-        #bbox = self.full_extent
-        if self.name and \
-           filename and \
-           os.path.isfile(filename + ".dat") and \
-           os.path.isfile(filename + ".idx"):
+        # bbox = self.full_extent
+        if (
+            self.name
+            and filename
+            and os.path.isfile(filename + ".dat")
+            and os.path.isfile(filename + ".idx")
+        ):
             l = len(self._data[self.name])
-            self._sindex = SpatialIndex(stype=stype,
-                                        filename=filename,
-                                        bbox=self.full_extent)
+            self._sindex = SpatialIndex(
+                stype=stype, filename=filename, bbox=self.full_extent
+            )
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
-                    if g.type.lower() == 'point':
+                    if g.type.lower() == "point":
                         ge = g.geoextent
-                        gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
+                        gext = (
+                            ge[0] - 0.001,
+                            ge[1] - 0.001,
+                            ge[2] + 0.001,
+                            ge[3] - 0.001,
+                        )
                         self._sindex.insert(oid=idx, bbox=gext)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
-                    if c >= int(l/4) + 1:
+                    if c >= int(l / 4) + 1:
                         self._sindex.flush()
                         c = 0
                     c += 1
@@ -2502,129 +2680,141 @@ class GeoAccessor(object):
         elif self.name:
             c = 0
             l = len(self._data[self.name])
-            self._sindex = SpatialIndex(stype=stype,
-                                        filename=filename,
-                                        bbox=self.full_extent)
+            self._sindex = SpatialIndex(
+                stype=stype, filename=filename, bbox=self.full_extent
+            )
             for idx, g in zip(self._index, self._data[self.name]):
                 if g:
-                    if g.type.lower() == 'point':
+                    if g.type.lower() == "point":
                         ge = g.geoextent
-                        gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
+                        gext = (
+                            ge[0] - 0.001,
+                            ge[1] - 0.001,
+                            ge[2] + 0.001,
+                            ge[3] - 0.001,
+                        )
                         self._sindex.insert(oid=idx, bbox=gext)
                     else:
                         self._sindex.insert(oid=idx, bbox=g.geoextent)
-                    if c >= int(l/4) + 1:
+                    if c >= int(l / 4) + 1:
                         self._sindex.flush()
                         c = 0
                     c += 1
             self._sindex.flush()
             return self._sindex
         else:
-            raise ValueError(("The Spatial Column must "
-                             "be set, call df.spatial.set_geometry."))
-    #----------------------------------------------------------------------
+            raise ValueError(
+                ("The Spatial Column must " "be set, call df.spatial.set_geometry.")
+            )
+
+    # ----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
-        template = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+        template = {"type": "FeatureCollection", "features": []}
         for index, row in self._data.iterrows():
             geom = row[self.name]
             del row[self.name]
             gj = copy.copy(geom.__geo_interface__)
-            gj['attributes'] = pd.io.json.loads(pd.io.json.dumps(row)) # ensures the values are converted correctly
-            template['features'].append(gj)
+            gj["attributes"] = pd.io.json.loads(
+                pd.io.json.dumps(row)
+            )  # ensures the values are converted correctly
+            template["features"].append(gj)
         return pd.io.json.dumps(template)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def __feature_set__(self):
         """returns a dictionary representation of an Esri FeatureSet"""
         import arcgis
 
-
         fields = []
         features = []
         date_fields = []
         _geom_types = {
-            arcgis.geometry._types.Point :  "esriGeometryPoint",
-            arcgis.geometry._types.Polyline : "esriGeometryPolyline",
-            arcgis.geometry._types.MultiPoint : "esriGeometryMultipoint",
-            arcgis.geometry._types.Polygon : "esriGeometryPolygon"
+            arcgis.geometry._types.Point: "esriGeometryPoint",
+            arcgis.geometry._types.Polyline: "esriGeometryPolyline",
+            arcgis.geometry._types.MultiPoint: "esriGeometryMultipoint",
+            arcgis.geometry._types.Polygon: "esriGeometryPolygon",
         }
         if self.sr is None:
-            sr = {'wkid' : 4326}
+            sr = {"wkid": 4326}
         else:
             sr = self.sr
         fs = {
-            "objectIdFieldName" : "",
-            "globalIdFieldName" : "",
-            "displayFieldName" : "",
-            "geometryType" : _geom_types[type(self._data[self.name][self._data[self.name].first_valid_index()])],
-            "spatialReference" : sr,
-            "fields" : [],
-            "features" : []
+            "objectIdFieldName": "",
+            "globalIdFieldName": "",
+            "displayFieldName": "",
+            "geometryType": _geom_types[
+                type(self._data[self.name][self._data[self.name].first_valid_index()])
+            ],
+            "spatialReference": sr,
+            "fields": [],
+            "features": [],
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
+        date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
         old_series = None
-        if 'objectid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
-            if df[fs['objectIdFieldName']].is_unique == False:
-                old_series = df[fs['objectIdFieldName']].copy()
-                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
-                #res = self.__feature_set__
-                #df[fs['objectIdFieldName']] = old_series
-                #return res
-        elif 'fid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
-            if df[fs['objectIdFieldName']].is_unique == False:
-                old_series = df[fs['objectIdFieldName']].copy()
-                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
-                #res = self.__feature_set__
-                #df[fs['objectIdFieldName']] = old_series
-                #return res
-        elif 'oid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
-            if df[fs['objectIdFieldName']].is_unique == False:
-                old_series = df[fs['objectIdFieldName']].copy()
-                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
-                #res = self.__feature_set__
-                #df[fs['objectIdFieldName']] = old_series
-                #return res
+        if "objectid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
+            if df[fs["objectIdFieldName"]].is_unique == False:
+                old_series = df[fs["objectIdFieldName"]].copy()
+                df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
+                # res = self.__feature_set__
+                # df[fs['objectIdFieldName']] = old_series
+                # return res
+        elif "fid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
+            if df[fs["objectIdFieldName"]].is_unique == False:
+                old_series = df[fs["objectIdFieldName"]].copy()
+                df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
+                # res = self.__feature_set__
+                # df[fs['objectIdFieldName']] = old_series
+                # return res
+        elif "oid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
+            if df[fs["objectIdFieldName"]].is_unique == False:
+                old_series = df[fs["objectIdFieldName"]].copy()
+                df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
+                # res = self.__feature_set__
+                # df[fs['objectIdFieldName']] = old_series
+                # return res
         else:
-            fs['objectIdFieldName'] = "OBJECTID"
-            fs['displayFieldName'] = "OBJECTID"
+            fs["objectIdFieldName"] = "OBJECTID"
+            fs["displayFieldName"] = "OBJECTID"
 
-            df['OBJECTID'] = list(range(1, df.shape[0] + 1))
+            df["OBJECTID"] = list(range(1, df.shape[0] + 1))
             cols_norm = [col for col in df.columns]
             cols_lower = [col.lower() for col in df.columns]
-            #res = self.__feature_set__
-            #del df['OBJECTID']
-            #return res
-        if 'objectIdFieldName' in fs:
-            fields.append({
-                "name" : fs['objectIdFieldName'],
-                "type" : "esriFieldTypeOID",
-                "alias" : fs['objectIdFieldName']
-            })
-            cols_norm.pop(cols_norm.index(fs['objectIdFieldName']))
-        if 'globalIdFieldName' in fs and len(fs['globalIdFieldName']) > 0:
-            fields.append({
-                "name" : fs['globalIdFieldName'],
-                "type" : "esriFieldTypeGlobalID",
-                "alias" : fs['globalIdFieldName']
-            })
-            cols_norm.pop(cols_norm.index(fs['globalIdFieldName']))
-        elif 'globalIdFieldName' in fs and \
-             len(fs['globalIdFieldName']) == 0:
-            del fs['globalIdFieldName']
+            # res = self.__feature_set__
+            # del df['OBJECTID']
+            # return res
+        if "objectIdFieldName" in fs:
+            fields.append(
+                {
+                    "name": fs["objectIdFieldName"],
+                    "type": "esriFieldTypeOID",
+                    "alias": fs["objectIdFieldName"],
+                }
+            )
+            cols_norm.pop(cols_norm.index(fs["objectIdFieldName"]))
+        if "globalIdFieldName" in fs and len(fs["globalIdFieldName"]) > 0:
+            fields.append(
+                {
+                    "name": fs["globalIdFieldName"],
+                    "type": "esriFieldTypeGlobalID",
+                    "alias": fs["globalIdFieldName"],
+                }
+            )
+            cols_norm.pop(cols_norm.index(fs["globalIdFieldName"]))
+        elif "globalIdFieldName" in fs and len(fs["globalIdFieldName"]) == 0:
+            del fs["globalIdFieldName"]
         if self.name in cols_norm:
             cols_norm.pop(cols_norm.index(self.name))
         for col in cols_norm:
@@ -2633,55 +2823,48 @@ class GeoAccessor(object):
                 col_val = df[col].loc[idx]
             except:
                 col_val = ""
-            if isinstance(col_val, (str, np.str)):
+            if isinstance(col_val, (str, np.str)) and not col in date_cols:
                 l = df[col].str.len().max()
-                if str(l) == 'nan':
+                if str(l) == "nan":
                     l = 255
 
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeString",
-                    "length" : int(l),
-                    "alias" : col
-                })
-                if fs['displayFieldName'] == "":
-                    fs['displayFieldName'] = col
-            elif isinstance(col_val, (datetime.datetime,
-                                      pd.Timestamp,
-                                      np.datetime64,
-                                      )):#pd.datetime
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeDate",
-                    "alias" : col
-                })
+                fields.append(
+                    {
+                        "name": col,
+                        "type": "esriFieldTypeString",
+                        "length": int(l),
+                        "alias": col,
+                    }
+                )
+                if fs["displayFieldName"] == "":
+                    fs["displayFieldName"] = col
+            elif (
+                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,))
+                or col in date_cols
+            ):  # pd.datetime
+                fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
                 date_fields.append(col)
-            elif isinstance(col_val, (np.int32, np.int16, np.int8)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeSmallInteger",
-                    "alias" : col
-                })
-            elif isinstance(col_val, (int, np.int, np.int64)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeInteger",
-                    "alias" : col
-                })
-            elif isinstance(col_val, (float, np.float64)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeDouble",
-                    "alias" : col
-                })
-            elif isinstance(col_val, (np.float32)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeSingle",
-                    "alias" : col
-                })
-        fs['fields'] = fields
-        for row in df.to_dict('records'):
+            elif (
+                isinstance(col_val, (np.int32, np.int16, np.int8))
+                and not col in date_cols
+            ):
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
+                )
+            elif isinstance(col_val, (int, np.int, np.int64)) and not col in date_cols:
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
+                )
+            elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
+                )
+            elif isinstance(col_val, (np.float32)) and not col in date_cols:
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
+                )
+        fs["fields"] = fields
+        for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
                 geom = row[self.name]
@@ -2693,57 +2876,54 @@ class GeoAccessor(object):
                     row[f] = None
             if geom and pd.notna(geom):
 
-
-                features.append(
-                    {
-                        "geometry" : dict(geom),
-                        "attributes" : row
-                    })
+                features.append({"geometry": dict(geom), "attributes": row})
             elif pd.notna(geom) == False:
-                features.append(
-                    {
-                        "geometry" : None,
-                        "attributes" : row
-                    })
+                features.append({"geometry": None, "attributes": row})
             else:
-                features.append(
-                    {
-                        "geometry" : geom,
-                        "attributes" : row
-                    })
+                features.append({"geometry": geom, "attributes": row})
             del row
             del geom
-        fs['features'] = features
-        #if old_series:
+        fs["features"] = features
+        # if old_series:
 
         return fs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _check_geometry_engine(self):
         if self._HASARCPY is None:
             try:
                 import arcpy
+
                 self._HASARCPY = True
             except:
                 self._HASARCPY = False
         if self._HASSHAPELY is None:
             try:
                 import shapely
+
                 self._HASSHAPELY = True
             except:
                 self._HASSHAPELY = False
         return self._HASARCPY, self._HASSHAPELY
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
-        data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
-                for g in self._data[self.name] \
-                if g not in [None, np.NaN, np.nan, ''] and isinstance(g, dict)]
-        srs = [SpatialReference(sr) for sr in pd.DataFrame(data).drop_duplicates().to_dict('records')]
+        data = [
+            getattr(g, "spatialReference", None) or g["spatialReference"]
+            for g in self._data[self.name]
+            if g not in [None, np.NaN, np.nan, ""] and isinstance(g, dict)
+        ]
+        srs = [
+            SpatialReference(sr)
+            for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
+        ]
         if len(srs) == 1:
             return srs[0]
         return srs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @sr.setter
     def sr(self, ref):
         """Sets the spatial reference"""
@@ -2753,18 +2933,14 @@ class GeoAccessor(object):
                 sr = self.sr
             except:
                 sr = None
-            if sr and \
-               'wkid' in sr:
-                wkid = sr['wkid']
-            elif sr and \
-                'latestWkid' in sr:
-                wkid = sr['latestWkid']
-            if sr and \
-               'wkt' in sr:
-                wkt = sr['wkt']
+            if sr and "wkid" in sr:
+                wkid = sr["wkid"]
+            elif sr and "latestWkid" in sr:
+                wkid = sr["latestWkid"]
+            if sr and "wkt" in sr:
+                wkt = sr["wkt"]
 
-            if isinstance(ref, (dict, SpatialReference)) and \
-               sr is None:
+            if isinstance(ref, (dict, SpatialReference)) and sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, SpatialReference):
                 if ref != sr:
@@ -2782,23 +2958,28 @@ class GeoAccessor(object):
         else:
             if ref:
                 if isinstance(ref, str):
-                    ref = {"wkt" : ref}
+                    ref = {"wkt": ref}
                 elif isinstance(ref, int):
-                    ref = {"wkid" : ref}
-                self._data[self.name].apply(lambda x: x.update({'spatialReference': ref}) if pd.notnull(x) else None)
-    #----------------------------------------------------------------------
+                    ref = {"wkid": ref}
+                self._data[self.name].apply(
+                    lambda x: x.update({"spatialReference": ref})
+                    if pd.notnull(x)
+                    else None
+                )
+
+    # ----------------------------------------------------------------------
     def to_featureset(self):
         """
         Converts a spatial dataframe to a feature set object
         """
         from arcgis.features import FeatureSet
+
         return FeatureSet.from_dataframe(self._data)
-    #----------------------------------------------------------------------
-    def to_feature_collection(self,
-                              name=None,
-                              drawing_info=None,
-                              extent=None,
-                              global_id_field=None):
+
+    # ----------------------------------------------------------------------
+    def to_feature_collection(
+        self, name=None, drawing_info=None, extent=None, global_id_field=None
+    ):
         """
         Converts a spatially enabled pd.DataFrame to a Feature Collection
 
@@ -2828,119 +3009,121 @@ class GeoAccessor(object):
 
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
-        template = {
-            'showLegend' : True,
-            'layers' : []
-        }
+        template = {"showLegend": True, "layers": []}
         if extent is None:
             ext = self.full_extent
             extent = {
-                "xmin" : ext[0],
-                "ymin" : ext[1],
-                "xmax" : ext[2],
-                "ymax" : ext[3],
-                "spatialReference" : self.sr
+                "xmin": ext[0],
+                "ymin": ext[1],
+                "xmax": ext[2],
+                "ymax": ext[3],
+                "spatialReference": self.sr,
             }
         fs = self.__feature_set__
         fields = []
-        for fld in fs['fields']:
-            if fld['name'].lower() == fs['objectIdFieldName'].lower():
-                fld['editable'] = False
-                fld['sqlType'] = "sqlTypeOther"
-                fld['domain'] = None
-                fld['defaultValue'] = None
-                fld['nullable'] = False
+        for fld in fs["fields"]:
+            if fld["name"].lower() == fs["objectIdFieldName"].lower():
+                fld["editable"] = False
+                fld["sqlType"] = "sqlTypeOther"
+                fld["domain"] = None
+                fld["defaultValue"] = None
+                fld["nullable"] = False
             else:
-                fld['editable'] = True
-                fld['sqlType'] = "sqlTypeOther"
-                fld['domain'] = None
-                fld['defaultValue'] = None
-                fld['nullable'] = True
+                fld["editable"] = True
+                fld["sqlType"] = "sqlTypeOther"
+                fld["domain"] = None
+                fld["defaultValue"] = None
+                fld["nullable"] = True
         if drawing_info is None:
             import json
-            di = { 'renderer' : json.loads(self._data.spatial.renderer.json) }
+
+            di = {"renderer": json.loads(self._data.spatial.renderer.json)}
         else:
             di = drawing_info
-        layer = {'layerDefinition': {'currentVersion': 10.7,
-                                     'id': 0,
-                                     'name': name,
-                                     'type': 'Feature Layer',
-                                     'displayField': '',
-                                     'description': '',
-                                     'copyrightText': '',
-                                     'defaultVisibility': True,
-                                     'relationships': [],
-                                     'isDataVersioned': False,
-                                     'supportsAppend': True,
-                                     'supportsCalculate': True,
-                                     'supportsASyncCalculate': True,
-                                     'supportsTruncate': False,
-                                     'supportsAttachmentsByUploadId': True,
-                                     'supportsAttachmentsResizing': True,
-                                     'supportsRollbackOnFailureParameter': True,
-                                     'supportsStatistics': True,
-                                     'supportsExceedsLimitStatistics': True,
-                                     'supportsAdvancedQueries': True,
-                                     'supportsValidateSql': True,
-                                     'supportsCoordinatesQuantization': True,
-                                     'supportsFieldDescriptionProperty': True,
-                                     'supportsQuantizationEditMode': True,
-                                     'supportsApplyEditsWithGlobalIds': False,
-                                     'supportsMultiScaleGeometry': True,
-                                     'supportsReturningQueryGeometry': True,
-                                     'hasGeometryProperties': True,
-                                     'advancedQueryCapabilities': {
-                                         'supportsPagination': True,
-                                         'supportsPaginationOnAggregatedQueries': True,
-                                         'supportsQueryRelatedPagination': True,
-                                         'supportsQueryWithDistance': True,
-                                         'supportsReturningQueryExtent': True,
-                                         'supportsStatistics': True,
-                                         'supportsOrderBy': True,
-                                         'supportsDistinct': True,
-                                         'supportsQueryWithResultType': True,
-                                         'supportsSqlExpression': True,
-                                         'supportsAdvancedQueryRelated': True,
-                                         'supportsCountDistinct': True,
-                                         'supportsReturningGeometryCentroid': True,
-                                         'supportsReturningGeometryProperties': True,
-                                         'supportsQueryWithDatumTransformation': True,
-                                         'supportsHavingClause': True,
-                                         'supportsOutFieldSQLExpression': True,
-                                         'supportsMaxRecordCountFactor': True,
-                                         'supportsTopFeaturesQuery': True,
-                                         'supportsDisjointSpatialRel': True,
-                                         'supportsQueryWithCacheHint': True},
-                                     'useStandardizedQueries': False,
-                                     'geometryType': fs['geometryType'],
-                                     'minScale': 0,
-                                     'maxScale': 0,
-                                     'extent': extent,
-                                     'drawingInfo': di,
-                                     'allowGeometryUpdates': True,
-                                     'hasAttachments': False,
-                                     'htmlPopupType': 'esriServerHTMLPopupTypeNone',
-                                     'hasM': False,
-                                     'hasZ': False,
-                                     'objectIdField': fs['objectIdFieldName'] or "OBJECTID",
-                                     'globalIdField': '',
-                                     'typeIdField': '',
-                                     'fields': fs['fields'],
-                                     'types': [],
-                                     'supportedQueryFormats': 'JSON, geoJSON',
-                                     'hasStaticData': True,
-                                     'maxRecordCount': 32000,
-                                     'standardMaxRecordCount': 4000,
-                                     'tileMaxRecordCount': 4000,
-                                     'maxRecordCountFactor': 1,
-                                     'capabilities': 'Query'},
-                 'featureSet':  {
-                     'features' : fs['features'],
-                     'geometryType' : fs['geometryType']
-                 }
-                 }
+        layer = {
+            "layerDefinition": {
+                "currentVersion": 10.7,
+                "id": 0,
+                "name": name,
+                "type": "Feature Layer",
+                "displayField": "",
+                "description": "",
+                "copyrightText": "",
+                "defaultVisibility": True,
+                "relationships": [],
+                "isDataVersioned": False,
+                "supportsAppend": True,
+                "supportsCalculate": True,
+                "supportsASyncCalculate": True,
+                "supportsTruncate": False,
+                "supportsAttachmentsByUploadId": True,
+                "supportsAttachmentsResizing": True,
+                "supportsRollbackOnFailureParameter": True,
+                "supportsStatistics": True,
+                "supportsExceedsLimitStatistics": True,
+                "supportsAdvancedQueries": True,
+                "supportsValidateSql": True,
+                "supportsCoordinatesQuantization": True,
+                "supportsFieldDescriptionProperty": True,
+                "supportsQuantizationEditMode": True,
+                "supportsApplyEditsWithGlobalIds": False,
+                "supportsMultiScaleGeometry": True,
+                "supportsReturningQueryGeometry": True,
+                "hasGeometryProperties": True,
+                "advancedQueryCapabilities": {
+                    "supportsPagination": True,
+                    "supportsPaginationOnAggregatedQueries": True,
+                    "supportsQueryRelatedPagination": True,
+                    "supportsQueryWithDistance": True,
+                    "supportsReturningQueryExtent": True,
+                    "supportsStatistics": True,
+                    "supportsOrderBy": True,
+                    "supportsDistinct": True,
+                    "supportsQueryWithResultType": True,
+                    "supportsSqlExpression": True,
+                    "supportsAdvancedQueryRelated": True,
+                    "supportsCountDistinct": True,
+                    "supportsReturningGeometryCentroid": True,
+                    "supportsReturningGeometryProperties": True,
+                    "supportsQueryWithDatumTransformation": True,
+                    "supportsHavingClause": True,
+                    "supportsOutFieldSQLExpression": True,
+                    "supportsMaxRecordCountFactor": True,
+                    "supportsTopFeaturesQuery": True,
+                    "supportsDisjointSpatialRel": True,
+                    "supportsQueryWithCacheHint": True,
+                },
+                "useStandardizedQueries": False,
+                "geometryType": fs["geometryType"],
+                "minScale": 0,
+                "maxScale": 0,
+                "extent": extent,
+                "drawingInfo": di,
+                "allowGeometryUpdates": True,
+                "hasAttachments": False,
+                "htmlPopupType": "esriServerHTMLPopupTypeNone",
+                "hasM": False,
+                "hasZ": False,
+                "objectIdField": fs["objectIdFieldName"] or "OBJECTID",
+                "globalIdField": "",
+                "typeIdField": "",
+                "fields": fs["fields"],
+                "types": [],
+                "supportedQueryFormats": "JSON, geoJSON",
+                "hasStaticData": True,
+                "maxRecordCount": 32000,
+                "standardMaxRecordCount": 4000,
+                "tileMaxRecordCount": 4000,
+                "maxRecordCountFactor": 1,
+                "capabilities": "Query",
+            },
+            "featureSet": {
+                "features": fs["features"],
+                "geometryType": fs["geometryType"],
+            },
+        }
         if global_id_field is not None:
-            layer['layerDefinition']['globalIdField'] = global_id_field
+            layer["layerDefinition"]["globalIdField"] = global_id_field
         return FeatureCollection(layer)
 
     # ---------------------------------------------------------------------
@@ -2969,7 +3152,9 @@ class GeoAccessor(object):
         try:
             import geopandas as gpd
         except ImportError:
-            raise ImportError('Requires Geopandas library installed for this functionality')
+            raise ImportError(
+                "Requires Geopandas library installed for this functionality"
+            )
 
         # import geometry libraries
         from arcgis.geometry import Geometry as ags_geometry
@@ -2981,27 +3166,31 @@ class GeoAccessor(object):
 
         # get wkid
         try:
-            if geo_df.crs is not None and hasattr(geo_df.crs, 'to_epsg'):
+            if geo_df.crs is not None and hasattr(geo_df.crs, "to_epsg"):
                 # check for pyproj
                 epsg_code = geo_df.crs.to_epsg()
-            elif geo_df.crs is not None and 'init' in geo_df.crs:
-                epsg_code = geo_df.crs['init'].split(':')[-1]
-                epsg_code = int(epsg_code) # convert string to number
+            elif geo_df.crs is not None and "init" in geo_df.crs:
+                epsg_code = geo_df.crs["init"].split(":")[-1]
+                epsg_code = int(epsg_code)  # convert string to number
             elif geo_df.crs is not None:
                 # crs is present, but no epsg code. Try to reproject to 4326
                 geo_df.to_crs(epsg=4326, inplace=True)
                 epsg_code = 4326
             else:
-                _LOGGER.info('Cannot acquire spatial reference from GeoDataFrame. Setting it a default of WKID 4326')
-                epsg_code = 4326 # set a safe default value
+                _LOGGER.info(
+                    "Cannot acquire spatial reference from GeoDataFrame. Setting it a default of WKID 4326"
+                )
+                epsg_code = 4326  # set a safe default value
 
         except Exception as proj_ex:
-            _LOGGER.warning('Error acquiring spatial reference from GeoDataFrame' \
-                            ' Spatial reference will not be set.' + str(proj_ex))
+            _LOGGER.warning(
+                "Error acquiring spatial reference from GeoDataFrame"
+                " Spatial reference will not be set." + str(proj_ex)
+            )
             epsg_code = None
 
         if epsg_code:
-            spatial_reference = {'wkid':epsg_code}
+            spatial_reference = {"wkid": epsg_code}
         else:
             spatial_reference = None
 
@@ -3014,7 +3203,7 @@ class GeoAccessor(object):
                 return None
 
         # vectorize converter so it will run efficiently on GeoSeries - avoids loops
-        v_func = np.vectorize(_converter, otypes='O')
+        v_func = np.vectorize(_converter, otypes="O")
 
         # initialize empty array
         ags_geom = np.empty(geo_df.shape[0], dtype="O")
@@ -3049,11 +3238,14 @@ class GeoAccessor(object):
         q = ge.notnull()
         data = ge[q].tolist()
         array = np.array(data)
-        return (float(array[:,0][array[:,0]!=None].min()),
-                float(array[:,1][array[:,1]!=None].min()),
-                float(array[:,2][array[:,2]!=None].max()),
-                float(array[:,3][array[:,3]!=None].max()))
-    #----------------------------------------------------------------------
+        return (
+            float(array[:, 0][array[:, 0] != None].min()),
+            float(array[:, 1][array[:, 1] != None].min()),
+            float(array[:, 2][array[:, 2] != None].max()),
+            float(array[:, 3][array[:, 3] != None].max()),
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def area(self):
         """
@@ -3066,7 +3258,8 @@ class GeoAccessor(object):
 
         """
         return self._data[self.name].values.area.sum()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def length(self):
         """
@@ -3079,7 +3272,8 @@ class GeoAccessor(object):
 
         """
         return self._data[self.name].values.length.sum()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def centroid(self):
         """
@@ -3092,9 +3286,12 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].geom.centroid.isnull()
-        df = pd.DataFrame(self._data[~q][self.name].geom.centroid.tolist(), columns=['x','y'])
-        return df['x'].mean(), df['y'].mean()
-    #----------------------------------------------------------------------
+        df = pd.DataFrame(
+            self._data[~q][self.name].geom.centroid.tolist(), columns=["x", "y"]
+        )
+        return df["x"].mean(), df["y"].mean()
+
+    # ----------------------------------------------------------------------
     @property
     def true_centroid(self):
         """
@@ -3107,9 +3304,13 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].notnull()
-        df = pd.DataFrame(data=self._data[self.name][q].geom.true_centroid.tolist(), columns=['x','y']).mean()
-        return df['x'], df['y']
-    #----------------------------------------------------------------------
+        df = pd.DataFrame(
+            data=self._data[self.name][q].geom.true_centroid.tolist(),
+            columns=["x", "y"],
+        ).mean()
+        return df["x"], df["y"]
+
+    # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
         """
@@ -3117,7 +3318,8 @@ class GeoAccessor(object):
         """
         gt = self._data[self.name].geom.geometry_type
         return pd.unique(gt).tolist()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def has_z(self):
         """
@@ -3126,7 +3328,8 @@ class GeoAccessor(object):
         :returns: Boolean
         """
         return self._data[self.name].geom.has_z.all()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def has_m(self):
         """
@@ -3135,7 +3338,8 @@ class GeoAccessor(object):
         :returns: Boolean
         """
         return self._data[self.name].geom.has_m.all()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def bbox(self):
         """
@@ -3148,21 +3352,30 @@ class GeoAccessor(object):
         """
         xmin, ymin, xmax, ymax = self.full_extent
         sr = self.sr
-        if isinstance(sr, list) and \
-           len(sr) > 0:
+        if isinstance(sr, list) and len(sr) > 0:
             sr = sr[0]
         if xmin == xmax:
-            xmin -= .001
-            xmax += .001
+            xmin -= 0.001
+            xmax += 0.001
         if ymin == ymax:
-            ymin -= .001
-            ymax += .001
+            ymin -= 0.001
+            ymax += 0.001
         return Geometry(
-            {'rings' : [[[xmin,ymin], [xmin, ymax],
-                         [xmax, ymax], [xmax, ymin],
-                         [xmin, ymin]]],
-             'spatialReference' : dict(sr)})
-    #----------------------------------------------------------------------
+            {
+                "rings": [
+                    [
+                        [xmin, ymin],
+                        [xmin, ymax],
+                        [xmax, ymax],
+                        [xmax, ymin],
+                        [xmin, ymin],
+                    ]
+                ],
+                "spatialReference": dict(sr),
+            }
+        )
+
+    # ----------------------------------------------------------------------
     def distance_matrix(self, leaf_size=16, rebuild=False):
         """
         Creates a k-d tree to calculate the nearest-neighbor problem.
@@ -3198,7 +3411,8 @@ class GeoAccessor(object):
             return self._kdtree
         else:
             return self._kdtree
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def select(self, other):
         """
         This operation performs a dataset wide **selection** by geometric
@@ -3214,8 +3428,10 @@ class GeoAccessor(object):
 
         """
         from arcgis.features.geo._tools import select
+
         return select(sdf=self._data, other=other)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def overlay(self, sdf, op="union"):
         """
         Performs spatial operation operations on two spatially enabled dataframes.
@@ -3237,8 +3453,10 @@ class GeoAccessor(object):
 
         """
         from arcgis.features.geo._tools import overlay
+
         return overlay(sdf1=self._data, sdf2=sdf, op=op.lower())
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def relationship(self, other, op, relation=None):
         """
         This method allows for dataframe to dataframe compairson using
@@ -3282,28 +3500,32 @@ class GeoAccessor(object):
         from ._tools import contains, crosses, disjoint
         from ._tools import equals, overlaps, touches
         from ._tools import within
-        _ops_allowed = {'contains' : contains,
-                        'crosses': crosses,
-                        'disjoint': disjoint,
-                        'intersect': disjoint,
-                        'equals': equals,
-                        'overlaps' : overlaps,
-                        'touches': touches,
-                        'within' : contains}
+
+        _ops_allowed = {
+            "contains": contains,
+            "crosses": crosses,
+            "disjoint": disjoint,
+            "intersect": disjoint,
+            "equals": equals,
+            "overlaps": overlaps,
+            "touches": touches,
+            "within": contains,
+        }
 
         if not op.lower() in _ops_allowed.keys():
             raise ValueError("Invalid `op`. Please use a proper operation.")
 
-        if op.lower() in ['contains', 'within']:
+        if op.lower() in ["contains", "within"]:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other, relation=relation)
-        elif op.lower() in ['intersect']:
+        elif op.lower() in ["intersect"]:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other) == False
         else:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def voronoi(self):
         """
         Generates a voronoi diagram on the whole dataset.  If the geometry
@@ -3319,10 +3541,13 @@ class GeoAccessor(object):
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
         if _HASARCPY == False and _HASSHAPELY == False:
             return None
-        radius = max(abs(self.full_extent[0] - self.full_extent[2]),
-                     abs(self.full_extent[1] - self.full_extent[3]))
+        radius = max(
+            abs(self.full_extent[0] - self.full_extent[2]),
+            abs(self.full_extent[1] - self.full_extent[3]),
+        )
         from ._array import GeoArray
         from scipy.spatial import Voronoi
+
         xy = self._data[self.name].geom.centroid
         vor = Voronoi(xy.tolist())
         if vor.points.shape[1] != 2:
@@ -3333,12 +3558,9 @@ class GeoAccessor(object):
         # Construct a map containing all ridges for a
         # given point
         all_ridges = {}
-        for (p1, p2), (v1, v2) in zip(vor.ridge_points,
-                                      vor.ridge_vertices):
-            all_ridges.setdefault(
-                p1, []).append((p2, v1, v2))
-            all_ridges.setdefault(
-                p2, []).append((p1, v1, v2))
+        for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+            all_ridges.setdefault(p1, []).append((p2, v1, v2))
+            all_ridges.setdefault(p2, []).append((p1, v1, v2))
         # Reconstruct infinite regions
         for p1, region in enumerate(vor.point_region):
             vertices = vor.regions[region]
@@ -3357,32 +3579,36 @@ class GeoAccessor(object):
                     continue
                 # Compute the missing endpoint of an
                 # infinite ridge
-                t = vor.points[p2] - \
-                    vor.points[p1]  # tangent
+                t = vor.points[p2] - vor.points[p1]  # tangent
                 t /= np.linalg.norm(t)
                 n = np.array([-t[1], t[0]])  # normal
-                midpoint = vor.points[[p1, p2]]. \
-                    mean(axis=0)
-                direction = np.sign(
-                    np.dot(midpoint - center, n)) * n
-                far_point = vor.vertices[v2] + \
-                    direction * radius
+                midpoint = vor.points[[p1, p2]].mean(axis=0)
+                direction = np.sign(np.dot(midpoint - center, n)) * n
+                far_point = vor.vertices[v2] + direction * radius
                 new_region.append(len(new_vertices))
                 new_vertices.append(far_point.tolist())
             # Sort region counterclockwise.
-            vs = np.asarray([new_vertices[v]
-                             for v in new_region])
+            vs = np.asarray([new_vertices[v] for v in new_region])
             c = vs.mean(axis=0)
-            angles = np.arctan2(
-                vs[:, 1] - c[1], vs[:, 0] - c[0])
-            new_region = np.array(new_region)[
-                np.argsort(angles)]
+            angles = np.arctan2(vs[:, 1] - c[1], vs[:, 0] - c[0])
+            new_region = np.array(new_region)[np.argsort(angles)]
             new_regions.append(new_region.tolist())
         sr = self.sr
-        return pd.Series(GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
-                                             'spatialReference' : sr}).buffer(0) \
-                                   for r in new_regions]))
-    #----------------------------------------------------------------------
+        return pd.Series(
+            GeoArray(
+                [
+                    Geometry(
+                        {
+                            "rings": [[new_vertices[l] for l in r]],
+                            "spatialReference": sr,
+                        }
+                    ).buffer(0)
+                    for r in new_regions
+                ]
+            )
+        )
+
+    # ----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """
         Reprojects the who dataset into a new spatial reference. This is an inplace operation meaning
@@ -3405,7 +3631,8 @@ class GeoAccessor(object):
         HASPYPROJ = True
         try:
             import importlib
-            i = importlib.util.find_spec('pyproj')
+
+            i = importlib.util.find_spec("pyproj")
             if i is None:
                 raise ImportError("Cannot find pyproj.")
         except ImportError:
@@ -3414,14 +3641,23 @@ class GeoAccessor(object):
 
             if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
+
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
-                                                                  'transformation_name' : transformation_name})
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference,
+                        "transformation_name": transformation_name,
+                    }
+                )
                 self._data[self.name] = vals
                 return True
             elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
-                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
-                                                                  'transformation_name' : transformation_name})
+                vals = self._data[self.name].values.project_as(
+                    **{
+                        "spatial_reference": spatial_reference,
+                        "transformation_name": transformation_name,
+                    }
+                )
                 self._data[self.name] = vals
                 return True
             else:
@@ -3429,8 +3665,13 @@ class GeoAccessor(object):
         except Exception as e:
             raise Exception(e)
 
-    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False,
-                              use_snake_case=True):
+    def sanitize_column_names(
+        self,
+        convert_to_string=True,
+        remove_special_char=True,
+        inplace=False,
+        use_snake_case=True,
+    ):
         """
         Cleans column names by converting them to string, removing special characters, renaming columns without
         column names to 'noname', renaming duplicates with integer suffixes and switching spaces or Pascal or
@@ -3459,4 +3700,6 @@ class GeoAccessor(object):
         :returns: pd.DataFrame object if inplace=False. Else None.
         """
 
-        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace, use_snake_case)
+        return _sanitize_column_names(
+            self, convert_to_string, remove_special_char, inplace, use_snake_case
+        )

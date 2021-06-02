@@ -5,7 +5,7 @@ from functools import partial
 import xml.etree.ElementTree as ET
 import math
 import sys
-import json 
+import json
 import logging
 import tempfile
 import types
@@ -19,7 +19,8 @@ try:
     import arcgis
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, \
+        get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch, parallel, ifnone
     import fastai.vision
     from fastai.torch_core import data_collate
@@ -35,7 +36,8 @@ try:
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
-    from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles, show_batch_object_detection
+    from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles, \
+        show_batch_object_detection
     from ._utils.pointcloud_data import pointcloud_prepare_data
     from ._utils.superres import ImageImageListSR
     from fastai.tabular import TabularDataBunch
@@ -47,11 +49,11 @@ try:
     from ._utils.pix2pix import ImageTupleList2, prepare_data_ms_pix2pix
     import random
     import PIL
+
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
-
 
 band_abrevation_lib = {
     'b': 'BLUE',
@@ -72,22 +74,22 @@ band_abrevation_lib = {
 imagery_type_lib = {
     'landsat8': {
         "bands": ['ca', 'b', 'g', 'r', 'nir', 'swir', 'swir', 'c', 'qa', 'tir', 'tir'],
-        "bands_info": { # incomplete
+        "bands_info": {  # incomplete
         }
     },
     "naip": {
         "bands": ['r', 'g', 'b', 'nir'],
-        "bands_info": { # incomplete
+        "bands_info": {  # incomplete
         }
     },
-    'sentinel2': { 
+    'sentinel2': {
         "bands": ['ca', 'b', 'g', 'r', 'vre', 'vre', 'vre', 'nir', 'nnir', 'wv', 'swirc', 'swir', 'swir'],
-        "bands_info": { # incomplete
+        "bands_info": {  # incomplete
             "b1": {
                 "Name": "costal",
                 "max": 10000,
                 "min": 10000
-            },            
+            },
             "b2": {
                 "Name": "blue",
                 "max": 10000,
@@ -99,6 +101,7 @@ imagery_type_lib = {
 
 
 def get_installation_command():
+
     installation_steps = ('\nPlease install all required dependencies by following the'
                           ' instructions at: \nhttps://developers.arcgis.com/python/guide/install-and-set-up/#Install'
                           '-deep-learning-dependencies\n')
@@ -123,6 +126,7 @@ def _raise_conda_import_error(import_exception=import_exception):
 class _ImagenetCollater():
     def __init__(self, chip_size):
         self.chip_size = chip_size
+
     def __call__(self, batch):
         _xb = []
         for sample in batch:
@@ -137,6 +141,7 @@ class _ImagenetCollater():
             _yb = torch.stack([torch.tensor(sample[1]) for sample in batch])
         return _xb, _yb
 
+
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
     if isinstance(samples[0][1], int):
@@ -145,17 +150,17 @@ def _bb_pad_collate(samples, pad_idx=0):
     bboxes = torch.zeros(len(samples), max_len, 4)
     labels = torch.zeros(len(samples), max_len).long() + pad_idx
     imgs = []
-    for i,s in enumerate(samples):
+    for i, s in enumerate(samples):
         imgs.append(s[0].data[None])
         bbs, lbls = s[1].data
 
-        if not (bbs.nelement() == 0) or list(bbs) == [[0,0,0,0]]:
-            bboxes[i,-len(lbls):] = bbs
-            labels[i,-len(lbls):] = torch.tensor(lbls, device=bbs.device).long()
-    return torch.cat(imgs,0), (bboxes,labels)    
+        if not (bbs.nelement() == 0) or list(bbs) == [[0, 0, 0, 0]]:
+            bboxes[i, -len(lbls):] = bbs
+            labels[i, -len(lbls):] = torch.tensor(lbls, device=bbs.device).long()
+    return torch.cat(imgs, 0), (bboxes, labels)
 
 
-def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
+def _get_bbox_classes(label_file, class_mapping, height_width=[], **kwargs):
     dataset_type = kwargs.get('dataset_type', None)
 
     if dataset_type == 'KITTI_rectangles':
@@ -167,38 +172,40 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
         hwl = []
         d_xyz = []
         occluded = []
-        rot_yaxis = []     
-        start_space = re.compile('^\s+') #pattern to capture leading spaces
-        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)') #pattern to capture spaces between numeric values
+        rot_yaxis = []
+        start_space = re.compile('^\s+')  # pattern to capture leading spaces
+        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)')  # pattern to capture spaces between numeric values
 
-        with open(label_file) as f: #reading the bbox and class labels
+        with open(label_file) as f:  # reading the bbox and class labels
             lines = f.readlines()
-        
+
         for line in lines:
-            line = re.sub(start_space, '', line)  
-            lst = re.sub(spaces_to_be_replaced, ',', line).split(',') #reading kitti labels from string to a list
-            xmin, ymin, xmax, ymax = [float(n) for n in lst[4:8]] #reading bbox coordinates
-            hieght, width, length = [float(n) for n in lst[8:11]] 
+            line = re.sub(start_space, '', line)
+            lst = re.sub(spaces_to_be_replaced, ',', line).split(',')  # reading kitti labels from string to a list
+            xmin, ymin, xmax, ymax = [float(n) for n in lst[4:8]]  # reading bbox coordinates
+            hieght, width, length = [float(n) for n in lst[8:11]]
             x, y, z = [float(n) for n in lst[11:14]]
 
             data_class_text = str(lst[0])
-            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
-                or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
+            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text)) \
+                    or (data_class_text.isnumeric() and not (
+                    class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
                 continue
             if data_class_text.isnumeric():
-                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
+                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else \
+                class_mapping[int(data_class_text)]
             else:
                 data_class_mapping = class_mapping[data_class_text]
-            
-            classes.append(data_class_mapping) #object class
-            truncated.append(float(lst[1]))    #if the object is truncated
-            obs_angle.append(float(lst[2]))    #onservation angle
-            occluded.append(float(lst[3]))     #if the object is occluded
+
+            classes.append(data_class_mapping)  # object class
+            truncated.append(float(lst[1]))  # if the object is truncated
+            obs_angle.append(float(lst[2]))  # onservation angle
+            occluded.append(float(lst[3]))  # if the object is occluded
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
+            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
             hwl.append([hieght, width, length])
             d_xyz.append([x, y, z])
-            rot_yaxis.append(float(lst[14]))   #angle of rotation along y axis
+            rot_yaxis.append(float(lst[14]))  # angle of rotation along y axis
     else:
         tree = ET.parse(label_file)
         xmlroot = tree.getroot()
@@ -207,23 +214,25 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
         for tag_obj in xmlroot.findall('object'):
             bnd_box = tag_obj.find('bndbox')
             xmin, ymin, xmax, ymax = float(bnd_box.find('xmin').text), \
-                                    float(bnd_box.find('ymin').text), \
-                                    float(bnd_box.find('xmax').text), \
-                                    float(bnd_box.find('ymax').text)
+                                     float(bnd_box.find('ymin').text), \
+                                     float(bnd_box.find('xmax').text), \
+                                     float(bnd_box.find('ymax').text)
             data_class_text = tag_obj.find('name').text
 
-            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
-                or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
+            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text)) \
+                    or (data_class_text.isnumeric() and not (
+                    class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
                 continue
 
             if data_class_text.isnumeric():
-                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
+                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else \
+                class_mapping[int(data_class_text)]
             else:
                 data_class_mapping = class_mapping[data_class_text]
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
+            height_width.append(((xmax - xmin) * 1.25, (ymax - ymin) * 1.25))
 
     if len(bboxes) == 0:
         return [[[0., 0., 0., 0.]], [list(class_mapping.values())[0]]]
@@ -236,7 +245,8 @@ def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
         label_suffix = '.txt'
     else:
         label_suffix = '.xml'
-    label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), label_suffix)
+    label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix),
+                                                                          label_suffix)
     return _get_bbox_classes(label_file, class_mapping, height_width, dataset_type=dataset_type)
 
 
@@ -259,7 +269,7 @@ def _get_multi_lbls(imagefile):
 
 def _check_esri_files(path):
     if os.path.exists(path / 'esri_model_definition.emd') \
-        and os.path.exists(path / 'map.txt') \
+            and os.path.exists(path / 'map.txt') \
             and os.path.exists(path / 'esri_accumulated_stats.json'):
         return True
 
@@ -271,13 +281,13 @@ def _get_class_mapping(path, **kwargs):
     dataset_type = kwargs.get('dataset_type', None)
     class_mapping = {}
     if dataset_type == 'KITTI_rectangles':
-        start_space = re.compile('^\s+') #pattern to capture leading spaces
-        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)') #pattern to capture spaces between numeric values
+        start_space = re.compile('^\s+')  # pattern to capture leading spaces
+        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)')  # pattern to capture spaces between numeric values
 
-        for txtfile in os.listdir(path): 
+        for txtfile in os.listdir(path):
             if not txtfile.endswith('.txt'):
                 continue
-            with open(os.path.join(path , txtfile)) as f:
+            with open(os.path.join(path, txtfile)) as f:
                 lines = f.readlines()
             for line in lines:
                 line = re.sub(start_space, '', line)
@@ -295,13 +305,13 @@ def _get_class_mapping(path, **kwargs):
     return class_mapping
 
 
-def _get_batch_stats(image_list, 
-                     norm_pct=1, 
-                     _band_std_values=False, 
-                     scaled_std=True, 
+def _get_batch_stats(image_list,
+                     norm_pct=1,
+                     _band_std_values=False,
+                     scaled_std=True,
                      reshape=True):
-    n_normalization_samples = round(len(image_list)*norm_pct)
-    #n_normalization_samples = max(256, n_normalization_samples)
+    n_normalization_samples = round(len(image_list) * norm_pct)
+    # n_normalization_samples = max(256, n_normalization_samples)
     random_indexes = np.random.randint(0, len(image_list), size=min(n_normalization_samples, len(image_list)))
 
     # Original Band Stats
@@ -311,13 +321,13 @@ def _get_batch_stats(image_list,
 
     data_shape = image_list[0].data.shape
     n_bands = data_shape[0]
-    feasible_chunk = round(512*4*400/(n_bands*data_shape[1])) # ~3gb footprint
+    feasible_chunk = round(512 * 4 * 400 / (n_bands * data_shape[1]))  # ~3gb footprint
     chunk = min(feasible_chunk, n_normalization_samples)
     i = 0
     n_c = image_list[0].data.shape[0]
     for i in range(0, n_normalization_samples, chunk):
         if reshape:
-            x_tensor_chunk = torch.cat([x.data.view(n_c, -1) for x in image_list[random_indexes[i:i+chunk]]], dim=1)
+            x_tensor_chunk = torch.cat([x.data.view(n_c, -1) for x in image_list[random_indexes[i:i + chunk]]], dim=1)
             min_values = x_tensor_chunk.min(dim=1).values
             max_values = x_tensor_chunk.max(dim=1).values
             mean_values = x_tensor_chunk.mean(dim=1)
@@ -330,8 +340,8 @@ def _get_batch_stats(image_list,
                 min_values[bi] = x_tensor_chunk[:, bi].min()
                 max_values[bi] = x_tensor_chunk[:, bi].max()
                 mean_values[bi] = x_tensor_chunk[:, bi].mean()
-            """          
-            x_tensor_chunk = torch.stack([x.data for x in image_list[random_indexes[i:i+chunk]]])
+            """
+            x_tensor_chunk = torch.stack([x.data for x in image_list[random_indexes[i:i + chunk]]])
             min_values = x_tensor_chunk.min(dim=0)[0].min(dim=1)[0].min(dim=1)[0]
             max_values = x_tensor_chunk.max(dim=0)[0].max(dim=1)[0].max(dim=1)[0]
             mean_values = x_tensor_chunk.mean((0, 2, 3))
@@ -342,16 +352,17 @@ def _get_batch_stats(image_list,
     band_max_values = torch.stack(max_values_store).max(dim=0)[0]
     band_min_values = torch.stack(min_values_store).min(dim=0)[0]
     band_mean_values = torch.stack(mean_values_store).mean(dim=0)
-    
+
     view_shape = _get_view_shape(image_list[0].data, band_mean_values)
 
     if _band_std_values:
         std_values_store = []
         for i in range(0, n_normalization_samples, chunk):
-            x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
+            x_tensor_chunk = torch.stack([x.data for x in image_list[random_indexes[i:i + chunk]]])
             std_values = (x_tensor_chunk - band_mean_values.view(view_shape)).pow(2).sum((0, 2, 3))
             std_values_store.append(std_values)
-        band_std_values = (torch.stack(std_values_store).sum(dim=0) / ((n_normalization_samples * data_shape[1] * data_shape[2])-1)).sqrt()
+        band_std_values = (torch.stack(std_values_store).sum(dim=0) / (
+                    (n_normalization_samples * data_shape[1] * data_shape[2]) - 1)).sqrt()
     else:
         band_std_values = None
 
@@ -359,29 +370,31 @@ def _get_batch_stats(image_list,
     scaled_min_values = torch.tensor([0 for i in range(n_bands)], dtype=torch.float32)
     scaled_max_values = torch.tensor([1 for i in range(n_bands)], dtype=torch.float32)
     scaled_mean_values = _tensor_scaler(band_mean_values, band_min_values, band_max_values, mode='minmax')
-    
+
     if scaled_std:
         scaled_std_values_store = []
         for i in range(0, n_normalization_samples, chunk):
-            x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
+            x_tensor_chunk = torch.stack([x.data for x in image_list[random_indexes[i:i + chunk]]])
             x_tensor_chunk = _tensor_scaler(x_tensor_chunk, band_min_values, band_max_values, mode='minmax')
             std_values = (x_tensor_chunk - scaled_mean_values.view(view_shape)).pow(2).sum((0, 2, 3))
             scaled_std_values_store.append(std_values)
-        scaled_std_values = (torch.stack(scaled_std_values_store).sum(dim=0) / ((n_normalization_samples * data_shape[1] * data_shape[2])-1)).sqrt()
+        scaled_std_values = (torch.stack(scaled_std_values_store).sum(dim=0) / (
+                    (n_normalization_samples * data_shape[1] * data_shape[2]) - 1)).sqrt()
     else:
         scaled_std_values = None
 
-    #return band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values
+    # return band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values
     return {
-        "band_min_values": band_min_values, 
-        "band_max_values": band_max_values, 
-        "band_mean_values": band_mean_values, 
-        "band_std_values": band_std_values, 
-        "scaled_min_values": scaled_min_values, 
-        "scaled_max_values": scaled_max_values, 
-        "scaled_mean_values": scaled_mean_values, 
+        "band_min_values": band_min_values,
+        "band_max_values": band_max_values,
+        "band_mean_values": band_mean_values,
+        "band_std_values": band_std_values,
+        "scaled_min_values": scaled_min_values,
+        "scaled_max_values": scaled_max_values,
+        "scaled_mean_values": scaled_mean_values,
         "scaled_std_values": scaled_std_values
     }
+
 
 def sniff_rgb_bands(band_names):
     band_mapping_reverse = {k.lower(): i for i, k in enumerate(band_names)}
@@ -397,6 +410,7 @@ def sniff_rgb_bands(band_names):
         rgb_bands.append(bi)
     return rgb_bands
 
+
 def data_is_multispectral(emd_info: dict) -> bool:
     """
     :param emd_info: Dictionary containing EMD info
@@ -405,9 +419,10 @@ def data_is_multispectral(emd_info: dict) -> bool:
     is_multispectral = False
     if not 'InputRastersProps' in emd_info:
         return is_multispectral
-    if len(emd_info['InputRastersProps']["BandNames"]) !=3:
+    if len(emd_info['InputRastersProps']["BandNames"]) != 3:
         is_multispectral = True
     return is_multispectral
+
 
 def _get_view_shape(tensor_batch, band_factors):
     view_shape = [1 for i in range(len(tensor_batch.shape))]
@@ -420,9 +435,9 @@ def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_v
         view_shape = _get_view_shape(tensor_batch, min_values)
         max_values = max_values.view(view_shape)
         min_values = min_values.view(view_shape)
-    if mode=='minmax':
+    if mode == 'minmax':
         # new_value = (((old_value - old_min) / (old_max-old_min))*(new_max-new_min))+new_min
-        scaled_tensor_batch = (tensor_batch - min_values) / ( (max_values - min_values) + 1e-05)
+        scaled_tensor_batch = (tensor_batch - min_values) / ((max_values - min_values) + 1e-05)
     return scaled_tensor_batch
 
 
@@ -440,6 +455,7 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
 
+
 def _make_folder(path):
     path = os.path.abspath(path)
     if not os.path.exists(os.path.dirname(path)):
@@ -447,9 +463,13 @@ def _make_folder(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+
 _models_dir = 'models'
+
+
 def _prepare_working_dir(path):
     _make_folder(os.path.join(os.path.abspath(path), _models_dir))
+
 
 def merge_emd_and_stats(data_folders):
     emd_store = {}
@@ -528,7 +548,8 @@ def merge_emd_and_stats(data_folders):
     emd['Classes'] = [_class_hash[x] for x in sorted(_class_hash)]
     path = Path(data_folders[emd_keys[0]])  # First folder that has esri files
     return emd, eas, path
-  
+
+
 def prepare_textdata(
         path,
         task,
@@ -543,7 +564,7 @@ def prepare_textdata(
         remove_html_tags=False,
         remove_urls=False,
         working_dir=None
-    ):
+):
     """
     Prepares a text data object from the files present at data folder
 
@@ -637,7 +658,7 @@ def prepare_textdata(
             remove_html_tags=remove_html_tags,
             remove_urls=remove_urls
         )
-    
+
     elif task.lower() == "sequence_translation":
         data = TextDataObject.prepare_data_for_seq2seq(
             path,
@@ -654,14 +675,17 @@ def prepare_textdata(
 
     else:
         logger = logging.getLogger()
-        logger.error(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
-        raise Exception(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
+        logger.error(
+            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
+        raise Exception(
+            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
 
     if working_dir is None:
         working_dir = ''
     _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
     return data
+
 
 def prepare_tabulardata(
         input_features=None,
@@ -676,8 +700,7 @@ def prepare_tabulardata(
         batch_size=64,
         index_field=None,
         working_dir=None
-    ):
-
+):
     """
     Prepares a tabular data object from input_features and optionally rasters.
 
@@ -712,6 +735,17 @@ def prepare_tabulardata(
                                 [raster_1, (raster_2, True)]
                             Here raster_1 is treated as continuous and
                             raster_2 as categorical.
+                            To select only specific bands of raster, pass 2/3 sized tuple
+                            containing:
+                                1. Raster object.
+                                2. True/False denoting Categorical/Continuous variable.
+                                3. Tuple holding the indexes of the bands to be used.
+                            For example:
+                                [raster_1, (raster_2, True,(0,)),(raster_3, (0,1,2))]
+                            Here bands with indexes 0 will be chosen from raster_2
+                            and it will be treated as categorical variable, bands with
+                            indexes 0,1,2 will be chosen from raster_3 and they will be
+                            treated as continuous.
     ---------------------   -------------------------------------------
     date_field              Optional field_name.
                             This field contains the date in the input_features.
@@ -843,27 +877,27 @@ def prepare_tabulardata(
 
 
 def prepare_data(path,
-                 class_mapping=None, 
-                 chip_size=224, 
-                 val_split_pct=0.1, 
-                 batch_size=64, 
-                 transforms=None, 
-                 collate_fn=_bb_pad_collate, 
-                 seed=42, 
-                 dataset_type=None, 
+                 class_mapping=None,
+                 chip_size=224,
+                 val_split_pct=0.1,
+                 batch_size=64,
+                 transforms=None,
+                 collate_fn=_bb_pad_collate,
+                 seed=42,
+                 dataset_type=None,
                  resize_to=None,
                  working_dir=None,
                  **kwargs):
     """
-    Prepares a data object from training sample exported by the 
-    Export Training Data tool in ArcGIS Pro or Image Server, or training 
-    samples in the supported dataset formats. This data object consists of 
-    training and validation data sets with the specified transformations, 
-    chip size, batch size, split percentage, etc. 
+    Prepares a data object from training sample exported by the
+    Export Training Data tool in ArcGIS Pro or Image Server, or training
+    samples in the supported dataset formats. This data object consists of
+    training and validation data sets with the specified transformations,
+    chip size, batch size, split percentage, etc.
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
     -For feature categorization use Labelled Tiles or ImageNet format.
     -For pixel classification, use Classified Tiles format.
-    -For entity extraction from text, use IOB, BILUO or ner_json formats. 
+    -For entity extraction from text, use IOB, BILUO or ner_json formats.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -878,7 +912,7 @@ def prepare_data(path,
                                 class_mapping={'address_tag':'address_field'}.
                                 Field defined as 'address_tag' will be treated
                                 as a location. In cases where trained model extracts
-                                multiple locations from a single document, that 
+                                multiple locations from a single document, that
                                 document will be replicated for each location.
 
     ---------------------   -------------------------------------------
@@ -898,9 +932,9 @@ def prepare_data(path,
                             augmentation of training and validation datasets
                             respectively (We have set good defaults which work
                             for satellite imagery well). If transforms is set
-                            to `False` no transformation will take place and 
+                            to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use 
+                            If the dataset_type is 'PointCloud', use
                             `Transform3d` class from `arcgis.learn`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
@@ -909,12 +943,12 @@ def prepare_data(path,
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
     ---------------------   -------------------------------------------
-    dataset_type            Optional string. `prepare_data` function will infer 
-                            the `dataset_type` on its own if it contains a 
-                            map.txt file. If the path does not contain the 
-                            map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
-                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',  
+    dataset_type            Optional string. `prepare_data` function will infer
+                            the `dataset_type` on its own if it contains a
+                            map.txt file. If the path does not contain the
+                            map.txt file pass either of 'PASCAL_VOC_rectangles',
+                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
+                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN' and 'Pix2Pix'.
                             This parameter is mandatory for data which are not
@@ -927,7 +961,7 @@ def prepare_data(path,
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the images to a given size.
                             Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles"
-                            and  "superres". First resizes the image to the given 
+                            and  "superres". First resizes the image to the given
                             size and then crops images of size equal to chip_size.
                             Note: If resize_to is less than chip_size, the
                             resize_to is used as chip_size.
@@ -941,35 +975,35 @@ def prepare_data(path,
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    imagery_type            Optional string. Type of imagery used to export 
+    imagery_type            Optional string. Type of imagery used to export
                             the training data, valid values are:
                                 - 'naip'
                                 - 'sentinel2'
                                 - 'landsat8'
                                 - 'ms' - any other type of imagery
     ---------------------   -------------------------------------------
-    bands                   Optional list. Bands of the imagery used to export 
-                            training data. 
-                            For example ['r', 'g', 'b', 'nir', 'u'] 
+    bands                   Optional list. Bands of the imagery used to export
+                            training data.
+                            For example ['r', 'g', 'b', 'nir', 'u']
                             where 'nir' is near infrared band and 'u' is a miscellaneous band.
     ---------------------   -------------------------------------------
-    rgb_bands               Optional list. Indices of red, green and blue bands 
+    rgb_bands               Optional list. Indices of red, green and blue bands
                             in the imagery used to export the training data.
-                            for example: [2, 1, 0] 
+                            for example: [2, 1, 0]
     ---------------------   -------------------------------------------
     extract_bands           Optional list. Indices of bands to be used for
-                            training the model, same as in the imagery used to 
+                            training the model, same as in the imagery used to
                             export the training data.
-                            for example: [3, 1, 0] where we will not be using 
-                            the band at index 2 to train our model. 
+                            for example: [3, 1, 0] where we will not be using
+                            the band at index 2 to train our model.
     ---------------------   -------------------------------------------
-    norm_pct                Optional float. Percentage of training data to be 
-                            used for calculating imagery statistics for  
-                            normalizing the data. 
+    norm_pct                Optional float. Percentage of training data to be
+                            used for calculating imagery statistics for
+                            normalizing the data.
                             Default is 0.3 (30%) of data.
     ---------------------   -------------------------------------------
-    downsample_factor       Optional integer. Factor to downsample the images 
-                            for image SuperResolution. 
+    downsample_factor       Optional integer. Factor to downsample the images
+                            for image SuperResolution.
                             for example: if value is 2 and image size 256x256,
                             it will create label images of size 128x128.
                             Default is 4
@@ -985,7 +1019,7 @@ def prepare_data(path,
                             than 1000 points. Applicable only for
                             dataset_type='PointCloud'
     ---------------------   -------------------------------------------
-    classes_of_interest     Optional string. List of classes of interest. 
+    classes_of_interest     Optional string. List of classes of interest.
                             This will filter blocks based on `classes_of_interest`.
                             If we have classes [1, 3, 5, 7] in our dataset,
                             but we are mainly interested in 1 and 3,
@@ -1002,27 +1036,27 @@ def prepare_data(path,
                             train PointCNN. By default only x,y and z
                             are considered for training irrespective
                             of what features were exported.
-                            Set this to be a subset of 
-                            ['intensity', 'numberOfReturns', 'returnNumber', 
+                            Set this to be a subset of
+                            ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
                             For data exported from `export_point_dataset` set
-                            this to ['intensity', 'num_returns', 'return_num', 
+                            this to ['intensity', 'num_returns', 'return_num',
                             'red', 'green', 'blue', 'nir'].
     ---------------------   -------------------------------------------
-    remap_classes           Optional dictionary {int:int}. Mapping from  
-                            class values to user defined values. 
+    remap_classes           Optional dictionary {int:int}. Mapping from
+                            class values to user defined values.
                             If we have [1, 3, 5, 7] in our dataset
-                            and we want to map class 5 to 3. Set this 
+                            and we want to map class 5 to 3. Set this
                             parameter to `remap_classes={5:3}`.
                             In training then 5 will also be considered as 3.
-                            Applicable only for dataset_type='PointCloud' 
+                            Applicable only for dataset_type='PointCloud'
     ---------------------   -------------------------------------------
     background_classcode    Optional int. Default None.
-                            If this is defined it will remap other 
-                            class except `classes_of_interest` to 
+                            If this is defined it will remap other
+                            class except `classes_of_interest` to
                             `background_classcode` value. Only applicable
                             when specifying `classes_of_interest`.
-                            Applicable only for dataset_type='PointCloud'.                                                                                                                
+                            Applicable only for dataset_type='PointCloud'.
     =====================   ===========================================
 
     :returns: data object
@@ -1040,13 +1074,13 @@ def prepare_data(path,
     if isinstance(path, str) and not os.path.exists(path):
         message = f"Invalid input path. \nCould not find the path specified \n'{path}' \nPlease ensure that the input path is correct."
         if '\\' in path:
-            message+=f"""\n\nif you are using windows style paths please ensure you have specified paths with raw modifier. for example {"path=r'{path}'"}"""
+            message += f"""\n\nif you are using windows style paths please ensure you have specified paths with raw modifier. for example {"path=r'{path}'"}"""
         raise Exception(message)
 
     if type(path) is str:
         path = Path(path)
 
-    databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
+    databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
 
     force_cpu = arcgis.learn.models._arcgis_model._device_check()
@@ -1087,7 +1121,7 @@ def prepare_data(path,
         eas = copy.deepcopy(eas_in)
 
     has_esri_files = _check_esri_files(path)
-            
+
     alter_class_mapping = False
     color_mapping = None
 
@@ -1107,18 +1141,19 @@ def prepare_data(path,
             dataset_type = stats['MetaDataMode']
         # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
         #     dataset_type = 'ChangeDetection'
-        elif _check_esri_files(path/'A') and _check_esri_files(path/'B'):
+        elif _check_esri_files(path / 'A') and _check_esri_files(path / 'B'):
             has_esri_files = True
             dataset_type = 'CycleGAN'
         elif not has_esri_files:
-            raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
-    
+            raise Exception(
+                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
+
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
-    if dataset_type == 'Export_Tiles' and os.path.exists(path/'images2'):
+    if dataset_type == 'Export_Tiles' and os.path.exists(path / 'images2'):
         dataset_type = 'Pix2Pix'
 
     # Change Detection data is exported as Classified_Tiles with 'images', 'images2' and 'labels' folders
-    if dataset_type == 'Classified_Tiles' and os.path.exists(path/'images2'):
+    if dataset_type == 'Classified_Tiles' and os.path.exists(path / 'images2'):
         dataset_type = 'ChangeDetection'
 
     if dataset_type == 'ChangeDetection':
@@ -1134,9 +1169,9 @@ def prepare_data(path,
         else:
             from ._utils.change_detection_data import get_files, image_extensions, folder_names
             images_before_folder, images_after_folder = folder_names(path)
-            files_list = get_files(path  / images_before_folder,
-                                  extensions=image_extensions,
-                                  recurse=True)
+            files_list = get_files(path / images_before_folder,
+                                   extensions=image_extensions,
+                                   recurse=True)
             msimage_list = ArcGISImageList(files_list)
             if msimage_list[0].shape[0] != 3:
                 kwargs['imagery_type'] = 'ms'
@@ -1146,7 +1181,7 @@ def prepare_data(path,
         from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
-            if _check_esri_files(path/'A') and _check_esri_files(path/'B'):
+            if _check_esri_files(path / 'A') and _check_esri_files(path / 'B'):
                 has_esri_files = True
             path_a, path_b = cyclegan_paths(path)
             stats_path = path_a.parent
@@ -1178,7 +1213,8 @@ def prepare_data(path,
         imagery_type_a = ifnone(rgb_or_ms(str(files_list_a[0])), img_type)
         imagery_type_b = ifnone(rgb_or_ms(str(files_list_b[0])), img_type)
 
-    if dataset_type not in ["Imagenet", "superres", "Export_Tiles", 'CycleGAN', 'Pix2Pix', 'ChangeDetection'] and has_esri_files:
+    if dataset_type not in ["Imagenet", "superres", "Export_Tiles", 'CycleGAN', 'Pix2Pix',
+                            'ChangeDetection'] and has_esri_files:
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
@@ -1186,12 +1222,12 @@ def prepare_data(path,
         with open(path / 'map.txt') as f:
             while True:
                 line = f.readline()
-                if len(line.split())==2:
+                if len(line.split()) == 2:
                     break
         try:
-            img_size = ArcGISMSImage.open_gdal((path/(line.split()[0]).replace('\\', os.sep))).shape[-1]
-        except:            
-            img_size = PIL.Image.open((path/(line.split()[0]).replace('\\', os.sep))).size[-1]
+            img_size = ArcGISMSImage.open_gdal((path / (line.split()[0]).replace('\\', os.sep))).shape[-1]
+        except:
+            img_size = PIL.Image.open((path / (line.split()[0]).replace('\\', os.sep))).size[-1]
         if chip_size > img_size:
             chip_size = img_size
         right = line.split()[1].split('.')[-1].lower()
@@ -1213,7 +1249,7 @@ def prepare_data(path,
 
         ## Change all keys to int.
         if class_mapping is not None:
-            class_mapping = {int(key):value for key, value in class_mapping.items()}
+            class_mapping = {int(key): value for key, value in class_mapping.items()}
         else:
             class_mapping = {}
 
@@ -1221,7 +1257,7 @@ def prepare_data(path,
         for key, _ in emd_class_mapping.items():
             if class_mapping.get(key) is not None:
                 emd_class_mapping[key] = class_mapping[key]
-            
+
         class_mapping = emd_class_mapping
 
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
@@ -1279,10 +1315,10 @@ def prepare_data(path,
         ##
         try:
             import gdal
-            _im_path = str(path/(line.split()[0]).replace('\\', os.sep))
+            _im_path = str(path / (line.split()[0]).replace('\\', os.sep))
             ds = gdal.Open(_im_path)
-            if ds.RasterCount!=3 \
-                or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
+            if ds.RasterCount != 3 \
+                    or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
         except:
@@ -1290,7 +1326,7 @@ def prepare_data(path,
 
     if has_esri_files and not _infered and "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
         # Check by band names
-        band_mapping = {i:b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
+        band_mapping = {i: b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
         for b in emd["WellKnownBandNames (FYI, these band names can be used in ExtractBands)"]:
             if b.lower() in [
                 "red",
@@ -1328,15 +1364,15 @@ def prepare_data(path,
     if kwargs.get('rgb_bands', None) is not None:
         rgb_bands = kwargs.get('rgb_bands')
     elif bands is not None:
-        rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
-    
+        rgb_bands = [bands.index(b) for b in ['r', 'g', 'b'] if b in bands]
+
     if (bands is not None) or (rgb_bands is not None) or (not imagery_type in ['RGB', 'ASSUMED_RGB']):
         if imagery_type in ['RGB', 'ASSUMED_RGB']:
             imagery_type = 'MULTISPECTRAL'
         _is_multispectral = True
-    
+
     if kwargs.get('norm_pct', None) is not None:
-        norm_pct= kwargs.get('norm_pct')
+        norm_pct = kwargs.get('norm_pct')
         norm_pct = min(max(0, norm_pct), 1)
     else:
         norm_pct = .3
@@ -1353,12 +1389,13 @@ def prepare_data(path,
             return label_path
 
         label_dirs = []
-        index_dir = {} #for handling calss value with any number
+        index_dir = {}  # for handling calss value with any number
         for i, k in enumerate(sorted(class_mapping.keys())):
             label_dirs.append(class_mapping[k])
-            index_dir[k] = i+1
-        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
-        get_y_func = partial(get_labels, label_dirs= label_dir)
+            index_dir[k] = i + 1
+        label_dir = [os.path.join(path / 'labels', lbl) for lbl in label_dirs if
+                     os.path.isdir(os.path.join(path / 'labels', lbl))]
+        get_y_func = partial(get_labels, label_dirs=label_dir)
 
         def image_without_label(imagefile, not_label_count=[0]):
             label_mask = get_y_func(imagefile)
@@ -1366,7 +1403,7 @@ def prepare_data(path,
                 not_label_count[0] += 1
                 return False
             return True
-        
+
         remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
 
         if class_mapping.get(0):
@@ -1428,7 +1465,7 @@ def prepare_data(path,
             data = src
         #
         _show_batch_multispectral = show_batch_rcnn_masks
-        
+
         if transforms is None:
             ranges = (0, 1)
             if _image_space_used == _map_space:
@@ -1463,7 +1500,7 @@ def prepare_data(path,
                 not_label_count[0] += 1
                 return False
             return True
-        
+
         remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
 
         if class_mapping.get(0):
@@ -1473,8 +1510,8 @@ def prepare_data(path,
             del color_mapping[0]
 
         if is_no_color(color_mapping):
-            color_mapping = {j:[random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
-            
+            color_mapping = {j: [random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
+
         # TODO : Handle NoData case
         if data_folders is None and images_df is None:
             data = ArcGISSegmentationItemList.from_folder(path / 'images') \
@@ -1527,9 +1564,10 @@ def prepare_data(path,
         #
         _show_batch_multispectral = show_batch_classified_tiles
 
-        def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
-            r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
+        def classified_tiles_collate_fn(samples):  # The default fastai collate_fn was causing memory leak on tensors
+            r = (torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]))
             return r
+
         databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
 
         if transforms is None:
@@ -1553,15 +1591,18 @@ def prepare_data(path,
         def image_without_label(imagefile, dataset_type, not_label_count=[0]):
             imagefile = Path(imagefile)
             if dataset_type == 'KITTI_rectangles':
-                label_suffix='.txt'
+                label_suffix = '.txt'
             else:
-                label_suffix='.xml'
-            label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), label_suffix)
+                label_suffix = '.xml'
+            label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix),
+                                                                                  label_suffix)
             if not os.path.exists(label_file):
                 not_label_count[0] += 1
                 return False
             return True
-        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count, dataset_type=dataset_type)
+
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count,
+                                             dataset_type=dataset_type)
         get_y_func = partial(
             _get_bbox_lbls,
             class_mapping=class_mapping,
@@ -1579,7 +1620,7 @@ def prepare_data(path,
                 src = ObjectDetectionItemList.from_df(images_df, 'images')
                 src.items = images_df[images_df.columns[0]].values
                 src = src.split_by_rand_pct(val_split_pct, seed=seed) \
-                        .label_from_func(get_y_func)
+                    .label_from_func(get_y_func)
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -1592,7 +1633,6 @@ def prepare_data(path,
             data = src
         #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
-
 
         if transforms is None:
             ranges = (0, 1)
@@ -1625,6 +1665,7 @@ def prepare_data(path,
             # Imagenet
             def get_y_func(x):
                 return x.parent.stem
+
             if collate_fn is not _bb_pad_collate:
                 databunch_kwargs['collate_fn'] = collate_fn
             else:
@@ -1633,7 +1674,7 @@ def prepare_data(path,
             if not os.path.exists(_images_folder):
                 raise Exception(f"""Could not find a folder "images" in "{os.path.abspath(path)}",
                 \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
-                )
+                                )
 
         if data_folders is None and images_df is None:
             data = ArcGISImageList.from_folder(path / 'images') \
@@ -1644,7 +1685,7 @@ def prepare_data(path,
                 src = ArcGISImageList.from_df(images_df, 'images')
                 src.items = images_df[images_df.columns[0]].values
                 src = src.split_by_rand_pct(val_split_pct, seed=seed) \
-                        .label_from_func(get_y_func)
+                    .label_from_func(get_y_func)
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -1685,15 +1726,15 @@ def prepare_data(path,
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
-        path_hr = path/'images'
-        path_lr = path/'labels'
+        path_hr = path / 'images'
+        path_lr = path / 'labels'
         il = ImageList.from_folder(path_hr)
         hr_suffix = il.items[0].suffix
         img_size = il[0].shape[1]
         downsample_factor = kwargs.get('downsample_factor', None)
         if downsample_factor is None:
             downsample_factor = 4
-        path_lr_check = path/f'esri_superres_labels_downsample_factor.txt'
+        path_lr_check = path / f'esri_superres_labels_downsample_factor.txt'
         prepare_label = False
         if path_lr_check.exists():
             with open(path_lr_check) as f:
@@ -1703,13 +1744,14 @@ def prepare_data(path,
         else:
             prepare_label = True
         if prepare_label:
-            parallel(partial(resize_one, path_lr=path_lr, size=img_size/downsample_factor, path_hr=path_hr, img_size=img_size), il.items, max_workers=databunch_kwargs.get('num_workers'))
+            parallel(partial(resize_one, path_lr=path_lr, size=img_size / downsample_factor, path_hr=path_hr,
+                             img_size=img_size), il.items, max_workers=databunch_kwargs.get('num_workers'))
             with open(path_lr_check, 'w') as f:
                 f.write(str(downsample_factor))
 
-        data = ImageImageListSR.from_folder(path_lr)\
-            .split_by_rand_pct(val_split_pct, seed=seed)\
-            .label_from_func(lambda x: path_hr/x.with_suffix(hr_suffix).name)
+        data = ImageImageListSR.from_folder(path_lr) \
+            .split_by_rand_pct(val_split_pct, seed=seed) \
+            .label_from_func(lambda x: path_hr / x.with_suffix(hr_suffix).name)
         if resize_to is None:
             kwargs_transforms['size'] = img_size
         kwargs_transforms['tfm_y'] = True
@@ -1718,14 +1760,14 @@ def prepare_data(path,
             json_file = path / 'esri_model_definition.emd'
             with open(json_file) as f:
                 emd = json.load(f)
-        
-    elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
+
+    elif dataset_type in ['ner_json', 'BIO', 'IOB', 'LBIOU', 'BILUO']:
         if batch_size == 64:
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")
         ner_architecture = kwargs.get("ner_architecture", "spacy")
         data = _NERData(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
-                                val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
+                        val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
         if working_dir is not None:
             data.working_dir = path = Path(os.path.abspath(working_dir))
         else:
@@ -1745,7 +1787,8 @@ def prepare_data(path,
             transform_fn = None
         else:
             transform_fn = transforms
-        data = pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+        data = pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn,
+                                       **kwargs)
         data._data_path = data.path
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
@@ -1776,7 +1819,7 @@ def prepare_data(path,
                                              bands=bands,
                                              extract_bands=kwargs.pop('extract_bands', None),
                                              norm_pct=norm_pct,
-                                             working_dir = working_dir,
+                                             working_dir=working_dir,
                                              **kwargs)
 
     elif dataset_type == "CycleGAN":
@@ -1798,9 +1841,9 @@ def prepare_data(path,
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
             return data
-        data = ImageTupleList.from_folders(path, path_a, path_b)\
-                .split_by_rand_pct(val_split_pct, seed=seed)\
-                .label_empty()
+        data = ImageTupleList.from_folders(path, path_a, path_b) \
+            .split_by_rand_pct(val_split_pct, seed=seed) \
+            .label_empty()
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1824,8 +1867,8 @@ def prepare_data(path,
             data._temp_folder = _prepare_working_dir(data.path)
             return data
         data = (ImageTupleList2.from_folders(path, path_a, path_b)
-                      .split_by_rand_pct(val_split_pct, seed=seed)
-                      .label_empty())
+                .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_empty())
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1840,14 +1883,14 @@ def prepare_data(path,
         return data
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
-    
+
     if _is_multispectral:
         # Normalize multispectral imagery by calculating stats
         if dataset_type == 'RCNN_Masks':
             kwargs['do_normalize'] = False
 
         data = (data.transform(transforms, **kwargs_transforms)
-                    .databunch(**databunch_kwargs))
+                .databunch(**databunch_kwargs))
 
         if "InputRastersProps" in emd:
             # Starting with ArcGIS Pro 2.7 and Python API for ArcGIS 1.9, the following multispectral kwargs have been
@@ -1866,7 +1909,7 @@ def prepare_data(path,
             band_max_values = []
             band_mean_values = []
             band_std_values = []
-            for band_stats in  emd['AllTilesStats']:
+            for band_stats in emd['AllTilesStats']:
                 band_min_values.append(band_stats['Min'])
                 band_max_values.append(band_stats['Max'])
                 band_mean_values.append(band_stats['Mean'])
@@ -1881,8 +1924,9 @@ def prepare_data(path,
             data._band_std_values = torch.tensor(band_std_values, dtype=torch.float32)
             data._scaled_min_values = torch.zeros((data._nbands,), dtype=torch.float32)
             data._scaled_max_values = torch.ones((data._nbands,), dtype=torch.float32)
-            data._scaled_mean_values = _tensor_scaler(data._band_mean_values, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-            data._scaled_std_values = data._band_std_values*(data._scaled_mean_values/data._band_mean_values)
+            data._scaled_mean_values = _tensor_scaler(data._band_mean_values, min_values=data._band_min_values,
+                                                      max_values=data._band_max_values, mode='minmax')
+            data._scaled_std_values = data._band_std_values * (data._scaled_mean_values / data._band_mean_values)
 
             # Handover to next section
             norm_pct = 1
@@ -1891,9 +1935,9 @@ def prepare_data(path,
             if rgb_bands is None:
                 rgb_bands = []
                 if len(data._band_names) < 3:
-                    symbology_rgb_bands = [0] # Panchromatic
+                    symbology_rgb_bands = [0]  # Panchromatic
                 else:
-                    symbology_rgb_bands = [0, 1, 2] # Case where could not find RGB in multiband imagery
+                    symbology_rgb_bands = [0, 1, 2]  # Case where could not find RGB in multiband imagery
         else:
             symbology_rgb_bands = rgb_bands
             if len(data.x) < 300:
@@ -1901,15 +1945,15 @@ def prepare_data(path,
 
             # Statistics
             dummy_stats = {
-                "batch_stats_for_norm_pct_0" : {
-                    "band_min_values":None,
-                    "band_max_values":None,
-                    "band_mean_values":None,
-                    "band_std_values":None,
-                    "scaled_min_values":None,
-                    "scaled_max_values":None,
-                    "scaled_mean_values":None,
-                    "scaled_std_values":None
+                "batch_stats_for_norm_pct_0": {
+                    "band_min_values": None,
+                    "band_max_values": None,
+                    "band_mean_values": None,
+                    "band_std_values": None,
+                    "scaled_min_values": None,
+                    "scaled_max_values": None,
+                    "scaled_mean_values": None,
+                    "scaled_std_values": None
                 }
             }
             normstats_json_path = os.path.abspath(data.path / '..' / 'esri_normalization_stats.json')
@@ -1921,7 +1965,7 @@ def prepare_data(path,
                 with open(normstats_json_path) as f:
                     normstats = json.load(f)
 
-            norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
+            norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct * 100)}"
             if norm_pct_search in normstats:
                 batch_stats = normstats[norm_pct_search]
                 for s in batch_stats:
@@ -1948,11 +1992,12 @@ def prepare_data(path,
         #
 
         # Prevent Divide by zeros
-        data._band_max_values[data._band_min_values == data._band_max_values]+=1
-        data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
-        
+        data._band_max_values[data._band_min_values == data._band_max_values] += 1
+        data._scaled_std_values[data._scaled_std_values == 0] += 1e-02
+
         # Scaling
-        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
+        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values,
+                                       max_values=data._band_max_values, mode='minmax')
         data.valid_ds.x._div = (data._band_min_values, data._band_max_values)
         data.train_ds.x._div = (data._band_min_values, data._band_max_values)
 
@@ -1962,11 +2007,11 @@ def prepare_data(path,
             data._do_normalize = kwargs.get('do_normalize', True)
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
-        
+
     elif dataset_type == 'RCNN_Masks':
         data = (data.transform(transforms, **kwargs_transforms)
                 .databunch(**databunch_kwargs))
-        data.show_batch = types.MethodType( show_batch_rcnn_masks, data)
+        data.show_batch = types.MethodType(show_batch_rcnn_masks, data)
         # Exceptional case
         # We are dividing image pixel values by 255, at the time of opening it for rcnn masks
         # Not normalizing imagery here because model will normalize image internally
@@ -1974,25 +2019,25 @@ def prepare_data(path,
         data.valid_ds.x._div = 255.
     elif dataset_type == "Pix2Pix":
         data = (data.transform(get_transforms(), **kwargs_transforms)
-            .databunch(**databunch_kwargs)) 
+                .databunch(**databunch_kwargs))
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
-    
+
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
-            .databunch(**databunch_kwargs)
-            .normalize(imagenet_stats, do_y=True))
+                .databunch(**databunch_kwargs)
+                .normalize(imagenet_stats, do_y=True))
     elif dataset_type == "CycleGAN":
         data = (data.transform(get_transforms(), **kwargs_transforms)
-            .databunch(**databunch_kwargs))
-        data.n_channel = data.x[0].data[0].shape[0] 
+                .databunch(**databunch_kwargs))
+        data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
-        data._imagery_type_b = imagery_type_b      
+        data._imagery_type_b = imagery_type_b
     else:
         data = (data.transform(transforms, **kwargs_transforms)
-            .databunch(**databunch_kwargs)
-            .normalize(imagenet_stats))
+                .databunch(**databunch_kwargs)
+                .normalize(imagenet_stats))
         # RGB Image
         # We need to divide image pixel values by 255. at the time of opening it
         # because same method is used to open multispectral imagery as well
@@ -2010,7 +2055,7 @@ def prepare_data(path,
     data.train_ds.x._imagery_type = data._imagery_type
     data.valid_ds.x._imagery_type = data._imagery_type
 
-    # Assigning chip size from training dataset and not data.x 
+    # Assigning chip size from training dataset and not data.x
     # to consider transforms and resizing
     x_shape = data.train_ds[0][0].shape
     data.chip_size = x_shape[-1]
@@ -2030,25 +2075,26 @@ def prepare_data(path,
         data._dataset_type = stats['MetaDataMode']
     else:
         data._dataset_type = dataset_type
-    
+
     if dataset_type == "superres" or dataset_type == "Export_Tiles":
         data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}
         for i, class_name in enumerate(class_mapping.keys()):
-            new_mapping[i+1] = class_name
+            new_mapping[i + 1] = class_name
         class_mapping = new_mapping
 
     ## For calculating loss from inverse of frquency.
     if dataset_type == 'Classified_Tiles':
         pixel_stats = stats.get('ClassPixelStats', stats.get('FeatureStats', None))
         if pixel_stats is not None:
-            data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', pixel_stats.get('NumFeaturesPerClass', None))
+            data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass',
+                                                        pixel_stats.get('NumFeaturesPerClass', None))
         else:
             data.num_pixels_per_class = None
 
-       ## Might want to change the variable name
+        ## Might want to change the variable name
         if data.num_pixels_per_class is not None:
             num_pixels_per_class = np.array(data.num_pixels_per_class, dtype=np.int64)
             if num_pixels_per_class.sum() < 0:
@@ -2056,9 +2102,9 @@ def prepare_data(path,
                 data.class_weight = None
             else:
                 _num_pixels_per_class = np.copy(num_pixels_per_class)
-                _num_pixels_per_class[_num_pixels_per_class==0]=1
+                _num_pixels_per_class[_num_pixels_per_class == 0] = 1
                 data.class_weight = num_pixels_per_class.sum() / _num_pixels_per_class
-                data.class_weight[num_pixels_per_class==0]=0
+                data.class_weight[num_pixels_per_class == 0] = 0
         else:
             data.class_weight = None
 
@@ -2076,7 +2122,7 @@ def prepare_data(path,
     data.height_width = height_width
     data.downsample_factor = kwargs.get("downsample_factor")
     data.dataset_type = dataset_type
-    
+
     data._is_multispectral = _is_multispectral
     if data._is_multispectral:
         data._bands = bands
@@ -2084,45 +2130,47 @@ def prepare_data(path,
         data._rgb_bands = rgb_bands
         data._symbology_rgb_bands = symbology_rgb_bands
 
-        # Handle invalid color mapping 
+        # Handle invalid color mapping
         data._multispectral_color_mapping = color_mapping
-        if any( -1 in x for x in data._multispectral_color_mapping.values() ):
-            random_color_list = np.random.randint(low=0, high=255, size=(len(data._multispectral_color_mapping), 3)).tolist()
+        if any(-1 in x for x in data._multispectral_color_mapping.values()):
+            random_color_list = np.random.randint(low=0, high=255,
+                                                  size=(len(data._multispectral_color_mapping), 3)).tolist()
             for i, c in enumerate(data._multispectral_color_mapping):
                 if -1 in data._multispectral_color_mapping[c]:
                     data._multispectral_color_mapping[c] = random_color_list[i]
 
         # prepare color array
         alpha = kwargs.get('alpha', 0.7)
-        color_array = torch.tensor( list(data.color_mapping.values()) ).float() / 255
-        alpha_tensor = torch.tensor( [alpha]*len(color_array) ).view(-1, 1).float()
-        color_array = torch.cat( [ color_array, alpha_tensor ], dim=-1)
-        background_color = torch.tensor( [[0, 0, 0, 0]] ).float()
-        data._multispectral_color_array = torch.cat( [background_color, color_array] )
+        color_array = torch.tensor(list(data.color_mapping.values())).float() / 255
+        alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
+        color_array = torch.cat([color_array, alpha_tensor], dim=-1)
+        background_color = torch.tensor([[0, 0, 0, 0]]).float()
+        data._multispectral_color_array = torch.cat([background_color, color_array])
 
         # Prepare unknown bands list if bands data is missing
         if data._bands is None:
             n_bands = data.x[0].data.shape[0]
-            if n_bands == 1:# Handle Pancromatic case
+            if n_bands == 1:  # Handle Pancromatic case
                 data._bands = ['p']
                 data._symbology_rgb_bands = [0]
             else:
                 data._bands = ['u' for i in range(n_bands)]
-                if n_bands == 2:# Handle Data with two channels
+                if n_bands == 2:  # Handle Data with two channels
                     data._symbology_rgb_bands = [0]
-        
-        # 
+
+        #
         if data._rgb_bands is None:
             data._rgb_bands = []
 
-        # 
+        #
         if data._symbology_rgb_bands is None:
             data._symbology_rgb_bands = [0, 1, 2][:min(n_bands, 3)]
 
         # Complete symbology rgb bands
         if len(data._bands) > 2 and len(data._symbology_rgb_bands) < 3:
-            data._symbology_rgb_bands += [ min(max(data._symbology_rgb_bands)+1, len(data._bands)-1)  for i in range(3 - len(data._symbology_rgb_bands)) ]
-        
+            data._symbology_rgb_bands += [min(max(data._symbology_rgb_bands) + 1, len(data._bands) - 1) for i in
+                                          range(3 - len(data._symbology_rgb_bands))]
+
         # Overwrite band values at r g b indexes with 'r' 'g' 'b'
         for i, band_idx in enumerate(data._rgb_bands):
             if band_idx is not None:
@@ -2131,32 +2179,33 @@ def prepare_data(path,
 
         # Attach custom show batch
         if _show_batch_multispectral is not None:
-            data.show_batch = types.MethodType( _show_batch_multispectral, data )
+            data.show_batch = types.MethodType(_show_batch_multispectral, data)
 
         # Apply filter band transformation if user has specified extract_bands otherwise add a generic extract_bands
         """
         extract_bands : List containing band indices of the bands from imagery on which the model would be trained. 
                         Useful for benchmarking and applied training, for reference see examples below.
-                        
+
                         4 band naip ['r, 'g', 'b', 'nir'] + extract_bands=[0, 1, 2] -> 3 band naip with bands ['r', 'g', 'b'] 
 
         """
-        data._extract_bands = kwargs.get('extract_bands', None) 
+        data._extract_bands = kwargs.get('extract_bands', None)
         if data._extract_bands is None:
             data._extract_bands = list(range(len(data._bands)))
         else:
             data._extract_bands_tfm = partial(_extract_bands_tfm, band_indices=data._extract_bands)
-            data.add_tfm(data._extract_bands_tfm)   
+            data.add_tfm(data._extract_bands_tfm)
 
-        # Tail Training Override
+            # Tail Training Override
         _train_tail = True
         if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
 
     if not_label_count[0]:
-            logger = logging.getLogger()
-            logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
+        logger = logging.getLogger()
+        logger.warning("Please check your dataset. " + str(
+            not_label_count[0]) + " images dont have the corresponding label files.")
 
     data._image_space_used = _image_space_used
 
@@ -2167,17 +2216,19 @@ def prepare_data(path,
     _prepare_working_dir(data.path)
 
     from ._utils.env import _IS_ARCGISPRONOTEBOOK
-    if _IS_ARCGISPRONOTEBOOK:        
+    if _IS_ARCGISPRONOTEBOOK:
         from functools import wraps
         from matplotlib import pyplot as plt
         data._show_batch_orig = data.show_batch
+
         @wraps(data.show_batch)
         def show_batch_wrapper(rows=2, *args, **kwargs):
             res = data._show_batch_orig(rows, *args, **kwargs)
             plt.show()
             return res
+
         data.show_batch = show_batch_wrapper
-    
+
     if has_esri_files:
         data._emd = emd
 

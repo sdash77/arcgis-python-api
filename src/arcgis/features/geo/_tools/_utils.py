@@ -1,11 +1,15 @@
 import os, sys
 from contextlib import ExitStack, redirect_stdout, redirect_stderr, suppress
 from io import StringIO
+
+
 def run_and_hide(fn, **kwargs):
     """runs and hides the code's output"""
     err = None
     res = None
-    with ExitStack() as stack, suppress(Exception) as s3, suppress(ValueError) as s2, suppress(SystemError) as s1:
+    with ExitStack() as stack, suppress(Exception) as s3, suppress(
+        ValueError
+    ) as s2, suppress(SystemError) as s1:
         null_stream = StringIO()
         with redirect_stdout(null_stream) as s4:
             try:

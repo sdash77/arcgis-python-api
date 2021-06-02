@@ -11,23 +11,35 @@ from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from .._impl.common._utils import inspect_function_inputs
+
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
-                                               'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                                               'geometryType': 'esriGeometryPolyline',
-                                               'fields': [{'name': 'OID', 'type': 'esriFieldTypeOID', 'alias': 'OID'},
-                                                          {'name': 'Shape_Length', 'type': 'esriFieldTypeDouble',
-                                                           'alias': 'Shape_Length'}], 'displayFieldName': '',
-                                               'features': []},
-            profile_id_field: str = None,
-            dem_resolution: str = None,
-            maximum_sample_distance: float = None,
-            maximum_sample_distance_units: str = """Meters""",
-            gis=None,
-            future=False) -> FeatureSet:
+
+def profile(
+    input_line_features: FeatureSet = {
+        "exceededTransferLimit": False,
+        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
+        "geometryType": "esriGeometryPolyline",
+        "fields": [
+            {"name": "OID", "type": "esriFieldTypeOID", "alias": "OID"},
+            {
+                "name": "Shape_Length",
+                "type": "esriFieldTypeDouble",
+                "alias": "Shape_Length",
+            },
+        ],
+        "displayFieldName": "",
+        "features": [],
+    },
+    profile_id_field: str = None,
+    dem_resolution: str = None,
+    maximum_sample_distance: float = None,
+    maximum_sample_distance_units: str = """Meters""",
+    gis=None,
+    future=False,
+) -> FeatureSet:
     """
     .. image:: _static/images/elevation_profile/elevation_profile.png
 
@@ -71,8 +83,8 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
         "dem_resolution": dem_resolution,
         "maximum_sample_distance": maximum_sample_distance,
         "maximum_sample_distance_units": maximum_sample_distance_units,
-        'future' : True,
-        'gis' : gis
+        "future": True,
+        "gis": gis,
     }
 
     if gis is None:
@@ -81,30 +93,37 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
     url = gis.properties.helperServices.elevation.url
     tbx = _import_toolbox(url, gis=gis)
     param_db = inspect_function_inputs(tbx.profile, **param_db)
-    param_db['future'] = True
+    param_db["future"] = True
     gpjob = tbx.profile(**param_db)
     if future:
         return gpjob
     return gpjob.result()
 
-def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
-                                         'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                                         'geometryType': 'esriGeometryPoint',
-                                         'fields': [{'name': 'OID', 'type': 'esriFieldTypeOID', 'alias': 'OID'},
-                                                    {'name': 'offseta', 'type': 'esriFieldTypeDouble',
-                                                     'alias': 'offseta'},
-                                                    {'name': 'offsetb', 'type': 'esriFieldTypeDouble',
-                                                     'alias': 'offsetb'}], 'displayFieldName': '', 'features': []},
-             maximum_distance: float = None,
-             maximum_distance_units: str = """Meters""",
-             dem_resolution: str = None,
-             observer_height: float = None,
-             observer_height_units: str = """Meters""",
-             surface_offset: float = None,
-             surface_offset_units: str = """Meters""",
-             generalize_viewshed_polygons: bool = True,
-             gis=None,
-             future=False) -> FeatureSet:
+
+def viewshed(
+    input_points: FeatureSet = {
+        "exceededTransferLimit": False,
+        "spatialReference": {"latestWkid": 3857, "wkid": 102100},
+        "geometryType": "esriGeometryPoint",
+        "fields": [
+            {"name": "OID", "type": "esriFieldTypeOID", "alias": "OID"},
+            {"name": "offseta", "type": "esriFieldTypeDouble", "alias": "offseta"},
+            {"name": "offsetb", "type": "esriFieldTypeDouble", "alias": "offsetb"},
+        ],
+        "displayFieldName": "",
+        "features": [],
+    },
+    maximum_distance: float = None,
+    maximum_distance_units: str = """Meters""",
+    dem_resolution: str = None,
+    observer_height: float = None,
+    observer_height_units: str = """Meters""",
+    surface_offset: float = None,
+    surface_offset_units: str = """Meters""",
+    generalize_viewshed_polygons: bool = True,
+    gis=None,
+    future=False,
+) -> FeatureSet:
     """
     .. image:: _static/images/elevation_viewshed/elevation_viewshed.png
 
@@ -188,33 +207,35 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
 
     url = gis.properties.helperServices.elevation.url
     tbx = _import_toolbox(url, gis=gis)
-    param_db = {'dem_resolution': dem_resolution,
-                'generalize_viewshed_polygons': generalize_viewshed_polygons,
-                'input_points': input_points,
-                'maximum_distance': maximum_distance,
-                'maximum_distance_units': maximum_distance_units,
-                'observer_height': observer_height,
-                'observer_height_units': observer_height_units,
-                'surface_offset': surface_offset,
-                'surface_offset_units': surface_offset_units,
-                'future' : future,
-                'gis' : gis
+    param_db = {
+        "dem_resolution": dem_resolution,
+        "generalize_viewshed_polygons": generalize_viewshed_polygons,
+        "input_points": input_points,
+        "maximum_distance": maximum_distance,
+        "maximum_distance_units": maximum_distance_units,
+        "observer_height": observer_height,
+        "observer_height_units": observer_height_units,
+        "surface_offset": surface_offset,
+        "surface_offset_units": surface_offset_units,
+        "future": future,
+        "gis": gis,
     }
     param_db = inspect_function_inputs(tbx.viewshed, **param_db)
-    param_db['future'] = True
+    param_db["future"] = True
     gpjob = tbx.viewshed(**param_db)
     if future:
         return gpjob
     return gpjob.result()
 
 
-
-def summarize_elevation(input_features: FeatureSet = {},
-                        feature_id_field: str = None,
-                        dem_resolution: str = None,
-                        include_slope_aspect: bool = False,
-                        gis=None,
-                        future=False) -> FeatureSet:
+def summarize_elevation(
+    input_features: FeatureSet = {},
+    feature_id_field: str = None,
+    dem_resolution: str = None,
+    include_slope_aspect: bool = False,
+    gis=None,
+    future=False,
+) -> FeatureSet:
     """
     .. image:: _static/images/summarize_elevation/summarize_elevation.png
 
@@ -257,17 +278,16 @@ def summarize_elevation(input_features: FeatureSet = {},
     url = gis.properties.helperServices.elevation.url
     tbx = _import_toolbox(url, gis=gis)
     param_db = {
-        'dem_resolution': dem_resolution,
-        'feature_id_field': feature_id_field,
-        'include_slope_aspect': include_slope_aspect,
-        'input_features': input_features,
-        'gis' : gis,
-        'future' : future
+        "dem_resolution": dem_resolution,
+        "feature_id_field": feature_id_field,
+        "include_slope_aspect": include_slope_aspect,
+        "input_features": input_features,
+        "gis": gis,
+        "future": future,
     }
     param_db = inspect_function_inputs(tbx.summarize_elevation, **param_db)
-    param_db['future'] = True
+    param_db["future"] = True
     gpjob = tbx.summarize_elevation(**param_db)
     if future:
         return gpjob
     return gpjob.result()
-

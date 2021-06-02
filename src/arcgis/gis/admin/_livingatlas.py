@@ -6,6 +6,7 @@ from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS
 from ...gis import Group, GroupManager
 from ._base import BasePortalAdmin
+
 ########################################################################
 class LivingAtlas(BasePortalAdmin):
     """
@@ -86,7 +87,7 @@ class LivingAtlas(BasePortalAdmin):
                                        gis=gis)
 
     """
-    
+
     _groupquery = None
     _con = None
     _url = None
@@ -96,7 +97,7 @@ class LivingAtlas(BasePortalAdmin):
     _living_atlas_group = None
     _living_atlas_content_group = None
     _groups = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
 
@@ -108,29 +109,30 @@ class LivingAtlas(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
 
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """initializer"""
         try:
-            self._groupquery = self._gis.properties['livingAtlasGroupQuery']
+            self._groupquery = self._gis.properties["livingAtlasGroupQuery"]
         except:
             self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
         groups = self._gis.groups
         self._groups = []
         for group in groups.search(query=self._groupquery, outside_org=True):
             if group.title.lower() == "living atlas".lower():
-                self._living_atlas_group =  group
-            elif group.title.lower() == 'Living Atlas Analysis Layers'.lower():
+                self._living_atlas_group = group
+            elif group.title.lower() == "Living Atlas Analysis Layers".lower():
                 self._living_atlas_content_group = group
             self._groups.append(group)
             del group
         del groups
         self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def enable_public_access(self):
         """
         Enables the Public Living Atlas content.
@@ -147,15 +149,12 @@ class LivingAtlas(BasePortalAdmin):
         url = self._url + "/share"
         results = []
         for g in self.groups:
-            params = {
-                "f" : "json",
-                "groupId" : g.id,
-                "type" : "Public"
-            }
+            params = {"f": "json", "groupId": g.id, "type": "Public"}
             res = self._con.post(path=url, postdata=params)
-            results.append(res['status'] == 'success')
+            results.append(res["status"] == "success")
         return all(results)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def disable_public_access(self):
         """
         Disables the Public Living Atlas content.
@@ -167,15 +166,12 @@ class LivingAtlas(BasePortalAdmin):
         url = self._url + "/unshare"
         results = []
         for g in self.groups:
-            params = {
-                "f" : "json",
-                "groupId" : g.id,
-                "type" : "Public"
-            }
+            params = {"f": "json", "groupId": g.id, "type": "Public"}
             res = self._con.post(path=url, postdata=params)
-            results.append(res['status'] == 'success')
+            results.append(res["status"] == "success")
         return all(results)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def status(self, group):
         """
         Returns information about the sharing status of the Living
@@ -215,13 +211,14 @@ class LivingAtlas(BasePortalAdmin):
 
         """
         url = "%s/status" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         if isinstance(group, str):
-            params["groupId" ] = group
+            params["groupId"] = group
         elif isinstance(group, Group):
-            params['groupId'] = group.id
+            params["groupId"] = group.id
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def upgrade(self):
         """
         Upgrades the Living Atlas Group to the latest version of the Living Atlas
@@ -231,15 +228,16 @@ class LivingAtlas(BasePortalAdmin):
         :return: Boolean
         """
         url = "%s/upgrade"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         try:
             for g in self.groups:
-                params['groupId'] = g.id
+                params["groupId"] = g.id
                 self._con.post(url, params)
             return True
         except:
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update_subscriber_account(self, username, password):
         """
         Updates the Username/Password for the Living Atlas Subscriber User.
@@ -261,19 +259,20 @@ class LivingAtlas(BasePortalAdmin):
         r = []
         for g in self.groups:
             params = {
-                "f" : "json",
-                "groupId" : g.id,
-                "type" : 'Premium',
-                "username" : username,
-                "password" : password
+                "f": "json",
+                "groupId": g.id,
+                "type": "Premium",
+                "username": username,
+                "password": password,
             }
             res = self._con.post(url, params)
-            if 'success' in res:
+            if "success" in res:
                 r.append(True)
             else:
                 r.append(False)
         return all(r)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update_premium_account(self, username, password):
         """
         Updates the Username/Password for the Living Atlas Premium User.
@@ -295,27 +294,28 @@ class LivingAtlas(BasePortalAdmin):
         r = []
         for g in self.groups:
             params = {
-                "f" : "json",
-                "groupId" : g.id,
-                "type" : 'Premium',
-                "username" : username,
-                "password" : password
+                "f": "json",
+                "groupId": g.id,
+                "type": "Premium",
+                "username": username,
+                "password": password,
             }
             res = self._con.post(url, params)
-            if 'success' in res:
+            if "success" in res:
                 r.append(True)
             else:
                 r.append(False)
         return all(r)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def groups(self):
         """returns a list of all living atlas groups"""
         if not self._groups:
             self._init()
         return self._groups
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate_credentials(self, username, password, online_url=None):
         """
         Ensures the arguments contain valid credentials to access an active
@@ -339,14 +339,15 @@ class LivingAtlas(BasePortalAdmin):
             online_url = "https://www.arcgis.com"
         url = "%s/validate" % self._url
         params = {
-            "username" : username,
-            "password" : password,
-            "onlineUrl" : online_url,
-            "f" : "json",
+            "username": username,
+            "password": password,
+            "onlineUrl": online_url,
+            "f": "json",
         }
         res = self._con.post(path=url, postdata=params)
-        return res['status'] == 'success'
-    #----------------------------------------------------------------------
+        return res["status"] == "success"
+
+    # ----------------------------------------------------------------------
     def enable_premium_atlas(self, username, password):
         """
         Enables the Premium Living Atlas Content for a local portal.
@@ -423,29 +424,24 @@ class LivingAtlas(BasePortalAdmin):
                 group_id = g.id
                 break
         params = {
-            "f" : "json",
-            "username" : username,
-            "password" : password,
-            'type' : "Premium",
-            'groupId' : group_id
+            "f": "json",
+            "username": username,
+            "password": password,
+            "type": "Premium",
+            "groupId": group_id,
         }
         url = "%s/enable" % self._url
         res = self._con.post(path=url, postdata=params)
-        if 'status' in res and \
-           res['status'] == 'success' and \
-           group_id:
+        if "status" in res and res["status"] == "success" and group_id:
             url = "%s/share" % self._url
-            params = {
-                "f" : "json",
-                "groupId" : group_id,
-                "type" : 'Premium'
-            }
+            params = {"f": "json", "groupId": group_id, "type": "Premium"}
             res = self._con.post(path=url, postdata=params)
-            return res['status'] == 'success'
+            return res["status"] == "success"
         else:
             return False
         return
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def enable_subscriber_atlas(self, username, password):
         """
         Enables the Subscriber level Living Atlas Content for an ArcGIS Enterprise portal.
@@ -477,28 +473,25 @@ class LivingAtlas(BasePortalAdmin):
         for g in self.groups:
             group_ids.append(g.id)
         params = {
-            "f" : "json",
-            "username" : username,
-            "password" : password,
-            'type' : "Subscriber"
+            "f": "json",
+            "username": username,
+            "password": password,
+            "type": "Subscriber",
         }
         try:
             for ids in group_ids:
-                params['groupId'] = ids
+                params["groupId"] = ids
                 url = "%s/enable" % self._url
                 res = self._con.post(path=url, postdata=params)
             for ids in group_ids:
                 url = "%s/share" % self._url
-                params = {
-                    "f" : "json",
-                    "groupId" : ids,
-                    "type" : 'Subscriber'
-                }
+                params = {"f": "json", "groupId": ids, "type": "Subscriber"}
                 res = self._con.post(path=url, postdata=params)
             return True
         except:
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def disable_subscriber_atlas(self):
         """
         Disables the Subscriber level Living Atlas Content for a local portal.
@@ -507,27 +500,21 @@ class LivingAtlas(BasePortalAdmin):
         group_ids = []
         for g in self.groups:
             group_ids.append(g.id)
-        params = {
-            "f" : "json",
-            'type' : "Subscriber"
-        }
+        params = {"f": "json", "type": "Subscriber"}
         try:
             for ids in group_ids:
-                params['groupId'] = ids
+                params["groupId"] = ids
                 url = "%s/disable" % self._url
                 res = self._con.post(path=url, postdata=params)
             for ids in group_ids:
                 url = "%s/unshare" % self._url
-                params = {
-                    "f" : "json",
-                    "groupId" : ids,
-                    "type" : 'Subscriber'
-                }
+                params = {"f": "json", "groupId": ids, "type": "Subscriber"}
                 res = self._con.post(path=url, postdata=params)
             return True
         except:
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def disable_premium_atlas(self):
         """
         Disables the Premium Living Atlas Content for a local portal.
@@ -560,24 +547,14 @@ class LivingAtlas(BasePortalAdmin):
             if g.title.lower() == "living atlas":
                 group_id = g.id
                 break
-        params = {
-            "f" : "json",
-            "groupId" : group_id,
-            'type' : "Premium"
-        }
+        params = {"f": "json", "groupId": group_id, "type": "Premium"}
         url = "%s/disable" % self._url
         res = self._con.post(path=url, postdata=params)
-        if 'status' in res and \
-           res['status'] == 'success' and \
-           group_id:
+        if "status" in res and res["status"] == "success" and group_id:
             url = "%s/unshare" % self._url
-            params = {
-                "f" : "json",
-                "groupId" : group_id,
-                "type" : 'Premium'
-            }
+            params = {"f": "json", "groupId": group_id, "type": "Premium"}
             res = self._con.post(path=url, postdata=params)
-            return res['status'] == 'success'
+            return res["status"] == "success"
         else:
             return False
         return False

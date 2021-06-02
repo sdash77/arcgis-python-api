@@ -2,14 +2,17 @@
 Wrapper for implementing Spatial Indexing for DataFrames
 """
 from .quadtree import Index as QIndex
+
 try:
     from rtree.index import Index as RIndex
+
     HASRTREE = True
 except:
     HASRTREE = False
     RIndex = None
 
-class SpatialIndex():
+
+class SpatialIndex:
     """
 
     A spatial index is a type of extended index that allows you to index a
@@ -53,28 +56,30 @@ class SpatialIndex():
 
 
     """
+
     _stype = None
     _bbox = None
     _index = None
     _df = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, stype, bbox=None, **kwargs):
         """initializer"""
-        ci = kwargs.pop('custom_index', None)
-        self._filename = kwargs.pop('filename', None)
+        ci = kwargs.pop("custom_index", None)
+        self._filename = kwargs.pop("filename", None)
         self._bbox = bbox
         self._stype = stype.lower()
         self._df = None
-        if ci and stype.lower() == 'custom':
+        if ci and stype.lower() == "custom":
             self._index = ci
-        elif stype.lower() == 'quadtree' and bbox:
+        elif stype.lower() == "quadtree" and bbox:
             self._index = QIndex(bbox=bbox)
-        elif RIndex and stype.lower() == 'rtree':
+        elif RIndex and stype.lower() == "rtree":
             self._index = RIndex(self._filename)
         else:
             raise ValueError("Could not create the spatial index.")
-    #----------------------------------------------------------------------
-    def intersect(self,bbox):
+
+    # ----------------------------------------------------------------------
+    def intersect(self, bbox):
         """
         Returns the spatial features that intersect the bbox
 
@@ -82,13 +87,14 @@ class SpatialIndex():
 
         :returns: list
         """
-        if self._stype.lower() in ['rtree']:
+        if self._stype.lower() in ["rtree"]:
             return list(self._index.intersection(bbox))
-        elif self._stype.lower() in ['quadtree' ]:
+        elif self._stype.lower() in ["quadtree"]:
             return list(self._index.intersect(bbox=bbox))
         else:
             return list(self._index.intersect(bbox))
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def insert(self, oid, bbox):
         """
         Inserts the entry into the spatial index
@@ -97,22 +103,22 @@ class SpatialIndex():
         :bbox: tuple - (xmin,ymin,xmax,ymax)
         """
         if self._index is None:
-            raise Exception(("Could not insert into a spatial index because "
-                            "it does not exist."))
-        if self._stype == 'rtree' and \
-           HASRTREE and \
-           isinstance(self._index, RIndex):
+            raise Exception(
+                ("Could not insert into a spatial index because " "it does not exist.")
+            )
+        if self._stype == "rtree" and HASRTREE and isinstance(self._index, RIndex):
 
             r = self._index.insert(id=oid, coordinates=bbox, obj=None)
             self.flush()
             return r
-        elif self._stype.lower() == 'quadtree':
+        elif self._stype.lower() == "quadtree":
             return self._index.insert(item=oid, bbox=bbox)
-        elif self._stype.lower() == 'custom':
+        elif self._stype.lower() == "custom":
             r = self._index.intersect(oid, bbox)
             self.flush()
             return r
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def flush(self):
         """
         Saves the index to disk if a filename is given for an R-Tree Spatial Index.
@@ -122,10 +128,9 @@ class SpatialIndex():
         :returns: Boolean
 
         """
-        if hasattr(self._index, 'flush'):
-            getattr(self._index, 'flush')()
-        elif self._stype == 'rtree' and \
-             self._filename:
+        if hasattr(self._index, "flush"):
+            getattr(self._index, "flush")()
+        elif self._stype == "rtree" and self._filename:
             self._index.close()
             self._index = RIndex(self._filename)
         else:

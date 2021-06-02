@@ -1,5 +1,6 @@
 import uuid
 from arcgis._impl.common._mixins import PropertyMap
+
 ###########################################################################
 class BaseOGC(object):
     """
@@ -23,6 +24,7 @@ class BaseOGC(object):
     ===============     ====================================================================
 
     """
+
     _id = None
     _con = None
     _gis = None
@@ -33,16 +35,17 @@ class BaseOGC(object):
     _copyright = None
     _min_scale = None
     _max_scale = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         self._url = url
         self._gis = gis
-        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._title = kwargs.pop("title", "Layer")
-        self._opacity = kwargs.pop('opacity', 1)
-        self._id = kwargs.pop('id', uuid.uuid4().hex)
+        self._opacity = kwargs.pop("opacity", 1)
+        self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._copyright = kwargs.pop("copyright", "")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -51,13 +54,16 @@ class BaseOGC(object):
         :returns: PropertyMap
         """
         return PropertyMap(self._lyr_json)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def title(self) -> str:
         """
@@ -66,9 +72,10 @@ class BaseOGC(object):
         :returns: String
         """
         return self._title
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @title.setter
-    def title(self, value:str):
+    def title(self, value: str):
         """
         The title of the layer used to identify it in places such as the Legend and LayerList widgets.
 
@@ -76,7 +83,8 @@ class BaseOGC(object):
         """
         if self._title != value:
             self._title = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def opacity(self) -> float:
         """
@@ -85,9 +93,10 @@ class BaseOGC(object):
         :returns: Float
         """
         return self._opacity
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @opacity.setter
-    def opacity(self, value:float):
+    def opacity(self, value: float):
         """
         This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
 
@@ -95,44 +104,51 @@ class BaseOGC(object):
         """
         if isinstance(value, (float, int)):
             self._opacity = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def scale(self):
         """Gets/Sets the Min/Max Scale for the layer"""
         return self._min_scale, self._max_scale
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @scale.setter
-    def scale(self, scale:tuple):
+    def scale(self, scale: tuple):
         """Gets/Sets the Min/Max Scale for the layer"""
         if isinstance(scale, (tuple, list)) and len(scale) == 2:
             self._min_scale, self._max_scale = scale
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def copyright(self):
         """Copyright information for the layer."""
         return self._copyright
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @copyright.setter
     def copyright(self):
         """Copyright information for the layer."""
         return self._copyright
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
         """Represents the MapView's JSON format"""
         return {
-            "id" : uuid.uuid4().hex,
-            "title" : self._title or "Layer",
-            "url" : self._url,
-            "type" : self._type,
-            "minScale" : self.scale[0],
-            "maxScale" : self.scale[1],
-            "opacity" : self.opacity
+            "id": uuid.uuid4().hex,
+            "title": self._title or "Layer",
+            "url": self._url,
+            "type": self._type,
+            "minScale": self.scale[0],
+            "maxScale": self.scale[1],
+            "opacity": self.opacity,
         }
+
     @property
     def _operational_layer_json(self) -> dict:
         """Represents the WebMap's JSON format"""
         return self._lyr_json
+
 
 ###########################################################################
 class BaseOpenData(BaseOGC):
@@ -159,18 +175,21 @@ class BaseOpenData(BaseOGC):
     ===============     ====================================================================
 
     """
+
     _sql = None
+
     def __init__(self, url, gis=None, **kwargs):
         super(BaseOpenData, self)
         self._url = url
         self._gis = gis
-        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._min_scale, self._max_scale = kwargs.pop("scale", (0, 0))
         self._title = kwargs.pop("title", "Layer")
-        self._opacity = kwargs.pop('opacity', 0)
-        self._id = kwargs.pop('id', uuid.uuid4().hex)
+        self._opacity = kwargs.pop("opacity", 0)
+        self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._copyright = kwargs.pop("copyright", "")
         self._sql = kwargs.pop("sql_expression", None)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def sql_expression(self):
         """
@@ -185,7 +204,8 @@ class BaseOpenData(BaseOGC):
         :return: String
         """
         return self._sql
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @sql_expression.setter
     def sql_expression(self, value):
         """

@@ -23,6 +23,7 @@ class WorkforceWarning(Warning):
     """
     Abstract base class for warnings thrown by the workforce module
     """
+
     def __init__(self, message):
         """
         :param message: A human readable message describing the error.
@@ -43,7 +44,7 @@ class ServerError(WorkforceError):
     def __init__(self, errors):
         """ :param errors: An array of error objects returned by the server.
         """
-        err_lines = ["\n\t{}".format(error['description']) for error in errors]
+        err_lines = ["\n\t{}".format(error["description"]) for error in errors]
         message = "Server operation failed with errors:{}".format(err_lines)
         super().__init__(message)
         self.errors = errors

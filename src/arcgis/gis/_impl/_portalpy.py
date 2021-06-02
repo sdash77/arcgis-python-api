@@ -14,9 +14,10 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = '1.9.0'
+__version__ = "1.9.0"
 
 _log = logging.getLogger(__name__)
+
 
 class Portal(object):
     """ An object representing a connection to a single portal (via URL).
@@ -74,15 +75,32 @@ class Portal(object):
         portal.delete_user('amy.user', True, 'bob.user')
 
     """
+
     _is_arcpy = False
-    def __init__(self, url, username=None, password=None, key_file=None,
-                 cert_file=None, expiration=60, referer=None, proxy_host=None,
-                 proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None,
-                 token=None, **kwargs):
+
+    def __init__(
+        self,
+        url,
+        username=None,
+        password=None,
+        key_file=None,
+        cert_file=None,
+        expiration=60,
+        referer=None,
+        proxy_host=None,
+        proxy_port=None,
+        connection=None,
+        workdir=tempfile.gettempdir(),
+        tokenurl=None,
+        verify_cert=True,
+        client_id=None,
+        custom_auth=None,
+        token=None,
+        **kwargs,
+    ):
         """ The Portal constructor. Requires URL and optionally username/password."""
-        url = url.strip()            # be permissive in accepting home app urls
-        homepos = url.find('/home')
+        url = url.strip()  # be permissive in accepting home app urls
+        homepos = url.find("/home")
         trust_env = kwargs.get("trust_env", None)
         if homepos != -1:
             url = url[:homepos]
@@ -91,6 +109,7 @@ class Portal(object):
         if self._is_arcpy:
             try:
                 import arcpy
+
                 url = arcpy.GetActivePortalURL()
                 self.url = url
             except ImportError:
@@ -102,23 +121,25 @@ class Portal(object):
 
         if url:
             normalized_url = self.url
-            '''_normalize_url(self.url)'''
-            if not normalized_url[-1] == '/':
-                normalized_url += '/'
+            """_normalize_url(self.url)"""
+            if not normalized_url[-1] == "/":
+                normalized_url += "/"
             if normalized_url.lower().find("www.arcgis.com") > -1:
                 urlscheme = urlparse(normalized_url).scheme
-                self.resturl = "{scheme}://www.arcgis.com/sharing/rest/".format(scheme=urlscheme)
+                self.resturl = "{scheme}://www.arcgis.com/sharing/rest/".format(
+                    scheme=urlscheme
+                )
             elif normalized_url.lower().endswith("sharing/"):
-                self.resturl = normalized_url + 'rest/'
+                self.resturl = normalized_url + "rest/"
             elif normalized_url.lower().endswith("sharing/rest/"):
                 self.resturl = normalized_url
             else:
-                self.resturl = normalized_url + 'sharing/rest/'
+                self.resturl = normalized_url + "sharing/rest/"
             self.hostname = _parse_hostname(url)
         self.workdir = workdir
 
         # Setup the instance members
-        self._basepostdata = { 'f': 'json' }
+        self._basepostdata = {"f": "json"}
         self._version = None
         self._properties = None
         self._resources = None
@@ -130,49 +151,52 @@ class Portal(object):
         # If a connection was passed in, use it, otherwise setup the
         # connection (use all SSL until portal informs us otherwise)
         if connection:
-            _log.debug('Using existing connection to: ' + \
-                       _parse_hostname(connection.baseurl))
+            _log.debug(
+                "Using existing connection to: " + _parse_hostname(connection.baseurl)
+            )
             self.con = connection
         if not connection:
-            _log.debug('Connecting to portal: ' + self.hostname)
+            _log.debug("Connecting to portal: " + self.hostname)
             if self._is_arcpy:
-                self.con = Connection(baseurl="pro",
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert,
-                                      custom_auth=custom_auth,
-                                      token=token,
-                                      trust_env=trust_env)
+                self.con = Connection(
+                    baseurl="pro",
+                    tokenurl=tokenurl,
+                    username=username,
+                    password=password,
+                    key_file=key_file,
+                    cert_file=cert_file,
+                    expiration=expiration,
+                    all_ssl=True,
+                    referer=referer,
+                    proxy_host=proxy_host,
+                    proxy_port=proxy_port,
+                    verify_cert=verify_cert,
+                    custom_auth=custom_auth,
+                    token=token,
+                    trust_env=trust_env,
+                )
             else:
-                self.con = Connection(baseurl=self.resturl,
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert,
-                                      client_id=client_id,
-                                      client_secret=kwargs.pop('client_secret', None),
-                                      custom_auth=custom_auth,
-                                      token=token,
-                                      trust_env=trust_env)
-        #self.get_version(True)
+                self.con = Connection(
+                    baseurl=self.resturl,
+                    tokenurl=tokenurl,
+                    username=username,
+                    password=password,
+                    key_file=key_file,
+                    cert_file=cert_file,
+                    expiration=expiration,
+                    all_ssl=True,
+                    referer=referer,
+                    proxy_host=proxy_host,
+                    proxy_port=proxy_port,
+                    verify_cert=verify_cert,
+                    client_id=client_id,
+                    client_secret=kwargs.pop("client_secret", None),
+                    custom_auth=custom_auth,
+                    token=token,
+                    trust_env=trust_env,
+                )
+        # self.get_version(True)
         self.get_properties(True)
-
-
 
     def add_group_users(self, user_names, group_id, admin_names):
         """ Adds users to the group specified.
@@ -197,21 +221,20 @@ class Portal(object):
              added to the group.
         """
 
-
         if self._is_pre_21:
-            _log.warning('The auto_accept option is not supported in ' \
-                         + 'pre-2.0 portals')
+            _log.warning(
+                "The auto_accept option is not supported in " + "pre-2.0 portals"
+            )
             return
 
-        #user_names = _unpack(user_names, 'username')
+        # user_names = _unpack(user_names, 'username')
 
         postdata = self._postdata()
         if user_names:
-            postdata['users'] = ','.join(user_names)
+            postdata["users"] = ",".join(user_names)
         if admin_names:
-            postdata['admins'] = ",".join(admin_names)
-        resp = self.con.post('community/groups/' + group_id + '/addUsers',
-                             postdata)
+            postdata["admins"] = ",".join(admin_names)
+        resp = self.con.post("community/groups/" + group_id + "/addUsers", postdata)
         return resp
 
     def delete_group_thumbnail(self, group_id):
@@ -228,13 +251,21 @@ class Portal(object):
 
         """
         url = f"community/groups/{group_id}/deleteThumbnail"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self.con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
 
-    def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def add_item(
+        self,
+        item_properties,
+        data=None,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
+    ):
         """ Adds content to a Portal.
 
 
@@ -311,7 +342,6 @@ class Portal(object):
              The item id of the uploaded item if successful, None if unsuccessful.
         """
 
-
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
         postdata.update(_to_utf8(item_properties))
@@ -323,41 +353,53 @@ class Portal(object):
                 data = request.urlretrieve(data)[0]
             else:
                 if not os.path.isfile(os.path.abspath(data)):
-                    raise RuntimeError("File("+data+") not found.")
-            files.append(('file', data, os.path.basename(data)))
+                    raise RuntimeError("File(" + data + ") not found.")
+            files.append(("file", data, os.path.basename(data)))
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
-            files.append(('metadata', metadata, 'metadata.xml'))
+            files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_thumbnail = thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
-            files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
+            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # If owner isn't specified, use the logged in user
         if not owner:
-            owner = self.logged_in_user()['username']
+            owner = self.logged_in_user()["username"]
 
         # Setup the item path, including the folder, and post to it
-        path = 'content/users/' + owner
-        if folder and folder != '/':
+        path = "content/users/" + owner
+        if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
-            path += '/' + folder_id
+            path += "/" + folder_id
 
-        path += '/addItem'
+        path += "/addItem"
         resp = self.con.post(path, postdata, files)
-        if resp and resp.get('success'):
-            return resp['id']
+        if resp and resp.get("success"):
+            return resp["id"]
 
-    def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None,
-                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False, item_id=None):
+    def publish_item(
+        self,
+        itemid,
+        data=None,
+        text=None,
+        fileType="serviceDefinition",
+        publishParameters=None,
+        outputType=None,
+        overwrite=False,
+        owner=None,
+        folder=None,
+        buildInitialCache=False,
+        item_id=None,
+    ):
         """
         Publishes a hosted service based on an existing source item.
         Publishers can create feature services as well as tiled map services.
@@ -372,130 +414,125 @@ class Portal(object):
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
 
-        postdata['itemid'] = itemid
+        postdata["itemid"] = itemid
         if text is not None:
-            postdata['text'] = text
+            postdata["text"] = text
 
-        postdata['fileType'] = fileType
+        postdata["fileType"] = fileType
 
         if publishParameters is not None and isinstance(publishParameters, dict):
-            postdata['publishParameters'] = json.dumps(publishParameters)
+            postdata["publishParameters"] = json.dumps(publishParameters)
 
         if outputType is not None:
-            postdata['outputType'] = outputType
-        if item_id and isinstance(item_id, str) and len(item_id) >=32:
-            postdata['itemIdToCreate'] = str(item_id)
-        postdata['overwrite'] = json.dumps(overwrite)
+            postdata["outputType"] = outputType
+        if item_id and isinstance(item_id, str) and len(item_id) >= 32:
+            postdata["itemIdToCreate"] = str(item_id)
+        postdata["overwrite"] = json.dumps(overwrite)
 
-        postdata['buildInitialCache'] = buildInitialCache
+        postdata["buildInitialCache"] = buildInitialCache
 
         # Build the files list (tuples)
         files = []
         if data:
             if _is_http_url(data):
                 data = request.urlretrieve(data)[0]
-            files.append(('file', data, os.path.basename(data)))
+            files.append(("file", data, os.path.basename(data)))
 
         # If owner isn't specified, use the logged in user
         if not owner:
-            owner = self.logged_in_user()['username']
+            owner = self.logged_in_user()["username"]
 
         # Setup the item path, including the folder, and post to it
-        path = 'content/users/' + owner
+        path = "content/users/" + owner
         if folder:
-            path += '/' + folder
-        path += '/publish'
+            path += "/" + folder
+        path += "/publish"
         resp = self.con.post(path, postdata, files)
         if resp:
-            return resp['services']
+            return resp["services"]
 
-    def create_service(self,
-                       name,
-                       service_description="",
-                       has_static_data=False,
-                       max_record_count = 1000,
-                       supported_query_formats = "JSON",
-                       capabilities = None,
-                       description = "",
-                       copyright_text = "",
-                       wkid=102100,
-                       service_type="imageService",
-                       create_params=None,
-                       owner=None,
-                       folder=None,
-                       common_params=None,
-                       is_view=False,
-                       item_id=None,
-                       tags=None,
-                       snippet=None):
+    def create_service(
+        self,
+        name,
+        service_description="",
+        has_static_data=False,
+        max_record_count=1000,
+        supported_query_formats="JSON",
+        capabilities=None,
+        description="",
+        copyright_text="",
+        wkid=102100,
+        service_type="imageService",
+        create_params=None,
+        owner=None,
+        folder=None,
+        common_params=None,
+        is_view=False,
+        item_id=None,
+        tags=None,
+        snippet=None,
+    ):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
              The item id of the created service item if successful, None if unsuccessful.
         """
 
-
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
 
         # If owner isn't specified, use the logged in user
         if not owner:
-            owner = self.logged_in_user()['username']
+            owner = self.logged_in_user()["username"]
 
         # Setup the item path, including the folder, and post to it
-        path = 'content/users/' + owner
-        if folder and folder != '/':
+        path = "content/users/" + owner
+        if folder and folder != "/":
             folder_id = self.get_folder_id(owner, folder)
-            path += '/' + folder_id
-        path += '/createService'
-
+            path += "/" + folder_id
+        path += "/createService"
 
         createParameters = {
-            "name" : name,
-            "serviceDescription" : service_description,
-            "hasStaticData" : has_static_data,
-            "maxRecordCount" : max_record_count,
-            "supportedQueryFormats" : supported_query_formats,
-            "capabilities" :capabilities,
-            "description" : description,
-            "copyrightText" : copyright_text,
-            "spatialReference" : {
-                "wkid" : wkid
-                },
-            "initialExtent" : {
-                "xmin" : -20037507.0671618,
-                "ymin" : -30240971.9583862,
-                "xmax" : 20037507.0671618,
-                "ymax" : 18398924.324645,
-                "spatialReference" : {
-                    "wkid" : 102100,
-                    "latestWkid" : 3857
-                }
-                },
-            "allowGeometryUpdates" : True,
-            "units" : "esriMeters",
-            "xssPreventionInfo" : {
-                "xssPreventionEnabled" : True,
-                "xssPreventionRule" : "InputOnly",
-                "xssInputRule" : "rejectInvalid"
-            }
+            "name": name,
+            "serviceDescription": service_description,
+            "hasStaticData": has_static_data,
+            "maxRecordCount": max_record_count,
+            "supportedQueryFormats": supported_query_formats,
+            "capabilities": capabilities,
+            "description": description,
+            "copyrightText": copyright_text,
+            "spatialReference": {"wkid": wkid},
+            "initialExtent": {
+                "xmin": -20037507.0671618,
+                "ymin": -30240971.9583862,
+                "xmax": 20037507.0671618,
+                "ymax": 18398924.324645,
+                "spatialReference": {"wkid": 102100, "latestWkid": 3857},
+            },
+            "allowGeometryUpdates": True,
+            "units": "esriMeters",
+            "xssPreventionInfo": {
+                "xssPreventionEnabled": True,
+                "xssPreventionRule": "InputOnly",
+                "xssInputRule": "rejectInvalid",
+            },
         }
 
         if create_params is not None:
-            postdata['createParameters'] = json.dumps(create_params)
+            postdata["createParameters"] = json.dumps(create_params)
         else:
-            postdata['createParameters'] = json.dumps(createParameters)
+            postdata["createParameters"] = json.dumps(createParameters)
 
-        postdata['outputType'] = service_type
-        postdata['isView'] = is_view
+        postdata["outputType"] = service_type
+        postdata["isView"] = is_view
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
-            postdata['itemIdToCreate'] = item_id
+            postdata["itemIdToCreate"] = item_id
         if tags and isinstance(tags, (list, tuple)):
             tags = ",".join([str(t) for t in tags])
         if tags and isinstance(tags, str):
-            postdata['tags'] = tags
+            postdata["tags"] = tags
         if snippet:
-            postdata['snippet'] = snippet
+            postdata["snippet"] = snippet
         # If common_params dictionary provided, add each key/value pair to postdata.
         if common_params is not None:
             for key in common_params:
@@ -503,9 +540,8 @@ class Portal(object):
                     postdata[key] = common_params[key]
 
         resp = self.con.post(path, postdata)
-        if resp and resp.get('success'):
-            return resp['itemId']
-
+        if resp and resp.get("success"):
+            return resp["itemId"]
 
     def create_group_from_dict(self, group, thumbnail=None):
 
@@ -541,21 +577,30 @@ class Portal(object):
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_thumbnail = thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
-            files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
+            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         # Send the POST request, and return the id from the response
-        resp = self.con.post('community/createGroup', postdata, files)
-        if resp and resp.get('success'):
-            return resp['group']
+        resp = self.con.post("community/createGroup", postdata, files)
+        if resp and resp.get("success"):
+            return resp["group"]
 
-    def create_group(self, title, tags, description=None,
-                     snippet=None, access='public', thumbnail=None,
-                     is_invitation_only=False, sort_field='avgRating',
-                     sort_order='desc', is_view_only=False, ):
+    def create_group(
+        self,
+        title,
+        tags,
+        description=None,
+        snippet=None,
+        access="public",
+        thumbnail=None,
+        is_invitation_only=False,
+        sort_field="avgRating",
+        sort_order="desc",
+        is_view_only=False,
+    ):
         """ Creates a group and returns a group id if successful.
 
         ================  ========================================================
@@ -586,15 +631,19 @@ class Portal(object):
             a dict containing group properties
         """
 
-        return self.create_group_from_dict({'title' : title, 'tags' : tags,
-                                            'snippet' : snippet, 'access' : access,
-                                            'sortField' : sort_field, 'sortOrder' : sort_order,
-                                            'isViewOnly' : is_view_only,
-                                            'isinvitationOnly' : is_invitation_only}, thumbnail)
-
-
-
-
+        return self.create_group_from_dict(
+            {
+                "title": title,
+                "tags": tags,
+                "snippet": snippet,
+                "access": access,
+                "sortField": sort_field,
+                "sortOrder": sort_order,
+                "isViewOnly": is_view_only,
+                "isinvitationOnly": is_invitation_only,
+            },
+            thumbnail,
+        )
 
     def delete_group(self, group_id):
         """ Deletes a group.
@@ -609,11 +658,11 @@ class Portal(object):
             a boolean indicating whether it was successful.
 
         """
-        resp = self.con.post('community/groups/' + group_id + '/delete',
-                             self._postdata())
+        resp = self.con.post(
+            "community/groups/" + group_id + "/delete", self._postdata()
+        )
         if resp:
-            return resp.get('success')
-
+            return resp.get("success")
 
     def delete_item(self, item_id, owner, folder=None, force=False):
         """ Deletes an item.
@@ -635,19 +684,19 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = 'content/users/' + owner
-        if folder :
-            path += '/' + folder
-        path += '/items/' + item_id + '/delete'
-        #print(path)
+        path = "content/users/" + owner
+        if folder:
+            path += "/" + folder
+        path += "/items/" + item_id + "/delete"
+        # print(path)
         if force:
-            post_data = {'f': 'json', 'force': True}
+            post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
         resp = self.con.post(path, post_data)
 
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
     def can_delete(self, item_id, owner, folder=None):
         """ checks if you can delete the item.
@@ -665,16 +714,16 @@ class Portal(object):
         :return:
             a tuple containing a boolean and a dict with details
         """
-        path = 'content/users/' + owner
+        path = "content/users/" + owner
         if folder:
-            path += '/' + folder
-        path += '/items/' + item_id + '/canDelete'
+            path += "/" + folder
+        path += "/items/" + item_id + "/canDelete"
         # print(path)
         resp1 = self.con.post(path, self._postdata(), try_json=False)
         resp = json.loads(resp1)
 
         if resp:
-            return_tuple = (resp.get('success'), resp.get('error'))
+            return_tuple = (resp.get("success"), resp.get("error"))
             return return_tuple
 
     def protect_item(self, item_id, owner, folder=None, enable=True):
@@ -698,19 +747,21 @@ class Portal(object):
 
 
         """
-        path = 'content/users/' + owner
-        if folder :
-            path += '/' + folder
+        path = "content/users/" + owner
+        if folder:
+            path += "/" + folder
         if enable == True:
-            path += '/items/' + item_id + '/protect'
+            path += "/items/" + item_id + "/protect"
         else:
-            path += '/items/' + item_id + '/unprotect'
+            path += "/items/" + item_id + "/unprotect"
         postdata = self._postdata()
         resp = self.con.post(path, postdata)
         if resp:
             return resp
 
-    def share_item_as_group_admin(self, item_id, groups="", allow_members_to_edit=False):
+    def share_item_as_group_admin(
+        self, item_id, groups="", allow_members_to_edit=False
+    ):
         """ Shares public item with the specified list of groups belonging to caller
 
         ================  ========================================================
@@ -730,12 +781,12 @@ class Portal(object):
 
 
         """
-        path = 'content/items/' + item_id + '/share'
+        path = "content/items/" + item_id + "/share"
         postdata = self._postdata()
-        postdata['groups'] = groups
+        postdata["groups"] = groups
         resp = self.con.post(path, postdata)
         if allow_members_to_edit:
-            postdata['confirmItemControl'] = True
+            postdata["confirmItemControl"] = True
         if resp:
             return resp
 
@@ -757,14 +808,23 @@ class Portal(object):
 
 
         """
-        path = 'content/items/' + item_id + '/unshare'
+        path = "content/items/" + item_id + "/unshare"
         postdata = self._postdata()
-        postdata['groups'] = groups
+        postdata["groups"] = groups
         resp = self.con.post(path, postdata)
         if resp:
             return resp
 
-    def share_item(self, item_id, owner, folder=None, everyone=False, org=False, groups="", allow_members_to_edit=False):
+    def share_item(
+        self,
+        item_id,
+        owner,
+        folder=None,
+        everyone=False,
+        org=False,
+        groups="",
+        allow_members_to_edit=False,
+    ):
         """ Shares an item with the specified list of groups
 
         ================  ========================================================
@@ -792,17 +852,17 @@ class Portal(object):
 
 
         """
-        path = 'content/users/' + owner
-        if folder :
-            path += '/' + folder
-        path += '/items/' + item_id + '/share'
-        #print(path)
+        path = "content/users/" + owner
+        if folder:
+            path += "/" + folder
+        path += "/items/" + item_id + "/share"
+        # print(path)
         postdata = self._postdata()
-        postdata['everyone'] = everyone
-        postdata['org'] = org
-        postdata['groups'] = groups
+        postdata["everyone"] = everyone
+        postdata["org"] = org
+        postdata["groups"] = groups
         if allow_members_to_edit:
-            postdata['confirmItemControl'] = True
+            postdata["confirmItemControl"] = True
         resp = self.con.post(path, postdata)
 
         if resp:
@@ -830,13 +890,13 @@ class Portal(object):
 
 
         """
-        path = 'content/users/' + owner
-        if folder :
-            path += '/' + folder
-        path += '/items/' + item_id + '/unshare'
+        path = "content/users/" + owner
+        if folder:
+            path += "/" + folder
+        path += "/items/" + item_id + "/unshare"
 
         postdata = self._postdata()
-        postdata['groups'] = groups
+        postdata["groups"] = groups
         resp = self.con.post(path, postdata)
 
         if resp:
@@ -865,12 +925,13 @@ class Portal(object):
 
         """
 
-
-        if reassign_to :
+        if reassign_to:
             self.reassign_user(username, reassign_to)
-        resp = self.con.post('community/users/' + username + '/delete',self._postdata())
+        resp = self.con.post(
+            "community/users/" + username + "/delete", self._postdata()
+        )
         if resp:
-            return resp.get('success')
+            return resp.get("success")
         else:
             return False
 
@@ -903,7 +964,6 @@ class Portal(object):
         """
 
         return self.con.generate_token(username, password, expiration)
-
 
     def get_group(self, group_id):
         """ Returns group information for the specified group group_id.
@@ -946,9 +1006,7 @@ class Portal(object):
             ================  ========================================================
 
         """
-        return self.con.post('community/groups/' + group_id, self._postdata())
-
-
+        return self.con.post("community/groups/" + group_id, self._postdata())
 
     def get_group_thumbnail(self, group_id):
         """ Returns the bytes that make up the thumbnail for the specified group group_id.
@@ -968,12 +1026,15 @@ class Portal(object):
             f.write(response)
 
         """
-        thumbnail_file = self.get_group(group_id).get('thumbnail')
+        thumbnail_file = self.get_group(group_id).get("thumbnail")
         if thumbnail_file:
-            thumbnail_url_path = 'community/groups/' + group_id + '/info/' + thumbnail_file
+            thumbnail_url_path = (
+                "community/groups/" + group_id + "/info/" + thumbnail_file
+            )
             if thumbnail_url_path:
-                return self.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
-
+                return self.con.get(
+                    thumbnail_url_path, try_json=False, force_bytes=True
+                )
 
     def get_group_members(self, group_id):
         """ Returns members of the specified group.
@@ -1004,8 +1065,9 @@ class Portal(object):
 
         """
 
-        return self.con.post('community/groups/' + group_id + '/users',
-                             self._postdata())
+        return self.con.post(
+            "community/groups/" + group_id + "/users", self._postdata()
+        )
 
     def get_org_roles(self, max_roles=1000):
         """ Returns all roles within the portal organization.
@@ -1020,20 +1082,22 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._roles_page(1, min(max_roles, 100))
-        resp_roles = resp.get('roles')
+        resp_roles = resp.get("roles")
         results = resp_roles
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_roles and nextstart > 0:
             resp = self._roles_page(nextstart, min(max_roles - count, 100))
-            resp_roles = resp.get('roles')
+            resp_roles = resp.get("roles")
             results.extend(resp_roles)
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
 
         return results
 
-    def get_org_users(self, max_users=1000, exclude_system=True, user_type=None, role=None):
+    def get_org_users(
+        self, max_users=1000, exclude_system=True, user_type=None, role=None
+    ):
         """ Returns all users within the portal organization.
 
         Arguments
@@ -1092,27 +1156,31 @@ class Portal(object):
 
         # Execute the search and get back the results
         count = 0
-        resp = self._org_users_page(1, min(max_users, 100),
-                                    exclude_system=exclude_system,
-                                    user_type=user_type,
-                                    role=role)
-        resp_users = resp.get('users')
+        resp = self._org_users_page(
+            1,
+            min(max_users, 100),
+            exclude_system=exclude_system,
+            user_type=user_type,
+            role=role,
+        )
+        resp_users = resp.get("users")
         results = resp_users
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_users and nextstart > 0:
-            resp = self._org_users_page(nextstart, min(max_users - count, 100),
-                                        exclude_system=exclude_system,
-                                        user_type=user_type,
-                                        role=role)
-            resp_users = resp.get('users')
+            resp = self._org_users_page(
+                nextstart,
+                min(max_users - count, 100),
+                exclude_system=exclude_system,
+                user_type=user_type,
+                role=role,
+            )
+            resp_users = resp.get("users")
             results.extend(resp_users)
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
 
         return results
-
-
 
     def get_properties(self, force=False):
         """ Returns the portal properties (using cache unless force=True). """
@@ -1120,20 +1188,28 @@ class Portal(object):
         # If we've never retrieved the properties before, or the caller is
         # forcing a check of the server, then check the server
         if not self._properties or force:
-            path = 'accounts/self' if self._is_pre_162 else 'portals/self'
+            path = "accounts/self" if self._is_pre_162 else "portals/self"
             resp = None
             try:
                 resp = self.con.post(path, self._postdata(), ssl=True)
             except Exception as e:
-                if not self.con._verify_cert and \
-                  (len(e.args)==2) and \
-                  (e.args[1] == '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:720)'):
+                if (
+                    not self.con._verify_cert
+                    and (len(e.args) == 2)
+                    and (
+                        e.args[1]
+                        == "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:720)"
+                    )
+                ):
                     import ssl
+
                     ssl._create_default_https_context = ssl._create_unverified_context
 
                     resp = self.con.post(path, self._postdata(), ssl=True)
                 if self.con._auth == "PKI":
-                    resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
+                    resp = self.con.get(
+                        path, ssl=True
+                    )  # issue seen with key, cert auth
                 if not resp:
                     raise e
 
@@ -1194,8 +1270,7 @@ class Portal(object):
             username          string, name of user
             ================  ========================================================
         """
-        return self.con.post('community/users/' + username, self._postdata())
-
+        return self.con.post("community/users/" + username, self._postdata())
 
     def get_item(self, itemid):
         """ Returns the item information for the specified item.
@@ -1261,40 +1336,48 @@ class Portal(object):
             numViews          number of views of the item.
             ================  ========================================================
         """
-        return self.con.post('content/items/' + itemid, self._postdata())
+        return self.con.post("content/items/" + itemid, self._postdata())
 
     def get_item_data(self, itemid, try_json=True, folder=None):
-        #print('content/items/' + itemid + '/data')
-        return self.con.get('content/items/' + itemid + '/data', try_json=try_json, out_folder=folder)
-        #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
-        #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
+        # print('content/items/' + itemid + '/data')
+        return self.con.get(
+            "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder
+        )
+        # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
+        # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
-    def usage(self, startTime, endTime, period, vars, etype, stype, groupby, appId=None):
+    def usage(
+        self, startTime, endTime, period, vars, etype, stype, groupby, appId=None
+    ):
         postdata = self._postdata()
-        postdata['startTime'] = startTime * 1000
-        postdata['endTime'] = endTime * 1000
-        postdata['period'] = period
-        postdata['vars'] = vars
-        postdata['etype'] = etype
-        postdata['stype'] = stype
-        postdata['groupby'] = groupby
+        postdata["startTime"] = startTime * 1000
+        postdata["endTime"] = endTime * 1000
+        postdata["period"] = period
+        postdata["vars"] = vars
+        postdata["etype"] = etype
+        postdata["stype"] = stype
+        postdata["groupby"] = groupby
         if appId is not None:
-            postdata['appId'] = appId
+            postdata["appId"] = appId
 
-
-        return self.con.post('portals/self/usage', postdata, use_ordered_dict=True)
+        return self.con.post("portals/self/usage", postdata, use_ordered_dict=True)
 
         # https://dev04875.esri.com/arcgis/sharing/rest/portals/0123456789ABCDEF/usage?f=json&startTime=1436984519000&endTime=1439576519000&period=1d&vars=num&etype=geocodecnt&stype=geocode&groupby=username%2Cstype%2Cetype
 
     def get_item_dependencies(self, itemid):
-        return self.con.post('content/items/' + itemid + '/dependencies', self._postdata())
+        return self.con.post(
+            "content/items/" + itemid + "/dependencies", self._postdata()
+        )
 
     def get_item_dependents_to(self, itemid):
-        return self.con.post('content/items/' + itemid + '/dependencies/listDependentsTo', self._postdata())
+        return self.con.post(
+            "content/items/" + itemid + "/dependencies/listDependentsTo",
+            self._postdata(),
+        )
 
-
-    def invite_group_users(self, user_names, group_id,
-                           role='group_member', expiration=10080):
+    def invite_group_users(
+        self, user_names, group_id, role="group_member", expiration=10080
+    ):
         """ Invites users to a group.
 
         .. note::
@@ -1322,23 +1405,23 @@ class Portal(object):
 
         """
 
-        user_names = _unpack(user_names, 'username')
+        user_names = _unpack(user_names, "username")
 
         # Send out the invitations
         postdata = self._postdata()
-        postdata['users'] = ','.join(user_names)
-        postdata['role'] = role
-        postdata['expiration'] = expiration
-        resp = self.con.post('community/groups/' + group_id + '/invite',
-                             postdata)
+        postdata["users"] = ",".join(user_names)
+        postdata["role"] = role
+        postdata["expiration"] = expiration
+        resp = self.con.post("community/groups/" + group_id + "/invite", postdata)
 
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
     @property
     def is_logged_in(self):
         """ Returns true if logged into the portal. """
         return self.con.is_logged_in
+
     @property
     def is_all_ssl(self):
         """ Returns true if this portal requires SSL. """
@@ -1349,25 +1432,36 @@ class Portal(object):
             return True
 
         # If access property doesn't exist, will correctly return false
-        return self._properties.get('allSSL')
+        return self._properties.get("allSSL")
+
     @property
     def is_multitenant(self):
         """ Returns true if this portal is multitenant. """
-        return self._properties['portalMode'] == 'multitenant'
+        return self._properties["portalMode"] == "multitenant"
+
     @property
     def is_arcgisonline(self):
         """ Returns true if this portal is ArcGIS Online. """
-        return self._properties['portalName'] == 'ArcGIS Online' \
-               and self.is_multitenant
+        return self._properties["portalName"] == "ArcGIS Online" and self.is_multitenant
+
     @property
     def is_subscription(self):
         """ Returns true if this portal is an ArcGIS Online subscription. """
-        return bool(self._properties.get('urlKey'))
+        return bool(self._properties.get("urlKey"))
+
     @property
     def is_org(self):
         """ Returns true if this portal is an organization. """
-        return bool(self._properties.get('id'))
+        return bool(self._properties.get("id"))
 
+    @property
+    def is_kubernetes(self):
+        """ Returns true if this portal is kubernetes. """
+        return (
+            "portalDeploymentType" in self._properties
+            and self._properties["portalDeploymentType"]
+            == "ArcGISEnterpriseOnKubernetes"
+        )
 
     def leave_group(self, group_id):
         """ Removes the logged in user from the specified group.
@@ -1381,10 +1475,11 @@ class Portal(object):
         :return:
              a boolean indicating whether the operation was successful.
         """
-        resp = self.con.post('community/groups/' + group_id + '/leave',
-                             self._postdata())
+        resp = self.con.post(
+            "community/groups/" + group_id + "/leave", self._postdata()
+        )
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
     def login(self, username, password, expiration=60):
         """ Logs into the portal using username/password.
@@ -1427,7 +1522,6 @@ class Portal(object):
 
         self.con.logout()
 
-
     def logged_in_user(self):
         """ Returns information about the logged in user.
 
@@ -1457,12 +1551,11 @@ class Portal(object):
             ================  ========================================================
 
          """
-        try :
-            username = self._properties['user']['username']
+        try:
+            username = self._properties["user"]["username"]
             return self.get_user(username)
         except:
             return None
-
 
     def reassign_user(self, username, target_username):
         """ Reassigns all of a user's items and groups to another user.
@@ -1489,12 +1582,10 @@ class Portal(object):
         """
 
         postdata = self._postdata()
-        postdata['targetUsername'] = target_username
-        resp = self.con.post('community/users/' + username + '/reassign', postdata)
+        postdata["targetUsername"] = target_username
+        resp = self.con.post("community/users/" + username + "/reassign", postdata)
         if resp:
-            return resp.get('success')
-
-
+            return resp.get("success")
 
     def reassign_group(self, group_id, target_owner):
         """ Reassigns a group to another owner.
@@ -1514,13 +1605,19 @@ class Portal(object):
 
         """
         postdata = self._postdata()
-        postdata['targetUsername'] = target_owner
-        resp = self.con.post('community/groups/' + group_id + '/reassign', postdata)
+        postdata["targetUsername"] = target_owner
+        resp = self.con.post("community/groups/" + group_id + "/reassign", postdata)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
-
-    def reassign_item(self, item_id, current_owner, target_owner, current_folder=None, target_folder=None):
+    def reassign_item(
+        self,
+        item_id,
+        current_owner,
+        target_owner,
+        current_folder=None,
+        target_folder=None,
+    ):
         """ Allows the administrator to reassign a single item from one user to another.
 
         .. note::
@@ -1545,20 +1642,26 @@ class Portal(object):
             a boolean, indicating success
 
         """
-        path = 'content/users/' + current_owner
-        if current_folder :
-            path += '/' + current_folder
-        path += '/items/' + item_id + '/reassign'
+        path = "content/users/" + current_owner
+        if current_folder:
+            path += "/" + current_folder
+        path += "/items/" + item_id + "/reassign"
 
         postdata = self._postdata()
-        postdata['targetUsername'] = target_owner
-        postdata['targetFolderName'] = target_folder if target_folder else '/'
+        postdata["targetUsername"] = target_owner
+        postdata["targetFolderName"] = target_folder if target_folder else "/"
         resp = self.con.post(path, postdata)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
-    def reset_user(self, username, password, new_password=None,
-                   new_security_question=None, new_security_answer=None):
+    def reset_user(
+        self,
+        username,
+        password,
+        new_password=None,
+        new_security_question=None,
+        new_security_answer=None,
+    ):
         """ Resets a user's password, security question, and/or security answer.
 
         .. note::
@@ -1588,19 +1691,18 @@ class Portal(object):
 
         """
         postdata = self._postdata()
-        postdata['password'] = password
+        postdata["password"] = password
         if new_password:
-            postdata['newPassword'] = new_password
+            postdata["newPassword"] = new_password
         if new_security_question:
-            postdata['newSecurityQuestionIdx'] = new_security_question
+            postdata["newSecurityQuestionIdx"] = new_security_question
         if new_security_answer:
-            postdata['newSecurityAnswer'] = new_security_answer
-        resp = self.con.post('community/users/' + username + '/reset',
-                             postdata, ssl=True)
+            postdata["newSecurityAnswer"] = new_security_answer
+        resp = self.con.post(
+            "community/users/" + username + "/reset", postdata, ssl=True
+        )
         if resp:
-            return resp.get('success')
-
-
+            return resp.get("success")
 
     def remove_group_users(self, user_names, group_id):
         """ Remove users from a group.
@@ -1618,64 +1720,93 @@ class Portal(object):
 
         """
 
-        user_names = _unpack(user_names, 'username')
+        user_names = _unpack(user_names, "username")
 
         # Remove the users from the group
         postdata = self._postdata()
-        postdata['users'] = ','.join(user_names)
-        resp = self.con.post('community/groups/' + group_id + '/removeUsers',
-                             postdata)
+        postdata["users"] = ",".join(user_names)
+        resp = self.con.post("community/groups/" + group_id + "/removeUsers", postdata)
         return resp
 
     def user_folders(self, owner):
         resp = self._contents_page(owner, None, 1, 10)
-        results = resp.get('folders')
+        results = resp.get("folders")
         return results
 
     def user_items(self, owner, folder, max_results=100):
         count = 0
         resp = self._contents_page(owner, folder, 1, min(max_results, 100))
-        results = resp.get('items')
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        results = resp.get("items")
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_results and nextstart > 0:
-            resp = self._contents_page(owner, folder, nextstart, min(max_results - count, 100))
-            results.extend(resp['items'])
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            resp = self._contents_page(
+                owner, folder, nextstart, min(max_results - count, 100)
+            )
+            results.extend(resp["items"])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
         return results
 
-    def search(self, q, bbox=None, sort_field='title', sort_order='asc',
-               max_results=1000, outside_org=False, categories=None,
-               category_filters=None):
-
+    def search(
+        self,
+        q,
+        bbox=None,
+        sort_field="title",
+        sort_order="asc",
+        max_results=1000,
+        outside_org=False,
+        categories=None,
+        category_filters=None,
+    ):
 
         if not outside_org:
-            accountid = self._properties.get('id')
+            accountid = self._properties.get("id")
             if accountid and q:
-                q += ' accountid:' + accountid
+                q += " accountid:" + accountid
             elif accountid:
-                q = 'accountid:' + accountid
+                q = "accountid:" + accountid
 
         count = 0
-        resp = self._search_page(q, bbox,  1, min(max_results, 100), sort_field, sort_order,
-                                 categories, category_filters)
-        results = resp.get('results')
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        resp = self._search_page(
+            q,
+            bbox,
+            1,
+            min(max_results, 100),
+            sort_field,
+            sort_order,
+            categories,
+            category_filters,
+        )
+        results = resp.get("results")
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_results and nextstart > 0:
-            resp = self._search_page(q, bbox, nextstart, min(max_results - count, 100),
-                                     sort_field, sort_order, categories, category_filters)
-            results.extend(resp['results'])
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            resp = self._search_page(
+                q,
+                bbox,
+                nextstart,
+                min(max_results - count, 100),
+                sort_field,
+                sort_order,
+                categories,
+                category_filters,
+            )
+            results.extend(resp["results"])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
 
         return results
 
-
-    def search_groups(self, q,
-                      sort_field='title',sort_order='asc',
-                      max_groups=1000, outside_org=False, categories=None):
+    def search_groups(
+        self,
+        q,
+        sort_field="title",
+        sort_order="asc",
+        max_groups=1000,
+        outside_org=False,
+        categories=None,
+    ):
         """ Searches for portal groups.
 
         .. note::
@@ -1746,35 +1877,47 @@ class Portal(object):
         """
 
         if not outside_org:
-            accountid = self._properties.get('id')
+            accountid = self._properties.get("id")
             if accountid and q:
-                q += ' accountid:' + accountid
+                q += " accountid:" + accountid
             elif accountid:
-                q = 'accountid:' + accountid
+                q = "accountid:" + accountid
 
         # Execute the search and get back the results
         count = 0
-        resp = self._groups_page(q, 1,
-                                 min(max_groups,100), sort_field, sort_order, categories)
-        results = resp.get('results')
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        resp = self._groups_page(
+            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+        )
+        results = resp.get("results")
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_groups and nextstart > 0:
-            resp = self._groups_page(q, nextstart, min(max_groups - count,100),
-                                     sort_field, sort_order, categories)
-            resp_users = resp.get('results')
+            resp = self._groups_page(
+                q,
+                nextstart,
+                min(max_groups - count, 100),
+                sort_field,
+                sort_order,
+                categories,
+            )
+            resp_users = resp.get("results")
             results.extend(resp_users)
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
 
         return results
 
-
-
-    def search_users(self, q, sort_field='username',
-                     sort_order='asc', max_users=1000,
-                     outside_org=False, exclude_system=True,
-                     user_type=None, role=None):
+    def search_users(
+        self,
+        q,
+        sort_field="username",
+        sort_order="asc",
+        max_users=1000,
+        outside_org=False,
+        exclude_system=True,
+        user_type=None,
+        role=None,
+    ):
         """ Searches portal users.
 
         This gives you a list of users and some basic information
@@ -1849,31 +1992,44 @@ class Portal(object):
         """
 
         if not outside_org:
-            accountid = self._properties.get('id')
+            accountid = self._properties.get("id")
             if accountid and q:
-                q += ' accountid:' + accountid
+                q += " accountid:" + accountid
             elif accountid:
-                q = 'accountid:' + accountid
+                q = "accountid:" + accountid
 
         # Execute the search and get back the results
         count = 0
-        resp = self._users_page(q, 1, min(max_users, 100),
-                                sort_field, sort_order,
-                                exclude_system, user_type, role)
-        results = resp.get('results')
-        count += int(resp['num'])
-        nextstart = int(resp['nextStart'])
+        resp = self._users_page(
+            q,
+            1,
+            min(max_users, 100),
+            sort_field,
+            sort_order,
+            exclude_system,
+            user_type,
+            role,
+        )
+        results = resp.get("results")
+        count += int(resp["num"])
+        nextstart = int(resp["nextStart"])
         while count < max_users and nextstart > 0:
-            resp = self._users_page(q, nextstart, min(max_users - count, 100),
-                                    sort_field, sort_order, exclude_system, user_type, role)
-            resp_users = resp.get('results')
+            resp = self._users_page(
+                q,
+                nextstart,
+                min(max_users - count, 100),
+                sort_field,
+                sort_order,
+                exclude_system,
+                user_type,
+                role,
+            )
+            resp_users = resp.get("results")
             results.extend(resp_users)
-            count += int(resp['num'])
-            nextstart = int(resp['nextStart'])
+            count += int(resp["num"])
+            nextstart = int(resp["nextStart"])
 
         return results
-
-
 
     # Used to signup a new user to an on-premises portal.
     def signup(self, username, password, fullname, email):
@@ -1911,23 +2067,33 @@ class Portal(object):
 
         """
         if self.is_arcgisonline:
-            raise ValueError('Signup is not supported on ArcGIS Online')
+            raise ValueError("Signup is not supported on ArcGIS Online")
 
         postdata = self._postdata()
-        postdata['username'] = username
-        postdata['password'] = password
-        postdata['fullname'] = fullname
-        postdata['email'] = email
-        resp = self.con.post('community/signUp', postdata, ssl=True)
+        postdata["username"] = username
+        postdata["password"] = password
+        postdata["fullname"] = fullname
+        postdata["email"] = email
+        resp = self.con.post("community/signUp", postdata, ssl=True)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
         # TODO: Also check https://portalpy.esri.com/arcgis/portaladmin/security/users/createUser
 
-    def update_user(self, username, access=None, preferred_view=None,
-                    description=None, tags=None, thumbnail=None,
-                    fullname=None, email=None, culture=None,
-                    region=None, user_type=None):
+    def update_user(
+        self,
+        username,
+        access=None,
+        preferred_view=None,
+        description=None,
+        tags=None,
+        thumbnail=None,
+        fullname=None,
+        email=None,
+        culture=None,
+        region=None,
+        user_type=None,
+    ):
         """ Updates a user's properties.
 
         .. note::
@@ -1968,23 +2134,23 @@ class Portal(object):
         properties = dict()
         postdata = self._postdata()
         if access:
-            properties['access'] = access
+            properties["access"] = access
         if preferred_view:
-            properties['preferredView'] = preferred_view
+            properties["preferredView"] = preferred_view
         if description:
-            properties['description'] = description
+            properties["description"] = description
         if tags:
-            properties['tags'] = tags
+            properties["tags"] = tags
         if fullname:
-            properties['fullname'] = fullname
+            properties["fullname"] = fullname
         if email:
-            properties['email'] = email
+            properties["email"] = email
         if culture:
-            properties['culture'] = culture
+            properties["culture"] = culture
         if region:
-            properties['region'] = region
+            properties["region"] = region
         if user_type is not None:
-            properties['userType'] = user_type
+            properties["userType"] = user_type
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
@@ -1992,22 +2158,20 @@ class Portal(object):
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_thumbnail = thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
-            files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
+            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         postdata.update(properties)
 
-
         # Send the POST request, and return the id from the response
-        resp = self.con.post('community/users/' + username + '/update', postdata, files, ssl=True)
-
+        resp = self.con.post(
+            "community/users/" + username + "/update", postdata, files, ssl=True
+        )
 
         if resp:
-            return resp.get('success')
-
-
+            return resp.get("success")
 
     def update_user_role(self, username, role):
         """ Updates a user's role.
@@ -2031,18 +2195,31 @@ class Portal(object):
 
         """
         postdata = self._postdata()
-        postdata.update({'user': username, 'role': role})
-        resp = self.con.post('portals/self/updateuserrole', postdata, ssl=True)
+        postdata.update({"user": username, "role": role})
+        resp = self.con.post("portals/self/updateuserrole", postdata, ssl=True)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
-
-    def update_group(self, group_id, title=None, tags=None, description=None,
-                     snippet=None, access=None, is_invitation_only=None,
-                     sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None, max_file_size=None, users_update_items=None,
-                     clear_empty_fields=False, display_settings=None,
-                     is_open_data=False, leaving_disallowed=False):
+    def update_group(
+        self,
+        group_id,
+        title=None,
+        tags=None,
+        description=None,
+        snippet=None,
+        access=None,
+        is_invitation_only=None,
+        sort_field=None,
+        sort_order=None,
+        is_view_only=None,
+        thumbnail=None,
+        max_file_size=None,
+        users_update_items=None,
+        clear_empty_fields=False,
+        display_settings=None,
+        is_open_data=False,
+        leaving_disallowed=False,
+    ):
         """ Updates a group.
 
         .. note::
@@ -2087,47 +2264,45 @@ class Portal(object):
             a boolean indicating success
         """
 
-
-
         properties = dict()
         postdata = self._postdata()
         if not title is None:
-            properties['title'] = title
+            properties["title"] = title
         if not tags is None:
-            properties['tags'] = tags
+            properties["tags"] = tags
         if not description is None:
-            properties['description'] = description
+            properties["description"] = description
         if not snippet is None:
-            properties['snippet'] = snippet
+            properties["snippet"] = snippet
         if not access is None:
-            properties['access'] = access
+            properties["access"] = access
         if not sort_field is None:
-            properties['sortField'] = sort_field
+            properties["sortField"] = sort_field
         if not sort_order is None:
-            properties['sortOrder'] = sort_order
+            properties["sortOrder"] = sort_order
         if not is_view_only is None:
-            properties['isViewOnly'] = is_view_only
+            properties["isViewOnly"] = is_view_only
         if not max_file_size is None:
-            properties['MAX_FILE_SIZE'] = max_file_size
+            properties["MAX_FILE_SIZE"] = max_file_size
         elif max_file_size is None:
-            properties['MAX_FILE_SIZE'] = 1024000
+            properties["MAX_FILE_SIZE"] = 1024000
         if users_update_items is None:
             users_update_items = False
         if leaving_disallowed in [True, False]:
             properties["leavingDisallowed"] = leaving_disallowed
         if is_open_data in [True, False]:
-            properties['isOpenData'] = is_open_data
+            properties["isOpenData"] = is_open_data
         if users_update_items == False:
-            properties['capabilities'] = ""
+            properties["capabilities"] = ""
         else:
-            properties['capabilities'] = "updateitemcontrol"
-        properties['isinvitationOnly'] = is_invitation_only
-        properties['clearEmptyFields'] = clear_empty_fields
+            properties["capabilities"] = "updateitemcontrol"
+        properties["isinvitationOnly"] = is_invitation_only
+        properties["clearEmptyFields"] = clear_empty_fields
         if display_settings:
-            properties['displaySettings'] = display_settings
+            properties["displaySettings"] = display_settings
         postdata.update(properties)
         if clear_empty_fields == True:
-            postdata['clearEmptyFields'] = True
+            postdata["clearEmptyFields"] = True
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
@@ -2135,19 +2310,29 @@ class Portal(object):
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_thumbnail = thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
-            files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
+            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
-        resp = self.con.post('community/groups/' + group_id + '/update', postdata, files)
+        resp = self.con.post(
+            "community/groups/" + group_id + "/update", postdata, files
+        )
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
-
-    def update_item(self, itemid, item_properties=None, data=None, thumbnail=None,
-                    metadata=None, owner=None, folder=None, large_thumbnail=None):
+    def update_item(
+        self,
+        itemid,
+        item_properties=None,
+        data=None,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
+        large_thumbnail=None,
+    ):
         """ Updates an item in a Portal.
 
 
@@ -2234,57 +2419,58 @@ class Portal(object):
         files = []
         if data:
             if isinstance(data, dict):
-                postdata['text'] = data#json.dumps(data)
+                postdata["text"] = data  # json.dumps(data)
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
-                files.append(('file', data, os.path.basename(data)))
+                files.append(("file", data, os.path.basename(data)))
             else:
-                postdata['text'] = data
-        if item_properties and \
-           item_properties.get('screenshots', None):
-            for screenshot in item_properties.get('screenshots', [])[0:4]:
-                files.append(('screenshot', screenshot, os.path.basename(screenshot)))
-            del item_properties['screenshots']
+                postdata["text"] = data
+        if item_properties and item_properties.get("screenshots", None):
+            for screenshot in item_properties.get("screenshots", [])[0:4]:
+                files.append(("screenshot", screenshot, os.path.basename(screenshot)))
+            del item_properties["screenshots"]
 
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
-            files.append(('metadata', metadata, 'metadata.xml'))
+            files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_thumbnail = thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
-            files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
+            files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
                 file_ext = os.path.splitext(large_thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(large_thumbnail)
-                    if file_ext in ('gif', 'png', 'jpeg'):
-                        new_large_thumbnail = large_thumbnail + '.' + file_ext
+                    if file_ext in ("gif", "png", "jpeg"):
+                        new_large_thumbnail = large_thumbnail + "." + file_ext
                         os.rename(large_thumbnail, new_thumbnail)
                         large_thumbnail = new_large_thumbnail
-            files.append(('largeThumbnail', large_thumbnail, os.path.basename(large_thumbnail)))
+            files.append(
+                ("largeThumbnail", large_thumbnail, os.path.basename(large_thumbnail))
+            )
         # If owner isn't specified, use the logged in user
         if not owner:
-            owner = self.logged_in_user()['username']
+            owner = self.logged_in_user()["username"]
 
         # Setup the item path, including the folder, and post to it
-        path = 'content/users/' + owner
+        path = "content/users/" + owner
         if folder:
-            path += '/' + folder
-        path += '/items/' + itemid + '/update'
+            path += "/" + folder
+        path += "/items/" + itemid + "/update"
         resp = self.con.post(path, postdata, files)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
 
     def get_version(self, force=False):
         """ Returns the portal version (using cache unless force=True).
@@ -2309,26 +2495,25 @@ class Portal(object):
         # If we've never retrieved the version before, or the caller is
         # forcing a check of the server, then check the server
         if not self._version or force:
-            resp = self.con.post('', self._postdata())
+            resp = self.con.post("", self._postdata())
             if not resp:
-                old_resturl = _normalize_url(self.url) + 'sharing/'
+                old_resturl = _normalize_url(self.url) + "sharing/"
                 resp = self.con.post(old_resturl, self._postdata(), ssl=True)
                 if resp:
-                    _log.warning('Portal is pre-1.6.2; some things may not work')
+                    _log.warning("Portal is pre-1.6.2; some things may not work")
                     self._is_pre_162 = True
                     self._is_pre_21 = True
                     self.resturl = old_resturl
                     self.con.baseurl = old_resturl
             else:
-                version = resp.get('currentVersion')
-                if version == '1.6.2' or version == '2.0':
-                    _log.warning('Portal is pre-2.1; some features not supported')
+                version = resp.get("currentVersion")
+                if version == "1.6.2" or version == "2.0":
+                    _log.warning("Portal is pre-2.1; some features not supported")
                     self._is_pre_21 = True
             if resp:
-                self._version = resp.get('currentVersion')
+                self._version = resp.get("currentVersion")
 
         return self._version
-
 
     def create_role(self, name, description):
         """ Creates a custom role with specified name and description
@@ -2337,12 +2522,12 @@ class Portal(object):
             role_id if role is created, else None
         """
         postdata = self._postdata()
-        postdata['name'] = name
-        postdata['description'] = description
+        postdata["name"] = name
+        postdata["description"] = description
 
-        resp = self.con.post('portals/self/createRole', postdata)
-        if resp and resp.get('success'):
-            return resp['id']
+        resp = self.con.post("portals/self/createRole", postdata)
+        if resp and resp.get("success"):
+            return resp["id"]
 
     def create_folder(self, owner, title):
         """ Creates a folder for the given user with the given title.
@@ -2360,12 +2545,10 @@ class Portal(object):
             {"username" : "portaladmin","id" : "bff13218991c4485a62c81db3512396f","title" : "testcreate"}
         """
         postdata = self._postdata()
-        postdata['title'] = title
-        resp = self.con.post('content/users/' + owner + '/createFolder', postdata)
-        if resp and resp.get('success'):
-            return resp['folder']
-
-
+        postdata["title"] = title
+        resp = self.con.post("content/users/" + owner + "/createFolder", postdata)
+        if resp and resp.get("success"):
+            return resp["folder"]
 
     def delete_folder(self, owner, folder):
         """ Deletes folder owned by owner with the given folder name.
@@ -2387,20 +2570,22 @@ class Portal(object):
             print("Folder doesn't exist.")
             return False
         else:
-            resp = self.con.post('content/users/' + owner + '/' + folder_id + '/delete', postdata)
+            resp = self.con.post(
+                "content/users/" + owner + "/" + folder_id + "/delete", postdata
+            )
             if resp:
-                return resp.get('success')
+                return resp.get("success")
 
     def move_item(self, itemid, owner, current_folder, folder_id):
         """ Moves the item to given folder """
 
-        path = 'content/users/' + owner
-        if current_folder :
-            path += '/' + current_folder
-        path += '/items/' + itemid + '/move'
+        path = "content/users/" + owner
+        if current_folder:
+            path += "/" + current_folder
+        path += "/items/" + itemid + "/move"
 
         postdata = self._postdata()
-        postdata['folder'] = folder_id
+        postdata["folder"] = folder_id
         resp = self.con.post(path, postdata)
         return resp
 
@@ -2418,33 +2603,36 @@ class Portal(object):
         :return:
             a boolean if succeeded.
         """
-        resp = self.con.post('content/users/' + owner, self._postdata())
-        if resp and 'folders' in resp:
+        resp = self.con.post("content/users/" + owner, self._postdata())
+        if resp and "folders" in resp:
             # Loop through each folder JSON object
-            for fldr in resp['folders']:
-                if fldr['title'].upper() == folder_name.upper():  # Force both strings to upper case for comparison
-                    return fldr['id']
-        return None # no such folder found for this owner
+            for fldr in resp["folders"]:
+                if (
+                    fldr["title"].upper() == folder_name.upper()
+                ):  # Force both strings to upper case for comparison
+                    return fldr["id"]
+        return None  # no such folder found for this owner
 
     def _is_searching_public(self, scope):
-        if scope == 'public':
+        if scope == "public":
             return True
-        elif scope == 'org':
+        elif scope == "org":
             return False
-        elif scope == 'default' or scope is None:
+        elif scope == "default" or scope is None:
             # By default orgs won't search public
             return False if self.is_org else True
         else:
-            raise ValueError('Unknown scope "' + scope + '". Supported ' \
-                             + 'values are "public", "org", and "default"')
-
+            raise ValueError(
+                'Unknown scope "'
+                + scope
+                + '". Supported '
+                + 'values are "public", "org", and "default"'
+            )
 
     def _invitations_page(self, start, num):
         postdata = self._postdata()
-        postdata.update({ 'start': start, 'num': num })
-        return self.con.post('portals/self/invitations', postdata)
-
-
+        postdata.update({"start": start, "num": num})
+        return self.con.post("portals/self/invitations", postdata)
 
     def _postdata(self):
         if self._basepostdata:
@@ -2455,81 +2643,139 @@ class Portal(object):
     def _contents_page(self, owner, folderid=None, start=1, num=100):
         _log.info("getting user folders and items")
         postdata = self._postdata()
-        postdata.update({"num":num, "start":start})
+        postdata.update({"num": num, "start": start})
         path = "content/users/{}".format(owner)
         if folderid:
             path = "{}/{}".format(path, folderid)
         return self.con.post(path, postdata)
 
-    def _search_page(self, q=None, bbox=None, start=1, num=10, sortfield='', sortorder='asc', categories=None, category_filters=None):
-        _log.info('Searching items (q=' + str(q) + ', bbox=' + str(bbox) \
-                  + ', start=' + str(start) + ', num=' + str(num) + ')')
+    def _search_page(
+        self,
+        q=None,
+        bbox=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        categories=None,
+        category_filters=None,
+    ):
+        _log.info(
+            "Searching items (q="
+            + str(q)
+            + ", bbox="
+            + str(bbox)
+            + ", start="
+            + str(start)
+            + ", num="
+            + str(num)
+            + ")"
+        )
         postdata = self._postdata()
-        postdata.update({ 'q': q or '', 'bbox': bbox or '', 'start': start, 'num': num,
-                          'sortField': sortfield, 'sortOrder': sortorder
-                          })
+        postdata.update(
+            {
+                "q": q or "",
+                "bbox": bbox or "",
+                "start": start,
+                "num": num,
+                "sortField": sortfield,
+                "sortOrder": sortorder,
+            }
+        )
         if categories is not None:
-            postdata['categories'] = categories
+            postdata["categories"] = categories
         if category_filters is not None:
-            postdata['categoryFilters'] = category_filters
+            postdata["categoryFilters"] = category_filters
 
-        return self.con.post('search', postdata)
+        return self.con.post("search", postdata)
 
-
-    def _groups_page(self, q=None, start=1, num=10, sortfield='',
-                     sortorder='asc', categories=None):
-        _log.info('Searching groups (q=' + str(q) + ', start=' + str(start) \
-                  + ', num=' + str(num) + ')')
+    def _groups_page(
+        self, q=None, start=1, num=10, sortfield="", sortorder="asc", categories=None
+    ):
+        _log.info(
+            "Searching groups (q="
+            + str(q)
+            + ", start="
+            + str(start)
+            + ", num="
+            + str(num)
+            + ")"
+        )
         postdata = self._postdata()
-        postdata.update({ 'q': q, 'start': start, 'num': num,
-                          'sortField': sortfield, 'sortOrder': sortorder
-                          })
+        postdata.update(
+            {
+                "q": q,
+                "start": start,
+                "num": num,
+                "sortField": sortfield,
+                "sortOrder": sortorder,
+            }
+        )
         if categories is not None:
-            postdata['categoryFilters'] = categories
-        return self.con.post('community/groups', postdata)
+            postdata["categoryFilters"] = categories
+        return self.con.post("community/groups", postdata)
 
-
-    def _org_users_page(self, start=1, num=10, exclude_system=True,
-                        user_type=None,role=None):
-        _log.info('Retrieving org users (start=' + str(start) \
-                  + ', num=' + str(num) + ')')
+    def _org_users_page(
+        self, start=1, num=10, exclude_system=True, user_type=None, role=None
+    ):
+        _log.info(
+            "Retrieving org users (start=" + str(start) + ", num=" + str(num) + ")"
+        )
         postdata = self._postdata()
-        postdata['start'] = start
-        postdata['num'] = num
-        postdata['excludeSystemUsers'] = exclude_system
+        postdata["start"] = start
+        postdata["num"] = num
+        postdata["excludeSystemUsers"] = exclude_system
         if user_type:
-            postdata['userLicenseType'] = user_type
+            postdata["userLicenseType"] = user_type
         if role:
-            postdata['role'] = role
-        return self.con.post('portals/self/users', postdata)
+            postdata["role"] = role
+        return self.con.post("portals/self/users", postdata)
 
     def _roles_page(self, start=1, num=10):
-        _log.info('Retrieving roles(start=' + str(start) \
-                  + ', num=' + str(num) + ')')
+        _log.info("Retrieving roles(start=" + str(start) + ", num=" + str(num) + ")")
         postdata = self._postdata()
-        postdata['start'] = start
-        postdata['num'] = num
-        return self.con.post('portals/self/roles', postdata)
+        postdata["start"] = start
+        postdata["num"] = num
+        return self.con.post("portals/self/roles", postdata)
 
-
-    def _users_page(self, q=None, start=1, num=10, sortfield='', sortorder='asc', exclude_system=False,
-                    user_type=None, role=None):
-        _log.info('Searching users (q=' + str(q) + ', start=' + str(start) \
-                  + ', num=' + str(num) + ')')
+    def _users_page(
+        self,
+        q=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        exclude_system=False,
+        user_type=None,
+        role=None,
+    ):
+        _log.info(
+            "Searching users (q="
+            + str(q)
+            + ", start="
+            + str(start)
+            + ", num="
+            + str(num)
+            + ")"
+        )
         postdata = self._postdata()
-        postdata.update({ 'q': q, 'start': start, 'num': num,
-                          'sortField': sortfield, 'sortOrder': sortorder,
-                          'excludeSystemUsers' : exclude_system})
+        postdata.update(
+            {
+                "q": q,
+                "start": start,
+                "num": num,
+                "sortField": sortfield,
+                "sortOrder": sortorder,
+                "excludeSystemUsers": exclude_system,
+            }
+        )
         if user_type:
-            postdata['userLicenseType'] = user_type
-            postdata['applyFiltersIntersection'] = json.dumps(True)
+            postdata["userLicenseType"] = user_type
+            postdata["applyFiltersIntersection"] = json.dumps(True)
         if role:
-            postdata['role'] = user_type
-            postdata['applyFiltersIntersection'] = json.dumps(True)
-        return self.con.post('community/users', postdata)
-
-
-
+            postdata["role"] = user_type
+            postdata["applyFiltersIntersection"] = json.dumps(True)
+        return self.con.post("community/users", postdata)
 
     def _extract(self, results, props=None):
         if not props or len(props) == 0:

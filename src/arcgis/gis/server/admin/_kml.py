@@ -12,12 +12,12 @@ class KML(BaseServer):
        This resource is a container for all the KMZ files created on the
        server.
     """
+
     _con = None
     _url = None
     _json_dict = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """
         Constructor
 
@@ -32,13 +32,13 @@ class KML(BaseServer):
         ===============     ====================================================================
 
         """
-        super(KML, self).__init__(gis=gis,
-                                  url=url)
+        super(KML, self).__init__(gis=gis, url=url)
         self._con = gis
         self._url = url
         if initialize:
             self._init(gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def create_KMZ(self, kmz_as_json):
         """
            Creates a KMZ file from json.
@@ -46,9 +46,5 @@ class KML(BaseServer):
            for more information.
         """
         url = self._url + "/createKmz"
-        params = {
-            "f" : "json",
-            "kml" : kmz_as_json
-        }
-        return self._con.post(path=url,
-                              postdata=params)
+        params = {"f": "json", "kml": kmz_as_json}
+        return self._con.post(path=url, postdata=params)

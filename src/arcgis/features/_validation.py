@@ -9,13 +9,14 @@ class ValidationManager(object):
     The Validation Server is responsible for exposing the management 
     capabilities necessary to support evaluation of geodatabase rules.
     """
+
     _con = None
     _gis = None
     _url = None
     _version = None
     _properties = None
-    
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """initializer"""
         self._url = url
@@ -27,33 +28,34 @@ class ValidationManager(object):
         self._con = gis._con
         self._version = version
         assert isinstance(self._version, Version)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            self._properties = PropertyMap(self._con.get(self._url, {'f' : 'json'}))
+            self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
         except:
-            self._properties = PropertyMap(self._con.post(self._url, {'f' : 'json'}))
-    #----------------------------------------------------------------------
+            self._properties = PropertyMap(self._con.post(self._url, {"f": "json"}))
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         url = self._url
         return f"<ValidationManager @ {url}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return self.__str__()    
-    #----------------------------------------------------------------------
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """service properties"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
-    def update_error(self, 
-                     error_features, 
-                     version=None, 
-                     return_edits=None,
-                     **kwargs):
+
+    # ----------------------------------------------------------------------
+    def update_error(self, error_features, version=None, return_edits=None, **kwargs):
         """
         Updates errors on the validation tables.  
         
@@ -110,29 +112,32 @@ class ValidationManager(object):
         
         """
         url = self._url + "/updateErrors"
-        
+
         version = self._version
         version_name = version.properties.versionName
         session_id = version._guid
         params = {
-            'f' : 'json',
-            'gdbVersion' : version_name,
-            'sessionId' : session_id,
-            'errorFeatures' : error_features
+            "f": "json",
+            "gdbVersion": version_name,
+            "sessionId": session_id,
+            "errorFeatures": error_features,
         }
         if len(kwargs) > 0:
             params.update(kwargs)
         if not return_edits is None:
-            params['returnEdits'] = return_edits
+            params["returnEdits"] = return_edits
         res = self._con.post(url, params)
         return res
-    #----------------------------------------------------------------------
-    def evaluate(self, 
-                 evaluation,
-                 area=None, 
-                 changes_in_version=False,
-                 selection=None,
-                 return_edits=False):
+
+    # ----------------------------------------------------------------------
+    def evaluate(
+        self,
+        evaluation,
+        area=None,
+        changes_in_version=False,
+        selection=None,
+        return_edits=False,
+    ):
         """
         Runs the topology rules and returns new errors if they exist.
         
@@ -190,38 +195,33 @@ class ValidationManager(object):
         """
         url = self._url + "/evaluate"
         eval_lu = {
-            'validation' : "validationRules",
-            "validationrules" : "validationRules",
-            "calculation" : "calculationRules",
-            "calculationrules" : "calculationRules",
-            "topology" : "topologyRules",
-            "topologyrules" : "topologyRules"
-                           
+            "validation": "validationRules",
+            "validationrules": "validationRules",
+            "calculation": "calculationRules",
+            "calculationrules": "calculationRules",
+            "topology": "topologyRules",
+            "topologyrules": "topologyRules",
         }
         params = {
-            'f' : 'json',
-            'sessionId' : self._version._guid,
-            'gdbVersion' : self._version.properties.versionName,
-            'changesInVersion' : changes_in_version,
-            'returnEdits' : return_edits,
-            'async' : False
+            "f": "json",
+            "sessionId": self._version._guid,
+            "gdbVersion": self._version.properties.versionName,
+            "changesInVersion": changes_in_version,
+            "returnEdits": return_edits,
+            "async": False,
         }
         if not area is None:
-            params['evaluationArea'] = area
+            params["evaluationArea"] = area
         if not selection is None:
-            params['selection'] = selection
-            
-        if isinstance(evaluation, str) and \
-           evaluation.lower() in eval_lu:
-            params['evaluationType'] = [eval_lu[evaluation.lower()]]
-        elif isinstance(evaluation, str) and \
-             not evaluation.lower() in eval_lu:
+            params["selection"] = selection
+
+        if isinstance(evaluation, str) and evaluation.lower() in eval_lu:
+            params["evaluationType"] = [eval_lu[evaluation.lower()]]
+        elif isinstance(evaluation, str) and not evaluation.lower() in eval_lu:
             raise ValueError("Invalid evalution type")
         elif isinstance(evaluation, (list, tuple)):
-            params['evaluationType'] = [eval_lu[e.lower()] for e in evaluation]
+            params["evaluationType"] = [eval_lu[e.lower()] for e in evaluation]
         else:
             raise ValueError("Invalid evalution type")
-        
+
         return self._con.post(url, params)
-            
-            

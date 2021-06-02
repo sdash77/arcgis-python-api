@@ -134,9 +134,8 @@ class ModelExtension(ArcGISModel):
                 super().__init__(learn)
                 self.on_batch_begin_fn = on_batch_begin_fn
 
-            def on_batch_begin(self, last_input, last_target, train, **kwargs):
-
-                last_input, last_target = self.on_batch_begin_fn(self.learn, last_input, last_target)
+            def on_batch_begin(self, last_input, last_target, **kwargs):
+                last_input, last_target = self.on_batch_begin_fn(self.learn, last_input, last_target, **kwargs)
 
                 return {'last_input':last_input, 'last_target':last_target}
 

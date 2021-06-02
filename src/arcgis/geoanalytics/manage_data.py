@@ -10,19 +10,31 @@ import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 
-from ._util import (_id_generator,
-                    _feature_input,
-                    _set_context,
-                    _create_output_service,
-                    GAJob,
-                    _prevent_bds_item)
+from ._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
+
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None, context=None, future=False, parameters=None, param_as_input=False):
+
+def run_python_script(
+    code,
+    layers=None,
+    gis=None,
+    context=None,
+    future=False,
+    parameters=None,
+    param_as_input=False,
+):
     """
 
     The ``run_python_script`` method executes a Python script on your ArcGIS
@@ -142,34 +154,37 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     if layers is None:
         layers = []
     import inspect
-    params = {
-        'f': 'json',
-        'input_layers' : layers,
-        'python_script' : code,
-        'user_variables' : parameters,
-        'context' : context
-    }
-    for idx, lyr in enumerate(params['input_layers']):
 
-        if hasattr(lyr, '_lyr_dict'):
-            params['input_layers'][idx] = lyr._lyr_dict
-        elif hasattr(lyr, '_lyr_json'):
-            params['input_layers'][idx] = lyr._lyr_json
+    params = {
+        "f": "json",
+        "input_layers": layers,
+        "python_script": code,
+        "user_variables": parameters,
+        "context": context,
+    }
+    for idx, lyr in enumerate(params["input_layers"]):
+
+        if hasattr(lyr, "_lyr_dict"):
+            params["input_layers"][idx] = lyr._lyr_dict
+        elif hasattr(lyr, "_lyr_json"):
+            params["input_layers"][idx] = lyr._lyr_json
         else:
-            params['input_layers'][idx] = lyr
+            params["input_layers"][idx] = lyr
 
     if inspect.isfunction(code):
         if param_as_input == True:
-            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '(**user_variables)'
+            params["code"] = (
+                inspect.getsource(code) + "\n" + code.__name__ + "(**user_variables)"
+            )
         else:
-            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
+            params["code"] = inspect.getsource(code) + "\n" + code.__name__ + "()"
     elif isinstance(code, str):
-        params['code'] = code
+        params["code"] = code
     else:
         raise ValueError("code must be a string or Python Function.")
 
     if isinstance(layers, (tuple, list)):
-        params['layers'] = layers
+        params["layers"] = layers
     else:
         raise ValueError("layers must be a list or tuple")
 
@@ -184,7 +199,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
         _set_context(params)
 
     params = inspect_function_inputs(tbx.run_python_script, **params)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.run_python_script(**params)
@@ -195,14 +210,17 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     except:
         raise
 
-def dissolve_boundaries(input_layer,
-                        dissolve_fields=None,
-                        summary_fields=None,
-                        multipart=False,
-                        output_name=None,
-                        gis=None,
-                        context=None,
-                        future=False):
+
+def dissolve_boundaries(
+    input_layer,
+    dissolve_fields=None,
+    summary_fields=None,
+    multipart=False,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
 
@@ -310,29 +328,40 @@ def dissolve_boundaries(input_layer,
         "input_layer": input_layer,
         "multipart": multipart,
         "summary_fields": summary_fields,
-        "dissolve_fields" : dissolve_fields,
+        "dissolve_fields": dissolve_fields,
         "output_name": output_name,
-        "context": context
+        "context": context,
     }
 
     if output_name is None:
-        output_service_name = 'Dissolve_Bounds_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Dissolve_Bounds_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Merge Layers",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -341,7 +370,7 @@ def dissolve_boundaries(input_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.dissolve_boundaries, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.dissolve_boundaries(**params)
         if future:
@@ -353,13 +382,16 @@ def dissolve_boundaries(input_layer,
         raise
     return
 
-def merge_layers(input_layer,
-                 merge_layer,
-                 merge_attributes=None,
-                 output_name=None,
-                 gis=None,
-                 context=None,
-                 future=False):
+
+def merge_layers(
+    input_layer,
+    merge_layer,
+    merge_attributes=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/merge_layers/merge_layers.png
@@ -461,32 +493,42 @@ def merge_layers(input_layer,
     params = {
         "input_layer": input_layer,
         "merge_layer": merge_layer,
-        "merge_attributes" : merge_attributes,
+        "merge_attributes": merge_attributes,
         "output_name": output_name,
         "context": context,
     }
     for key in list(params.keys()):
-        if key == 'merge_attributes' and \
-           params[key] is None:
+        if key == "merge_attributes" and params[key] is None:
             params[key] = []
     if output_name is None:
-        output_service_name = 'Merge_Layers_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Merge_Layers_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Merge Layers",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -495,7 +537,7 @@ def merge_layers(input_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.merge_layers, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.merge_layers(**params)
         if future:
@@ -506,7 +548,10 @@ def merge_layers(input_layer,
         output_service.delete()
         raise
 
-def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None, future=False):
+
+def clip_layer(
+    input_layer, clip_layer, output_name=None, gis=None, context=None, future=False
+):
     """
     .. image:: _static/images/clip_layer/clip_layer.png
 
@@ -571,25 +616,33 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     params = {
         "input_layer": input_layer,
         "clip_layer": clip_layer,
-        "output_type" : "Input",
+        "output_type": "Input",
         "output_name": output_name,
         "context": context,
     }
 
     if output_name is None:
-        output_service_name = 'Clip_Layers_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Clip_Layer_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
+    output_service = _create_output_service(
+        gis, output_name, output_service_name, "Overlay Layers"
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -598,7 +651,7 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
         _set_context(params)
 
     params = inspect_function_inputs(tbx.clip_layer, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.clip_layer(**params)
         if future:
@@ -610,14 +663,16 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
         raise
 
 
-def overlay_data(input_layer,
-                 overlay_layer,
-                 overlay_type="intersect",
-                 output_name=None,
-                 gis=None,
-                 include_overlaps=True,
-                 context=None,
-                 future=False):
+def overlay_data(
+    input_layer,
+    overlay_layer,
+    overlay_type="intersect",
+    output_name=None,
+    gis=None,
+    include_overlaps=True,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
@@ -689,11 +744,13 @@ def overlay_data(input_layer,
                             |                                    | * Polygon— Polygon                                                                |
                             +------------------------------------+-----------------------------------------------------------------------------------+
     ----------------------  -------------------------------------------------------------------------------
-    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features.
-                            This option should only be modified if you're not interested in self-intersection between
-                            features for the input layer and self-intersection between features for the overlay layer.
-                            Setting this value to false will improve performance. This parameter is only used when
-                            ``include_overlaps`` is Intersect with 10.6 and 10.6.1.
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain 
+                            overlapping features. The default is `True`. Change this parameter to `False` 
+                            if you don't want self-intersecting features for the input layer or the 
+                            overlay layer. Setting this to `False` will also improve performance. For 10.6 
+                            and 10.6.1, this parameter is only used when `overlayType` is `Intersect`. 
+                            The parameter is not used for 10.7 or later and will always be `True`.
+
 
                             The default value is 'True'.
     ----------------------  -------------------------------------------------------------------------------
@@ -732,34 +789,45 @@ def overlay_data(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json",
+        "f": "json",
         "input_layer": input_layer,
         "overlay_layer": overlay_layer,
-        "overlay_type" : overlay_type,
+        "overlay_type": overlay_type,
         "output_name": output_name,
-        "include_overlaps" : include_overlaps,
+        "include_overlaps": include_overlaps,
         "context": context,
-        "future" : future
+        "future": future,
     }
 
     if output_name is None:
-        output_service_name = 'Overlay_Layers_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Overlay_Layers_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Overlay Layers",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     if context is not None:
         params["context"] = context
@@ -767,7 +835,7 @@ def overlay_data(input_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.overlay_layers, **params)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.overlay_layers(**params)
@@ -836,13 +904,13 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     params = {
         "input_layer": input_layer,
         "append_layer": append_layer,
-        "field_mapping" : field_mapping
+        "field_mapping": field_mapping,
     }
 
     _set_context(params)
 
     params = inspect_function_inputs(tbx.append_data, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.append_data(**params)
         if future:
@@ -854,20 +922,21 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     return False
 
 
-def calculate_fields(input_layer,
-                     field_name,
-                     data_type,
-                     expression,
-                     track_aware=False,
-                     track_fields=None,
-                     time_boundary_split=None,
-                     time_split_unit=None,
-                     time_reference=None,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False
-                     ):
+def calculate_fields(
+    input_layer,
+    field_name,
+    data_type,
+    expression,
+    track_aware=False,
+    track_fields=None,
+    time_boundary_split=None,
+    time_split_unit=None,
+    time_reference=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/calculate_field/calculate_field.png
@@ -952,37 +1021,47 @@ def calculate_fields(input_layer,
     tbx = _import_toolbox(url, gis=gis)
     params = {
         "input_layer": input_layer,
-        "field_name" : field_name,
-        "data_type" : data_type,
-        "expression" : expression,
-        "track_aware" : track_aware,
-        "track_fields" : track_fields,
-        "time_boundary_split" : time_boundary_split,
-        "time_boundary_split_unit" : time_split_unit,
-        "time_boundary_reference" : time_reference,
+        "field_name": field_name,
+        "data_type": data_type,
+        "expression": expression,
+        "track_aware": track_aware,
+        "track_fields": track_fields,
+        "time_boundary_split": time_boundary_split,
+        "time_boundary_split_unit": time_split_unit,
+        "time_boundary_reference": time_reference,
         "output_name": output_name,
-        "context": context
+        "context": context,
     }
 
     if output_name is None:
-        output_service_name = 'Calculate_Fields_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Calculate_Field_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Calculate Fields",
+        output_datastore=output_datastore,
+    )
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
-
 
     if context is not None:
         params["context"] = context
@@ -990,7 +1069,7 @@ def calculate_fields(input_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.calculate_field, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.calculate_field(**params)
         if future:
@@ -1001,12 +1080,10 @@ def calculate_fields(input_layer,
         output_service.delete()
         raise
 
+
 def copy_to_data_store(
-    input_layer,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False):
+    input_layer, output_name=None, gis=None, context=None, future=False
+):
     """
     .. image:: _static/images/copy_to_data_store/copy_to_data_store.png
 
@@ -1063,39 +1140,53 @@ def copy_to_data_store(
     params = {
         "input_layer": input_layer,
         "output_name": output_name,
-        "context": context
+        "context": context,
     }
 
-
     if output_name is None:
-        output_service_name = 'Data Store Copy_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = "Copy_to_Data_Store_" + _id_generator()
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
-    if 'context' in params and \
-       'dataStore' in params['context'] and \
-       params['context']['dataStore'].lower().find('/bigDataFileShares/'.lower()) > -1:
-        params['output_name'] = output_name
+    if (
+        "context" in params
+        and "dataStore" in params["context"]
+        and params["context"]["dataStore"].lower().find("/bigDataFileShares/".lower())
+        > -1
+    ):
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     else:
         if context is not None:
-            output_datastore = context.get('dataStore', None)
+            output_datastore = context.get("dataStore", None)
         else:
             output_datastore = None
-        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store', output_datastore=output_datastore)
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        output_service = _create_output_service(
+            gis,
+            output_name,
+            output_service_name,
+            "Copy To Data Store",
+            output_datastore=output_datastore,
+        )
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
 
     params = inspect_function_inputs(tbx.copy_to_data_store, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.copy_to_data_store(**params)
-        gajob =  GAJob(gpjob=gpjob, return_service=output_service)
+        gajob = GAJob(gpjob=gpjob, return_service=output_service)
         if future:
             return gajob
         else:
@@ -1106,10 +1197,5 @@ def copy_to_data_store(
         output_service.delete()
         raise
 
-copy_to_data_store.__annotations__ = {
-    'output_name': str}
 
-
-
-
-
+copy_to_data_store.__annotations__ = {"output_name": str}

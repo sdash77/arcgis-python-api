@@ -1,17 +1,19 @@
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 from arcgis import env
+
 ########################################################################
 class IdentityProviderManager(object):
     """
     Manages and Updates the SAML identity provider configuration for a given GIS.
     """
+
     _gis = None
     _portal = None
     _url = None
     _properties = None
     _allowed_keys = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, gis=None):
         """Constructor"""
         if gis is None:
@@ -20,32 +22,50 @@ class IdentityProviderManager(object):
         self._gis = gis
         self._portal = self._gis._portal
         self._url = self._portal.resturl + "portals/self/idp"
-        self._allowed_keys = ['groups', 'supportSignedRequest', 'updateProfileAtSignin',
-                              'entityId', 'roleId', 'bindingPostUrl', 'certificate',
-                              'name', 'logoutUrl', 'id', 'useSHA256', 'encryptionCertificate',
-                              'bindingUrl', 'level', 'userCreditAssignment', 'signUpMode',
-                              'supportsLogoutRequest', 'encryptionSupported', 'idpMetadataFile']
+        self._allowed_keys = [
+            "groups",
+            "supportSignedRequest",
+            "updateProfileAtSignin",
+            "entityId",
+            "roleId",
+            "bindingPostUrl",
+            "certificate",
+            "name",
+            "logoutUrl",
+            "id",
+            "useSHA256",
+            "encryptionCertificate",
+            "bindingUrl",
+            "level",
+            "userCreditAssignment",
+            "signUpMode",
+            "supportsLogoutRequest",
+            "encryptionSupported",
+            "idpMetadataFile",
+        ]
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the IDP configuration"""
         if self._properties is None:
-            params = {'f':'json'}
-            res = self._gis._con.get(path=self._url,
-                                     params=params)
+            params = {"f": "json"}
+            res = self._gis._con.get(path=self._url, params=params)
             try:
                 self._properties = PropertyMap(res)
             except:
                 self._properties = PropertyMap({})
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def configuration(self):
         """
@@ -142,7 +162,8 @@ class IdentityProviderManager(object):
         ======================  =====================================================================
         """
         return self.properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @configuration.setter
     def configuration(self, value):
         """
@@ -240,76 +261,77 @@ class IdentityProviderManager(object):
 
 
         """
-        if len(dict(self.properties)) == 0 and \
-           value is not None:
+        if len(dict(self.properties)) == 0 and value is not None:
             self._add(**value)
         elif value is None:
             self._unregister()
         elif len(dict(self.properties)) > 0:
             self._update(**value)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _add(self, **kwargs):
         """
         registers the inital idp configuration
         """
-        if 'name' not in kwargs:
+        if "name" not in kwargs:
             import uuid
-            kwargs['name'] = uuid.uuid4().hex[:7]
+
+            kwargs["name"] = uuid.uuid4().hex[:7]
         url = self._url + "/register"
-        params = {'f' : 'json'}
-        file = kwargs.pop('idpMetadataFile', None)
+        params = {"f": "json"}
+        file = kwargs.pop("idpMetadataFile", None)
         params.update(dict(kwargs))
-        for k,v in params.items():
+        for k, v in params.items():
             if isinstance(v, list):
                 params[k] = ",".join(v)
             else:
                 params[k] = v
         if file is not None:
-            files = {'idpMetadataFile' : file}
+            files = {"idpMetadataFile": file}
         else:
             files = {}
-        res = self._gis._con.post(path=url,
-                                  postdata=params,
-                                  files=files)
+        res = self._gis._con.post(path=url, postdata=params, files=files)
         self._properties = None
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _unregister(self):
         """unregisters the current IDP settings"""
         if len(dict(self.properties)) == 0:
             return True
-        url = self._url + "/%s/unregister" % self.properties['id']
-        params = {'f' : 'json'}
+        url = self._url + "/%s/unregister" % self.properties["id"]
+        params = {"f": "json"}
         self._gis._con.post(path=url, postdata=params)
         self._properties = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _update(self, **kwargs):
         """
         updates the idp configuration
         """
         import json
-        if 'id' in self._properties:
-            url = self._url + "/%s/update" % self.properties['id']
-            params = {'f' : 'json'}
-            file = kwargs.pop('idpMetadataFile', None)
+
+        if "id" in self._properties:
+            url = self._url + "/%s/update" % self.properties["id"]
+            params = {"f": "json"}
+            file = kwargs.pop("idpMetadataFile", None)
             params.update(dict(kwargs))
-            for k,v in params.items():
+            for k, v in params.items():
                 if isinstance(v, list):
                     params[k] = ",".join(v)
                 else:
                     params[k] = v
             if file is not None:
-                files = {'idpMetadataFile' : file}
+                files = {"idpMetadataFile": file}
             else:
                 files = {}
-            res = self._gis._con.post(path=url,
-                                      postdata=params,
-                                      files=files,
-                                      try_json=False).replace('",}', '"}')
+            res = self._gis._con.post(
+                path=url, postdata=params, files=files, try_json=False
+            ).replace('",}', '"}')
 
             self._properties = None
             try:
-                return json.loads(res)['success']
+                return json.loads(res)["success"]
             except:
                 return True
         return False

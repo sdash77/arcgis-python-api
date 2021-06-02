@@ -1,19 +1,23 @@
 import json as _json
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
-#from arcgis.raster._layer import Raster as _Raster
+
+# from arcgis.raster._layer import Raster as _Raster
 from arcgis.features import FeatureLayer as _FeatureLayer
 import arcgis as _arcgis
 import string as _string
 import random as _random
 from arcgis._impl.common._utils import _date_handler
 import datetime
-from arcgis.geometry import Geometry  as _Geometry
+from arcgis.geometry import Geometry as _Geometry
 import numbers
 import time
 import os
+from urllib.parse import urljoin
+import requests
 
 
 import logging as _logging
+
 _LOGGER = _logging.getLogger(__name__)
 
 try:
@@ -24,7 +28,7 @@ except:
     pass
 
 
-def _set_context(params, function_context = None):
+def _set_context(params, function_context=None):
     out_sr = _arcgis.env.out_spatial_reference
     process_sr = _arcgis.env.process_spatial_reference
     out_extent = _arcgis.env.analysis_extent
@@ -36,42 +40,39 @@ def _set_context(params, function_context = None):
     context = {}
 
     if out_sr is not None:
-        context['outSR'] = {'wkid': int(out_sr)}
+        context["outSR"] = {"wkid": int(out_sr)}
 
     if out_extent is not None:
-        context['extent'] = out_extent
+        context["extent"] = out_extent
 
     if process_sr is not None:
-        context['processSR'] = {'wkid': int(process_sr)}
-
+        context["processSR"] = {"wkid": int(process_sr)}
 
     if mask is not None:
         if isinstance(mask, _ImageryLayer):
-            context['mask'] = {"url":mask._url}
-        elif isinstance(mask,str):
-            context['mask'] = {"url":mask}
-    
+            context["mask"] = {"url": mask._url}
+        elif isinstance(mask, str):
+            context["mask"] = {"url": mask}
+
     if cell_size is not None:
         if isinstance(cell_size, _ImageryLayer):
-            context['cellSize'] = {"url":cell_size._url}
-        elif isinstance(cell_size,str):
-            if 'http:' in cell_size or 'https:' in cell_size:
-                context['cellSize'] = {"url":cell_size}
+            context["cellSize"] = {"url": cell_size._url}
+        elif isinstance(cell_size, str):
+            if "http:" in cell_size or "https:" in cell_size:
+                context["cellSize"] = {"url": cell_size}
             else:
-                context['cellSize'] = cell_size
+                context["cellSize"] = cell_size
         else:
-            context['cellSize'] = cell_size
+            context["cellSize"] = cell_size
 
     if snap_raster is not None:
         if isinstance(snap_raster, _ImageryLayer):
-            context['snapRaster'] = {"url":snap_raster._url}
-        elif isinstance(mask,str):
-            context['snapRaster'] = {"url":snap_raster}
-
+            context["snapRaster"] = {"url": snap_raster._url}
+        elif isinstance(mask, str):
+            context["snapRaster"] = {"url": snap_raster}
 
     if parallel_processing_factor is not None:
-        context['parallelProcessingFactor'] = parallel_processing_factor
-
+        context["parallelProcessingFactor"] = parallel_processing_factor
 
     if function_context is not None:
         if context is not None:
@@ -83,105 +84,124 @@ def _set_context(params, function_context = None):
     if context:
         params["context"] = _json.dumps(context)
 
+
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    return ''.join(_random.choice(chars) for _ in range(size))
+    return "".join(_random.choice(chars) for _ in range(size))
+
 
 def _set_time_param(time):
     time_val = time
     if time is not None:
         if type(time) is list:
-            if isinstance(time[0], datetime.datetime) or isinstance(time[0], datetime.date):
+            if isinstance(time[0], datetime.datetime) or isinstance(
+                time[0], datetime.date
+            ):
                 if time[0].tzname() is None or time[0].tzname() != "UTC":
                     time[0] = time[0].astimezone(datetime.timezone.utc)
-            if isinstance(time[1], datetime.datetime) or isinstance(time[1], datetime.date):
+            if isinstance(time[1], datetime.datetime) or isinstance(
+                time[1], datetime.date
+            ):
                 if time[1].tzname() is None or time[1].tzname() != "UTC":
                     time[1] = time[1].astimezone(datetime.timezone.utc)
             starttime = _date_handler(time[0])
             endtime = _date_handler(time[1])
             if starttime is None:
-                starttime = 'null'
+                starttime = "null"
             if endtime is None:
-                endtime = 'null'
+                endtime = "null"
             time_val = "%s,%s" % (starttime, endtime)
         else:
             time_val = _date_handler(time)
 
     return time_val
 
+
 def _to_datetime(dt):
     import datetime
+
     try:
-        if dt<0:
-            return datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=(dt/1000))
+        if dt < 0:
+            return datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                seconds=(dt / 1000)
+            )
         else:
-            return  datetime.datetime.utcfromtimestamp(dt/1000)
+            return datetime.datetime.utcfromtimestamp(dt / 1000)
     except:
         return dt
 
+
 def _datetime2ole(date):
-    #date = datetime.strptime(date, '%d-%b-%Y')
+    # date = datetime.strptime(date, '%d-%b-%Y')
     import datetime
+
     OLE_TIME_ZERO = datetime.datetime(1899, 12, 30)
     delta = date - OLE_TIME_ZERO
     return float(delta.days) + (float(delta.seconds) / 86400)
 
+
 def _ole2datetime(oledt):
     import datetime
+
     OLE_TIME_ZERO = datetime.datetime(1899, 12, 30, 0, 0, 0)
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt/1000)
+        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+
 
 def _iso_to_datetime(timestamp):
-    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    format_string = "%Y-%m-%dT%H:%M:%S%z"
     try:
         colon = timestamp[-3]
         colonless_timestamp = timestamp
-        if colon == ':':
+        if colon == ":":
             colonless_timestamp = timestamp[:-3] + timestamp[-2:]
         dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
         return dt_ob.replace(tzinfo=None)
     except:
         try:
-            format_string = '%Y-%m-%dT%H:%M:%S'
+            format_string = "%Y-%m-%dT%H:%M:%S"
             dt_ob = datetime.datetime.strptime(timestamp, format_string)
             return dt_ob
         except:
             return timestamp
 
+
 def _check_if_iso_format(timestamp):
-    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    format_string = "%Y-%m-%dT%H:%M:%S%z"
     try:
         colon = timestamp[-3]
         colonless_timestamp = timestamp
-        if colon == ':':
+        if colon == ":":
             colonless_timestamp = timestamp[:-3] + timestamp[-2:]
         dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
         return True
     except:
         try:
-            format_string = '%Y-%m-%dT%H:%M:%S'
+            format_string = "%Y-%m-%dT%H:%M:%S"
             dt_ob = datetime.datetime.strptime(timestamp, format_string)
             return dt_ob
         except:
             return False
 
-def _time_filter(time_extent,ele):
+
+def _time_filter(time_extent, ele):
     if time_extent is not None:
         if isinstance(time_extent, datetime.datetime):
-            if(ele<time_extent):
+            if ele < time_extent:
                 return True
             else:
                 return False
         elif isinstance(time_extent, list):
-            if isinstance(time_extent[0], datetime.datetime) and isinstance(time_extent[1], datetime.datetime):                                                
-                if(time_extent[0] < ele and ele < time_extent[1]):
+            if isinstance(time_extent[0], datetime.datetime) and isinstance(
+                time_extent[1], datetime.datetime
+            ):
+                if time_extent[0] < ele and ele < time_extent[1]:
                     return True
                 else:
                     return False
 
-        else:                            
+        else:
             return True
     else:
         return True
@@ -190,209 +210,269 @@ def _time_filter(time_extent,ele):
 def _linear_regression(sample_size, date_list, x, y):
     ncoefficient = 2
     if sample_size < ncoefficient:
-        _LOGGER.warning("Trend line cannot be drawn. Insufficient points to plot Linear Trend Line")
-        return [],[]
+        _LOGGER.warning(
+            "Trend line cannot be drawn. Insufficient points to plot Linear Trend Line"
+        )
+        return [], []
 
-    AA = _np.empty([sample_size,ncoefficient], dtype=float, order='C')
-    BB = _np.empty([sample_size,1], dtype=float, order='C')
-    XX = _np.empty([ncoefficient,1], dtype=float, order='C')
+    AA = _np.empty([sample_size, ncoefficient], dtype=float, order="C")
+    BB = _np.empty([sample_size, 1], dtype=float, order="C")
+    XX = _np.empty([ncoefficient, 1], dtype=float, order="C")
     for i in range(sample_size):
-        n=0
-        AA[i][n] = date_list[i] 
-        AA[i][n+1] = 1
+        n = 0
+        AA[i][n] = date_list[i]
+        AA[i][n + 1] = 1
         BB[i] = y[i]
 
     x1 = _np.linalg.lstsq(AA, BB, rcond=None)[0]
 
-    YY=[]
+    YY = []
     for i in range(sample_size):
-        y_temp=x1[0][0]*date_list[i] + x1[1][0]
+        y_temp = x1[0][0] * date_list[i] + x1[1][0]
         YY.append(y_temp)
-    return x,YY
+    return x, YY
 
 
 def _harmonic_regression(sample_size, date_list, x, y, trend_order):
-    PI2_Year = 3.14159265*2/365.25
+    PI2_Year = 3.14159265 * 2 / 365.25
 
     ncoefficient = 2 * (trend_order + 1)
     if sample_size < ncoefficient:
-        _LOGGER.warning("Trend line cannot be drawn. Insufficient points to plot Harmonic Trend Line for trend order "+str(trend_order)+". Please try specifying a lower trend order.")
-        return [],[]
+        _LOGGER.warning(
+            "Trend line cannot be drawn. Insufficient points to plot Harmonic Trend Line for trend order "
+            + str(trend_order)
+            + ". Please try specifying a lower trend order."
+        )
+        return [], []
 
-    AA = _np.empty([sample_size,ncoefficient], dtype=float, order='C')
-    BB = _np.empty([sample_size,1], dtype=float, order='C')
-    XX = _np.empty([ncoefficient,1], dtype=float, order='C')
+    AA = _np.empty([sample_size, ncoefficient], dtype=float, order="C")
+    BB = _np.empty([sample_size, 1], dtype=float, order="C")
+    XX = _np.empty([ncoefficient, 1], dtype=float, order="C")
 
     for i in range(sample_size):
-        n=0
-        AA[i][n] = date_list[i] 
-        AA[i][n+1] = 1
+        n = 0
+        AA[i][n] = date_list[i]
+        AA[i][n + 1] = 1
 
-        for j in range(1,trend_order+1):
+        for j in range(1, trend_order + 1):
             AA[i][n + 2 * j] = _np.sin(PI2_Year * j * date_list[i])
             AA[i][n + 2 * j + 1] = _np.cos(PI2_Year * j * date_list[i])
 
         BB[i] = y[i]
 
     x1 = _np.linalg.lstsq(AA, BB, rcond=None)[0]
-    YY=[]
+    YY = []
     for i in range(sample_size):
-        y_temp=x1[0][0]*date_list[i] + x1[1][0]
-        for q in range(2,len(x1),2):
-            y_temp=y_temp + x1[q][0] * _np.sin(2 * 3.14159265358979323846 * (q / 2) * date_list[i] / 365.25)
-            y_temp=y_temp + x1[q+1][0] * _np.cos(2 * 3.14159265358979323846 * (q / 2) * date_list[i] / 365.25)
+        y_temp = x1[0][0] * date_list[i] + x1[1][0]
+        for q in range(2, len(x1), 2):
+            y_temp = y_temp + x1[q][0] * _np.sin(
+                2 * 3.14159265358979323846 * (q / 2) * date_list[i] / 365.25
+            )
+            y_temp = y_temp + x1[q + 1][0] * _np.cos(
+                2 * 3.14159265358979323846 * (q / 2) * date_list[i] / 365.25
+            )
         YY.append(y_temp)
     return x, YY
 
+
 def _epoch_to_iso(dt):
     import datetime
+
     try:
-        if dt<0:
-            return (datetime.datetime(1970, 1, 1, tzinfo = datetime.timezone.utc) + datetime.timedelta(seconds=(dt/1000))).isoformat()
+        if dt < 0:
+            return (
+                datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+                + datetime.timedelta(seconds=(dt / 1000))
+            ).isoformat()
         else:
-            return  datetime.datetime.fromtimestamp(dt/1000, tz=datetime.timezone.utc).isoformat()
+            return datetime.datetime.fromtimestamp(
+                dt / 1000, tz=datetime.timezone.utc
+            ).isoformat()
     except:
         return dt
 
+
 def _datetime2ole(date):
-    #date = datetime.strptime(date, '%d-%b-%Y')
+    # date = datetime.strptime(date, '%d-%b-%Y')
     import datetime
+
     OLE_TIME_ZERO = datetime.datetime(1899, 12, 30)
     delta = date - OLE_TIME_ZERO
     return float(delta.days) + (float(delta.seconds) / 86400)
 
+
 def _ole2datetime(oledt):
     import datetime
+
     OLE_TIME_ZERO = datetime.datetime(1899, 12, 30, 0, 0, 0)
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt/1000)
+        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+
 
 def _iso_to_datetime(timestamp):
-    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    format_string = "%Y-%m-%dT%H:%M:%S%z"
     try:
         colon = timestamp[-3]
         colonless_timestamp = timestamp
-        if colon == ':':
+        if colon == ":":
             colonless_timestamp = timestamp[:-3] + timestamp[-2:]
         dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
         return dt_ob.replace(tzinfo=None)
     except:
         try:
-            format_string = '%Y-%m-%dT%H:%M:%S.%f%z'
+            format_string = "%Y-%m-%dT%H:%M:%S.%f%z"
             dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
             return dt_ob.replace(tzinfo=None)
         except:
             try:
-                format_string = '%Y-%m-%dT%H:%M:%S'
+                format_string = "%Y-%m-%dT%H:%M:%S"
                 dt_ob = datetime.datetime.strptime(timestamp, format_string)
                 return dt_ob
             except:
                 return timestamp
 
+
 def _check_if_iso_format(timestamp):
-    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    format_string = "%Y-%m-%dT%H:%M:%S%z"
     try:
         colon = timestamp[-3]
         colonless_timestamp = timestamp
-        if colon == ':':
+        if colon == ":":
             colonless_timestamp = timestamp[:-3] + timestamp[-2:]
         dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
         return True
     except:
         try:
-            format_string = '%Y-%m-%dT%H:%M:%S'
+            format_string = "%Y-%m-%dT%H:%M:%S"
             dt_ob = datetime.datetime.strptime(timestamp, format_string)
             return dt_ob
         except:
             return False
 
+
 def _local_function_template(operation_number=None):
     template_dict = {
-  "name" : "max_rft",
-  "description" : "A raster function template.",
-  "function" : {
-    "pixelType" : "UNKNOWN",
-    "name" : "Cell Statistics",
-    "description" : "Calculates a per-cell statistic from multiple rasters.  The available statistics are Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.",
-    "type" : "LocalFunction",
-    "_object_id" : 1
-  },
-  "arguments" : {
-    "Rasters" : {
-      "name" : "Rasters",
-      "value" : {
-        "elements" : [
-        ],
-        "type" : "ArgumentArray",
-        "_object_id" : 2
-      },
-      "aliases" : [
-        "__IsRasterArray__"
-      ],
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 3
-    },
-    "Operation" : {
-      "name" : "Operation",
-      "value" : "",
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 4
-    },
-    "CellsizeType" : {
-      "name" : "CellsizeType",
-      "value" : 2,
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 5
-    },
-    "ExtentType" : {
-      "name" : "ExtentType",
-      "value" : 1,
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 6
-    },
-    "ProcessAsMultiband" : {
-      "name" : "ProcessAsMultiband",
-      "value" : True,
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 7
-    },
-    "MatchVariable" : {
-      "name" : "MatchVariable",
-      "value" : True,
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 8
-    },
-    "UnionDimension" : {
-      "name" : "UnionDimension",
-      "value" : False,
-      "isDataset" : False,
-      "isPublic" : False,
-      "type" : "RasterFunctionVariable",
-      "_object_id" : 9
-    },
-    "type" : "LocalFunctionArguments",
-    "_object_id" : 10
-  },
-  "functionType" : 0,
-  "thumbnail" : ""
-}
+        "name": "max_rft",
+        "description": "A raster function template.",
+        "function": {
+            "pixelType": "UNKNOWN",
+            "name": "Cell Statistics",
+            "description": "Calculates a per-cell statistic from multiple rasters.  The available statistics are Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.",
+            "type": "LocalFunction",
+            "_object_id": 1,
+        },
+        "arguments": {
+            "Rasters": {
+                "name": "Rasters",
+                "value": {"elements": [], "type": "ArgumentArray", "_object_id": 2},
+                "aliases": ["__IsRasterArray__"],
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 3,
+            },
+            "Operation": {
+                "name": "Operation",
+                "value": "",
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 4,
+            },
+            "CellsizeType": {
+                "name": "CellsizeType",
+                "value": 2,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 5,
+            },
+            "ExtentType": {
+                "name": "ExtentType",
+                "value": 1,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 6,
+            },
+            "ProcessAsMultiband": {
+                "name": "ProcessAsMultiband",
+                "value": True,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 7,
+            },
+            "MatchVariable": {
+                "name": "MatchVariable",
+                "value": True,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 8,
+            },
+            "UnionDimension": {
+                "name": "UnionDimension",
+                "value": False,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 9,
+            },
+            "type": "LocalFunctionArguments",
+            "_object_id": 10,
+        },
+        "functionType": 0,
+        "thumbnail": "",
+    }
     if operation_number is not None:
-        template_dict["arguments"]["Operation"]["value"]=operation_number
+        template_dict["arguments"]["Operation"]["value"] = operation_number
     return template_dict
+
+
+def _percentile_function_template(ignore_nodata=False, percentile=90,percentile_interpolation_type=False):
+    template_dict = {
+      "name" : "Raster Function Template",
+      "description" : "A raster function template.",
+      "function" : {
+        "pixelType" : "UNKNOWN",
+        "name" : "Percentile Function",
+        "description" : "Compute percentile value across the input rasters.",
+        "type" : "PercentileFunction",
+        "_object_id" : 1
+      },
+      "arguments" : {
+        "Rasters" : {
+          "name" : "Rasters",
+          "isDataset" : False,
+          "isPublic" : False,
+          "type" : "RasterFunctionVariable",
+          "_object_id" : 2
+        },
+        "IgnoreNoData" : True,
+        "Percentile" : 90,
+        "InterpolatePercentile" : False,
+        "type" : "PercentileFunctionArguments",
+        "_object_id" : 3
+      },
+      "functionType" : 0,
+      "type" : "RasterFunctionTemplate",
+      "_object_id" : 4
+    }
+
+    if ignore_nodata is not None:
+        template_dict["arguments"]["IgnoreNoData"] = ignore_nodata
+
+    if percentile is not None:
+        template_dict["arguments"]["Percentile"] = percentile
+
+    if percentile_interpolation_type is not None:
+        template_dict["arguments"]["InterpolatePercentile"] = percentile_interpolation_type
+
+    return template_dict
+
 
 def _get_geometry(data):
     if data is None:
@@ -409,83 +489,99 @@ def _get_geometry(data):
     else:
         return data
 
+
 def _get_geometry_from_feature_layer(data):
-    geo=None
+    geo = None
     layer_fset = layer.query()
     for ele in layer_fset.features:
         geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
     return geometry
 
+
 def build_query_string(field_name, operator, field_values):
     operator_map = {
-    "equals": "=",
-    "less_than": "<",
-    "greater_than": ">",
-    "not_equals": "<>",
-    "not_less_than": ">=",
-    "not_greater_than": "<=",
-        }
+        "equals": "=",
+        "less_than": "<",
+        "greater_than": ">",
+        "not_equals": "<>",
+        "not_less_than": ">=",
+        "not_greater_than": "<=",
+    }
 
     if operator in operator_map:
         if isinstance(field_values, numbers.Number):
-            return field_name + ' ' + operator_map[operator] + ' ' + str(field_values)
+            return field_name + " " + operator_map[operator] + " " + str(field_values)
         elif isinstance(field_values, str):
-            return field_name + ' ' + operator_map[operator] + ' \'' + field_values + '\''
+            return field_name + " " + operator_map[operator] + " '" + field_values + "'"
         else:
-            raise TypeError('field_value must be numeric or string')
+            raise TypeError("field_value must be numeric or string")
 
-    elif operator in ['starts_with', 'ends_with', 'not_starts_with', 'not_ends_with', 'contains', 'not_contains']:
+    elif operator in [
+        "starts_with",
+        "ends_with",
+        "not_starts_with",
+        "not_ends_with",
+        "contains",
+        "not_contains",
+    ]:
         if not isinstance(field_values, str):
-            raise TypeError('field_value must be string')
-        if operator == 'starts_with':
-            return field_name + ' LIKE ' + '\'' + field_values + '%\''
-        elif operator == 'ends_with':
-            return field_name + ' LIKE' + '\'%' + field_values + '\''
-        elif operator == 'not_starts_with':
-            return field_name + ' NOT LIKE ' + '\'' + field_values + '%\''
-        elif operator == 'not_ends_with':
-            return field_name + ' NOT LIKE ' + '\'%' + field_values + '\''
-        elif operator == 'contains':
-            return field_name + ' LIKE ' + '\'%' + field_values + '%\''
-        elif operator == 'not_contains':
-            return field_name + ' NOT LIKE ' + '\'%' + field_values + '%\''
-    elif operator == 'in':
+            raise TypeError("field_value must be string")
+        if operator == "starts_with":
+            return field_name + " LIKE " + "'" + field_values + "%'"
+        elif operator == "ends_with":
+            return field_name + " LIKE" + "'%" + field_values + "'"
+        elif operator == "not_starts_with":
+            return field_name + " NOT LIKE " + "'" + field_values + "%'"
+        elif operator == "not_ends_with":
+            return field_name + " NOT LIKE " + "'%" + field_values + "'"
+        elif operator == "contains":
+            return field_name + " LIKE " + "'%" + field_values + "%'"
+        elif operator == "not_contains":
+            return field_name + " NOT LIKE " + "'%" + field_values + "%'"
+    elif operator == "in":
         if not isinstance(field_values, list):
             raise TypeError('field_values must be type list for operator "in"')
-        values = '('
+        values = "("
         for item in field_values:
             if not (isinstance(item, numbers.Number) or isinstance(item, str)):
-                raise TypeError('item in field_values must be numeric or string')
-            if values == '(':
-                values += '\'' + item + '\'' if isinstance(item, str) else str(item)
+                raise TypeError("item in field_values must be numeric or string")
+            if values == "(":
+                values += "'" + item + "'" if isinstance(item, str) else str(item)
             else:
-                values += ',\'' + item + '\'' if isinstance(item, str) else ',' + str(item)
-        values += ')'
-        return field_name + ' IN ' + values
-    elif operator == 'not_in':
-        values = '('
+                values += (
+                    ",'" + item + "'" if isinstance(item, str) else "," + str(item)
+                )
+        values += ")"
+        return field_name + " IN " + values
+    elif operator == "not_in":
+        values = "("
         for item in field_values:
             if not (isinstance(item, numbers.Number) or isinstance(item, str)):
-                raise TypeError('item in field_values must be numeric or string')
-            if values == '(':
-                values += '\'' + item + '\'' if isinstance(item, str) else str(item)
+                raise TypeError("item in field_values must be numeric or string")
+            if values == "(":
+                values += "'" + item + "'" if isinstance(item, str) else str(item)
             else:
-                values += ',\'' + item + '\'' if isinstance(item, str) else ',' + str(item)
-        values += ')'
-        return field_name + ' NOT IN ' + values
+                values += (
+                    ",'" + item + "'" if isinstance(item, str) else "," + str(item)
+                )
+        values += ")"
+        return field_name + " NOT IN " + values
     else:
-        raise ValueError('invalid operator value')
+        raise ValueError("invalid operator value")
+
 
 def _generate_direct_access_url(gis=None, expiration=None):
     """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
-    url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
-                                                                 gis._username)
-    params = {"f" : "json", "storeType":"rasterStore"}
+    url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (
+        gis._portal.url,
+        gis.users.me.username,
+    )
+    params = {"f": "json", "storeType": "rasterStore"}
     if expiration is not None:
-        params.update({"expiration":expiration})
+        params.update({"expiration": expiration})
     else:
-        params.update({"expiration":1440})
+        params.update({"expiration": 1440})
     res = gis._portal.con.post(url, params)
     if isinstance(res, dict):
         if "url" in res.keys():
@@ -494,60 +590,81 @@ def _generate_direct_access_url(gis=None, expiration=None):
             raise RuntimeError("Couldn't generate direct access url")
     else:
         raise RuntimeError("Couldn't generate direct access url")
-    
-def _upload_imagery_agol(files, gis=None, direct_access_url=None, raster_type_name=None):
+
+
+def _upload_imagery_agol(
+    files, gis=None, direct_access_url=None, raster_type_name=None
+):
     """uploads a file to the image layer to AGOL and returns the list of urls"""
 
     try:
         from azure.storage.blob import ContainerClient
-        from azure.core.exceptions import ClientAuthenticationError, ServiceResponseError, ServiceRequestError
+        from azure.core.exceptions import (
+            ClientAuthenticationError,
+            ServiceResponseError,
+            ServiceRequestError,
+        )
     except:
-        print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
-        (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
+        print(
+            "Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
+        (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)"
+        )
     gis = _arcgis.env.active_gis if gis is None else gis
     if direct_access_url is None:
         sas_url = _generate_direct_access_url(gis)
     else:
         sas_url = direct_access_url
     container = ContainerClient.from_container_url(sas_url)
-    if not isinstance(files,list):
+    if not isinstance(files, list):
         files = [files]
 
     url_list = []
-    url=""
-    set_root=True
+    url = ""
+    set_root = True
     for file in files:
         current_time = int(time.time())
         current_time_str = str(current_time)
-        prefix =  "_images/"+str(current_time)+"/"
+        prefix = "_images/" + str(current_time) + "/"
         if os.path.exists(file):
-            if(os.path.isdir(file)):
+            if os.path.isdir(file):
                 if raster_type_name is None:
                     set_root = False
-                elif (file.endswith(".crf") and raster_type_name =="Raster Dataset") or raster_type_name != "Raster Dataset":
+                elif (
+                    file.endswith(".crf") and raster_type_name == "Raster Dataset"
+                ) or raster_type_name != "Raster Dataset":
                     set_root = True
                 folder = os.path.basename(file)
-                basename_len=len(os.path.dirname(file))
-                for root,d_names,f_names in os.walk(file):
+                basename_len = len(os.path.dirname(file))
+                for root, d_names, f_names in os.walk(file):
                     for f in f_names:
-                        blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        blobname = prefix + (root + "/" + f)[
+                            basename_len + 1 :
+                        ].replace(os.sep, "/")
                         filepath = os.path.join(root, f)
-                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        path = ("/" + root + "/" + f)[basename_len + 1 :].replace(
+                            os.sep, "/"
+                        )
                         while True:
                             try:
-                                blob=container.get_blob_client(blobname)
+                                blob = container.get_blob_client(blobname)
                                 with open(filepath, "rb") as data:
                                     blob.upload_blob(data, blob_type="BlockBlob")
                                 url = blob.url.split("?", 1)[0]
                                 if set_root:
                                     break
                                 else:
-                                    uri_dict = {"uri":url, "path":path}
+                                    uri_dict = {"uri": url, "path": path}
                                     url_list.append(uri_dict)
-                            except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                            except (
+                                ClientAuthenticationError,
+                                ServiceResponseError,
+                                ServiceRequestError,
+                            ) as err:
                                 if direct_access_url is None:
                                     sas_url = _generate_direct_access_url(gis)
-                                    container = ContainerClient.from_container_url(sas_url)
+                                    container = ContainerClient.from_container_url(
+                                        sas_url
+                                    )
                                     continue
                                 else:
                                     raise
@@ -555,19 +672,25 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None, raster_type_na
                                 raise err
                             break
                 if set_root:
-                    if url !="":
-                        url = url[0:url.find(current_time_str)+len(current_time_str)]
+                    if url != "":
+                        url = url[
+                            0 : url.find(current_time_str) + len(current_time_str)
+                        ]
                         url_list.append(url)
             else:
-                blobname = prefix+os.path.basename(file).replace(os.sep, '/')
+                blobname = prefix + os.path.basename(file).replace(os.sep, "/")
                 while True:
                     try:
-                        blob=container.get_blob_client(blobname)
+                        blob = container.get_blob_client(blobname)
                         with open(file, "rb") as data:
                             blob.upload_blob(data, blob_type="BlockBlob")
                         url = blob.url.split("?", 1)[0]
                         url_list.append(url)
-                    except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                    except (
+                        ClientAuthenticationError,
+                        ServiceResponseError,
+                        ServiceRequestError,
+                    ) as err:
                         if direct_access_url is None:
                             sas_url = _generate_direct_access_url(gis)
                             container = ContainerClient.from_container_url(sas_url)
@@ -580,65 +703,67 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None, raster_type_na
 
     return url_list
 
+
 def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
     """uploads a file to the image layer to enterprise and returns the item id"""
-    
+
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     url = "%s/uploads/upload" % ra_url
-    params = {
-        "f" : 'json'
-    }
+    params = {"f": "json"}
 
-   
-    if not isinstance(files,list):
+    if not isinstance(files, list):
         files = [files]
 
     item_ids_list = []
     res = {}
-    
+
     append_path = False
     for file in files:
-        item_id_dict={}
+        item_id_dict = {}
         if os.path.exists(file):
-            if(os.path.isdir(file)):
-                if file.endswith(".crf") or raster_type_name !="Raster Dataset":
+            if os.path.isdir(file):
+                if file.endswith(".crf") or raster_type_name != "Raster Dataset":
                     append_path = True
                 folder = os.path.basename(file)
-                basename_len=len(os.path.dirname(file))
-                for root,d_names,f_names in os.walk(file):
+                basename_len = len(os.path.dirname(file))
+                for root, d_names, f_names in os.walk(file):
                     for f in f_names:
-                        fp =os.path.join(root, f)
-                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        fp = os.path.join(root, f)
+                        path = ("/" + root + "/" + f)[basename_len + 1 :].replace(
+                            os.sep, "/"
+                        )
                         item_id = None
                         try:
-                            item_id  = _upload(path=fp, gis=gis)
+                            item_id = _upload(path=fp, gis=gis)
                         except Exception as e:
                             if "(Error Code: 403)" in str(e):
                                 pass
                             else:
-                                _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
+                                _LOGGER.warning("file: " + str(fp) + " " + str(e))
 
                         if item_id is not None:
                             if append_path:
-                                item_id_dict = {"itemId":item_id, "path":path}
+                                item_id_dict = {"itemId": item_id, "path": path}
                                 item_ids_list.append(item_id_dict)
-                                item_id_dict={}
+                                item_id_dict = {}
                             else:
                                 item_ids_list.append(item_id)
 
             else:
-                files_param = {'file' : file}
-                item_id=None
+                files_param = {"file": file}
+                item_id = None
                 try:
-                    item_id  = _upload(path=file, gis=gis)
+                    item_id = _upload(path=file, gis=gis)
                 except Exception as e:
-                    _LOGGER.warning('file: '+str(file)+ " "+ str(e))
+                    _LOGGER.warning("file: " + str(file) + " " + str(e))
                 if item_id is not None:
                     item_ids_list.append(item_id)
 
     return item_ids_list
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
+
 def _upload(path, description=None, gis=None):
     """
     Uploads a new item to the server. Once the operation is completed
@@ -659,41 +784,36 @@ def _upload(path, description=None, gis=None):
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     if (os.path.getsize(path)) < 1000000000:
         url = ra_url + "/uploads/upload"
-        params = {
-            "f" : "json",
-            'filename' : os.path.basename(path),
-            'overwrite' : True
-        }
+        params = {"f": "json", "filename": os.path.basename(path), "overwrite": True}
         files = {}
-        files['file'] = path
+        files["file"] = path
         if description:
-            params['description'] = description
-        res = gis._con.post(path=url,
-                                postdata=params,
-                                files=files)
-        if 'error' in res:
+            params["description"] = description
+        res = gis._con.post(path=url, postdata=params, files=files)
+        if "error" in res:
             raise Exception(res)
         else:
-            return res['item']['itemID']
+            return res["item"]["itemID"]
     else:
         file_path = path
         item_id = _register_upload(file_path, gis=gis)
         _upload_by_parts(item_id, file_path, gis=gis)
         return _commit_upload(item_id, gis=gis)
-#----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
 def _register_upload(file_path, gis=None):
     """returns the itemid for the upload by parts logic"""
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     r_url = "%s/uploads/register" % ra_url
-    params = {'f' : 'json',
-                'itemName' : os.path.basename(file_path)
-                }
+    params = {"f": "json", "itemName": os.path.basename(file_path)}
     reg_res = gis._con.post(r_url, params)
-    if 'item' in reg_res and \
-        'itemID' in reg_res['item']:
-        return reg_res['item']['itemID']
+    if "item" in reg_res and "itemID" in reg_res["item"]:
+        return reg_res["item"]["itemID"]
     return None
-#----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
 def _upload_by_parts(item_id, file_path, gis=None):
     """loads a file for attachmens by parts"""
     import mmap, tempfile
@@ -701,13 +821,11 @@ def _upload_by_parts(item_id, file_path, gis=None):
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     b_url = "%s/uploads/%s" % (ra_url, item_id)
     upload_part_url = "%s/uploadPart" % b_url
-    params = {
-        "f" : "json"
-    }
-    with open(file_path, 'rb') as f:
+    params = {"f": "json"}
+    with open(file_path, "rb") as f:
         mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
         size = 100000000
-        steps =  int(os.fstat(f.fileno()).st_size / size)
+        steps = int(os.fstat(f.fileno()).st_size / size)
         if os.fstat(f.fileno()).st_size % size > 0:
             steps += 1
         for i in range(steps):
@@ -715,40 +833,38 @@ def _upload_by_parts(item_id, file_path, gis=None):
             tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
             if os.path.isfile(tempFile):
                 os.remove(tempFile)
-            with open(tempFile, 'wb') as writer:
+            with open(tempFile, "wb") as writer:
                 writer.write(mm.read(size))
                 writer.flush()
                 writer.close()
             del writer
-            files['file'] = tempFile
-            params['partId'] = i + 1
-            res = gis._con.post(upload_part_url,
-                                    postdata=params,
-                                    files=files)
-            if 'error' in res:
+            files["file"] = tempFile
+            params["partId"] = i + 1
+            res = gis._con.post(upload_part_url, postdata=params, files=files)
+            if "error" in res:
                 raise Exception(res)
             os.remove(tempFile)
             del files
         del mm
     return True
-#----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
 def _commit_upload(item_id, gis=None):
     """commits an upload by parts upload"""
 
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     b_url = "%s/uploads/%s" % (ra_url, item_id)
     commit_part_url = "%s/commit" % b_url
-    params = {
-            'f':'json',
-            'parts' : _uploaded_parts(itemid=item_id, gis=gis)
-    }
-    res = gis._con.post(commit_part_url,
-                            params)
-    if 'error' in res:
+    params = {"f": "json", "parts": _uploaded_parts(itemid=item_id, gis=gis)}
+    res = gis._con.post(commit_part_url, params)
+    if "error" in res:
         raise Exception(res)
     else:
-        return res['item']['itemID']
-#----------------------------------------------------------------------
+        return res["item"]["itemID"]
+
+
+# ----------------------------------------------------------------------
 def _uploaded_parts(itemid, gis=None):
     """
     returns the parts uploaded for a given item
@@ -762,11 +878,10 @@ def _uploaded_parts(itemid, gis=None):
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     url = ra_url + "/uploads/%s/parts" % itemid
-    params = {
-        "f" : "json"
-    }
+    params = {"f": "json"}
     res = gis._con.get(url, params)
-    return ",".join(res['parts'])
+    return ",".join(res["parts"])
+
 
 def _get_extent(extdict=None):
     """
@@ -782,18 +897,30 @@ def _get_extent(extdict=None):
     outext = arcpy.Extent
     extsr = ""
     try:
-        if extdict is None: 
+        if extdict is None:
             return outext, extsr
         # Note: creating geometry directly from envelope JSON gave me a _passthrough
         # which does not provide a extent object.
-        if "xmin" in extdict and "xmax" in extdict and "ymin" in extdict and "ymax" in extdict:
+        if (
+            "xmin" in extdict
+            and "xmax" in extdict
+            and "ymin" in extdict
+            and "ymax" in extdict
+        ):
             xmin = extdict["xmin"]
             ymin = extdict["ymin"]
             xmax = extdict["xmax"]
             ymax = extdict["ymax"]
-            extjson = {"rings": [
-                [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin],
-                    [xmin, ymin]]]
+            extjson = {
+                "rings": [
+                    [
+                        [xmin, ymin],
+                        [xmin, ymax],
+                        [xmax, ymax],
+                        [xmax, ymin],
+                        [xmin, ymin],
+                    ]
+                ]
             }
             if "spatialReference" in extdict:
                 srdict = extdict["spatialReference"]
@@ -805,3 +932,85 @@ def _get_extent(extdict=None):
         return outext, extsr
     except:
         return outext, extsr
+
+
+def _get_stac_metadata_file(item):
+    """
+    This method is used to retrieve the metadata file of a valid STAC item.
+    :param item: input STAC Item (JSON dictionary)
+    :return string (URL of the STAC Item metadata file)
+    """
+    if "metadata" in item["assets"]:
+        href = item["assets"]["metadata"]["href"]
+        return href
+    elif "MTL" in item["assets"]:
+        href = item["assets"]["MTL"]["href"]
+        return href
+    elif "data" in item["assets"]:
+        data_href = item["assets"]["data"]["href"]
+        mtl_file = item["id"] + "_MTL.txt"
+        href = data_href.replace("index.html", mtl_file)
+        return href
+    else:
+        links = item["links"]
+        for i in range(len(links)):
+            if links[i]["rel"] == "metadata":
+                href = links[i]["href"]
+                return href
+        return None
+
+
+def _get_stac_links(stac_json, rel):
+    """
+    This method is used to retrieve all the links matching the specified relation type from a STAC Item or Catalog.
+    :param stac_json: input STAC Item or Catalog (JSON dictionary).
+    :param rel: relationship type used to filter  the links.
+    :return list (of URLs matching the rel filter)
+    """
+    if "links" not in stac_json:
+        raise RuntimeError(f"Invalid STAC Item/Catalog-\n{stac_json}")
+    links = stac_json["links"]
+    rel_links = [l for l in links if l["rel"] == rel]
+    link_hrefs = [l["href"] for l in rel_links]
+
+    all_links = []
+    for l in link_hrefs:
+        if l.startswith("http"):
+            link = l
+        else:
+            link = urljoin(os.path.dirname(stac_json["links"][0]["href"]) + "/", l)
+        all_links.append(link)
+    return all_links
+
+
+def _get_all_stac_catalog_items(stac_json, request_params={}):
+    """
+    This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
+    :param stac_json: input Static STAC (Catalog - JSON dictionary)
+    :param request_params: requests.get() method parameters used for the STAC Item and Catalog requests (passed through the RasterCollection.from_stac_catalog() method call).
+    :return generator (of all items retrived in the Catalog)
+    """
+    for item_link in _get_stac_links(stac_json, "item"):
+        item_res = requests.get(item_link, **request_params)
+        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+        ]:
+            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+        item_json = item_res.json()
+        yield item_json
+
+    children = _get_stac_links(stac_json, "child")
+    for child in children:
+        child_res = requests.get(child, **request_params)
+        if child_res.status_code != 200 or child_res.headers.get(
+            "content-type"
+        ) not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+        ]:
+            raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
+        child_json = child_res.json()
+        yield from _get_all_stac_catalog_items(child_json, request_params)

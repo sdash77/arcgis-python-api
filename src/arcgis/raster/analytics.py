@@ -3,8 +3,12 @@ Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service
 
 The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online from 8.2 as an invite only Beta through an Early Adopter Program (EAP). 
 """
-from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
-                                          _analysis_job_status, _layer_input
+from arcgis.geoprocessing._support import (
+    _analysis_job,
+    _analysis_job_results,
+    _analysis_job_status,
+    _layer_input,
+)
 import json as _json
 import arcgis as _arcgis
 import string as _string
@@ -23,7 +27,7 @@ def get_datastores(gis=None):
     gis = _arcgis.env.active_gis if gis is None else gis
 
     for ds in gis._datastores:
-        if 'RasterAnalytics' in ds._server['serverFunction']:
+        if "RasterAnalytics" in ds._server["serverFunction"]:
             return ds
 
     return None
@@ -35,419 +39,601 @@ def is_supported(gis=None):
     checks if arcgis.env.active_gis supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if 'rasterAnalytics' in gis.properties.helperServices:
+    if "rasterAnalytics" in gis.properties.helperServices:
         return True
     else:
         return False
 
-def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    return ''.join(_random.choice(chars) for _ in range(size))
 
-        
+def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
+    return "".join(_random.choice(chars) for _ in range(size))
+
+
 def _create_output_image_service(gis, output_name, task, folder=None):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
-        raise RuntimeError("An Image Service by this name already exists: " + output_name)
+        raise RuntimeError(
+            "An Image Service by this name already exists: " + output_name
+        )
 
     create_parameters = {
         "name": output_name,
         "description": "",
         "capabilities": "Image",
-        "properties": {
-            "path": "@",
-            "description": "",
-            "copyright": ""
-        }
+        "properties": {"path": "@", "description": "", "copyright": ""},
     }
 
-    output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                      service_type="imageService", folder=folder)
+    output_service = gis.content.create_service(
+        output_name,
+        create_params=create_parameters,
+        service_type="imageService",
+        folder=folder,
+    )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
         "tags": "Analysis Result, " + task,
-        "snippet": "Analysis Image Service generated from " + task
+        "snippet": "Analysis Image Service generated from " + task,
     }
     output_service.update(item_properties)
     return output_service
 
-def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', folder=None):
-    ok = gis.content.is_service_name_available(output_name, 'Feature Service')
+
+def _create_output_feature_service(
+    gis,
+    output_name,
+    output_service_name="Analysis feature service",
+    task="GeoAnalytics",
+    folder=None,
+):
+    ok = gis.content.is_service_name_available(output_name, "Feature Service")
     if not ok:
-        raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+        raise RuntimeError(
+            "A Feature Service by this name already exists: " + output_name
+        )
 
     createParameters = {
-            "currentVersion": 10.2,
-            "serviceDescription": "",
-            "hasVersionedData": False,
-            "supportsDisconnectedEditing": False,
-            "hasStaticData": True,
-            "maxRecordCount": 2000,
-            "supportedQueryFormats": "JSON",
-            "capabilities": "Query",
-            "description": "",
-            "copyrightText": "",
-            "allowGeometryUpdates": False,
-            "syncEnabled": False,
-            "editorTrackingInfo": {
-                "enableEditorTracking": False,
-                "enableOwnershipAccessControl": False,
-                "allowOthersToUpdate": True,
-                "allowOthersToDelete": True
-            },
-            "xssPreventionInfo": {
-                "xssPreventionEnabled": True,
-                "xssPreventionRule": "InputOnly",
-                "xssInputRule": "rejectInvalid"
-            },
-            "tables": [],
-            "name": output_service_name.replace(' ', '_')
-        }
+        "currentVersion": 10.2,
+        "serviceDescription": "",
+        "hasVersionedData": False,
+        "supportsDisconnectedEditing": False,
+        "hasStaticData": True,
+        "maxRecordCount": 2000,
+        "supportedQueryFormats": "JSON",
+        "capabilities": "Query",
+        "description": "",
+        "copyrightText": "",
+        "allowGeometryUpdates": False,
+        "syncEnabled": False,
+        "editorTrackingInfo": {
+            "enableEditorTracking": False,
+            "enableOwnershipAccessControl": False,
+            "allowOthersToUpdate": True,
+            "allowOthersToDelete": True,
+        },
+        "xssPreventionInfo": {
+            "xssPreventionEnabled": True,
+            "xssPreventionRule": "InputOnly",
+            "xssInputRule": "rejectInvalid",
+        },
+        "tables": [],
+        "name": output_service_name.replace(" ", "_"),
+    }
 
-    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder=folder)
+    output_service = gis.content.create_service(
+        output_name,
+        create_params=createParameters,
+        service_type="featureService",
+        folder=folder,
+    )
     description = "Feature Service generated from running the " + task + " tool."
     item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": output_service_name
-            }
+        "description": description,
+        "tags": "Analysis Result, " + task,
+        "snippet": output_service_name,
+    }
     output_service.update(item_properties)
     return output_service
 
 
-def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
-    input_surface_raster = forceFlow = flowDirectionType = output_flow_direction_raster = output_drop_name = None
+def _flow_direction_analytics_converter(
+    raster_function,
+    output_name=None,
+    other_outputs=None,
+    gis=None,
+    future=False,
+    **kwargs
+):
+    input_surface_raster = (
+        forceFlow
+    ) = flowDirectionType = output_flow_direction_raster = output_drop_name = None
 
-    input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
-    if 'force_flow' in raster_function['rasterFunctionArguments'].keys():
-        forceFlow = raster_function['rasterFunctionArguments']['force_flow']
-    if 'flow_direction_type' in raster_function['rasterFunctionArguments'].keys():
-        flowDirectionType = raster_function['rasterFunctionArguments']['flow_direction_type']
+    input_surface_raster = raster_function["rasterFunctionArguments"][
+        "in_surface_raster"
+    ]
+    if "force_flow" in raster_function["rasterFunctionArguments"].keys():
+        forceFlow = raster_function["rasterFunctionArguments"]["force_flow"]
+    if "flow_direction_type" in raster_function["rasterFunctionArguments"].keys():
+        flowDirectionType = raster_function["rasterFunctionArguments"][
+            "flow_direction_type"
+        ]
     output_flow_direction_raster = output_name
     if "out_drop_raster" in other_outputs.keys():
-        output_drop_name = "out_drop_raster" + '_' + _id_generator()
-    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis,future=future,  **kwargs)
+        output_drop_name = "out_drop_raster" + "_" + _id_generator()
+    return _flow_direction(
+        input_surface_raster,
+        forceFlow,
+        flowDirectionType,
+        output_flow_direction_raster,
+        output_drop_name,
+        gis=gis,
+        future=future,
+        **kwargs
+    )
 
-def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
+
+def _calculate_travel_cost_analytics_converter(
+    raster_function,
+    output_name=None,
+    other_outputs=None,
+    gis=None,
+    future=False,
+    **kwargs
+):
     input_source = None
-    input_cost_raster=None
-    input_surface_raster=None
-    maximum_distance=None
-    input_horizonal_raster=None
-    horizontal_factor=None
-    input_vertical_raster=None
-    vertical_factor=None
-    source_cost_multiplier=None
-    source_start_cost=None
-    source_resistance_rate=None
-    source_capacity=None
-    source_direction=None
-    allocation_field=None
-    output_backlink_name=None
-    output_allocation_name=None
-    output_distance_name=None
+    input_cost_raster = None
+    input_surface_raster = None
+    maximum_distance = None
+    input_horizonal_raster = None
+    horizontal_factor = None
+    input_vertical_raster = None
+    vertical_factor = None
+    source_cost_multiplier = None
+    source_start_cost = None
+    source_resistance_rate = None
+    source_capacity = None
+    source_direction = None
+    allocation_field = None
+    output_backlink_name = None
+    output_allocation_name = None
+    output_distance_name = None
 
-    if raster_function['rasterFunctionArguments']['in_source_data'] is not None:
-        input_source = raster_function['rasterFunctionArguments']['in_source_data']
-    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
-        input_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
-    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
-        input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
-    if 'maximum_distance' in raster_function['rasterFunctionArguments'].keys():
-        maximum_distance = raster_function['rasterFunctionArguments']['maximum_distance']
-    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
-        input_horizonal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
-    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
-        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
-    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
-        input_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
-    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
-        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
-    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
-        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
-    if 'source_start_cost' in raster_function['rasterFunctionArguments'].keys():
-        source_start_cost = raster_function['rasterFunctionArguments']['source_start_cost']
-    if 'source_resistance_rate' in raster_function['rasterFunctionArguments'].keys():
-        source_resistance_rate = raster_function['rasterFunctionArguments']['source_resistance_rate']
-    if 'source_capacity' in raster_function['rasterFunctionArguments'].keys():
-        source_capacity = raster_function['rasterFunctionArguments']['source_capacity']
-    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
-        source_direction = raster_function['rasterFunctionArguments']['source_direction']
-    if 'allocation_field' in raster_function['rasterFunctionArguments'].keys():
-        allocation_field = raster_function['rasterFunctionArguments']['allocation_field']
+    if raster_function["rasterFunctionArguments"]["in_source_data"] is not None:
+        input_source = raster_function["rasterFunctionArguments"]["in_source_data"]
+    if "in_cost_raster" in raster_function["rasterFunctionArguments"].keys():
+        input_cost_raster = raster_function["rasterFunctionArguments"]["in_cost_raster"]
+    if "in_surface_raster" in raster_function["rasterFunctionArguments"].keys():
+        input_surface_raster = raster_function["rasterFunctionArguments"][
+            "in_surface_raster"
+        ]
+    if "maximum_distance" in raster_function["rasterFunctionArguments"].keys():
+        maximum_distance = raster_function["rasterFunctionArguments"][
+            "maximum_distance"
+        ]
+    if "in_horizontal_raster" in raster_function["rasterFunctionArguments"].keys():
+        input_horizonal_raster = raster_function["rasterFunctionArguments"][
+            "in_horizontal_raster"
+        ]
+    if "horizontal_factor" in raster_function["rasterFunctionArguments"].keys():
+        horizontal_factor = raster_function["rasterFunctionArguments"][
+            "horizontal_factor"
+        ]
+    if "in_vertical_raster" in raster_function["rasterFunctionArguments"].keys():
+        input_vertical_raster = raster_function["rasterFunctionArguments"][
+            "in_vertical_raster"
+        ]
+    if "vertical_factor" in raster_function["rasterFunctionArguments"].keys():
+        vertical_factor = raster_function["rasterFunctionArguments"]["vertical_factor"]
+    if "source_cost_multiplier" in raster_function["rasterFunctionArguments"].keys():
+        source_cost_multiplier = raster_function["rasterFunctionArguments"][
+            "source_cost_multiplier"
+        ]
+    if "source_start_cost" in raster_function["rasterFunctionArguments"].keys():
+        source_start_cost = raster_function["rasterFunctionArguments"][
+            "source_start_cost"
+        ]
+    if "source_resistance_rate" in raster_function["rasterFunctionArguments"].keys():
+        source_resistance_rate = raster_function["rasterFunctionArguments"][
+            "source_resistance_rate"
+        ]
+    if "source_capacity" in raster_function["rasterFunctionArguments"].keys():
+        source_capacity = raster_function["rasterFunctionArguments"]["source_capacity"]
+    if "source_direction" in raster_function["rasterFunctionArguments"].keys():
+        source_direction = raster_function["rasterFunctionArguments"][
+            "source_direction"
+        ]
+    if "allocation_field" in raster_function["rasterFunctionArguments"].keys():
+        allocation_field = raster_function["rasterFunctionArguments"][
+            "allocation_field"
+        ]
     output_distance_name = output_name
 
     if "out_backlink_raster" in other_outputs.keys():
         if other_outputs["out_backlink_raster"] is True:
-            output_backlink_name = "out_backlink" + '_' + _id_generator()
+            output_backlink_name = "out_backlink" + "_" + _id_generator()
 
     if "out_allocation_raster" in other_outputs.keys():
         if other_outputs["out_allocation_raster"] is True:
-            output_allocation_name = "out_allocation" + '_' + _id_generator()
+            output_allocation_name = "out_allocation" + "_" + _id_generator()
 
-    return _calculate_travel_cost(input_source, input_cost_raster, input_surface_raster,
-                                  maximum_distance, input_horizonal_raster, horizontal_factor,
-                                  input_vertical_raster, vertical_factor, source_cost_multiplier,
-                                  source_start_cost, source_resistance_rate, source_capacity,
-                                  source_direction, allocation_field, output_distance_name,
-                                  output_backlink_name, output_allocation_name, gis=gis, future=future, **kwargs)
+    return _calculate_travel_cost(
+        input_source,
+        input_cost_raster,
+        input_surface_raster,
+        maximum_distance,
+        input_horizonal_raster,
+        horizontal_factor,
+        input_vertical_raster,
+        vertical_factor,
+        source_cost_multiplier,
+        source_start_cost,
+        source_resistance_rate,
+        source_capacity,
+        source_direction,
+        allocation_field,
+        output_distance_name,
+        output_backlink_name,
+        output_allocation_name,
+        gis=gis,
+        future=future,
+        **kwargs
+    )
 
-def _calculate_distance_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
+
+def _calculate_distance_analytics_converter(
+    raster_function,
+    output_name=None,
+    other_outputs=None,
+    gis=None,
+    future=False,
+    **kwargs
+):
     input_source = None
-    maximum_distance=None
-    output_cell_size=None
-    allocation_field=None
-    distance_method=None
-    output_allocation_name=None
-    output_direction_name=None
-    output_distance_name=None
-    output_back_direction_name=None
-    in_barrier_data=None
+    maximum_distance = None
+    output_cell_size = None
+    allocation_field = None
+    distance_method = None
+    output_allocation_name = None
+    output_direction_name = None
+    output_distance_name = None
+    output_back_direction_name = None
+    in_barrier_data = None
 
-    if raster_function['rasterFunctionArguments']['in_source_data'] is not None:
-        input_source = raster_function['rasterFunctionArguments']['in_source_data']
-    if 'maximum_distance' in raster_function['rasterFunctionArguments'].keys():
-        maximum_distance = raster_function['rasterFunctionArguments']['maximum_distance']
-    if 'allocation_field' in raster_function['rasterFunctionArguments'].keys():
-        allocation_field = raster_function['rasterFunctionArguments']['allocation_field']
-    if 'output_cell_size' in raster_function['rasterFunctionArguments'].keys():
-        output_cell_size = raster_function['rasterFunctionArguments']['output_cell_size']
-    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
-        distance_method = raster_function['rasterFunctionArguments']['distance_method']
-    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
-        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
+    if raster_function["rasterFunctionArguments"]["in_source_data"] is not None:
+        input_source = raster_function["rasterFunctionArguments"]["in_source_data"]
+    if "maximum_distance" in raster_function["rasterFunctionArguments"].keys():
+        maximum_distance = raster_function["rasterFunctionArguments"][
+            "maximum_distance"
+        ]
+    if "allocation_field" in raster_function["rasterFunctionArguments"].keys():
+        allocation_field = raster_function["rasterFunctionArguments"][
+            "allocation_field"
+        ]
+    if "output_cell_size" in raster_function["rasterFunctionArguments"].keys():
+        output_cell_size = raster_function["rasterFunctionArguments"][
+            "output_cell_size"
+        ]
+    if "distance_method" in raster_function["rasterFunctionArguments"].keys():
+        distance_method = raster_function["rasterFunctionArguments"]["distance_method"]
+    if "in_barrier_data" in raster_function["rasterFunctionArguments"].keys():
+        in_barrier_data = raster_function["rasterFunctionArguments"]["in_barrier_data"]
 
     output_distance_name = output_name
 
     if "out_direction_raster" in other_outputs.keys():
         if other_outputs["out_direction_raster"] is True:
-            output_direction_name = "out_direction" + '_' + _id_generator()
+            output_direction_name = "out_direction" + "_" + _id_generator()
 
     if "out_allocation_raster" in other_outputs.keys():
         if other_outputs["out_allocation_raster"] is True:
-            output_allocation_name = "out_allocation" + '_' + _id_generator()
+            output_allocation_name = "out_allocation" + "_" + _id_generator()
 
     if "out_back_direction_raster" in other_outputs.keys():
         if other_outputs["out_back_direction_raster"] is True:
-            output_back_direction_name = "out_back_direction" + '_' + _id_generator()
+            output_back_direction_name = "out_back_direction" + "_" + _id_generator()
+
+    return _calculate_distance(
+        input_source,
+        maximum_distance,
+        output_cell_size,
+        allocation_field,
+        output_distance_name,
+        output_direction_name,
+        output_allocation_name,
+        in_barrier_data,
+        output_back_direction_name,
+        distance_method,
+        gis=gis,
+        future=future,
+        **kwargs
+    )
 
 
-    return _calculate_distance(input_source, 
-                               maximum_distance, 
-                               output_cell_size, 
-                               allocation_field, 
-                               output_distance_name,
-                               output_direction_name, 
-                               output_allocation_name, 
-                               in_barrier_data,
-                               output_back_direction_name,
-                               distance_method,
-                               gis=gis, 
-                               future=future, 
-                               **kwargs)
+def _distance_accumulation_analytics_converter(
+    raster_function, output_name=None, other_outputs=None, gis=None, **kwargs
+):
+    in_source_data = None
+    in_barrier_data = None
+    in_surface_raster = None
+    in_cost_raster = None
+    in_vertical_raster = None
+    vertical_factor = None
+    in_horizontal_raster = None
+    horizontal_factor = None
+    source_initial_accumulation = None
+    source_maximum_accumulation = None
+    source_cost_multiplier = None
+    source_direction = None
+    distance_method = None
+    output_back_direction_raster_name = None
+    output_source_direction_raster_name = None
+    output_source_location_raster_name = None
 
-def _distance_accumulation_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
-    in_source_data=None
-    in_barrier_data=None
-    in_surface_raster=None
-    in_cost_raster=None
-    in_vertical_raster=None
-    vertical_factor=None
-    in_horizontal_raster=None
-    horizontal_factor=None
-    source_initial_accumulation=None
-    source_maximum_accumulation=None
-    source_cost_multiplier=None
-    source_direction=None
-    distance_method=None
-    output_back_direction_raster_name=None
-    output_source_direction_raster_name=None
-    output_source_location_raster_name=None
-
-    if 'in_source_data' in raster_function['rasterFunctionArguments'].keys():
-        in_source_data = raster_function['rasterFunctionArguments']['in_source_data']
-    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
-        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
-    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
-    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
-    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
-    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
-        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
-    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_horizontal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
-    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
-        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
-    if 'source_initial_accumulation' in raster_function['rasterFunctionArguments'].keys():
-        source_initial_accumulation = raster_function['rasterFunctionArguments']['source_initial_accumulation']
-    if 'source_maximum_accumulation' in raster_function['rasterFunctionArguments'].keys():
-        source_maximum_accumulation = raster_function['rasterFunctionArguments']['source_maximum_accumulation']
-    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
-        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
-    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
-        source_direction = raster_function['rasterFunctionArguments']['source_direction']
-    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
-        distance_method = raster_function['rasterFunctionArguments']['distance_method']
+    if "in_source_data" in raster_function["rasterFunctionArguments"].keys():
+        in_source_data = raster_function["rasterFunctionArguments"]["in_source_data"]
+    if "in_barrier_data" in raster_function["rasterFunctionArguments"].keys():
+        in_barrier_data = raster_function["rasterFunctionArguments"]["in_barrier_data"]
+    if "in_surface_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_surface_raster = raster_function["rasterFunctionArguments"][
+            "in_surface_raster"
+        ]
+    if "in_cost_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_cost_raster = raster_function["rasterFunctionArguments"]["in_cost_raster"]
+    if "in_vertical_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_vertical_raster = raster_function["rasterFunctionArguments"][
+            "in_vertical_raster"
+        ]
+    if "vertical_factor" in raster_function["rasterFunctionArguments"].keys():
+        vertical_factor = raster_function["rasterFunctionArguments"]["vertical_factor"]
+    if "in_horizontal_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_horizontal_raster = raster_function["rasterFunctionArguments"][
+            "in_horizontal_raster"
+        ]
+    if "horizontal_factor" in raster_function["rasterFunctionArguments"].keys():
+        horizontal_factor = raster_function["rasterFunctionArguments"][
+            "horizontal_factor"
+        ]
+    if (
+        "source_initial_accumulation"
+        in raster_function["rasterFunctionArguments"].keys()
+    ):
+        source_initial_accumulation = raster_function["rasterFunctionArguments"][
+            "source_initial_accumulation"
+        ]
+    if (
+        "source_maximum_accumulation"
+        in raster_function["rasterFunctionArguments"].keys()
+    ):
+        source_maximum_accumulation = raster_function["rasterFunctionArguments"][
+            "source_maximum_accumulation"
+        ]
+    if "source_cost_multiplier" in raster_function["rasterFunctionArguments"].keys():
+        source_cost_multiplier = raster_function["rasterFunctionArguments"][
+            "source_cost_multiplier"
+        ]
+    if "source_direction" in raster_function["rasterFunctionArguments"].keys():
+        source_direction = raster_function["rasterFunctionArguments"][
+            "source_direction"
+        ]
+    if "distance_method" in raster_function["rasterFunctionArguments"].keys():
+        distance_method = raster_function["rasterFunctionArguments"]["distance_method"]
 
     output_distance_accumulation_raster_name = output_name
 
     if "output_back_direction_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_back_direction_raster_name"], bool):
             if other_outputs["output_back_direction_raster_name"] is True:
-                output_back_direction_raster_name = "output_back_direction_raster" + '_' + _id_generator()
+                output_back_direction_raster_name = (
+                    "output_back_direction_raster" + "_" + _id_generator()
+                )
         else:
-            output_back_direction_raster_name = other_outputs["output_back_direction_raster_name"]
+            output_back_direction_raster_name = other_outputs[
+                "output_back_direction_raster_name"
+            ]
 
     if "output_source_direction_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_source_direction_raster_name"], bool):
             if other_outputs["output_source_direction_raster_name"] is True:
-                output_source_direction_raster_name = "output_source_direction_raster" + '_' + _id_generator()
+                output_source_direction_raster_name = (
+                    "output_source_direction_raster" + "_" + _id_generator()
+                )
         else:
-            output_source_direction_raster_name = other_outputs["output_source_direction_raster_name"]
+            output_source_direction_raster_name = other_outputs[
+                "output_source_direction_raster_name"
+            ]
 
     if "output_source_location_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_source_location_raster_name"], bool):
             if other_outputs["output_source_location_raster_name"] is True:
-                output_source_location_raster_name = "output_source_location_raster" + '_' + _id_generator()
+                output_source_location_raster_name = (
+                    "output_source_location_raster" + "_" + _id_generator()
+                )
         else:
-            output_source_location_raster_name = other_outputs["output_source_location_raster_name"]
+            output_source_location_raster_name = other_outputs[
+                "output_source_location_raster_name"
+            ]
 
-    return _distance_accumulation(input_source_raster_or_features=in_source_data,
-                                  input_barrier_raster_or_features=in_barrier_data,
-                                  input_surface_raster=in_surface_raster,
-                                  input_cost_raster=in_cost_raster,
-                                  input_vertical_raster=in_vertical_raster,
-                                  vertical_factor=vertical_factor,
-                                  input_horizontal_raster=in_horizontal_raster,
-                                  horizontal_factor=horizontal_factor,
-                                  source_initial_accumulation=source_initial_accumulation,
-                                  source_maximum_accumulation=source_maximum_accumulation,
-                                  source_cost_multiplier=source_cost_multiplier,
-                                  source_direction=source_direction,
-                                  distance_method=distance_method,
-                                  output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
-                                  output_back_direction_raster_name=output_back_direction_raster_name, 
-                                  output_source_direction_raster_name=output_source_direction_raster_name, 
-                                  output_source_location_raster_name=output_source_location_raster_name,
-                                  gis=gis,  
-                                  **kwargs)
+    return _distance_accumulation(
+        input_source_raster_or_features=in_source_data,
+        input_barrier_raster_or_features=in_barrier_data,
+        input_surface_raster=in_surface_raster,
+        input_cost_raster=in_cost_raster,
+        input_vertical_raster=in_vertical_raster,
+        vertical_factor=vertical_factor,
+        input_horizontal_raster=in_horizontal_raster,
+        horizontal_factor=horizontal_factor,
+        source_initial_accumulation=source_initial_accumulation,
+        source_maximum_accumulation=source_maximum_accumulation,
+        source_cost_multiplier=source_cost_multiplier,
+        source_direction=source_direction,
+        distance_method=distance_method,
+        output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+        output_back_direction_raster_name=output_back_direction_raster_name,
+        output_source_direction_raster_name=output_source_direction_raster_name,
+        output_source_location_raster_name=output_source_location_raster_name,
+        gis=gis,
+        **kwargs
+    )
 
-def _distance_allocation_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
 
-    in_source_data=None
-    in_barrier_data=None
-    in_surface_raster=None
-    in_cost_raster=None
-    in_vertical_raster=None
-    vertical_factor=None
-    in_horizontal_raster=None
-    horizontal_factor=None
-    source_initial_accumulation=None
-    source_maximum_accumulation=None
-    source_cost_multiplier=None
-    source_direction=None
-    distance_method=None
-    output_back_direction_raster_name=None 
-    output_source_direction_raster_name=None
-    output_source_location_raster_name=None
-    output_distance_accumulation_raster_name=None
+def _distance_allocation_analytics_converter(
+    raster_function, output_name=None, other_outputs=None, gis=None, **kwargs
+):
 
-    if 'in_source_data' in raster_function['rasterFunctionArguments'].keys():
-        in_source_data = raster_function['rasterFunctionArguments']['in_source_data']
-    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
-        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
-    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
-    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
-    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
-    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
-        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
-    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
-        in_horizontal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
-    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
-        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
-    if 'source_initial_accumulation' in raster_function['rasterFunctionArguments'].keys():
-        source_initial_accumulation = raster_function['rasterFunctionArguments']['source_initial_accumulation']
-    if 'source_maximum_accumulation' in raster_function['rasterFunctionArguments'].keys():
-        source_maximum_accumulation = raster_function['rasterFunctionArguments']['source_maximum_accumulation']
-    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
-        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
-    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
-        source_direction = raster_function['rasterFunctionArguments']['source_direction']
-    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
-        distance_method = raster_function['rasterFunctionArguments']['distance_method']
+    in_source_data = None
+    in_barrier_data = None
+    in_surface_raster = None
+    in_cost_raster = None
+    in_vertical_raster = None
+    vertical_factor = None
+    in_horizontal_raster = None
+    horizontal_factor = None
+    source_initial_accumulation = None
+    source_maximum_accumulation = None
+    source_cost_multiplier = None
+    source_direction = None
+    distance_method = None
+    output_back_direction_raster_name = None
+    output_source_direction_raster_name = None
+    output_source_location_raster_name = None
+    output_distance_accumulation_raster_name = None
+
+    if "in_source_data" in raster_function["rasterFunctionArguments"].keys():
+        in_source_data = raster_function["rasterFunctionArguments"]["in_source_data"]
+    if "in_barrier_data" in raster_function["rasterFunctionArguments"].keys():
+        in_barrier_data = raster_function["rasterFunctionArguments"]["in_barrier_data"]
+    if "in_surface_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_surface_raster = raster_function["rasterFunctionArguments"][
+            "in_surface_raster"
+        ]
+    if "in_cost_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_cost_raster = raster_function["rasterFunctionArguments"]["in_cost_raster"]
+    if "in_vertical_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_vertical_raster = raster_function["rasterFunctionArguments"][
+            "in_vertical_raster"
+        ]
+    if "vertical_factor" in raster_function["rasterFunctionArguments"].keys():
+        vertical_factor = raster_function["rasterFunctionArguments"]["vertical_factor"]
+    if "in_horizontal_raster" in raster_function["rasterFunctionArguments"].keys():
+        in_horizontal_raster = raster_function["rasterFunctionArguments"][
+            "in_horizontal_raster"
+        ]
+    if "horizontal_factor" in raster_function["rasterFunctionArguments"].keys():
+        horizontal_factor = raster_function["rasterFunctionArguments"][
+            "horizontal_factor"
+        ]
+    if (
+        "source_initial_accumulation"
+        in raster_function["rasterFunctionArguments"].keys()
+    ):
+        source_initial_accumulation = raster_function["rasterFunctionArguments"][
+            "source_initial_accumulation"
+        ]
+    if (
+        "source_maximum_accumulation"
+        in raster_function["rasterFunctionArguments"].keys()
+    ):
+        source_maximum_accumulation = raster_function["rasterFunctionArguments"][
+            "source_maximum_accumulation"
+        ]
+    if "source_cost_multiplier" in raster_function["rasterFunctionArguments"].keys():
+        source_cost_multiplier = raster_function["rasterFunctionArguments"][
+            "source_cost_multiplier"
+        ]
+    if "source_direction" in raster_function["rasterFunctionArguments"].keys():
+        source_direction = raster_function["rasterFunctionArguments"][
+            "source_direction"
+        ]
+    if "distance_method" in raster_function["rasterFunctionArguments"].keys():
+        distance_method = raster_function["rasterFunctionArguments"]["distance_method"]
 
     output_distance_allocation_raster_name = output_name
 
     if "output_distance_accumulation_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_distance_accumulation_raster_name"], bool):
             if other_outputs["output_distance_accumulation_raster_name"] is True:
-                output_distance_accumulation_raster_name = "output_distance_accumulation_raster" + '_' + _id_generator()
+                output_distance_accumulation_raster_name = (
+                    "output_distance_accumulation_raster" + "_" + _id_generator()
+                )
         else:
-            output_distance_accumulation_raster_name = other_outputs["output_distance_accumulation_raster_name"]
+            output_distance_accumulation_raster_name = other_outputs[
+                "output_distance_accumulation_raster_name"
+            ]
 
     if "output_back_direction_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_back_direction_raster_name"], bool):
             if other_outputs["output_back_direction_raster_name"] is True:
-                output_back_direction_raster_name = "output_back_direction_raster" + '_' + _id_generator()
+                output_back_direction_raster_name = (
+                    "output_back_direction_raster" + "_" + _id_generator()
+                )
         else:
-            output_back_direction_raster_name = other_outputs["output_back_direction_raster_name"]
+            output_back_direction_raster_name = other_outputs[
+                "output_back_direction_raster_name"
+            ]
 
     if "output_source_direction_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_source_direction_raster_name"], bool):
             if other_outputs["output_source_direction_raster_name"] is True:
-                output_source_direction_raster_name = "output_source_direction_raster" + '_' + _id_generator()
+                output_source_direction_raster_name = (
+                    "output_source_direction_raster" + "_" + _id_generator()
+                )
         else:
-            output_source_direction_raster_name = other_outputs["output_source_direction_raster_name"]
+            output_source_direction_raster_name = other_outputs[
+                "output_source_direction_raster_name"
+            ]
 
     if "output_source_location_raster_name" in other_outputs.keys():
         if isinstance(other_outputs["output_source_location_raster_name"], bool):
             if other_outputs["output_source_location_raster_name"] is True:
-                output_source_location_raster_name = "output_source_location_raster" + '_' + _id_generator()
+                output_source_location_raster_name = (
+                    "output_source_location_raster" + "_" + _id_generator()
+                )
         else:
-            output_source_location_raster_name = other_outputs["output_source_location_raster_name"]
+            output_source_location_raster_name = other_outputs[
+                "output_source_location_raster_name"
+            ]
 
-    return _distance_allocation(input_source_raster_or_features=in_source_data,
-                                  input_barrier_raster_or_features=in_barrier_data,
-                                  input_surface_raster=in_surface_raster,
-                                  input_cost_raster=in_cost_raster,
-                                  input_vertical_raster=in_vertical_raster,
-                                  vertical_factor=vertical_factor,
-                                  input_horizontal_raster=in_horizontal_raster,
-                                  horizontal_factor=horizontal_factor,
-                                  source_initial_accumulation=source_initial_accumulation,
-                                  source_maximum_accumulation=source_maximum_accumulation,
-                                  source_cost_multiplier=source_cost_multiplier,
-                                  source_direction=source_direction,
-                                  distance_method=distance_method,
-                                  output_distance_allocation_raster_name = output_distance_allocation_raster_name,
-                                  output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
-                                  output_back_direction_raster_name=output_back_direction_raster_name, 
-                                  output_source_direction_raster_name=output_source_direction_raster_name, 
-                                  output_source_location_raster_name=output_source_location_raster_name,
-                                  gis=gis,  
-                                  **kwargs)
+    return _distance_allocation(
+        input_source_raster_or_features=in_source_data,
+        input_barrier_raster_or_features=in_barrier_data,
+        input_surface_raster=in_surface_raster,
+        input_cost_raster=in_cost_raster,
+        input_vertical_raster=in_vertical_raster,
+        vertical_factor=vertical_factor,
+        input_horizontal_raster=in_horizontal_raster,
+        horizontal_factor=horizontal_factor,
+        source_initial_accumulation=source_initial_accumulation,
+        source_maximum_accumulation=source_maximum_accumulation,
+        source_cost_multiplier=source_cost_multiplier,
+        source_direction=source_direction,
+        distance_method=distance_method,
+        output_distance_allocation_raster_name=output_distance_allocation_raster_name,
+        output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+        output_back_direction_raster_name=output_back_direction_raster_name,
+        output_source_direction_raster_name=output_source_direction_raster_name,
+        output_source_location_raster_name=output_source_location_raster_name,
+        gis=gis,
+        **kwargs
+    )
 
-def _return_output(num_returns, output_dict ,return_value_names):
+
+def _return_output(num_returns, output_dict, return_value_names):
     if num_returns == 1:
         return output_dict[return_value_names[0]]
- 
+
     else:
         ret_names = []
         for return_value in return_value_names:
             ret_names.append(return_value)
-        NamedTuple = collections.namedtuple('FunctionOutput', ret_names)
+        NamedTuple = collections.namedtuple("FunctionOutput", ret_names)
         function_output = NamedTuple(**output_dict)
         return function_output
+
 
 def _set_output_raster(output_name, task, gis, output_properties=None):
     output_service = None
     output_raster = None
-    
+
     if task == "GenerateRaster":
         task_name = "GeneratedRasterProduct"
     else:
@@ -463,7 +649,7 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
         if isinstance(folder, dict):
             if "id" in folder:
                 folderId = folder["id"]
-                folder=folder["title"]
+                folder = folder["title"]
         else:
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
@@ -473,38 +659,112 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
             folderId = folder_dict["id"]
 
     if output_name is None:
-        output_name = str(task_name) + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task, folder=folder)
-        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        output_name = str(task_name) + "_" + _id_generator()
+        output_service = _create_output_image_service(
+            gis, output_name, task, folder=folder
+        )
+        output_raster = {
+            "serviceProperties": {
+                "name": output_service.name,
+                "serviceUrl": output_service.url,
+            },
+            "itemProperties": {"itemId": output_service.itemid},
+        }
     elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task, folder=folder)
-        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        output_service = _create_output_image_service(
+            gis, output_name, task, folder=folder
+        )
+        output_raster = {
+            "serviceProperties": {
+                "name": output_service.name,
+                "serviceUrl": output_service.url,
+            },
+            "itemProperties": {"itemId": output_service.itemid},
+        }
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
-        output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+        output_raster = {"itemProperties": {"itemId": output_service.itemid}}
     else:
-        raise TypeError("output_raster should be a string (service name) or Item") 
+        raise TypeError("output_raster should be a string (service name) or Item")
 
     if folderId is not None:
-        output_raster["itemProperties"].update({"folderId":folderId})
+        output_raster["itemProperties"].update({"folderId": folderId})
     output_raster = _json.dumps(output_raster)
     return output_raster, output_service
 
-def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, future=False, **kwargs):
-    if raster_function['rasterFunctionArguments']['toolName'] == "FlowDirection_sa":
-        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateTravelCost_sa":
-        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateDistance_sa":
-        return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAccumulation_sa":
-        return _distance_accumulation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAllocation_sa":
-        return _distance_allocation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+
+def _save_ra(
+    raster_function,
+    output_name=None,
+    other_outputs=None,
+    gis=None,
+    future=False,
+    **kwargs
+):
+    if raster_function["rasterFunctionArguments"]["toolName"] == "FlowDirection_sa":
+        return _flow_direction_analytics_converter(
+            raster_function,
+            output_name=output_name,
+            other_outputs=other_outputs,
+            gis=gis,
+            future=future,
+            **kwargs
+        )
+    if (
+        raster_function["rasterFunctionArguments"]["toolName"]
+        == "CalculateTravelCost_sa"
+    ):
+        return _calculate_travel_cost_analytics_converter(
+            raster_function,
+            output_name=output_name,
+            other_outputs=other_outputs,
+            gis=gis,
+            future=future,
+            **kwargs
+        )
+    if raster_function["rasterFunctionArguments"]["toolName"] == "CalculateDistance_sa":
+        return _calculate_distance_analytics_converter(
+            raster_function,
+            output_name=output_name,
+            other_outputs=other_outputs,
+            gis=gis,
+            future=future,
+            **kwargs
+        )
+    if (
+        raster_function["rasterFunctionArguments"]["toolName"]
+        == "DistanceAccumulation_sa"
+    ):
+        return _distance_accumulation_analytics_converter(
+            raster_function,
+            output_name=output_name,
+            other_outputs=other_outputs,
+            gis=gis,
+            **kwargs
+        )
+    if (
+        raster_function["rasterFunctionArguments"]["toolName"]
+        == "DistanceAllocation_sa"
+    ):
+        return _distance_allocation_analytics_converter(
+            raster_function,
+            output_name=output_name,
+            other_outputs=other_outputs,
+            gis=gis,
+            **kwargs
+        )
 
 
-def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
-    
+def _build_param_dictionary(
+    gis,
+    params,
+    input_rasters,
+    raster_type_name,
+    raster_type_params=None,
+    image_collection_properties=None,
+    use_input_rasters_by_ref=False,
+):
+
     inputRasterSpecified = False
     # input rasters
     if isinstance(input_rasters, list):
@@ -517,38 +777,40 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
             if isinstance(item, Item):
                 item_id_list.append(item.itemid)
             elif isinstance(item, str):
-                if 'http:' in item or 'https:' in item:
+                if "http:" in item or "https:" in item:
                     url_list.append(item)
                 else:
-                    uri_list.append(item)        
-        
+                    uri_list.append(item)
+
         if len(item_id_list) > 0:
-            params["inputRasters"] = {"itemIds" : item_id_list }
+            params["inputRasters"] = {"itemIds": item_id_list}
             inputRasterSpecified = True
         elif len(url_list) > 0:
-            params["inputRasters"] = {"urls" : url_list}
+            params["inputRasters"] = {"urls": url_list}
             inputRasterSpecified = True
         elif len(uri_list) > 0:
-            params["inputRasters"] = {"uris" : uri_list}
+            params["inputRasters"] = {"uris": uri_list}
             inputRasterSpecified = True
     elif isinstance(input_rasters, str):
         # the input_rasters is a folder name; try and extract the folderID
         owner = gis.properties.user.username
         folderId = gis._portal.get_folder_id(owner, input_rasters)
         if folderId is None:
-            if 'http:' in input_rasters or 'https:' in input_rasters:
-                params["inputRasters"] = {"url" : input_rasters}
+            if "http:" in input_rasters or "https:" in input_rasters:
+                params["inputRasters"] = {"url": input_rasters}
             else:
-                params["inputRasters"] = {"uri" : input_rasters}
+                params["inputRasters"] = {"uri": input_rasters}
         else:
-            params["inputRasters"] = {"folderId" : folderId}
+            params["inputRasters"] = {"folderId": folderId}
         inputRasterSpecified = True
 
     if inputRasterSpecified is False:
-        raise RuntimeError("Input raster list to be added to the collection must be specified")
+        raise RuntimeError(
+            "Input raster list to be added to the collection must be specified"
+        )
     else:
         if use_input_rasters_by_ref:
-            params["inputRasters"].update({"byref":True})
+            params["inputRasters"].update({"byref": True})
 
     # raster_type
     if not isinstance(raster_type_name, str):
@@ -557,36 +819,50 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
     elevation_set = 0
     if raster_type_params is not None:
         for element in raster_type_params.keys():
-            if(element.lower() == "constantz"):
+            if element.lower() == "constantz":
                 value = raster_type_params[element]
                 del raster_type_params[element]
-                raster_type_params.update({"ConstantZ":value})
+                raster_type_params.update({"ConstantZ": value})
 
                 elevation_set = 1
                 break
-            elif(element.lower() == "averagezdem"):
+            elif element.lower() == "averagezdem":
                 value = raster_type_params[element]
                 del raster_type_params[element]
-                raster_type_params.update({"averagezdem":value})
+                raster_type_params.update({"averagezdem": value})
                 elevation_set = 1
                 break
 
-        if(elevation_set == 0):
+        if elevation_set == 0:
             if "orthomappingElevation" in gis.properties.helperServices.keys():
-                raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
+                raster_type_params["averagezdem"] = gis.properties.helperServices[
+                    "orthomappingElevation"
+                ]
             else:
-                raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
+                raster_type_params["averagezdem"] = {
+                    "url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+                }
     else:
         if "orthomappingElevation" in gis.properties.helperServices.keys():
-            raster_type_params = {"averagezdem" : gis.properties.helperServices["orthomappingElevation"]}
+            raster_type_params = {
+                "averagezdem": gis.properties.helperServices["orthomappingElevation"]
+            }
         else:
-            raster_type_params = {"averagezdem": {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+            raster_type_params = {
+                "averagezdem": {
+                    "url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+                }
+            }
 
-
-    params["rasterType"] = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
+    params["rasterType"] = {
+        "rasterTypeName": raster_type_name,
+        "rasterTypeParameters": raster_type_params,
+    }
     if image_collection_properties is not None:
         if "rasterType" in params:
-            params["rasterType"].update({"imageCollectionProps":image_collection_properties})
+            params["rasterType"].update(
+                {"imageCollectionProps": image_collection_properties}
+            )
 
     params["rasterType"] = _json.dumps(params["rasterType"])
     return
@@ -596,15 +872,15 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
 ###################################################################################################
 def _set_image_collection_param(gis, params, image_collection):
     if isinstance(image_collection, str):
-        #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
-        #if doesnotexist:
-            #raise RuntimeError("The input image collection does not exist")
-        if 'http:' in image_collection or 'https:' in image_collection:
-            params['imageCollection'] = _json.dumps({ 'url' : image_collection })
+        # doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+        # if doesnotexist:
+        # raise RuntimeError("The input image collection does not exist")
+        if "http:" in image_collection or "https:" in image_collection:
+            params["imageCollection"] = _json.dumps({"url": image_collection})
         else:
-            params['imageCollection'] = _json.dumps({ 'uri' : image_collection })
+            params["imageCollection"] = _json.dumps({"uri": image_collection})
     elif isinstance(image_collection, Item):
-        params['imageCollection'] = _json.dumps({ "itemId" : image_collection.itemid })
+        params["imageCollection"] = _json.dumps({"itemId": image_collection.itemid})
     else:
         raise TypeError("image_collection should be a string (url or uri) or Item")
 
@@ -699,17 +975,20 @@ def _set_image_collection_param(gis, params, image_collection):
 #
 #     return generate_raster(raster_function, function_args, output_name=output_name, gis=gis)
 
-def generate_raster(raster_function,
-                    function_arguments=None,
-                    output_raster_properties=None,
-                    output_name=None,
-                    process_as_multidimensional=None,
-                    build_transpose=None,
-                    context=None,
-                    *,
-                    gis=None,
-                    future=False,
-                    **kwargs):
+
+def generate_raster(
+    raster_function,
+    function_arguments=None,
+    output_raster_properties=None,
+    output_name=None,
+    process_as_multidimensional=None,
+    build_transpose=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_generate_raster/ra_generate_raster.png 
@@ -842,29 +1121,34 @@ def generate_raster(raster_function,
     gis = _arcgis.env.active_gis if gis is None else gis
 
     if context is None:
-        context={}
+        context = {}
     if process_as_multidimensional is not None:
-        context.update({"processAsMultidimensional":process_as_multidimensional})
+        context.update({"processAsMultidimensional": process_as_multidimensional})
     if build_transpose is not None:
-        context.update({"buildTranspose":build_transpose})
+        context.update({"buildTranspose": build_transpose})
 
-    return gis._tools.rasteranalysis.generate_raster(raster_function=raster_function,
-                                                     function_arguments=function_arguments,
-                                                     output_raster_properties=output_raster_properties,
-                                                     output_name = output_name,
-                                                     context=context,
-                                                     future=future,
-                                                     **kwargs)
+    return gis._tools.rasteranalysis.generate_raster(
+        raster_function=raster_function,
+        function_arguments=function_arguments,
+        output_raster_properties=output_raster_properties,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def convert_feature_to_raster(input_feature,
-                              output_cell_size,
-                              value_field=None,
-                              output_name=None,
-                              context=None,
-                              *,
-                              gis=None,
-                              future=False,
-                              **kwargs):
+
+def convert_feature_to_raster(
+    input_feature,
+    output_cell_size,
+    value_field=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_convert_feature_to_raster/ra_convert_feature_to_raster.png 
@@ -972,29 +1256,33 @@ def convert_feature_to_raster(input_feature,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.convert_feature_to_raster(input_feature=input_feature,
-                                                              output_cell_size=output_cell_size,
-                                                              output_name=output_name,
-                                                              value_field=value_field,
-                                                              context=context,
-                                                              future=future,
-                                                              **kwargs)
+    return gis._tools.rasteranalysis.convert_feature_to_raster(
+        input_feature=input_feature,
+        output_cell_size=output_cell_size,
+        output_name=output_name,
+        value_field=value_field,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def copy_raster(input_raster,
-                output_cellsize=None,
-                resampling_method="NEAREST",
-                clip_setting=None,
-                output_name=None,
-                process_as_multidimensional=None,
-                build_transpose=None,
-                context=None,
-                raster_type_name=None,
-                raster_type_params = None,
-                *,
-                gis=None,
-                future=False,
-                **kwargs):
+def copy_raster(
+    input_raster,
+    output_cellsize=None,
+    resampling_method="NEAREST",
+    clip_setting=None,
+    output_name=None,
+    process_as_multidimensional=None,
+    build_transpose=None,
+    context=None,
+    raster_type_name=None,
+    raster_type_params=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
@@ -1177,38 +1465,42 @@ def copy_raster(input_raster,
     gis = _arcgis.env.active_gis if gis is None else gis
 
     if context is None:
-        context={}
+        context = {}
     if process_as_multidimensional is not None:
-        context.update({"processAsMultidimensional":process_as_multidimensional})
+        context.update({"processAsMultidimensional": process_as_multidimensional})
     if build_transpose is not None:
-        context.update({"buildTranspose":build_transpose})
+        context.update({"buildTranspose": build_transpose})
 
-    return gis._tools.rasteranalysis.copy_raster(input_raster=input_raster,
-                                                 output_cellsize=output_cellsize,
-                                                 resampling_method=resampling_method,
-                                                 clip_setting=clip_setting,
-                                                 output_name=output_name,
-                                                 context=context,
-                                                 future=future,
-                                                 raster_type_name=raster_type_name,
-                                                 raster_type_params = raster_type_params,
-                                                 **kwargs)
+    return gis._tools.rasteranalysis.copy_raster(
+        input_raster=input_raster,
+        output_cellsize=output_cellsize,
+        resampling_method=resampling_method,
+        clip_setting=clip_setting,
+        output_name=output_name,
+        context=context,
+        future=future,
+        raster_type_name=raster_type_name,
+        raster_type_params=raster_type_params,
+        **kwargs
+    )
 
 
-def summarize_raster_within(input_zone_layer,
-                            input_raster_layer_to_summarize,
-                            zone_field="Value",
-                            statistic_type="Mean",
-                            ignore_missing_values=True,
-                            output_name=None,
-                            context=None,
-                            process_as_multidimensional=False,
-                            percentile_value=90,
-                            percentile_interpolation_type="AUTO_DETECT",
-                            *,
-                            gis=None,
-                            future=False,
-                            **kwargs):
+def summarize_raster_within(
+    input_zone_layer,
+    input_raster_layer_to_summarize,
+    zone_field="Value",
+    statistic_type="Mean",
+    ignore_missing_values=True,
+    output_name=None,
+    context=None,
+    process_as_multidimensional=False,
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_summarize_raster_within/ra_summarize_raster_within.png 
@@ -1396,32 +1688,36 @@ def summarize_raster_within(input_zone_layer,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.summarize_raster_within(input_zone_layer=input_zone_layer,
-                                                             input_raster_layer_to_summarize=input_raster_layer_to_summarize,
-                                                             zone_field=zone_field,
-                                                             output_name=output_name,
-                                                             statistic_type=statistic_type,
-                                                             ignore_missing_values=ignore_missing_values,
-                                                             context=context,
-                                                             process_as_multidimensional=process_as_multidimensional,
-                                                             percentile_value=percentile_value,
-                                                             percentile_interpolation_type=percentile_interpolation_type,
-                                                             future=future,
-                                                             **kwargs)
+    return gis._tools.rasteranalysis.summarize_raster_within(
+        input_zone_layer=input_zone_layer,
+        input_raster_layer_to_summarize=input_raster_layer_to_summarize,
+        zone_field=zone_field,
+        output_name=output_name,
+        statistic_type=statistic_type,
+        ignore_missing_values=ignore_missing_values,
+        context=context,
+        process_as_multidimensional=process_as_multidimensional,
+        percentile_value=percentile_value,
+        percentile_interpolation_type=percentile_interpolation_type,
+        future=future,
+        **kwargs
+    )
 
 
-def convert_raster_to_feature(input_raster,
-                              field="Value",
-                              output_type="Polygon",
-                              simplify=True,
-                              output_name=None,
-                              context=None,
-                              create_multipart_features=False,
-                              max_vertices_per_feature=None,
-                              *,
-                              gis=None,
-                              future=False,
-                              **kwargs):
+def convert_raster_to_feature(
+    input_raster,
+    field="Value",
+    output_type="Polygon",
+    simplify=True,
+    output_name=None,
+    context=None,
+    create_multipart_features=False,
+    max_vertices_per_feature=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_convert_raster_to_feature/ra_convert_raster_to_feature.png 
@@ -1510,29 +1806,34 @@ def convert_raster_to_feature(input_raster,
 
     gis = _arcgis.env.active_gis if gis is None else gis
 
-    return gis._tools.rasteranalysis.convert_raster_to_feature(input_raster=input_raster,
-                                                               field=field,
-                                                               output_type=output_type,
-                                                               output_name = output_name,
-                                                               simplify_lines_or_polygons=simplify,
-                                                               context=context,
-                                                               create_multipart_features=create_multipart_features,
-                                                               max_vertices_per_feature=max_vertices_per_feature,
-                                                               future=future,
-                                                               **kwargs)
+    return gis._tools.rasteranalysis.convert_raster_to_feature(
+        input_raster=input_raster,
+        field=field,
+        output_type=output_type,
+        output_name=output_name,
+        simplify_lines_or_polygons=simplify,
+        context=context,
+        create_multipart_features=create_multipart_features,
+        max_vertices_per_feature=max_vertices_per_feature,
+        future=future,
+        **kwargs
+    )
 
-def calculate_density(input_point_or_line_features,
-                      count_field=None,
-                      search_distance=None,
-                      output_area_units=None,
-                      output_cell_size=None,
-                      output_name=None,
-                      context=None,
-                      input_barriers=None,
-                      *,
-                      gis=None,
-                      future=False,
-                      **kwargs):
+
+def calculate_density(
+    input_point_or_line_features,
+    count_field=None,
+    search_distance=None,
+    output_area_units=None,
+    output_cell_size=None,
+    output_name=None,
+    context=None,
+    input_barriers=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_calculate_density/ra_calculate_density.png 
@@ -1694,38 +1995,43 @@ def calculate_density(input_point_or_line_features,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                                        output_name=output_name,
-                                                        count_field=count_field,
-                                                        search_distance = search_distance,
-                                                        output_area_units=output_area_units,
-                                                        output_cell_size=output_cell_size,
-                                                        context=context,
-                                                        future=future,
-                                                        input_barriers=input_barriers,
-                                                        **kwargs)
+    return gis._tools.rasteranalysis.calculate_density(
+        input_point_or_line_features=input_point_or_line_features,
+        output_name=output_name,
+        count_field=count_field,
+        search_distance=search_distance,
+        output_area_units=output_area_units,
+        output_cell_size=output_cell_size,
+        context=context,
+        future=future,
+        input_barriers=input_barriers,
+        **kwargs
+    )
 
-def create_viewshed(input_elevation_surface,
-                    input_observer_features,
-                    optimize_for=None,
-                    maximum_viewing_distance=None,
-                    maximum_viewing_distance_field=None,
-                    minimum_viewing_distance=None,
-                    minimum_viewing_distance_field=None,
-                    viewing_distance_is_3d=None,
-                    observers_elevation=None,
-                    observers_elevation_field=None,
-                    observers_height=None,
-                    observers_height_field=None,
-                    target_height=None,
-                    target_height_field=None,
-                    above_ground_level_output_name=None,
-                    output_name=None,
-                    context=None,
-                    *,
-                    gis=None,
-                    future=False,
-                    **kwargs):
+
+def create_viewshed(
+    input_elevation_surface,
+    input_observer_features,
+    optimize_for=None,
+    maximum_viewing_distance=None,
+    maximum_viewing_distance_field=None,
+    minimum_viewing_distance=None,
+    minimum_viewing_distance_field=None,
+    viewing_distance_is_3d=None,
+    observers_elevation=None,
+    observers_elevation_field=None,
+    observers_height=None,
+    observers_height_field=None,
+    target_height=None,
+    target_height_field=None,
+    above_ground_level_output_name=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_create_viewshed/ra_create_viewshed.png 
@@ -1936,40 +2242,45 @@ def create_viewshed(input_elevation_surface,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.create_viewshed(input_elevation_surface=input_elevation_surface,
-                                                     input_observer_features=input_observer_features,
-                                                     output_name=output_name,
-                                                     optimize_for=optimize_for,
-                                                     maximum_viewing_distance=maximum_viewing_distance,
-                                                     maximum_viewing_distance_field=maximum_viewing_distance_field,
-                                                     minimum_viewing_distance=minimum_viewing_distance,
-                                                     minimum_viewing_distance_field=minimum_viewing_distance_field,
-                                                     viewing_distance_is3D=viewing_distance_is_3d,
-                                                     observers_elevation=observers_elevation,
-                                                     observers_elevation_field=observers_elevation_field,
-                                                     observers_height=observers_height,
-                                                     observers_height_field=observers_height_field,
-                                                     target_height=target_height,
-                                                     target_height_field=target_height_field,
-                                                     above_ground_level_output_name=above_ground_level_output_name,
-                                                     context=context,
-                                                     future=future,
-                                                     **kwargs)
+    return gis._tools.rasteranalysis.create_viewshed(
+        input_elevation_surface=input_elevation_surface,
+        input_observer_features=input_observer_features,
+        output_name=output_name,
+        optimize_for=optimize_for,
+        maximum_viewing_distance=maximum_viewing_distance,
+        maximum_viewing_distance_field=maximum_viewing_distance_field,
+        minimum_viewing_distance=minimum_viewing_distance,
+        minimum_viewing_distance_field=minimum_viewing_distance_field,
+        viewing_distance_is3D=viewing_distance_is_3d,
+        observers_elevation=observers_elevation,
+        observers_elevation_field=observers_elevation_field,
+        observers_height=observers_height,
+        observers_height_field=observers_height_field,
+        target_height=target_height,
+        target_height_field=target_height_field,
+        above_ground_level_output_name=above_ground_level_output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def interpolate_points(input_point_features,
-                       interpolate_field,
-                       optimize_for="BALANCE",
-                       transform_data=False,
-                       size_of_local_models=None,
-                       number_of_neighbors=None,
-                       output_cell_size=None,
-                       output_prediction_error=False,
-                       output_name=None,
-                       context=None,
-                       *,
-                       gis=None,
-                       future=False,
-                       **kwargs):
+
+def interpolate_points(
+    input_point_features,
+    interpolate_field,
+    optimize_for="BALANCE",
+    transform_data=False,
+    size_of_local_models=None,
+    number_of_neighbors=None,
+    output_cell_size=None,
+    output_prediction_error=False,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_interpolate_points/ra_interpolate_points.png 
@@ -2148,29 +2459,33 @@ def interpolate_points(input_point_features,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.interpolate_points(input_point_features=input_point_features,
-                                                       interpolate_field=interpolate_field, 
-                                                       output_name=output_name,
-                                                       optimize_for=optimize_for, 
-                                                       transform_data=transform_data,
-                                                       size_of_local_models=size_of_local_models, 
-                                                       number_of_neighbors=number_of_neighbors,
-                                                       output_cell_size=output_cell_size, 
-                                                       output_prediction_error=output_prediction_error,
-                                                       context=context,
-                                                       future=future, 
-                                                       **kwargs)
+    return gis._tools.rasteranalysis.interpolate_points(
+        input_point_features=input_point_features,
+        interpolate_field=interpolate_field,
+        output_name=output_name,
+        optimize_for=optimize_for,
+        transform_data=transform_data,
+        size_of_local_models=size_of_local_models,
+        number_of_neighbors=number_of_neighbors,
+        output_cell_size=output_cell_size,
+        output_prediction_error=output_prediction_error,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def classify(input_raster,
-             input_classifier_definition,
-             additional_input_raster=None,
-             output_name=None,
-             context=None,
-             *,
-             gis=None,
-             future=False,
-             **kwargs):
+def classify(
+    input_raster,
+    input_classifier_definition,
+    additional_input_raster=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_classify/ra_classify.png 
@@ -2294,18 +2609,31 @@ def classify(input_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.classify(input_raster=input_raster,
-                                              input_classifier_definition=input_classifier_definition,
-                                              output_name=output_name,
-                                              additional_input_raster=additional_input_raster,
-                                              context=context,
-                                              future=future,
-                                              **kwargs)
+    return gis._tools.rasteranalysis.classify(
+        input_raster=input_raster,
+        input_classifier_definition=input_classifier_definition,
+        output_name=output_name,
+        additional_input_raster=additional_input_raster,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segment_size_in_pixels=20,
-            band_indexes=[0,1,2], remove_tiling_artifacts=False, output_name=None, context=None,
-            *, gis=None, future=False, **kwargs):
+def segment(
+    input_raster,
+    spectral_detail=15.5,
+    spatial_detail=15,
+    minimum_segment_size_in_pixels=20,
+    band_indexes=[0, 1, 2],
+    remove_tiling_artifacts=False,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_segment/ra_segment.png 
@@ -2442,27 +2770,32 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.segment(input_raster=input_raster,
-                                            output_name=output_name, 
-                                            spectral_detail=spectral_detail,
-                                            spatial_detail=spatial_detail, 
-                                            minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
-                                            band_indexes=band_indexes,
-                                            remove_tiling_artifacts=remove_tiling_artifacts,
-                                            context=context,
-                                            future=future, 
-                                            **kwargs)
+    return gis._tools.rasteranalysis.segment(
+        input_raster=input_raster,
+        output_name=output_name,
+        spectral_detail=spectral_detail,
+        spatial_detail=spatial_detail,
+        minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
+        band_indexes=band_indexes,
+        remove_tiling_artifacts=remove_tiling_artifacts,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def train_classifier(input_raster,
-                     input_training_sample_json,
-                     classifier_parameters,
-                     segmented_raster=None,
-                     segment_attributes="COLOR;MEAN",
-                     dimension_value_field=None,
-                     *,
-                     gis=None,
-                     future=False,
-                     **kwargs):
+
+def train_classifier(
+    input_raster,
+    input_training_sample_json,
+    classifier_parameters,
+    segmented_raster=None,
+    segment_attributes="COLOR;MEAN",
+    dimension_value_field=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     .. image:: _static/images/ra_train_classifier/ra_train_classifier.png 
 
@@ -2544,28 +2877,33 @@ def train_classifier(input_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.train_classifier(input_raster=input_raster,
-                                                     input_training_sample_json=input_training_sample_json,
-                                                     classifier_parameters=classifier_parameters,
-                                                     segmented_raster=segmented_raster,
-                                                     segment_attributes=segment_attributes,
-                                                     dimension_value_field=dimension_value_field,
-                                                     future=future,
-                                                     **kwargs)
+    return gis._tools.rasteranalysis.train_classifier(
+        input_raster=input_raster,
+        input_training_sample_json=input_training_sample_json,
+        classifier_parameters=classifier_parameters,
+        segmented_raster=segmented_raster,
+        segment_attributes=segment_attributes,
+        dimension_value_field=dimension_value_field,
+        future=future,
+        **kwargs
+    )
+
 
 ###################################################################################################
 ## Create image collection
 ###################################################################################################
-def create_image_collection(image_collection,
-                            input_rasters, 
-                            raster_type_name,
-                            raster_type_params = None,
-                            out_sr = None,
-                            context = None,
-                            *,
-                            gis=None,
-                            future=False,
-                            **kwargs):
+def create_image_collection(
+    image_collection,
+    input_rasters,
+    raster_type_name,
+    raster_type_params=None,
+    out_sr=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/create_image_collection/create_image_collection.png 
@@ -3169,29 +3507,33 @@ def create_image_collection(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    #url = gis.properties.helperServices.rasterAnalytics.url
-    return gis._tools.rasteranalysis.create_image_collection(image_collection=image_collection,
-                                                            input_rasters=input_rasters,
-                                                            raster_type_name=raster_type_name,
-                                                            raster_type_params = raster_type_params,
-                                                            out_sr = out_sr,
-                                                            context=context,
-                                                            future=future,
-                                                            **kwargs)
+    # url = gis.properties.helperServices.rasterAnalytics.url
+    return gis._tools.rasteranalysis.create_image_collection(
+        image_collection=image_collection,
+        input_rasters=input_rasters,
+        raster_type_name=raster_type_name,
+        raster_type_params=raster_type_params,
+        out_sr=out_sr,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
 ###################################################################################################
 ## Add image
 ###################################################################################################
-def add_image(image_collection,
-              input_rasters, 
-              raster_type_name=None, 
-              raster_type_params=None, 
-              context = None,
-              *,
-              gis=None,
-              future=False,
-              **kwargs):
+def add_image(
+    image_collection,
+    input_rasters,
+    raster_type_name=None,
+    raster_type_params=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     .. image:: _static/images/add_image/add_image.png 
 
@@ -3312,25 +3654,22 @@ def add_image(image_collection,
   
     """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.add_image(image_collection=image_collection,
-                                              input_rasters=input_rasters,
-                                              raster_type_name=raster_type_name, 
-                                              raster_type_params=raster_type_params, 
-                                              context=context,
-                                              future=future,
-                                              **kwargs)
+    return gis._tools.rasteranalysis.add_image(
+        image_collection=image_collection,
+        input_rasters=input_rasters,
+        raster_type_name=raster_type_name,
+        raster_type_params=raster_type_params,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
 
 ###################################################################################################
 ## Delete image
 ###################################################################################################
-def delete_image(image_collection, 
-                 where, 
-                 *,
-                 gis=None,
-                 future=False,
-                 **kwargs):
+def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
     """
     .. image:: _static/images/delete_image/delete_image.png 
 
@@ -3365,21 +3704,16 @@ def delete_image(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.delete_image(image_collection=image_collection,
-                                                 where=where,
-                                                 future=future,
-                                                 **kwargs)
+    return gis._tools.rasteranalysis.delete_image(
+        image_collection=image_collection, where=where, future=future, **kwargs
+    )
 
 
 ###################################################################################################
 ## Delete image collection
 ###################################################################################################
-def delete_image_collection(image_collection,
-                            *,
-                            gis=None,
-                            future=False,
-                            **kwargs):
-    '''
+def delete_image_collection(image_collection, *, gis=None, future=False, **kwargs):
+    """
     .. image:: _static/images/delete_image_collection/delete_image_collection.png 
 
     Delete the image collection. This service tool will delete the image collection
@@ -3409,23 +3743,25 @@ def delete_image_collection(image_collection,
 
             delete_flag = delete_image_collection(image_collection=image_collection_item)
 
-    '''
+    """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.delete_image_collection(image_collection=image_collection, 
-                                                             future=future, 
-                                                             **kwargs)
+    return gis._tools.rasteranalysis.delete_image_collection(
+        image_collection=image_collection, future=future, **kwargs
+    )
 
 
-def _flow_direction(input_surface_raster,
-                   force_flow= False,
-                   flow_direction_type= "D8",
-                   output_flow_direction_name=None,
-                   output_drop_name=None,
-                   *,
-                   gis=None,
-                   future=False,
-                   **kwargs):
+def _flow_direction(
+    input_surface_raster,
+    force_flow=False,
+    flow_direction_type="D8",
+    output_flow_direction_name=None,
+    output_drop_name=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Replaces cells of a raster corresponding to a mask 
     with the values of the nearest neighbors.
@@ -3460,40 +3796,43 @@ def _flow_direction(input_surface_raster,
     output_raster : Image layer item 
     """
 
-    #task = "FlowDirection"
+    # task = "FlowDirection"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.flow_direction(input_surface_raster=input_surface_raster,
-                                                   output_flow_direction_name=output_flow_direction_name,
-                                                   force_flow=force_flow,
-                                                   flow_direction_type=flow_direction_type,
-                                                   output_drop_name=output_drop_name,
-                                                   future=future,
-                                                   **kwargs)
+    return gis._tools.rasteranalysis.flow_direction(
+        input_surface_raster=input_surface_raster,
+        output_flow_direction_name=output_flow_direction_name,
+        force_flow=force_flow,
+        flow_direction_type=flow_direction_type,
+        output_drop_name=output_drop_name,
+        future=future,
+        **kwargs
+    )
 
 
-
-def _calculate_travel_cost(input_source,
-                          input_cost_raster=None,
-                          input_surface_raster=None,
-                          maximum_distance=None,
-                          input_horizonal_raster=None,
-                          horizontal_factor="BINARY",
-                          input_vertical_raster=None,
-                          vertical_factor="BINARY",
-                          source_cost_multiplier=None,
-                          source_start_cost=None,
-                          source_resistance_rate=None,
-                          source_capacity=None,
-                          source_direction="FROM_SOURCE",
-                          allocation_field=None,
-                          output_distance_name=None,
-                          output_backlink_name=None,
-                          output_allocation_name=None,
-                          *,
-                          gis=None,
-                          future=False,
-                          **kwargs):
+def _calculate_travel_cost(
+    input_source,
+    input_cost_raster=None,
+    input_surface_raster=None,
+    maximum_distance=None,
+    input_horizonal_raster=None,
+    horizontal_factor="BINARY",
+    input_vertical_raster=None,
+    vertical_factor="BINARY",
+    source_cost_multiplier=None,
+    source_start_cost=None,
+    source_resistance_rate=None,
+    source_capacity=None,
+    source_direction="FROM_SOURCE",
+    allocation_field=None,
+    output_distance_name=None,
+    output_backlink_name=None,
+    output_allocation_name=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
 
     Parameters
@@ -3551,40 +3890,47 @@ def _calculate_travel_cost(input_source,
     output_raster : Image layer item 
     """
 
-    #task = "CalculateTravelCost"
+    # task = "CalculateTravelCost"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.calculate_travel_cost(input_source_raster_or_features=input_source,
-                                                           output_name=output_distance_name,
-                                                           input_cost_raster=input_cost_raster,
-                                                           input_surface_raster=input_surface_raster,
-                                                           maximum_distance=maximum_distance,
-                                                           input_horizontal_raster=input_horizonal_raster,
-                                                           horizontal_factor=horizontal_factor,
-                                                           input_vertical_raster=input_vertical_raster,
-                                                           vertical_factor=vertical_factor,
-                                                           source_cost_multiplier=source_cost_multiplier,
-                                                           source_start_cost=source_start_cost,
-                                                           source_resistance_rate=source_resistance_rate,
-                                                           source_capacity=source_capacity,
-                                                           source_travel_direction=source_direction,
-                                                           output_backlink_name=output_backlink_name,
-                                                           output_allocation_name=output_allocation_name,
-                                                           allocation_field=allocation_field,
-                                                           future=future,
-                                                           **kwargs)
+    return gis._tools.rasteranalysis.calculate_travel_cost(
+        input_source_raster_or_features=input_source,
+        output_name=output_distance_name,
+        input_cost_raster=input_cost_raster,
+        input_surface_raster=input_surface_raster,
+        maximum_distance=maximum_distance,
+        input_horizontal_raster=input_horizonal_raster,
+        horizontal_factor=horizontal_factor,
+        input_vertical_raster=input_vertical_raster,
+        vertical_factor=vertical_factor,
+        source_cost_multiplier=source_cost_multiplier,
+        source_start_cost=source_start_cost,
+        source_resistance_rate=source_resistance_rate,
+        source_capacity=source_capacity,
+        source_travel_direction=source_direction,
+        output_backlink_name=output_backlink_name,
+        output_allocation_name=output_allocation_name,
+        allocation_field=allocation_field,
+        future=future,
+        **kwargs
+    )
 
 
-@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.analytics.optimal_region_connections() instead. ")
-def optimum_travel_cost_network(input_regions_raster,
-                                input_cost_raster,
-                                output_optimum_network_name=None,
-                                output_neighbor_network_name=None,
-                                context=None,
-                                *,
-                                gis=None,
-                                future=False,
-                                **kwargs):
+@deprecated(
+    deprecated_in="1.8.1",
+    details="Please use arcgis.raster.analytics.optimal_region_connections() instead. ",
+)
+def optimum_travel_cost_network(
+    input_regions_raster,
+    input_cost_raster,
+    output_optimum_network_name=None,
+    output_neighbor_network_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png 
@@ -3660,13 +4006,16 @@ def optimum_travel_cost_network(input_regions_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.determine_optimum_travel_cost_network(input_regions_raster_or_features=input_regions_raster,
-                                                                           input_cost_raster=input_cost_raster,
-                                                                           output_optimum_network_name=output_optimum_network_name,
-                                                                           output_neighbor_network_name=output_neighbor_network_name,
-                                                                           context=context,
-                                                                           future=future,
-                                                                           **kwargs)
+    return gis._tools.rasteranalysis.determine_optimum_travel_cost_network(
+        input_regions_raster_or_features=input_regions_raster,
+        input_cost_raster=input_cost_raster,
+        output_optimum_network_name=output_optimum_network_name,
+        output_neighbor_network_name=output_neighbor_network_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
 
 def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **kwargs):
     """
@@ -3708,21 +4057,22 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
         List of contents in the datastore
     """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.list_datastore_content(data_store_name=datastore,
-                                                            filter=filter,
-                                                            future=future,
-                                                            **kwargs)
+    return gis._tools.rasteranalysis.list_datastore_content(
+        data_store_name=datastore, filter=filter, future=future, **kwargs
+    )
 
-def build_footprints(image_collection,
-                     computation_method="RADIOMETRY",
-                     value_range=None,
-                     context=None,
-                     *,
-                     gis=None,
-                     future=False,
-                     **kwargs):
+
+def build_footprints(
+    image_collection,
+    computation_method="RADIOMETRY",
+    value_range=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Computes the extent of every raster in an image collection.
@@ -3771,21 +4121,19 @@ def build_footprints(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.build_footprints(image_collection=image_collection,
-                                                     computation_method=computation_method,
-                                                     value_range=value_range,
-                                                     context=context,
-                                                     future=future,
-                                                     **kwargs)
+    return gis._tools.rasteranalysis.build_footprints(
+        image_collection=image_collection,
+        computation_method=computation_method,
+        value_range=value_range,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def build_overview(image_collection,
-                   cell_size=None,
-                   context=None,
-                    *,
-                    gis=None,
-                    future=False,
-                    **kwargs):
+def build_overview(
+    image_collection, cell_size=None, context=None, *, gis=None, future=False, **kwargs
+):
 
     """
     Generates overviews on an image collection.
@@ -3830,19 +4178,24 @@ def build_overview(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.build_overview(image_collection=image_collection,
-                                                   cell_size=cell_size,
-                                                   context=context,
-                                                   future=future,
-                                                   **kwargs)
+    return gis._tools.rasteranalysis.build_overview(
+        image_collection=image_collection,
+        cell_size=cell_size,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def calculate_statistics(image_collection,
-                         skip_factors=None,
-                         context=None,
-                          *,
-                          gis=None,
-                          future=False,
-                          **kwargs):
+
+def calculate_statistics(
+    image_collection,
+    skip_factors=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Calculates statistics for an image collection
 
@@ -3894,28 +4247,35 @@ def calculate_statistics(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.calculate_statistics(image_collection=image_collection,
-                                                          skip_factors=skip_factors,
-                                                          context=context,
-                                                          future=future,
-                                                          **kwargs)
+    return gis._tools.rasteranalysis.calculate_statistics(
+        image_collection=image_collection,
+        skip_factors=skip_factors,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.gbl.distance_accumulation()"
-            "followed by arcgis.raster.analytics.optimal_path_as_line(), instead.")
-def determine_travel_costpath_as_polyline(input_source_data,
-                                          input_cost_raster,
-                                          input_destination_data,
-                                          path_type='BEST_SINGLE',
-                                          output_polyline_name=None,
-                                          destination_field=None,
-                                          context=None,
-                                          *,
-                                          gis=None,
-                                          future=False,
-                                          **kwargs):
+@deprecated(
+    deprecated_in="1.8.1",
+    details="Please use arcgis.raster.gbl.distance_accumulation()"
+    "followed by arcgis.raster.analytics.optimal_path_as_line(), instead.",
+)
+def determine_travel_costpath_as_polyline(
+    input_source_data,
+    input_cost_raster,
+    input_destination_data,
+    path_type="BEST_SINGLE",
+    output_polyline_name=None,
+    destination_field=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
-    '''
+    """
     .. image:: _static/images/ra_determine_travel_costpath_as_polyline/ra_determine_travel_costpath_as_polyline.png 
 
     Calculates the least cost polyline path between sources and known destinations.
@@ -3992,38 +4352,42 @@ def determine_travel_costpath_as_polyline(input_source_data,
     :return:
         The imagery layer url
 
-    '''
+    """
 
-    #task = "DetermineTravelCostPathAsPolyline"
+    # task = "DetermineTravelCostPathAsPolyline"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.determine_travel_costpath_as_polyline(input_source_raster_or_features=input_source_data, 
-                                                                           input_cost_raster=input_cost_raster,
-                                                                           input_destination_raster_or_features=input_destination_data, 
-                                                                           output_polyline_name=output_polyline_name,
-                                                                           path_type=path_type, 
-                                                                           destination_field=destination_field,
-                                                                           context=context,
-                                                                           future=future, 
-                                                                           **kwargs)
+    return gis._tools.rasteranalysis.determine_travel_costpath_as_polyline(
+        input_source_raster_or_features=input_source_data,
+        input_cost_raster=input_cost_raster,
+        input_destination_raster_or_features=input_destination_data,
+        output_polyline_name=output_polyline_name,
+        path_type=path_type,
+        destination_field=destination_field,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def _calculate_distance(input_source_data,
-                        maximum_distance=None,
-                        output_cell_size=None,
-                        allocation_field=None,
-                        output_distance_name=None,
-                        output_direction_name=None,
-                        output_allocation_name=None,
-                        input_barrier_data=None,
-                        output_back_direction_name=None,
-                        distance_method='PLANAR',
-                        *,
-                        gis=None,
-                        future=False,
-                        **kwargs):
+def _calculate_distance(
+    input_source_data,
+    maximum_distance=None,
+    output_cell_size=None,
+    allocation_field=None,
+    output_distance_name=None,
+    output_direction_name=None,
+    output_allocation_name=None,
+    input_barrier_data=None,
+    output_back_direction_name=None,
+    distance_method="PLANAR",
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
-    '''
+    """
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
     ====================================     ====================================================================
@@ -4097,38 +4461,41 @@ def _calculate_distance(input_source_data,
     :return:
         The imagery layer url
 
-    '''
+    """
 
-    #task = "CalculateDistance"
+    # task = "CalculateDistance"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.calculate_distance(input_source_raster_or_features=input_source_data,
-                                                        output_distance_name=output_distance_name,
-                                                        maximum_distance=maximum_distance,
-                                                        output_cell_size=output_cell_size,
-                                                        output_direction_name=output_direction_name,
-                                                        output_allocation_name=output_allocation_name,
-                                                        allocation_field=allocation_field,
-                                                        distance_method=distance_method,
-                                                        input_barrier_raster_or_features=input_barrier_data,
-                                                        output_back_direction_name=output_back_direction_name,
-                                                        future=future,
-                                                        **kwargs)
+    return gis._tools.rasteranalysis.calculate_distance(
+        input_source_raster_or_features=input_source_data,
+        output_distance_name=output_distance_name,
+        maximum_distance=maximum_distance,
+        output_cell_size=output_cell_size,
+        output_direction_name=output_direction_name,
+        output_allocation_name=output_allocation_name,
+        allocation_field=allocation_field,
+        distance_method=distance_method,
+        input_barrier_raster_or_features=input_barrier_data,
+        output_back_direction_name=output_back_direction_name,
+        future=future,
+        **kwargs
+    )
 
 
-
-def generate_multidimensional_anomaly(input_multidimensional_raster,
-                                      variables=None,
-                                      method='DIFFERENCE_FROM_MEAN',
-                                      calculation_interval=None,
-                                      ignore_nodata=True,
-                                      output_name=None,
-                                      context=None,
-                                      reference_mean_raster=None,
-                                      *,
-                                      gis=None,
-                                      future=False,
-                                      **kwargs):
+def generate_multidimensional_anomaly(
+    input_multidimensional_raster,
+    variables=None,
+    method="DIFFERENCE_FROM_MEAN",
+    calculation_interval=None,
+    ignore_nodata=True,
+    output_name=None,
+    context=None,
+    reference_mean_raster=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Computes the anomaly for each slice in a multidimensional raster to generate a multidimensional dataset.
     An anomaly is the deviation of an observation from its standard or mean value.
@@ -4290,28 +4657,32 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
     output_raster : Imagery Layer Item
     """
 
-    #task = "GenerateMultidimensionalAnomaly"
+    # task = "GenerateMultidimensionalAnomaly"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster, 
-                                                                       output_name=output_name, 
-                                                                       variables=variables, 
-                                                                       method=method, 
-                                                                       calculation_interval=calculation_interval, 
-                                                                       ignore_nodata=ignore_nodata, 
-                                                                       context=context,
-                                                                       reference_mean_raster=reference_mean_raster,
-                                                                       future=future,
-                                                                       **kwargs)
+    return gis._tools.rasteranalysis.generate_multidimensional_anomaly(
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        variables=variables,
+        method=method,
+        calculation_interval=calculation_interval,
+        ignore_nodata=ignore_nodata,
+        context=context,
+        reference_mean_raster=reference_mean_raster,
+        future=future,
+        **kwargs
+    )
 
 
-def build_multidimensional_transpose(input_multidimensional_raster,
-                                     context=None,
-                                     delete_transpose=False,
-                                     *,
-                                     gis=None,
-                                     future=False,
-                                     **kwargs):
+def build_multidimensional_transpose(
+    input_multidimensional_raster,
+    context=None,
+    delete_transpose=False,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Transposes a multidimensional raster dataset, which chunks the multidimensional data along each dimension
     to optimize performance when accessing pixel values across all slices.
@@ -4366,33 +4737,37 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
     """
 
-    #task = "BuildMultidimensionalTranspose"
+    # task = "BuildMultidimensionalTranspose"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
-                                                                      context=context,
-                                                                      delete_transpose=delete_transpose,
-                                                                      future=future,
-                                                                      **kwargs)
+    return gis._tools.rasteranalysis.build_multidimensional_transpose(
+        input_multidimensional_raster=input_multidimensional_raster,
+        context=context,
+        delete_transpose=delete_transpose,
+        future=future,
+        **kwargs
+    )
 
 
-def aggregate_multidimensional_raster(input_multidimensional_raster,
-                                      dimension=None,
-                                      variables=None,
-                                      aggregation_method='MEAN',
-                                      aggregation_definition='ALL',
-                                      interval_keyword=None,
-                                      interval_value=None,
-                                      interval_unit=None,
-                                      interval_ranges=None,
-                                      aggregation_function=None,
-                                      ignore_nodata=True,
-                                      output_name=None,
-                                      context=None,
-                                      *,
-                                      gis=None,
-                                      future=False,
-                                      **kwargs):
+def aggregate_multidimensional_raster(
+    input_multidimensional_raster,
+    dimension=None,
+    variables=None,
+    aggregation_method="MEAN",
+    aggregation_definition="ALL",
+    interval_keyword=None,
+    interval_value=None,
+    interval_unit=None,
+    interval_ranges=None,
+    aggregation_function=None,
+    ignore_nodata=True,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -4683,45 +5058,48 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
     """
 
-    #task = "AggregateMultidimensionalRaster"
+    # task = "AggregateMultidimensionalRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                                       output_name=output_name, 
-                                                                       dimension=dimension, 
-                                                                       aggregation_method=aggregation_method, 
-                                                                       variables=variables, 
-                                                                       aggregation_definition=aggregation_definition, 
-                                                                       interval_keyword=interval_keyword, 
-                                                                       interval_value=interval_value, 
-                                                                       interval_unit=interval_unit, 
-                                                                       interval_ranges=interval_ranges, 
-                                                                       aggregation_function=aggregation_function, 
-                                                                       ignore_nodata=ignore_nodata, 
-                                                                       context=context,
-                                                                       future=future,
-                                                                       **kwargs)
+    return gis._tools.rasteranalysis.aggregate_multidimensional_raster(
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        dimension=dimension,
+        aggregation_method=aggregation_method,
+        variables=variables,
+        aggregation_definition=aggregation_definition,
+        interval_keyword=interval_keyword,
+        interval_value=interval_value,
+        interval_unit=interval_unit,
+        interval_ranges=interval_ranges,
+        aggregation_function=aggregation_function,
+        ignore_nodata=ignore_nodata,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-
-def generate_trend_raster(input_multidimensional_raster,
-                          dimension=None,
-                          variables=None,
-                          trend_line_type='LINEAR',
-                          frequency=None,
-                          ignore_nodata=True,
-                          output_name=None,
-                          context=None,
-                          cycle_length=None, 
-                          cycle_unit='YEARS',
-                          rmse=True, 
-                          r2=False, 
-                          slope_p_value=False,
-                          seasonal_period="DAYS",
-                          *,
-                          gis=None,
-                          future=False,
-                          **kwargs):
+def generate_trend_raster(
+    input_multidimensional_raster,
+    dimension=None,
+    variables=None,
+    trend_line_type="LINEAR",
+    frequency=None,
+    ignore_nodata=True,
+    output_name=None,
+    context=None,
+    cycle_length=None,
+    cycle_unit="YEARS",
+    rmse=True,
+    r2=False,
+    slope_p_value=False,
+    seasonal_period="DAYS",
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -4890,42 +5268,45 @@ def generate_trend_raster(input_multidimensional_raster,
 
     """
 
-    #task = "GenerateTrendRaster"
+    # task = "GenerateTrendRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                          output_name=output_name, 
-                                                          dimension=dimension, 
-                                                          variables=variables, 
-                                                          trend_line_type=trend_line_type,
-                                                          frequency=frequency, 
-                                                          ignore_nodata=ignore_nodata,
-                                                          context=context,
-                                                          cycle_length=cycle_length, 
-                                                          cycle_unit=cycle_unit,
-                                                          rmse=rmse, 
-                                                          r2=r2, 
-                                                          slope_p_value=slope_p_value,
-                                                          seasonal_period=seasonal_period,
-                                                          future=future,
-                                                          **kwargs)
+    return gis._tools.rasteranalysis.generate_trend_raster(
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        dimension=dimension,
+        variables=variables,
+        trend_line_type=trend_line_type,
+        frequency=frequency,
+        ignore_nodata=ignore_nodata,
+        context=context,
+        cycle_length=cycle_length,
+        cycle_unit=cycle_unit,
+        rmse=rmse,
+        r2=r2,
+        slope_p_value=slope_p_value,
+        seasonal_period=seasonal_period,
+        future=future,
+        **kwargs
+    )
 
 
-
-def predict_using_trend_raster(input_multidimensional_raster,
-                               variables=None,
-                               dimension_definition='BY_VALUE',
-                               dimension_values=None,
-                               start=None,
-                               end=None,
-                               interval_value=1,
-                               interval_unit=None,
-                               output_name=None,
-                               context=None,
-                               *,
-                               gis=None,
-                               future=False,
-                               **kwargs):
+def predict_using_trend_raster(
+    input_multidimensional_raster,
+    variables=None,
+    dimension_definition="BY_VALUE",
+    dimension_values=None,
+    start=None,
+    end=None,
+    interval_value=1,
+    interval_unit=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -5088,40 +5469,43 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
     """
 
-    #task = "PredictUsingTrendRaster"
+    # task = "PredictUsingTrendRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                 output_name=output_name, 
-                                                 variables=variables, 
-                                                 dimension_definition=dimension_definition,
-                                                 dimension_values=dimension_values, 
-                                                 start=start, 
-                                                 end=end, 
-                                                 interval_value=interval_value, 
-                                                 interval_unit=interval_unit, 
-                                                 context=context,
-                                                 future=future,
-                                                 **kwargs)
+    return gis._tools.rasteranalysis.predict_using_trend_raster(
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        variables=variables,
+        dimension_definition=dimension_definition,
+        dimension_values=dimension_values,
+        start=start,
+        end=end,
+        interval_value=interval_value,
+        interval_unit=interval_unit,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-
-def find_argument_statistics(input_raster,
-                             dimension=None,
-                             dimension_definition='ALL',
-                             interval_keyword=None,
-                             variables=None,
-                             statistics_type='ARGUMENT_MIN',
-                             min_value=None,
-                             max_value=None,
-                             multiple_occurrence_value=None,
-                             ignore_nodata=True,
-                             output_name=None,
-                             context=None,
-                             *,
-                             gis=None,
-                             future=False,
-                             **kwargs):
+def find_argument_statistics(
+    input_raster,
+    dimension=None,
+    dimension_definition="ALL",
+    interval_keyword=None,
+    variables=None,
+    statistics_type="ARGUMENT_MIN",
+    min_value=None,
+    max_value=None,
+    multiple_occurrence_value=None,
+    ignore_nodata=True,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Extracts the dimension value at which a given statistic is attained for each pixel in a multidimensional raster.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -5304,35 +5688,38 @@ def find_argument_statistics(input_raster,
                                                    gis=gis,
                                                    folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
     """
-    #task = "FindArgumentStatistics"
+    # task = "FindArgumentStatistics"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.find_argument_statistics(input_raster=input_raster, 
-                                               output_name=output_name, 
-                                               dimension=dimension,
-                                               dimension_definition=dimension_definition,
-                                               interval_keyword=interval_keyword,
-                                               variables=variables, 
-                                               statistics_type=statistics_type, 
-                                               min_value=min_value, 
-                                               max_value=max_value, 
-                                               multiple_occurrence_value=multiple_occurrence_value, 
-                                               ignore_nodata=ignore_nodata, 
-                                               context=context,
-                                               future=future,
-                                               **kwargs)
+    return gis._tools.rasteranalysis.find_argument_statistics(
+        input_raster=input_raster,
+        output_name=output_name,
+        dimension=dimension,
+        dimension_definition=dimension_definition,
+        interval_keyword=interval_keyword,
+        variables=variables,
+        statistics_type=statistics_type,
+        min_value=min_value,
+        max_value=max_value,
+        multiple_occurrence_value=multiple_occurrence_value,
+        ignore_nodata=ignore_nodata,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-
-def linear_spectral_unmixing(input_raster,
-                             input_spectral_profile,
-                             value_option=[],
-                             output_name=None,
-                             context=None,
-                             *,
-                             gis=None,
-                             future=False,
-                             **kwargs):
+def linear_spectral_unmixing(
+    input_raster,
+    input_spectral_profile,
+    value_option=[],
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Performs subpixel classification and calculates the fractional abundance of endmembers for individual pixels.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -5462,32 +5849,36 @@ def linear_spectral_unmixing(input_raster,
 
     """
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.linear_spectral_unmixing(input_raster=input_raster, 
-                                               output_name=output_name, 
-                                               input_spectral_profile=input_spectral_profile, 
-                                               value_option=value_option, 
-                                               context=context,
-                                               future=future,
-                                               **kwargs)
+    return gis._tools.rasteranalysis.linear_spectral_unmixing(
+        input_raster=input_raster,
+        output_name=output_name,
+        input_spectral_profile=input_spectral_profile,
+        value_option=value_option,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def subset_multidimensional_raster(input_multidimensional_raster,
-                                   variables=None,
-                                   dimension_definition='ALL',
-                                   dimension_ranges=None,
-                                   dimension_values=None,
-                                   dimension=None,
-                                   start_of_first_iteration=None,
-                                   end_of_first_iteration=None,
-                                   iteration_step=None,
-                                   iteration_unit=None,
-                                   output_name=None,
-                                   context=None,
-                                   *,
-                                   gis=None,
-                                   future=False,
-                                   **kwargs):
+
+def subset_multidimensional_raster(
+    input_multidimensional_raster,
+    variables=None,
+    dimension_definition="ALL",
+    dimension_ranges=None,
+    dimension_values=None,
+    dimension=None,
+    start_of_first_iteration=None,
+    end_of_first_iteration=None,
+    iteration_step=None,
+    iteration_unit=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Subsets a multidimensional raster by slicing data along defined variables and dimensions.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -5676,35 +6067,43 @@ def subset_multidimensional_raster(input_multidimensional_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                                    output_name=output_name, 
-                                                                    variables=variables, 
-                                                                    dimension_definition=dimension_definition,
-                                                                    dimension_ranges=dimension_ranges,
-                                                                    dimension_values=dimension_values, 
-                                                                    dimension=dimension, 
-                                                                    start_of_first_iteration=start_of_first_iteration, 
-                                                                    end_of_first_iteration=end_of_first_iteration, 
-                                                                    iteration_step=iteration_step, 
-                                                                    iteration_unit=iteration_unit,
-                                                                    context=context,
-                                                                    future=future,
-                                                                    **kwargs)
+    return gis._tools.rasteranalysis.subset_multidimensional_raster(
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        variables=variables,
+        dimension_definition=dimension_definition,
+        dimension_ranges=dimension_ranges,
+        dimension_values=dimension_values,
+        dimension=dimension,
+        start_of_first_iteration=start_of_first_iteration,
+        end_of_first_iteration=end_of_first_iteration,
+        iteration_step=iteration_step,
+        iteration_unit=iteration_unit,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.analytics.optimal_path_as_line() instead. ")
-def costpath_as_polyline(input_destination_data,
-                         input_cost_distance_raster,
-                         input_cost_backlink_raster,
-                         path_type='BEST_SINGLE',
-                         destination_field=None,
-                         output_polyline_name=None,
-                         context=None,
-                         *,
-                         gis=None,
-                         future=False,
-                         **kwargs):
 
-    '''
+@deprecated(
+    deprecated_in="1.8.1",
+    details="Please use arcgis.raster.analytics.optimal_path_as_line() instead. ",
+)
+def costpath_as_polyline(
+    input_destination_data,
+    input_cost_distance_raster,
+    input_cost_backlink_raster,
+    path_type="BEST_SINGLE",
+    destination_field=None,
+    output_polyline_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
+
+    """
     .. image:: _static/images/ra_costpath_as_polyline/ra_costpath_as_polyline.png 
 
     Calculates the least cost polyline path between sources and known destinations.
@@ -5784,29 +6183,33 @@ def costpath_as_polyline(input_destination_data,
 
     :return:
         output_raster : Imagery layer item
-    '''
+    """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.cost_path_as_polyline(input_destination_raster_or_features=input_destination_data, 
-                                            input_cost_distance_raster=input_cost_distance_raster, 
-                                            input_cost_backlink_raster=input_cost_backlink_raster, 
-                                            output_polyline_name=output_polyline_name, 
-                                            path_type=path_type, 
-                                            destination_field=destination_field, 
-                                            context=context,
-                                            future=future,
-                                            **kwargs)
+    return gis._tools.rasteranalysis.cost_path_as_polyline(
+        input_destination_raster_or_features=input_destination_data,
+        input_cost_distance_raster=input_cost_distance_raster,
+        input_cost_backlink_raster=input_cost_backlink_raster,
+        output_polyline_name=output_polyline_name,
+        path_type=path_type,
+        destination_field=destination_field,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def define_nodata(input_raster,
-                  nodata,
-                  query_filter=None,
-                  num_of_bands=None,
-                  composite_value=False,
-                  *,
-                  gis=None,
-                  future=False,
-                  **kwargs):
+def define_nodata(
+    input_raster,
+    nodata,
+    query_filter=None,
+    num_of_bands=None,
+    composite_value=False,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function specifies one or more values to be represented as NoData.
@@ -5877,26 +6280,31 @@ def define_nodata(input_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.define_nodata(input_raster=input_raster,
-                                                    nodata=nodata,
-                                                    query_filter=query_filter,
-                                                    num_of_bands=num_of_bands,
-                                                    composite_value=composite_value,
-                                                    future=future,
-                                                    **kwargs)
+    return gis._tools.rasteranalysis.define_nodata(
+        input_raster=input_raster,
+        nodata=nodata,
+        query_filter=query_filter,
+        num_of_bands=num_of_bands,
+        composite_value=composite_value,
+        future=future,
+        **kwargs
+    )
 
-def optimal_path_as_line(input_destination_data,
-                         input_distance_accumulation_raster,
-                         input_back_direction_raster,
-                         destination_field=None, 
-                         path_type="EACH_ZONE", 
-                         output_feature_name=None, 
-                         context=None, 
-                         create_network_paths='DESTINATIONS_TO_SOURCES',
-                         *, 
-                         gis=None, 
-                         future=False, 
-                         **kwargs):
+
+def optimal_path_as_line(
+    input_destination_data,
+    input_distance_accumulation_raster,
+    input_back_direction_raster,
+    destination_field=None,
+    path_type="EACH_ZONE",
+    output_feature_name=None,
+    context=None,
+    create_network_paths="DESTINATIONS_TO_SOURCES",
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Calculates the optimal path from a source to a destination as a feature.
@@ -5983,30 +6391,34 @@ def optimal_path_as_line(input_destination_data,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.optimal_path_as_line(input_destination_raster_or_features=input_destination_data,  
-                                                          input_distance_accumulation_raster=input_distance_accumulation_raster, 
-                                                          input_back_direction_raster=input_back_direction_raster, 
-                                                          output_polyline_name=output_feature_name,  
-                                                          destination_field=destination_field, 
-                                                          path_type=path_type, 
-                                                          context=context,
-                                                          create_network_paths=create_network_paths,
-                                                          future=future,
-                                                          **kwargs)
+    return gis._tools.rasteranalysis.optimal_path_as_line(
+        input_destination_raster_or_features=input_destination_data,
+        input_distance_accumulation_raster=input_distance_accumulation_raster,
+        input_back_direction_raster=input_back_direction_raster,
+        output_polyline_name=output_feature_name,
+        destination_field=destination_field,
+        path_type=path_type,
+        context=context,
+        create_network_paths=create_network_paths,
+        future=future,
+        **kwargs
+    )
 
 
-def optimal_region_connections(input_region_data,
-                               input_barrier_data=None,
-                               input_cost_raster=None,
-                               distance_method="PLANAR",
-                               connections_within_regions="GENERATE_CONNECTIONS",
-                               output_optimal_lines_name=None,
-                               output_neighbor_connections_name=None,
-                               context=None, 
-                               *, 
-                               gis=None, 
-                               future=False, 
-                               **kwargs):
+def optimal_region_connections(
+    input_region_data,
+    input_barrier_data=None,
+    input_cost_raster=None,
+    distance_method="PLANAR",
+    connections_within_regions="GENERATE_CONNECTIONS",
+    output_optimal_lines_name=None,
+    output_neighbor_connections_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Calculates the optimal connectivity network between two or more input regions.
@@ -6135,123 +6547,136 @@ def optimal_region_connections(input_region_data,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.optimal_region_connections(input_region_raster_or_features=input_region_data,  
-                                                                input_barrier_raster_or_features=input_barrier_data, 
-                                                                input_cost_raster=input_cost_raster, 
-                                                                distance_method=distance_method,  
-                                                                connections_within_regions=connections_within_regions, 
-                                                                output_optimal_lines_name=output_optimal_lines_name, 
-                                                                output_neighbor_connections_name=output_neighbor_connections_name,
-                                                                context=context,
-                                                                future=future,
-                                                                **kwargs)
+    return gis._tools.rasteranalysis.optimal_region_connections(
+        input_region_raster_or_features=input_region_data,
+        input_barrier_raster_or_features=input_barrier_data,
+        input_cost_raster=input_cost_raster,
+        distance_method=distance_method,
+        connections_within_regions=connections_within_regions,
+        output_optimal_lines_name=output_optimal_lines_name,
+        output_neighbor_connections_name=output_neighbor_connections_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def _distance_accumulation(input_source_raster_or_features,
-                           input_barrier_raster_or_features=None,
-                           input_surface_raster=None,
-                           input_cost_raster=None,
-                           input_vertical_raster=None,
-                           vertical_factor='BINARY 1 -30 30',
-                           input_horizontal_raster=None,
-                           horizontal_factor='BINARY 1 45',
-                           source_initial_accumulation=None,
-                           source_maximum_accumulation=None,
-                           source_cost_multiplier=None,
-                           source_direction=None,
-                           distance_method='PLANAR',
-                           output_distance_accumulation_raster_name=None,
-                           output_back_direction_raster_name=None, 
-                           output_source_direction_raster_name=None, 
-                           output_source_location_raster_name=None,
-                           context=None, 
-                           *, 
-                           gis=None, 
-                           future=False, 
-                           **kwargs):
-
-    gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,  
-                                                           input_barrier_raster_or_features=input_barrier_raster_or_features, 
-                                                           input_surface_raster=input_surface_raster, 
-                                                           input_cost_raster=input_cost_raster,  
-                                                           input_vertical_raster=input_vertical_raster,
-                                                           vertical_factor=vertical_factor,
-                                                           input_horizontal_raster=input_horizontal_raster,
-                                                           horizontal_factor=horizontal_factor,
-                                                           source_initial_accumulation=source_initial_accumulation,
-                                                           source_maximum_accumulation=source_maximum_accumulation,
-                                                           source_cost_multiplier=source_cost_multiplier,
-                                                           source_direction=source_direction,
-                                                           distance_method=distance_method,
-                                                           output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
-                                                           output_back_direction_raster_name=output_back_direction_raster_name, 
-                                                           output_source_direction_raster_name=output_source_direction_raster_name, 
-                                                           output_source_location_raster_name=output_source_location_raster_name,
-                                                           context=context,
-                                                           future=future,
-                                                           **kwargs)
-
-
-def _distance_allocation(input_source_raster_or_features,
-                           input_barrier_raster_or_features=None,
-                           input_surface_raster=None,
-                           input_cost_raster=None,
-                           input_vertical_raster=None,
-                           vertical_factor='BINARY 1 -30 30',
-                           input_horizontal_raster=None,
-                           horizontal_factor='BINARY 1 45',
-                           source_initial_accumulation=None,
-                           source_maximum_accumulation=None,
-                           source_cost_multiplier=None,
-                           source_direction=None,
-                           distance_method='PLANAR',
-                           output_distance_allocation_raster_name=None,
-                           output_distance_accumulation_raster_name=None,
-                           output_back_direction_raster_name=None, 
-                           output_source_direction_raster_name=None, 
-                           output_source_location_raster_name=None,
-                           context=None, 
-                           *, 
-                           gis=None, 
-                           future=False, 
-                           **kwargs):
+def _distance_accumulation(
+    input_source_raster_or_features,
+    input_barrier_raster_or_features=None,
+    input_surface_raster=None,
+    input_cost_raster=None,
+    input_vertical_raster=None,
+    vertical_factor="BINARY 1 -30 30",
+    input_horizontal_raster=None,
+    horizontal_factor="BINARY 1 45",
+    source_initial_accumulation=None,
+    source_maximum_accumulation=None,
+    source_cost_multiplier=None,
+    source_direction=None,
+    distance_method="PLANAR",
+    output_distance_accumulation_raster_name=None,
+    output_back_direction_raster_name=None,
+    output_source_direction_raster_name=None,
+    output_source_location_raster_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,  
-                                                           input_barrier_raster_or_features=input_barrier_raster_or_features, 
-                                                           input_surface_raster=input_surface_raster, 
-                                                           input_cost_raster=input_cost_raster,  
-                                                           input_vertical_raster=input_vertical_raster,
-                                                           vertical_factor=vertical_factor,
-                                                           input_horizontal_raster=input_horizontal_raster,
-                                                           horizontal_factor=horizontal_factor,
-                                                           source_initial_accumulation=source_initial_accumulation,
-                                                           source_maximum_accumulation=source_maximum_accumulation,
-                                                           source_cost_multiplier=source_cost_multiplier,
-                                                           source_direction=source_direction,
-                                                           distance_method=distance_method,
-                                                           output_distance_allocation_raster_name=output_distance_allocation_raster_name,
-                                                           output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
-                                                           output_back_direction_raster_name=output_back_direction_raster_name, 
-                                                           output_source_direction_raster_name=output_source_direction_raster_name, 
-                                                           output_source_location_raster_name=output_source_location_raster_name,
-                                                           context=context,
-                                                           future=future,
-                                                           **kwargs)
+    return gis._tools.rasteranalysis.distance_accumulation(
+        input_source_raster_or_features=input_source_raster_or_features,
+        input_barrier_raster_or_features=input_barrier_raster_or_features,
+        input_surface_raster=input_surface_raster,
+        input_cost_raster=input_cost_raster,
+        input_vertical_raster=input_vertical_raster,
+        vertical_factor=vertical_factor,
+        input_horizontal_raster=input_horizontal_raster,
+        horizontal_factor=horizontal_factor,
+        source_initial_accumulation=source_initial_accumulation,
+        source_maximum_accumulation=source_maximum_accumulation,
+        source_cost_multiplier=source_cost_multiplier,
+        source_direction=source_direction,
+        distance_method=distance_method,
+        output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+        output_back_direction_raster_name=output_back_direction_raster_name,
+        output_source_direction_raster_name=output_source_direction_raster_name,
+        output_source_location_raster_name=output_source_location_raster_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def analyze_changes_using_ccdc(input_multidimensional_raster=None,
-                               bands_for_detecting_change=[],
-                               bands_for_temporal_masking=[],
-                               chi_squared_threshold=0.99,
-                               min_anomaly_observations=6,
-                               update_frequency=1,
-                               output_name=None,
-                               context=None,
-                               *,
-                               gis=None,
-                               future=False,
-                               **kwargs):
+
+def _distance_allocation(
+    input_source_raster_or_features,
+    input_barrier_raster_or_features=None,
+    input_surface_raster=None,
+    input_cost_raster=None,
+    input_vertical_raster=None,
+    vertical_factor="BINARY 1 -30 30",
+    input_horizontal_raster=None,
+    horizontal_factor="BINARY 1 45",
+    source_initial_accumulation=None,
+    source_maximum_accumulation=None,
+    source_cost_multiplier=None,
+    source_direction=None,
+    distance_method="PLANAR",
+    output_distance_allocation_raster_name=None,
+    output_distance_accumulation_raster_name=None,
+    output_back_direction_raster_name=None,
+    output_source_direction_raster_name=None,
+    output_source_location_raster_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.distance_allocation(
+        input_source_raster_or_features=input_source_raster_or_features,
+        input_barrier_raster_or_features=input_barrier_raster_or_features,
+        input_surface_raster=input_surface_raster,
+        input_cost_raster=input_cost_raster,
+        input_vertical_raster=input_vertical_raster,
+        vertical_factor=vertical_factor,
+        input_horizontal_raster=input_horizontal_raster,
+        horizontal_factor=horizontal_factor,
+        source_initial_accumulation=source_initial_accumulation,
+        source_maximum_accumulation=source_maximum_accumulation,
+        source_cost_multiplier=source_cost_multiplier,
+        source_direction=source_direction,
+        distance_method=distance_method,
+        output_distance_allocation_raster_name=output_distance_allocation_raster_name,
+        output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+        output_back_direction_raster_name=output_back_direction_raster_name,
+        output_source_direction_raster_name=output_source_direction_raster_name,
+        output_source_location_raster_name=output_source_location_raster_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
+
+def analyze_changes_using_ccdc(
+    input_multidimensional_raster=None,
+    bands_for_detecting_change=[],
+    bands_for_temporal_masking=[],
+    chi_squared_threshold=0.99,
+    min_anomaly_observations=6,
+    update_frequency=1,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function evaluates changes in pixel values over time using the CCDC algorithm, 
@@ -6406,44 +6831,48 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster, 
-                                            bands_for_detecting_change=bands_for_detecting_change, 
-                                            bands_for_temporal_masking=bands_for_temporal_masking, 
-                                            chi_squared_threshold=chi_squared_threshold, 
-                                            min_anomaly_observations=min_anomaly_observations, 
-                                            update_frequency=update_frequency, 
-                                            output_name=output_name,
-                                            context=context,
-                                            future=future,
-                                            **kwargs)
+    return gis._tools.rasteranalysis.analyze_changes_using_ccdc(
+        input_multidimensional_raster=input_multidimensional_raster,
+        bands_for_detecting_change=bands_for_detecting_change,
+        bands_for_temporal_masking=bands_for_temporal_masking,
+        chi_squared_threshold=chi_squared_threshold,
+        min_anomaly_observations=min_anomaly_observations,
+        update_frequency=update_frequency,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def detect_change_using_change_analysis_raster(input_change_analysis_raster=None, 
-                                               change_type="TIME_OF_LATEST_CHANGE", 
-                                               max_number_of_changes=1, 
-                                               output_name=None,
-                                               context=None,
-                                               segment_date='BEGINNING_OF_SEGMENT', 
-                                               change_direction='ALL', 
-                                               filter_by_year=False, 
-                                               min_year=None, 
-                                               max_year=None, 
-                                               filter_by_duration=False, 
-                                               min_duration=None, 
-                                               max_duration=None, 
-                                               filter_by_magnitude=False, 
-                                               min_magnitude=None, 
-                                               max_magnitude=None,
-                                               filter_by_start_value=None,
-                                               min_start_value=None,
-                                               max_start_value=None,
-                                               filter_by_end_value=None,
-                                               min_end_value=None,
-                                               max_end_value=None,
-                                               *,
-                                               gis=None,
-                                               future=False,
-                                               **kwargs):
+def detect_change_using_change_analysis_raster(
+    input_change_analysis_raster=None,
+    change_type="TIME_OF_LATEST_CHANGE",
+    max_number_of_changes=1,
+    output_name=None,
+    context=None,
+    segment_date="BEGINNING_OF_SEGMENT",
+    change_direction="ALL",
+    filter_by_year=False,
+    min_year=None,
+    max_year=None,
+    filter_by_duration=False,
+    min_duration=None,
+    max_duration=None,
+    filter_by_magnitude=False,
+    min_magnitude=None,
+    max_magnitude=None,
+    filter_by_start_value=None,
+    min_start_value=None,
+    max_start_value=None,
+    filter_by_end_value=None,
+    min_end_value=None,
+    max_end_value=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function generates a raster containing pixel change information using the 
@@ -6752,44 +7181,48 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                                change_type=change_type,
-                                                                                max_number_of_changes=max_number_of_changes,
-                                                                                segment_date=segment_date, 
-                                                                                change_direction=change_direction, 
-                                                                                filter_by_year=filter_by_year, 
-                                                                                min_year=min_year, 
-                                                                                max_year=max_year, 
-                                                                                filter_by_duration=filter_by_duration, 
-                                                                                min_duration=min_duration, 
-                                                                                max_duration=max_duration, 
-                                                                                filter_by_magnitude=filter_by_magnitude, 
-                                                                                min_magnitude=min_magnitude, 
-                                                                                max_magnitude=max_magnitude,
-                                                                                filter_by_start_value=filter_by_start_value,
-                                                                                min_start_value=min_start_value,
-                                                                                max_start_value=max_start_value,
-                                                                                filter_by_end_value=filter_by_end_value,
-                                                                                min_end_value=min_end_value,
-                                                                                max_end_value=max_end_value,
-                                                                                output_name=output_name,
-                                                                                context=context,
-                                                                                future=future,
-                                                                                **kwargs)
+    return gis._tools.rasteranalysis.detect_change_using_change_analysis_raster(
+        input_change_analysis_raster=input_change_analysis_raster,
+        change_type=change_type,
+        max_number_of_changes=max_number_of_changes,
+        segment_date=segment_date,
+        change_direction=change_direction,
+        filter_by_year=filter_by_year,
+        min_year=min_year,
+        max_year=max_year,
+        filter_by_duration=filter_by_duration,
+        min_duration=min_duration,
+        max_duration=max_duration,
+        filter_by_magnitude=filter_by_magnitude,
+        min_magnitude=min_magnitude,
+        max_magnitude=max_magnitude,
+        filter_by_start_value=filter_by_start_value,
+        min_start_value=min_start_value,
+        max_start_value=max_start_value,
+        filter_by_end_value=filter_by_end_value,
+        min_end_value=min_end_value,
+        max_end_value=max_end_value,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def manage_multidimensional_raster(target_multidimensional_raster, 
-                                   manage_mode='APPEND_SLICES', 
-                                   variables=None, 
-                                   input_multidimensional_rasters=None, 
-                                   dimension_name=None, 
-                                   dimension_value=None, 
-                                   dimension_description=None, 
-                                   dimension_unit=None,
-                                   *,
-                                   gis=None,
-                                   future=False,
-                                   **kwargs):
+def manage_multidimensional_raster(
+    target_multidimensional_raster,
+    manage_mode="APPEND_SLICES",
+    variables=None,
+    input_multidimensional_rasters=None,
+    dimension_name=None,
+    dimension_value=None,
+    dimension_description=None,
+    dimension_unit=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
     """
     Function edits a multidimensional raster by adding or deleting variables or dimensions.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -6848,38 +7281,42 @@ def manage_multidimensional_raster(target_multidimensional_raster,
 
     """
 
-    #task = "ManageMultidimensionalRaster"
+    # task = "ManageMultidimensionalRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.manage_multidimensional_raster(target_multidimensional_raster=target_multidimensional_raster, 
-                                                                    manage_mode=manage_mode, 
-                                                                    variables=variables, 
-                                                                    input_multidimensional_rasters=input_multidimensional_rasters, 
-                                                                    dimension_name=dimension_name, 
-                                                                    dimension_value=dimension_value, 
-                                                                    dimension_description=dimension_description, 
-                                                                    dimension_unit=dimension_unit,
-                                                                    future=future,
-                                                                    **kwargs)
+    return gis._tools.rasteranalysis.manage_multidimensional_raster(
+        target_multidimensional_raster=target_multidimensional_raster,
+        manage_mode=manage_mode,
+        variables=variables,
+        input_multidimensional_rasters=input_multidimensional_rasters,
+        dimension_name=dimension_name,
+        dimension_value=dimension_value,
+        dimension_description=dimension_description,
+        dimension_unit=dimension_unit,
+        future=future,
+        **kwargs
+    )
 
 
-def sample(input_rasters, 
-           input_location_data, 
-           resampling_type='NEAREST', 
-           unique_id_field=None, 
-           acquisition_definition=None, 
-           statistics_type='MEAN', 
-           percentile_value=None, 
-           buffer_distance=None, 
-           layout='ROW_WISE', 
-           generate_feature_class=False,
-           process_as_multidimensional=None,
-           output_name=None, 
-           context=None,
-           *,
-           gis=None,
-           future=False,
-           **kwargs):
+def sample(
+    input_rasters,
+    input_location_data,
+    resampling_type="NEAREST",
+    unique_id_field=None,
+    acquisition_definition=None,
+    statistics_type="MEAN",
+    percentile_value=None,
+    buffer_distance=None,
+    layout="ROW_WISE",
+    generate_feature_class=False,
+    process_as_multidimensional=None,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function creates a table that shows the values of cells from a raster, 
@@ -6993,34 +7430,38 @@ def sample(input_rasters,
 
     gis = _arcgis.env.active_gis if gis is None else gis
     if context is None:
-        context={}
+        context = {}
     if process_as_multidimensional is not None:
-        context.update({"processAsMultidimensional":process_as_multidimensional})
+        context.update({"processAsMultidimensional": process_as_multidimensional})
 
-    return gis._tools.rasteranalysis.sample(in_rasters=input_rasters, 
-                                            in_location_data= input_location_data, 
-                                            output_name=output_name, 
-                                            resampling_type=resampling_type, 
-                                            unique_id_field=unique_id_field, 
-                                            acquisition_definition=acquisition_definition, 
-                                            statistics_type=statistics_type, 
-                                            percentile_value=percentile_value, 
-                                            buffer_distance=buffer_distance, 
-                                            layout=layout, 
-                                            generate_feature_class=generate_feature_class,
-                                            context=context,
-                                            future=future,
-                                            **kwargs)
+    return gis._tools.rasteranalysis.sample(
+        in_rasters=input_rasters,
+        in_location_data=input_location_data,
+        output_name=output_name,
+        resampling_type=resampling_type,
+        unique_id_field=unique_id_field,
+        acquisition_definition=acquisition_definition,
+        statistics_type=statistics_type,
+        percentile_value=percentile_value,
+        buffer_distance=buffer_distance,
+        layout=layout,
+        generate_feature_class=generate_feature_class,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
 
-def merge_multidimensional_rasters(input_multidimensional_rasters,
-                                   resolve_overlap_method='FIRST',
-                                   output_name=None, 
-                                   context=None,
-                                   *,
-                                   gis=None,
-                                   future=False,
-                                   **kwargs):
+def merge_multidimensional_rasters(
+    input_multidimensional_rasters,
+    resolve_overlap_method="FIRST",
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
@@ -7143,32 +7584,37 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
-                                                                    resolve_overlap_method=resolve_overlap_method,
-                                                                    output_name=output_name, 
-                                                                    context=context,
-                                                                    future=future,
-                                                                    **kwargs)
+    return gis._tools.rasteranalysis.merge_multidimensional_rasters(
+        input_multidimensional_rasters=input_multidimensional_rasters,
+        resolve_overlap_method=resolve_overlap_method,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def analyze_changes_using_landtrendr(input_multidimensional_raster,
-                                      processing_band=None, 
-                                      snapping_date='06-30', 
-                                      max_num_segments=5, 
-                                      vertex_count_overshoot=2, 
-                                      spike_threshold=0.9, 
-                                      recovery_threshold=0.25, 
-                                      prevent_one_year_recovery=True, 
-                                      increasing_recovery_trend=True, 
-                                      min_num_observations=6, 
-                                      best_model_proportion=1.25, 
-                                      pvalue_threshold=0.01, 
-                                      output_other_bands=False,
-                                      output_name=None,
-                                      context=None,
-                                      *,
-                                      gis=None,
-                                      future=False,
-                                      **kwargs):
+
+def analyze_changes_using_landtrendr(
+    input_multidimensional_raster,
+    processing_band=None,
+    snapping_date="06-30",
+    max_num_segments=5,
+    vertex_count_overshoot=2,
+    spike_threshold=0.9,
+    recovery_threshold=0.25,
+    prevent_one_year_recovery=True,
+    increasing_recovery_trend=True,
+    min_num_observations=6,
+    best_model_proportion=1.25,
+    pvalue_threshold=0.01,
+    output_other_bands=False,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends 
@@ -7379,26 +7825,29 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
-                                                                       processing_band=processing_band, 
-                                                                       snapping_date=snapping_date, 
-                                                                       max_num_segments=max_num_segments, 
-                                                                       vertex_count_overshoot=vertex_count_overshoot, 
-                                                                       spike_threshold=spike_threshold, 
-                                                                       recovery_threshold=recovery_threshold, 
-                                                                       prevent_one_year_recovery=prevent_one_year_recovery, 
-                                                                       increasing_recovery_trend=increasing_recovery_trend, 
-                                                                       min_num_observations=min_num_observations, 
-                                                                       best_model_proportion=best_model_proportion, 
-                                                                       pvalue_threshold=pvalue_threshold, 
-                                                                       output_other_bands=output_other_bands,
-                                                                       output_name=output_name,
-                                                                       context=context,
-                                                                       future=future,
-                                                                       **kwargs)
+    return gis._tools.rasteranalysis.analyze_changes_using_landtrendr(
+        input_multidimensional_raster=input_multidimensional_raster,
+        processing_band=processing_band,
+        snapping_date=snapping_date,
+        max_num_segments=max_num_segments,
+        vertex_count_overshoot=vertex_count_overshoot,
+        spike_threshold=spike_threshold,
+        recovery_threshold=recovery_threshold,
+        prevent_one_year_recovery=prevent_one_year_recovery,
+        increasing_recovery_trend=increasing_recovery_trend,
+        min_num_observations=min_num_observations,
+        best_model_proportion=best_model_proportion,
+        pvalue_threshold=pvalue_threshold,
+        output_other_bands=output_other_bands,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-#def transfer_files(input_files, 
-#                   output_datastore=None, 
+
+# def transfer_files(input_files,
+#                   output_datastore=None,
 #                   tf_filter=None,
 #                   return_first_file=False,
 #                   context=None,
@@ -7408,7 +7857,7 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 #                   **kwargs):
 
 #    """
-#    Transfers files between datastores. 
+#    Transfers files between datastores.
 #    The tool does not support file transfers to or from geodatabases.
 
 #    ====================================     ====================================================================
@@ -7435,13 +7884,13 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 #    ------------------------------------     --------------------------------------------------------------------
 #    return_first_file                        Optional bool. Available in ArcGIS Image Server 10.8.1 and higher.
 #    ------------------------------------     --------------------------------------------------------------------
-#    context                                  Context contains additional settings that affect task execution. 
+#    context                                  Context contains additional settings that affect task execution.
 
 #                                             context parameter overwrites values set through arcgis.env parameter
 
 #                                             This function has the following settings:
 
-#                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+#                                              - Parallel Processing Factor (parallelProcessingFactor): controls
 #                                                Raster Processing (CPU) service instances.
 
 #                                                Example:
@@ -7449,7 +7898,7 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 
 #                                                    {"parallelProcessingFactor": "2"}
 
-#                                                    Syntax example with a specified percentage of total 
+#                                                    Syntax example with a specified percentage of total
 #                                                    processing instances:
 
 #                                                    {"parallelProcessingFactor": "60%"}
@@ -7457,7 +7906,7 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 #    gis                                      Optional GIS object. If not specified, the currently active connection
 #                                             is used.
 #    ------------------------------------     --------------------------------------------------------------------
-#    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+#    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
 #                                             results will be returned asynchronously.
 #    ====================================     ====================================================================
 
@@ -7467,8 +7916,8 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 
 #        # Usage Example 1: This example transfers raster.tif from a cloudstore location to a fileshare location.
 
-#        transfer_file = transfer_files(input_files="/cloudStores/testcloud/raster.tif", 
-#                                       output_datastore="/fileShares/testfolder", 
+#        transfer_file = transfer_files(input_files="/cloudStores/testcloud/raster.tif",
+#                                       output_datastore="/fileShares/testfolder",
 #                                       tf_filter=None,
 #                                       gis=gis)
 
@@ -7476,27 +7925,29 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 
 #    gis = _arcgis.env.active_gis if gis is None else gis
 
-#    return gis._tools.rasteranalysis.transfer_files(input_files=input_files, 
-#                                                    output_datastore=output_datastore, 
-#                                                    tf_filter=tf_filter, 
-#                                                    return_first_file=return_first_file, 
+#    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
+#                                                    output_datastore=output_datastore,
+#                                                    tf_filter=tf_filter,
+#                                                    return_first_file=return_first_file,
 #                                                    context=context,
 #                                                    future=future,
 #                                                    **kwargs)
-def zonal_statistics_as_table(input_zone_raster_or_features, 
-                              input_value_raster, 
-                              zone_field, 
-                              ignore_nodata=True, 
-                              statistic_type='ALL', 
-                              percentile_values=[90],
-                              process_as_multidimensional=False,
-                              percentile_interpolation_type="AUTO_DETECT",
-                              output_name=None, 
-                              context=None,
-                              *,
-                              gis=None,
-                              future=False,
-                              **kwargs):
+def zonal_statistics_as_table(
+    input_zone_raster_or_features,
+    input_value_raster,
+    zone_field,
+    ignore_nodata=True,
+    statistic_type="ALL",
+    percentile_values=[90],
+    process_as_multidimensional=False,
+    percentile_interpolation_type="AUTO_DETECT",
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
@@ -7624,32 +8075,37 @@ def zonal_statistics_as_table(input_zone_raster_or_features,
 
     gis = _arcgis.env.active_gis if gis is None else gis
 
-    return gis._tools.rasteranalysis.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
-                                                               input_value_raster=input_value_raster, 
-                                                               output_name=output_name,
-                                                               zone_field=zone_field, 
-                                                               ignore_nodata=ignore_nodata, 
-                                                               statistic_type=statistic_type, 
-                                                               percentile_values=percentile_values,
-                                                               process_as_multidimensional=process_as_multidimensional,
-                                                               percentile_interpolation_type=percentile_interpolation_type,
-                                                               context=context,
-                                                               future=future,
-                                                               **kwargs)
+    return gis._tools.rasteranalysis.zonal_statistics_as_table(
+        input_zone_raster_or_features=input_zone_raster_or_features,
+        input_value_raster=input_value_raster,
+        output_name=output_name,
+        zone_field=zone_field,
+        ignore_nodata=ignore_nodata,
+        statistic_type=statistic_type,
+        percentile_values=percentile_values,
+        process_as_multidimensional=process_as_multidimensional,
+        percentile_interpolation_type=percentile_interpolation_type,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def compute_change_raster(input_from_raster,
-                          input_to_raster,
-                          compute_change_method='DIFFERENCE',
-                          from_classes=None,
-                          to_classes=None,
-                          filter_method='CHANGED_PIXELS_ONLY',
-                          transition_class_colors='AVERAGE',
-                          output_name=None,
-                          context=None,
-                          *,
-                          gis=None,
-                          future=False,
-                          **kwargs):
+
+def compute_change_raster(
+    input_from_raster,
+    input_to_raster,
+    compute_change_method="DIFFERENCE",
+    from_classes=None,
+    to_classes=None,
+    filter_method="CHANGED_PIXELS_ONLY",
+    transition_class_colors="AVERAGE",
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function calculates the absolute, relative, or categorical difference between two raster datasets.  
@@ -7810,14 +8266,16 @@ def compute_change_raster(input_from_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.compute_change_raster(input_from_raster=input_from_raster,
-                                                           input_to_raster=input_to_raster,
-                                                           compute_change_method=compute_change_method,
-                                                           from_classes=from_classes,
-                                                           to_classes=to_classes,
-                                                           filter_method=filter_method,
-                                                           transition_class_colors=transition_class_colors,
-                                                           output_name=output_name,
-                                                           context=context,
-                                                           future=future,
-                                                           **kwargs)
+    return gis._tools.rasteranalysis.compute_change_raster(
+        input_from_raster=input_from_raster,
+        input_to_raster=input_to_raster,
+        compute_change_method=compute_change_method,
+        from_classes=from_classes,
+        to_classes=to_classes,
+        filter_method=filter_method,
+        transition_class_colors=transition_class_colors,
+        output_name=output_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
