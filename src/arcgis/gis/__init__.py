@@ -3783,7 +3783,7 @@ class UserManager(object):
                     un = user["username"]
                 else:
                     un = user["id"]
-                userlist.append(User(self._gis, un, userdict=user))
+                userlist.append(User(self._gis, un))
             return userlist
 
     # ----------------------------------------------------------------------

@@ -4817,7 +4817,7 @@ def raster_collection_function(
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -4863,7 +4863,7 @@ def raster_collection_function(
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -4872,7 +4872,7 @@ def raster_collection_function(
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -6105,6 +6105,7 @@ def _simple_collection(raster, md_info=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+
 def aggregate(
     raster,
     dimension=None,
@@ -6115,7 +6116,10 @@ def aggregate(
     interval_unit=None,
     interval_ranges=None,
     ignore_nodata=False,
-):
+    dimensionless=False,
+    percentile_value=90,
+    percentile_interpolation_type="NEAREST"
+    ):
     """
      Creates a new raster by applying an aggregation function
     :param raster: Input Raster. 
@@ -6134,6 +6138,10 @@ def aggregate(
 
                                 - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
+                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. 
+                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the 
+                                  percentile_value parameter.
+
                                 - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
                                 - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
@@ -6142,10 +6150,10 @@ def aggregate(
 
                                 - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
-                                You may also pass custom aggregaation function. 
+                                You may also pass custom aggregation function. 
                                 Create an RFT object out of the raster function template item on the portal and 
                                 specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
-                                aggregation_method.
+                                aggregation_function.
 
     :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
                                         will be aggregated.
@@ -6160,7 +6168,7 @@ def aggregate(
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -6206,7 +6214,7 @@ def aggregate(
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -6215,7 +6223,7 @@ def aggregate(
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -6244,9 +6252,40 @@ def aggregate(
 
                             - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
                             - False : The function will result in NoData if there are any NoData values.
+
+    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values. 
+                          This parameter is only active if a single slice is selected to create a layer.
+
+                            - True : The layer will not have dimension values.
+                            - False : The layer will have dimension values. This is the default.
+
+    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating 
+                             the 90th percentile.
+
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
+                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
+                             A value of 50 will produce essentially the same result as the median statistic. 
+                             This option is only honored if the aggregation_function parameter is set to PERCENTILE. 
+
+                             Example:
+                                90
+
+    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+                                          even number of values from the input raster to be calculated
+
+                                            - NEAREST : The nearest available value to the desired percentile will be used. 
+                                              In this case, the output pixel type will be the same as that of the input 
+                                              value raster. This is the default
+
+                                            - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                              percentile will be used. In this case, the output pixel type will be floating point.
+
+                                          Example:
+                                            NEAREST
     :return: the output raster with function applied on it
     """
-    from arcgis.raster._util import _local_function_template
+
+    from arcgis.raster._util import _local_function_template, _percentile_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -6289,7 +6328,10 @@ def aggregate(
                 opnum = 75 if ignore_nodata else 58
 
             if opnum is None:
-                raise RuntimeError("Invalid aggregation_function")
+                if aggregation_function.upper() == "PERCENTILE":
+                    template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile_function_template(ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
+                else:
+                    raise RuntimeError("Invalid aggregation_function")
             else:
                 template_dict["rasterFunctionArguments"][
                     "AggregationFunction"
@@ -6382,7 +6424,14 @@ def aggregate(
     # if where_clause is not None:
     #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dimensionless is not None:
+        if dimensionless:
+            aggregated_layer =  _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+            return multidimensional_filter(aggregated_layer, dimensionless=dimensionless)
+        else:
+            return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
 
 
 def compute_change(
