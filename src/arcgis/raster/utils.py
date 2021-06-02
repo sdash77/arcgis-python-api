@@ -1,7 +1,8 @@
 from arcgis.raster import _util
 
+
 def generate_direct_access_url(expiration=None, *, gis=None):
-    '''
+    """
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
     ====================================     ====================================================================
@@ -15,12 +16,13 @@ def generate_direct_access_url(expiration=None, *, gis=None):
 
     :return:
         String. Direct Access Url
-    '''
+    """
 
     return _util._generate_direct_access_url(expiration=expiration, gis=gis)
 
+
 def upload_imagery_to_agol_userstore(files, direct_access_url=None, *, gis=None):
-    '''
+    """
     Uploads file/files to the user's rasterStore on ArcGIS Online and returns the list of urls.
     The list of urls can then be used with arcgis.raster.analytics.copy_raster() method to create imagery layer on AGOL.
 
@@ -38,6 +40,8 @@ def upload_imagery_to_agol_userstore(files, direct_access_url=None, *, gis=None)
 
     :return:
         List of file paths.
-    '''
+    """
 
-    return _util._upload_imagery_agol(files=files, direct_access_url=direct_access_url, gis=gis)
+    return _util._upload_imagery_agol(
+        files=files, direct_access_url=direct_access_url, gis=gis
+    )

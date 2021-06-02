@@ -11,16 +11,18 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
-def aggregate_points(point_layer: str = None,
-                     polygon_layer: str = None,
-                     keep_boundaries_with_no_points: bool = True,
-                     summary_fields: str = """[]""",
-                     group_by_field: str = None,
-                     minority_majority: bool = False,
-                     percent_points: bool = False,
-                     output_name: str = None,
-                     context: str = None,
-                     gis=None) -> tuple:
+def aggregate_points(
+    point_layer: str = None,
+    polygon_layer: str = None,
+    keep_boundaries_with_no_points: bool = True,
+    summary_fields: str = """[]""",
+    group_by_field: str = None,
+    minority_majority: bool = False,
+    percent_points: bool = False,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -79,18 +81,22 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "AggregatePoints", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "AggregatePoints", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def find_hot_spots(analysis_layer: str = None,
-                   analysis_field: str = None,
-                   divided_by_field: str = None,
-                   bounding_polygon_layer: str = None,
-                   aggregation_polygon_layer: str = None,
-                   output_name: str = None,
-                   context: str = None,
-                   gis=None,
-                   shape_type: str = None) -> tuple:
+def find_hot_spots(
+    analysis_layer: str = None,
+    analysis_field: str = None,
+    divided_by_field: str = None,
+    bounding_polygon_layer: str = None,
+    aggregation_polygon_layer: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+    shape_type: str = None,
+) -> tuple:
     """
 
 
@@ -139,7 +145,11 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "shape_type": (str, "shapeType"),
     }
     return_values = [
-        {"name": "hot_spots_result_layer", "display_name": "hotSpotsResultLayer", "type": str},
+        {
+            "name": "hot_spots_result_layer",
+            "display_name": "hotSpotsResultLayer",
+            "type": str,
+        },
         {"name": "process_info", "display_name": "processInfo", "type": str},
     ]
 
@@ -147,20 +157,24 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "FindHotSpots", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "FindHotSpots", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def create_buffers(input_layer: str = None,
-                   distances: str = """[]""",
-                   field: str = None,
-                   units: str = """Meters""",
-                   dissolve_type: str = """None""",
-                   ring_type: str = """Disks""",
-                   side_type: str = """Full""",
-                   end_type: str = """Round""",
-                   output_name: str = None,
-                   context: str = None,
-                   gis=None) -> str:
+def create_buffers(
+    input_layer: str = None,
+    distances: str = """[]""",
+    field: str = None,
+    units: str = """Meters""",
+    dissolve_type: str = """None""",
+    ring_type: str = """Disks""",
+    side_type: str = """Full""",
+    end_type: str = """Round""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -224,19 +238,23 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "CreateBuffers", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "CreateBuffers", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def create_drive_time_areas(input_layer: str = None,
-                            break_values: str = """[5, 10, 15]""",
-                            break_units: str = """Minutes""",
-                            travel_mode: str = """Driving""",
-                            overlap_policy: str = """Overlap""",
-                            time_of_day: datetime = None,
-                            time_zone_for_time_of_day: str = """GeoLocal""",
-                            output_name: str = None,
-                            context: str = None,
-                            gis=None) -> str:
+def create_drive_time_areas(
+    input_layer: str = None,
+    break_values: str = """[5, 10, 15]""",
+    break_units: str = """Minutes""",
+    travel_mode: str = """Driving""",
+    overlap_policy: str = """Overlap""",
+    time_of_day: datetime = None,
+    time_zone_for_time_of_day: str = """GeoLocal""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -288,22 +306,30 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "drive_time_areas_layer": (str, "driveTimeAreasLayer"),
     }
     return_values = [
-        {"name": "drive_time_areas_layer", "display_name": "driveTimeAreasLayer", "type": str},
+        {
+            "name": "drive_time_areas_layer",
+            "display_name": "driveTimeAreasLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "CreateDriveTimeAreas", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "CreateDriveTimeAreas", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def dissolve_boundaries(input_layer: str = None,
-                        dissolve_fields: str = """[]""",
-                        summary_fields: str = """[]""",
-                        output_name: str = None,
-                        context: str = None,
-                        gis=None) -> str:
+def dissolve_boundaries(
+    input_layer: str = None,
+    dissolve_fields: str = """[]""",
+    summary_fields: str = """[]""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -347,15 +373,19 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "DissolveBoundaries", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "DissolveBoundaries", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def merge_layers(input_layer: str = None,
-                 merge_layer: str = None,
-                 merging_attributes: str = """[]""",
-                 output_name: str = None,
-                 context: str = None,
-                 gis=None) -> str:
+def merge_layers(
+    input_layer: str = None,
+    merge_layer: str = None,
+    merging_attributes: str = """[]""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -399,20 +429,24 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "MergeLayers", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "MergeLayers", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def summarize_within(sum_within_layer: str = None,
-                     summary_layer: str = None,
-                     sum_shape: bool = True,
-                     shape_units: str = None,
-                     summary_fields: str = """[]""",
-                     group_by_field: str = None,
-                     minority_majority: bool = False,
-                     percent_shape: bool = False,
-                     output_name: str = None,
-                     context: str = None,
-                     gis=None) -> tuple:
+def summarize_within(
+    sum_within_layer: str = None,
+    summary_layer: str = None,
+    sum_shape: bool = True,
+    shape_units: str = None,
+    summary_fields: str = """[]""",
+    group_by_field: str = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -475,20 +509,24 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "SummarizeWithin", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "SummarizeWithin", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def enrich_layer(input_layer: str = None,
-                 data_collections: str = """[]""",
-                 analysis_variables: str = """[]""",
-                 country: str = None,
-                 buffer_type: str = None,
-                 distance: float = None,
-                 units: str = None,
-                 return_boundaries: bool = False,
-                 output_name: str = None,
-                 context: str = None,
-                 gis=None) -> str:
+def enrich_layer(
+    input_layer: str = None,
+    data_collections: str = """[]""",
+    analysis_variables: str = """[]""",
+    country: str = None,
+    buffer_type: str = None,
+    distance: float = None,
+    units: str = None,
+    return_boundaries: bool = False,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -548,18 +586,22 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "EnrichLayer", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "EnrichLayer", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def overlay_layers(input_layer: str = None,
-                   overlay_layer: str = None,
-                   overlay_type: str = """Intersect""",
-                   snap_to_input: bool = False,
-                   output_type: str = """Input""",
-                   tolerance: float = None,
-                   output_name: str = None,
-                   context: str = None,
-                   gis=None) -> str:
+def overlay_layers(
+    input_layer: str = None,
+    overlay_layer: str = None,
+    overlay_type: str = """Intersect""",
+    snap_to_input: bool = False,
+    output_type: str = """Input""",
+    tolerance: float = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -614,16 +656,20 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "OverlayLayers", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "OverlayLayers", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def extract_data(input_layers: str = """[]""",
-                 extent: str = None,
-                 clip: bool = False,
-                 data_format: str = None,
-                 output_name: str = None,
-                 context: str = None,
-                 gis=None) -> str:
+def extract_data(
+    input_layers: str = """[]""",
+    extent: str = None,
+    clip: bool = False,
+    data_format: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -671,14 +717,18 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "ExtractData", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "ExtractData", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def find_existing_locations(input_layers: str = """[]""",
-                            expressions: str = None,
-                            output_name: str = None,
-                            context: str = None,
-                            gis=None) -> str:
+def find_existing_locations(
+    input_layers: str = """[]""",
+    expressions: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -719,14 +769,18 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "FindExistingLocations", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "FindExistingLocations", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def derive_new_locations(input_layers: str = """[]""",
-                         expressions: str = None,
-                         output_name: str = None,
-                         context: str = None,
-                         gis=None) -> str:
+def derive_new_locations(
+    input_layers: str = """[]""",
+    expressions: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -767,14 +821,18 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "DeriveNewLocations", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "DeriveNewLocations", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def field_calculator(input_layer: str = None,
-                     expressions: str = None,
-                     output_name: str = None,
-                     context: str = None,
-                     gis=None) -> str:
+def field_calculator(
+    input_layer: str = None,
+    expressions: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -815,21 +873,25 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "FieldCalculator", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "FieldCalculator", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def interpolate_points(input_layer: str = None,
-                       field: str = None,
-                       interpolate_option: str = """5""",
-                       output_prediction_error: bool = False,
-                       classification_type: str = """GeometricInterval""",
-                       num_classes: int = 10,
-                       class_breaks: str = """[]""",
-                       bounding_polygon_layer: str = None,
-                       predict_at_point_layer: str = None,
-                       output_name: str = None,
-                       context: str = None,
-                       gis=None) -> tuple:
+def interpolate_points(
+    input_layer: str = None,
+    field: str = None,
+    interpolate_option: str = """5""",
+    output_prediction_error: bool = False,
+    classification_type: str = """GeometricInterval""",
+    num_classes: int = 10,
+    class_breaks: str = """[]""",
+    bounding_polygon_layer: str = None,
+    predict_at_point_layer: str = None,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -892,29 +954,37 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     return_values = [
         {"name": "result_layer", "display_name": "resultLayer", "type": str},
         {"name": "prediction_error", "display_name": "predictionError", "type": str},
-        {"name": "predicted_point_layer", "display_name": "predictedPointLayer", "type": str},
+        {
+            "name": "predicted_point_layer",
+            "display_name": "predictedPointLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "InterpolatePoints", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "InterpolatePoints", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def calculate_density(input_layer: str = None,
-                      field: str = None,
-                      cell_size: float = None,
-                      cell_size_units: str = """Meters""",
-                      radius: float = None,
-                      radius_units: str = None,
-                      bounding_polygon_layer: str = None,
-                      area_units: str = None,
-                      classification_type: str = """EqualInterval""",
-                      num_classes: int = 10,
-                      output_name: str = None,
-                      context: str = None,
-                      gis=None) -> str:
+def calculate_density(
+    input_layer: str = None,
+    field: str = None,
+    cell_size: float = None,
+    cell_size_units: str = """Meters""",
+    radius: float = None,
+    radius_units: str = None,
+    bounding_polygon_layer: str = None,
+    area_units: str = None,
+    classification_type: str = """EqualInterval""",
+    num_classes: int = 10,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -983,26 +1053,30 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "CalculateDensity", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "CalculateDensity", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def summarize_nearby(sum_nearby_layer: str = None,
-                     summary_layer: str = None,
-                     near_type: str = """StraightLine""",
-                     distances: str = """[]""",
-                     units: str = """Meters""",
-                     time_of_day: datetime = None,
-                     time_zone_for_time_of_day: str = """GeoLocal""",
-                     return_boundaries: bool = True,
-                     sum_shape: bool = True,
-                     shape_units: str = None,
-                     summary_fields: str = """[]""",
-                     group_by_field: str = None,
-                     minority_majority: bool = False,
-                     percent_shape: bool = False,
-                     output_name: str = None,
-                     context: str = None,
-                     gis=None) -> tuple:
+def summarize_nearby(
+    sum_nearby_layer: str = None,
+    summary_layer: str = None,
+    near_type: str = """StraightLine""",
+    distances: str = """[]""",
+    units: str = """Meters""",
+    time_of_day: datetime = None,
+    time_zone_for_time_of_day: str = """GeoLocal""",
+    return_boundaries: bool = True,
+    sum_shape: bool = True,
+    shape_units: str = None,
+    summary_fields: str = """[]""",
+    group_by_field: str = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1085,21 +1159,25 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "SummarizeNearby", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "SummarizeNearby", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def create_viewshed(input_layer: str = None,
-                    dem_resolution: str = """Finest""",
-                    maximum_distance: float = None,
-                    max_distance_units: str = """Meters""",
-                    observer_height: float = None,
-                    observer_height_units: str = """Meters""",
-                    target_height: float = None,
-                    target_height_units: str = """Meters""",
-                    generalize: bool = True,
-                    output_name: str = None,
-                    context: str = None,
-                    gis=None) -> str:
+def create_viewshed(
+    input_layer: str = None,
+    dem_resolution: str = """Finest""",
+    maximum_distance: float = None,
+    max_distance_units: str = """Meters""",
+    observer_height: float = None,
+    observer_height_units: str = """Meters""",
+    target_height: float = None,
+    target_height_units: str = """Meters""",
+    generalize: bool = True,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -1165,17 +1243,21 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "CreateViewshed", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "CreateViewshed", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def find_similar_locations(input_layer: str = None,
-                           search_layer: str = None,
-                           analysis_fields: str = """[]""",
-                           input_query: str = None,
-                           number_of_results: int = 0,
-                           output_name: str = None,
-                           context: str = None,
-                           gis=None) -> tuple:
+def find_similar_locations(
+    input_layer: str = None,
+    search_layer: str = None,
+    analysis_fields: str = """[]""",
+    input_query: str = None,
+    number_of_results: int = 0,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1220,7 +1302,11 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "process_info": (str, "processInfo"),
     }
     return_values = [
-        {"name": "similar_result_layer", "display_name": "similarResultLayer", "type": str},
+        {
+            "name": "similar_result_layer",
+            "display_name": "similarResultLayer",
+            "type": str,
+        },
         {"name": "process_info", "display_name": "processInfo", "type": str},
     ]
 
@@ -1228,17 +1314,21 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "FindSimilarLocations", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "FindSimilarLocations", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def create_watersheds(input_layer: str = None,
-                      search_distance: float = None,
-                      search_units: str = """Meters""",
-                      source_database: str = """FINEST""",
-                      generalize: bool = True,
-                      output_name: str = None,
-                      context: str = None,
-                      gis=None) -> tuple:
+def create_watersheds(
+    input_layer: str = None,
+    search_distance: float = None,
+    search_units: str = """Meters""",
+    source_database: str = """FINEST""",
+    generalize: bool = True,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1285,7 +1375,11 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "watershed_layer": (str, "watershedLayer"),
     }
     return_values = [
-        {"name": "snap_pour_pts_layer", "display_name": "snapPourPtsLayer", "type": str},
+        {
+            "name": "snap_pour_pts_layer",
+            "display_name": "snapPourPtsLayer",
+            "type": str,
+        },
         {"name": "watershed_layer", "display_name": "watershedLayer", "type": str},
     ]
 
@@ -1293,20 +1387,24 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "CreateWatersheds", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "CreateWatersheds", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def find_nearest(analysis_layer: str = None,
-                 near_layer: str = None,
-                 measurement_type: str = """StraightLine""",
-                 max_count: int = 100,
-                 search_cutoff: float = 2147483647,
-                 search_cutoff_units: str = None,
-                 time_of_day: datetime = None,
-                 time_zone_for_time_of_day: str = """GeoLocal""",
-                 output_name: str = None,
-                 context: str = None,
-                 gis=None) -> tuple:
+def find_nearest(
+    analysis_layer: str = None,
+    near_layer: str = None,
+    measurement_type: str = """StraightLine""",
+    max_count: int = 100,
+    search_cutoff: float = 2147483647,
+    search_cutoff_units: str = None,
+    time_of_day: datetime = None,
+    time_zone_for_time_of_day: str = """GeoLocal""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1363,31 +1461,39 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     }
     return_values = [
         {"name": "nearest_layer", "display_name": "nearestLayer", "type": str},
-        {"name": "connecting_lines_layer", "display_name": "connectingLinesLayer", "type": str},
+        {
+            "name": "connecting_lines_layer",
+            "display_name": "connectingLinesLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "FindNearest", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "FindNearest", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def plan_routes(stops_layer: str = None,
-                route_count: int = None,
-                max_stops_per_route: int = None,
-                route_start_time: datetime = None,
-                start_layer: str = None,
-                start_layer_route_id_field: str = None,
-                return_to_start: bool = True,
-                end_layer: str = None,
-                end_layer_route_id_field: str = None,
-                travel_mode: str = """Driving""",
-                stop_service_time: float = 0,
-                max_route_time: float = 525600,
-                output_name: str = None,
-                context: str = None,
-                gis=None) -> tuple:
+def plan_routes(
+    stops_layer: str = None,
+    route_count: int = None,
+    max_stops_per_route: int = None,
+    route_start_time: datetime = None,
+    start_layer: str = None,
+    start_layer_route_id_field: str = None,
+    return_to_start: bool = True,
+    end_layer: str = None,
+    end_layer_route_id_field: str = None,
+    travel_mode: str = """Driving""",
+    stop_service_time: float = 0,
+    max_route_time: float = 525600,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1456,28 +1562,40 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     }
     return_values = [
         {"name": "routes_layer", "display_name": "routesLayer", "type": str},
-        {"name": "assigned_stops_layer", "display_name": "assignedStopsLayer", "type": str},
-        {"name": "unassigned_stops_layer", "display_name": "unassignedStopsLayer", "type": str},
+        {
+            "name": "assigned_stops_layer",
+            "display_name": "assignedStopsLayer",
+            "type": str,
+        },
+        {
+            "name": "unassigned_stops_layer",
+            "display_name": "unassignedStopsLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "PlanRoutes", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "PlanRoutes", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def trace_downstream(input_layer: str = None,
-                     split_distance: float = None,
-                     split_units: str = """Kilometers""",
-                     max_distance: float = None,
-                     max_distance_units: str = """Kilometers""",
-                     bounding_polygon_layer: str = None,
-                     source_database: str = None,
-                     generalize: bool = True,
-                     output_name: str = None,
-                     context: str = None,
-                     gis=None) -> str:
+def trace_downstream(
+    input_layer: str = None,
+    split_distance: float = None,
+    split_units: str = """Kilometers""",
+    max_distance: float = None,
+    max_distance_units: str = """Kilometers""",
+    bounding_polygon_layer: str = None,
+    source_database: str = None,
+    generalize: bool = True,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> str:
     """
 
 
@@ -1538,22 +1656,26 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "TraceDownstream", kwargs, param_db, return_values, _use_async, url
+    )
 
 
-def connect_origins_to_destinations(origins_layer = None,
-                                    destinations_layer = None,
-                                    measurement_type: str = """DrivingTime""",
-                                    origins_layer_route_id_field: str = None,
-                                    destinations_layer_route_id_field: str = None,
-                                    time_of_day: datetime = None,
-                                    time_zone_for_time_of_day: str = """GeoLocal""",
-                                    output_name: str = None,
-                                    context: str = None,
-                                    gis=None,
-                                    point_barrier_layer = None,
-                                    line_barrier_layer = None,
-                                    polygon_barrier_layer = None) -> tuple:
+def connect_origins_to_destinations(
+    origins_layer=None,
+    destinations_layer=None,
+    measurement_type: str = """DrivingTime""",
+    origins_layer_route_id_field: str = None,
+    destinations_layer_route_id_field: str = None,
+    time_of_day: datetime = None,
+    time_zone_for_time_of_day: str = """GeoLocal""",
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+    point_barrier_layer=None,
+    line_barrier_layer=None,
+    polygon_barrier_layer=None,
+) -> tuple:
     """
 
 
@@ -1610,40 +1732,57 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     }
     return_values = [
         {"name": "routes_layer", "display_name": "routesLayer", "type": str},
-        {"name": "unassigned_origins_layer", "display_name": "unassignedOriginsLayer", "type": str},
-        {"name": "unassigned_destinations_layer", "display_name": "unassignedDestinationsLayer", "type": str},
+        {
+            "name": "unassigned_origins_layer",
+            "display_name": "unassignedOriginsLayer",
+            "type": str,
+        },
+        {
+            "name": "unassigned_destinations_layer",
+            "display_name": "unassignedDestinationsLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "ConnectOriginsToDestinations", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis,
+        "ConnectOriginsToDestinations",
+        kwargs,
+        param_db,
+        return_values,
+        _use_async,
+        url,
+    )
 
 
-
-def choose_best_facilities(goal: str = """Allocate""",
-                           demand_locations_layer: str = None,
-                           demand: float = 1,
-                           demand_field: str = None,
-                           max_travel_range: float = 2147483647,
-                           max_travel_range_field: str = None,
-                           max_travel_range_units: str = """Minutes""",
-                           travel_mode: str = None,
-                           time_of_day: datetime = None,
-                           time_zone_for_time_of_day: str = """GeoLocal""",
-                           travel_direction: str = """FacilityToDemand""",
-                           required_facilities_layer: str = None,
-                           required_facilities_capacity: float = 2147483647,
-                           required_facilities_capacity_field: str = None,
-                           candidate_facilities_layer: str = None,
-                           candidate_count: int = 1,
-                           candidate_facilities_capacity: float = 2147483647,
-                           candidate_facilities_capacity_field: str = None,
-                           percent_demand_coverage: float = 100,
-                           output_name: str = None,
-                           context: str = None,
-                           gis=None) -> tuple:
+def choose_best_facilities(
+    goal: str = """Allocate""",
+    demand_locations_layer: str = None,
+    demand: float = 1,
+    demand_field: str = None,
+    max_travel_range: float = 2147483647,
+    max_travel_range_field: str = None,
+    max_travel_range_units: str = """Minutes""",
+    travel_mode: str = None,
+    time_of_day: datetime = None,
+    time_zone_for_time_of_day: str = """GeoLocal""",
+    travel_direction: str = """FacilityToDemand""",
+    required_facilities_layer: str = None,
+    required_facilities_capacity: float = 2147483647,
+    required_facilities_capacity_field: str = None,
+    candidate_facilities_layer: str = None,
+    candidate_count: int = 1,
+    candidate_facilities_capacity: float = 2147483647,
+    candidate_facilities_capacity_field: str = None,
+    percent_demand_coverage: float = 100,
+    output_name: str = None,
+    context: str = None,
+    gis=None,
+) -> tuple:
     """
 
 
@@ -1727,7 +1866,10 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "candidate_facilities_layer": (str, "candidateFacilitiesLayer"),
         "candidate_count": (int, "candidateCount"),
         "candidate_facilities_capacity": (float, "candidateFacilitiesCapacity"),
-        "candidate_facilities_capacity_field": (str, "candidateFacilitiesCapacityField"),
+        "candidate_facilities_capacity_field": (
+            str,
+            "candidateFacilitiesCapacityField",
+        ),
         "percent_demand_coverage": (float, "percentDemandCoverage"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
@@ -1736,14 +1878,27 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "assigned_facilities_layer": (str, "assignedFacilitiesLayer"),
     }
     return_values = [
-        {"name": "allocated_demand_locations_layer", "display_name": "allocatedDemandLocationsLayer", "type": str},
-        {"name": "allocation_lines_layer", "display_name": "allocationLinesLayer", "type": str},
-        {"name": "assigned_facilities_layer", "display_name": "assignedFacilitiesLayer", "type": str},
+        {
+            "name": "allocated_demand_locations_layer",
+            "display_name": "allocatedDemandLocationsLayer",
+            "type": str,
+        },
+        {
+            "name": "allocation_lines_layer",
+            "display_name": "allocationLinesLayer",
+            "type": str,
+        },
+        {
+            "name": "assigned_facilities_layer",
+            "display_name": "assignedFacilitiesLayer",
+            "type": str,
+        },
     ]
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.analysis.url
 
-    return _execute_gp_tool(gis, "ChooseBestFacilities", kwargs, param_db, return_values, _use_async, url)
-
+    return _execute_gp_tool(
+        gis, "ChooseBestFacilities", kwargs, param_db, return_values, _use_async, url
+    )

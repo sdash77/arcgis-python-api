@@ -6,30 +6,24 @@ from arcgis.widgets._mapview._raster import *
 from arcgis.widgets._mapview._raster._numpy_utils import *
 from arcgis.widgets._mapview._raster._jupyter_utils import *
 
+
 class RasterOverlay:
-    def __init__(self,
-                 id_: str,
-                 img_url: str,
-                 extent: dict,
-                 opacity: float):
+    def __init__(self, id_: str, img_url: str, extent: dict, opacity: float):
         self.id = id_
         self.img_url = img_url
         self.extent = extent
         self.opacity = opacity
 
     def as_dict(self) -> dict:
-        return { href: self.img_url,
-                 extent: self.extent,
-                 opacity: self.opacity }
+        return {href: self.img_url, extent: self.extent, opacity: self.opacity}
+
 
 class RasterData:
-    def __init__(self, 
-                 img_data,
-                 extent: dict,
-                 id_: str):
+    def __init__(self, img_data, extent: dict, id_: str):
         self.img_data = img_data
         self.extent = extent
         self.id = id_
+
 
 class LocalRasterOverlayManager:
     """
@@ -59,9 +53,10 @@ class LocalRasterOverlayManager:
     _overlays = []
 
     _file_format = "jpg"
+
     @property
     def file_format(self) -> str:
-       return self._file_format
+        return self._file_format
 
     @file_format.setter
     def file_format(self, value):
@@ -71,24 +66,31 @@ class LocalRasterOverlayManager:
         self._clear_old_image_overlays()
         raster_data = self.try_get_raster_data(raster)
         img_path = self._save_img_to_jupyter_accessible_dir(
-            raster_data.img_data, raster.cmap,
-            vmin = raster.vmin, vmax = raster.vmax,
-            filename = str(raster_data.id) + "." + self.file_format)
+            raster_data.img_data,
+            raster.cmap,
+            vmin=raster.vmin,
+            vmax=raster.vmax,
+            filename=str(raster_data.id) + "." + self.file_format,
+        )
 
         extent = self._make_extent_valid(raster.extent)
 
         img_url = self._get_jupyter_accessible_url(img_path)
 
-        raster_overlay = RasterOverlay(raster_data.id, img_url, 
-                                       extent, raster.opacity)
+        raster_overlay = RasterOverlay(raster_data.id, img_url, extent, raster.opacity)
         self._mapview._add_overlay(raster_overlay)
-        self._overlays.append({"id": raster_data.id,
-                               "image": raster,
-                               "img_path": img_path,
-                               "img_url": img_url,
-                               "extent": extent})
+        self._overlays.append(
+            {
+                "id": raster_data.id,
+                "image": raster,
+                "img_path": img_path,
+                "img_url": img_url,
+                "extent": extent,
+            }
+        )
 
     _SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".tif"]
+
     def _is_supported_image_file(self, image):
         if not isinstance(image, str):
             return False
@@ -98,14 +100,16 @@ class LocalRasterOverlayManager:
     def _is_arcgis_raster(self, image):
         try:
             from arcgis.raster import Raster
+
             return isinstance(image, Raster)
         except ImportError:
             return False
 
     def try_get_raster_data(self, image) -> RasterData:
         img_data = image.read().squeeze()
-        return RasterData(img_data = img_data, extent = image.extent,
-                          id_ = get_hash_numpy_array(img_data))
+        return RasterData(
+            img_data=img_data, extent=image.extent, id_=get_hash_numpy_array(img_data)
+        )
 
     def remove(self, raster=None):
         image = raster
@@ -123,11 +127,9 @@ class LocalRasterOverlayManager:
 
     def _are_equal(self, image1, image2):
         if is_numpy_array(image1):
-            return get_hash_numpy_array(image1) == \
-                   get_hash_numpy_array(image2)
+            return get_hash_numpy_array(image1) == get_hash_numpy_array(image2)
         else:
             return image1 == image2
-
 
     def list(self):
         """
@@ -135,6 +137,7 @@ class LocalRasterOverlayManager:
         rasters in a Jupyter Notebook environment.
         """
         from IPython.display import display
+
         scroll_list = JupyterHorizScrollImageList()
         for overlay in self._overlays:
             scroll_list.append(src=overlay["img_url"], title=str(overlay["extent"]))
@@ -144,18 +147,22 @@ class LocalRasterOverlayManager:
 
     def _make_extent_valid(self, extent):
         if not extent:
-            raise RuntimeError(f"Could not infer extent of raster! Please manually "
-                               f"specify an extent")
+            raise RuntimeError(
+                f"Could not infer extent of raster! Please manually "
+                f"specify an extent"
+            )
         return extent
 
     def _attempt_infer_file_format(self):
         try:
             from PIL import Image
+
             self.file_format = "jpg"
         except ImportError:
             self.file_format = "png"
 
     _jupyter_notebook_dir_override = ""
+
     def set_current_executing_nb_dir(self, path: str):
         """To display in a notebook, rasters must be placed in the 
         ``_image_overlays`` folder in the same directory as the current
@@ -164,10 +171,11 @@ class LocalRasterOverlayManager:
         """
         self._jupyter_notebook_dir_override = path
 
-    _DEFAULT_CMAP = "Greys_r" # Mirrors the style of default ArcGIS Pro
+    _DEFAULT_CMAP = "Greys_r"  # Mirrors the style of default ArcGIS Pro
 
     def _save_img_to_jupyter_accessible_dir(self, img_data, cmap, vmin, vmax, filename):
         import matplotlib.pyplot as plt
+
         img_path = os.path.join(self._get_image_overlays_dir(), filename)
         num_bands = self._get_num_bands(img_data)
         kwargs = {}
@@ -177,16 +185,20 @@ class LocalRasterOverlayManager:
             kwargs["vmax"] = vmax
         if not cmap:
             if num_bands != 1 and num_bands != 3 and num_bands != 4:
-                raise Exception(f"This raster has {num_bands} bands -- Number "\
-                    f"of bands must be 1 (greyscale), 3 (RGB), or 4 (RGBA). "\
-                    f"Consider choosing a subset of bands, or make sure the "\
-                    f"shape of the data is valid. (Shape: {img_data.shape}).")
+                raise Exception(
+                    f"This raster has {num_bands} bands -- Number "
+                    f"of bands must be 1 (greyscale), 3 (RGB), or 4 (RGBA). "
+                    f"Consider choosing a subset of bands, or make sure the "
+                    f"shape of the data is valid. (Shape: {img_data.shape})."
+                )
             if num_bands == 1:
                 kwargs["cmap"] = self._DEFAULT_CMAP
         else:
             if num_bands != 1:
-                raise Exception(f"To use a cmap, the input raster "\
-                                f"must have only 1 band, not {num_bands}")
+                raise Exception(
+                    f"To use a cmap, the input raster "
+                    f"must have only 1 band, not {num_bands}"
+                )
             else:
                 kwargs["cmap"] = cmap
 
@@ -208,12 +220,15 @@ class LocalRasterOverlayManager:
         if self._jupyter_notebook_dir_override:
             curr_jupyter_notebook_dir = self._jupyter_notebook_dir_override
         else:
-            from arcgis.widgets._mapview._raster._jupyter_utils \
-                import get_dir_of_curr_exec_notebook
+            from arcgis.widgets._mapview._raster._jupyter_utils import (
+                get_dir_of_curr_exec_notebook,
+            )
+
             curr_jupyter_notebook_dir = get_dir_of_curr_exec_notebook()
 
-        image_overlays_dir = os.path.join(curr_jupyter_notebook_dir,
-                                          self._image_overlays_dir_name)
+        image_overlays_dir = os.path.join(
+            curr_jupyter_notebook_dir, self._image_overlays_dir_name
+        )
         if not os.path.isdir(image_overlays_dir):
             os.mkdir(image_overlays_dir)
         return image_overlays_dir
@@ -225,7 +240,7 @@ class LocalRasterOverlayManager:
         for file_name in os.listdir(dir_):
             file_path = os.path.join(dir_, file_name)
             if os.stat(file_path).st_mtime < now - 2 * 86400:
-                #If older than 2 days
+                # If older than 2 days
                 try:
                     os.remove(file_path)
                 except Exception:

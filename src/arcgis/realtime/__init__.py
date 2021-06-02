@@ -16,6 +16,7 @@ class StreamLayer(Layer):
     GeoEvent Processor or broadcast updates or alerts. This class can be used to perform continuous processing and
     analysis of real-time data as it's received.
     """
+
     # autobahn, twisted, pyOpenssl, service_identity
     def __init__(self, url, gis=None):
         super(StreamLayer, self).__init__(url, gis)
@@ -28,8 +29,10 @@ class StreamLayer(Layer):
         self._on_error = None
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
+
             self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
+        except:
+            pass
 
     @property
     def out_sr(self):
@@ -68,10 +71,15 @@ class StreamLayer(Layer):
             from twisted.internet import reactor
             from twisted.python import log
 
-            from autobahn.twisted.websocket import WebSocketClientFactory, \
-                WebSocketClientProtocol, connectWS
+            from autobahn.twisted.websocket import (
+                WebSocketClientFactory,
+                WebSocketClientProtocol,
+                connectWS,
+            )
         except:
-            print('Install autobahn, twisted, pyOpenssl, service_identity packages to subscribe')
+            print(
+                "Install autobahn, twisted, pyOpenssl, service_identity packages to subscribe"
+            )
 
         url = self._streamurl
 
@@ -79,7 +87,7 @@ class StreamLayer(Layer):
         params.update(self.filter)
 
         if self.out_sr != self.properties.spatialReference.wkid:
-            params['outSR'] = self.out_sr
+            params["outSR"] = self.out_sr
 
         url = "{url}/subscribe?{params}".format(url=url, params=urlencode(params))
 
@@ -92,10 +100,10 @@ class StreamLayer(Layer):
                 if isBinary:
                     print("Binary message received: {0} bytes".format(len(payload)))
                 else:
-                    msg = format(payload.decode('utf8'))
+                    msg = format(payload.decode("utf8"))
                     on_features(msg)
 
-        factory = WebSocketClientFactory(url, headers={'token': self._streamtoken})
+        factory = WebSocketClientFactory(url, headers={"token": self._streamtoken})
 
         factory.protocol = StreamServiceClientProtocol
         connectWS(factory)

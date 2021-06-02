@@ -6,11 +6,13 @@ from ._system import SystemManager
 from ._machines import MachineManager
 from ._security import SecurityManager
 from .api import MissionCatalog
+
 ###########################################################################
 class MissionServer(BaseMissionServer):
     """
     A Mission Server Instance.
     """
+
     _url = None
     _gis = None
     _con = None
@@ -21,25 +23,26 @@ class MissionServer(BaseMissionServer):
     _system = None
     _logs = None
     _machine = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
 
         self.catalog = MissionCatalog(gis=gis)
         if url.lower().find("/admin") == -1:
-            if url.endswith('/'):
+            if url.endswith("/"):
                 url = url[:-1]
             url += "/admin/"
         self._url = url
         super().__init__(url, gis)
         if gis is None:
             from arcgis import env
+
             gis = env.active_gis
         if gis is None:
             raise ValueError("A GIS could not be obtained.")
         self._gis = gis
         self._con = self._gis._con
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def info(self):
         """
@@ -49,10 +52,11 @@ class MissionServer(BaseMissionServer):
 
         """
         url = self._url + "/info"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._gis._con.get(url, params)
         return PropertyMap(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def logs(self):
         """
@@ -65,7 +69,8 @@ class MissionServer(BaseMissionServer):
             url = self._url + "/logs"
             self._logs = LogManager(url=url, gis=self._gis)
         return self._logs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def system(self):
         """
@@ -78,7 +83,8 @@ class MissionServer(BaseMissionServer):
             url = self._url + "/system"
             self._system = SystemManager(url=url, gis=self._gis)
         return self._system
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def machine(self):
         """
@@ -92,7 +98,8 @@ class MissionServer(BaseMissionServer):
             url = self._url + "/machines"
             self._machine = MachineManager(url=url, gis=self._gis)
         return self._machine
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def security(self):
         """

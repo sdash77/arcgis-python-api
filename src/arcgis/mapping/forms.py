@@ -16,15 +16,16 @@ class FormCollection:
         -- it controls the appearance and behavior of your data collection experience in ArcGIS Field Maps
         and Map Viewer Beta.  These forms can then be used in the ArcGIS Field Maps mobile app and other applications.
         A form is stored as "formInfo" in the layer JSON on the webmap.
-        This class will create a :class:`arcgis.mapping.forms.FormInfo` object for each layer or table in the webmap/item data and return it
+        This class will create a :class:`~arcgis.mapping.forms.FormInfo` object for each layer or table in the webmap/item data and return it
         as a list. You can then modify the :class:`~arcgis.mapping.forms.FormInfo` object to add and edit your form.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        parent                 Required :class:`arcgis.mapping.WebMap` or :class:`arcgis.gis.Item`.
+        parent                 Required :class:`~arcgis.mapping.WebMap` or :class:`~arcgis.gis.Item`.
                                This is the object which contains the layer, either an item of type
-                               `Feature Layer Collection` or a WebMap, where the forms are located.
+                               :class:`Feature Layer Collection <arcgis.features.FeatureLayerCollection>`
+                               or a :class:`Web Map <arcgis.mapping.WebMap>`, where the forms are located.
                                This is needed to save your form changes to the backend.
         ==================     ====================================================================
 
@@ -108,7 +109,11 @@ class FormCollection:
             for form in self.forms:
                 # item id is optional in the webmap spec, so we need to try/except
                 try:
-                    if (title == form._layer_data["title"]) or (layer_id == form._layer_data["id"]) or (item_id == form._layer_data["itemId"]):
+                    if (
+                        (title == form._layer_data["title"])
+                        or (layer_id == form._layer_data["id"])
+                        or (item_id == form._layer_data["itemId"])
+                    ):
                         return form
                 except Exception:
                     pass
@@ -193,7 +198,9 @@ class FormInfo:
 
     def __init__(self, layer_data, parent):
         if not isinstance(layer_data, (dict, PropertyMap)):
-            raise ValueError("Incorrect layer type passed to FormInfo class. Please pass in a property map")
+            raise ValueError(
+                "Incorrect layer type passed to FormInfo class. Please pass in a property map"
+            )
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
@@ -201,9 +208,15 @@ class FormInfo:
         self._description = self._form.get("description")
         self._expression_infos = []
         for exp in self._form.get("expressionInfos", []):
-            expression = FormExpressionInfo(expression=exp.get("expression"), name=exp.get("name"), title=exp.get("title"))
+            expression = FormExpressionInfo(
+                expression=exp.get("expression"),
+                name=exp.get("name"),
+                title=exp.get("title"),
+            )
             self._expression_infos.append(expression)
-        self._form_elements = self._get_form_element_objects(self._form.get("formElements", []), self)
+        self._form_elements = self._get_form_element_objects(
+            self._form.get("formElements", []), self
+        )
         self._parent = parent
         try:
             url = self._original_layer["url"]
@@ -213,7 +226,9 @@ class FormInfo:
             self._id_fields = self._get_id_fields()
             self._required_fields = self._get_required_fields()
         except Exception:
-            raise ValueError("A layer url which can be used to generate a feature layer is required to use this module")
+            raise ValueError(
+                "A layer url which can be used to generate a feature layer is required to use this module"
+            )
 
     def __repr__(self):
         if self.title:
@@ -316,7 +331,9 @@ class FormInfo:
             try:
                 self._parent.update()
             except RuntimeError:
-                raise ValueError("WebMap item does not exist yet. Form is now on your webmap - please use WebMap.save() to persist these changes")
+                raise ValueError(
+                    "WebMap item does not exist yet. Form is now on your webmap - please use WebMap.save() to persist these changes"
+                )
         else:
             pass
 
@@ -337,7 +354,11 @@ class FormInfo:
         fields = self._fields
         for field in fields:
             try:
-                element = FormFieldElement(label=field.get("alias"), editable=field.get("editable"), field_name=field.get("name"))
+                element = FormFieldElement(
+                    label=field.get("alias"),
+                    editable=field.get("editable"),
+                    field_name=field.get("name"),
+                )
                 self.add(element=element)
             except Exception:
                 continue
@@ -374,8 +395,20 @@ class FormInfo:
         self._form_elements.insert(index, element)
         return element
 
-    def add_field(self, field_name, label, description=None, visibility_expression=None,
-                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, index=None, **kwargs):
+    def add_field(
+        self,
+        field_name,
+        label,
+        description=None,
+        visibility_expression=None,
+        domain=None,
+        editable=None,
+        hint=None,
+        input_type=None,
+        required_expression=None,
+        index=None,
+        **kwargs
+    ):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the form.
 
@@ -423,11 +456,30 @@ class FormInfo:
 
         """
 
-        element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
-                                   domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
+        element = FormFieldElement(
+            form=self,
+            field_name=field_name,
+            label=label,
+            description=description,
+            visibility_expression=visibility_expression,
+            domain=domain,
+            editable=editable,
+            hint=hint,
+            input_type=input_type,
+            required_expression=required_expression,
+            **kwargs
+        )
         return self.add(element, index=index)
 
-    def add_group(self, label, description=None, visibility_expression=None, initial_state=None, index=None, **kwargs):
+    def add_group(
+        self,
+        label,
+        description=None,
+        visibility_expression=None,
+        initial_state=None,
+        index=None,
+        **kwargs
+    ):
         """
           Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
 
@@ -451,7 +503,13 @@ class FormInfo:
 
           :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
         """
-        group_el = FormGroupElement(label=label, description=description, visibility_expression=visibility_expression, initial_state=initial_state, **kwargs)
+        group_el = FormGroupElement(
+            label=label,
+            description=description,
+            visibility_expression=visibility_expression,
+            initial_state=initial_state,
+            **kwargs
+        )
         return self.add(group_el, index=index)
 
     def delete(self, element=None, label=None):
@@ -535,9 +593,15 @@ class FormInfo:
     @staticmethod
     def _is_valid_field_type(field_type):
         """Check the field type from the feature layer field is valid to be added to the form"""
-        return field_type in ["esriFieldTypeDate", "esriFieldTypeDouble", "esriFieldTypeInteger",
-                              "esriFieldTypeSingle", "esriFieldTypeSmallInteger", "esriFieldTypeString",
-                              "esriFieldTypeGUID"]
+        return field_type in [
+            "esriFieldTypeDate",
+            "esriFieldTypeDouble",
+            "esriFieldTypeInteger",
+            "esriFieldTypeSingle",
+            "esriFieldTypeSmallInteger",
+            "esriFieldTypeString",
+            "esriFieldTypeGUID",
+        ]
 
     @staticmethod
     def _get_default_input_type(field):
@@ -574,40 +638,74 @@ class FormInfo:
             if self._is_geometry_field(element.field_name):
                 raise ValueError("Cannot add a geometry field to the form")
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
-                raise ValueError("Cannot add a GPS metadata or editor tracking fields to the form")
+                raise ValueError(
+                    "Cannot add a GPS metadata or editor tracking fields to the form"
+                )
             for form_el in self._form_elements:
                 if form_el.element_type == "group":
-                    if element.field_name in [el.field_name for el in form_el._form_elements]:
-                        raise ValueError("Field already exists in a group, cannot add to form")
+                    if element.field_name in [
+                        el.field_name for el in form_el._form_elements
+                    ]:
+                        raise ValueError(
+                            "Field already exists in a group, cannot add to form"
+                        )
                 else:
                     if element.field_name == form_el.field_name:
-                        raise ValueError("Field already exists in the form, cannot add to the form")
+                        raise ValueError(
+                            "Field already exists in the form, cannot add to the form"
+                        )
         elif element.element_type == "group":
             for el in element.elements:
                 self._validate_element(el)
 
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
-        return "esrignss" not in field_name and "esrisnsr" not in field_name and field_name not in self._edit_fields and field_name not in self._id_fields
+        return (
+            "esrignss" not in field_name
+            and "esrisnsr" not in field_name
+            and field_name not in self._edit_fields
+            and field_name not in self._id_fields
+        )
 
     def _is_geometry_field(self, field_name):
         return "geometryProperties" in self.feature_layer.properties and (
-            ("shapeAreaFieldName" in self.feature_layer.properties["geometryProperties"] and
-             self.feature_layer.properties["geometryProperties"]["shapeAreaFieldName"].lower() == field_name.lower()) or
-            ("shapeLengthFieldName" in self.feature_layer.properties["geometryProperties"] and
-             self.feature_layer.properties["geometryProperties"]["shapeLengthFieldName"].lower() == field_name.lower()))
+            (
+                "shapeAreaFieldName"
+                in self.feature_layer.properties["geometryProperties"]
+                and self.feature_layer.properties["geometryProperties"][
+                    "shapeAreaFieldName"
+                ].lower()
+                == field_name.lower()
+            )
+            or (
+                "shapeLengthFieldName"
+                in self.feature_layer.properties["geometryProperties"]
+                and self.feature_layer.properties["geometryProperties"][
+                    "shapeLengthFieldName"
+                ].lower()
+                == field_name.lower()
+            )
+        )
 
     def _get_id_fields(self):
         """Returns the id fields in lower case."""
         try:
-            return [self.feature_layer.properties.get("objectIdField").lower(), self.feature_layer.properties.get("globalIdField").lower()]
+            return [
+                self.feature_layer.properties.get("objectIdField").lower(),
+                self.feature_layer.properties.get("globalIdField").lower(),
+            ]
         except Exception:
             return []
 
     def _get_edit_fields(self):
         """Gets the edit fields for the feature layer in order to filter them out of the form."""
         try:
-            return [x.lower() for x in list(self.feature_layer.properties.get("editFieldsInfo", {}).values())]
+            return [
+                x.lower()
+                for x in list(
+                    self.feature_layer.properties.get("editFieldsInfo", {}).values()
+                )
+            ]
         except Exception:
             return []
 
@@ -617,17 +715,35 @@ class FormInfo:
         elements = []
         for element in form_elements:
             if element["type"] == "field":
-                el = FormFieldElement(form=form, description=element.get("description"), label=element.get("label"),
-                                      visibility_expression=element.get("visibilityExpression"), domain=element.get("domain"),
-                                      editable=element.get("editable"), field_name=element.get("fieldName"),
-                                      hint=element.get("hint"), input_type=element.get("inputType"), required_expression=element.get("requiredExpression"))
+                el = FormFieldElement(
+                    form=form,
+                    description=element.get("description"),
+                    label=element.get("label"),
+                    visibility_expression=element.get("visibilityExpression"),
+                    domain=element.get("domain"),
+                    editable=element.get("editable"),
+                    field_name=element.get("fieldName"),
+                    hint=element.get("hint"),
+                    input_type=element.get("inputType"),
+                    required_expression=element.get("requiredExpression"),
+                )
             elif element["type"] == "group":
-                el = FormGroupElement(form=form, elements=element.get("formElements"), initial_state=element.get("initialState"),
-                                      description=element.get("description"),
-                                      label=element.get("label"), visibility_expression=element.get("visibilityExpression"))
+                el = FormGroupElement(
+                    form=form,
+                    elements=element.get("formElements"),
+                    initial_state=element.get("initialState"),
+                    description=element.get("description"),
+                    label=element.get("label"),
+                    visibility_expression=element.get("visibilityExpression"),
+                )
             else:
-                el = FormElement(form=form, element_type=element.get("type"), description=element.get("description"), label=element.get("label"),
-                                 visibility_expression=element.get("visibilityExpression"))
+                el = FormElement(
+                    form=form,
+                    element_type=element.get("type"),
+                    description=element.get("description"),
+                    label=element.get("label"),
+                    visibility_expression=element.get("visibilityExpression"),
+                )
             elements.append(el)
         return elements
 
@@ -650,7 +766,10 @@ class FormInfo:
         add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a FormExpressionInfo"""
         if element.visibility_expression:
             if isinstance(element.visibility_expression, FormExpressionInfo):
-                if self._get_expression_info(element.visibility_expression.name) is None:
+                if (
+                    self._get_expression_info(element.visibility_expression.name)
+                    is None
+                ):
                     self._expression_infos.append(element.visibility_expression)
             else:
                 if self._get_expression_info(element.visibility_expression) is None:
@@ -666,8 +785,12 @@ class FormInfo:
     def _get_required_fields(self):
         required_fields = []
         for field in self._fields:
-            if "nullable" in field and field["nullable"] is False and field["name"].lower() not in self._edit_fields and \
-                    field["name"].lower() not in self._id_fields:
+            if (
+                "nullable" in field
+                and field["nullable"] is False
+                and field["name"].lower() not in self._edit_fields
+                and field["name"].lower() not in self._id_fields
+            ):
                 required_fields.append(field["name"])
         return required_fields
 
@@ -676,7 +799,9 @@ class FormInfo:
         for field_name in self._required_fields:
             for el in self._form_elements:
                 if el.element_type == "group":
-                    if field_name.lower() in [el.field_name.lower() for el in el._form_elements]:
+                    if field_name.lower() in [
+                        el.field_name.lower() for el in el._form_elements
+                    ]:
                         found = True
                         break
                 else:
@@ -684,7 +809,10 @@ class FormInfo:
                         found = True
                         break
             if not found:
-                raise ValueError(str(field_name) + " is a required field not found in the form. Please add to the form")
+                raise ValueError(
+                    str(field_name)
+                    + " is a required field not found in the form. Please add to the form"
+                )
             found = False
 
 
@@ -693,7 +821,15 @@ class FormElement:
     the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
-    def __init__(self, form=None, element_type=None, description=None, label=None, visibility_expression=None, **kwargs):
+    def __init__(
+        self,
+        form=None,
+        element_type=None,
+        description=None,
+        label=None,
+        visibility_expression=None,
+        **kwargs
+    ):
         self._form = form
         self._element_type = element_type
         self._description = description
@@ -830,9 +966,28 @@ class FormFieldElement(FormElement):
             el.visibility_expression = expression_info
         """
 
-    def __init__(self, form=None, description=None, label=None, visibility_expression=None,
-                 domain=None, editable=None, field_name=None, hint=None, input_type=None, required_expression=None, **kwargs):
-        super().__init__(form=form, element_type="field", description=description, label=label, visibility_expression=visibility_expression, **kwargs)
+    def __init__(
+        self,
+        form=None,
+        description=None,
+        label=None,
+        visibility_expression=None,
+        domain=None,
+        editable=None,
+        field_name=None,
+        hint=None,
+        input_type=None,
+        required_expression=None,
+        **kwargs
+    ):
+        super().__init__(
+            form=form,
+            element_type="field",
+            description=description,
+            label=label,
+            visibility_expression=visibility_expression,
+            **kwargs
+        )
         self._domain = domain
         self._editable = editable
         self._field_name = field_name
@@ -900,7 +1055,14 @@ class FormFieldElement(FormElement):
 
     @input_type.setter
     def input_type(self, value):
-        if value in ["text-area", "text-box", "barcode-scanner", "combo-box", "radio-buttons", "datetime-picker"]:
+        if value in [
+            "text-area",
+            "text-box",
+            "barcode-scanner",
+            "combo-box",
+            "radio-buttons",
+            "datetime-picker",
+        ]:
             value = {"type": value}
         self._input_type = value
 
@@ -992,8 +1154,24 @@ class FormGroupElement(FormElement):
 
     """
 
-    def __init__(self, form=None, elements=None, initial_state=None, description=None, label=None, visibility_expression=None, **kwargs):
-        super().__init__(form=form, element_type="group", description=description, label=label, visibility_expression=visibility_expression, **kwargs)
+    def __init__(
+        self,
+        form=None,
+        elements=None,
+        initial_state=None,
+        description=None,
+        label=None,
+        visibility_expression=None,
+        **kwargs
+    ):
+        super().__init__(
+            form=form,
+            element_type="group",
+            description=description,
+            label=label,
+            visibility_expression=visibility_expression,
+            **kwargs
+        )
         if elements is None:
             elements = []
         self._form_elements = FormInfo._get_form_element_objects(elements, form=form)
@@ -1050,8 +1228,20 @@ class FormGroupElement(FormElement):
         self._form_elements.insert(index, element)
         return element
 
-    def add_field(self, field_name, label, description=None, visibility_expression=None,
-                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, index=None, **kwargs):
+    def add_field(
+        self,
+        field_name,
+        label,
+        description=None,
+        visibility_expression=None,
+        domain=None,
+        editable=None,
+        hint=None,
+        input_type=None,
+        required_expression=None,
+        index=None,
+        **kwargs
+    ):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the group.
 
@@ -1098,8 +1288,19 @@ class FormGroupElement(FormElement):
             ======================     ====================================================================
 
         """
-        element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
-                                   domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
+        element = FormFieldElement(
+            form=self,
+            field_name=field_name,
+            label=label,
+            description=description,
+            visibility_expression=visibility_expression,
+            domain=domain,
+            editable=editable,
+            hint=hint,
+            input_type=input_type,
+            required_expression=required_expression,
+            **kwargs
+        )
         return self.add(element, index=index)
 
     def delete(self, element=None, label=None):
@@ -1178,7 +1379,9 @@ class FormGroupElement(FormElement):
           :return: :class:`~arcgis.mapping.forms.FormFieldElement` or `None`
         """
         try:
-            return next(el for el in self._form_elements if el.label.lower() == label.lower())
+            return next(
+                el for el in self._form_elements if el.label.lower() == label.lower()
+            )
         except Exception:
             return None
 
@@ -1239,7 +1442,7 @@ class FormExpressionInfo:
     @expression.setter
     def expression(self, value):
         if value:
-            self._expression = value.replace('"', '\"')
+            self._expression = value.replace('"', '"')
         else:
             raise ValueError("Expression must be set")
 

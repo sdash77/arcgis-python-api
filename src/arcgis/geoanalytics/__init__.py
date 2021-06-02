@@ -19,7 +19,15 @@ Note: GeoAnalytics operations use the following context parameters defined in th
         =========================     ====================================================================
 """
 
-from . import summarize_data, analyze_patterns, use_proximity, manage_data, find_locations, data_enrichment
+from . import (
+    summarize_data,
+    analyze_patterns,
+    use_proximity,
+    manage_data,
+    find_locations,
+    data_enrichment,
+)
+
 
 def get_datastores(gis=None):
     """
@@ -27,13 +35,15 @@ def get_datastores(gis=None):
     If a gis isn't specified, returns datastore manager of arcgis.env.active_gis
     """
     import arcgis
+
     gis = arcgis.env.active_gis if gis is None else gis
 
     for ds in gis._datastores:
-        if 'GeoAnalytics' in ds._server['serverFunction']:
+        if "GeoAnalytics" in ds._server["serverFunction"]:
             return ds
 
     return None
+
 
 def define_output_datastore(datastore=None, template=None):
     """
@@ -58,24 +68,32 @@ def define_output_datastore(datastore=None, template=None):
 
     """
     import arcgis
-    if isinstance(datastore, str) and \
-       str(datastore).lower() in ["spatiotemporal", "relational"]:
+
+    if isinstance(datastore, str) and str(datastore).lower() in [
+        "spatiotemporal",
+        "relational",
+    ]:
         arcgis.env.output_datastore = str(datastore).lower()
         return True
-    elif isinstance(datastore, str) and \
-       not str(datastore).lower() in ["spatiotemporal", "relational"]:
+    elif isinstance(datastore, str) and not str(datastore).lower() in [
+        "spatiotemporal",
+        "relational",
+    ]:
         raise ValueError("datastore can only ")
     elif datastore and template:
         if isinstance(datastore, arcgis.gis.Datastore):
-            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore.path,
-                                                                     template=template)
+            arcgis.env.output_datastore = "{path}:{template}".format(
+                path=datastore.path, template=template
+            )
         elif isinstance(datastore, str):
-            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore,
-                                                                     template=template)
+            arcgis.env.output_datastore = "{path}:{template}".format(
+                path=datastore, template=template
+            )
         elif isinstance(datastore, arcgis.gis.server.Datastore):
             path = datastore.properties.path
-            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore,
-                                                                     template=template)
+            arcgis.env.output_datastore = "{path}:{template}".format(
+                path=datastore, template=template
+            )
         else:
             raise ValueError("Invalid Datastore")
         return True
@@ -88,15 +106,16 @@ def define_output_datastore(datastore=None, template=None):
         return True
     return False
 
+
 def is_supported(gis=None):
     """
     Returns True if the GIS supports geoanalytics. If a gis isn't specified,
     checks if arcgis.env.active_gis supports geoanalytics
     """
     import arcgis
+
     gis = arcgis.env.active_gis if gis is None else gis
-    if 'geoanalytics' in gis.properties.helperServices:
+    if "geoanalytics" in gis.properties.helperServices:
         return True
     else:
         return False
-
