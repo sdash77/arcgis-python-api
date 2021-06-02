@@ -18,13 +18,13 @@ class LogManager(BaseServer):
     and check error messages for helping to determine the nature of an issue.
 
     """
+
     _url = None
     _con = None
     _json_dict = None
     _json = None
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor
 
                
@@ -38,19 +38,21 @@ class LogManager(BaseServer):
         
         """
         connection = gis
-        super(LogManager, self).__init__(gis=gis,
-                                  url=url)
+        super(LogManager, self).__init__(gis=gis, url=url)
         self._url = url
         self._con = connection
         if initialize:
             self._init(connection)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def count_error_reports(self, machine="*"):
         """
         This operation counts the number of error reports (crash reports) that have been generated 
@@ -67,14 +69,11 @@ class LogManager(BaseServer):
            A dictionary with machine name and report count.
         
         """
-        params = {
-            "f": "json",
-            "machine" : machine
-        }
+        params = {"f": "json", "machine": machine}
         url = self._url + "/countErrorReports"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def clean(self):
         """
         Deletes all the log files on all server machines in the site. This is an irreversible
@@ -89,33 +88,27 @@ class LogManager(BaseServer):
            
         """
         params = {
-            "f" : "json",
+            "f": "json",
         }
         url = "{}/clean".format(self._url)
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """Gets the current log settings. """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/settings"
         try:
-            return self._con.post(path=url,
-                                  postdata=params)['settings']
+            return self._con.post(path=url, postdata=params)["settings"]
         except:
             return ""
-    #----------------------------------------------------------------------
-    def edit(self,
-             level="WARNING",
-             log_dir=None,
-             max_age=90,
-             max_report_count=10):
+
+    # ----------------------------------------------------------------------
+    def edit(self, level="WARNING", log_dir=None, max_age=90, max_report_count=10):
         """
         Provides log editing capabilities for the entire site. 
            
@@ -140,37 +133,48 @@ class LogManager(BaseServer):
            
         """
         url = self._url + "/settings/edit"
-        allowed_levels = ("OFF", "SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        allowed_levels = (
+            "OFF",
+            "SEVERE",
+            "WARNING",
+            "INFO",
+            "FINE",
+            "VERBOSE",
+            "DEBUG",
+        )
         current_settings = self.settings
         current_settings["f"] = "json"
 
         if level.upper() in allowed_levels:
-            current_settings['logLevel'] = level.upper()
+            current_settings["logLevel"] = level.upper()
         if log_dir is not None:
-            current_settings['logDir'] = log_dir
-        if max_age is not None and \
-           isinstance(max_age, int):
-            current_settings['maxLogFileAge'] = max_age
-        if max_report_count is not None and \
-           isinstance(max_report_count, int) and\
-           max_report_count > 0:
-            current_settings['maxErrorReportsCount'] = max_report_count
-        return self._con.post(path=url,
-                              postdata=current_settings)
-    #----------------------------------------------------------------------
-    def query(self,
-              start_time=None,
-              end_time=None,
-              since_server_start=False,
-              level="WARNING",
-              services="*",
-              machines="*",
-              server="*",
-              codes=None,
-              process_IDs=None,
-              export=False,
-              export_type="CSV", #CSV or TAB
-              out_path=None):
+            current_settings["logDir"] = log_dir
+        if max_age is not None and isinstance(max_age, int):
+            current_settings["maxLogFileAge"] = max_age
+        if (
+            max_report_count is not None
+            and isinstance(max_report_count, int)
+            and max_report_count > 0
+        ):
+            current_settings["maxErrorReportsCount"] = max_report_count
+        return self._con.post(path=url, postdata=current_settings)
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        start_time=None,
+        end_time=None,
+        since_server_start=False,
+        level="WARNING",
+        services="*",
+        machines="*",
+        server="*",
+        codes=None,
+        process_IDs=None,
+        export=False,
+        export_type="CSV",  # CSV or TAB
+        out_path=None,
+    ):
         """
         The query operation on the logs resource provides a way to
         aggregate, filter, and page through logs across the entire site.
@@ -224,56 +228,46 @@ class LogManager(BaseServer):
         
         
         """
-     
-    
+
         if codes is None:
             codes = []
         if process_IDs is None:
             process_IDs = []
-        allowed_levels = ("SEVERE", "WARNING", "INFO",
-                          "FINE", "VERBOSE", "DEBUG")
-        qFilter = {
-            "services": "*",
-            "machines": "*",
-            "server" : "*"
-        }
+        allowed_levels = ("SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        qFilter = {"services": "*", "machines": "*", "server": "*"}
         if len(process_IDs) > 0:
-            qFilter['processIds'] = process_IDs
+            qFilter["processIds"] = process_IDs
         if len(codes) > 0:
-            qFilter['codes'] = codes
+            qFilter["codes"] = codes
         params = {
-            "f" : "json",
-            "sinceServerStart" : since_server_start,
-            "pageSize" : 10000
+            "f": "json",
+            "sinceServerStart": since_server_start,
+            "pageSize": 10000,
         }
         url = "{url}/query".format(url=self._url)
-        if start_time is not None and \
-           isinstance(start_time, datetime):
-            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
-        if end_time is not None and \
-           isinstance(end_time, datetime):
-            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+        if start_time is not None and isinstance(start_time, datetime):
+            params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+        if end_time is not None and isinstance(end_time, datetime):
+            params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
         if level.upper() in allowed_levels:
-            params['level'] = level
+            params["level"] = level
         if server != "*":
-            qFilter['server'] = server.split(',')
+            qFilter["server"] = server.split(",")
         if services != "*":
-            qFilter['services'] = services.split(',')
+            qFilter["services"] = services.split(",")
         if machines != "*":
-            qFilter['machines'] = machines.split(",")
-        params['filter'] = qFilter
-        if export is True and \
-           out_path is not None:
+            qFilter["machines"] = machines.split(",")
+        params["filter"] = qFilter
+        if export is True and out_path is not None:
 
-            messages = self._con.post(path=url,
-                                      postdata=params)
-            with open(name=out_path, mode='wb') as f:
+            messages = self._con.post(path=url, postdata=params)
+            with open(name=out_path, mode="wb") as f:
                 hasKeys = False
                 if export_type == "TAB":
-                    csvwriter = csv.writer(f, delimiter='\t')
+                    csvwriter = csv.writer(f, delimiter="\t")
                 else:
                     csvwriter = csv.writer(f)
-                for message in messages['logMessages']:
+                for message in messages["logMessages"]:
                     if hasKeys == False:
                         csvwriter.writerow(message.keys())
                         hasKeys = True
@@ -282,5 +276,4 @@ class LogManager(BaseServer):
             del messages
             return out_path
         else:
-            return self._con.post(path=url,
-                                  postdata=params)
+            return self._con.post(path=url, postdata=params)

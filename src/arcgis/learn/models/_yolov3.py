@@ -25,7 +25,7 @@ try:
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.utils import extract_zipfile
-    from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP
+    from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP, AveragePrecision
     from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess, coco_config, coco_class_mapping
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
@@ -117,6 +117,7 @@ class YOLOv3(ArcGISModel):
 
         self._loss_f = YOLOv3_Loss()
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
+        self.learn.metrics = [AveragePrecision(self, data.c-1)]
         self.learn.split([self._model.module_list[11]]) #Splitting the model at Darknet53 backbone
         self.learn.freeze()
 

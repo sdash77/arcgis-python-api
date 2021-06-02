@@ -3,6 +3,7 @@ from arcgis import gis
 from arcgis._impl.common._isd import InsensitiveDict
 from .admin.administration import Server
 import logging
+
 _log = logging.getLogger(__name__)
 ###########################################################################
 class ServerManager(object):
@@ -12,6 +13,7 @@ class ServerManager(object):
     is available as a property of the gis.admin object. Administrators call methods
     on this :class:`ServerManager` object to manage and interrogate ArcGIS Servers.
     """
+
     _gis = None
     _catalog_list = None
     _server_list = None
@@ -20,7 +22,7 @@ class ServerManager(object):
     _pa = None
     _federation = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
@@ -28,13 +30,16 @@ class ServerManager(object):
         self._federation = self._pa.federation
         self._server_list = None
         self._catalog_list = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._pa._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._pa._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._pa._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._pa._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -44,7 +49,8 @@ class ServerManager(object):
         """
         res = self._portal.con.post("portals/self/servers", {"f": "json"})
         return InsensitiveDict(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         Retrieves all servers in a GIS.
@@ -54,32 +60,36 @@ class ServerManager(object):
         """
 
         from . import ServicesDirectory
+
         if self._server_list is not None:
             return self._server_list
         self._server_list = []
         self._catalog_list = []
         res = self._portal.con.post("portals/self/servers", {"f": "json"})
-        servers = res['servers']
+        servers = res["servers"]
         admin_url = None
         public_url = None
         for server in servers:
-            admin_url = server['adminUrl']
-            public_url = server['url']
+            admin_url = server["adminUrl"]
+            public_url = server["url"]
             try:
 
-                if server['serverFunction'] == 'NotebookServer':
+                if server["serverFunction"] == "NotebookServer":
                     try:
                         from arcgis.gis.nb import NotebookServer
+
                         nbs = NotebookServer(url=admin_url, gis=self._gis)
                         nbs.info
                         self._server_list.append(nbs)
                     except:
                         from arcgis.gis.nb import NotebookServer
+
                         nbs = NotebookServer(url=public_url, gis=self._gis)
                         nbs.info
                         self._server_list.append(nbs)
-                elif server['serverFunction'] == 'MissionServer':
+                elif server["serverFunction"] == "MissionServer":
                     from arcgis.gis.mission import MissionServer
+
                     try:
                         ms = MissionServer(url=admin_url, gis=self._gis)
                         ms.info
@@ -91,14 +101,16 @@ class ServerManager(object):
                 else:
                     try:
 
-                        c = ServicesDirectory(url=admin_url,
-                                              portal_connection=self._gis._portal.con)
+                        c = ServicesDirectory(
+                            url=admin_url, portal_connection=self._gis._portal.con
+                        )
                         c.admin.logs
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
                     except:
-                        c = ServicesDirectory(url=public_url,
-                                              portal_connection=self._gis._portal.con)
+                        c = ServicesDirectory(
+                            url=public_url, portal_connection=self._gis._portal.con
+                        )
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
 
@@ -106,7 +118,8 @@ class ServerManager(object):
                 _log.warning("Could not access the server at " + admin_url)
 
         return self._server_list
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, role=None, function=None):
         """
         Retrieves the ArcGIS Server(s) by role or function. While each argument is optional,
@@ -132,25 +145,23 @@ class ServerManager(object):
         servers = []
         if role is None and function is None:
             raise ValueError("A role or function must be provided")
-        for server in self._federation.servers['servers']:
-            if str(role).lower() == server['serverRole'].lower():
-                servers.append(Server(url=server['adminUrl'], gis=self._gis))
-            elif str(function).lower() in server['serverFunction'].lower():
-                servers.append(Server(url=server['adminUrl'], gis=self._gis))
+        for server in self._federation.servers["servers"]:
+            if str(role).lower() == server["serverRole"].lower():
+                servers.append(Server(url=server["adminUrl"], gis=self._gis))
+            elif str(function).lower() in server["serverFunction"].lower():
+                servers.append(Server(url=server["adminUrl"], gis=self._gis))
         return servers
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _server_info(self):
         """
         Gets federation information for all servers associated the WebGIS.
         """
-        return self._federation.servers['servers']
-    #----------------------------------------------------------------------
-    def _federate(self,
-                 url,
-                 admin_url,
-                 username,
-                 password):
+        return self._federation.servers["servers"]
+
+    # ----------------------------------------------------------------------
+    def _federate(self, url, admin_url, username, password):
         """
         This operation enables ArcGIS Servers to be federated with Portal
         for ArcGIS.
@@ -189,13 +200,11 @@ class ServerManager(object):
         :return:
            The server response with server ID.
         """
-        res = self._federation.federate(url,
-                                        admin_url,
-                                        username,
-                                        password)
+        res = self._federation.federate(url, admin_url, username, password)
         self._server_list = None
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _unfederate(self, server_id):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
@@ -213,7 +222,8 @@ class ServerManager(object):
         res = self._federation(server_id)
         self._server_list = None
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, server, role, function=None):
         """
         This operation allows you to set an ArcGIS Server federated with
@@ -245,31 +255,37 @@ class ServerManager(object):
         """
         if isinstance(server, Server) == False:
             raise ValueError("server must be of type arcgis.gis.Server")
-        roles = ["FEDERATED_SERVER",
-                 "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
-                 "HOSTING_SERVER"]
+        roles = [
+            "FEDERATED_SERVER",
+            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
+            "HOSTING_SERVER",
+        ]
         functions = {
-            "geoanalytics" : "GeoAnalytics",
-            "rasteranalytics" : "RasterAnalytics",
-            "imagehosting" : "ImageHosting",
-            "none" : None
+            "geoanalytics": "GeoAnalytics",
+            "rasteranalytics": "RasterAnalytics",
+            "imagehosting": "ImageHosting",
+            "none": None,
         }
         if not role.upper() in roles:
             raise ValueError("Invalid role, allowed values: %s" % ",".join(roles))
         if not str(function).lower() in functions.keys():
-            raise ValueError("Invalid function, allowed values: %s" % ",".join(functions.keys()))
+            raise ValueError(
+                "Invalid function, allowed values: %s" % ",".join(functions.keys())
+            )
         else:
             function = functions[str(function).lower()]
         server_id = None
         from urllib.parse import urlparse
+
         b = urlparse(url=server._admin_url).netloc.lower()
         for s in self._server_info:
-            if b == urlparse(s['adminUrl'].lower()).netloc:
-                server_id = s['id']
+            if b == urlparse(s["adminUrl"].lower()).netloc:
+                server_id = s["id"]
                 break
             del s
         return self._federation.update(server_id, role, function)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate(self):
         """
         This operation returns information on the status of ArcGIS Servers
@@ -279,4 +295,4 @@ class ServerManager(object):
            True if all servers are functioning as expected, False if there is an
            issue with 1 or more of the Federated Servers.
         """
-        return self._federation.validate_all()['status'] == 'success'
+        return self._federation.validate_all()["status"] == "success"

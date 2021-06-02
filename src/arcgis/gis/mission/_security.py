@@ -8,10 +8,11 @@ class SecurityManager(object):
     This resource is a container for all resources and operations
     pertaining to security in your ArcGIS Mission Server site.
     """
+
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -20,22 +21,26 @@ class SecurityManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<SecurityManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _modify_server_role(self, role):
         """
         Allows for the modification of the server role from federated to standalone.
@@ -52,14 +57,13 @@ class SecurityManager(object):
         
         """
         url = self._url + "/config/changeServerRole"
-        function = None  
+        function = None
         if function is None:
             function = ""
-        params = {'f' : 'json',
-                  'serverRole' : role,
-                  'serverFunction' : function}
+        params = {"f": "json", "serverRole": role, "serverFunction": function}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def configuration(self):
         """
@@ -141,9 +145,10 @@ class SecurityManager(object):
 
         """
         url = self._url + "/config"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @configuration.setter
     def configuration(self, settings):
         """
@@ -223,7 +228,7 @@ class SecurityManager(object):
 
         """
         url = self._url + "/config/update"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         current = dict(self.configuration)
         for k, v in settings.items():
             if k in current:

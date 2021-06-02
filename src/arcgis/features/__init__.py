@@ -35,13 +35,17 @@ from . import elevation
 from . import hydrology
 
 
-__all__ = ['Feature', 'FeatureSet',
-           'FeatureCollection', 'FeatureLayer',
-           'Table', 'FeatureLayerCollection']
+__all__ = [
+    "Feature",
+    "FeatureSet",
+    "FeatureCollection",
+    "FeatureLayer",
+    "Table",
+    "FeatureLayerCollection",
+]
 try:
     from .geo import GeoAccessor, GeoSeriesAccessor
-    __all__.extend(['GeoAccessor', 'GeoSeriesAccessor'])
+
+    __all__.extend(["GeoAccessor", "GeoSeriesAccessor"])
 except ImportError:
     pass
-
-

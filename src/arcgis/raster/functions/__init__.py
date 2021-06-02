@@ -14,27 +14,42 @@ Functions can be applied to various rasters (or images), including the following
 # Mosaic datasets
 # Rasters within mosaic datasets
 from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
-from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
-                     _pixel_type_string_to_long
+from .utility import (
+    _raster_input,
+    _get_raster,
+    _replace_raster_url,
+    _get_raster_url,
+    _get_raster_ra,
+    _pixel_type_string_to_long,
+)
 from arcgis.gis import Item
 import copy
 import numbers
 from . import gbl
 import arcgis as _arcgis
 import json as _json
-from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
-                                          _analysis_job_status
-from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
-                     _python_variable_name
+from arcgis.geoprocessing._support import (
+    _analysis_job,
+    _analysis_job_results,
+    _analysis_job_status,
+)
+from .utility import (
+    _raster_input_rft,
+    _get_raster_ra_rft,
+    _input_rft,
+    _find_object_ref,
+    _python_variable_name,
+)
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
 from .._RasterInfo import RasterInfo
 import logging
+
 _LOGGER = logging.getLogger(__name__)
 from datetime import datetime
 import time
 
-key_value_dict={}
-hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterName"]
+key_value_dict = {}
+hidden_inputs = ["ToolName", "PrimaryInputParameterName", "OutputRasterParameterName"]
 
 
 #
@@ -57,21 +72,25 @@ hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterN
 #     return layer, raster
 
 
-def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+def _clone_layer(
+    layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
+):
 
     _set_multidimensional_rules(function_chain)
 
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
-        return _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2, variable_name)
+        return _clone_layer_raster(
+            layer, function_chain, raster_ra, raster_ra2, variable_name
+        )
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
     function_chain_ra = copy.deepcopy(function_chain)
-    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
+    function_chain_ra["rasterFunctionArguments"][variable_name] = raster_ra
     if raster_ra2 is not None:
-        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["Raster2"] = raster_ra2
     if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
             newlyr = ImageryLayer(function_chain_ra, layer._gis)
         else:
             newlyr = ImageryLayer(layer._uri, layer._gis)
@@ -87,7 +106,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
     if layer._datastore_raster:
-        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
@@ -108,16 +127,19 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
         newlyr._extent_set = layer._extent_set
 
     return newlyr
+
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     _set_multidimensional_rules(function_chain, function_chain_ra)
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
-        return _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra)
+        return _clone_layer_raster_without_copy(
+            layer, function_chain, function_chain_ra
+        )
     if isinstance(layer, Item):
         layer = layer.layers[0]
-   
+
     if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
             newlyr = ImageryLayer(function_chain_ra, layer._gis)
         else:
             newlyr = ImageryLayer(layer._uri, layer._gis)
@@ -134,7 +156,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._fnra = function_chain_ra
 
     if layer._datastore_raster:
-        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
@@ -154,36 +176,60 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
         newlyr._extent_set = layer._extent_set
     return newlyr
 
-def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+
+def _clone_layer_raster(
+    layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
+):
 
     function_chain_ra = copy.deepcopy(function_chain)
-    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
+    function_chain_ra["rasterFunctionArguments"][variable_name] = raster_ra
     if raster_ra2 is not None:
-        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+        function_chain_ra["rasterFunctionArguments"]["Raster2"] = raster_ra2
 
     if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
-            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+            newlyr = Raster(
+                function_chain_ra,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
         else:
-            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+            newlyr = Raster(
+                layer._uri,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
     else:
-        newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        newlyr = Raster(
+            layer._url,
+            is_multidimensional=layer._is_multidimensional,
+            engine=layer._engine,
+            gis=layer._gis,
+        )
 
-    if layer._engine==_ArcpyRaster:
-        try:            
+    if layer._engine == _ArcpyRaster:
+        try:
             import arcpy, json
-            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+
+            arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
         except Exception as err:
             _LOGGER.warning(err)
 
-    #newlyr.properties = layer.properties
+    # newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
 
-    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
-        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
-            newlyr._engine_obj._fn  = copy.deepcopy(function_chain_ra)
+    if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
+            newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
 
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
@@ -192,11 +238,11 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    #newlyr._engine_obj.extent = layer.extent
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
-        if layer._engine!=_ArcpyRaster:
+        if layer._engine != _ArcpyRaster:
             newlyr._lazy_token = layer._token
 
     if layer._extent_set:
@@ -205,31 +251,53 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
 
     return newlyr
 
+
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
 
     if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
-            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+            newlyr = Raster(
+                function_chain_ra,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
         else:
-            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+            newlyr = Raster(
+                layer._uri,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
     else:
-        newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
+        newlyr = Raster(
+            layer._url,
+            is_multidimensional=layer._is_multidimensional,
+            engine=layer._engine,
+            gis=layer._gis,
+        )
 
-    if layer._engine==_ArcpyRaster:
+    if layer._engine == _ArcpyRaster:
         try:
             import arcpy, json
-            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+
+            arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
         except Exception as err:
             _LOGGER.warning(err)
 
-    #newlyr.properties = layer.properties
+    # newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
 
-    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
-        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
-            newlyr._engine_obj._fn  = copy.deepcopy(function_chain_ra)
+    if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
+            newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
 
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
@@ -242,7 +310,7 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
-        if layer._engine!=_ArcpyRaster:
+        if layer._engine != _ArcpyRaster:
             newlyr._lazy_token = layer._token
 
     if layer._extent_set:
@@ -251,25 +319,45 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
 
     return newlyr
 
-def _set_multidimensional_rules(function_chain = None, function_chain_ra = None):
+
+def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
     match_variables = _arcgis.env.match_variables
     union_dimension = _arcgis.env.union_dimension
 
     if (match_variables is not None) and isinstance(match_variables, bool):
-        if (function_chain is not None) and 'MatchVariable' not in function_chain.keys():
-            function_chain['rasterFunctionArguments']['MatchVariable'] =  match_variables
-        if (function_chain_ra is not None) and 'MatchVariable' not in function_chain_ra.keys():
-            function_chain_ra['rasterFunctionArguments']['MatchVariable'] = match_variables
+        if (
+            function_chain is not None
+        ) and "MatchVariable" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"]["MatchVariable"] = match_variables
+        if (
+            function_chain_ra is not None
+        ) and "MatchVariable" not in function_chain_ra.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "MatchVariable"
+            ] = match_variables
     if (union_dimension is not None) and isinstance(union_dimension, bool):
-        if (function_chain is not None) and 'UnionDimension' not in function_chain.keys():
-            function_chain['rasterFunctionArguments']['UnionDimension'] = union_dimension
-        if (function_chain_ra is not None) and 'UnionDimension' not in function_chain.keys():
-            function_chain_ra['rasterFunctionArguments']['UnionDimension'] =  union_dimension
+        if (
+            function_chain is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension
+        if (
+            function_chain_ra is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension
 
 
-
-
-def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
+def arg_statistics(
+    rasters,
+    stat_type=None,
+    min_value=None,
+    max_value=None,
+    undefined_class=None,
+    astype=None,
+):
     """
     The arg_statistics function produces an output with a pixel value that represents a statistical metric from all
     bands of input rasters. The statistics can be the band index of the maximum, minimum, or median value, or the
@@ -288,34 +376,30 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
 
     layer, raster, raster_ra = _raster_input(rasters)
 
-    stat_types = {
-        'max': 0,
-        'min': 1,
-        'median': 2,
-        'duration': 3
-    }
-        
+    stat_types = {"max": 0, "min": 1, "median": 2, "duration": 3}
+
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {            
-            "Rasters": raster,
-        },
-        "variableName": "Rasters"
+        "rasterFunctionArguments": {"Rasters": raster,},
+        "variableName": "Rasters",
     }
 
-    if stat_type is not None:       
-        template_dict["rasterFunctionArguments"]['ArgStatisticsType'] = stat_types[stat_type.lower()]
+    if stat_type is not None:
+        template_dict["rasterFunctionArguments"]["ArgStatisticsType"] = stat_types[
+            stat_type.lower()
+        ]
     if min_value is not None:
-        template_dict["rasterFunctionArguments"]['MinValue'] = min_value
+        template_dict["rasterFunctionArguments"]["MinValue"] = min_value
     if max_value is not None:
-        template_dict["rasterFunctionArguments"]['MaxValue'] = max_value
+        template_dict["rasterFunctionArguments"]["MaxValue"] = max_value
     if undefined_class is not None:
-        template_dict["rasterFunctionArguments"]['UndefinedClass'] = undefined_class
+        template_dict["rasterFunctionArguments"]["UndefinedClass"] = undefined_class
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
 
 def arg_max(rasters, undefined_class=None, astype=None):
     """
@@ -329,7 +413,10 @@ def arg_max(rasters, undefined_class=None, astype=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "max", undefined_class=undefined_class, astype=astype)
+    return arg_statistics(
+        rasters, "max", undefined_class=undefined_class, astype=astype
+    )
+
 
 def arg_min(rasters, undefined_class=None, astype=None):
     """
@@ -342,7 +429,10 @@ def arg_min(rasters, undefined_class=None, astype=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "min", undefined_class=undefined_class, astype=astype)
+    return arg_statistics(
+        rasters, "min", undefined_class=undefined_class, astype=astype
+    )
+
 
 def arg_median(rasters, undefined_class=None, astype=None):
     """
@@ -359,9 +449,14 @@ def arg_median(rasters, undefined_class=None, astype=None):
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "median", undefined_class=undefined_class, astype=astype)
+    return arg_statistics(
+        rasters, "median", undefined_class=undefined_class, astype=astype
+    )
 
-def duration(rasters, min_value=None, max_value=None, undefined_class=None, astype=None):
+
+def duration(
+    rasters, min_value=None, max_value=None, undefined_class=None, astype=None
+):
     """
     Returns the duration (number of bands) between a minimum and maximum value.
     The Duration method finds the longest consecutive elements in the array, where each element has a value greater
@@ -373,11 +468,24 @@ def duration(rasters, min_value=None, max_value=None, undefined_class=None, asty
     :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
-    return arg_statistics(rasters, "max",  min_value=min_value, max_value=max_value,
-                          undefined_class=undefined_class, astype=astype)
+    return arg_statistics(
+        rasters,
+        "max",
+        min_value=min_value,
+        max_value=max_value,
+        undefined_class=undefined_class,
+        astype=astype,
+    )
 
 
-def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, operation_type=1):
+def arithmetic(
+    raster1,
+    raster2,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    astype=None,
+    operation_type=1,
+):
     """
     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
 
@@ -392,26 +500,17 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
     layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+    if layer1 is not None and (
+        layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)
+    ):
         layer = layer1
     else:
         layer = layer2
-    #layer = layer1 if layer1 is not None else layer2
+    # layer = layer1 if layer1 is not None else layer2
 
-    extent_types = {
-        "FirstOf" : 0,
-        "IntersectionOf" : 1,
-        "UnionOf" : 2,
-        "LastOf" : 3
-    }
+    extent_types = {"FirstOf": 0, "IntersectionOf": 1, "UnionOf": 2, "LastOf": 3}
 
-    cellsize_types = {
-        "FirstOf" : 0,
-        "MinOf" : 1,
-        "MaxOf" : 2,
-        "MeanOf" : 3,
-        "LastOf" : 4
-    }
+    cellsize_types = {"FirstOf": 0, "MinOf": 1, "MaxOf": 2, "MeanOf": 3, "LastOf": 4}
 
     in_extent_type = extent_types[extent_type]
     in_cellsize_type = cellsize_types[cellsize_type]
@@ -421,19 +520,20 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
         "rasterFunctionArguments": {
             "Operation": operation_type,
             "Raster": raster_1,
-            "Raster2": raster_2
-        }
+            "Raster2": raster_2,
+        },
     }
 
     if in_extent_type is not None:
-        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+        template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if in_cellsize_type is not None:
-        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
+        template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+
 
 #
 #
@@ -516,6 +616,7 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
 #     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
 #
 
+
 def aspect(raster):
     """
     aspect identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
@@ -532,9 +633,7 @@ def aspect(raster):
 
     template_dict = {
         "rasterFunction": "Aspect",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        }
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -587,22 +686,23 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     layer, raster, raster_ra = _raster_input(raster)
 
     if isinstance(band_indexes, list):
-         band_indexes = " ".join(str(index) for index in band_indexes)
+        band_indexes = " ".join(str(index) for index in band_indexes)
 
     template_dict = {
         "rasterFunction": "BandArithmetic",
         "rasterFunctionArguments": {
             "Method": method,
             "BandIndexes": band_indexes,
-            "Raster": raster
+            "Raster": raster,
         },
-        "variableName": "Raster"
+        "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 def ndvi(raster, band_indexes="4 3", astype=None):
     """
@@ -615,6 +715,7 @@ def ndvi(raster, band_indexes="4 3", astype=None):
     :return: Normalized Difference Vegetation Index raster
     """
     return band_arithmetic(raster, band_indexes, astype, 1)
+
 
 def savi(raster, band_indexes="4 3 0.33", astype=None):
     """
@@ -629,7 +730,8 @@ def savi(raster, band_indexes="4 3 0.33", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 2)
 
-def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
+
+def tsavi(raster, band_indexes="4 3 0.33 0.50 1.50", astype=None):
     """
     Transformed Soil Adjusted Vegetation Index
 
@@ -641,6 +743,7 @@ def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 3)
+
 
 def msavi(raster, band_indexes="4 3", astype=None):
     """
@@ -654,6 +757,7 @@ def msavi(raster, band_indexes="4 3", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 4)
+
 
 def gemi(raster, band_indexes="4 3", astype=None):
     """
@@ -670,6 +774,7 @@ def gemi(raster, band_indexes="4 3", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 5)
 
+
 def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     """
     Perpendicular Vegetation Index
@@ -682,7 +787,8 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 6)
 
-def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
+
+def gvitm(raster, band_indexes="1 2 3 4 5 6", astype=None):
     """
     Green Vegetation Index - Landsat TM
 
@@ -694,6 +800,7 @@ def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 7)
+
 
 def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
     """
@@ -710,6 +817,7 @@ def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 8)
 
+
 def vari(raster, band_indexes="3 2 1", astype=None):
     """
     Visible Atmospherically Resistant Index
@@ -722,6 +830,7 @@ def vari(raster, band_indexes="3 2 1", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 9)
+
 
 def gndvi(raster, band_indexes="4 2", astype=None):
     """
@@ -736,6 +845,7 @@ def gndvi(raster, band_indexes="4 2", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 10)
 
+
 def sr(raster, band_indexes="4 3", astype=None):
     """
     Simple Ratio (SR)
@@ -748,6 +858,7 @@ def sr(raster, band_indexes="4 3", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 11)
+
 
 def ndvire(raster, band_indexes="7 6", astype=None):
     """
@@ -767,6 +878,7 @@ def ndvire(raster, band_indexes="7 6", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 12)
+
 
 def srre(raster, band_indexes="7 6", astype=None):
     """
@@ -788,6 +900,7 @@ def srre(raster, band_indexes="7 6", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 13)
 
+
 def mtvi2(raster, band_indexes="7 5 3", astype=None):
     """
     The Modified Triangular Vegetation Index (MTVI2) is a vegetation index 
@@ -804,6 +917,7 @@ def mtvi2(raster, band_indexes="7 5 3", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 14)
 
+
 def rtvi_core(raster, band_indexes="7 6 3", astype=None):
     """
     The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index 
@@ -818,6 +932,7 @@ def rtvi_core(raster, band_indexes="7 6 3", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 15)
+
 
 def cire(raster, band_indexes="7 6", astype=None):
     """
@@ -834,6 +949,7 @@ def cire(raster, band_indexes="7 6", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 16)
 
+
 def cig(raster, band_indexes="7 3", astype=None):
     """
     The Chlorophyll Index - Green (CIg) is a vegetation index for estimating 
@@ -849,6 +965,7 @@ def cig(raster, band_indexes="7 3", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 17)
 
+
 def ndwi(raster, band_indexes="5 3", astype=None):
     """
     The Normalized Difference Water Index (NDWI) is an index for delineating and 
@@ -863,6 +980,7 @@ def ndwi(raster, band_indexes="5 3", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 18)
+
 
 def evi(raster, band_indexes="5 4 2", astype=None):
     """
@@ -880,6 +998,7 @@ def evi(raster, band_indexes="5 4 2", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 19)
 
+
 def iron_oxide(raster, band_indexes="4 2", astype=None):
     """
     The Iron Oxide (IO) ratio is a geological index for identifying rock 
@@ -895,6 +1014,7 @@ def iron_oxide(raster, band_indexes="4 2", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 20)
+
 
 def ferrous_minerals(raster, band_indexes="6 5", astype=None):
     """
@@ -912,6 +1032,7 @@ def ferrous_minerals(raster, band_indexes="6 5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 21)
 
+
 def clay_minerals(raster, band_indexes="6 7", astype=None):
     """
     The Clay Minerals (CM) ratio is a geological index for identifying 
@@ -926,6 +1047,7 @@ def clay_minerals(raster, band_indexes="6 7", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 22)
+
 
 def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     """
@@ -944,6 +1066,7 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 23)
 
+
 def bai(raster, band_indexes="3 4", astype=None):
     """
     The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
@@ -957,6 +1080,7 @@ def bai(raster, band_indexes="3 4", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 24)
+
 
 def nbr(raster, band_indexes="5 7", astype=None):
     """
@@ -973,6 +1097,7 @@ def nbr(raster, band_indexes="5 7", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 25)
 
+
 def ndbi(raster, band_indexes="6 5", astype=None):
     """
     The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
@@ -986,6 +1111,7 @@ def ndbi(raster, band_indexes="6 5", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 26)
+
 
 def ndmi(raster, band_indexes="5 6", astype=None):
     """
@@ -1002,6 +1128,7 @@ def ndmi(raster, band_indexes="5 6", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 27)
 
+
 def ndsi(raster, band_indexes="4 6", astype=None):
     """
     The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
@@ -1016,6 +1143,7 @@ def ndsi(raster, band_indexes="4 6", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 28)
+
 
 def mndwi(raster, band_indexes="3 6", astype=None):
     """
@@ -1032,6 +1160,7 @@ def mndwi(raster, band_indexes="3 6", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 29)
 
+
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
@@ -1044,6 +1173,7 @@ def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     :return:
     """
     return band_arithmetic(raster, expression, astype, 0)
+
 
 def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
@@ -1058,7 +1188,7 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
-    layer2=None
+    layer2 = None
     if raster2 is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
@@ -1071,12 +1201,14 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
         "rasterFunction": "Classify",
         "rasterFunctionArguments": {
             "ClassifierDefinition": classifier_definition,
-            "Raster": raster_1
-        }
+            "Raster": raster_1,
+        },
     }
     if classifier_definition is None:
         raise RuntimeError("classifier_definition cannot be empty")
-    template_dict["rasterFunctionArguments"]["ClassifierDefinition"] = classifier_definition
+    template_dict["rasterFunctionArguments"][
+        "ClassifierDefinition"
+    ] = classifier_definition
 
     if raster2 is not None:
         template_dict["rasterFunctionArguments"]["Raster2"] = raster_2
@@ -1087,6 +1219,7 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     if raster2 is not None:
         return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
     return _clone_layer(layer, template_dict, raster_ra1)
+
 
 def clip(raster, geometry=None, clip_outside=True, astype=None):
     """
@@ -1107,8 +1240,8 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
         "rasterFunctionArguments": {
             "ClippingGeometry": geometry,
             "ClipType": 1 if clip_outside else 2,
-            "Raster": raster
-        }
+            "Raster": raster,
+        },
     }
 
     if astype is not None:
@@ -1140,20 +1273,18 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
 
     template_dict = {
         "rasterFunction": "Colormap",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if colormap_name is not None:
-        template_dict["rasterFunctionArguments"]['ColormapName'] = colormap_name
+        template_dict["rasterFunctionArguments"]["ColormapName"] = colormap_name
     if colormap is not None:
-        template_dict["rasterFunctionArguments"]['Colormap'] = colormap
-    if colorramp is not None and isinstance(colorramp,str):
-        template_dict["rasterFunctionArguments"]['ColorrampName'] = colorramp
+        template_dict["rasterFunctionArguments"]["Colormap"] = colormap
+    if colorramp is not None and isinstance(colorramp, str):
+        template_dict["rasterFunctionArguments"]["ColorrampName"] = colorramp
     if colorramp is not None and isinstance(colorramp, dict):
-        template_dict["rasterFunctionArguments"]['Colorramp'] = colorramp
+        template_dict["rasterFunctionArguments"]["Colorramp"] = colorramp
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
@@ -1161,7 +1292,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
+def composite_band(rasters, astype=None, cellsize_type="MaxOf"):
     """
     Combines multiple images to form a multiband image.
 
@@ -1175,30 +1306,25 @@ def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
 
     template_dict = {
         "rasterFunction": "CompositeBand",
-        "rasterFunctionArguments": {
-            "Rasters": raster
-        },
-        "variableName": "Rasters"
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    cellsize_types = {
-        "firstof" : 0,
-        "minof" : 1,
-        "maxof" : 2,
-        "meanof" : 3,
-        "lastof" : 4
-    }      
+    cellsize_types = {"firstof": 0, "minof": 1, "maxof": 2, "meanof": 3, "lastof": 4}
 
     if cellsize_type is not None:
         if isinstance(cellsize_type, str):
-            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type.lower()]
-        elif isinstance(cellsize_type,int):
-            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_type
+            template_dict["rasterFunctionArguments"]["CellsizeType"] = cellsize_types[
+                cellsize_type.lower()
+            ]
+        elif isinstance(cellsize_type, int):
+            template_dict["rasterFunctionArguments"]["CellsizeType"] = cellsize_type
 
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
 
 def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=None):
     """
@@ -1214,13 +1340,13 @@ def contrast_brightness(raster, contrast_offset=2, brightness_offset=1, astype=N
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-      "rasterFunction" : "ContrastBrightness",
-      "rasterFunctionArguments" : {
-        "Raster": raster,
-        "ContrastOffset" : contrast_offset,
-        "BrightnessOffset" : brightness_offset
-      },
-      "variableName" : "Raster"
+        "rasterFunction": "ContrastBrightness",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+            "ContrastOffset": contrast_offset,
+            "BrightnessOffset": brightness_offset,
+        },
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -1243,32 +1369,32 @@ def convolution(raster, kernel=None, astype=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-      "rasterFunction" : "Convolution",
-      "rasterFunctionArguments" : {
-        "Raster": raster,
-      },
-      "variableName" : "Raster"
+        "rasterFunction": "Convolution",
+        "rasterFunctionArguments": {"Raster": raster,},
+        "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    if (isinstance(kernel, int)):
-        template_dict["rasterFunctionArguments"]['Type'] = kernel
-    elif (isinstance(kernel, list)):
+    if isinstance(kernel, int):
+        template_dict["rasterFunctionArguments"]["Type"] = kernel
+    elif isinstance(kernel, list):
         numrows = len(kernel)
         numcols = len(kernel[0])
         flattened = [item for sublist in kernel for item in sublist]
-        template_dict["rasterFunctionArguments"]['Columns'] = numcols
-        template_dict["rasterFunctionArguments"]['Rows'] = numrows
-        template_dict["rasterFunctionArguments"]['Kernel'] = flattened
+        template_dict["rasterFunctionArguments"]["Columns"] = numcols
+        template_dict["rasterFunctionArguments"]["Rows"] = numrows
+        template_dict["rasterFunctionArguments"]["Kernel"] = flattened
     else:
-        raise RuntimeError('Invalid kernel type - pass int or list of list: [[][][]...]')
+        raise RuntimeError(
+            "Invalid kernel type - pass int or list of list: [[][][]...]"
+        )
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
+def curvature(raster, curvature_type="standard", z_factor=1, astype=None):
     """
     The Curvature function displays the shape or curvature of the slope. A part of a surface can be concave or convex;
     you can tell that by looking at the curvature value. The curvature is calculated by computing the second derivative
@@ -1284,12 +1410,7 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
     """
     layer, raster, raster_ra = _raster_input(raster)
 
-
-    curv_types = {
-        'standard': 0,
-        'profile': 1,
-        'planform': 2
-    }
+    curv_types = {"standard": 0, "profile": 1, "planform": 2}
 
     in_curv_type = curv_types[curvature_type.lower()]
 
@@ -1298,9 +1419,9 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
         "rasterFunctionArguments": {
             "Raster": raster,
             "Type": in_curv_type,
-            "ZFactor": z_factor
+            "ZFactor": z_factor,
         },
-        "variableName": "Raster"
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -1329,13 +1450,13 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-      "rasterFunction" : "NDVI",
-      "rasterFunctionArguments" : {
-        "Raster": raster,
-        "VisibleBandID" : visible_band,
-        "InfraredBandID" : ir_band
-      },
-      "variableName" : "Raster"
+        "rasterFunction": "NDVI",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+            "VisibleBandID": visible_band,
+            "InfraredBandID": ir_band,
+        },
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -1361,10 +1482,8 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
 
     template_dict = {
         "rasterFunction": "ElevationVoidFill",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -1376,8 +1495,15 @@ def elevation_void_fill(raster, max_void_width=0, astype=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, missing_band_action=None,
-                 wavelength_match_tolerance=None, astype=None):
+def extract_band(
+    raster,
+    band_ids=None,
+    band_names=None,
+    band_wavelengths=None,
+    missing_band_action=None,
+    wavelength_match_tolerance=None,
+    astype=None,
+):
     """
     The extract_band function allows you to extract one or more bands from a raster, or it can reorder the bands in a
     multiband image. The arguments for the extract_band function are as follows:
@@ -1397,20 +1523,18 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
     template_dict = {
         "rasterFunction": "ExtractBand",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
-        band_ids_mod=[]
-        if isinstance(band_ids,list):
+        band_ids_mod = []
+        if isinstance(band_ids, list):
             for index, item in enumerate(band_ids):
-                band_ids_mod.append(item-1)
+                band_ids_mod.append(item - 1)
             template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids_mod
         else:
             raise RuntimeError("band_ids should be of type list")
@@ -1419,15 +1543,29 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     if band_wavelengths is not None:
         template_dict["rasterFunctionArguments"]["BandWavelengths"] = band_wavelengths
     if missing_band_action is not None:
-        template_dict["rasterFunctionArguments"]["MissingBandAction"] = missing_band_action
+        template_dict["rasterFunctionArguments"][
+            "MissingBandAction"
+        ] = missing_band_action
     if wavelength_match_tolerance is not None:
-        template_dict["rasterFunctionArguments"]["WavelengthMatchTolerance"] = wavelength_match_tolerance
+        template_dict["rasterFunctionArguments"][
+            "WavelengthMatchTolerance"
+        ] = wavelength_match_tolerance
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, astype=None, tolerance=None, dem= None):
+def geometric(
+    raster,
+    geodata_transforms=None,
+    append_geodata_xform=None,
+    z_factor=None,
+    z_offset=None,
+    constant_z=None,
+    correct_geoid=None,
+    astype=None,
+    tolerance=None,
+    dem=None,
+):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
@@ -1452,25 +1590,27 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
 
     layer1, raster_1, raster_ra1 = _raster_input(raster)
 
-    layer2=None
+    layer2 = None
     if dem is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster, dem)
 
     template_dict = {
         "rasterFunction": "Geometric",
-        "rasterFunctionArguments": {
-            "Raster": raster_1
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster_1},
+        "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     if geodata_transforms is not None:
-        template_dict["rasterFunctionArguments"]["GeodataTransforms"] = geodata_transforms
+        template_dict["rasterFunctionArguments"][
+            "GeodataTransforms"
+        ] = geodata_transforms
     if append_geodata_xform is not None:
-        template_dict["rasterFunctionArguments"]["AppendGeodataXform"] = append_geodata_xform
+        template_dict["rasterFunctionArguments"][
+            "AppendGeodataXform"
+        ] = append_geodata_xform
     if z_factor is not None:
         template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
     if z_offset is not None:
@@ -1488,8 +1628,18 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     return _clone_layer(layer1, template_dict, raster_ra1)
 
 
-def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
-              remove_edge_effect=None, astype=None, hillshade_type=0):
+def hillshade(
+    dem,
+    azimuth=215.0,
+    altitude=75.0,
+    z_factor=0.3,
+    slope_type=1,
+    ps_power=None,
+    psz_factor=None,
+    remove_edge_effect=None,
+    astype=None,
+    hillshade_type=0,
+):
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
     For more information, see
@@ -1516,10 +1666,8 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
 
     template_dict = {
         "rasterFunction": "Hillshade",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -1538,14 +1686,23 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     if psz_factor is not None:
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
-        template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+        template_dict["rasterFunctionArguments"][
+            "RemoveEdgeEffect"
+        ] = remove_edge_effect
     if hillshade_type is not None:
         template_dict["rasterFunctionArguments"]["HillshadeType"] = hillshade_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, process_as_multiband=None):
+def local(
+    rasters,
+    operation,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
     a pixel-by-pixel basis. For more information, see `local function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/local-function.htm>`__.
@@ -1570,31 +1727,17 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
 
     layer, raster, raster_ra = _raster_input(raster)
 
+    extent_types = {"FirstOf": 0, "IntersectionOf": 1, "UnionOf": 2, "LastOf": 3}
 
-    extent_types = {
-        "FirstOf" : 0,
-        "IntersectionOf" : 1,
-        "UnionOf" : 2,
-        "LastOf" : 3
-    }
-
-    cellsize_types = {
-        "FirstOf" : 0,
-        "MinOf" : 1,
-        "MaxOf" : 2,
-        "MeanOf" : 3,
-        "LastOf" : 4
-    }
+    cellsize_types = {"FirstOf": 0, "MinOf": 1, "MaxOf": 2, "MeanOf": 3, "LastOf": 4}
 
     in_extent_type = extent_types[extent_type]
     in_cellsize_type = cellsize_types[cellsize_type]
 
     template_dict = {
         "rasterFunction": "Local",
-        "rasterFunctionArguments": {
-            "Rasters": raster
-        },
-        "variableName": "Rasters"
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
     }
 
     if astype is not None:
@@ -1609,15 +1752,17 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
 
     if process_as_multiband is not None:
         if isinstance(process_as_multiband, bool):
-            template_dict["rasterFunctionArguments"]["ProcessAsMultiband"] = process_as_multiband
+            template_dict["rasterFunctionArguments"][
+                "ProcessAsMultiband"
+            ] = process_as_multiband
         else:
-            raise RuntimeError('process_as_multiband should be an instance of bool')
+            raise RuntimeError("process_as_multiband should be an instance of bool")
 
-
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
+
 
 def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
@@ -1632,7 +1777,9 @@ def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 1, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1648,7 +1795,9 @@ def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 2, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 2, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1664,7 +1813,9 @@ def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 3, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 3, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1680,7 +1831,9 @@ def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 4, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 4, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1696,7 +1849,9 @@ def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 5, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 5, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1712,7 +1867,9 @@ def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 6, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 6, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1728,7 +1885,9 @@ def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 7, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 7, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1744,7 +1903,9 @@ def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 8, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 8, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1760,7 +1921,9 @@ def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 9, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 9, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1776,7 +1939,9 @@ def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 10, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 10, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1792,10 +1957,14 @@ def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 11, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 11, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def bitwise_left_shift(
+    rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
+):
     """
     The BitwiseLeftShift operation
 
@@ -1808,7 +1977,9 @@ def bitwise_left_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :return: the output raster
 
     """
-    return local(rasters, 12, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 12, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1824,7 +1995,9 @@ def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 13, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 13, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1840,10 +2013,14 @@ def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
     :return: the output raster
 
     """
-    return local(rasters, 14, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 14, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def bitwise_right_shift(
+    rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
+):
     """
     The BitwiseRightShift operation
 
@@ -1856,7 +2033,9 @@ def bitwise_right_shift(rasters, extent_type="FirstOf", cellsize_type="FirstOf",
     :return: the output raster
 
     """
-    return local(rasters, 15, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 15, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1872,7 +2051,9 @@ def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 16, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 16, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1888,7 +2069,9 @@ def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 17, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 17, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1904,7 +2087,9 @@ def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 18, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 18, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1920,7 +2105,9 @@ def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
     :return: the output raster
 
     """
-    return local(rasters, 19, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 19, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1936,7 +2123,9 @@ def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
     :return: the output raster
 
     """
-    return local(rasters, 20, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 20, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1952,7 +2141,9 @@ def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 21, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 21, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1968,7 +2159,9 @@ def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 22, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 22, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1984,7 +2177,9 @@ def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     :return: the output raster
 
     """
-    return local(rasters, 23, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 23, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2000,7 +2195,9 @@ def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
     :return: the output raster
 
     """
-    return local(rasters, 24, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 24, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2016,7 +2213,9 @@ def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 25, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 25, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2032,7 +2231,9 @@ def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 26, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 26, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2048,7 +2249,9 @@ def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 27, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 27, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2064,10 +2267,14 @@ def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
     :return: the output raster
 
     """
-    return local(rasters, 28, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 28, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def greater_than_equal(
+    rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
+):
     """
     The GreaterThanEqual operation
 
@@ -2080,7 +2287,9 @@ def greater_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", 
     :return: the output raster
 
     """
-    return local(rasters, 29, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 29, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2096,7 +2305,9 @@ def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 30, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 30, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2112,7 +2323,9 @@ def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
     :return: the output raster
 
     """
-    return local(rasters, 31, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 31, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2128,7 +2341,9 @@ def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 32, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 32, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2144,10 +2359,14 @@ def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     :return: the output raster
 
     """
-    return local(rasters, 33, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 33, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def less_than_equal(
+    rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
+):
     """
     The LessThanEqual operation
 
@@ -2160,7 +2379,9 @@ def less_than_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ast
     :return: the output raster
 
     """
-    return local(rasters, 34, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 34, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2176,7 +2397,9 @@ def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 35, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 35, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2192,7 +2415,9 @@ def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 36, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 36, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2208,10 +2433,19 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def majority(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Majority operation
 
@@ -2227,10 +2461,24 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
 
     """
     opnum = 66 if ignore_nodata else 38
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband= process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def max(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Max operation
 
@@ -2245,10 +2493,24 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
 
     """
     opnum = 67 if ignore_nodata else 39
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def mean(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Mean operation
 
@@ -2264,10 +2526,24 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=
 
     """
     opnum = 68 if ignore_nodata else 40
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def med(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Med operation
 
@@ -2283,10 +2559,24 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
 
     """
     opnum = 69 if ignore_nodata else 41
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def min(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Min operation
 
@@ -2302,10 +2592,24 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
 
     """
     opnum = 70 if ignore_nodata else 42
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def minority(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Minority operation
 
@@ -2321,7 +2625,14 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
 
     """
     opnum = 71 if ignore_nodata else 43
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2337,7 +2648,9 @@ def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 44, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 44, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2353,7 +2666,9 @@ def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     :return: the output raster
 
     """
-    return local(rasters, 45, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 45, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2369,10 +2684,19 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     :return: the output raster
 
     """
-    return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def cellstats_range(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Range operation
 
@@ -2388,7 +2712,14 @@ def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ign
 
     """
     opnum = 72 if ignore_nodata else 47
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2404,7 +2735,9 @@ def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
     :return: the output raster
 
     """
-    return local(rasters, 48, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 48, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2420,7 +2753,9 @@ def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
     :return: the output raster
 
     """
-    return local(rasters, 49, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 49, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2436,7 +2771,9 @@ def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
     :return: the output raster
 
     """
-    return local(rasters, 50, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 50, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2452,7 +2789,9 @@ def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 51, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 51, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2468,7 +2807,9 @@ def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 52, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 52, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2484,10 +2825,19 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     :return: the output raster
 
     """
-    return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def std(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Std operation
 
@@ -2503,10 +2853,24 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
 
     """
     opnum = 73 if ignore_nodata else 54
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None, process_as_multiband=None):
+def sum(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Sum operation
 
@@ -2522,7 +2886,14 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
 
     """
     opnum = 74 if ignore_nodata else 55
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2538,7 +2909,9 @@ def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 56, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 56, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2554,10 +2927,19 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
+def variety(
+    rasters,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
     """
     The Variety operation
 
@@ -2573,7 +2955,14 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_noda
 
     """
     opnum = 75 if ignore_nodata else 58
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+    )
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2589,7 +2978,9 @@ def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 59, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 59, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2605,7 +2996,9 @@ def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 60, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 60, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2621,7 +3014,9 @@ def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 61, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 61, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2637,7 +3032,9 @@ def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
     :return: the output raster
 
     """
-    return local(rasters, 64, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 64, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2653,7 +3050,9 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
     :return: the output raster
 
     """
-    return local(rasters, 65, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 65, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2679,7 +3078,9 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
         con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
 
     """
-    return local(rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
 
 
 def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2695,12 +3096,21 @@ def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :return: the output raster
 
     """
-    return local(rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(
+        rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
+    )
+
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
 
-def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretation=None, astype=None):
+def mask(
+    raster,
+    no_data_values=None,
+    included_ranges=None,
+    no_data_interpretation=None,
+    astype=None,
+):
     """
     The mask function changes the image by specifying a certain pixel value or a range of pixel values as no data.
     The arguments for the mask function are as follows:
@@ -2730,10 +3140,8 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
 
     template_dict = {
         "rasterFunction": "Mask",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -2744,7 +3152,9 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     if included_ranges is not None:
         template_dict["rasterFunctionArguments"]["IncludedRanges"] = included_ranges
     if no_data_interpretation is not None:
-        template_dict["rasterFunctionArguments"]["NoDataInterpretation"] = no_data_interpretation
+        template_dict["rasterFunctionArguments"][
+            "NoDataInterpretation"
+        ] = no_data_interpretation
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -2769,10 +3179,8 @@ def ml_classify(raster, signature, astype=None):
 
     template_dict = {
         "rasterFunction": "MLClassify",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -2782,6 +3190,7 @@ def ml_classify(raster, signature, astype=None):
         template_dict["rasterFunctionArguments"]["SignatureFile"] = signature
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 # See NDVI() above
 # def ndvi(raster, visible_band_id=None, infrared_band_id=None, astype=None):
@@ -2856,8 +3265,16 @@ def ml_classify(raster, signature, astype=None):
 #     }
 
 
-def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geometries=None, no_data_ranges=None,
-          allow_unmatched=None, astype=None):
+def remap(
+    raster,
+    input_ranges=None,
+    output_values=None,
+    geometry_type=None,
+    geometries=None,
+    no_data_ranges=None,
+    allow_unmatched=None,
+    astype=None,
+):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
     see `remap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm>`__.
@@ -2880,10 +3297,8 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
 
     template_dict = {
         "rasterFunction": "Remap",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -2905,7 +3320,9 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def resample(raster, resampling_type=None, input_cellsize=None, output_cellsize=None, astype=None):
+def resample(
+    raster, resampling_type=None, input_cellsize=None, output_cellsize=None, astype=None
+):
     """
     The resample function resamples pixel values from a given resolution.The arguments for the resample function are as follows:
 
@@ -2921,17 +3338,17 @@ def resample(raster, resampling_type=None, input_cellsize=None, output_cellsize=
 
     layer, raster, raster_ra = _raster_input(raster)
     resample_types = {
-        'NearestNeighbor': 0,
-        'Bilinear': 1,
-        'Cubic': 2,
-        'Majority': 3,
-        'BilinearInterpolationPlus': 4,
-        'BilinearGaussBlur': 5,
-        'BilinearGaussBlurPlus': 6,
-        'Average': 7,
-        'Minimum': 8,
-        'Maximum': 9,
-        'VectorAverage':10
+        "NearestNeighbor": 0,
+        "Bilinear": 1,
+        "Cubic": 2,
+        "Majority": 3,
+        "BilinearInterpolationPlus": 4,
+        "BilinearGaussBlur": 5,
+        "BilinearGaussBlurPlus": 6,
+        "Average": 7,
+        "Minimum": 8,
+        "Maximum": 9,
+        "VectorAverage": 10,
     }
 
     if isinstance(resampling_type, str):
@@ -2939,10 +3356,8 @@ def resample(raster, resampling_type=None, input_cellsize=None, output_cellsize=
 
     template_dict = {
         "rasterFunction": "Resample",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -2958,8 +3373,15 @@ def resample(raster, resampling_type=None, input_cellsize=None, output_cellsize=
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectral_radius=None, spatial_radius=None,
-                       min_num_pixels_per_segment=None, astype=None):
+def segment_mean_shift(
+    raster,
+    spectral_detail=None,
+    spatial_detail=None,
+    spectral_radius=None,
+    spatial_radius=None,
+    min_num_pixels_per_segment=None,
+    astype=None,
+):
     """
     The segment_mean_shift function produces a segmented output. Pixel values in the output image represent the
     converged RGB colors of the segment. The input raster needs to be a 3-band 8-bit image. If the imagery layer is not
@@ -2990,10 +3412,8 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
 
     template_dict = {
         "rasterFunction": "SegmentMeanShift",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3008,13 +3428,27 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
     if spatial_radius is not None:
         template_dict["rasterFunctionArguments"]["SpatialRadius"] = spatial_radius
     if min_num_pixels_per_segment is not None:
-        template_dict["rasterFunctionArguments"]["MinNumPixelsPerSegment"] = min_num_pixels_per_segment
+        template_dict["rasterFunctionArguments"][
+            "MinNumPixelsPerSegment"
+        ] = min_num_pixels_per_segment
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
-                  psz_factor=None, remove_edge_effect=None, astype=None, colorramp=None, hillshade_type=0):
+def shaded_relief(
+    raster,
+    azimuth=None,
+    altitude=None,
+    z_factor=None,
+    colormap=None,
+    slope_type=None,
+    ps_power=None,
+    psz_factor=None,
+    remove_edge_effect=None,
+    astype=None,
+    colorramp=None,
+    hillshade_type=0,
+):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
     Hillshade methods. For more information, see `Shaded relief <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/shaded-relief-function.htm>`__ function.
@@ -3044,10 +3478,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
 
     template_dict = {
         "rasterFunction": "ShadedRelief",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3062,7 +3494,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     if colormap is not None:
         template_dict["rasterFunctionArguments"]["Colormap"] = colormap
     if colorramp is not None:
-        template_dict["rasterFunctionArguments"]['Colorramp'] = colorramp
+        template_dict["rasterFunctionArguments"]["Colorramp"] = colorramp
     if slope_type is not None:
         template_dict["rasterFunctionArguments"]["SlopeType"] = slope_type
     if ps_power is not None:
@@ -3070,15 +3502,24 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     if psz_factor is not None:
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
-        template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+        template_dict["rasterFunctionArguments"][
+            "RemoveEdgeEffect"
+        ] = remove_edge_effect
     if hillshade_type is not None:
         template_dict["rasterFunctionArguments"]["HillshadeType"] = hillshade_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, remove_edge_effect=None,
-          astype=None):
+def slope(
+    dem,
+    z_factor=None,
+    slope_type=None,
+    ps_power=None,
+    psz_factor=None,
+    remove_edge_effect=None,
+    astype=None,
+):
     """
     slope represents the rate of change of elevation for each pixel. For more information, see
     `slope function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm>`__
@@ -3102,10 +3543,8 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
 
     template_dict = {
         "rasterFunction": "Slope",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3120,15 +3559,25 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
     if psz_factor is not None:
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
-        template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+        template_dict["rasterFunctionArguments"][
+            "RemoveEdgeEffect"
+        ] = remove_edge_effect
     # if dem is not None:
     #     template_dict["rasterFunctionArguments"]["DEM"] = raster
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=None, columns=None, rows=None,
-               fill_no_data_only=None, astype=None):
+def focal_statistics(
+    raster,
+    kernel_columns=None,
+    kernel_rows=None,
+    stat_type=None,
+    columns=None,
+    rows=None,
+    fill_no_data_only=None,
+    astype=None,
+):
     """
     The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
     For more information, see `statistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm>`__.
@@ -3175,14 +3624,20 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    statistics_types = ["Min", "Max", "Mean", "StandardDeviation", "Median", "Majority", "Minority"]
+    statistics_types = [
+        "Min",
+        "Max",
+        "Mean",
+        "StandardDeviation",
+        "Median",
+        "Majority",
+        "Minority",
+    ]
 
     template_dict = {
         "rasterFunction": "Statistics",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3192,11 +3647,11 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
         template_dict["rasterFunctionArguments"]["KernelColumns"] = kernel_columns
     if kernel_rows is not None:
         template_dict["rasterFunctionArguments"]["KernelRows"] = kernel_rows
-    if stat_type is not None: 
+    if stat_type is not None:
         if isinstance(stat_type, str) and stat_type in statistics_types:
-            template_dict["rasterFunctionArguments"]['Type'] = stat_type
+            template_dict["rasterFunctionArguments"]["Type"] = stat_type
         elif isinstance(stat_type, int):
-            template_dict["rasterFunctionArguments"]['Type'] = stat_type
+            template_dict["rasterFunctionArguments"]["Type"] = stat_type
     if columns is not None:
         template_dict["rasterFunctionArguments"]["Columns"] = columns
     if rows is not None:
@@ -3207,9 +3662,21 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statistics=None,
-            dra=None, min_percent=None, max_percent=None, gamma=None, compute_gamma=None, sigmoid_strength_level=None,
-            astype=None):
+def stretch(
+    raster,
+    stretch_type=0,
+    min=None,
+    max=None,
+    num_stddev=None,
+    statistics=None,
+    dra=None,
+    min_percent=None,
+    max_percent=None,
+    gamma=None,
+    compute_gamma=None,
+    sigmoid_strength_level=None,
+    astype=None,
+):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
     `stretch function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm>`__.
@@ -3250,12 +3717,12 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
     layer, raster, raster_ra = _raster_input(raster)
 
     str_types = {
-        'none': 0,
-        'stddev': 3,
-        'histogram' : 4,
-        'minmax': 5,
-        'percentclip' : 6,
-        'sigmoid': 9
+        "none": 0,
+        "stddev": 3,
+        "histogram": 4,
+        "minmax": 5,
+        "percentclip": 6,
+        "sigmoid": 9,
     }
 
     if isinstance(stretch_type, str):
@@ -3265,10 +3732,8 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
 
     template_dict = {
         "rasterFunction": "Stretch",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3281,7 +3746,9 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
     if max is not None:
         template_dict["rasterFunctionArguments"]["Max"] = max
     if num_stddev is not None:
-        template_dict["rasterFunctionArguments"]["NumberOfStandardDeviations"] = num_stddev
+        template_dict["rasterFunctionArguments"][
+            "NumberOfStandardDeviations"
+        ] = num_stddev
     if statistics is not None:
         template_dict["rasterFunctionArguments"]["Statistics"] = statistics
     if dra is not None:
@@ -3295,7 +3762,9 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
     if compute_gamma is not None:
         template_dict["rasterFunctionArguments"]["ComputeGamma"] = compute_gamma
     if sigmoid_strength_level is not None:
-        template_dict["rasterFunctionArguments"]["SigmoidStrengthLevel"] = sigmoid_strength_level
+        template_dict["rasterFunctionArguments"][
+            "SigmoidStrengthLevel"
+        ] = sigmoid_strength_level
 
     if compute_gamma is not None or gamma is not None:
         template_dict["rasterFunctionArguments"]["UseGamma"] = True
@@ -3320,10 +3789,8 @@ def threshold(raster, astype=None):
 
     template_dict = {
         "rasterFunction": "Threshold",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3335,8 +3802,15 @@ def threshold(raster, astype=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, constant_fill_check=None,
-                   constant_fill_value=None, fill_raster=None, astype=None):
+def transpose_bits(
+    raster,
+    input_bit_positions=None,
+    output_bit_positions=None,
+    constant_fill_check=None,
+    constant_fill_value=None,
+    fill_raster=None,
+    astype=None,
+):
     """
     The transpose_bits function performs a bit operation. It extracts bit values from the source data and assigns them
     to new bits in the output data.
@@ -3374,23 +3848,29 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
 
     template_dict = {
         "rasterFunction": "TransposeBits",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     if input_bit_positions is not None:
-        template_dict["rasterFunctionArguments"]["InputBitPositions"] = input_bit_positions
+        template_dict["rasterFunctionArguments"][
+            "InputBitPositions"
+        ] = input_bit_positions
     if output_bit_positions is not None:
-        template_dict["rasterFunctionArguments"]["OutputBitPositions"] = output_bit_positions
+        template_dict["rasterFunctionArguments"][
+            "OutputBitPositions"
+        ] = output_bit_positions
     if constant_fill_check is not None:
-        template_dict["rasterFunctionArguments"]["ConstantFillCheck"] = constant_fill_check
+        template_dict["rasterFunctionArguments"][
+            "ConstantFillCheck"
+        ] = constant_fill_check
     if constant_fill_value is not None:
-        template_dict["rasterFunctionArguments"]["ConstantFillValue"] = constant_fill_value
+        template_dict["rasterFunctionArguments"][
+            "ConstantFillValue"
+        ] = constant_fill_value
     if fill_raster is not None:
         template_dict["rasterFunctionArguments"]["FillRaster"] = fill_raster
 
@@ -3419,22 +3899,22 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     unit_types = {
-        'inches': 1,
-        'feet': 3,
-        'yards': 4,
-        'miles': 5,
-        'nauticalmiles': 6,
-        'millimeters': 7,
-        'centimeters': 8,
-        'meters': 9,
-        'celsius': 200,
-        'fahrenheit': 201,
-        'kelvin': 202,
-        'meterspersecond': 100,
-        'kilometersperhour': 101,
-        'knots': 102,
-        'feetpersecond': 103,
-        'milesperhour': 104
+        "inches": 1,
+        "feet": 3,
+        "yards": 4,
+        "miles": 5,
+        "nauticalmiles": 6,
+        "millimeters": 7,
+        "centimeters": 8,
+        "meters": 9,
+        "celsius": 200,
+        "fahrenheit": 201,
+        "kelvin": 202,
+        "meterspersecond": 100,
+        "kilometersperhour": 101,
+        "knots": 102,
+        "feetpersecond": 103,
+        "milesperhour": 104,
     }
 
     if isinstance(from_unit, str):
@@ -3443,13 +3923,10 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     if isinstance(to_unit, str):
         to_unit = unit_types[to_unit.lower()]
 
-
     template_dict = {
         "rasterFunction": "UnitConversion",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3463,8 +3940,15 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def vector_field_renderer(raster, is_uv_components=None, reference_system=None, mass_flow_angle_representation=None,
-                          calculation_method="Vector Average", symbology_name="Single Arrow", astype=None):
+def vector_field_renderer(
+    raster,
+    is_uv_components=None,
+    reference_system=None,
+    mass_flow_angle_representation=None,
+    calculation_method="Vector Average",
+    symbology_name="Single Arrow",
+    astype=None,
+):
     """
     The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.
     
@@ -3485,10 +3969,8 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
 
     template_dict = {
         "rasterFunction": "VectorFieldRenderer",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if astype is not None:
@@ -3499,9 +3981,13 @@ def vector_field_renderer(raster, is_uv_components=None, reference_system=None, 
     if reference_system is not None:
         template_dict["rasterFunctionArguments"]["ReferenceSystem"] = reference_system
     if mass_flow_angle_representation is not None:
-        template_dict["rasterFunctionArguments"]["MassFlowAngleRepresentation"] = mass_flow_angle_representation
+        template_dict["rasterFunctionArguments"][
+            "MassFlowAngleRepresentation"
+        ] = mass_flow_angle_representation
     if calculation_method is not None:
-        template_dict["rasterFunctionArguments"]["CalculationMethod"] = calculation_method
+        template_dict["rasterFunctionArguments"][
+            "CalculationMethod"
+        ] = calculation_method
     if symbology_name is not None:
         template_dict["rasterFunctionArguments"]["SymbologyName"] = symbology_name
 
@@ -3524,7 +4010,7 @@ def apply(raster, fn_name, **kwargs):
     :param kwargs: keyword arguments to override the default values of the raster function template, including astype
     :return: the output raster
     """
-    
+
     variable_name = kwargs.pop("variable_name", None)
     raster_layer = raster
     if variable_name is not None:
@@ -3534,41 +4020,49 @@ def apply(raster, fn_name, **kwargs):
 
     template_dict = {
         "rasterFunction": fn_name,
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     for key, value in kwargs.items():
         template_dict["rasterFunctionArguments"][key] = value
 
-    astype = kwargs.pop('astype', None)
+    astype = kwargs.pop("astype", None)
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
-        template_dict["rasterFunctionArguments"].pop('astype', None)
+        template_dict["rasterFunctionArguments"].pop("astype", None)
 
     if variable_name is not None:
-        template_dict["variableName"] = variable_name        
-        template_dict["rasterFunctionArguments"][variable_name] = raster        
-        template_dict["rasterFunctionArguments"].pop('variable_name', None)
-        template_dict["rasterFunctionArguments"].pop('Raster', None)
+        template_dict["variableName"] = variable_name
+        template_dict["rasterFunctionArguments"][variable_name] = raster
+        template_dict["rasterFunctionArguments"].pop("variable_name", None)
+        template_dict["rasterFunctionArguments"].pop("Raster", None)
 
     function_chain_ra = {
-        "rasterFunction" : "Identity",
+        "rasterFunction": "Identity",
         "rasterFunctionArguments": {
-            "Raster" : {"renderingRule":copy.deepcopy(template_dict),
-                         "url":layer._lyr_json['url']},
-        }
+            "Raster": {
+                "renderingRule": copy.deepcopy(template_dict),
+                "url": layer._lyr_json["url"],
+            },
+        },
     }
 
     if raster_layer._mosaic_rule is not None:
-        function_chain_ra["rasterFunctionArguments"]["Raster"]["mosaicRule"] = raster_layer._mosaic_rule
+        function_chain_ra["rasterFunctionArguments"]["Raster"][
+            "mosaicRule"
+        ] = raster_layer._mosaic_rule
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
-def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_reference_system='Geographic',
-                 output_data_type='Vector-UV', astype=None):
+def vector_field(
+    raster_u_mag,
+    raster_v_dir,
+    input_data_type="Vector-UV",
+    angle_reference_system="Geographic",
+    output_data_type="Vector-UV",
+    astype=None,
+):
     """
     The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
     into a two-band raster (each band represents U/V or Magnitude/Direction). Data combination type (U-V or Magnitude-Direction)
@@ -3591,12 +4085,9 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
         layer = layer1
     else:
         layer = layer2
-    #layer = layer1 if layer1 is not None else layer2
+    # layer = layer1 if layer1 is not None else layer2
 
-    angle_reference_system_types = {
-        "Geographic" : 0,
-        "Arithmetic" : 1
-    }
+    angle_reference_system_types = {"Geographic": 0, "Arithmetic": 1}
 
     in_angle_reference_system = angle_reference_system_types[angle_reference_system]
 
@@ -3604,16 +4095,24 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
         "rasterFunction": "VectorField",
         "rasterFunctionArguments": {
             "Raster1": raster_u_mag_1,
-            "Raster2": raster_v_dir_1,            
-        }
+            "Raster2": raster_v_dir_1,
+        },
     }
 
     if in_angle_reference_system is not None:
-        template_dict["rasterFunctionArguments"]["AngleReferenceSystem"] = in_angle_reference_system
-    if input_data_type is not None and input_data_type in ["Vector-UV", "Vector-MagDir"]:
-        template_dict["rasterFunctionArguments"]['InputDataType'] = input_data_type
-    if output_data_type is not None and output_data_type in ["Vector-UV", "Vector-MagDir"]:
-        template_dict["rasterFunctionArguments"]['OutputDataType'] = output_data_type
+        template_dict["rasterFunctionArguments"][
+            "AngleReferenceSystem"
+        ] = in_angle_reference_system
+    if input_data_type is not None and input_data_type in [
+        "Vector-UV",
+        "Vector-MagDir",
+    ]:
+        template_dict["rasterFunctionArguments"]["InputDataType"] = input_data_type
+    if output_data_type is not None and output_data_type in [
+        "Vector-UV",
+        "Vector-MagDir",
+    ]:
+        template_dict["rasterFunctionArguments"]["OutputDataType"] = output_data_type
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
@@ -3634,10 +4133,8 @@ def complex(raster):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Complex",
-        "rasterFunctionArguments" : {
-            "Raster" : raster,
-        }
+        "rasterFunction": "Complex",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -3661,10 +4158,8 @@ def colormap_to_rgb(raster):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "ColormapToRGB",
-        "rasterFunctionArguments" : {
-            "Raster" : raster,
-        }
+        "rasterFunction": "ColormapToRGB",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -3685,16 +4180,14 @@ def statistics_histogram(raster, statistics=None, histograms=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "StatisticsHistogram",
-        "rasterFunctionArguments" : {            
-            "Raster" : raster,
-        }
+        "rasterFunction": "StatisticsHistogram",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if statistics is not None:
-        template_dict["rasterFunctionArguments"]['Statistics'] = statistics
+        template_dict["rasterFunctionArguments"]["Statistics"] = statistics
     if histograms is not None:
-        template_dict["rasterFunctionArguments"]['Histograms'] = histograms
+        template_dict["rasterFunctionArguments"]["Histograms"] = histograms
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -3720,14 +4213,12 @@ def tasseled_cap(raster):
     :param raster: the input raster / imagery layer
     :return: the output raster with TasseledCap function applied to it
     """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "TasseledCap",
-        "rasterFunctionArguments" : {
-            "Raster" : raster,
-        }
+        "rasterFunction": "TasseledCap",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -3743,17 +4234,16 @@ def identity(raster):
     :param raster: the input raster / imagery layer
     :return: the input raster
     """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Identity",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        }
+        "rasterFunction": "Identity",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
     """
@@ -3768,23 +4258,20 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
     :param conversion_type: sting type, one of "rgb_to_hsv" or "hsv_to_rgb". Default is "rgb_to_hsv"
     :return: the output raster with this function applied to it
     """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
 
-    conversion_types = {
-        "rgb_to_hsv" : 0,
-        "hsv_to_rgb" : 1
-        }
-            
+    conversion_types = {"rgb_to_hsv": 0, "hsv_to_rgb": 1}
+
     template_dict = {
-        "rasterFunction" : "ColorspaceConversion",
-        "rasterFunctionArguments" : {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "ColorspaceConversion",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
-    template_dict["rasterFunctionArguments"]['ConversionType'] = conversion_types[conversion_type]
-         
+
+    template_dict["rasterFunctionArguments"]["ConversionType"] = conversion_types[
+        conversion_type
+    ]
+
     return _clone_layer(layer, template_dict, raster_ra)
 
 
@@ -3799,18 +4286,18 @@ def grayscale(raster, conversion_parameters=None):
     :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
     :return: the output raster with this function applied to it
     """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Grayscale",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "Grayscale",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
+
     if conversion_parameters is not None and isinstance(conversion_parameters, list):
-        template_dict["rasterFunctionArguments"]['ConversionParameters'] = conversion_parameters
+        template_dict["rasterFunctionArguments"][
+            "ConversionParameters"
+        ] = conversion_parameters
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -3828,21 +4315,28 @@ def spectral_conversion(raster, conversion_matrix):
     :param conversion_parameters: array of double (A NxN length one-dimension matrix, where N=band count.)
     :return: the output raster with this function applied to it
     """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
-        "rasterFunction" : "SpectralConversion",
+        "rasterFunction": "SpectralConversion",
         "rasterFunctionArguments": {
-            "Raster" : raster,  
-            "ConversionMatrix" : conversion_matrix
-        }
-    }    
-    
+            "Raster": raster,
+            "ConversionMatrix": conversion_matrix,
+        },
+    }
+
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def raster_calculator(rasters, input_names, expression, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def raster_calculator(
+    rasters,
+    input_names,
+    expression,
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    astype=None,
+):
     """
     The RasterCalculator function provides access to all existing math functions
     so you can make calls to them when building your expressions. The calculator
@@ -3860,52 +4354,45 @@ def raster_calculator(rasters, input_names, expression, extent_type="FirstOf", c
     :param astype: output pixel type
     :return: output raster with function applied
     """
-    
-    layer, raster, raster_ra = _raster_input(rasters)
-    
-    extent_types = {
-        "FirstOf" : 0,
-        "IntersectionOf" : 1,
-        "UnionOf" : 2,
-        "LastOf" : 3
-    }
 
-    cellsize_types = {
-        "FirstOf" : 0,
-        "MinOf" : 1,
-        "MaxOf" : 2,
-        "MeanOf" : 3,
-        "LastOf" : 4
-    }      
+    layer, raster, raster_ra = _raster_input(rasters)
+
+    extent_types = {"FirstOf": 0, "IntersectionOf": 1, "UnionOf": 2, "LastOf": 3}
+
+    cellsize_types = {"FirstOf": 0, "MinOf": 1, "MaxOf": 2, "MeanOf": 3, "LastOf": 4}
 
     template_dict = {
-        "rasterFunction" : "RasterCalculator",
+        "rasterFunction": "RasterCalculator",
         "rasterFunctionArguments": {
-            "InputNames" : input_names,
-            "Expression" : expression,
-            "Rasters" : raster            
+            "InputNames": input_names,
+            "Expression": expression,
+            "Rasters": raster,
         },
-        "variableName" : "Rasters"
+        "variableName": "Rasters",
     }
-    
-    template_dict["rasterFunctionArguments"]['ExtentType'] = extent_types[extent_type]    
-    template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type]
+
+    template_dict["rasterFunctionArguments"]["ExtentType"] = extent_types[extent_type]
+    template_dict["rasterFunctionArguments"]["CellsizeType"] = cellsize_types[
+        cellsize_type
+    ]
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
-def speckle(raster, 
-            filter_type="Lee", 
-            filter_size="3x3", 
-            noise_model="Multiplicative", 
-            noise_var=None,
-            additive_noise_mean=None, 
-            multiplicative_noise_mean=1,
-            nlooks=1, 
-            damp_factor=None):
+def speckle(
+    raster,
+    filter_type="Lee",
+    filter_size="3x3",
+    noise_model="Multiplicative",
+    noise_var=None,
+    additive_noise_mean=None,
+    multiplicative_noise_mean=1,
+    nlooks=1,
+    damp_factor=None,
+):
     """
     The Speckle function filters the speckled radar dataset to smooth out the 
     noise while retaining the edges or sharp features in the image. Four speckle
@@ -3925,62 +4412,51 @@ def speckle(raster,
     :param damp_factor: double, for EnhancedLee and Frost filters
     :return: output raster with function applied
     """
-   
+
     layer, raster, raster_ra = _raster_input(raster)
-   
-    filter_types = {
-        "Lee" : 0,
-        "EnhancedLee" : 1,
-        "Frost" : 2,
-        "Kuan" : 3
-    }
 
-    filter_sizes = {
-        "3x3" : 0,
-        "5x5" : 1,
-        "7x7" : 2,
-        "9x9" : 3,
-        "11x11" : 4
-    }
+    filter_types = {"Lee": 0, "EnhancedLee": 1, "Frost": 2, "Kuan": 3}
 
-    noise_models = {
-        "Multiplicative" : 0,
-        "Additive" : 1,
-        "AdditiveAndMultiplicative" : 2
-    }    
-    
+    filter_sizes = {"3x3": 0, "5x5": 1, "7x7": 2, "9x9": 3, "11x11": 4}
+
+    noise_models = {"Multiplicative": 0, "Additive": 1, "AdditiveAndMultiplicative": 2}
+
     template_dict = {
-        "rasterFunction" : "Speckle",
-        "rasterFunctionArguments" : {            
-            "Raster": raster,            
-        }
+        "rasterFunction": "Speckle",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-        
-    template_dict["rasterFunctionArguments"]['FilterType'] = filter_types[filter_type]    
-    template_dict["rasterFunctionArguments"]['FilterSize'] = filter_sizes[filter_size]    
-    template_dict["rasterFunctionArguments"]['NoiseModel'] = noise_models[noise_model]
+
+    template_dict["rasterFunctionArguments"]["FilterType"] = filter_types[filter_type]
+    template_dict["rasterFunctionArguments"]["FilterSize"] = filter_sizes[filter_size]
+    template_dict["rasterFunctionArguments"]["NoiseModel"] = noise_models[noise_model]
 
     if noise_var is not None:
-        template_dict["rasterFunctionArguments"]['NoiseVar'] = noise_var
+        template_dict["rasterFunctionArguments"]["NoiseVar"] = noise_var
     if additive_noise_mean is not None:
-        template_dict["rasterFunctionArguments"]['AdditiveNoiseMean'] = additive_noise_mean
+        template_dict["rasterFunctionArguments"][
+            "AdditiveNoiseMean"
+        ] = additive_noise_mean
     if multiplicative_noise_mean is not None:
-        template_dict["rasterFunctionArguments"]['MultiplicativeNoiseMean'] = multiplicative_noise_mean
+        template_dict["rasterFunctionArguments"][
+            "MultiplicativeNoiseMean"
+        ] = multiplicative_noise_mean
     if nlooks is not None:
-        template_dict["rasterFunctionArguments"]['NLooks'] = nlooks
+        template_dict["rasterFunctionArguments"]["NLooks"] = nlooks
     if damp_factor is not None:
-        template_dict["rasterFunctionArguments"]['DampFactor'] = damp_factor
-    
+        template_dict["rasterFunctionArguments"]["DampFactor"] = damp_factor
+
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def pansharpen(pan_raster,
-               ms_raster,
-               ir_raster=None,
-               fourth_band_of_ms_is_ir = True,
-               weights = [0.166, 0.167, 0.167, 0.5],               
-               type="ESRI",                                
-               sensor=None):
+def pansharpen(
+    pan_raster,
+    ms_raster,
+    ir_raster=None,
+    fourth_band_of_ms_is_ir=True,
+    weights=[0.166, 0.167, 0.167, 0.5],
+    type="ESRI",
+    sensor=None,
+):
     """
     The Pansharpening function uses a higher-resolution panchromatic raster to
     fuse with a lower-resolution, multiband raster. It can generate colorized 
@@ -3999,8 +4475,8 @@ def pansharpen(pan_raster,
 
     layer1, pan_raster_1, raster_ra1 = _raster_input(pan_raster)
     layer2, ms_raster_1, raster_ra2 = _raster_input(pan_raster, ms_raster)
-    
-    layer3=None
+
+    layer3 = None
     if ir_raster is not None:
         layer3, ir_raster_1, raster_ra3 = _raster_input(pan_raster, ir_raster)
 
@@ -4008,10 +4484,10 @@ def pansharpen(pan_raster,
     if layer1._datastore_raster is True:
         layer = layer1
     elif layer2._datastore_raster is True:
-        layer= layer2
-    elif (layer3 is not None and layer3._datastore_raster is True):
+        layer = layer2
+    elif layer3 is not None and layer3._datastore_raster is True:
         layer = layer3
-    
+
     if layer is not None:
         pan_raster_1 = raster_ra1
         ms_raster_1 = raster_ra2
@@ -4026,45 +4502,49 @@ def pansharpen(pan_raster,
             layer = layer3
 
     pansharpening_types = {
-        "IHS" : 0,
-        "Brovey" : 1,
-        "ESRI" : 2,
-        "SimpleMean" : 3,
-        "Gram-Schmidt" : 4
+        "IHS": 0,
+        "Brovey": 1,
+        "ESRI": 2,
+        "SimpleMean": 3,
+        "Gram-Schmidt": 4,
     }
 
     template_dict = {
-        "rasterFunction" : "Pansharpening",
-        "rasterFunctionArguments" : {      
-            "Weights" : weights,            
+        "rasterFunction": "Pansharpening",
+        "rasterFunctionArguments": {
+            "Weights": weights,
             "PanImage": pan_raster_1,
-            "MSImage" : ms_raster_1
-        }
+            "MSImage": ms_raster_1,
+        },
     }
 
     if type is not None:
-        template_dict["rasterFunctionArguments"]['PansharpeningType'] = pansharpening_types[type]
+        template_dict["rasterFunctionArguments"][
+            "PansharpeningType"
+        ] = pansharpening_types[type]
 
     if ir_raster is not None:
-        template_dict["rasterFunctionArguments"]['InfraredImage'] = ir_raster_1
+        template_dict["rasterFunctionArguments"]["InfraredImage"] = ir_raster_1
 
     if isinstance(fourth_band_of_ms_is_ir, bool):
-        template_dict["rasterFunctionArguments"]['UseFourthBandOfMSAsIR'] = fourth_band_of_ms_is_ir
+        template_dict["rasterFunctionArguments"][
+            "UseFourthBandOfMSAsIR"
+        ] = fourth_band_of_ms_is_ir
 
     if sensor is not None:
-        template_dict["rasterFunctionArguments"]['Sensor'] = sensor
+        template_dict["rasterFunctionArguments"]["Sensor"] = sensor
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra['rasterFunctionArguments']['PanImage'] = raster_ra1
-    function_chain_ra['rasterFunctionArguments']['MSImage'] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["PanImage"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["MSImage"] = raster_ra2
     if ir_raster is not None:
-        function_chain_ra['rasterFunctionArguments']['InfraredImage'] = raster_ra3
+        function_chain_ra["rasterFunctionArguments"]["InfraredImage"] = raster_ra3
 
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
-               
+
     """
     The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm
@@ -4079,26 +4559,26 @@ def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
     :return: output raster with function applied
     """
 
-    layer, raster, raster_ra = _raster_input(rasters)   
+    layer, raster, raster_ra = _raster_input(rasters)
 
     template_dict = {
-        "rasterFunction" : "WeightedOverlay",
-        "rasterFunctionArguments" : { 
-            "Rasters" : raster,
-            "Fields" : fields,
+        "rasterFunction": "WeightedOverlay",
+        "rasterFunctionArguments": {
+            "Rasters": raster,
+            "Fields": fields,
             "Influences": influences,
-            "Remaps" : remaps,
-            "EvalFrom" : eval_from,
-            "EvalTo": eval_to
+            "Remaps": remaps,
+            "EvalFrom": eval_from,
+            "EvalTo": eval_to,
         },
-        "variableName": "Rasters"
-    }   
-    
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+        "variableName": "Rasters",
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
 def weighted_sum(rasters, fields, weights):
-               
+
     """
     The WeightedSum function allows you to overlay several rasters, multiplying each by their given weight and summing them together.  For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
@@ -4110,24 +4590,36 @@ def weighted_sum(rasters, fields, weights):
     :return: output raster with function applied
     """
 
-    layer, raster, raster_ra = _raster_input(rasters)   
-     
+    layer, raster, raster_ra = _raster_input(rasters)
+
     template_dict = {
-        "rasterFunction" : "WeightedSum",
-        "rasterFunctionArguments" : { 
-            "Rasters" : raster,
-            "Fields" : fields,
-            "Weights" : weights
+        "rasterFunction": "WeightedSum",
+        "rasterFunctionArguments": {
+            "Rasters": raster,
+            "Fields": fields,
+            "Weights": weights,
         },
-        "variableName": "Rasters"
-    }   
-    
-    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+        "variableName": "Rasters",
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
-def focal_stats(raster, neighborhood_type=1 , width=3, height=3, 
-                inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None,
-                stat_type=3, percentile_value=90, ignore_no_data=True):
+def focal_stats(
+    raster,
+    neighborhood_type=1,
+    width=3,
+    height=3,
+    inner_radius=1,
+    outer_radius=3,
+    radius=3,
+    start_angle=0,
+    end_angle=90,
+    neighborhood_values=None,
+    stat_type=3,
+    percentile_value=90,
+    ignore_no_data=True,
+):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
@@ -4215,10 +4707,8 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
 
     template_dict = {
         "rasterFunction": "Focal",
-        "rasterFunctionArguments": {
-            "Raster": raster
-        },
-        "variableName": "Raster"
+        "rasterFunctionArguments": {"Raster": raster},
+        "variableName": "Raster",
     }
 
     if stat_type is not None:
@@ -4242,13 +4732,22 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
     if end_angle is not None:
         template_dict["rasterFunctionArguments"]["EndAngle"] = end_angle
     if neighborhood_values is not None:
-        flattened = [item for sublist in neighborhood_values if isinstance(sublist, list) for item in sublist]
+        flattened = [
+            item
+            for sublist in neighborhood_values
+            if isinstance(sublist, list)
+            for item in sublist
+        ]
         if flattened == []:
             flattened = neighborhood_values
         else:
-            template_dict["rasterFunctionArguments"]["Height"] = len(neighborhood_values)
+            template_dict["rasterFunctionArguments"]["Height"] = len(
+                neighborhood_values
+            )
             if isinstance(neighborhood_values[0], list):
-                template_dict["rasterFunctionArguments"]["Width"] = len(neighborhood_values[0])
+                template_dict["rasterFunctionArguments"]["Width"] = len(
+                    neighborhood_values[0]
+                )
         template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = flattened
     if ignore_no_data is not None:
         template_dict["rasterFunctionArguments"]["NoDataPolicy"] = ignore_no_data
@@ -4268,30 +4767,30 @@ def lookup(raster, field=None):
     """
 
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
-        "rasterFunction" : "Lookup",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "Lookup",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
+
     if field is not None:
-        template_dict["rasterFunctionArguments"]['Field'] = field
+        template_dict["rasterFunctionArguments"]["Field"] = field
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def raster_collection_function(raster, item_function=None, 
-                               aggregation_function=None, 
-                               processing_function=None, 
-                               aggregation_definition_type="ALL",
-                               dimension=None,
-                               interval_keyword=None,
-                               interval_value=None,
-                               interval_unit=None,
-                               interval_ranges=None,
-                               ):
+def raster_collection_function(
+    raster,
+    item_function=None,
+    aggregation_function=None,
+    processing_function=None,
+    aggregation_definition_type="ALL",
+    dimension=None,
+    interval_keyword=None,
+    interval_value=None,
+    interval_unit=None,
+    interval_ranges=None,
+):
     """
     Creates a new raster by applying item, aggregation and processing function
 
@@ -4318,7 +4817,7 @@ def raster_collection_function(raster, item_function=None,
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -4364,7 +4863,7 @@ def raster_collection_function(raster, item_function=None,
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -4373,7 +4872,7 @@ def raster_collection_function(raster, item_function=None,
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -4403,78 +4902,118 @@ def raster_collection_function(raster, item_function=None,
     """
 
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
         "rasterFunction": "RasterCollection",
-        "rasterFunctionArguments": {
-            "RasterCollection": raster
-        },
-        "variableName": "RasterCollection"
+        "rasterFunctionArguments": {"RasterCollection": raster},
+        "variableName": "RasterCollection",
     }
-    
+
     if item_function is not None:
         if isinstance(item_function, RFT):
-            template_dict["rasterFunctionArguments"]['ItemFunction']=item_function._rft_json
+            template_dict["rasterFunctionArguments"][
+                "ItemFunction"
+            ] = item_function._rft_json
         else:
-            template_dict["rasterFunctionArguments"]['ItemFunction']=item_function
+            template_dict["rasterFunctionArguments"]["ItemFunction"] = item_function
         if "type" not in template_dict["rasterFunctionArguments"]["ItemFunction"]:
-            template_dict["rasterFunctionArguments"]["ItemFunction"].update({'type':'RasterFunctionTemplate'})
+            template_dict["rasterFunctionArguments"]["ItemFunction"].update(
+                {"type": "RasterFunctionTemplate"}
+            )
 
     if aggregation_function is not None:
         if isinstance(aggregation_function, RFT):
-            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function._rft_json
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = aggregation_function._rft_json
         else:
-            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function
-        if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
-            template_dict["rasterFunctionArguments"]["AggregationFunction"].update({'type':'RasterFunctionTemplate'})
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = aggregation_function
+        if (
+            "type"
+            not in template_dict["rasterFunctionArguments"]["AggregationFunction"]
+        ):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"].update(
+                {"type": "RasterFunctionTemplate"}
+            )
 
     if processing_function is not None:
         if isinstance(processing_function, RFT):
-            template_dict["rasterFunctionArguments"]["ProcessingFunction"]=processing_function._rft_json
+            template_dict["rasterFunctionArguments"][
+                "ProcessingFunction"
+            ] = processing_function._rft_json
         else:
-            template_dict["rasterFunctionArguments"]["ProcessingFunction"]=processing_function
+            template_dict["rasterFunctionArguments"][
+                "ProcessingFunction"
+            ] = processing_function
         if "type" not in template_dict["rasterFunctionArguments"]["ProcessingFunction"]:
-            template_dict["rasterFunctionArguments"]["ProcessingFunction"].update({'type':'RasterFunctionTemplate'})
+            template_dict["rasterFunctionArguments"]["ProcessingFunction"].update(
+                {"type": "RasterFunctionTemplate"}
+            )
 
     aggregation_definition = {}
     aggregation_definition.update({"definitionType": aggregation_definition_type})
 
     if dimension is not None:
-         aggregation_definition.update({"dimension":dimension})
+        aggregation_definition.update({"dimension": dimension})
 
     if aggregation_definition_type == "INTERVAL_VALUE":
         if interval_value is None:
-            raise RuntimeError("interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE")
+            raise RuntimeError(
+                "interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE"
+            )
 
-        aggregation_definition.update({"intervalValue":interval_value})
+        aggregation_definition.update({"intervalValue": interval_value})
         if interval_unit is not None:
-            aggregation_definition.update({"intervalUnits":interval_unit})
+            aggregation_definition.update({"intervalUnits": interval_unit})
 
     elif aggregation_definition_type == "INTERVAL_KEYWORD":
         if interval_keyword is None:
-            raise RuntimeError("interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD")
+            raise RuntimeError(
+                "interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD"
+            )
 
-        interval_keyword_val=interval_keyword
+        interval_keyword_val = interval_keyword
         if interval_keyword is not None:
-            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
-                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
-            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
-                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
-            interval_keyword_val=interval_keyword
+            interval_keyword_allowed_values = [
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY",
+                "QUARTERLY",
+                "YEARLY",
+                "RECURRING_DAILY",
+                "RECURRING_WEEKLY",
+                "RECURRING_MONTHLY",
+                "RECURRING_QUARTERLY",
+                "PENTADLY",
+                "DEKADLY",
+            ]
+            if [element.lower() for element in interval_keyword_allowed_values].count(
+                interval_keyword.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "interval_keyword can only be one of the following: "
+                    + str(interval_keyword_allowed_values)
+                )
+            interval_keyword_val = interval_keyword
             for element in interval_keyword_allowed_values:
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
-        aggregation_definition.update({"intervalKeyword":interval_keyword})
+        aggregation_definition.update({"intervalKeyword": interval_keyword})
 
     elif aggregation_definition_type == "INTERVAL_RANGES":
         if interval_ranges is None:
-            raise RuntimeError("interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES")
-            
-        min_list=[]
-        max_list=[]
+            raise RuntimeError(
+                "interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES"
+            )
+
+        min_list = []
+        max_list = []
         if isinstance(interval_ranges, list):
             for ele in interval_ranges:
-                if isinstance(ele,dict):
+                if isinstance(ele, dict):
                     min_list.append(ele["minValue"])
                     max_list.append(ele["maxValue"])
 
@@ -4482,18 +5021,21 @@ def raster_collection_function(raster, item_function=None,
             min_list.append(interval_ranges["minValue"])
             max_list.append(interval_ranges["maxValue"])
 
-        aggregation_definition.update({"minValues":min_list})
-        aggregation_definition.update({"maxValues":max_list})
+        aggregation_definition.update({"minValues": min_list})
+        aggregation_definition.update({"maxValues": max_list})
 
     if aggregation_definition is not None:
-        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(aggregation_definition)
+        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(
+            aggregation_definition
+        )
 
-    #if where_clause is not None:
+    # if where_clause is not None:
     #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
+
+def monitor_vegetation(raster, method="NDVI", band_indexes=None, astype=None):
     """
     The monitor_vegetation function performs an arithmetic operation on the bands 
     of a performs an arithmetic operation on the bands of a multiband raster layer 
@@ -4512,48 +5054,49 @@ def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
     :return: output raster 
     """
     if band_indexes is None:
-        raise RuntimeError('band_indexes cannot be None')
+        raise RuntimeError("band_indexes cannot be None")
     if isinstance(method, str):
-        if method.upper() == 'NDVI':
+        if method.upper() == "NDVI":
             return band_arithmetic(raster, band_indexes, astype, 1)
-        elif method.upper() == 'SAVI':
+        elif method.upper() == "SAVI":
             return band_arithmetic(raster, band_indexes, astype, 2)
-        elif method.upper() == 'TSAVI':
+        elif method.upper() == "TSAVI":
             return band_arithmetic(raster, band_indexes, astype, 3)
-        elif method.upper() == 'MSAVI':
+        elif method.upper() == "MSAVI":
             return band_arithmetic(raster, band_indexes, astype, 4)
-        elif method.upper() == 'GEMI':
+        elif method.upper() == "GEMI":
             return band_arithmetic(raster, band_indexes, astype, 5)
-        elif method.upper() == 'PVI':
+        elif method.upper() == "PVI":
             return band_arithmetic(raster, band_indexes, astype, 6)
-        elif method.upper() == 'GVITM':
+        elif method.upper() == "GVITM":
             return band_arithmetic(raster, band_indexes, astype, 7)
-        elif method.upper() == 'SULTAN':
+        elif method.upper() == "SULTAN":
             return band_arithmetic(raster, band_indexes, astype, 8)
-        elif method.upper() == 'VARI':
+        elif method.upper() == "VARI":
             return band_arithmetic(raster, band_indexes, astype, 9)
-        elif method.upper() == 'GNDVI':
+        elif method.upper() == "GNDVI":
             return band_arithmetic(raster, band_indexes, astype, 10)
-        elif method.upper() == 'SR':
+        elif method.upper() == "SR":
             return band_arithmetic(raster, band_indexes, astype, 11)
-        elif method.upper() == 'NDVIRE':
+        elif method.upper() == "NDVIRE":
             return band_arithmetic(raster, band_indexes, astype, 12)
-        elif method.upper() == 'SRRE':
+        elif method.upper() == "SRRE":
             return band_arithmetic(raster, band_indexes, astype, 13)
-        elif method.upper() == 'MTVI2':
+        elif method.upper() == "MTVI2":
             return band_arithmetic(raster, band_indexes, astype, 14)
-        elif method.upper() == 'RTVICORE':
+        elif method.upper() == "RTVICORE":
             return band_arithmetic(raster, band_indexes, astype, 15)
-        elif method.upper() == 'CIRE':
+        elif method.upper() == "CIRE":
             return band_arithmetic(raster, band_indexes, astype, 16)
-        elif method.upper() == 'CIG':
+        elif method.upper() == "CIG":
             return band_arithmetic(raster, band_indexes, astype, 17)
-        elif method.upper() == 'NDWI':
+        elif method.upper() == "NDWI":
             return band_arithmetic(raster, band_indexes, astype, 18)
-        elif method.upper() == 'EVI':
+        elif method.upper() == "EVI":
             return band_arithmetic(raster, band_indexes, astype, 19)
 
     return band_arithmetic(raster, band_indexes, astype, method)
+
 
 def constant_raster(constant, raster_info, gis=None):
     """
@@ -4590,11 +5133,7 @@ def constant_raster(constant, raster_info, gis=None):
     :return: output raster 
     """
 
-    template_dict = {
-        "rasterFunction" : "Constant",
-        "rasterFunctionArguments": {
-        }
-    }
+    template_dict = {"rasterFunction": "Constant", "rasterFunctionArguments": {}}
 
     if constant is not None:
         template_dict["rasterFunctionArguments"]["Constant"] = constant
@@ -4609,25 +5148,44 @@ def constant_raster(constant, raster_info, gis=None):
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
             if isinstance(layer_raster_info["pixelType"], str):
-                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
-        layer_raster_info.update({'type': 'RasterInfo'})
-        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(
+                    layer_raster_info["pixelType"]
+                )
+        layer_raster_info.update({"type": "RasterInfo"})
+        template_dict["rasterFunctionArguments"]["RasterInfo"] = layer_raster_info
     else:
-        raise RuntimeError('raster_info cannot be None')
+        raise RuntimeError("raster_info cannot be None")
 
     if gis is not None:
         newlyr = ImageryLayer(template_dict, gis)
     else:
-        newlyr = ImageryLayer(template_dict,None)
-    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        newlyr = ImageryLayer(template_dict, None)
+    # _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
     newlyr._fn = template_dict
     newlyr._fnra = template_dict
     return newlyr
 
-def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0, min_integer=1, 
-                  max_integer=10, normal_mean=0.0, std_dev=1.0, exp_mean=1.0, poisson_mean= 1.0,
-                  alpha=1.0, beta=1.0, N=10, r=10, probability=0.5, seed=1, generator_type=2, 
-                  gis=None):
+
+def random_raster(
+    raster_info,
+    distribution=1,
+    min_uniform=0.0,
+    max_uniform=1.0,
+    min_integer=1,
+    max_integer=10,
+    normal_mean=0.0,
+    std_dev=1.0,
+    exp_mean=1.0,
+    poisson_mean=1.0,
+    alpha=1.0,
+    beta=1.0,
+    N=10,
+    r=10,
+    probability=0.5,
+    seed=1,
+    generator_type=2,
+    gis=None,
+):
     """
     Creates a virtual raster with random values for each cell.
 
@@ -4711,11 +5269,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     :return: output raster 
     """
 
-    template_dict = {
-        "rasterFunction" : "Random",
-        "rasterFunctionArguments": {
-        }
-    }
+    template_dict = {"rasterFunction": "Random", "rasterFunctionArguments": {}}
 
     if distribution is not None:
         template_dict["rasterFunctionArguments"]["Distribution"] = distribution
@@ -4775,22 +5329,31 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
             if isinstance(layer_raster_info["pixelType"], str):
-                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
-        layer_raster_info.update({'type': 'RasterInfo'})
-        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(
+                    layer_raster_info["pixelType"]
+                )
+        layer_raster_info.update({"type": "RasterInfo"})
+        template_dict["rasterFunctionArguments"]["RasterInfo"] = layer_raster_info
     else:
-        raise RuntimeError('raster_info cannot be None')
+        raise RuntimeError("raster_info cannot be None")
 
     if gis is not None:
         newlyr = ImageryLayer(template_dict, gis)
     else:
-        newlyr = ImageryLayer(template_dict,None)
-    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        newlyr = ImageryLayer(template_dict, None)
+    # _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
     newlyr._fn = template_dict
     newlyr._fnra = template_dict
     return newlyr
 
-def aggregate_cells(raster, cell_factor=2, aggregation_type=9, extent_handling=False, ignore_nodata=False):
+
+def aggregate_cells(
+    raster,
+    cell_factor=2,
+    aggregation_type=9,
+    extent_handling=False,
+    ignore_nodata=False,
+):
 
     """
     Generates a reduced-resolution version of a raster.
@@ -4844,25 +5407,24 @@ def aggregate_cells(raster, cell_factor=2, aggregation_type=9, extent_handling=F
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Aggregate",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "Aggregate",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
+
     if cell_factor is not None:
-        template_dict["rasterFunctionArguments"]['CellFactor'] = cell_factor
+        template_dict["rasterFunctionArguments"]["CellFactor"] = cell_factor
 
     if aggregation_type is not None:
-        template_dict["rasterFunctionArguments"]['AggregationType'] = aggregation_type
+        template_dict["rasterFunctionArguments"]["AggregationType"] = aggregation_type
 
     if extent_handling is not None:
-        template_dict["rasterFunctionArguments"]['ExpandHandling'] = extent_handling
+        template_dict["rasterFunctionArguments"]["ExpandHandling"] = extent_handling
 
     if ignore_nodata is not None:
-        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+        template_dict["rasterFunctionArguments"]["IgnoreNoData"] = ignore_nodata
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 def _raster_item(raster, raster_id=None):
     """
@@ -4870,30 +5432,37 @@ def _raster_item(raster, raster_id=None):
     :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
     :return: the output raster with this function applied to it
     """
- 
 
+    template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
 
-    template_dict = {
-        "rasterFunction" : "RasterItem",
-        "rasterFunctionArguments": {}
-    }
-    
     if raster is not None and isinstance(raster, ImageryLayer):
-        template_dict["rasterFunctionArguments"]['URL'] = raster.url
+        template_dict["rasterFunctionArguments"]["URL"] = raster.url
 
     if raster is not None and isinstance(raster, str):
-        template_dict["rasterFunctionArguments"]['URL'] = raster
+        template_dict["rasterFunctionArguments"]["URL"] = raster
 
     if raster_id is not None:
-        template_dict["rasterFunctionArguments"]['RasterID'] = raster_id
+        template_dict["rasterFunctionArguments"]["RasterID"] = raster_id
 
     layer, raster, raster_ra = _raster_input(raster)
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, cycle_unit = "YEARS",
-                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False,
-                   seasonal_period="DAYS"):
+
+def generate_trend(
+    raster,
+    dimension_name,
+    regression_type=0,
+    cycle_length=1,
+    cycle_unit="YEARS",
+    harmonic_frequency=1,
+    polynomial_order=2,
+    ignore_nodata=True,
+    rmse=True,
+    r2=False,
+    slope_p_value=False,
+    seasonal_period="DAYS",
+):
 
     """
     Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
@@ -4950,61 +5519,77 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "TrendAnalysis",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "TrendAnalysis",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
-    if dimension_name is not None:
-        template_dict["rasterFunctionArguments"]['DimensionName'] = dimension_name
 
-    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2, "MANN-KENDALL":3,"SEASONAL-KENDALL":4}
+    if dimension_name is not None:
+        template_dict["rasterFunctionArguments"]["DimensionName"] = dimension_name
+
+    regression_type_dict = {
+        "LINEAR": 0,
+        "HARMONIC": 1,
+        "POLYNOMIAL": 2,
+        "MANN-KENDALL": 3,
+        "SEASONAL-KENDALL": 4,
+    }
     if regression_type is not None:
         if isinstance(regression_type, str):
-            regression_type= regression_type_dict[regression_type.upper()]
-            template_dict["rasterFunctionArguments"]['RegressionType'] = regression_type
+            regression_type = regression_type_dict[regression_type.upper()]
+            template_dict["rasterFunctionArguments"]["RegressionType"] = regression_type
         else:
-            template_dict["rasterFunctionArguments"]['RegressionType'] = regression_type
+            template_dict["rasterFunctionArguments"]["RegressionType"] = regression_type
 
     if cycle_length is not None:
-        template_dict["rasterFunctionArguments"]['CycleLength'] = cycle_length
+        template_dict["rasterFunctionArguments"]["CycleLength"] = cycle_length
 
     if cycle_unit is not None:
-        template_dict["rasterFunctionArguments"]['CycleUnit'] = cycle_unit
+        template_dict["rasterFunctionArguments"]["CycleUnit"] = cycle_unit
 
     if harmonic_frequency is not None:
-        template_dict["rasterFunctionArguments"]['Frequency'] = harmonic_frequency
+        template_dict["rasterFunctionArguments"]["Frequency"] = harmonic_frequency
 
     if polynomial_order is not None:
-        template_dict["rasterFunctionArguments"]['Order'] = polynomial_order
+        template_dict["rasterFunctionArguments"]["Order"] = polynomial_order
 
     if ignore_nodata is not None:
-        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+        template_dict["rasterFunctionArguments"]["IgnoreNoData"] = ignore_nodata
 
     if rmse is not None:
-        template_dict["rasterFunctionArguments"]['RMSE'] = rmse
+        template_dict["rasterFunctionArguments"]["RMSE"] = rmse
 
     if r2 is not None:
-        template_dict["rasterFunctionArguments"]['R2'] = r2
+        template_dict["rasterFunctionArguments"]["R2"] = r2
 
     if slope_p_value is not None:
-        template_dict["rasterFunctionArguments"]['SlopePValue'] = slope_p_value
+        template_dict["rasterFunctionArguments"]["SlopePValue"] = slope_p_value
 
     if seasonal_period is not None:
         seasonal_period_allowed_values = ["DAYS", "MONTHS"]
-        if [element.lower() for element in seasonal_period_allowed_values].count(seasonal_period.lower()) <= 0 :
-            raise RuntimeError('seasonal_period can only be one of the following:  '+str(seasonal_period_allowed_values))
+        if [element.lower() for element in seasonal_period_allowed_values].count(
+            seasonal_period.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "seasonal_period can only be one of the following:  "
+                + str(seasonal_period_allowed_values)
+            )
         for element in seasonal_period_allowed_values:
             if seasonal_period.lower() == element.lower():
                 seasonal_period = element
-        template_dict["rasterFunctionArguments"]['SeasonalPeriod'] = seasonal_period
+        template_dict["rasterFunctionArguments"]["SeasonalPeriod"] = seasonal_period
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-
-def predict_using_trend(raster, dimension_definition_type=0, dimension_values=None, start=None, end=None, interval_value=1, interval_unit='HOURS'):
+def predict_using_trend(
+    raster,
+    dimension_definition_type=0,
+    dimension_values=None,
+    start=None,
+    end=None,
+    interval_value=1,
+    interval_unit="HOURS",
+):
 
     """
     Computes a forecasted multidimensional raster layer using the output trend raster from the generate_trend function.
@@ -5045,44 +5630,51 @@ def predict_using_trend(raster, dimension_definition_type=0, dimension_values=No
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Trend",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "Trend",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
-    dimension_definition_type_dict = {"BY_VALUE":0, "BY_INTERVAL":1}
+    dimension_definition_type_dict = {"BY_VALUE": 0, "BY_INTERVAL": 1}
     if dimension_definition_type is not None:
         if isinstance(dimension_definition_type, str):
-            dimension_definition_type= dimension_definition_type_dict[dimension_definition_type.upper()]
-            template_dict["rasterFunctionArguments"]['DimensionDefinitionType'] = dimension_definition_type
+            dimension_definition_type = dimension_definition_type_dict[
+                dimension_definition_type.upper()
+            ]
+            template_dict["rasterFunctionArguments"][
+                "DimensionDefinitionType"
+            ] = dimension_definition_type
         else:
-            template_dict["rasterFunctionArguments"]['DimensionDefinitionType'] = dimension_definition_type
-    
+            template_dict["rasterFunctionArguments"][
+                "DimensionDefinitionType"
+            ] = dimension_definition_type
 
     if dimension_values is not None:
         if isinstance(dimension_values, list):
             values = ";".join(str(ele) for ele in dimension_values)
-            template_dict["rasterFunctionArguments"]['DimensionValues'] = values
+            template_dict["rasterFunctionArguments"]["DimensionValues"] = values
         else:
-            template_dict["rasterFunctionArguments"]['DimensionValues'] = dimension_values
+            template_dict["rasterFunctionArguments"][
+                "DimensionValues"
+            ] = dimension_values
 
     if start is not None:
-        template_dict["rasterFunctionArguments"]['DimensionStart'] = start
+        template_dict["rasterFunctionArguments"]["DimensionStart"] = start
 
     if end is not None:
-        template_dict["rasterFunctionArguments"]['DimensionEnd'] = end
+        template_dict["rasterFunctionArguments"]["DimensionEnd"] = end
 
     if interval_value is not None:
-        template_dict["rasterFunctionArguments"]['DimensionInterval'] = interval_value
+        template_dict["rasterFunctionArguments"]["DimensionInterval"] = interval_value
 
     if interval_unit is not None:
-        template_dict["rasterFunctionArguments"]['DimensionUnit'] = interval_unit
+        template_dict["rasterFunctionArguments"]["DimensionUnit"] = interval_unit
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def linear_spectral_unmixing(raster,spectral_profile_def=None, non_negative=False, sum_to_one=False):
+def linear_spectral_unmixing(
+    raster, spectral_profile_def=None, non_negative=False, sum_to_one=False
+):
 
     """
     Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels. 
@@ -5108,36 +5700,37 @@ def linear_spectral_unmixing(raster,spectral_profile_def=None, non_negative=Fals
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "SpectralUnmixing",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "SpectralUnmixing",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if spectral_profile_def is not None:
-        template_dict["rasterFunctionArguments"]['SpectralProfileDefinition'] = spectral_profile_def
+        template_dict["rasterFunctionArguments"][
+            "SpectralProfileDefinition"
+        ] = spectral_profile_def
 
     if non_negative is not None:
-        template_dict["rasterFunctionArguments"]['NonNegative'] = non_negative
+        template_dict["rasterFunctionArguments"]["NonNegative"] = non_negative
 
     if sum_to_one is not None:
-        template_dict["rasterFunctionArguments"]['SumToOne'] = sum_to_one
-
+        template_dict["rasterFunctionArguments"]["SumToOne"] = sum_to_one
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def multidimensional_filter(raster, 
-                            variables=None,
-                            dimension_definition='ALL',
-                            dimension=None,
-                            dimension_ranges=None,
-                            dimension_values=None,
-                            start_of_first_iteration=None,
-                            end_of_first_iteration=None,
-                            iteration_step=3,
-                            iteration_unit=None,
-                            dimensionless=False):
+def multidimensional_filter(
+    raster,
+    variables=None,
+    dimension_definition="ALL",
+    dimension=None,
+    dimension_ranges=None,
+    dimension_values=None,
+    start_of_first_iteration=None,
+    end_of_first_iteration=None,
+    iteration_step=3,
+    iteration_unit=None,
+    dimensionless=False,
+):
 
     """
     Applies a filter on a multidimensional raster. Function creates a raster layer 
@@ -5210,9 +5803,19 @@ def multidimensional_filter(raster,
 
     dimension_definition_val = dimension_definition
     if dimension_definition is not None:
-        dimension_definition_allowed_values = ['ALL', 'BY_VALUES', 'BY_RANGES', 'BY_ITERATION']
-        if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
-            raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+        dimension_definition_allowed_values = [
+            "ALL",
+            "BY_VALUES",
+            "BY_RANGES",
+            "BY_ITERATION",
+        ]
+        if [element.lower() for element in dimension_definition_allowed_values].count(
+            dimension_definition.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "dimension_definition can only be one of the following: "
+                + str(dimension_definition_allowed_values)
+            )
 
         for element in dimension_definition_allowed_values:
             if dimension_definition.upper() == element:
@@ -5220,9 +5823,21 @@ def multidimensional_filter(raster,
 
     iteration_unit_val = iteration_unit
     if iteration_unit is not None:
-        iteration_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
-        if [element.lower() for element in iteration_unit_allowed_values].count(iteration_unit.lower()) <= 0 :
-            raise RuntimeError('iteration_unit can only be one of the following: '+str(iteration_unit_allowed_values))
+        iteration_unit_allowed_values = [
+            "HOURS",
+            "DAYS",
+            "DAILY",
+            "WEEKS",
+            "MONTHS",
+            "YEARS",
+        ]
+        if [element.lower() for element in iteration_unit_allowed_values].count(
+            iteration_unit.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "iteration_unit can only be one of the following: "
+                + str(iteration_unit_allowed_values)
+            )
 
         for element in iteration_unit_allowed_values:
             if iteration_unit.upper() == element:
@@ -5233,10 +5848,9 @@ def multidimensional_filter(raster,
 
     if variables is not None:
         if isinstance(variables, list):
-            filter_dict.update({"variables":variables})
+            filter_dict.update({"variables": variables})
         else:
-            filter_dict.update({"variables":[variables]})
-
+            filter_dict.update({"variables": [variables]})
 
     if dimension_definition == "BY_RANGES":
         dimensions_list = []
@@ -5244,45 +5858,56 @@ def multidimensional_filter(raster,
         max_values_list = []
         if isinstance(dimension_ranges, list):
             for ele in dimension_ranges:
-                if isinstance(ele,dict):
+                if isinstance(ele, dict):
                     min_values_list.append(ele["minValue"])
                     max_values_list.append(ele["maxValue"])
                     dimensions_list.append(ele["dimension"])
-        filter_dict.update({"dimensions":dimensions_list, "minValues":min_values_list, "maxValues":max_values_list})
+        filter_dict.update(
+            {
+                "dimensions": dimensions_list,
+                "minValues": min_values_list,
+                "maxValues": max_values_list,
+            }
+        )
 
     elif dimension_definition == "BY_ITERATION":
-        filter_dict.update({"dimension":dimension, 
-                            "startValue":start_of_first_iteration, 
-                            "endValue":end_of_first_iteration,
-                            "stepValue":iteration_step})
+        filter_dict.update(
+            {
+                "dimension": dimension,
+                "startValue": start_of_first_iteration,
+                "endValue": end_of_first_iteration,
+                "stepValue": iteration_step,
+            }
+        )
         if iteration_unit is not None:
-            filter_dict.update({"units":iteration_unit_val})
+            filter_dict.update({"units": iteration_unit_val})
 
     elif dimension_definition == "BY_VALUES":
         dimensions_list = []
         values_list = []
         if isinstance(dimension_values, list):
             for ele in dimension_values:
-                if isinstance(ele,dict):
+                if isinstance(ele, dict):
                     values_list.append(ele["value"])
                     dimensions_list.append(ele["dimension"])
-        filter_dict.update({"dimensions":dimensions_list, "values":values_list})
+        filter_dict.update({"dimensions": dimensions_list, "values": values_list})
 
     template_dict = {
-        "rasterFunction" : "MultidimensionalFilter",
+        "rasterFunction": "MultidimensionalFilter",
         "rasterFunctionArguments": {
-            "Raster" : raster,  
-            "Filter" : _json.dumps(filter_dict)
-        }
+            "Raster": raster,
+            "Filter": _json.dumps(filter_dict),
+        },
     }
 
     if dimensionless is not None:
         if isinstance(dimensionless, bool):
-            template_dict["rasterFunctionArguments"]['Dimensionless'] = dimensionless
+            template_dict["rasterFunctionArguments"]["Dimensionless"] = dimensionless
         else:
-            raise RuntimeError('dimensionless should be an instance of bool')
+            raise RuntimeError("dimensionless should be an instance of bool")
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 def s1_radiometric_calibration(raster, calibration_type=None):
 
@@ -5306,21 +5931,23 @@ def s1_radiometric_calibration(raster, calibration_type=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "S1RadiometricCalibration",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "S1RadiometricCalibration",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
-    
-    calibration_type_dict = {"beta_nought":0, "sigma_nought":1, "gamma":2}
+
+    calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
     if calibration_type is not None:
         if isinstance(calibration_type, str):
-            calibration_type= calibration_type_dict[calibration_type.upper()]
-            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+            calibration_type = calibration_type_dict[calibration_type.upper()]
+            template_dict["rasterFunctionArguments"][
+                "CalibrationType"
+            ] = calibration_type
         else:
-            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+            template_dict["rasterFunctionArguments"][
+                "CalibrationType"
+            ] = calibration_type
     else:
-        template_dict["rasterFunctionArguments"]['CalibrationType'] = 3
+        template_dict["rasterFunctionArguments"]["CalibrationType"] = 3
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -5341,15 +5968,21 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "S1ThermalNoiseRemoval",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "S1ThermalNoiseRemoval",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, interpolation_method = 0, radius=3, gis=None):
+
+def interpolate_irregular_data(
+    point_feature,
+    value_field=None,
+    cell_size=0,
+    interpolation_method=0,
+    radius=3,
+    gis=None,
+):
     """
     Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
 
@@ -5391,41 +6024,46 @@ def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, int
 
     """
     from arcgis.geoprocessing._support import _layer_input
+
     point_feature = _layer_input(point_feature)
     template_dict = {
-        "rasterFunction" : "InterpolateIrregularData",
-        "rasterFunctionArguments": {"PointFeatureClass":point_feature,
-                                    "RasterInfo":{"blockWidth" : 2048,
-                                                "blockHeight" : 256,
-                                                "bandCount" : 0,
-                                                "pixelType" : -1,
-                                                "pixelSizeX" : cell_size,
-                                                "pixelSizeY" : cell_size,
-                                                "format" : "",
-                                                "compressionType" : "",
-                                                "firstPyramidLevel" : 1,
-                                                "maximumPyramidLevel" : 30,
-                                                "packetSize" : 4,
-                                                "compressionQuality" : 0,
-                                                "pyramidResamplingType" : -1,
-                                                "type" : "RasterInfo"}
-                                 }
-                 }
-
-    interpolation_methods = {
-        'NEAREST_NEIGBOR': 0,
-        'LINEAR_TINNING': 2,
-        'NATURAL_NEIGHBOR' : 3,
-        'INVERSE_DISTANCE_WEIGHTED': 4
+        "rasterFunction": "InterpolateIrregularData",
+        "rasterFunctionArguments": {
+            "PointFeatureClass": point_feature,
+            "RasterInfo": {
+                "blockWidth": 2048,
+                "blockHeight": 256,
+                "bandCount": 0,
+                "pixelType": -1,
+                "pixelSizeX": cell_size,
+                "pixelSizeY": cell_size,
+                "format": "",
+                "compressionType": "",
+                "firstPyramidLevel": 1,
+                "maximumPyramidLevel": 30,
+                "packetSize": 4,
+                "compressionQuality": 0,
+                "pyramidResamplingType": -1,
+                "type": "RasterInfo",
+            },
+        },
     }
 
+    interpolation_methods = {
+        "NEAREST_NEIGBOR": 0,
+        "LINEAR_TINNING": 2,
+        "NATURAL_NEIGHBOR": 3,
+        "INVERSE_DISTANCE_WEIGHTED": 4,
+    }
 
     if interpolation_method is not None:
         if isinstance(interpolation_method, str):
             interpolation_method = interpolation_methods[interpolation_method.upper()]
         else:
             interpolation_method = interpolation_method
-        template_dict["rasterFunctionArguments"]["InterpolationMethod"] = interpolation_method
+        template_dict["rasterFunctionArguments"][
+            "InterpolationMethod"
+        ] = interpolation_method
 
     if value_field is not None:
         template_dict["rasterFunctionArguments"]["ValueField"] = value_field
@@ -5436,11 +6074,12 @@ def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, int
     if gis is not None:
         newlyr = ImageryLayer(template_dict, gis)
     else:
-        newlyr = ImageryLayer(template_dict,None)
-    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        newlyr = ImageryLayer(template_dict, None)
+    # _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
     newlyr._fn = template_dict
     newlyr._fnra = template_dict
     return newlyr
+
 
 def _simple_collection(raster, md_info=None):
     """"
@@ -5455,29 +6094,32 @@ def _simple_collection(raster, md_info=None):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "SimpleCollection",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        },
-        "variableName": "Rasters"
+        "rasterFunction": "SimpleCollection",
+        "rasterFunctionArguments": {"Raster": raster,},
+        "variableName": "Rasters",
     }
 
     if md_info is not None:
-        template_dict["rasterFunctionArguments"]['MultidimensionalInfo'] = md_info
-
+        template_dict["rasterFunctionArguments"]["MultidimensionalInfo"] = md_info
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def aggregate(raster,
-              dimension=None,
-              aggregation_function=None,
-              aggregation_definition_type="ALL",
-              interval_keyword=None,
-              interval_value=None,
-              interval_unit=None,
-              interval_ranges=None,
-              ignore_nodata=False
-              ):
+
+
+def aggregate(
+    raster,
+    dimension=None,
+    aggregation_function=None,
+    aggregation_definition_type="ALL",
+    interval_keyword=None,
+    interval_value=None,
+    interval_unit=None,
+    interval_ranges=None,
+    ignore_nodata=False,
+    dimensionless=False,
+    percentile_value=90,
+    percentile_interpolation_type="NEAREST"
+    ):
     """
      Creates a new raster by applying an aggregation function
     :param raster: Input Raster. 
@@ -5496,6 +6138,10 @@ def aggregate(raster,
 
                                 - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
+                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. 
+                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the 
+                                  percentile_value parameter.
+
                                 - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
                                 - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
@@ -5504,10 +6150,10 @@ def aggregate(raster,
 
                                 - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
-                                You may also pass custom aggregaation function. 
+                                You may also pass custom aggregation function. 
                                 Create an RFT object out of the raster function template item on the portal and 
                                 specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
-                                aggregation_method.
+                                aggregation_function.
 
     :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
                                         will be aggregated.
@@ -5522,7 +6168,7 @@ def aggregate(raster,
     :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
     :param interval_keyword: Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -5568,7 +6214,7 @@ def aggregate(raster,
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_def
+                           aggregation. This parameter is required when the aggregation_definition_type
                            parameter is set to INTERVAL_VALUE.
 
                            For example, to aggregate 30 years of monthly temperature data into
@@ -5577,7 +6223,7 @@ def aggregate(raster,
 
     :param interval_unit: Optional String. The unit that will be used for the interval value.
                           This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
 
                           If you are aggregating over anything other than time, this option
                           will not be available and the unit for the interval value will match
@@ -5606,26 +6252,58 @@ def aggregate(raster,
 
                             - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
                             - False : The function will result in NoData if there are any NoData values.
+
+    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values. 
+                          This parameter is only active if a single slice is selected to create a layer.
+
+                            - True : The layer will not have dimension values.
+                            - False : The layer will have dimension values. This is the default.
+
+    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating 
+                             the 90th percentile.
+
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
+                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
+                             A value of 50 will produce essentially the same result as the median statistic. 
+                             This option is only honored if the aggregation_function parameter is set to PERCENTILE. 
+
+                             Example:
+                                90
+
+    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+                                          even number of values from the input raster to be calculated
+
+                                            - NEAREST : The nearest available value to the desired percentile will be used. 
+                                              In this case, the output pixel type will be the same as that of the input 
+                                              value raster. This is the default
+
+                                            - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                              percentile will be used. In this case, the output pixel type will be floating point.
+
+                                          Example:
+                                            NEAREST
     :return: the output raster with function applied on it
     """
-    from arcgis.raster._util import _local_function_template
+
+    from arcgis.raster._util import _local_function_template, _percentile_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
         "rasterFunction": "RasterCollection",
-        "rasterFunctionArguments": {
-            "RasterCollection": raster
-        },
-        "variableName": "RasterCollection"
+        "rasterFunctionArguments": {"RasterCollection": raster},
+        "variableName": "RasterCollection",
     }
-    
 
     if aggregation_function is not None:
         if isinstance(aggregation_function, RFT):
-            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function._rft_json
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = aggregation_function._rft_json
         elif isinstance(aggregation_function, dict):
-            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = aggregation_function
         elif isinstance(aggregation_function, str):
             opnum = None
             if aggregation_function.upper() == "MEAN":
@@ -5650,51 +6328,84 @@ def aggregate(raster,
                 opnum = 75 if ignore_nodata else 58
 
             if opnum is None:
-                raise RuntimeError("Invalid aggregation_function")
+                if aggregation_function.upper() == "PERCENTILE":
+                    template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile_function_template(ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
+                else:
+                    raise RuntimeError("Invalid aggregation_function")
             else:
-                template_dict["rasterFunctionArguments"]["AggregationFunction"] = _local_function_template(opnum)
-        if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
-            template_dict["rasterFunctionArguments"]["AggregationFunction"].update({'type':'RasterFunctionTemplate'})
+                template_dict["rasterFunctionArguments"][
+                    "AggregationFunction"
+                ] = _local_function_template(opnum)
+        if (
+            "type"
+            not in template_dict["rasterFunctionArguments"]["AggregationFunction"]
+        ):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"].update(
+                {"type": "RasterFunctionTemplate"}
+            )
 
     aggregation_definition = {}
     aggregation_definition.update({"definitionType": aggregation_definition_type})
 
     if dimension is not None:
-         aggregation_definition.update({"dimension":dimension})
+        aggregation_definition.update({"dimension": dimension})
 
     if aggregation_definition_type.upper() == "INTERVAL_VALUE":
         if interval_value is None:
-            raise RuntimeError("interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE")
+            raise RuntimeError(
+                "interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE"
+            )
 
-        aggregation_definition.update({"intervalValue":interval_value})
+        aggregation_definition.update({"intervalValue": interval_value})
         if interval_unit is not None:
-            aggregation_definition.update({"intervalUnits":interval_unit})
+            aggregation_definition.update({"intervalUnits": interval_unit})
 
     elif aggregation_definition_type.upper() == "INTERVAL_KEYWORD":
         if interval_keyword is None:
-            raise RuntimeError("interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD")
+            raise RuntimeError(
+                "interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD"
+            )
 
-        interval_keyword_val=interval_keyword
+        interval_keyword_val = interval_keyword
         if interval_keyword is not None:
-            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
-                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
-            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
-                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
-            interval_keyword_val=interval_keyword
+            interval_keyword_allowed_values = [
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY",
+                "QUARTERLY",
+                "YEARLY",
+                "RECURRING_DAILY",
+                "RECURRING_WEEKLY",
+                "RECURRING_MONTHLY",
+                "RECURRING_QUARTERLY",
+                "PENTADLY",
+                "DEKADLY",
+            ]
+            if [element.lower() for element in interval_keyword_allowed_values].count(
+                interval_keyword.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "interval_keyword can only be one of the following: "
+                    + str(interval_keyword_allowed_values)
+                )
+            interval_keyword_val = interval_keyword
             for element in interval_keyword_allowed_values:
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
-        aggregation_definition.update({"intervalKeyword":interval_keyword})
+        aggregation_definition.update({"intervalKeyword": interval_keyword})
 
     elif aggregation_definition_type.upper() == "INTERVAL_RANGES":
         if interval_ranges is None:
-            raise RuntimeError("interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES")
-            
-        min_list=[]
-        max_list=[]
+            raise RuntimeError(
+                "interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES"
+            )
+
+        min_list = []
+        max_list = []
         if isinstance(interval_ranges, list):
             for ele in interval_ranges:
-                if isinstance(ele,dict):
+                if isinstance(ele, dict):
                     min_list.append(ele["minValue"])
                     max_list.append(ele["maxValue"])
 
@@ -5702,27 +6413,38 @@ def aggregate(raster,
             min_list.append(interval_ranges["minValue"])
             max_list.append(interval_ranges["maxValue"])
 
-        aggregation_definition.update({"minValues":min_list})
-        aggregation_definition.update({"maxValues":max_list})
+        aggregation_definition.update({"minValues": min_list})
+        aggregation_definition.update({"maxValues": max_list})
 
     if aggregation_definition is not None:
-        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(aggregation_definition)
+        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(
+            aggregation_definition
+        )
 
-    #if where_clause is not None:
+    # if where_clause is not None:
     #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dimensionless is not None:
+        if dimensionless:
+            aggregated_layer =  _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+            return multidimensional_filter(aggregated_layer, dimensionless=dimensionless)
+        else:
+            return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
 
 
-def compute_change(raster1,
-                   raster2,
-                   method=0,
-                   from_class_values=[],
-                   to_class_values=[],
-                   filter_method=1,
-                   define_transition_colors=0,
-                   extent_type="IntersectionOf", 
-                   cellsize_type="MaxOf"):
+def compute_change(
+    raster1,
+    raster2,
+    method=0,
+    from_class_values=[],
+    to_class_values=[],
+    filter_method=1,
+    define_transition_colors=0,
+    extent_type="IntersectionOf",
+    cellsize_type="MaxOf",
+):
 
     """
     Produce raster outputs representing of various changes.
@@ -5780,22 +6502,32 @@ def compute_change(raster1,
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
     layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+    if layer1 is not None and (
+        layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)
+    ):
         layer = layer1
     else:
         layer = layer2
-    #layer = layer1 if layer1 is not None else layer2
+    # layer = layer1 if layer1 is not None else layer2
 
     method_types = {
-        'DIFFERENCE': 0,
-        'RELATIVE_DIFFERENCE': 1,
-        'CATEGORICAL_DIFFERENCE' : 2
+        "DIFFERENCE": 0,
+        "RELATIVE_DIFFERENCE": 1,
+        "CATEGORICAL_DIFFERENCE": 2,
     }
 
     if isinstance(method, str):
-        method_allowed_values = ['DIFFERENCE', 'RELATIVE_DIFFERENCE', 'CATEGORICAL_DIFFERENCE']
-        if [element.upper() for element in method_allowed_values].count(method.upper()) <= 0 :
-            raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
+        method_allowed_values = [
+            "DIFFERENCE",
+            "RELATIVE_DIFFERENCE",
+            "CATEGORICAL_DIFFERENCE",
+        ]
+        if [element.upper() for element in method_allowed_values].count(
+            method.upper()
+        ) <= 0:
+            raise RuntimeError(
+                "method can only be one of the following: " + str(method_allowed_values)
+            )
         in_method = method_types[method.upper()]
     else:
         in_method = method
@@ -5805,102 +6537,112 @@ def compute_change(raster1,
         "rasterFunctionArguments": {
             "Method": in_method,
             "Raster": raster_1,
-            "Raster2": raster_2
-        }
+            "Raster2": raster_2,
+        },
     }
 
     if from_class_values is not None:
-        template_dict["rasterFunctionArguments"]['FromClassValues'] = from_class_values
+        template_dict["rasterFunctionArguments"]["FromClassValues"] = from_class_values
 
     if to_class_values is not None:
-        template_dict["rasterFunctionArguments"]['ToClassValues'] = to_class_values
-
+        template_dict["rasterFunctionArguments"]["ToClassValues"] = to_class_values
 
     filter_method_types = {
-            'ALL': 0,
-            'CHANGED_PIXELS_ONLY': 1,
-            'UNCHANGED_PIXELS_ONLY' : 2
-        }
+        "ALL": 0,
+        "CHANGED_PIXELS_ONLY": 1,
+        "UNCHANGED_PIXELS_ONLY": 2,
+    }
 
     if isinstance(filter_method, str):
-        filter_method_allowed_values = ['ALL', 'CHANGED_PIXELS_ONLY', 'UNCHANGED_PIXELS_ONLY']
-        if [element.upper() for element in filter_method_allowed_values].count(filter_method.upper()) <= 0 :
-            raise RuntimeError('method can only be one of the following: '+str(filter_method_allowed_values))
+        filter_method_allowed_values = [
+            "ALL",
+            "CHANGED_PIXELS_ONLY",
+            "UNCHANGED_PIXELS_ONLY",
+        ]
+        if [element.upper() for element in filter_method_allowed_values].count(
+            filter_method.upper()
+        ) <= 0:
+            raise RuntimeError(
+                "method can only be one of the following: "
+                + str(filter_method_allowed_values)
+            )
         in_filter_method = filter_method_types[filter_method.upper()]
     else:
         in_filter_method = filter_method
 
-    template_dict["rasterFunctionArguments"]['KeepMethod'] = in_filter_method
-
+    template_dict["rasterFunctionArguments"]["KeepMethod"] = in_filter_method
 
     if define_transition_colors is not None:
-        define_transition_colors_types = {
-        'AVERAGE': 0,
-        'FROM_COLOR': 1,
-        'TO_COLOR' : 2
-    }
+        define_transition_colors_types = {"AVERAGE": 0, "FROM_COLOR": 1, "TO_COLOR": 2}
 
         if isinstance(define_transition_colors, str):
-            define_transition_colors_allowed_values = ['AVERAGE', 'FROM_COLOR', 'TO_COLOR']
-            if [element.upper() for element in define_transition_colors_allowed_values].count(define_transition_colors.upper()) <= 0 :
-                raise RuntimeError('method can only be one of the following: '+str(define_transition_colors_allowed_values))
-            define_transition_colors = define_transition_colors_types[define_transition_colors.upper()]
+            define_transition_colors_allowed_values = [
+                "AVERAGE",
+                "FROM_COLOR",
+                "TO_COLOR",
+            ]
+            if [
+                element.upper() for element in define_transition_colors_allowed_values
+            ].count(define_transition_colors.upper()) <= 0:
+                raise RuntimeError(
+                    "method can only be one of the following: "
+                    + str(define_transition_colors_allowed_values)
+                )
+            define_transition_colors = define_transition_colors_types[
+                define_transition_colors.upper()
+            ]
         else:
             define_transition_colors = define_transition_colors
-        template_dict["rasterFunctionArguments"]['UseColorMethod'] = define_transition_colors
+        template_dict["rasterFunctionArguments"][
+            "UseColorMethod"
+        ] = define_transition_colors
 
-    extent_types = {
-        "FIRSTOF": 0,
-        "INTERSECTIONOF": 1,
-        "UNIONOF": 2,
-        "LASTOF": 3
-    }
+    extent_types = {"FIRSTOF": 0, "INTERSECTIONOF": 1, "UNIONOF": 2, "LASTOF": 3}
 
-    cellsize_types = {
-        "FIRSTOF": 0,
-        "MINOF": 1,
-        "MAXOF": 2,
-        "MEANOF": 3,
-        "LASTOF": 4
-    }
+    cellsize_types = {"FIRSTOF": 0, "MINOF": 1, "MAXOF": 2, "MEANOF": 3, "LASTOF": 4}
 
     if extent_type.upper() not in extent_types.keys():
         raise ValueError(
-            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'IntersectionOf', 'UnionOf', 'LastOf'")
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'IntersectionOf', 'UnionOf', 'LastOf'"
+        )
     in_extent_type = extent_types[extent_type.upper()]
 
     if cellsize_type.upper() not in cellsize_types.keys():
         raise ValueError(
-            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'MinOf', 'MaxOf', 'MeanOf', 'LastOf'")
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'MinOf', 'MaxOf', 'MeanOf', 'LastOf'"
+        )
     in_cellsize_type = cellsize_types[cellsize_type.upper()]
 
     if in_extent_type is not None:
-        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+        template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if in_cellsize_type is not None:
-        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
+        template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
-def detect_change_using_change_analysis_raster(raster, 
-                                               change_type="TIME_OF_LATEST_CHANGE", 
-                                               max_number_of_changes=1,
-                                               segment_date="BEGINNING_OF_SEGMENT",
-                                               change_direction="ALL",
-                                               filter_by_year=False,
-                                               min_year=None,
-                                               max_year=None,
-                                               filter_by_duration=False,
-                                               min_duration=None,
-                                               max_duration=None,
-                                               filter_by_magnitude=False,
-                                               min_magnitude=None,
-                                               max_magnitude=None,
-                                               filter_by_start_value=False,
-                                               min_start_value=None,
-                                               max_start_value=None,
-                                               filter_by_end_value=False,
-                                               min_end_value=None,
-                                               max_end_value=None):
+
+def detect_change_using_change_analysis_raster(
+    raster,
+    change_type="TIME_OF_LATEST_CHANGE",
+    max_number_of_changes=1,
+    segment_date="BEGINNING_OF_SEGMENT",
+    change_direction="ALL",
+    filter_by_year=False,
+    min_year=None,
+    max_year=None,
+    filter_by_duration=False,
+    min_duration=None,
+    max_duration=None,
+    filter_by_magnitude=False,
+    min_magnitude=None,
+    max_magnitude=None,
+    filter_by_start_value=False,
+    min_start_value=None,
+    max_start_value=None,
+    filter_by_end_value=False,
+    min_end_value=None,
+    max_end_value=None,
+):
 
     """
     Function generates a raster containing pixel change information using the 
@@ -6118,24 +6860,21 @@ def detect_change_using_change_analysis_raster(raster,
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "DetectChange",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        },
-        "variableName": "Raster"
+        "rasterFunction": "DetectChange",
+        "rasterFunctionArguments": {"Raster": raster,},
+        "variableName": "Raster",
     }
-
 
     if change_type is not None:
         change_types = {
-            'TIME_OF_LATEST_CHANGE': 0,
-            'TIME_OF_EARLIEST_CHANGE': 1,
-            'TIME_OF_LARGEST_CHANGE' : 2,
-            'NUM_OF_CHANGES' : 3,
-            'TIME_OF_LONGEST_CHANGE' : 4,
-            'TIME_OF_SHORTEST_CHANGE' : 5,
-            'TIME_OF_FASTEST_CHANGE' : 6,
-            'TIME_OF_SLOWEST_CHANGE' : 7
+            "TIME_OF_LATEST_CHANGE": 0,
+            "TIME_OF_EARLIEST_CHANGE": 1,
+            "TIME_OF_LARGEST_CHANGE": 2,
+            "NUM_OF_CHANGES": 3,
+            "TIME_OF_LONGEST_CHANGE": 4,
+            "TIME_OF_SHORTEST_CHANGE": 5,
+            "TIME_OF_FASTEST_CHANGE": 6,
+            "TIME_OF_SLOWEST_CHANGE": 7,
         }
 
         if isinstance(change_type, str):
@@ -6143,92 +6882,113 @@ def detect_change_using_change_analysis_raster(raster,
         else:
             in_change_type = change_type
 
-        template_dict["rasterFunctionArguments"]['ChangeType'] = in_change_type
+        template_dict["rasterFunctionArguments"]["ChangeType"] = in_change_type
 
     if max_number_of_changes is not None:
-        template_dict["rasterFunctionArguments"]['MaxNumberChanges'] = max_number_of_changes
+        template_dict["rasterFunctionArguments"][
+            "MaxNumberChanges"
+        ] = max_number_of_changes
 
     if segment_date is not None:
-        segment_date_types = {
-            'BEGINNING_OF_SEGMENT': 0,
-            'END_OF_SEGMENT': 1
-        }
+        segment_date_types = {"BEGINNING_OF_SEGMENT": 0, "END_OF_SEGMENT": 1}
 
         if isinstance(segment_date, str):
             in_segment_date = segment_date_types[segment_date.upper()]
         else:
             in_segment_date = segment_date
 
-        template_dict["rasterFunctionArguments"]['SegmentDate'] = in_segment_date
+        template_dict["rasterFunctionArguments"]["SegmentDate"] = in_segment_date
 
     if change_direction is not None:
-        change_direction_types = {
-            'ALL': 0,
-            'INCREASE': 1,
-            'DECREASE':2
-        }
+        change_direction_types = {"ALL": 0, "INCREASE": 1, "DECREASE": 2}
 
         if isinstance(change_direction, str):
             in_change_direction = change_direction_types[change_direction.upper()]
         else:
             in_change_direction = change_direction
 
-        template_dict["rasterFunctionArguments"]['ChangeDirection'] = in_change_direction
+        template_dict["rasterFunctionArguments"][
+            "ChangeDirection"
+        ] = in_change_direction
 
     if isinstance(filter_by_year, bool):
-        template_dict["rasterFunctionArguments"]['FilterByYear'] = filter_by_year
+        template_dict["rasterFunctionArguments"]["FilterByYear"] = filter_by_year
 
         if filter_by_year:
             if min_year is not None:
-                template_dict["rasterFunctionArguments"]['MinimumYear'] = min_year
+                template_dict["rasterFunctionArguments"]["MinimumYear"] = min_year
 
             if max_year is not None:
-                template_dict["rasterFunctionArguments"]['MaximumYear'] = max_year
+                template_dict["rasterFunctionArguments"]["MaximumYear"] = max_year
 
     if isinstance(filter_by_duration, bool):
-        template_dict["rasterFunctionArguments"]['FilterByDuration'] = filter_by_duration
+        template_dict["rasterFunctionArguments"][
+            "FilterByDuration"
+        ] = filter_by_duration
 
         if filter_by_duration:
             if min_duration is not None:
-                template_dict["rasterFunctionArguments"]['MinimumDuration'] = min_duration
+                template_dict["rasterFunctionArguments"][
+                    "MinimumDuration"
+                ] = min_duration
 
             if max_duration is not None:
-                template_dict["rasterFunctionArguments"]['MaximumDuration'] = max_duration
+                template_dict["rasterFunctionArguments"][
+                    "MaximumDuration"
+                ] = max_duration
 
     if isinstance(filter_by_magnitude, bool):
-        template_dict["rasterFunctionArguments"]['FilterByMagnitude'] = filter_by_magnitude
+        template_dict["rasterFunctionArguments"][
+            "FilterByMagnitude"
+        ] = filter_by_magnitude
 
         if filter_by_magnitude:
             if min_magnitude is not None:
-                template_dict["rasterFunctionArguments"]['MinimumMagnitude'] = min_magnitude
+                template_dict["rasterFunctionArguments"][
+                    "MinimumMagnitude"
+                ] = min_magnitude
 
             if max_magnitude is not None:
-                template_dict["rasterFunctionArguments"]['MaximumMagnitude'] = max_magnitude
+                template_dict["rasterFunctionArguments"][
+                    "MaximumMagnitude"
+                ] = max_magnitude
 
     if isinstance(filter_by_start_value, bool):
-        template_dict["rasterFunctionArguments"]['FilterByStartValue'] = filter_by_start_value
+        template_dict["rasterFunctionArguments"][
+            "FilterByStartValue"
+        ] = filter_by_start_value
 
         if filter_by_start_value:
             if min_start_value is not None:
-                template_dict["rasterFunctionArguments"]['MinimumStartValue'] = min_start_value
+                template_dict["rasterFunctionArguments"][
+                    "MinimumStartValue"
+                ] = min_start_value
 
             if max_start_value is not None:
-                template_dict["rasterFunctionArguments"]['MaximumStartValue'] = max_start_value
+                template_dict["rasterFunctionArguments"][
+                    "MaximumStartValue"
+                ] = max_start_value
 
     if isinstance(filter_by_end_value, bool):
-        template_dict["rasterFunctionArguments"]['FilterByEndValue'] = filter_by_end_value
+        template_dict["rasterFunctionArguments"][
+            "FilterByEndValue"
+        ] = filter_by_end_value
 
         if filter_by_end_value:
             if min_end_value is not None:
-                template_dict["rasterFunctionArguments"]['MinimumEndValue'] = min_end_value
+                template_dict["rasterFunctionArguments"][
+                    "MinimumEndValue"
+                ] = min_end_value
 
             if max_end_value is not None:
-                template_dict["rasterFunctionArguments"]['MaximumEndValue'] = max_end_value
+                template_dict["rasterFunctionArguments"][
+                    "MaximumEndValue"
+                ] = max_end_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def trend_to_rgb(raster, 
-                 model_type=0):
+
+def trend_to_rgb(raster, model_type=0):
 
     """
     Display the generate trend raster.
@@ -6256,33 +7016,35 @@ def trend_to_rgb(raster,
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "TrendToRGB",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        },
-        "variableName": "Raster"
+        "rasterFunction": "TrendToRGB",
+        "rasterFunctionArguments": {"Raster": raster,},
+        "variableName": "Raster",
     }
 
-
     if model_type is not None:
-        model_types = {
-            'linear': 0,
-            'harmonic': 1
-        }
+        model_types = {"linear": 0, "harmonic": 1}
 
         if isinstance(model_type, str):
             in_model_type = model_types[model_type.lower()]
         else:
             in_model_type = model_type
 
-        template_dict["rasterFunctionArguments"]['ModelType'] = in_model_type
+        template_dict["rasterFunctionArguments"]["ModelType"] = in_model_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_values=None, 
-                         reflectance_gain_values=None, reflectance_bias_values=None,
-                         sun_elevation=None, albedo=False, scale_factor=None, offset=None):
+def apparent_reflectance(
+    raster,
+    radiance_gain_values=None,
+    radiance_bias_values=None,
+    reflectance_gain_values=None,
+    reflectance_bias_values=None,
+    sun_elevation=None,
+    albedo=False,
+    scale_factor=None,
+    offset=None,
+):
 
     """
     Function calibrates the digital number (DN) values of imagery from some satellite 
@@ -6343,68 +7105,75 @@ def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_valu
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Reflectance",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        },
-        "variableName": "Raster"
+        "rasterFunction": "Reflectance",
+        "rasterFunctionArguments": {"Raster": raster,},
+        "variableName": "Raster",
     }
 
     if radiance_gain_values is not None:
-        template_dict["rasterFunctionArguments"]['RadianceGainValues'] = radiance_gain_values
+        template_dict["rasterFunctionArguments"][
+            "RadianceGainValues"
+        ] = radiance_gain_values
 
     if radiance_bias_values is not None:
-        template_dict["rasterFunctionArguments"]['RadianceBiasValues'] = radiance_bias_values
+        template_dict["rasterFunctionArguments"][
+            "RadianceBiasValues"
+        ] = radiance_bias_values
 
     if reflectance_gain_values is not None:
-        template_dict["rasterFunctionArguments"]['ReflectanceGainValues'] = reflectance_gain_values
+        template_dict["rasterFunctionArguments"][
+            "ReflectanceGainValues"
+        ] = reflectance_gain_values
 
     if reflectance_bias_values is not None:
-        template_dict["rasterFunctionArguments"]['ReflectanceBiasValues'] = reflectance_bias_values
+        template_dict["rasterFunctionArguments"][
+            "ReflectanceBiasValues"
+        ] = reflectance_bias_values
 
     if sun_elevation is not None:
-        template_dict["rasterFunctionArguments"]['SunElevation'] = sun_elevation
+        template_dict["rasterFunctionArguments"]["SunElevation"] = sun_elevation
 
     if albedo is not None:
-        template_dict["rasterFunctionArguments"]['Albedo'] = albedo
+        template_dict["rasterFunctionArguments"]["Albedo"] = albedo
 
     if scale_factor is not None:
-        template_dict["rasterFunctionArguments"]['ScaleFactor'] = scale_factor
+        template_dict["rasterFunctionArguments"]["ScaleFactor"] = scale_factor
 
     if offset is not None:
-        template_dict["rasterFunctionArguments"]['Offset'] = offset
+        template_dict["rasterFunctionArguments"]["Offset"] = offset
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-#def radar_calibration(raster, calibration_type=None):
+
+# def radar_calibration(raster, calibration_type=None):
 
 #    """
-#    The Radar Calibration function is used to calibrate RADARSAT-2 imagery in a 
-#    mosaic dataset or as a raster product. Calibration is performed on radar 
+#    The Radar Calibration function is used to calibrate RADARSAT-2 imagery in a
+#    mosaic dataset or as a raster product. Calibration is performed on radar
 #    imagery so that the pixel values are a true representation of the radar backscatter.
 
 #    :param raster: The input raster.
 
-#    :param calibration_type: Optional string or int. one of four calibration types: 
+#    :param calibration_type: Optional string or int. one of four calibration types:
 #                             "beta_nought" (0) - The function returns the radar reflectivity per unit area in slant range.
-#                             "sigma_nought" (1) - The function returns the radar reflectivity per unit area in ground range. 
-#                                                  Results are 32-bit floating-point values commonly in the range of 0.0 to 
+#                             "sigma_nought" (1) - The function returns the radar reflectivity per unit area in ground range.
+#                                                  Results are 32-bit floating-point values commonly in the range of 0.0 to
 #                                                  1.0. No data clipping is performed if this option is selected.
-#                             "gamma" (2) - The function returns the radar reflectivity per unit area in the 
+#                             "gamma" (2) - The function returns the radar reflectivity per unit area in the
 #                                           plane perpendicular to the direction of measurement.
 #                              None - Specify None to not apply any calibration. This is the default.
 
-#    :return: output raster 
+#    :return: output raster
 #    """
 #    layer, raster, raster_ra = _raster_input(raster)
 
 #    template_dict = {
 #        "rasterFunction" : "RadarCalibration",
 #        "rasterFunctionArguments": {
-#            "Raster" : raster,            
+#            "Raster" : raster,
 #        }
 #    }
-    
+
 #    calibration_type_dict = {"beta_nought":0, "sigma_nought":1, "gamma":2}
 #    if calibration_type is not None:
 #        if isinstance(calibration_type, str):
@@ -6416,6 +7185,7 @@ def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_valu
 #        template_dict["rasterFunctionArguments"]['CalibrationType'] = 3
 
 #    return _clone_layer(layer, template_dict, raster_ra)
+
 
 def buffered(raster):
 
@@ -6430,16 +7200,16 @@ def buffered(raster):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "BufferedRaster",
-        "rasterFunctionArguments": {
-            "Raster" : raster,            
-        }
+        "rasterFunction": "BufferedRaster",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def rasterize_features(raster, feature_class,  class_index_field=None, resolve_overlap_method = 0):
+def rasterize_features(
+    raster, feature_class, class_index_field=None, resolve_overlap_method=0
+):
     """
     Converts features to raster. Features are assigned pixel values based on the feature's OBJECTID (default). 
     Optionally, the pixel values can be based on a user defined value field in the input feature's attribute table.
@@ -6477,55 +7247,59 @@ def rasterize_features(raster, feature_class,  class_index_field=None, resolve_o
         feature_class = feature_class.url
 
     template_dict = {
-        "rasterFunction" : "RasterizeFeatureClass",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        }
+        "rasterFunction": "RasterizeFeatureClass",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if feature_class is not None:
-        template_dict["rasterFunctionArguments"]['FeatureClass'] = feature_class
+        template_dict["rasterFunctionArguments"]["FeatureClass"] = feature_class
 
     if class_index_field is not None:
-        template_dict["rasterFunctionArguments"]['ClassIndexField'] = class_index_field
-    
-    resolve_overlap_method_dict = {"first":0, "last":1, "smallest":2, 'largest':3}
+        template_dict["rasterFunctionArguments"]["ClassIndexField"] = class_index_field
+
+    resolve_overlap_method_dict = {"first": 0, "last": 1, "smallest": 2, "largest": 3}
     if resolve_overlap_method is not None:
         if isinstance(resolve_overlap_method, str):
-            resolve_overlap_method= resolve_overlap_method_dict[resolve_overlap_method.lower()]
-            template_dict["rasterFunctionArguments"]['ResolveOverlapMethod'] = resolve_overlap_method
+            resolve_overlap_method = resolve_overlap_method_dict[
+                resolve_overlap_method.lower()
+            ]
+            template_dict["rasterFunctionArguments"][
+                "ResolveOverlapMethod"
+            ] = resolve_overlap_method
         else:
-            template_dict["rasterFunctionArguments"]['ResolveOverlapMethod'] = resolve_overlap_method
+            template_dict["rasterFunctionArguments"][
+                "ResolveOverlapMethod"
+            ] = resolve_overlap_method
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-#def swath(raster, interpolation_method = 0, cell_size=0):
+# def swath(raster, interpolation_method = 0, cell_size=0):
 #    """
 #    Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
 
 #    ================================     ====================================================================
 #    **Argument**                         **Description**
 #    --------------------------------     --------------------------------------------------------------------
-#    raster                               Required Imagery Layer object. 
+#    raster                               Required Imagery Layer object.
 #    --------------------------------     --------------------------------------------------------------------
 #    interpolation_method                 Optional int or string. The resampling method to use for interpolation:
 
-#                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel 
+#                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel
 #                                             exists, no new pixel can be created in the output. This is the default.
 
-#                                          -  1 or BILINEAR : Calculates pixel value using the distance-weighted 
+#                                          -  1 or BILINEAR : Calculates pixel value using the distance-weighted
 #                                             value of four nearest pixels.
 
-#                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center 
-#                                             points of each cell in the irregular raster to interpolate a surface 
+#                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center
+#                                             points of each cell in the irregular raster to interpolate a surface
 #                                             that is then converted to a regular raster.
 
-#                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a 
-#                                             query point and applies weights to them based on proportionate 
+#                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a
+#                                             query point and applies weights to them based on proportionate
 #                                             areas to interpolate a value.
 #    --------------------------------     --------------------------------------------------------------------
-#    cell_size                            Optional int. The cell size for the output raster dataset. 
+#    cell_size                            Optional int. The cell size for the output raster dataset.
 #    ================================     ====================================================================
 
 #    :returns: output raster with function applied
@@ -6570,7 +7344,14 @@ def rasterize_features(raster, feature_class,  class_index_field=None, resolve_o
 #    return _clone_layer(layer, template_dict, raster_ra)
 
 
-def reproject(raster, spatial_reference=None, x_cell_size=0, y_cell_size=0, x_registration_point=0, y_registration_point=0):
+def reproject(
+    raster,
+    spatial_reference=None,
+    x_cell_size=0,
+    y_cell_size=0,
+    x_registration_point=0,
+    y_registration_point=0,
+):
     """
     Modifies the projection of a raster dataset, mosaic dataset, or raster item in a 
     mosaic dataset. It can also resample the data to a new cell size and define an origin.
@@ -6616,34 +7397,34 @@ def reproject(raster, spatial_reference=None, x_cell_size=0, y_cell_size=0, x_re
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction" : "Reproject",
-        "rasterFunctionArguments": {
-            "Raster" : raster,
-        }
+        "rasterFunction": "Reproject",
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
-
     if spatial_reference is not None:
-        template_dict["rasterFunctionArguments"]['SpatialReference'] = spatial_reference
+        template_dict["rasterFunctionArguments"]["SpatialReference"] = spatial_reference
 
     if x_cell_size is not None:
-        template_dict["rasterFunctionArguments"]['XCellsize'] = x_cell_size
+        template_dict["rasterFunctionArguments"]["XCellsize"] = x_cell_size
 
     if y_cell_size is not None:
-        template_dict["rasterFunctionArguments"]['YCellsize'] = y_cell_size
+        template_dict["rasterFunctionArguments"]["YCellsize"] = y_cell_size
 
     if x_registration_point is not None:
-        template_dict["rasterFunctionArguments"]['XOrigin'] = x_registration_point
+        template_dict["rasterFunctionArguments"]["XOrigin"] = x_registration_point
 
     if y_registration_point is not None:
-        template_dict["rasterFunctionArguments"]['YOrigin'] = y_registration_point
-
+        template_dict["rasterFunctionArguments"]["YOrigin"] = y_registration_point
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def heat_index(temperature_raster, relative_humidity_raster, temperature_units="Fahrenheit",
-              heat_index_units="Fahrenheit"):
+def heat_index(
+    temperature_raster,
+    relative_humidity_raster,
+    temperature_units="Fahrenheit",
+    heat_index_units="Fahrenheit",
+):
     """
     Calculates apparent temperature based on ambient temperature and relative humidity. The apparent temperature is often described as how hot it feels to the human body.
     
@@ -6667,17 +7448,20 @@ def heat_index(temperature_raster, relative_humidity_raster, temperature_units="
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(temperature_raster)
-    layer2, raster_2, raster_ra2 = _raster_input(temperature_raster, relative_humidity_raster)
+    layer2, raster_2, raster_ra2 = _raster_input(
+        temperature_raster, relative_humidity_raster
+    )
 
-    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+    if layer1 is not None and (
+        layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)
+    ):
         layer = layer1
     else:
         layer = layer2
 
     template_dict = {
         "rasterFunction": "PythonAdapter",
-        "rasterFunctionArguments": {"temperature": raster_1,
-            "rh": raster_2}
+        "rasterFunctionArguments": {"temperature": raster_1, "rh": raster_2},
     }
     if temperature_units is not None:
         template_dict["rasterFunctionArguments"]["units"] = temperature_units
@@ -6685,17 +7469,25 @@ def heat_index(temperature_raster, relative_humidity_raster, temperature_units="
         template_dict["rasterFunctionArguments"]["outUnits"] = heat_index_units
 
     template_dict["rasterFunctionArguments"]["ClassName"] = "HeatIndex"
-    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\HeatIndex.py"
-    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+    template_dict["rasterFunctionArguments"][
+        "PythonModule"
+    ] = "[functions]System\\HeatIndex.py"
+    # template_dict["rasterFunctionArguments"]["MatchVariable"] = False
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
-    function_chain_ra['rasterFunctionArguments']['rh'] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["temperature"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["rh"] = raster_ra2
 
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
-def wind_chill(temperature_raster, wind_speed_raster, temperature_units="Fahrenheit", wind_speed_units="mph",
-              wind_chill_units="Fahrenheit"):
+
+def wind_chill(
+    temperature_raster,
+    wind_speed_raster,
+    temperature_units="Fahrenheit",
+    wind_speed_units="mph",
+    wind_chill_units="Fahrenheit",
+):
 
     """
     The Wind Chill function is useful for identifying dangerous winter conditions that, depending on exposure times to
@@ -6734,15 +7526,16 @@ def wind_chill(temperature_raster, wind_speed_raster, temperature_units="Fahrenh
     layer1, raster_1, raster_ra1 = _raster_input(temperature_raster)
     layer2, raster_2, raster_ra2 = _raster_input(temperature_raster, wind_speed_raster)
 
-    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+    if layer1 is not None and (
+        layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)
+    ):
         layer = layer1
     else:
         layer = layer2
 
-
     template_dict = {
         "rasterFunction": "PythonAdapter",
-        "rasterFunctionArguments": {"temperature": raster_1, "ws": raster_2}
+        "rasterFunctionArguments": {"temperature": raster_1, "ws": raster_2},
     }
 
     if temperature_units is not None:
@@ -6753,14 +7546,17 @@ def wind_chill(temperature_raster, wind_speed_raster, temperature_units="Fahrenh
         template_dict["rasterFunctionArguments"]["ounits"] = wind_chill_units
 
     template_dict["rasterFunctionArguments"]["ClassName"] = "Windchill"
-    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\Windchill.py"
-    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+    template_dict["rasterFunctionArguments"][
+        "PythonModule"
+    ] = "[functions]System\\Windchill.py"
+    # template_dict["rasterFunctionArguments"]["MatchVariable"] = False
 
     function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
-    function_chain_ra['rasterFunctionArguments']['ws'] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["temperature"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["ws"] = raster_ra2
 
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
 
 def aspect_slope(raster, z_factor=1):
     """
@@ -6783,18 +7579,29 @@ def aspect_slope(raster, z_factor=1):
 
     template_dict = {
         "rasterFunction": "PythonAdapter",
-        "rasterFunctionArguments": {"Raster" : raster}
+        "rasterFunctionArguments": {"Raster": raster},
     }
 
-    template_dict['rasterFunctionArguments']['zf'] = z_factor
+    template_dict["rasterFunctionArguments"]["zf"] = z_factor
 
     template_dict["rasterFunctionArguments"]["ClassName"] = "AspectSlope"
-    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\AspectSlope.py"
+    template_dict["rasterFunctionArguments"][
+        "PythonModule"
+    ] = "[functions]System\\AspectSlope.py"
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-def contour(raster, adaptive_smoothing=2.5, contour_type="CONTOUR_LINES", z_base=0, number_of_contours=0,
-            contour_interval=100, nth_contour_line_in_bold=5, z_factor=1):
+
+def contour(
+    raster,
+    adaptive_smoothing=2.5,
+    contour_type="CONTOUR_LINES",
+    z_base=0,
+    number_of_contours=0,
+    contour_interval=100,
+    nth_contour_line_in_bold=5,
+    z_factor=1,
+):
     """
     Creates contour lines.
 
@@ -6812,128 +7619,141 @@ def contour(raster, adaptive_smoothing=2.5, contour_type="CONTOUR_LINES", z_base
 
     template_dict = {
         "rasterFunction": "Contour",
-        "rasterFunctionArguments": {"Raster" : raster}
+        "rasterFunctionArguments": {"Raster": raster},
     }
 
     contour_types = {
-        'CONTOUR_LINES': 0,
-        'CONTOUR_FILL': 1,
-        'SMOOTH_SURFACE_ONLY': 2,
+        "CONTOUR_LINES": 0,
+        "CONTOUR_FILL": 1,
+        "SMOOTH_SURFACE_ONLY": 2,
     }
 
     if adaptive_smoothing is not None:
-        template_dict['rasterFunctionArguments']['SigmaGaussian'] = adaptive_smoothing
+        template_dict["rasterFunctionArguments"]["SigmaGaussian"] = adaptive_smoothing
     if contour_type is not None:
-        template_dict['rasterFunctionArguments']['ContourType'] = contour_types[contour_type.upper()]
+        template_dict["rasterFunctionArguments"]["ContourType"] = contour_types[
+            contour_type.upper()
+        ]
     if z_base is not None:
-        template_dict['rasterFunctionArguments']['ZBase'] = z_base
+        template_dict["rasterFunctionArguments"]["ZBase"] = z_base
     if number_of_contours is not None:
-        template_dict['rasterFunctionArguments']['NumberOfContours'] = number_of_contours
+        template_dict["rasterFunctionArguments"][
+            "NumberOfContours"
+        ] = number_of_contours
     if contour_interval is not None:
-        template_dict['rasterFunctionArguments']['ContourInterval'] = contour_interval
+        template_dict["rasterFunctionArguments"]["ContourInterval"] = contour_interval
     if nth_contour_line_in_bold is not None:
-        template_dict['rasterFunctionArguments']['NthContourLineInBold'] = nth_contour_line_in_bold
+        template_dict["rasterFunctionArguments"][
+            "NthContourLineInBold"
+        ] = nth_contour_line_in_bold
     if z_factor is not None:
-        template_dict['rasterFunctionArguments']['ZFactor'] = z_factor
+        template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+
 class RFT:
-    def __init__(self, raster_function_template,gis=None):
+    def __init__(self, raster_function_template, gis=None):
         try:
             self._is_public_flag = False
-            self._rft=raster_function_template
+            self._rft = raster_function_template
             self._gis = _arcgis.env.active_gis if gis is None else gis
-            key_value_dict={}
-            if(".rft.xml" in self._rft.name):
+            key_value_dict = {}
+            if ".rft.xml" in self._rft.name:
                 _rft_json = self.to_json(self._gis)
             else:
                 file_path = self._rft.get_data()
                 if isinstance(file_path, dict):
-                    _rft_json=file_path
+                    _rft_json = file_path
                 else:
-                    f=open(file_path, "r")
+                    f = open(file_path, "r")
                     file_content = f.read()
                     file_content = file_content.replace("false", "False")
                     file_content = file_content.replace("true", "True")
                     _rft_json = eval(file_content)
             self._rft_json = _find_object_ref(_rft_json, {}, self)
-            global node, end_node 
+            global node, end_node
             node = 0
-            end_node=0
+            end_node = 0
             self._rft_dict, self._raster_dict = self._find_arguments_()
 
             if self._rft_dict.keys() & hidden_inputs:
                 for key in hidden_inputs:
-                    self._rft_dict.pop(key,None)
-            self._arguments=copy.deepcopy(self._rft_dict)
+                    self._rft_dict.pop(key, None)
+            self._arguments = copy.deepcopy(self._rft_dict)
             self.arguments = copy.deepcopy(self._arguments)
-            self._local_raster=None
+            self._local_raster = None
         except:
-            _LOGGER.warning("Unable to find the arguments for the current raster function template. "
-                  "This might be because the server could not process the template "
-                  "or the template is invalid."
-                  "(Ensure that the user account has access to Raster Utilities of the server. "
-                  "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
-                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html )")
+            _LOGGER.warning(
+                "Unable to find the arguments for the current raster function template. "
+                "This might be because the server could not process the template "
+                "or the template is invalid."
+                "(Ensure that the user account has access to Raster Utilities of the server. "
+                "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
+                "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html )"
+            )
 
     @property
     def __doc__(self):
-        tab_value =-1
-        help="\"\"\"\n"
-        if("description" in self._rft_json):
-            help=help+self._rft_json["description"]
+        tab_value = -1
+        help = '"""\n'
+        if "description" in self._rft_json:
+            help = help + self._rft_json["description"]
         else:
-            help=help+self._rft_json["function"]["description"]
-        help = help+"\n\nParameters\n----------\n"
-        for key,value in self._rft_dict.items():
-            help=help+"\n"+(str(key)+" : "+str(value))
+            help = help + self._rft_json["function"]["description"]
+        help = help + "\n\nParameters\n----------\n"
+        for key, value in self._rft_dict.items():
+            help = help + "\n" + (str(key) + " : " + str(value))
 
-        help=help+("\n\nReturns\n-------\n")
-        help=help+("Imagery Layer, on which the function chain is applied \n")
-        help=help+"\"\"\""
+        help = help + ("\n\nReturns\n-------\n")
+        help = help + ("Imagery Layer, on which the function chain is applied \n")
+        help = help + '"""'
         print(help)
 
     @property
     def __signature__(self):
         from inspect import Signature, Parameter
-        signature_list=[]
-        for name,value in self.arguments.items():
-            signature_list.append(Parameter(name, Parameter.POSITIONAL_OR_KEYWORD, default=value))
+
+        signature_list = []
+        for name, value in self.arguments.items():
+            signature_list.append(
+                Parameter(name, Parameter.POSITIONAL_OR_KEYWORD, default=value)
+            )
         sig = Signature(signature_list)
         return sig
-
 
     @property
     def template(self):
         if self._template is None:
-            self._template=self._rft_json
+            self._template = self._rft_json
         return self._template
 
-    def __call__(self,*args,**kwargs):
+    def __call__(self, *args, **kwargs):
         try:
-            i=0
-            key_list=list(self._arguments.keys())
+            i = 0
+            key_list = list(self._arguments.keys())
             for pos_arg in args:
-                kwargs.update({key_list[i]:pos_arg})
-                i=i+1
+                kwargs.update({key_list[i]: pos_arg})
+                i = i + 1
 
             for key in kwargs.keys():
                 if isinstance(kwargs[key], Raster):
-                    if(self._local_raster is None):
+                    if self._local_raster is None:
                         self._local_raster = kwargs[key]._engine_obj
                         break
-            
-            if(len(kwargs)==1):
-                for k,v in self._raster_dict.items():
-                    self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
+
+            if len(kwargs) == 1:
+                for k, v in self._raster_dict.items():
+                    self._raster_dict.update({k: kwargs[list(kwargs.keys())[0]]})
                     layer = self._apply_rft(self._raster_dict, self._gis)
                 if isinstance(layer, Raster):
                     self._template = layer._engine_obj._fnra
                     if layer._engine_obj.url is None:
                         return None
-                    if layer._engine==_ArcpyRaster:
-                        return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
+                    if layer._engine == _ArcpyRaster:
+                        return _clone_layer_raster_without_copy(
+                            layer._engine_obj, self._template, self._template
+                        )
 
                 else:
                     self._template = layer._fnra
@@ -6941,18 +7761,19 @@ class RFT:
                         return None
                 return layer
 
-
             for key in kwargs.keys():
                 for k in self._arguments.keys():
-                    if(k==key):
-                        self._arguments[k]=kwargs[key]
+                    if k == key:
+                        self._arguments[k] = kwargs[key]
             layer = self._apply_rft(self._arguments, self._gis)
             if isinstance(layer, Raster):
                 self._template = layer._engine_obj._fnra
                 if layer._engine_obj.url is None:
                     return None
-                if layer._engine==_ArcpyRaster:
-                    return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
+                if layer._engine == _ArcpyRaster:
+                    return _clone_layer_raster_without_copy(
+                        layer._engine_obj, self._template, self._template
+                    )
 
             else:
                 self._template = layer._fnra
@@ -6961,13 +7782,14 @@ class RFT:
             return layer
 
         except:
-            _LOGGER.warning("Unable to apply the current raster function template on the imagery layer. " 
-                  "This might be because the server could not process the template, "
-                  "the template is invalid or not populated with correct arguments. "
-                  "(Make sure that Raster rendering service is turned on, inorder to display the output dynamically.)")
+            _LOGGER.warning(
+                "Unable to apply the current raster function template on the imagery layer. "
+                "This might be because the server could not process the template, "
+                "the template is invalid or not populated with correct arguments. "
+                "(Make sure that Raster rendering service is turned on, inorder to display the output dynamically.)"
+            )
 
-        
-    def to_json(self, gis =None):
+    def to_json(self, gis=None):
         """
         Converts the raster function template into a dictionary.
 
@@ -6986,407 +7808,752 @@ class RFT:
         gptool = _arcgis.gis._GISResource(url, gis)
         params = {}
         params["inputRasterFunction"] = {"itemId": self._rft.itemid}
-        params["outputFormat"]="json"
+        params["outputFormat"] = "json"
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
         job_info = _analysis_job_status(gptool, task_url, job_info)
         job_values = _analysis_job_results(gptool, task_url, job_info)
         if gis._con._product == "AGOL":
-            result = gptool._con.get(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+            result = gptool._con.get(
+                job_values["outputRasterFunction"]["url"], {}, token=gptool._token
+            )
         else:
-            result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+            result = gptool._con.post(
+                job_values["outputRasterFunction"]["url"], {}, token=gptool._token
+            )
         return result
 
-    def _apply_argument(self, input_dict,arg_dict):
+    def _apply_argument(self, input_dict, arg_dict):
         if "arguments" in input_dict.keys():
             if "isDataset" in input_dict["arguments"].keys():
-                if(input_dict["arguments"]["isDataset"] == False):
-                    if(("value" in input_dict["arguments"]) and "elements" in input_dict["arguments"]["value"]):
+                if input_dict["arguments"]["isDataset"] == False:
+                    if (
+                        "value" in input_dict["arguments"]
+                    ) and "elements" in input_dict["arguments"]["value"]:
                         for arg_element in input_dict["arguments"]["value"]["elements"]:
-                            self._apply_argument(arg_element["arguments"],arg_dict)
+                            self._apply_argument(arg_element["arguments"], arg_dict)
                 else:
-                    if(("value" in input_dict["arguments"]) and "arguments" in input_dict["arguments"]["value"]):
-                        self._apply_argument(input_dict["arguments"]["value"]["arguments"],arg_dict)
-            self._apply_argument(input_dict["arguments"],arg_dict)
+                    if (
+                        "value" in input_dict["arguments"]
+                    ) and "arguments" in input_dict["arguments"]["value"]:
+                        self._apply_argument(
+                            input_dict["arguments"]["value"]["arguments"], arg_dict
+                        )
+            self._apply_argument(input_dict["arguments"], arg_dict)
         flag_rasters = -1
         for key, value in input_dict.items():
             if isinstance(value, dict):
-                if (("type" in value) and value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
+                if (
+                    ("type" in value) and value["type"] == "RasterFunctionTemplate"
+                ) and "arguments" in value.keys():
                     if "isDataset" in value["arguments"].keys():
-                        if(value["arguments"]["isDataset"] == False):
+                        if value["arguments"]["isDataset"] == False:
                             for arg_element in value["arguments"]["value"]["elements"]:
-                                self._apply_argument(arg_element["arguments"],arg_dict)
+                                self._apply_argument(arg_element["arguments"], arg_dict)
                         else:
                             if "arguments" in value["arguments"]["value"]:
-                                self._apply_argument(value["arguments"]["value"]["arguments"],arg_dict)
-                    self._apply_argument(value["arguments"],arg_dict)
+                                self._apply_argument(
+                                    value["arguments"]["value"]["arguments"], arg_dict
+                                )
+                    self._apply_argument(value["arguments"], arg_dict)
                     flag_rasters = 1
-                if(("type" in value) and value["type"]=="RasterFunctionVariable"):
-                    for k,v in arg_dict.items():
-                        if(value["name"]==k):
-                            if isinstance(v,(ImageryLayer, Raster)) or isinstance(v, _FeatureLayer):
+                if ("type" in value) and value["type"] == "RasterFunctionVariable":
+                    for k, v in arg_dict.items():
+                        if value["name"] == k:
+                            if isinstance(v, (ImageryLayer, Raster)) or isinstance(
+                                v, _FeatureLayer
+                            ):
                                 raster = _raster_input_rft(v)
-                                v =_input_rft(raster)
-                                if isinstance(raster,str):
-                                    value["value"]=v
-                                    flag_rasters=1
-                                elif isinstance(raster,dict):
+                                v = _input_rft(raster)
+                                if isinstance(raster, str):
+                                    value["value"] = v
+                                    flag_rasters = 1
+                                elif isinstance(raster, dict):
                                     if raster.keys() & {"mosaicRule"}:
-                                        value["value"]=v
+                                        value["value"] = v
                                     else:
-                                        input_dict.update({key:v})
+                                        input_dict.update({key: v})
                                 break
                             else:
-                                if("value" in value):
-                                    if isinstance(value["value"],dict):
+                                if "value" in value:
+                                    if isinstance(value["value"], dict):
                                         if "type" in value["value"]:
-                                            if value["value"]["type"]=="Scalar":
-                                                value["value"]={"type":"Scalar","value":v}
+                                            if value["value"]["type"] == "Scalar":
+                                                value["value"] = {
+                                                    "type": "Scalar",
+                                                    "value": v,
+                                                }
                                                 break
-                                            elif value["value"]["type"]=="RasterDatasetName":
-                                                value["value"]=v
+                                            elif (
+                                                value["value"]["type"]
+                                                == "RasterDatasetName"
+                                            ):
+                                                value["value"] = v
                                                 break
-                                                
+
                                         else:
-                                            value["value"]=v
+                                            value["value"] = v
                                             break
                                     else:
-                                        value["value"]=v
+                                        value["value"] = v
                                         break
                                 else:
-                                    value["value"]=v
-                                    if((key=="RasterInfo")) and isinstance(v, dict):
-                                        v.update({"type":"RasterInfo"})
-                                    if (isinstance(value["value"], numbers.Number) and value["isDataset"]==True):
-                                        value["value"]={"type":"Scalar","value":v}
+                                    value["value"] = v
+                                    if ((key == "RasterInfo")) and isinstance(v, dict):
+                                        v.update({"type": "RasterInfo"})
+                                    if (
+                                        isinstance(value["value"], numbers.Number)
+                                        and value["isDataset"] == True
+                                    ):
+                                        value["value"] = {"type": "Scalar", "value": v}
                                         break
 
                             if "name" in value and "value" in value:
                                 if isinstance(value["value"], dict):
-                                    if("elements" in value["value"].keys()):
+                                    if "elements" in value["value"].keys():
                                         raster = _raster_input_rft(v)
-                                        v =_input_rft(raster)
-                                        if isinstance(raster,list):
-                                            value["value"]=v
-                                            flag_rasters=1
+                                        v = _input_rft(raster)
+                                        if isinstance(raster, list):
+                                            value["value"] = v
+                                            flag_rasters = 1
                                             break
                             else:
-                                if("value" in value):
-                                    if isinstance(value["value"],dict):
+                                if "value" in value:
+                                    if isinstance(value["value"], dict):
                                         if "type" in value["value"]:
-                                            if value["value"]["type"]=="Scalar":
-                                                value["value"]={"type":"Scalar","value":v}
+                                            if value["value"]["type"] == "Scalar":
+                                                value["value"] = {
+                                                    "type": "Scalar",
+                                                    "value": v,
+                                                }
                                                 break
-                                            elif value["value"]["type"]=="RasterDatasetName":
-                                                value["value"]=v
+                                            elif (
+                                                value["value"]["type"]
+                                                == "RasterDatasetName"
+                                            ):
+                                                value["value"] = v
                                                 break
                                         else:
-                                            value["value"]=v
+                                            value["value"] = v
                                             break
                                     else:
-                                        value["value"]=v
+                                        value["value"] = v
                                         break
                                 else:
-                                    value["value"]=v
-                                    if isinstance(value["value"], numbers.Number) and value["isDataset"]==True:
-                                        value["value"]={"type":"Scalar","value":v}
+                                    value["value"] = v
+                                    if (
+                                        isinstance(value["value"], numbers.Number)
+                                        and value["isDataset"] == True
+                                    ):
+                                        value["value"] = {"type": "Scalar", "value": v}
                                         break
-                    if(flag_rasters==-1) and "Rasters" in input_dict.keys():
+                    if (flag_rasters == -1) and "Rasters" in input_dict.keys():
                         elements_structure = []
-                        if (isinstance (input_dict["Rasters"]["value"], dict)) and "elements" in input_dict["Rasters"]["value"]:
-                            elements_structure = input_dict["Rasters"]["value"]["elements"]
-                        elif isinstance(input_dict["Rasters"]["value"],list):
+                        if (
+                            isinstance(input_dict["Rasters"]["value"], dict)
+                        ) and "elements" in input_dict["Rasters"]["value"]:
+                            elements_structure = input_dict["Rasters"]["value"][
+                                "elements"
+                            ]
+                        elif isinstance(input_dict["Rasters"]["value"], list):
                             elements_structure = input_dict["Rasters"]["value"]
                         for element in elements_structure:
-                            if isinstance(element,dict):
-                                if (("type" in element) and element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
+                            if isinstance(element, dict):
+                                if (
+                                    ("type" in element)
+                                    and element["type"] == "RasterFunctionTemplate"
+                                ) and "arguments" in element.keys():
                                     if "isDataset" in element["arguments"].keys():
-                                        if(element["arguments"]["isDataset"] == False):
-                                            for arg_element in element["arguments"]["value"]["elements"]:
-                                                self._apply_argument(arg_element["arguments"],arg_dict)
+                                        if element["arguments"]["isDataset"] == False:
+                                            for arg_element in element["arguments"][
+                                                "value"
+                                            ]["elements"]:
+                                                self._apply_argument(
+                                                    arg_element["arguments"], arg_dict
+                                                )
                                         else:
-                                            if(("value" in element["arguments"]) and "arguments" in element["arguments"]["value"]):
-                                                self._apply_argument(element["arguments"]["value"]["arguments"],arg_dict)
-                                    self._apply_argument(element["arguments"],arg_dict)
+                                            if (
+                                                ("value" in element["arguments"])
+                                                and "arguments"
+                                                in element["arguments"]["value"]
+                                            ):
+                                                self._apply_argument(
+                                                    element["arguments"]["value"][
+                                                        "arguments"
+                                                    ],
+                                                    arg_dict,
+                                                )
+                                    self._apply_argument(element["arguments"], arg_dict)
                                     flag_rasters = 1
-                            for k,v in arg_dict.items():
+                            for k, v in arg_dict.items():
                                 if "name" in element:
-                                    if(element["name"]==k):
-                                        if isinstance(v,(ImageryLayer, Raster)) or isinstance(v, _FeatureLayer):
+                                    if element["name"] == k:
+                                        if isinstance(
+                                            v, (ImageryLayer, Raster)
+                                        ) or isinstance(v, _FeatureLayer):
                                             raster = _raster_input_rft(v)
-                                            v =_input_rft(raster)
-                                            if isinstance(raster,str):
+                                            v = _input_rft(raster)
+                                            if isinstance(raster, str):
                                                 element.clear()
                                                 element.update(v)
-                                            elif isinstance(raster,dict):
+                                            elif isinstance(raster, dict):
                                                 if raster.keys() & {"mosaicRule"}:
                                                     element.update(v)
                                                 else:
                                                     element.clear()
                                                     element.update(v)
-                                                    #input_dict.update({key:v})
-                                            flag_rasters=1
+                                                    # input_dict.update({key:v})
+                                            flag_rasters = 1
                                         else:
-                                            if("value" in element):
-                                                if isinstance(element["value"],dict):
+                                            if "value" in element:
+                                                if isinstance(element["value"], dict):
                                                     if "type" in element["value"]:
-                                                        if element["value"]["type"]=="Scalar":
+                                                        if (
+                                                            element["value"]["type"]
+                                                            == "Scalar"
+                                                        ):
                                                             element.clear()
-                                                            element.update({"type":"Scalar","value":v})
+                                                            element.update(
+                                                                {
+                                                                    "type": "Scalar",
+                                                                    "value": v,
+                                                                }
+                                                            )
                                                             break
                                                 else:
-                                                    element["value"]=v
+                                                    element["value"] = v
                                                     break
                                             else:
-                                                element["value"]=v
-                                                if isinstance(element["value"], numbers.Number) and element["isDataset"]==True:
+                                                element["value"] = v
+                                                if (
+                                                    isinstance(
+                                                        element["value"], numbers.Number
+                                                    )
+                                                    and element["isDataset"] == True
+                                                ):
                                                     element.clear()
-                                                    element.update({"type":"Scalar","value":v})
+                                                    element.update(
+                                                        {"type": "Scalar", "value": v}
+                                                    )
                                                     break
-                        if (flag_rasters==1 and "Rasters" in input_dict.keys()):
+                        if flag_rasters == 1 and "Rasters" in input_dict.keys():
                             if "value" in input_dict["Rasters"]:
                                 if "elements" in input_dict["Rasters"]["value"]:
-                                    input_dict["Rasters"]["value"]=input_dict["Rasters"]["value"]["elements"]
-                if((("type" in value) and value["type"]=="RasterFunctionVariable") and ("value" in value)) and isinstance(value["value"],dict):
+                                    input_dict["Rasters"]["value"] = input_dict[
+                                        "Rasters"
+                                    ]["value"]["elements"]
+                if (
+                    (("type" in value) and value["type"] == "RasterFunctionVariable")
+                    and ("value" in value)
+                ) and isinstance(value["value"], dict):
                     if "function" in value["value"]:
-                        self._apply_argument(value["value"]["arguments"],arg_dict)
+                        self._apply_argument(value["value"]["arguments"], arg_dict)
 
         return input_dict
 
     def _query_rasters(self, rft_dict, raster_dict):
         if "arguments" in rft_dict.keys():
-            self._query_rasters(rft_dict["arguments"],raster_dict)
+            self._query_rasters(rft_dict["arguments"], raster_dict)
         for key, value in rft_dict.items():
             if isinstance(value, dict):
-                if (value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
-                    self._query_rasters( value["arguments"],raster_dict)
+                if (
+                    value["type"] == "RasterFunctionTemplate"
+                ) and "arguments" in value.keys():
+                    self._query_rasters(value["arguments"], raster_dict)
                 if "isDataset" in value.keys():
-                    if (value["isDataset"]==True) and (value["type"]=="RasterFunctionVariable"):
+                    if (value["isDataset"] == True) and (
+                        value["type"] == "RasterFunctionVariable"
+                    ):
                         if "name" in value and "value" not in value:
-                            raster_dict.update({value["name"]:None})
-                    if(value["isDataset"]==False) and (value["type"]=="RasterFunctionVariable"):
+                            raster_dict.update({value["name"]: None})
+                    if (value["isDataset"] == False) and (
+                        value["type"] == "RasterFunctionVariable"
+                    ):
                         if "value" in value.keys():
-                            if(isinstance(value["value"],dict)):
+                            if isinstance(value["value"], dict):
                                 if "type" in value["value"].keys():
                                     if value["value"]["type"] == "ArgumentArray":
                                         if value["value"]["elements"]:
                                             for element in value["value"]["elements"]:
-                                                if (element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
-                                                    self._query_rasters( element["arguments"],raster_dict)
+                                                if (
+                                                    element["type"]
+                                                    == "RasterFunctionTemplate"
+                                                ) and "arguments" in element.keys():
+                                                    self._query_rasters(
+                                                        element["arguments"],
+                                                        raster_dict,
+                                                    )
                                                 if isinstance(element, dict):
-                                                    if "isDataset" in element and "type" in element:
-                                                        if (element["isDataset"]==True) and (element["type"]=="RasterFunctionVariable"):
-                                                            if "name" in element and "value" not in element:
-                                                                raster_dict.update({element["name"]:None})
+                                                    if (
+                                                        "isDataset" in element
+                                                        and "type" in element
+                                                    ):
+                                                        if (
+                                                            element["isDataset"] == True
+                                                        ) and (
+                                                            element["type"]
+                                                            == "RasterFunctionVariable"
+                                                        ):
+                                                            if (
+                                                                "name" in element
+                                                                and "value"
+                                                                not in element
+                                                            ):
+                                                                raster_dict.update(
+                                                                    {
+                                                                        element[
+                                                                            "name"
+                                                                        ]: None
+                                                                    }
+                                                                )
                                         else:
-                                            raster_dict.update({value["name"]:None})
+                                            raster_dict.update({value["name"]: None})
 
         return raster_dict
 
     def _find_arguments_(self):
         from operator import eq
         import numbers
+
         gdict = self._rft_json
-        key_value_dict =  {}
+        key_value_dict = {}
         raster_dictionary = {}
 
-        def _function_create(value): #Create new node for the function if it doesn't exist yet
+        def _function_create(
+            value,
+        ):  # Create new node for the function if it doesn't exist yet
             if "isDataset" in value["arguments"].keys():
-                if(value["arguments"]["isDataset"] == False):
+                if value["arguments"]["isDataset"] == False:
                     for arg_element in value["arguments"]["value"]["elements"]:
                         _function_traversal(arg_element)
                 else:
-                    if("value" in value["arguments"]):
+                    if "value" in value["arguments"]:
                         _raster_function_traversal(value["arguments"])
             _function_traversal(value["arguments"])
 
-        def _raster_function_traversal(raster_dict, index=1, scalar_name="Raster", ispublic=False, function_arg_type=None): #If isDataset=True
-            if "value" in raster_dict.keys(): #Handling Scalar rasters
+        def _raster_function_traversal(
+            raster_dict,
+            index=1,
+            scalar_name="Raster",
+            ispublic=False,
+            function_arg_type=None,
+        ):  # If isDataset=True
+            if "value" in raster_dict.keys():  # Handling Scalar rasters
                 if raster_dict["value"] is None:
-                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                    if (
+                        self._is_public_flag is False
+                        or ispublic == True
+                        or (
+                            ("isPublic" in raster_dict)
+                            and raster_dict["isPublic"] is True
+                        )
+                    ):
                         raster_name = _python_variable_name(raster_dict["name"])
-                        raster_dict.update({"name":raster_name})
-                        key_value_dict.update({raster_name:None})
+                        raster_dict.update({"name": raster_name})
+                        key_value_dict.update({raster_name: None})
                 elif isinstance(raster_dict["value"], dict):
                     if "value" in raster_dict["value"]:
                         if isinstance(raster_dict["value"]["value"], numbers.Number):
-                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            if (
+                                self._is_public_flag is False
+                                or ispublic == True
+                                or (
+                                    ("isPublic" in raster_dict)
+                                    and raster_dict["isPublic"] is True
+                                )
+                            ):
                                 if "name" in raster_dict.keys():
-                                    raster_name = _python_variable_name(raster_dict["name"])
-                                    raster_dict.update({"name":raster_name})
-                                    key_value_dict.update({raster_name:raster_dict["value"]["value"]})
-                                    raster_dictionary.update({raster_name:raster_dict["value"]["value"]})
+                                    raster_name = _python_variable_name(
+                                        raster_dict["name"]
+                                    )
+                                    raster_dict.update({"name": raster_name})
+                                    key_value_dict.update(
+                                        {raster_name: raster_dict["value"]["value"]}
+                                    )
+                                    raster_dictionary.update(
+                                        {raster_name: raster_dict["value"]["value"]}
+                                    )
                                 else:
-                                    scalar_name = scalar_name+"_scalar_"+str(index)
-                                    raster_dict.update({"name":scalar_name})
-                                    key_value_dict.update({scalar_name:raster_dict["value"]["value"]}) 
+                                    scalar_name = scalar_name + "_scalar_" + str(index)
+                                    raster_dict.update({"name": scalar_name})
+                                    key_value_dict.update(
+                                        {scalar_name: raster_dict["value"]["value"]}
+                                    )
 
-                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
-                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
+                    elif "elements" in raster_dict["value"]:  # Handling Raster arrays
+                        if raster_dict["value"][
+                            "elements"
+                        ]:  # if elements has any value in the list
                             for e in raster_dict["value"]["elements"]:
-                                index = (raster_dict["value"]["elements"].index(e))+1
+                                index = (raster_dict["value"]["elements"].index(e)) + 1
                                 if "name" in raster_dict:
-                                    scalar_name = _python_variable_name(raster_dict["name"])
-                                if ("type" in e) and e["type"]=="FunctionRasterDatasetName":
-                                    if self._is_public_flag is False or  ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
-                                        raster_name = _python_variable_name(raster_dict["name"])
-                                        raster_dict.update({"name":raster_name})
-                                        key_value_dict.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
-                                        raster_dictionary.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
-                                elif "function" in e.keys(): # if function template inside
+                                    scalar_name = _python_variable_name(
+                                        raster_dict["name"]
+                                    )
+                                if ("type" in e) and e[
+                                    "type"
+                                ] == "FunctionRasterDatasetName":
+                                    if (
+                                        self._is_public_flag is False
+                                        or ispublic == True
+                                        or (
+                                            ("isPublic" in raster_dict)
+                                            and raster_dict["isPublic"] is True
+                                        )
+                                    ):
+                                        raster_name = _python_variable_name(
+                                            raster_dict["name"]
+                                        )
+                                        raster_dict.update({"name": raster_name})
+                                        key_value_dict.update(
+                                            {
+                                                raster_name: e["arguments"]["Raster"][
+                                                    "datasetName"
+                                                ]["name"]
+                                            }
+                                        )
+                                        raster_dictionary.update(
+                                            {
+                                                raster_name: e["arguments"]["Raster"][
+                                                    "datasetName"
+                                                ]["name"]
+                                            }
+                                        )
+                                elif (
+                                    "function" in e.keys()
+                                ):  # if function template inside
                                     _function_traversal(e)
-                                else:  #if raster dataset inside raster array
+                                else:  # if raster dataset inside raster array
                                     if function_arg_type == "LocalFunctionArguments":
-                                        if self._is_public_flag is False or ispublic==True or ("isPublic" not in e.keys()) or (("isPublic" in e.keys()) and e["isPublic"] is True):
-                                            _raster_function_traversal(e,  index, scalar_name, ispublic=True)
-                                    elif self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
-                                        _raster_function_traversal(e,  index, scalar_name, ispublic=True)
-                        else: # If elements is empty i.e Rasters has no value when rft was created
-                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                        if (
+                                            self._is_public_flag is False
+                                            or ispublic == True
+                                            or ("isPublic" not in e.keys())
+                                            or (
+                                                ("isPublic" in e.keys())
+                                                and e["isPublic"] is True
+                                            )
+                                        ):
+                                            _raster_function_traversal(
+                                                e, index, scalar_name, ispublic=True
+                                            )
+                                    elif (
+                                        self._is_public_flag is False
+                                        or ispublic == True
+                                        or ("isPublic" not in raster_dict.keys())
+                                        or (
+                                            ("isPublic" in raster_dict.keys())
+                                            and raster_dict["isPublic"] is True
+                                        )
+                                    ):
+                                        _raster_function_traversal(
+                                            e, index, scalar_name, ispublic=True
+                                        )
+                        else:  # If elements is empty i.e Rasters has no value when rft was created
+                            if (
+                                self._is_public_flag is False
+                                or ispublic == True
+                                or (
+                                    ("isPublic" in raster_dict)
+                                    and raster_dict["isPublic"] is True
+                                )
+                            ):
                                 raster_name = _python_variable_name(raster_dict["name"])
-                                raster_dict.update({"name":raster_name})
-                                key_value_dict.update({raster_name:None})
-                                raster_dictionary.update({raster_name:None})
-                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                                raster_dict.update({"name": raster_name})
+                                key_value_dict.update({raster_name: None})
+                                raster_dictionary.update({raster_name: None})
+                    elif (
+                        "name" in raster_dict["value"]
+                    ):  # if raster properties are preserved
                         if "function" in raster_dict["value"]:
                             _function_traversal(raster_dict["value"])
                         else:
-                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            if (
+                                self._is_public_flag is False
+                                or ispublic == True
+                                or (
+                                    ("isPublic" in raster_dict)
+                                    and raster_dict["isPublic"] is True
+                                )
+                            ):
                                 raster_name = _python_variable_name(raster_dict["name"])
-                                raster_dict.update({"name":raster_name})
-                                key_value_dict.update({raster_name:raster_dict["value"]["name"]})
-                                raster_dictionary.update({raster_name:raster_dict["value"]["name"]})
+                                raster_dict.update({"name": raster_name})
+                                key_value_dict.update(
+                                    {raster_name: raster_dict["value"]["name"]}
+                                )
+                                raster_dictionary.update(
+                                    {raster_name: raster_dict["value"]["name"]}
+                                )
 
-                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="FunctionRasterDatasetName":
-                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"][
+                        "type"
+                    ] == "FunctionRasterDatasetName":
+                        if (
+                            self._is_public_flag is False
+                            or ispublic == True
+                            or (
+                                ("isPublic" in raster_dict)
+                                and raster_dict["isPublic"] is True
+                            )
+                        ):
                             raster_name = _python_variable_name(raster_dict["name"])
-                            raster_dict.update({"name":raster_name})
-                            key_value_dict.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
-                            raster_dictionary.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
-                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="RasterBandCollectionName":
-                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            raster_dict.update({"name": raster_name})
+                            key_value_dict.update(
+                                {
+                                    raster_name: raster_dict["value"]["arguments"][
+                                        "Raster"
+                                    ]["datasetName"]["name"]
+                                }
+                            )
+                            raster_dictionary.update(
+                                {
+                                    raster_name: raster_dict["value"]["arguments"][
+                                        "Raster"
+                                    ]["datasetName"]["name"]
+                                }
+                            )
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"][
+                        "type"
+                    ] == "RasterBandCollectionName":
+                        if (
+                            self._is_public_flag is False
+                            or ispublic == True
+                            or (
+                                ("isPublic" in raster_dict)
+                                and raster_dict["isPublic"] is True
+                            )
+                        ):
                             raster_name = _python_variable_name(raster_dict["name"])
-                            raster_dict.update({"name":raster_name})
-                            key_value_dict.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
-                            raster_dictionary.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
-                    elif "datasetName" in raster_dict["value"]: #local image location
+                            raster_dict.update({"name": raster_name})
+                            key_value_dict.update(
+                                {
+                                    raster_name: raster_dict["value"]["datasetName"][
+                                        "name"
+                                    ]
+                                }
+                            )
+                            raster_dictionary.update(
+                                {
+                                    raster_name: raster_dict["value"]["datasetName"][
+                                        "name"
+                                    ]
+                                }
+                            )
+                    elif "datasetName" in raster_dict["value"]:  # local image location
                         if "name" in raster_dict["value"]["datasetName"]:
-                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict["value"]["datasetName"]) and raster_dict["value"]["datasetName"]["isPublic"] is True):
-                                raster_name = _python_variable_name(raster_dict["value"]["datasetName"]["name"])
-                                raster_dict["value"]["datasetName"].update({"name":raster_name})
-                                key_value_dict.update({raster_name:None})
+                            if (
+                                self._is_public_flag is False
+                                or ispublic == True
+                                or (
+                                    ("isPublic" in raster_dict["value"]["datasetName"])
+                                    and raster_dict["value"]["datasetName"]["isPublic"]
+                                    is True
+                                )
+                            ):
+                                raster_name = _python_variable_name(
+                                    raster_dict["value"]["datasetName"]["name"]
+                                )
+                                raster_dict["value"]["datasetName"].update(
+                                    {"name": raster_name}
+                                )
+                                key_value_dict.update({raster_name: None})
 
-                    elif "function" in raster_dict["value"].keys(): # if function template inside
+                    elif (
+                        "function" in raster_dict["value"].keys()
+                    ):  # if function template inside
                         _function_traversal(raster_dict["value"])
-                elif isinstance (raster_dict["value"], list): #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
-                        for x in raster_dict["value"]:
-                            if isinstance(x, numbers.Number):  #Check if scalar float value
-                                if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
-                                     if "name" in raster_dict.keys():
-                                         raster_name = _python_variable_name(raster_dict["name"])
-                                         raster_dict.update({"name":raster_name})
-                                         key_value_dict.update({raster_name:x}) 
-                                     #else:
-                                         #time.sleep(.00000001)scalar_name+"scalar"+str(index))
-                                         #scalar_name = "scalar"+''.join(e for e in str(datetime.now()) if e.isalnum())
-                                         #raster_dict.update({"name":scalar_name})
-                                         #key_value_dict.update({scalar_name:x}) 
-                elif isinstance (raster_dict["value"], numbers.Number):
-                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                elif isinstance(
+                    raster_dict["value"], list
+                ):  # raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                    for x in raster_dict["value"]:
+                        if isinstance(x, numbers.Number):  # Check if scalar float value
+                            if (
+                                self._is_public_flag is False
+                                or ispublic == True
+                                or (
+                                    ("isPublic" in raster_dict)
+                                    and raster_dict["isPublic"] is True
+                                )
+                            ):
+                                if "name" in raster_dict.keys():
+                                    raster_name = _python_variable_name(
+                                        raster_dict["name"]
+                                    )
+                                    raster_dict.update({"name": raster_name})
+                                    key_value_dict.update({raster_name: x})
+                                # else:
+                                # time.sleep(.00000001)scalar_name+"scalar"+str(index))
+                                # scalar_name = "scalar"+''.join(e for e in str(datetime.now()) if e.isalnum())
+                                # raster_dict.update({"name":scalar_name})
+                                # key_value_dict.update({scalar_name:x})
+                elif isinstance(raster_dict["value"], numbers.Number):
+                    if (
+                        self._is_public_flag is False
+                        or ispublic == True
+                        or (
+                            ("isPublic" in raster_dict.keys())
+                            and raster_dict["isPublic"] is True
+                        )
+                    ):
                         if "name" in raster_dict.keys():
                             raster_name = _python_variable_name(raster_dict["name"])
-                            raster_dict.update({"name":raster_name})
-                            key_value_dict.update({raster_name:raster_dict["value"]})
+                            raster_dict.update({"name": raster_name})
+                            key_value_dict.update({raster_name: raster_dict["value"]})
                         else:
-                            scalar_name = scalar_name+"_scalar_"+str(index)
-                            raster_dict.update({"name":scalar_name})
-                            key_value_dict.update({scalar_name:raster_dict["value"]}) 
+                            scalar_name = scalar_name + "_scalar_" + str(index)
+                            raster_dict.update({"name": scalar_name})
+                            key_value_dict.update({scalar_name: raster_dict["value"]})
             else:
-                if self._is_public_flag is False  or ispublic==True or  (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                if (
+                    self._is_public_flag is False
+                    or ispublic == True
+                    or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True)
+                ):
                     raster_name = _python_variable_name(raster_dict["name"])
-                    raster_dict.update({"name":raster_name})
-                    key_value_dict.update({raster_name:None})
-                    raster_dictionary.update({raster_name:None})
+                    raster_dict.update({"name": raster_name})
+                    key_value_dict.update({raster_name: None})
+                    raster_dictionary.update({raster_name: None})
 
         def _function_traversal(dictionary):
             if "function" in dictionary.keys():
                 _function_create(dictionary)
-            function_arg_type=dictionary['type'] if 'type' in dictionary else None  
-            for key,value in dictionary.items():
-                if isinstance(value , dict):
+            function_arg_type = dictionary["type"] if "type" in dictionary else None
+            for key, value in dictionary.items():
+                if isinstance(value, dict):
                     if "isDataset" in value.keys():
-                        if (value["isDataset"] == True) or key == "raster" or key == "Raster2" or key == "Rasters" or key == "Raster":
-                            _raster_function_traversal(value,function_arg_type=function_arg_type)
-                        elif (value["isDataset"] == False):  #Parameters
-                            if "value" in value:                                
-                                if value["value"] is not None or isinstance(value["value"],bool):
-                                    if (isinstance(value["value"],dict)) and "elements" in value["value"]:
-                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
-                                            raster_name = _python_variable_name(value["name"])
-                                            value.update({"name":raster_name})
-                                            key_value_dict.update({raster_name:value["value"]["elements"]})
-                                    else:                                        
-                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
-                                            raster_name = _python_variable_name(value["name"])
-                                            value.update({"name":raster_name})
-                                            key_value_dict.update({raster_name:value["value"]})
+                        if (
+                            (value["isDataset"] == True)
+                            or key == "raster"
+                            or key == "Raster2"
+                            or key == "Rasters"
+                            or key == "Raster"
+                        ):
+                            _raster_function_traversal(
+                                value, function_arg_type=function_arg_type
+                            )
+                        elif value["isDataset"] == False:  # Parameters
+                            if "value" in value:
+                                if value["value"] is not None or isinstance(
+                                    value["value"], bool
+                                ):
+                                    if (
+                                        isinstance(value["value"], dict)
+                                    ) and "elements" in value["value"]:
+                                        if self._is_public_flag is False or (
+                                            ("isPublic" in value)
+                                            and value["isPublic"] is True
+                                        ):
+                                            raster_name = _python_variable_name(
+                                                value["name"]
+                                            )
+                                            value.update({"name": raster_name})
+                                            key_value_dict.update(
+                                                {
+                                                    raster_name: value["value"][
+                                                        "elements"
+                                                    ]
+                                                }
+                                            )
+                                    else:
+                                        if self._is_public_flag is False or (
+                                            ("isPublic" in value)
+                                            and value["isPublic"] is True
+                                        ):
+                                            raster_name = _python_variable_name(
+                                                value["name"]
+                                            )
+                                            value.update({"name": raster_name})
+                                            key_value_dict.update(
+                                                {raster_name: value["value"]}
+                                            )
                             else:
-                                if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                if self._is_public_flag is False or (
+                                    ("isPublic" in value) and value["isPublic"] is True
+                                ):
                                     raster_name = _python_variable_name(value["name"])
-                                    value.update({"name":raster_name})
-                                    key_value_dict.update({raster_name:None})
+                                    value.update({"name": raster_name})
+                                    key_value_dict.update({raster_name: None})
                     elif "datasetName" in value.keys():
-                        if self._is_public_flag is False or  (("isPublic" in value["datasetName"]) and value["datasetName"]["isPublic"] is True):
-                            key_value_dict.update({key:value["datasetName"]["name"]})
-                    elif "function" in value.keys():  #Function Chain inside Raster
+                        if self._is_public_flag is False or (
+                            ("isPublic" in value["datasetName"])
+                            and value["datasetName"]["isPublic"] is True
+                        ):
+                            key_value_dict.update({key: value["datasetName"]["name"]})
+                    elif "function" in value.keys():  # Function Chain inside Raster
                         _function_create(value)
 
         if "function" in gdict.keys():
             if "isDataset" in gdict["arguments"].keys():
-                if(gdict["arguments"]["isDataset"] == False):
-                    if ("value" in gdict["arguments"]):
+                if gdict["arguments"]["isDataset"] == False:
+                    if "value" in gdict["arguments"]:
                         if "elements" in gdict["arguments"]["value"]:
                             if gdict["arguments"]["value"]["elements"]:
-                                for arg_element in gdict["arguments"]["value"]["elements"]:
+                                for arg_element in gdict["arguments"]["value"][
+                                    "elements"
+                                ]:
                                     _function_traversal(arg_element)
-                            else: # when gdict["arguments"]["value"]["elements"]=[]
-                                _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
+                            else:  # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_traversal(
+                                    gdict["arguments"],
+                                    function_arg_type=gdict["arguments"]["type"]
+                                    if "type" in gdict["arguments"]
+                                    else None,
+                                )
                     else:
-                        _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
-            
+                        _raster_function_traversal(
+                            gdict["arguments"],
+                            function_arg_type=gdict["arguments"]["type"]
+                            if "type" in gdict["arguments"]
+                            else None,
+                        )
+
                 else:
                     if "value" in gdict["arguments"]:
                         _function_traversal(gdict["arguments"]["value"])
-                    elif (gdict["arguments"]["isDataset"] == True): #Aspect function with only raster parameter
-                        _raster_function_traversal(gdict["arguments"],  function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
+                    elif (
+                        gdict["arguments"]["isDataset"] == True
+                    ):  # Aspect function with only raster parameter
+                        _raster_function_traversal(
+                            gdict["arguments"],
+                            function_arg_type=gdict["arguments"]["type"]
+                            if "type" in gdict["arguments"]
+                            else None,
+                        )
             _function_traversal(gdict["arguments"])
         return key_value_dict, raster_dictionary
 
-
-    def _apply_rft(self, arg_dict=None, gis = None):
+    def _apply_rft(self, arg_dict=None, gis=None):
         rft_dict = copy.deepcopy(self._rft_json)
-        arg_dict_copy=copy.copy(arg_dict)
+        arg_dict_copy = copy.copy(arg_dict)
         if arg_dict_copy is not None:
             for key in list(arg_dict_copy.keys()):
-                if(arg_dict_copy[key] is None):
-                    arg_dict_copy.pop(key,None)
-            complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
+                if arg_dict_copy[key] is None:
+                    arg_dict_copy.pop(key, None)
+            complete_rft_dict = self._apply_argument(rft_dict, arg_dict_copy)
 
         if self._local_raster is not None:
             if self._local_raster._engine == _ArcpyRaster:
-                newlyr = Raster(self._local_raster._uri, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+                newlyr = Raster(
+                    self._local_raster._uri,
+                    is_multidimensional=self._local_raster._is_multidimensional,
+                    gis=self._local_raster._gis,
+                )
             else:
-                newlyr = Raster(complete_rft_dict, is_multidimensional=self._local_raster._is_multidimensional, gis=self._gis)
+                newlyr = Raster(
+                    complete_rft_dict,
+                    is_multidimensional=self._local_raster._is_multidimensional,
+                    gis=self._gis,
+                )
             self._local_raster = None
             newlyr._engine_obj._fn = complete_rft_dict
             newlyr._engine_obj._fnra = complete_rft_dict
         else:
             newlyr = ImageryLayer(complete_rft_dict, self._gis)
-        #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+            # _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
             newlyr._fn = complete_rft_dict
             newlyr._fnra = complete_rft_dict
         return newlyr
 
-    def draw_graph(self,show_attributes=False, graph_size="14.25, 15.25"):
+    def draw_graph(self, show_attributes=False, graph_size="14.25, 15.25"):
 
         """
         Displays a structural representation of the function chain and it's raster input values. If
@@ -7414,177 +8581,386 @@ class RFT:
         """
         from operator import eq
         import numbers
+
         try:
             from graphviz import Digraph
         except:
             print("Graphviz needs to be installed. pip install graphviz")
 
-        G = Digraph(comment='Raster Function Chain', format = 'svg') # To declare the graph
-        G.clear() #clear all previous cases of the same name
-        G.attr(rankdir='LR', len='1',overlap="false",splines='ortho', nodesep='0.5',size=graph_size)   #Display graph from Left to Right
-        root=0
+        G = Digraph(
+            comment="Raster Function Chain", format="svg"
+        )  # To declare the graph
+        G.clear()  # clear all previous cases of the same name
+        G.attr(
+            rankdir="LR",
+            len="1",
+            overlap="false",
+            splines="ortho",
+            nodesep="0.5",
+            size=graph_size,
+        )  # Display graph from Left to Right
+        root = 0
         gdict = self._rft_json
-        global nodenumber,dict_arg
-        dict_arg={}
-        
-        def _function_create(value,childnode): #Create new node for the function if it doesn't exist yet
+        global nodenumber, dict_arg
+        dict_arg = {}
+
+        def _function_create(
+            value, childnode
+        ):  # Create new node for the function if it doesn't exist yet
             global nodenumber
-            dict_temp_arg={}
-            list_arg=[]
-            flag=0
+            dict_temp_arg = {}
+            list_arg = []
+            flag = 0
             for k_arg, v_arg in value["arguments"].items():
-                list_arg.append(k_arg+str(v_arg))
- 
+                list_arg.append(k_arg + str(v_arg))
+
             list_arg.sort()
-            list_arg_str=str(list_arg)
+            list_arg_str = str(list_arg)
             if dict_arg is not None:
                 for k_check in dict_arg.keys():
                     if k_check == list_arg_str:
-                        G.edge(str(dict_arg.get(k_check)),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                        flag=1
-                                    
+                        G.edge(
+                            str(dict_arg.get(k_check)),
+                            str(childnode),
+                            color="silver",
+                            arrowsize="0.9",
+                            penwidth="1",
+                        )
+                        flag = 1
+
             if flag == 0:
-                nodenumber+=1
-                G.node(str(nodenumber),value["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
-                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                nodenumber += 1
+                G.node(
+                    str(nodenumber),
+                    value["function"]["name"],
+                    style=("rounded, filled"),
+                    shape="box",
+                    color="lightgoldenrod1",
+                    fillcolor="lightgoldenrod1",
+                    fontname="sans-serif",
+                )
+                G.edge(
+                    str(nodenumber),
+                    str(childnode),
+                    color="silver",
+                    arrowsize="0.9",
+                    penwidth="1",
+                )
                 connect = nodenumber
-                dict_temp_arg={list_arg_str:connect}
+                dict_temp_arg = {list_arg_str: connect}
                 dict_arg.update(dict_temp_arg)
                 if "isDataset" in value["arguments"].keys():
-                    if(value["arguments"]["isDataset"] == False):
+                    if value["arguments"]["isDataset"] == False:
                         for arg_element in value["arguments"]["value"]["elements"]:
-                            _function_graph(arg_element,connect)
-                    elif (value["arguments"]["isDataset"] == True):
-                        _raster_function_graph(value["arguments"],connect)
-                _function_graph(value["arguments"],connect)
+                            _function_graph(arg_element, connect)
+                    elif value["arguments"]["isDataset"] == True:
+                        _raster_function_graph(value["arguments"], connect)
+                _function_graph(value["arguments"], connect)
 
-        def _raster_function_graph(raster_dict, childnode): #If isDataset=True
-            global nodenumber,connect
-            if "value" in raster_dict.keys(): #Handling Scalar rasters
+        def _raster_function_graph(raster_dict, childnode):  # If isDataset=True
+            global nodenumber, connect
+            if "value" in raster_dict.keys():  # Handling Scalar rasters
                 if raster_dict["value"] is not None:
-                    if not (isinstance(raster_dict["value"],dict)):
-                        if isinstance(raster_dict["value"], numbers.Number): 
-                            nodenumber+=1
-                            G.node(str(nodenumber), str(raster_dict["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
-                    elif "value" in raster_dict["value"]:
-                        if isinstance(raster_dict["value"]["value"], numbers.Number): 
-                            nodenumber+=1
-                            G.node(str(nodenumber), str(raster_dict["value"]["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
-                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
-                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
-                            for e in raster_dict["value"]["elements"]:
-                                if "function" in e.keys(): # if function template inside
-                                    _function_graph(e,childnode)
-                                else:  #if raster dataset inside raster array
-                                    _raster_function_graph(e, childnode)
-                        else: # If elements is empty i.e Rasters has no value when rft was created
-                            nodenumber+=1
-                            G.node(str(nodenumber),str(raster_dict["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
-                    elif "function" in raster_dict["value"]: # If function in value[]
-                        _function_graph(raster_dict,childnode)
+                    if not (isinstance(raster_dict["value"], dict)):
+                        if isinstance(raster_dict["value"], numbers.Number):
+                            nodenumber += 1
+                            G.node(
+                                str(nodenumber),
+                                str(raster_dict["value"]),
+                                style=("filled"),
+                                fontsize="12",
+                                shape="circle",
+                                fixedsize="shape",
+                                color="darkslategray2",
+                                fillcolor="darkslategray2",
+                                fontname="sans-serif",
+                            )
+                            G.edge(
+                                str(nodenumber),
+                                str(childnode),
+                                color="silver",
+                                arrowsize="0.9",
+                                penwidth="1",
+                            )
 
-                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                    elif "value" in raster_dict["value"]:
+                        if isinstance(raster_dict["value"]["value"], numbers.Number):
+                            nodenumber += 1
+                            G.node(
+                                str(nodenumber),
+                                str(raster_dict["value"]["value"]),
+                                style=("filled"),
+                                fontsize="12",
+                                shape="circle",
+                                fixedsize="shape",
+                                color="darkslategray2",
+                                fillcolor="darkslategray2",
+                                fontname="sans-serif",
+                            )
+                            G.edge(
+                                str(nodenumber),
+                                str(childnode),
+                                color="silver",
+                                arrowsize="0.9",
+                                penwidth="1",
+                            )
+
+                    elif "elements" in raster_dict["value"]:  # Handling Raster arrays
+                        if raster_dict["value"][
+                            "elements"
+                        ]:  # if elements has any value in the list
+                            for e in raster_dict["value"]["elements"]:
+                                if (
+                                    "function" in e.keys()
+                                ):  # if function template inside
+                                    _function_graph(e, childnode)
+                                else:  # if raster dataset inside raster array
+                                    _raster_function_graph(e, childnode)
+                        else:  # If elements is empty i.e Rasters has no value when rft was created
+                            nodenumber += 1
+                            G.node(
+                                str(nodenumber),
+                                str(raster_dict["name"]),
+                                style=("filled"),
+                                shape="note",
+                                color="darkseagreen2",
+                                fillcolor="darkseagreen2",
+                                fontname="sans-serif",
+                            )
+                            G.edge(
+                                str(nodenumber),
+                                str(childnode),
+                                color="silver",
+                                arrowsize="0.9",
+                                penwidth="1",
+                            )
+
+                    elif "function" in raster_dict["value"]:  # If function in value[]
+                        _function_graph(raster_dict, childnode)
+
+                    elif (
+                        "name" in raster_dict["value"]
+                    ):  # if raster properties are preserved
                         if "function" in raster_dict["value"]:
-                            _function_graph(raster_dict["value"],childnode)
+                            _function_graph(raster_dict["value"], childnode)
                         else:
-                            nodenumber+=1
-                            G.node(str(nodenumber),str(raster_dict["value"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
-                    elif "datasetName" in raster_dict["value"]: #local image location
+                            nodenumber += 1
+                            G.node(
+                                str(nodenumber),
+                                str(raster_dict["value"]["name"]),
+                                style=("filled"),
+                                shape="note",
+                                color="darkseagreen2",
+                                fillcolor="darkseagreen2",
+                                fontname="sans-serif",
+                            )
+                            G.edge(
+                                str(nodenumber),
+                                str(childnode),
+                                color="silver",
+                                arrowsize="0.9",
+                                penwidth="1",
+                            )
+
+                    elif "datasetName" in raster_dict["value"]:  # local image location
                         if "name" in raster_dict["value"]["datasetName"]:
-                            nodenumber+=1
-                            G.node(str(nodenumber),str(raster_dict["value"]["datasetName"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
-                    elif "function" in raster_dict["value"].keys(): # if function template inside
-                        _function_graph(raster_dict["value"],childnode)
-                    #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
-                    elif isinstance (raster_dict["value"], list):
+                            nodenumber += 1
+                            G.node(
+                                str(nodenumber),
+                                str(raster_dict["value"]["datasetName"]["name"]),
+                                style=("filled"),
+                                shape="note",
+                                color="darkseagreen2",
+                                fillcolor="darkseagreen2",
+                                fontname="sans-serif",
+                            )
+                            G.edge(
+                                str(nodenumber),
+                                str(childnode),
+                                color="silver",
+                                arrowsize="0.9",
+                                penwidth="1",
+                            )
+
+                    elif (
+                        "function" in raster_dict["value"].keys()
+                    ):  # if function template inside
+                        _function_graph(raster_dict["value"], childnode)
+                    # raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                    elif isinstance(raster_dict["value"], list):
                         for x in raster_dict["value"]:
-                            if isinstance(x, numbers.Number):  #Check if scalar float value
-                                nodenumber+=1
-                                G.node(str(nodenumber), str(x), style=('filled'), fontsize="12", shape='circle',fixedsize="shape", color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
-                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                        
-                elif "name" in raster_dict.keys():      
-                    rastername = str(raster_dict["name"]) #Handling Raster
-                    nodenumber+=1
-                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                
+                            if isinstance(
+                                x, numbers.Number
+                            ):  # Check if scalar float value
+                                nodenumber += 1
+                                G.node(
+                                    str(nodenumber),
+                                    str(x),
+                                    style=("filled"),
+                                    fontsize="12",
+                                    shape="circle",
+                                    fixedsize="shape",
+                                    color="darkslategray2",
+                                    fillcolor="darkslategray2",
+                                    fontname="sans-serif",
+                                )
+                                G.edge(
+                                    str(nodenumber),
+                                    str(childnode),
+                                    color="silver",
+                                    arrowsize="0.9",
+                                    penwidth="1",
+                                )
+
+                elif "name" in raster_dict.keys():
+                    rastername = str(raster_dict["name"])  # Handling Raster
+                    nodenumber += 1
+                    G.node(
+                        str(nodenumber),
+                        rastername,
+                        style=("filled"),
+                        shape="note",
+                        color="darkseagreen2",
+                        fillcolor="darkseagreen2",
+                        fontname="sans-serif",
+                    )
+                    G.edge(
+                        str(nodenumber),
+                        str(childnode),
+                        color="silver",
+                        arrowsize="0.9",
+                        penwidth="1",
+                    )
 
             elif "datasetName" in raster_dict.keys():
-                rastername = str(raster_dict["datasetName"]["name"]) #Handling Raster
-                nodenumber+=1
-                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                rastername = str(raster_dict["datasetName"]["name"])  # Handling Raster
+                nodenumber += 1
+                G.node(
+                    str(nodenumber),
+                    rastername,
+                    style=("filled"),
+                    shape="note",
+                    color="darkseagreen2",
+                    fillcolor="darkseagreen2",
+                    fontname="sans-serif",
+                )
+                G.edge(
+                    str(nodenumber),
+                    str(childnode),
+                    color="silver",
+                    arrowsize="0.9",
+                    penwidth="1",
+                )
 
-            elif "name" in raster_dict: 
-                rastername = str(raster_dict["name"]) #Handling Raster
-                nodenumber+=1
-                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+            elif "name" in raster_dict:
+                rastername = str(raster_dict["name"])  # Handling Raster
+                nodenumber += 1
+                G.node(
+                    str(nodenumber),
+                    rastername,
+                    style=("filled"),
+                    shape="note",
+                    color="darkseagreen2",
+                    fillcolor="darkseagreen2",
+                    fontname="sans-serif",
+                )
+                G.edge(
+                    str(nodenumber),
+                    str(childnode),
+                    color="silver",
+                    arrowsize="0.9",
+                    penwidth="1",
+                )
 
-
-        def _function_graph(dictionary, childnode): 
-            global nodenumber,connect
-            count=0
+        def _function_graph(dictionary, childnode):
+            global nodenumber, connect
+            count = 0
             if "function" in dictionary.keys():
-                _function_create(dictionary,childnode)
+                _function_create(dictionary, childnode)
 
-            for key,value in dictionary.items():
-                if isinstance(value , dict):
+            for key, value in dictionary.items():
+                if isinstance(value, dict):
                     if "isDataset" in value.keys():
-                        if (value["isDataset"] == True) or key == "Raster" or key == "Raster2" or key == "Rasters":
+                        if (
+                            (value["isDataset"] == True)
+                            or key == "Raster"
+                            or key == "Raster2"
+                            or key == "Rasters"
+                        ):
                             _raster_function_graph(value, childnode)
-                        elif (value["isDataset"] == False) and show_attributes == True:  #Parameters
-                            nodenumber+=1
+                        elif (
+                            value["isDataset"] == False
+                        ) and show_attributes == True:  # Parameters
+                            nodenumber += 1
                             if "name" in value and value["name"] not in hidden_inputs:
                                 if "value" in value:
-                                    if value["value"] is not None or isinstance(value["value"],bool):
-                                        atrr_name=str(value["name"])+" = "+str(value["value"])
+                                    if value["value"] is not None or isinstance(
+                                        value["value"], bool
+                                    ):
+                                        atrr_name = (
+                                            str(value["name"])
+                                            + " = "
+                                            + str(value["value"])
+                                        )
                                 else:
-                                    atrr_name=str(value["name"])
+                                    atrr_name = str(value["name"])
 
-                                G.node(str(nodenumber), atrr_name, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
-                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
-                    
+                                G.node(
+                                    str(nodenumber),
+                                    atrr_name,
+                                    style=("filled"),
+                                    shape="rectangle",
+                                    color="antiquewhite",
+                                    fillcolor="antiquewhite",
+                                    fontname="sans-serif",
+                                )
+                                G.edge(
+                                    str(nodenumber),
+                                    str(childnode),
+                                    color="silver",
+                                    arrowsize="0.9",
+                                    penwidth="1",
+                                )
+
                     elif "datasetName" in value.keys():
                         _raster_function_graph(value, childnode)
 
-                    elif "function" in value.keys():  #Function Chain inside Raster
-                        _function_create(value,childnode)
+                    elif "function" in value.keys():  # Function Chain inside Raster
+                        _function_create(value, childnode)
 
         if "function" in gdict.keys():
-            G.node(str(root),gdict["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
-            nodenumber=root
+            G.node(
+                str(root),
+                gdict["function"]["name"],
+                style=("rounded, filled"),
+                shape="box",
+                color="lightgoldenrod1",
+                fillcolor="lightgoldenrod1",
+                fontname="sans-serif",
+            )
+            nodenumber = root
             if "isDataset" in gdict["arguments"].keys():
-                if(gdict["arguments"]["isDataset"] == False):
+                if gdict["arguments"]["isDataset"] == False:
                     if "value" in gdict["arguments"]:
                         if "elements" in gdict["arguments"]["value"]:
                             if gdict["arguments"]["value"]["elements"]:
-                                for arg_element in gdict["arguments"]["value"]["elements"]:
-                                    _function_graph(arg_element,root)
-                            else: # when gdict["arguments"]["value"]["elements"]=[]
-                                _raster_function_graph(gdict["arguments"],root)
+                                for arg_element in gdict["arguments"]["value"][
+                                    "elements"
+                                ]:
+                                    _function_graph(arg_element, root)
+                            else:  # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_graph(gdict["arguments"], root)
                     else:
-                        _raster_function_graph(gdict["arguments"],root)
+                        _raster_function_graph(gdict["arguments"], root)
                 else:
                     if "value" in gdict["arguments"]:
-                        _function_graph(gdict["arguments"]["value"],root)
-                    elif (gdict["arguments"]["isDataset"] == True):
-                        _raster_function_graph(gdict["arguments"],root)
-            _function_graph(gdict["arguments"],root)
+                        _function_graph(gdict["arguments"]["value"], root)
+                    elif gdict["arguments"]["isDataset"] == True:
+                        _raster_function_graph(gdict["arguments"], root)
+            _function_graph(gdict["arguments"], root)
         return G
-  
+
     def _repr_svg_(self):
-        graph=self.draw_graph()
-        svg_graph=graph.pipe().decode('utf-8')
+        graph = self.draw_graph()
+        svg_graph = graph.pipe().decode("utf-8")
         return svg_graph
