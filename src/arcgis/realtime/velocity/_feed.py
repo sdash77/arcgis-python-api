@@ -5,8 +5,9 @@ from ._task import Task
 
 class Feed(Task):
     """
-     Feed class implements Task and provides public facing methods to access Feeds API endpoints
+    Feed class implements Task and provides public facing methods to access Feeds API endpoints
     """
+
     _id = ""
     _gis = None
     _url = None
@@ -18,28 +19,32 @@ class Feed(Task):
         self._gis = gis
         self._util = util
         self._feed_item = feed_item
-        self._id = feed_item['id']
+        self._id = feed_item["id"]
         self._serialized_object = PropertyMap(self._feed_item)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s id:%s label:%s>" % (type(self).__name__, self._id, self._feed_item['label'])
+        return "<%s id:%s label:%s>" % (
+            type(self).__name__,
+            self._id,
+            self._feed_item["label"],
+        )
 
     # ----------------------------------------------------------------------
     def start(self):
         """
-       Start the Feed for the given id
-       :return: response of feed start
-       """
+        Start the Feed for the given id
+        :return: response of feed start
+        """
         return self._util._start("feed", self._id)
 
     # ----------------------------------------------------------------------
     def stop(self):
         """
-       Stop the Feed for the given id
-       Return True if the Feed was successfully stopped.
-       :return: boolean
-       """
+        Stop the Feed for the given id
+        Return True if the Feed was successfully stopped.
+        :return: boolean
+        """
         return self._util._stop("feed", self._id)
 
     # ----------------------------------------------------------------------

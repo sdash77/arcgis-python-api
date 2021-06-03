@@ -1,9 +1,10 @@
 class _Util:
     """
-        Private class that provides wrapper functions for Connection objects
-        (gis._con) xhr functions and some re-usable function endpoint calls
-        for _start, _stop, _delete operations on a task
+    Private class that provides wrapper functions for Connection objects
+    (gis._con) xhr functions and some re-usable function endpoint calls
+    for _start, _stop, _delete operations on a task
     """
+
     _gis = None
     _base_url = None
     _params = None
@@ -15,9 +16,7 @@ class _Util:
         """
         self._gis = gis
         self._base_url = base_url
-        self._params = {
-            'authorization': f'token={gis._con.token}'
-        }
+        self._params = {"authorization": f"token={gis._con.token}"}
 
     # ----------------------------------------------------------------------
     def _get_request(self, path):
@@ -29,7 +28,7 @@ class _Util:
         :param path: feeds | realtime | bigdata
         :return: Endpoint response
         """
-        url = f'{self._base_url}{path}'
+        url = f"{self._base_url}{path}"
         response = self._gis._con.get(url, self._params)
 
         return self._parse_response(response)
@@ -44,12 +43,9 @@ class _Util:
         :param path: feeds | realtime | bigdata
         :return: Endpoint response
         """
-        path = f'{type}/{id}/'
+        path = f"{type}/{id}/"
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
-        params = {
-            **self._params,
-            'data': payload
-        }
+        params = {**self._params, "data": payload}
         response = self._gis._con.put(url, params, post_json=True, try_json=False)
 
         return self._parse_response(response)
@@ -64,12 +60,9 @@ class _Util:
         :param path: feeds | realtime | bigdata
         :return: Endpoint response
         """
-        path = f'{type}/{id}/'
+        path = f"{type}/{id}/"
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
-        params = {
-            **self._params,
-            'data': payload
-        }
+        params = {**self._params, "data": payload}
 
         response = self._gis._con.post(url, params, post_json=True, try_json=True)
 
@@ -85,7 +78,7 @@ class _Util:
         :param path: feeds | realtime | bigdata
         :return: endpoint response
         """
-        url = f'{self._base_url}{path}'
+        url = f"{self._base_url}{path}"
         response = self._gis._con.delete(url, self._params)
 
         return self._parse_response(response, return_boolean_for_success=True)
@@ -98,7 +91,7 @@ class _Util:
         :param id: unique id of a task
         :return: Endpoint response for start task
         """
-        path = f'{type}/{id}'
+        path = f"{type}/{id}"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
@@ -109,7 +102,7 @@ class _Util:
         :param id: unique id of a task
         :return: Endpoint response for start task
         """
-        path = f'{type}/{id}/start'
+        path = f"{type}/{id}/start"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
@@ -123,10 +116,10 @@ class _Util:
         :returns: boolean
          a dictionary with error details.
         """
-        path = f'{type}/{id}/stop'
+        path = f"{type}/{id}/stop"
         response = self._get_request(path)
 
-        return response.get('status') == 'success'
+        return response.get("status") == "success"
 
     # ----------------------------------------------------------------------
     def _status(self, type, id):
@@ -136,7 +129,7 @@ class _Util:
         :param id: unique id of a task
         :return: endpoint response for task status
         """
-        path = f'{type}/{id}/status'
+        path = f"{type}/{id}/status"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
@@ -157,20 +150,20 @@ class _Util:
         :return: A bool containing True (for success) or
          False (for failure) a dictionary with details is returned.
         """
-        path = f'{type}/{id}'
+        path = f"{type}/{id}"
         return self._delete_request(path)
 
     # ----------------------------------------------------------------------
-    def _parse_response(self, response, return_boolean_for_success = False):
+    def _parse_response(self, response, return_boolean_for_success=False):
         """
         :param response: Result object of an endpoint
         :return: Result or raise exception if status has an 'error' attribute
         """
-        if isinstance(response, dict) and response.get('status') == 'error':
+        if isinstance(response, dict) and response.get("status") == "error":
             raise Exception(response)
         elif isinstance(response, list):
             for item in response:
-                if item.get('status') == 'error':
+                if item.get("status") == "error":
                     raise Exception(item)
                 else:
                     return response

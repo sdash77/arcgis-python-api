@@ -6,6 +6,7 @@ class FeedsManager:
     """
     Used to manage Feeds
     """
+
     _gis = None
     _url = None
     _util = None
@@ -26,10 +27,9 @@ class FeedsManager:
         Get all Feeds
         :return: returns a collection of all configured Feed tasks
         """
-        all_feeds_response = self._util._get_request('feeds')
+        all_feeds_response = self._util._get_request("feeds")
         feed_items = [
-            Feed(self._url, self._gis, self._util, feed)
-            for feed in all_feeds_response
+            Feed(self._url, self._gis, self._util, feed) for feed in all_feeds_response
         ]
         return feed_items
 
@@ -40,5 +40,5 @@ class FeedsManager:
         :param id: unique id of a Feed
         :return: endpoint response of Feed for the given id
         """
-        feed_item = self._util._get('feed', id)
+        feed_item = self._util._get("feed", id)
         return Feed(self._url, self._gis, self._util, feed_item)

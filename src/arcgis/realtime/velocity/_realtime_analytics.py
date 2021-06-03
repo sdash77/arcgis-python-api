@@ -5,9 +5,10 @@ from ._task import Task
 
 class RealTimeAnalytics(Task):
     """
-     RealTimeAnalytics class implements Task and provides public facing methods to
-     access RealTimeAnalytics API endpoints
+    RealTimeAnalytics class implements Task and provides public facing methods to
+    access RealTimeAnalytics API endpoints
     """
+
     _id = ""
     _gis = None
     _url = None
@@ -21,28 +22,32 @@ class RealTimeAnalytics(Task):
 
         if realtime_analytics_item:
             self._realtime_analytics_item = realtime_analytics_item
-            self._id = realtime_analytics_item['id']
+            self._id = realtime_analytics_item["id"]
             self._serialized_object = PropertyMap(self._realtime_analytics_item)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s id:%s label:%s>" % (type(self).__name__, self._id, self._realtime_analytics_item['label'])
+        return "<%s id:%s label:%s>" % (
+            type(self).__name__,
+            self._id,
+            self._realtime_analytics_item["label"],
+        )
 
     # ----------------------------------------------------------------------
     def start(self):
         """
-       Start the Real-Time Analytics for the given id
-       :return: response of realtime_analytics start
-       """
+        Start the Real-Time Analytics for the given id
+        :return: response of realtime_analytics start
+        """
         return self._util._start("analytics/realtime", self._id)
 
     # ----------------------------------------------------------------------
     def stop(self):
         """
-       Stop the Real-Time Analytics for the given id
-       Return True if the the Real-Time Analytics was successfully stopped.
-       :return: boolean
-       """
+        Stop the Real-Time Analytics for the given id
+        Return True if the the Real-Time Analytics was successfully stopped.
+        :return: boolean
+        """
         return self._util._stop("analytics/realtime", self._id)
 
     # ----------------------------------------------------------------------

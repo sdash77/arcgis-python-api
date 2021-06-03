@@ -5,9 +5,9 @@ from arcgis.realtime.velocity.bigdata_analytics_manager import BigDataAnalytics
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
-    url = ''
-    username = ''
-    password = ''
+    url = ""
+    username = ""
+    password = ""
     gis = GIS(url, username, password)
     SKIP_TESTS = False
     # Skip task start/stop/delete tests by default. Set as false to run
@@ -16,17 +16,18 @@ except:
     SKIP_TESTS = True
 
 
-@unittest.skipIf(SKIP_TESTS,
-                 reason='GIS connection failed')
+@unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
 class TestBigDataAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     bigdata_analytics_manager = velocity.bigdata_analytics_manager
-    bigdata_analytics_item = bigdata_analytics_manager.get('7a49c634c09f4e558f842db06c76a346')
+    bigdata_analytics_item = bigdata_analytics_manager.get(
+        "7a49c634c09f4e558f842db06c76a346"
+    )
 
     # ----------------------------------------------------------------------
-    @unittest.skipIf(SKIP_SOME_TESTS, 'test_get_all_bigdata_analytics skipping')
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_bigdata_analytics skipping")
     def test_get_all_bigdata_analytics(self):
-        print('\n ---- test_get_all_bigdata_analytics ----')
+        print("\n ---- test_get_all_bigdata_analytics ----")
 
         try:
             items = self.bigdata_analytics_manager.items
@@ -41,14 +42,16 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
     def test_get_bigdata_analytics(self):
-        print('\n ---- test_get_bigdata_analytics ----')
+        print("\n ---- test_get_bigdata_analytics ----")
 
         try:
-            response = self.bigdata_analytics_manager.get('7a49c634c09f4e558f842db06c76a346')
+            response = self.bigdata_analytics_manager.get(
+                "7a49c634c09f4e558f842db06c76a346"
+            )
             assert isinstance(response, BigDataAnalytics)
 
         except AssertionError as assertErrorException:
@@ -59,16 +62,16 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
-    @unittest.skipIf(SKIP_SOME_TESTS, 'test_start_bigdata_analytics skipping')
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_start_bigdata_analytics skipping")
     def test_start_bigdata_analytics(self):
-        print('\n ---- test_start_bigdata_analytics ----')
+        print("\n ---- test_start_bigdata_analytics ----")
 
         try:
             response = self.bigdata_analytics_item.start()
-            assert response and response.get('status') == 'success'
+            assert response and response.get("status") == "success"
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -78,16 +81,16 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
-    @unittest.skipIf(SKIP_SOME_TESTS, 'test_stop_bigdata_analytics skipping')
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_stop_bigdata_analytics skipping")
     def test_stop_bigdata_analytics(self):
-        print('\n ---- test_stop_bigdata_analytics ----')
+        print("\n ---- test_stop_bigdata_analytics ----")
 
         try:
             response = self.bigdata_analytics_item.stop()
-            assert response and response.get('status') == 'success'
+            assert response and response.get("status") == "success"
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -97,15 +100,15 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
     def test_bigdata_analytics_status(self):
-        print('\n ---- test_bigdata_analytics_status ----')
+        print("\n ---- test_bigdata_analytics_status ----")
 
         try:
             response = self.bigdata_analytics_item.status()
-            assert response and response.get('status')
+            assert response and response.get("status")
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -115,16 +118,16 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
-    @unittest.skipIf(SKIP_SOME_TESTS, 'test_bigdata_analytics_metrics skipping')
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_bigdata_analytics_metrics skipping")
     def test_bigdata_analytics_metrics(self):
-        print('\n ---- test_bigdata_analytics_metrics ----')
+        print("\n ---- test_bigdata_analytics_metrics ----")
 
         try:
             response = self.bigdata_analytics_item.metrics()
-            assert response and response.get('itemId')
+            assert response and response.get("itemId")
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -134,17 +137,19 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
     # ----------------------------------------------------------------------
-    @unittest.skipIf(SKIP_SOME_TESTS, 'test_delete_bigdata_analytics skipping')
+    @unittest.skipIf(SKIP_SOME_TESTS, "test_delete_bigdata_analytics skipping")
     def test_delete_bigdata_analytics(self):
-        print('\n ---- test_delete_bigdata_analytics ----')
+        print("\n ---- test_delete_bigdata_analytics ----")
         try:
-            bigdata_analytics_to_delete = self.bigdata_analytics_manager.get('f34d3a7c899f4c178c9a0ff9dfc24bf9')
+            bigdata_analytics_to_delete = self.bigdata_analytics_manager.get(
+                "f34d3a7c899f4c178c9a0ff9dfc24bf9"
+            )
             try:
                 response = bigdata_analytics_to_delete.delete()
-                assert response and response.get('id')
+                assert response and response.get("id")
 
             except AssertionError as assertErrorException:
                 self.SKIP_TESTS = True
@@ -154,7 +159,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
                 raise skipException
 
             except Exception as testException:
-                self.fail('Error during test: ' + testException.__str__())
+                self.fail("Error during test: " + testException.__str__())
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -164,7 +169,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             raise skipException
 
         except Exception as testException:
-            self.fail('Error during test: ' + testException.__str__())
+            self.fail("Error during test: " + testException.__str__())
 
 
 def print_result(response):
@@ -172,8 +177,8 @@ def print_result(response):
         print(response)
     else:
         for key in response:
-            print(key + ' : ' + format(response[key]))
+            print(key + " : " + format(response[key]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

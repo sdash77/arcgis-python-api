@@ -5,9 +5,10 @@ from ._task import Task
 
 class BigDataAnalytics(Task):
     """
-     BigDataAnalytics class implements Task and provides public facing methods to
-     access BigDataAnalytics API endpoints
+    BigDataAnalytics class implements Task and provides public facing methods to
+    access BigDataAnalytics API endpoints
     """
+
     _id = ""
     _gis = None
     _url = None
@@ -21,28 +22,32 @@ class BigDataAnalytics(Task):
 
         if bigdata_analytics_item:
             self._bigdata_analytics_item = bigdata_analytics_item
-            self._id = bigdata_analytics_item['id']
+            self._id = bigdata_analytics_item["id"]
             self._serialized_object = PropertyMap(self._bigdata_analytics_item)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s id:%s label:%s>" % (type(self).__name__, self._id, self._bigdata_analytics_item['label'])
+        return "<%s id:%s label:%s>" % (
+            type(self).__name__,
+            self._id,
+            self._bigdata_analytics_item["label"],
+        )
 
     # ----------------------------------------------------------------------
     def start(self):
         """
-       Start the Big Data Analytics for the given id
-       :return: response of bigdata_analytics start
-       """
+        Start the Big Data Analytics for the given id
+        :return: response of bigdata_analytics start
+        """
         return self._util._start("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
     def stop(self):
         """
-       Stop the Big Data Analytics for the given id
-       Return True if the Big Data Analytics was successfully stopped.
-       :return: boolean
-       """
+        Stop the Big Data Analytics for the given id
+        Return True if the Big Data Analytics was successfully stopped.
+        :return: boolean
+        """
         return self._util._stop("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------

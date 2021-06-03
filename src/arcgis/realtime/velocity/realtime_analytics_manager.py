@@ -6,6 +6,7 @@ class RealTimeAnalyticsManager:
     """
     Used to manage Real-Time Analytics
     """
+
     _gis = None
     _url = None
     _util = None
@@ -27,7 +28,7 @@ class RealTimeAnalyticsManager:
         Get all Real-Time Analytics items
         :return: returns a collection of all configured Real-Time Analytics items
         """
-        all_realtime_analytics_response = self._util._get_request('analytics/realtime')
+        all_realtime_analytics_response = self._util._get_request("analytics/realtime")
         realtime_analytics_items = [
             RealTimeAnalytics(self._gis, self._util, realtime_item)
             for realtime_item in all_realtime_analytics_response
@@ -41,5 +42,5 @@ class RealTimeAnalyticsManager:
         :param id: unique id of a big data task
         :return: endpoint response of Real-Time Analytics for the given id
         """
-        realtime_analytics_item = self._util._get('analytics/realtime', id)
+        realtime_analytics_item = self._util._get("analytics/realtime", id)
         return RealTimeAnalytics(self._gis, self._util, realtime_analytics_item)

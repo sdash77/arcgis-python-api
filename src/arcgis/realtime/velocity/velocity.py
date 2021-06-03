@@ -31,12 +31,14 @@ class Velocity:
     @property
     def realtime_analytics_manager(self):
         """
-        Provides access to managing configured Real-time analytics tasks with ArcGIS Velocity
+         Provides access to managing configured Real-time analytics tasks with ArcGIS Velocity
 
-       :return: RealTimeAnalyticsManager
-       """
+        :return: RealTimeAnalyticsManager
+        """
         if self._realtime_manager is None:
-            self._realtime_manager = RealTimeAnalyticsManager(url=self._url, gis=self._gis)
+            self._realtime_manager = RealTimeAnalyticsManager(
+                url=self._url, gis=self._gis
+            )
         return self._realtime_manager
 
     @property
@@ -47,5 +49,7 @@ class Velocity:
         :return: BigDataAnalyticsManager
         """
         if self._bigdata_manager is None:
-            self._bigdata_manager = BigDataAnalyticsManager(url=self._url, gis=self._gis)
+            self._bigdata_manager = BigDataAnalyticsManager(
+                url=self._url, gis=self._gis
+            )
         return self._bigdata_manager
