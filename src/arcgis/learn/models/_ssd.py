@@ -721,34 +721,42 @@ class SingleShotDetector(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
-        for chip in chips:
-            if self._data._is_multispectral:
-                t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
-                scaled_t = self._data._min_max_scaler(t)[0]
-                frame = Image(scaled_t[self._data._extract_bands])
-            else:
-                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
-            if bbox:
-                scores = bbox.scores
-                bboxes, lbls = bbox._compute_boxes()
-                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
-                for index, bbox in enumerate(bboxes):
-                    if lbls is not None:
-                        label = lbls[index]
-                    else:
-                        label = 'Default'
+        from .._utils.pascal_voc_rectangles import modified_getitem
+        from fastai.data_block import LabelList
+        orig_getitem = LabelList.__getitem__
+        LabelList.__getitem__ = modified_getitem
 
-                    data = bb2hw(bbox)
-                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
-                        chip['predictions'].append({
-                            'xmin': data[0],
-                            'ymin': data[1],
-                            'width': data[2],
-                            'height': data[3],
-                            'score': float(scores[index]),
-                            'label': label
-                        })
+        try:
+            for chip in chips:
+                if self._data._is_multispectral:
+                    t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                    scaled_t = self._data._min_max_scaler(t)[0]
+                    frame = Image(scaled_t[self._data._extract_bands])
+                else:
+                    frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+                bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
+                if bbox:
+                    scores = bbox.scores
+                    bboxes, lbls = bbox._compute_boxes()
+                    bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                    for index, bbox in enumerate(bboxes):
+                        if lbls is not None:
+                            label = lbls[index]
+                        else:
+                            label = 'Default'
+
+                        data = bb2hw(bbox)
+                        if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                            chip['predictions'].append({
+                                'xmin': data[0],
+                                'ymin': data[1],
+                                'width': data[2],
+                                'height': data[3],
+                                'score': float(scores[index]),
+                                'label': label
+                            })
+        finally:
+            LabelList.__getitem__ = orig_getitem
 
         self._data.valid_ds.tfms = valid_tfms
 

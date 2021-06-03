@@ -7,8 +7,8 @@ from . import Point, Polygon, Polyline
 from . import MultiPoint, Geometry
 
 GEOM_TYPES = (Point, Polygon, Polyline, MultiPoint)
-__all__ = ['scale', 'rotate', 'skew', 'translate']
-#-------------------------------------------------------------------------
+__all__ = ["scale", "rotate", "skew", "translate"]
+# -------------------------------------------------------------------------
 def scale(geom, *scale_factor):
     """
     Create a scaling transform from a scalar value (float)
@@ -20,6 +20,7 @@ def scale(geom, *scale_factor):
      dictionary or arcgis.Geomerty
     """
     import numpy as np
+
     if len(scale_factor) == 1:
         sy = sx = scale_factor[0]
     elif len(scale_factor) > 1:
@@ -27,38 +28,34 @@ def scale(geom, *scale_factor):
         sy = scale_factor[1]
     else:
         return
-    A = np.matrix([[sx, 0.0], [0.0,sy]])
-    if isinstance(geom, dict) or \
-       isinstance(geom, GEOM_TYPES):
-        if 'x' in geom and 'y' in geom: # translates point
-            matrix = np.matrix([[geom['x']],
-                                [geom['y']]])
+    A = np.matrix([[sx, 0.0], [0.0, sy]])
+    if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
+        if "x" in geom and "y" in geom:  # translates point
+            matrix = np.matrix([[geom["x"]], [geom["y"]]])
             val = (A * matrix).tolist()
-            geom['x'] = val[0][0]
-            geom['y'] = val[1][0]
+            geom["x"] = val[0][0]
+            geom["y"] = val[1][0]
             return geom
-        elif 'rings' in geom or \
-             'paths' in geom: # translates lines/polygons
+        elif "rings" in geom or "paths" in geom:  # translates lines/polygons
             rings = []
-            if 'paths' in geom:
-                coords = geom['paths']
+            if "paths" in geom:
+                coords = geom["paths"]
             else:
-                coords = geom['rings']
+                coords = geom["rings"]
             for part in coords:
                 x_coords = [pt[0] for pt in part]
                 y_coords = [pt[1] for pt in part]
                 matrix = np.matrix([x_coords, y_coords])
                 vals = (A * matrix).tolist()
-                rings.append( list(zip(vals[0], vals[1])))
-            if 'paths' in geom:
-                geom['paths'] = rings
+                rings.append(list(zip(vals[0], vals[1])))
+            if "paths" in geom:
+                geom["paths"] = rings
             else:
-                geom['rings'] = rings
+                geom["rings"] = rings
             return geom
-        elif 'points' in geom: # translates Multipoint
-            for pt in geom['points']:
-                matrix = np.matrix([[pt[0]],
-                                    [pt[1]]])
+        elif "points" in geom:  # translates Multipoint
+            for pt in geom["points"]:
+                matrix = np.matrix([[pt[0]], [pt[1]]])
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]
@@ -66,7 +63,9 @@ def scale(geom, *scale_factor):
         else:
             return None
     return None
-#-------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
 def rotate(geom, theta):
     """
     rotates a geometry counter-clockwise by some degree theta
@@ -78,39 +77,37 @@ def rotate(geom, theta):
      dict or arcgis.Geometry
     """
     import numpy as np
-    A = np.matrix([[math.cos(theta), -1 * math.sin(theta)],
-                   [math.sin(theta), math.cos(theta)]])
-    if isinstance(geom, dict) or \
-       isinstance(geom, GEOM_TYPES):
-        if 'x' in geom and 'y' in geom: # translates point
-            matrix = np.matrix([[geom['x']],
-                                [geom['y']]])
+
+    A = np.matrix(
+        [[math.cos(theta), -1 * math.sin(theta)], [math.sin(theta), math.cos(theta)]]
+    )
+    if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
+        if "x" in geom and "y" in geom:  # translates point
+            matrix = np.matrix([[geom["x"]], [geom["y"]]])
             val = (A * matrix).tolist()
-            geom['x'] = val[0][0]
-            geom['y'] = val[1][0]
+            geom["x"] = val[0][0]
+            geom["y"] = val[1][0]
             return geom
-        elif 'rings' in geom or \
-             'paths' in geom: # translates lines/polygons
+        elif "rings" in geom or "paths" in geom:  # translates lines/polygons
             rings = []
-            if 'paths' in geom:
-                coords = geom['paths']
+            if "paths" in geom:
+                coords = geom["paths"]
             else:
-                coords = geom['rings']
+                coords = geom["rings"]
             for part in coords:
                 x_coords = [pt[0] for pt in part]
                 y_coords = [pt[1] for pt in part]
                 matrix = np.matrix([x_coords, y_coords])
                 vals = (A * matrix).tolist()
-                rings.append( list(zip(vals[0], vals[1])))
-            if 'paths' in geom:
-                geom['paths'] = rings
+                rings.append(list(zip(vals[0], vals[1])))
+            if "paths" in geom:
+                geom["paths"] = rings
             else:
-                geom['rings'] = rings
+                geom["rings"] = rings
             return geom
-        elif 'points' in geom: # translates Multipoint
-            for pt in geom['points']:
-                matrix = np.matrix([[pt[0]],
-                                    [pt[1]]])
+        elif "points" in geom:  # translates Multipoint
+            for pt in geom["points"]:
+                matrix = np.matrix([[pt[0]], [pt[1]]])
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]
@@ -118,7 +115,9 @@ def rotate(geom, theta):
         else:
             return None
     return None
-#-------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
 def skew(geom, x_angle=0, y_angle=0):
     """
     Create a skew transform along one or both axes.
@@ -131,48 +130,44 @@ def skew(geom, x_angle=0, y_angle=0):
      dictionary or arcgis.Geometry
     """
     import numpy as np
-    A = np.matrix([[1,math.tan(x_angle)],
-                   [math.tan(y_angle), 1]])
-    if isinstance(geom, dict) or \
-       isinstance(geom, GEOM_TYPES):
-        if 'x' in geom and 'y' in geom: # translates point
-            matrix = np.matrix([[geom['x']],
-                                [geom['y']],
-                                ])
+
+    A = np.matrix([[1, math.tan(x_angle)], [math.tan(y_angle), 1]])
+    if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
+        if "x" in geom and "y" in geom:  # translates point
+            matrix = np.matrix([[geom["x"]], [geom["y"]],])
             val = (A * matrix).tolist()
-            geom['x'] = val[0][0]
-            geom['y'] = val[1][0]
+            geom["x"] = val[0][0]
+            geom["y"] = val[1][0]
             return geom
-        elif 'rings' in geom or \
-             'paths' in geom: # translates lines/polygons
+        elif "rings" in geom or "paths" in geom:  # translates lines/polygons
             rings = []
-            if 'paths' in geom:
-                coords = geom['paths']
+            if "paths" in geom:
+                coords = geom["paths"]
             else:
-                coords = geom['rings']
+                coords = geom["rings"]
             for part in coords:
                 x_coords = [pt[0] for pt in part]
                 y_coords = [pt[1] for pt in part]
                 matrix = np.matrix([x_coords, y_coords])
                 vals = (A * matrix).tolist()
-                rings.append( list(zip(vals[0], vals[1])))
-            if 'paths' in geom:
-                geom['paths'] = rings
+                rings.append(list(zip(vals[0], vals[1])))
+            if "paths" in geom:
+                geom["paths"] = rings
             else:
-                geom['rings'] = rings
+                geom["rings"] = rings
             return geom
-        elif 'points' in geom: # translates Multipoint
-            for pt in geom['points']:
-                matrix = np.matrix([[pt[0]],
-                                    [pt[1]],
-                                    ])
+        elif "points" in geom:  # translates Multipoint
+            for pt in geom["points"]:
+                matrix = np.matrix([[pt[0]], [pt[1]],])
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]
             return geom
         else:
             return None
-#-------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
 def translate(geom, x_offset, y_offset):
     """
     Moves a geometry by some distance
@@ -185,42 +180,35 @@ def translate(geom, x_offset, y_offset):
      dictionary or arcgis.Geometry
     """
     import numpy as np
-    A = np.matrix([[1, 0, x_offset],
-                   [0, 1, y_offset],
-                   [0, 0, 1]])
-    if isinstance(geom, dict) or \
-       isinstance(geom, GEOM_TYPES):
-        if 'x' in geom and 'y' in geom: # translates point
-            matrix = np.matrix([[geom['x']],
-                                [geom['y']],
-                                [1]])
+
+    A = np.matrix([[1, 0, x_offset], [0, 1, y_offset], [0, 0, 1]])
+    if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
+        if "x" in geom and "y" in geom:  # translates point
+            matrix = np.matrix([[geom["x"]], [geom["y"]], [1]])
             val = (A * matrix).tolist()
-            geom['x'] = val[0][0]
-            geom['y'] = val[1][0]
+            geom["x"] = val[0][0]
+            geom["y"] = val[1][0]
             return geom
-        elif 'rings' in geom or \
-             'paths' in geom: # translates lines/polygons
+        elif "rings" in geom or "paths" in geom:  # translates lines/polygons
             rings = []
-            if 'paths' in geom:
-                coords = geom['paths']
+            if "paths" in geom:
+                coords = geom["paths"]
             else:
-                coords = geom['rings']
+                coords = geom["rings"]
             for part in coords:
                 x_coords = [pt[0] for pt in part]
                 y_coords = [pt[1] for pt in part]
                 matrix = np.matrix([x_coords, y_coords, [1] * len(y_coords)])
                 vals = (A * matrix).tolist()
-                rings.append( list(zip(vals[0], vals[1])))
-            if 'paths' in geom:
-                geom['paths'] = rings
+                rings.append(list(zip(vals[0], vals[1])))
+            if "paths" in geom:
+                geom["paths"] = rings
             else:
-                geom['rings'] = rings
+                geom["rings"] = rings
             return geom
-        elif 'points' in geom: # translates Multipoint
-            for pt in geom['points']:
-                matrix = np.matrix([[pt[0]],
-                                    [pt[1]],
-                                    [1]])
+        elif "points" in geom:  # translates Multipoint
+            for pt in geom["points"]:
+                matrix = np.matrix([[pt[0]], [pt[1]], [1]])
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]
@@ -229,43 +217,66 @@ def translate(geom, x_offset, y_offset):
             return None
 
 
-
-
 if __name__ == "__main__":
-    shapes = [{
-        "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                    [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                                         [-97.06326,32.759]]],
-        "spatialReference" : {"wkid" : 4326}
-        },
-        {'x': 50, 'y': 60},
+    shapes = [
         {
-            "paths" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
-                     [[-97.06326,32.759],[-97.06298,32.755]]],
-          "spatialReference" : {"wkid" : 4326}
+            "rings": [
+                [
+                    [-97.06138, 32.837],
+                    [-97.06133, 32.836],
+                    [-97.06124, 32.834],
+                    [-97.06127, 32.832],
+                    [-97.06138, 32.837],
+                ],
+                [
+                    [-97.06326, 32.759],
+                    [-97.06298, 32.755],
+                    [-97.06153, 32.749],
+                    [-97.06326, 32.759],
+                ],
+            ],
+            "spatialReference": {"wkid": 4326},
+        },
+        {"x": 50, "y": 60},
+        {
+            "paths": [
+                [
+                    [-97.06138, 32.837],
+                    [-97.06133, 32.836],
+                    [-97.06124, 32.834],
+                    [-97.06127, 32.832],
+                ],
+                [[-97.06326, 32.759], [-97.06298, 32.755]],
+            ],
+            "spatialReference": {"wkid": 4326},
         },
         {
-            "points" : [[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
-          "spatialReference" : {"wkid" : 4326}
-        }]
+            "points": [
+                [-97.06138, 32.837],
+                [-97.06133, 32.836],
+                [-97.06124, 32.834],
+                [-97.06127, 32.832],
+            ],
+            "spatialReference": {"wkid": 4326},
+        },
+    ]
     # translate Test
-    print ('translate test')
+    print("translate test")
     for shape in shapes:
-        #val_dict = translate(shape,-10, 10)
+        # val_dict = translate(shape,-10, 10)
         val_geom = translate(Geometry(shape), -10, 10)
-        print (val_geom)
-        print ()
-    print ("rotate shapes")
+        print(val_geom)
+        print()
+    print("rotate shapes")
     for shape in shapes:
         val_geom = rotate(geom=Geometry(shape), theta=20)
-        print (val_geom, val_geom.type)
+        print(val_geom, val_geom.type)
         del shape
-    print ('scale factor shapes')
+    print("scale factor shapes")
     for shape in shapes:
         val_geom = scale(Geometry(shape), 10)
-        val_geom = scale(Geometry(shape), 10,20)
-    print ('skew test')
-    for shape in shapes: # Skew test
+        val_geom = scale(Geometry(shape), 10, 20)
+    print("skew test")
+    for shape in shapes:  # Skew test
         val_geom = skew(geom=Geometry(shape), x_angle=45, y_angle=-20)
     print()
-
