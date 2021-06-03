@@ -114,7 +114,7 @@ def summarize_center_and_dispersion(
     }
 
     if output_name is None:
-        output_service_name = "Sum_Cntr_and_Disp_" + _id_generator()
+        output_service_name = _id_generator(prefix="Sum_Cntr_and_Disp_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -393,7 +393,7 @@ def build_multivariable_grid(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Build Multi Variable Grid_" + _id_generator()
+        output_service_name = _id_generator(prefix="Build Multi Variable Grid_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -633,7 +633,7 @@ def aggregate_points(
     if context is not None:
         params["context"] = context
     if output_name is None:
-        output_service_name = "Aggregate Points_" + _id_generator()
+        output_service_name = _id_generator(prefix="Aggregate Points_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -791,7 +791,7 @@ def describe_dataset(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Describe_Dataset_" + _id_generator()
+        output_service_name = _id_generator(prefix="Describe_Dataset_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1070,7 +1070,7 @@ def join_features(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Join_Features_" + _id_generator()
+        output_service_name = _id_generator(prefix="Join_Features_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1332,7 +1332,7 @@ def reconstruct_tracks(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Reconstruct_Tracks_" + _id_generator()
+        output_service_name = _id_generator(prefix="Reconstruct_Tracks_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1513,7 +1513,7 @@ def summarize_attributes(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Summarize Attributes_" + _id_generator()
+        output_service_name = _id_generator(prefix="Summarize Attributes_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1772,7 +1772,7 @@ def summarize_within(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Summarize Within_" + _id_generator()
+        output_service_name = _id_generator(prefix="Summarize Within_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

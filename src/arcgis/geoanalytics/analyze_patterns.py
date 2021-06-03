@@ -299,7 +299,7 @@ def forest(
     else:
         _set_context(params)
     if output_name is None:
-        output_service_name = "Forest Based Regression_" + _id_generator()
+        output_service_name = _id_generator(prefix="Forest Based Regression_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -460,7 +460,8 @@ def gwr(
     url = gis.properties.helperServices.geoanalytics.url
 
     if output_name is None:
-        output_trained_name = f"GWR_{_id_generator()}".replace(" ", "_")
+        uid = _id_generator(prefix="GWR_")
+        output_trained_name = f"{uid}".replace(" ", "_")
     else:
         output_trained_name = output_name.replace(" ", "_")
 
@@ -749,7 +750,7 @@ def glr(
         params["explanatory_variables"] = var_explanatory
 
     if output_name is None:
-        output_service_name = "GLR_" + _id_generator()
+        output_service_name = _id_generator(prefix="GLR_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -893,7 +894,7 @@ def find_point_clusters(
     tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Find Point Clusters_" + _id_generator()
+        output_service_name = _id_generator(prefix="Find Point Clusters_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1125,7 +1126,7 @@ def calculate_density(
     tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Calculate Density_" + _id_generator()
+        output_service_name = _id_generator(prefix="Calculate Density_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1316,7 +1317,7 @@ def find_hot_spots(
     tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Hot Spot_" + _id_generator()
+        output_service_name = _id_generator(prefix="Hot Spot_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
