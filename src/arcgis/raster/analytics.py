@@ -4753,8 +4753,8 @@ def aggregate_multidimensional_raster(
     input_multidimensional_raster,
     dimension=None,
     variables=None,
-    aggregation_method="MEAN",
-    aggregation_definition="ALL",
+    aggregation_method='MEAN',
+    aggregation_definition='ALL',
     interval_keyword=None,
     interval_value=None,
     interval_unit=None,
@@ -4763,6 +4763,9 @@ def aggregate_multidimensional_raster(
     ignore_nodata=True,
     output_name=None,
     context=None,
+    dimensionless=False,
+    percentile_value=90,
+    percentile_interpolation_type="NEAREST",
     *,
     gis=None,
     future=False,
@@ -4807,6 +4810,10 @@ def aggregate_multidimensional_raster(
 
                                              - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
+                                             - PERCENTILE: The percentile of values for a pixel will be calculated across all slices 
+                                               in the interval. The 90th percentile is calculated by default. You can specify other 
+                                               values (from 0 to 100) using the percentile_value parameter.
+
                                              - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
                                              - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
@@ -4832,7 +4839,7 @@ def aggregate_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     interval_keyword                         Optional String. Specifies the keyword interval that will be used
                                              when aggregating along the dimension. This parameter is required
-                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             when the aggregation_definition parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
                                              - HOURLY : The data values will be aggregated into hourly time steps, 
@@ -4878,7 +4885,7 @@ def aggregate_multidimensional_raster(
                                                The output will include, at most, 4 quarterly time slices.
     ------------------------------------     --------------------------------------------------------------------
     interval_value                           Optional String. The size of the interval that will be used for the
-                                             aggregation. This parameter is required when the aggregation_def
+                                             aggregation. This parameter is required when the aggregation_definition
                                              parameter is set to INTERVAL_VALUE.
 
                                              For example, to aggregate 30 years of monthly temperature data into
@@ -4887,7 +4894,7 @@ def aggregate_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     interval_unit                            Optional Integer. The unit that will be used for the interval value.
                                              This parameter is required when the dimension parameter is set to a
-                                             time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+                                             time field and the aggregation_definition parameter is set to INTERVAL_VALUE.
 
                                              If you are aggregating over anything other than time, this option
                                              will not be available and the unit for the interval value will match
@@ -4927,6 +4934,44 @@ def aggregate_multidimensional_raster(
                                                This is the default.
 
                                              - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
+    ------------------------------------     --------------------------------------------------------------------
+    dimensionless                            Optional Boolean. Specifies whether the layer will have dimension values. 
+                                             This parameter is only active if a single slice is selected to create a layer. 
+
+                                             - True : The layer will not have dimension values.
+
+                                             - False : The layer will have dimension values. This is the default.
+
+                                             Parameter available in ArcGIS Image Server 10.9.1 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_value                         Optional float. The percentile to calculate. The default is 90, indicating 
+                                             the 90th percentile.
+
+                                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
+                                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
+                                             A value of 50 will produce essentially the same result as the median statistic. 
+
+                                             This option is only honored if the aggregation_method parameter is set to PERCENTILE. 
+
+                                             Parameter available in ArcGIS Image Server 10.9.1 and higher.
+
+                                             Example:
+                                                 90
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+                                             even number of values from the input raster to be calculated
+
+                                             - NEAREST : The nearest available value to the desired percentile will be used. 
+                                               In this case, the output pixel type will be the same as that of the input 
+                                               value raster. This is the default
+
+                                             - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                               percentile will be used. In this case, the output pixel type will be floating point.
+
+                                             Parameter available in ArcGIS Image Server 10.9.1 and higher.
+
+                                             Example:
+                                                 NEAREST
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -5062,18 +5107,21 @@ def aggregate_multidimensional_raster(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.aggregate_multidimensional_raster(
-        input_multidimensional_raster=input_multidimensional_raster,
-        output_name=output_name,
-        dimension=dimension,
-        aggregation_method=aggregation_method,
-        variables=variables,
-        aggregation_definition=aggregation_definition,
-        interval_keyword=interval_keyword,
-        interval_value=interval_value,
-        interval_unit=interval_unit,
-        interval_ranges=interval_ranges,
-        aggregation_function=aggregation_function,
+        input_multidimensional_raster=input_multidimensional_raster, 
+        output_name=output_name, 
+        dimension=dimension, 
+        aggregation_method=aggregation_method, 
+        variables=variables, 
+        aggregation_definition=aggregation_definition, 
+        interval_keyword=interval_keyword, 
+        interval_value=interval_value, 
+        interval_unit=interval_unit, 
+        interval_ranges=interval_ranges, 
+        aggregation_function=aggregation_function, 
         ignore_nodata=ignore_nodata,
+        dimensionless=dimensionless,
+        percentile_value=percentile_value,
+        percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
         **kwargs

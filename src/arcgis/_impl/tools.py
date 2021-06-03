@@ -10074,14 +10074,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
+
     def aggregate_multidimensional_raster(
         self,
         input_multidimensional_raster=None,
         output_name=None,
         dimension=None,
-        aggregation_method="MEAN",
+        aggregation_method='MEAN',
         variables=None,
-        aggregation_definition="ALL",
+        aggregation_definition='ALL',
         interval_keyword=None,
         interval_value=None,
         interval_unit=None,
@@ -10090,6 +10091,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         ignore_nodata=True,
         context=None,
         future=False,
+        dimensionless=False,
+        percentile_value=90,
+        percentile_interpolation_type="NEAREST",
         **kwargs
     ):
         """
@@ -10157,6 +10161,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "SUM",
                 "VARIETY",
                 "CUSTOM",
+                "PERCENTILE"
             ]
             if [element.lower() for element in aggregation_method_allowed_values].count(
                 aggregation_method.lower()
@@ -10217,6 +10222,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
+        percentile_interpolation_type_val=percentile_interpolation_type
+        if percentile_interpolation_type is not None:
+            percentile_interpolation_type_allowed_values = ["NEAREST", "LINEAR"]
+            if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
+                raise RuntimeError('percentile_interpolation_type can only be one of the following: '+str(percentile_interpolation_type_allowed_values))
+            percentile_interpolation_type_val=percentile_interpolation_type
+            for element in percentile_interpolation_type_allowed_values:
+                if percentile_interpolation_type.upper() == element:
+                    percentile_interpolation_type_val = element
+
         if isinstance(aggregation_function, Item):
             aggregation_function = {"itemId": aggregation_function.itemid}
 
@@ -10224,23 +10239,47 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.aggregate_multidimensional_raster(
-            input_multidimensional_raster=input_multidimensional_raster,
-            output_name=output_raster,
-            dimension=dimension,
-            aggregation_method=aggregation_method_val,
-            variables=variables,
-            aggregation_definition=aggregation_definition_val,
-            interval_keyword=interval_keyword_val,
-            interval_value=interval_value,
-            interval_unit=interval_unit,
-            interval_ranges=interval_ranges,
-            aggregation_function=aggregation_function,
-            ignore_nodata=ignore_nodata,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.91):
+                gpjob = self._tbx.aggregate_multidimensional_raster(
+                    input_multidimensional_raster=input_multidimensional_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    aggregation_method=aggregation_method_val,
+                    variables=variables,
+                    aggregation_definition=aggregation_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    interval_value=interval_value,
+                    interval_unit=interval_unit,
+                    interval_ranges=interval_ranges,
+                    aggregation_function=aggregation_function,
+                    ignore_nodata=ignore_nodata,
+                    context=context,
+                    gis=self._gis,
+                    future=True
+                )
+            elif((current_version is not None) and current_version>=10.91):
+                gpjob = self._tbx.aggregate_multidimensional_raster(
+                    input_multidimensional_raster=input_multidimensional_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    aggregation_method=aggregation_method_val,
+                    variables=variables,
+                    aggregation_definition=aggregation_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    interval_value=interval_value,
+                    interval_unit=interval_unit,
+                    interval_ranges=interval_ranges,
+                    aggregation_function=aggregation_function,
+                    ignore_nodata=ignore_nodata,
+                    dimensionless=dimensionless,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                    context=context,
+                    gis=self._gis,
+                    future=True
+                )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
