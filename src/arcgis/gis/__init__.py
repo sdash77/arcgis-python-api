@@ -6922,6 +6922,11 @@ class Group(dict):
         as_dict             Required Boolean. If True, the response comes back as a dictionary.
         ================    ===============================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> group.search("Hurricane Data", category_filters =["Natural_Disasters", "Hurricanes", "USA"])
 
         :returns: List of :class:`~arcgis.gis.Item` objects
         """
@@ -7053,7 +7058,7 @@ class Group(dict):
 
     def content(self, max_items=1000):
         """
-        The ``content`` method retrievs the list of items shared with this group.
+        The ``content`` method retrieves the list of items shared with this group.
 
 
         ==================     ====================================================================
@@ -7173,6 +7178,11 @@ class Group(dict):
         ------------  --------------------------------------
         admins        Optional List of String, or Single String.  This is a list of users to be an administrator of the group.
         ============  ======================================
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> group.add(usernames=["User1234","User5678"], admin="Admin9012")
 
         :return:
            A dictionary containing the users that were not added to the group.
@@ -7332,6 +7342,12 @@ class Group(dict):
             in the "Groups" tab of Portal listing invitations. The user
             can either accept or reject the invitation.
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> group.invite_users(usernames=["User1234","User5678"], role="group_admin")
+
         :return:
            A boolean indicating success (True) or failure (False).
         """
@@ -7447,6 +7463,12 @@ class Group(dict):
                             push operation.
         ==================  =========================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> group.notify(users="User1234", subject= "Test Message", message="Testing the notification system",
+            >>>              method="email"
         :return: A boolean indicating success (True), or failure (False).
 
         """
@@ -7615,7 +7637,11 @@ class Group(dict):
                             administrator can remove them from the group. The default
                             is False.
         ==================  =========================================================
+        .. code-block:: python
 
+            # Usage Example
+
+            >>> user.update(description="Aggregated US Hurricane Data", tags = "Hurricanes,USA, 2020")
 
         :return:
             A boolean indicating success (True) or failure (False).
@@ -8064,7 +8090,13 @@ class User(dict):
                                Types: `big_data_file`, 'notebook', or 'raster`.
         =====================  =========================================================
 
-        :returns: A string representing a direct acess URL
+        .. code-block:: python
+
+            # Usage Example
+
+            user.generate_direct_access_url(store_type="notebook")
+
+        :returns: A string representing a direct access URL
 
         """
         if self._gis._portal.is_arcgisonline == False:
@@ -8385,6 +8417,12 @@ class User(dict):
             that come from an enterprise such as ActiveDirectory, LDAP, or SAML.
             It only has an effect on built-in users.
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> user.reset("password123",new_password="passWORD1234",reset_by_email=True)
+
         :return:
             A boolean indicating success (True) or failure (False).
 
@@ -8483,7 +8521,7 @@ class User(dict):
 
                             security_question=13
         ------------------  ----------------------------------------------------------
-        security_answer     Optional string.  This is the answer to security querstion.
+        security_answer     Optional string.  This is the answer to security question.
                             If you are changing a user's question, an answer must be
                             provided.
 
@@ -8495,6 +8533,11 @@ class User(dict):
         :return:
            A boolean indicating success (True) or failure (False).
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> user.update(description="Aggregated US Hurricane Data", tags = "Hurricanes,USA, 2020")
         """
         user_type = None
         if tags is not None and isinstance(tags, list):
@@ -8708,6 +8751,13 @@ class User(dict):
                           account.
         ================  ==========================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis = GIS("https://www.arcgis.com", "username1", "password123")
+            >>> user.link_account("User1234", gis)
+
         returns: A boolean indicating success (True) or failure (False).
 
         """
@@ -8740,6 +8790,12 @@ class User(dict):
         username          required string/User. This is the username or User object
                           that a user wants to unlink.
         ================  ==========================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> user.unlink_account("User1234")
 
         returns: A boolean indicating success (True) or failure (False).
         """
@@ -8807,6 +8863,11 @@ class User(dict):
 
         =====================  =========================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> user.update_level(2)
         :returns:
            A boolean indicating success (True) or failure (False).
         """
@@ -8900,6 +8961,12 @@ class User(dict):
                           that belong to the user being deleted.
         ================  ========================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            user.delete(reassign_to="User1234")
+
         :return:
             A boolean indicating success (True) or failure (False).
 
@@ -8936,6 +9003,12 @@ class User(dict):
         target_username   Required string. The user who will be the new owner of the
                           items and groups from which these are being reassigned from.
         ================  ===========================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> user.reassign_to(target_username="User1234")
 
         :return:
             A boolean indicating success (True) or failure (False).
