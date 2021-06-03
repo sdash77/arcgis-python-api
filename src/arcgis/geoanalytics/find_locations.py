@@ -151,6 +151,7 @@ def geocode_locations(
     if output_name is None:
         output_service_name = _id_generator(prefix="Geocoding_Results_")
         output_service_name = output_service_name.replace(" ", "_")
+        output_name = output_service_name
     else:
         output_service_name = output_name.replace(" ", "_")
 
