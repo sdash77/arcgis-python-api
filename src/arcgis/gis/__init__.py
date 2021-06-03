@@ -5350,6 +5350,82 @@ class ContentManager(object):
                 items["results"] = items["results"][:max_items]
             return items
 
+
+    def _market_listings(
+        self,
+        query: str,
+        sort_field: str = None,
+        sort_order: str = "asc",
+        num: int = 10,
+        start: int = 1,
+        my_listings: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        This operation searches for marketplace listings. The searches are 
+        performed against a high performance index that indexes the most 
+        popular fields of a listing. See the Search reference page for 
+        information on the fields and the syntax of the query.
+
+        By default, this search spans all public listings in the 
+        marketplace. However, if you're logged in as a vendor org admin and
+        you specify the mylistings=true parameter, it then searches all 
+        public and private listings in your organization.
+        
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. The field to sort by. You can also sort by 
+                            multiple fields (comma separated) for listings, sort field 
+                            names are case-insensitive.
+
+                            Supported sort field names are `title`, `created`, 
+                            `listingpublisheddate`, `type`, `owner`, `avgrating`, 
+                            `numratings`, `numcomments`, and `numviews`.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. Describes whether the order returns in 
+                            ascending or descending order. Default is ascending.
+
+                            Values: `asc` or `desc`
+        ----------------    ---------------------------------------------------------------
+        num                 Optional Integer. The maximum number of results to be included 
+                            in the result set response.
+
+                            The default value is `10`, and the maximum allowed value is `100`.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Integer. The number of the first entry in the result 
+                            set response. The index number is 1-based.
+        ----------------    ---------------------------------------------------------------
+        my_listings         Optional Boolean.  If `True` and you're logged in as a vendor 
+                            org admin, it searches all public and private listings in your 
+                            organization. 
+                            
+                            **Note** that if `my_listings=True`, the q parameter is optional.
+
+                            Values: `False (default) | True`
+        ================    ===============================================================
+        
+        
+        :returns: Dictionary[str, Any]
+        """
+        params = {
+            "f": "json",
+            "q": query,
+            "sortField": sort_field,
+            "sortOrder": sort_order,
+            "mylistings": my_listings,
+            "num": num,
+            "start": start,
+        }
+        for key in list(params.keys()):
+            if params[key] is None:
+                del params[key]
+
+        url = f"{self._gis._portal.resturl}content/listings"
+        resp = self._gis._con.get(url, params)
+        return resp
+       
     def search(
         self,
         query,
