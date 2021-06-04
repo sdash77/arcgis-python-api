@@ -112,7 +112,7 @@ class GIS(object):
 
     See `Working with different authentication schemes
     <https://developers.arcgis.com/python/guide/working-with-different-authentication-schemes/>`_
-    in the ARCGIS API for Python guide for examples.
+    in the ArcGIS API for Python guide for examples.
 
 
     ================    ===============================================================
@@ -121,7 +121,7 @@ class GIS(object):
     url                 Optional string. If URL is None, then the URL will be ArcGIS
                         Online.  This should be a web address to either an ArcGIS Enterprise portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> .A portal example is formatted in the form:
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor>. An enterprise example is formatted in the form:
                         https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
     username            Optional string. The login user name (case-sensitive).
@@ -877,7 +877,7 @@ class GIS(object):
     @property
     def datastore(self):
         """
-        The ``datastore`` properties are the resource managers for GIS datastores.
+        The ``datastore`` property is the resource manager for GIS datastores.
 
         .. note::
             This is only available with ArcGIS Enterprise 10.7+.
@@ -1187,7 +1187,7 @@ class GIS(object):
             >>> gis.map("Durham,NC")
 
         :return:
-          The map widget (the widget is displayed in Jupyter Notebook when queried).
+          A :class:`map widget <arcgis.widgets.MapView>` (the widget is displayed in Jupyter Notebook when queried).
         """
         try:
             from arcgis.widgets import MapView
@@ -1354,7 +1354,7 @@ class Datastore(dict):
     @property
     def ref_count(self):
         """
-        The ``ref_count`` property lets the total number of references to this data item that exists on the server.
+        The ``ref_count`` property gets the total number of references to this data item that exists on the server.
         This property can be used to determine if this data item can be safely deleted or taken down for maintenance.
         """
         data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
@@ -1583,7 +1583,7 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
 
         :returns:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
+            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.server.Job` when `future=True`
         """
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
