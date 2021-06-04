@@ -344,7 +344,7 @@ class _NodeCursor(object):
                         yield cr
 
     def query_rect(self, r):
-        """ Return things that intersect with 'r'. """
+        """Return things that intersect with 'r'."""
 
         def p(o, x):
             return r.does_intersect(o.rect)
@@ -353,7 +353,7 @@ class _NodeCursor(object):
             yield rr
 
     def query_point(self, point):
-        """ Query by a point """
+        """Query by a point"""
 
         def p(o, x):
             return o.rect.does_containpoint(point)

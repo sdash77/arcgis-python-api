@@ -39,7 +39,7 @@ class SurveyManager:
     # ----------------------------------------------------------------------
     @property
     def surveys(self) -> List:
-        """returns a list of existing Survey """
+        """returns a list of existing Survey"""
         query = (
             'type:"Form" AND NOT tags:"noxlsform"'
             'AND NOT tags:"draft" AND NOT typekeyw'
@@ -204,7 +204,10 @@ class Survey:
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         isinstance(self._ssi, Item)
-        eitem = self._ssi.export(title=title, export_format=export_format,)
+        eitem = self._ssi.export(
+            title=title,
+            export_format=export_format,
+        )
         save_file = eitem.download(save_path=save_folder)
         eitem.delete(force=True)
         return save_file
@@ -245,19 +248,19 @@ class Survey:
         utc_offset        Optional String.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. Specify the file name (without extension) of the 
-                          result report file. For example, if outputFormat is .pdf, input: 
+        report_title      Optional String. Specify the file name (without extension) of the
+                          result report file. For example, if outputFormat is .pdf, input:
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
-                          
-                          If mergeFiles is either nextPage or continuous, 
+
+                          If mergeFiles is either nextPage or continuous,
                           outputReportName will be used as the merged file name. See
                           `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_
                           for detailed explanation.
         ----------------  ---------------------------------------------------------------
-        package_name      Optional String. Specify the file name (without extension)of the 
+        package_name      Optional String. Specify the file name (without extension)of the
                           packaged file when packageFiles is true, for example, <outputPackageName>.zip.
         ----------------  ---------------------------------------------------------------
-        output_format     Optional string. Currently only docx and pdf are supported.                   
+        output_format     Optional string. Currently only docx and pdf are supported.
         ----------------  ---------------------------------------------------------------
         folder_id         Optional String. The folder ID of the user's content.
         ----------------  ---------------------------------------------------------------
@@ -279,7 +282,7 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
         ----------------  ---------------------------------------------------------------
-        locale            Optional String. Specify the locale setting to format number and date values. 
+        locale            Optional String. Specify the locale setting to format number and date values.
         ================  ===============================================================
 
         :Returns: Item or string upon completion of `Job <https://developers.arcgis.com/survey123/api-reference/rest/report/#jobs>`_.
@@ -366,7 +369,7 @@ class Survey:
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        template_type     Optional String. Specify which sections to include in the template. 
+        template_type     Optional String. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
                           Default is `individual`.
         ================  ===============================================================
@@ -408,7 +411,7 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked.
         ================  ===============================================================
-        
+
         :returns: dictionary {Success or Failure}
         """
 
@@ -437,18 +440,18 @@ class Survey:
     ):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
-        when generating reports in the given feature. Uploads the report to the organization 
-        and associates it with the survey. 
+        when generating reports in the given feature. Uploads the report to the organization
+        and associates it with the survey.
 
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
         ----------------  ---------------------------------------------------------------
-        template_name     Optional String. If provided the resulting item will use the provided name, otherwise 
-                          the name of the docx file will be used. 
+        template_name     Optional String. If provided the resulting item will use the provided name, otherwise
+                          the name of the docx file will be used.
         ================  ===============================================================
-        
+
         :returns: item {Success) or string (Failure}
         """
 
@@ -509,7 +512,7 @@ class Survey:
     def update_report_template(self, template_file: str = None):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
-        when generating reports in the given feature and updates existing Report template Org item. 
+        when generating reports in the given feature and updates existing Report template Org item.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -517,7 +520,7 @@ class Survey:
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
                           The updated template name must match the name of the existing template item.
         ================  ===============================================================
-        
+
         :returns: item {Success) or string (Failure}
         """
 
@@ -559,7 +562,7 @@ class Survey:
     def estimate(self, report_template: Item, where: str = "1=1"):
         """
         An operation to estimate how many credits are required for a task
-        with the given parameters. 
+        with the given parameters.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -567,12 +570,12 @@ class Survey:
         report_template   Required Item.  The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
-                          part or whole of the dataset. If the filtered result has more 
-                          than one feature/record, the request will be considered as a 
-                          batch printing. Currently, one individual report will be 
-                          generated for each feature/record. 
+                          part or whole of the dataset. If the filtered result has more
+                          than one feature/record, the request will be considered as a
+                          batch printing. Currently, one individual report will be
+                          generated for each feature/record.
         ================  ===============================================================
-        
+
         :returns: dictionary {totalRecords, cost(in credits)}
         """
 
@@ -613,7 +616,7 @@ class Survey:
 
         """
         Similar task to generate_report for creating test sample report, and refining
-        a report template before generating any formal report. 
+        a report template before generating any formal report.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -627,13 +630,13 @@ class Survey:
         utc_offset        Optional String.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. Specify the file name (without extension) of the 
-                          result report file. For example, if outputFormat is .pdf, input: 
+        report_title      Optional String. Specify the file name (without extension) of the
+                          result report file. For example, if outputFormat is .pdf, input:
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
-                          
-                          If packageFiles is true, outputReportName will be used for report files 
-                          inside the packaged file. If mergeFiles is either nextPage or continuous, 
-                          outputReportName will be used as the merged file name.        
+
+                          If packageFiles is true, outputReportName will be used for report files
+                          inside the packaged file. If mergeFiles is either nextPage or continuous,
+                          outputReportName will be used as the merged file name.
         ----------------  ---------------------------------------------------------------
         merge_files       Optional String. Specify if print multiple records into a single
                           report file (merged mode) or multiple files (split mode), and if
@@ -653,7 +656,7 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
         ----------------  ---------------------------------------------------------------
-        locale            Optional String. Specify the locale setting to format number and date values. 
+        locale            Optional String. Specify the locale setting to format number and date values.
         ================  ===============================================================
 
         :Returns: string

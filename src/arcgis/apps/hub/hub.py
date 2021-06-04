@@ -6,8 +6,7 @@ import json
 
 
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 
@@ -23,19 +22,19 @@ def _lazy_property(fn):
 class Hub(object):
     """
     Entry point into the Hub module. Lets you access an individual hub and its components.
-       
+
 
     ================    ===============================================================
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
-    url                 Required string. If no URL is provided by user while connecting 
+    url                 Required string. If no URL is provided by user while connecting
                         to the GIS, then the URL will be ArcGIS Online.
     ----------------    ---------------------------------------------------------------
-    username            Optional string as entered while connecting to GIS. The login user name 
+    username            Optional string as entered while connecting to GIS. The login user name
                         (case-sensitive).
     ----------------    ---------------------------------------------------------------
-    password            Optional string as entered while connecting to GIS. If a username is 
-                        provided, a password is expected.  This is case-sensitive. If the password 
+    password            Optional string as entered while connecting to GIS. If a username is
+                        provided, a password is expected.  This is case-sensitive. If the password
                         is not provided, the user is prompted in the interactive dialog.
     ================    ===============================================================
 
@@ -153,7 +152,7 @@ class Hub(object):
 
 class Initiative(collections.OrderedDict):
     """
-    Represents an initiative within a Hub. An Initiative supports 
+    Represents an initiative within a Hub. An Initiative supports
     policy- or activity-oriented goals through workflows, tools and team collaboration.
     """
 
@@ -244,7 +243,7 @@ class Initiative(collections.OrderedDict):
     @_lazy_property
     def indicators(self):
         """
-        The resource manager for an Initiative's indicators. 
+        The resource manager for an Initiative's indicators.
         See :class:`~arcgis.apps.hub.IndicatorManager`.
         """
         return IndicatorManager(self._gis, self.item)
@@ -254,7 +253,7 @@ class Initiative(collections.OrderedDict):
         Deletes the initiative. If unable to delete, raises a RuntimeException.
 
         :return:
-            A bool containing True (for success) or False (for failure). 
+            A bool containing True (for success) or False (for failure).
 
         .. code-block:: python
 
@@ -283,7 +282,7 @@ class Initiative(collections.OrderedDict):
     def update(
         self, initiative_properties=None, data=None, thumbnail=None, metadata=None
     ):
-        """ Updates the initiative.
+        """Updates the initiative.
 
 
         .. note::
@@ -305,7 +304,7 @@ class Initiative(collections.OrderedDict):
         =====================     ====================================================================
 
 
-        To find the list of applicable options for argument initiative_properties - 
+        To find the list of applicable options for argument initiative_properties -
         https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
@@ -329,7 +328,7 @@ class Initiative(collections.OrderedDict):
 
 class InitiativeManager(object):
     """
-    Helper class for managing initiatives within a Hub. This class is not created by users directly. 
+    Helper class for managing initiatives within a Hub. This class is not created by users directly.
     An instance of this class, called 'initiatives', is available as a property of the Hub object. Users
     call methods on this 'initiatives' object to manipulate (add, get, search, etc) initiatives.
     """
@@ -339,7 +338,7 @@ class InitiativeManager(object):
         self._gis = self._hub.gis
 
     def add(self, title, description=None, data=None, thumbnail=None):
-        """ 
+        """
         Adds a new initiative to the Hub.
 
         ===============     ====================================================================
@@ -347,7 +346,7 @@ class InitiativeManager(object):
         ---------------     --------------------------------------------------------------------
         title               Required string.
         ---------------     --------------------------------------------------------------------
-        description         Optional string. 
+        description         Optional string.
         ---------------     --------------------------------------------------------------------
         data                Optional string. Either a path or URL to the data.
         ---------------     --------------------------------------------------------------------
@@ -496,7 +495,7 @@ class InitiativeManager(object):
         return Initiative(self._gis, item)
 
     def get(self, initiative_id):
-        """ Returns the initiative object for the specified initiative_id.
+        """Returns the initiative object for the specified initiative_id.
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -524,7 +523,7 @@ class InitiativeManager(object):
     def search(
         self, scope=None, title=None, owner=None, created=None, modified=None, tags=None
     ):
-        """ 
+        """
         Searches for initiatives.
 
         ===============     ====================================================================
@@ -591,9 +590,9 @@ class InitiativeManager(object):
 
 class Indicator(collections.OrderedDict):
     """
-    Represents an indicator within an initiative. Initiatives use Indicators to standardize 
-    data sources for ready-to-use analysis and comparison. Indicators are measurements of a system 
-    including features, calculated metrics, or quantified goals. 
+    Represents an indicator within an initiative. Initiatives use Indicators to standardize
+    data sources for ready-to-use analysis and comparison. Indicators are measurements of a system
+    including features, calculated metrics, or quantified goals.
     """
 
     def __init__(self, initiativeItem, indicatorObject):
@@ -679,7 +678,7 @@ class Indicator(collections.OrderedDict):
         Deletes an indicator from the initiative
 
         :return:
-            A bool containing True (for success) or False (for failure). 
+            A bool containing True (for success) or False (for failure).
 
         .. code-block:: python
 
@@ -714,7 +713,7 @@ class Indicator(collections.OrderedDict):
         Updates properties of an initiative
 
         :return:
-            A bool containing True (for success) or False (for failure). 
+            A bool containing True (for success) or False (for failure).
 
         .. code-block:: python
 
@@ -726,7 +725,7 @@ class Indicator(collections.OrderedDict):
 
             >> True
 
-            Refer the indicator definition (`get_data()`) to learn about fields that can be 
+            Refer the indicator definition (`get_data()`) to learn about fields that can be
             updated and their acceptable data format.
 
         """
@@ -751,7 +750,7 @@ class Indicator(collections.OrderedDict):
 
 
 class IndicatorManager(object):
-    """Helper class for managing indicators within an initiative. This class is not created by users directly. 
+    """Helper class for managing indicators within an initiative. This class is not created by users directly.
     An instance of this class, called 'indicators', is available as a property of the Initiative object. Users
     call methods on this 'indicators' object to manipulate (add, get, search, etc) indicators of a particular
     initiative.
@@ -782,7 +781,7 @@ class IndicatorManager(object):
         -----------------  ---------------------------------------------------------------------
         definition         Optional dictionary. Specification of the Indicator - types, fields
         -----------------  ---------------------------------------------------------------------
-        source             Optional dictionary. Reference to an API or collection of data along 
+        source             Optional dictionary. Reference to an API or collection of data along
                            with mapping between schemas
         =================  =====================================================================
 
@@ -837,7 +836,7 @@ class IndicatorManager(object):
             return "Invalid indicator id for this initiative"
 
     def get(self, indicator_id):
-        """ Returns the indicator object for the specified indicator_id.
+        """Returns the indicator object for the specified indicator_id.
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -858,7 +857,7 @@ class IndicatorManager(object):
             return None
 
     def search(self, url=None, item_id=None, name=None):
-        """ 
+        """
         Searches for indicators within an initiative.
 
         ===============     ====================================================================
@@ -904,8 +903,8 @@ class IndicatorManager(object):
 class Event(collections.OrderedDict):
     """
     Represents an event in a Hub. A Hub has many Events that can be associated with an Initiative.
-    Events are meetings for people to support an Initiative. Events are scheduled by an organizer 
-    and have many attendees. An Event has a Group so that they can include content for preparation 
+    Events are meetings for people to support an Initiative. Events are scheduled by an organizer
+    and have many attendees. An Event has a Group so that they can include content for preparation
     as well as gather and archive content during the event for later retrieval or analysis.
     """
 
@@ -1033,10 +1032,10 @@ class Event(collections.OrderedDict):
 
 
 class EventManager(object):
-    """Helper class for managing events within a Hub. This class is not created by users directly. 
+    """Helper class for managing events within a Hub. This class is not created by users directly.
     An instance of this class, called 'events', is available as a property of the Hub object. Users
-    call methods on this 'events' object to manipulate (add, search, get_map etc) events 
-    of a particular Hub. 
+    call methods on this 'events' object to manipulate (add, search, get_map etc) events
+    of a particular Hub.
     """
 
     def __init__(self, hub, event=None):
@@ -1061,7 +1060,7 @@ class EventManager(object):
     def search(
         self, initiative_id=None, title=None, location=None, organizer_name=None
     ):
-        """ 
+        """
         Searches for events within a Hub.
 
         ===============     ====================================================================

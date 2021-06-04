@@ -51,8 +51,7 @@ def _is_geoenabled(df):
 ###########################################################################
 @pd.api.extensions.register_series_accessor("geom")
 class GeoSeriesAccessor:
-    """
-    """
+    """ """
 
     _data = None
     _index = None
@@ -2578,47 +2577,47 @@ class GeoAccessor(object):
     @staticmethod
     def from_table(filename, **kwargs):
         """
-            Allows a user to read from a non-spatial table
+        Allows a user to read from a non-spatial table
 
-            **Note: ArcPy is Required for this method**
+        **Note: ArcPy is Required for this method**
 
-            ===============     ====================================================
-            **Argument**        **Description**
-            ---------------     ----------------------------------------------------
-            filename            Required string or pathlib.Path. The path to the
-                                table.
-            ===============     ====================================================
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        filename            Required string or pathlib.Path. The path to the
+                            table.
+        ===============     ====================================================
 
-            **Keyword Arguments**
+        **Keyword Arguments**
 
-            ===============     ====================================================
-            **Argument**        **Description**
-            ---------------     ----------------------------------------------------
-            fields              Optional List/Tuple. A list (or tuple) of field
-                                names. For a single field, you can use a string
-                                instead of a list of strings.
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        fields              Optional List/Tuple. A list (or tuple) of field
+                            names. For a single field, you can use a string
+                            instead of a list of strings.
 
-                                Use an asterisk (*) instead of a list of fields if
-                                you want to access all fields from the input table
-                                (raster and BLOB fields are excluded). However, for
-                                faster performance and reliable field order, it is
-                                recommended that the list of fields be narrowed to
-                                only those that are actually needed.
+                            Use an asterisk (*) instead of a list of fields if
+                            you want to access all fields from the input table
+                            (raster and BLOB fields are excluded). However, for
+                            faster performance and reliable field order, it is
+                            recommended that the list of fields be narrowed to
+                            only those that are actually needed.
 
-                                Geometry, raster, and BLOB fields are not supported.
+                            Geometry, raster, and BLOB fields are not supported.
 
-            ---------------     ----------------------------------------------------
-            where               Optional String. An optional expression that limits
-                                the records returned.
-            ---------------     ----------------------------------------------------
-            skip_nulls          Optional Boolean. This controls whether records
-                                using nulls are skipped.
-            ---------------     ----------------------------------------------------
-            null_value          Optional String/Integer/Float. Replaces null values
-                                from the input with a new value.
-            ===============     ====================================================
+        ---------------     ----------------------------------------------------
+        where               Optional String. An optional expression that limits
+                            the records returned.
+        ---------------     ----------------------------------------------------
+        skip_nulls          Optional Boolean. This controls whether records
+                            using nulls are skipped.
+        ---------------     ----------------------------------------------------
+        null_value          Optional String/Integer/Float. Replaces null values
+                            from the input with a new value.
+        ===============     ====================================================
 
-            :returns: pd.DataFrame
+        :returns: pd.DataFrame
         """
         from arcgis.features.geo._io.fileops import from_table
 
@@ -2839,7 +2838,14 @@ class GeoAccessor(object):
                 if fs["displayFieldName"] == "":
                     fs["displayFieldName"] = col
             elif (
-                isinstance(col_val, (datetime.datetime, pd.Timestamp, np.datetime64,))
+                isinstance(
+                    col_val,
+                    (
+                        datetime.datetime,
+                        pd.Timestamp,
+                        np.datetime64,
+                    ),
+                )
                 or col in date_cols
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})

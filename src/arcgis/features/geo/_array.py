@@ -291,7 +291,7 @@ class GeoArray(ExtensionArray):
 
     @classmethod
     def from_geometry(cls, data, copy=False):
-        """"""
+        """ """
         if copy:
             data = data.copy()
         new = GeoArray([])
@@ -376,7 +376,7 @@ class GeoArray(ExtensionArray):
         return GeoArray(result)
 
     def _fill(self, idx, value):
-        """ Fill index locations with value
+        """Fill index locations with value
 
         Value should be a Geometry
         """
@@ -389,7 +389,7 @@ class GeoArray(ExtensionArray):
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """ Fill NA/NaN values using the specified method.
+        """Fill NA/NaN values using the specified method.
 
         Parameters
         ----------

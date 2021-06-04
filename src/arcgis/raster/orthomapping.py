@@ -127,10 +127,10 @@ def compute_sensor_model(
     **kwargs
 ):
     """
-    compute_sensor_model computes the bundle block adjustment for the image collection 
-    and applies the frame xform to the images. It will also generate the control point 
-    table, solution table, solution points table and flight path table. 
-    These tables will not be published as Portal items. 
+    compute_sensor_model computes the bundle block adjustment for the image collection
+    and applies the frame xform to the images. It will also generate the control point
+    table, solution table, solution points table and flight path table.
+    These tables will not be published as Portal items.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -138,12 +138,12 @@ def compute_sensor_model(
     image_collection       Required, the input image collection on which to compute
                            the sensor model.
                            The image_collection can be a portal Item or an image service URL or a URI
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
-                           
+
                            - 'Quick' : Computes tie points and adjustment at 8x of the source imagery resolution
 
                            - 'Full'  : adjust the images in Quick mode then at 1x of the source imagery resolution
@@ -152,27 +152,27 @@ def compute_sensor_model(
 
                            By default, 'Quick' mode is applied to compute the sensor model.
     ------------------     --------------------------------------------------------------------
-    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the  
-                           source image. It determines how far the underline tool will search for neighboring 
+    location_acuracy       Optional string. this option allows users to specify the GPS location accuracy level of the
+                           source image. It determines how far the underline tool will search for neighboring
                            matching images, then calculate tie points and compute adjustments.
 
                            Possible values for location_accuracy are:
 
-                           - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images 
+                           - 'High'    : GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images
 
                            - 'Medium'  : GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images
 
-                           - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images 
+                           - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images
 
                            - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
 
-                           The default location_accuracy is 'High' 
+                           The default location_accuracy is 'High'
     ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. The context parameter is used to configure additional client settings 
+    context                Optional dictionary. The context parameter is used to configure additional client settings
                            for block adjustment. The supported configurable parameters are for compute mosaic dataset
-                           candidates after the adjustment. 
+                           candidates after the adjustment.
 
-                           Example: 
+                           Example:
                            {
                            "computeCandidate": False,
                            "maxoverlap": 0.6,
@@ -236,10 +236,10 @@ def alter_processing_states(
 ):
     """
     Alter the processing states of the image collection.
-    The states are stored as key property "Orthomapping". 
-    The content of the state is a dictionary including 
-    several properties which can be set based on the process 
-    done on the image collection. 
+    The states are stored as key property "Orthomapping".
+    The content of the state is a dictionary including
+    several properties which can be set based on the process
+    done on the image collection.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -247,7 +247,7 @@ def alter_processing_states(
     image_collection       Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     new_states             Required dictionary. The state to set on the image_collection
@@ -318,7 +318,7 @@ def get_processing_states(image_collection, *, gis=None, future=False, **kwargs)
     image_collection       Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
-                            
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1018,12 +1018,12 @@ def edit_control_points(
 ):
     """
     This service can be used to append additional ground control point sets to
-    the image collection's control points. It is recommended that a ground control point (GCP) set 
-    should contain one ground control point and multiple tie points. 
-    The service tool can also be used to edit tie point sets. 
+    the image collection's control points. It is recommended that a ground control point (GCP) set
+    should contain one ground control point and multiple tie points.
+    The service tool can also be used to edit tie point sets.
     The input control points dictionary will always replace the points in the tie points
-    table if the point IDs already exist. 
-   
+    table if the point IDs already exist.
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -1033,8 +1033,8 @@ def edit_control_points(
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
-                           The schema of control points follows the schema 
-                           of the mosaic dataset control point table. 
+                           The schema of control points follows the schema
+                           of the mosaic dataset control point table.
 
                            The control point object should contain the point geometry, pointID, type, status and the
                            imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
@@ -1043,7 +1043,7 @@ def edit_control_points(
 
                            -- type (int)    - The type of the control point as determined by its numeric value
 
-                                                 1: Tie Point 
+                                                 1: Tie Point
                                                  2: Ground Control Point.
                                                  3: Check Point
 
@@ -1096,7 +1096,7 @@ def edit_control_points(
                                | },
                                | …
                                | …
-                               | ] 
+                               | ]
 
 
     ------------------     --------------------------------------------------------------------
@@ -1347,9 +1347,9 @@ def generate_orthomosaic(
     **kwargs
 ):
     """
-    Function can be used for generating single ortho-rectified mosaicked image from image collection after 
-    the block adjustment.  
-    
+    Function can be used for generating single ortho-rectified mosaicked image from image collection after
+    the block adjustment.
+
     ===================================    ====================================================================
     **Argument**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
@@ -1358,41 +1358,41 @@ def generate_orthomosaic(
                                            The image_collection can be a portal Item or an image service URL or a URI
                                            The image_collection must exist.
     -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Required. This is the ortho-mosaicked image converted from the image 
+    out_ortho                               Required. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
-                                            It can be a url, uri, portal item, or string representing the name of output dem 
+                                            It can be a url, uri, portal item, or string representing the name of output dem
                                             (either existing or to be created.)
                                             Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     -----------------------------------    --------------------------------------------------------------------
     regen_seamlines                        Optional, boolean.
-                                           Choose whether to apply seamlines before the orthomosaic image generation or not. 
-                                           The seamlines will always be regenerated if this parameter is set to True. 
-                                           The user can set the seamline options through the context parameter. 
-                                           If the seamline generation options are not set, the default will be used.  
+                                           Choose whether to apply seamlines before the orthomosaic image generation or not.
+                                           The seamlines will always be regenerated if this parameter is set to True.
+                                           The user can set the seamline options through the context parameter.
+                                           If the seamline generation options are not set, the default will be used.
 
                                            Default value is True
     -----------------------------------    --------------------------------------------------------------------
     recompute_color_correction              Optional, boolean.
-                                            Choose whether to apply color correction settings to the output ortho-image or not. 
-                                            Color correction will always be recomputed if this option is set to True. 
-                                            The user can configure the compute color correction settings through the context parameter. 
-                                            If there is no color collection setting, the default will be used.  
+                                            Choose whether to apply color correction settings to the output ortho-image or not.
+                                            Color correction will always be recomputed if this option is set to True.
+                                            The user can configure the compute color correction settings through the context parameter.
+                                            If there is no color collection setting, the default will be used.
 
                                             Default value is True
     -----------------------------------    --------------------------------------------------------------------
-    context                                Optional dictionary. Context contains additional environment settings that affect output 
+    context                                Optional dictionary. Context contains additional environment settings that affect output
                                            image. The supported environment settings for this tool are:
 
                                            1. Output Spatial Reference (outSR)-the output features will
                                               be projected into the output spatial reference.
 
-                                           2. Extent (extent) - extent that would clip or expand the output image 
+                                           2. Extent (extent) - extent that would clip or expand the output image
 
                                            3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
 
                                            4. Compute Seamlines (seamlinesMethod) - Default.
 
-                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of 
+                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of
                                               interest defined by the geometry.
 
                                            6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
@@ -1402,30 +1402,30 @@ def generate_orthomosaic(
                                            Example:
 
                                                | {
-                                               |   "outSR": {"wkid": 3516}, 
-                                               |   "extent": {"xmin": 470614.263139, 
-                                               |             "ymin": 8872849.409968, 
-                                               |             "xmax": 532307.351827, 
-                                               |             "ymax": 8920205.372412, 
+                                               |   "outSR": {"wkid": 3516},
+                                               |   "extent": {"xmin": 470614.263139,
+                                               |             "ymin": 8872849.409968,
+                                               |             "xmax": 532307.351827,
+                                               |             "ymax": 8920205.372412,
                                                |             "spatialReference": {"wkid": 32628}},
                                                |   "clippingGeometry": {},
                                                |   "orthoMosaicAsOvr": False,
-                                               |   "seamlinesMethod": "VORONOI", 
-                                               |   "minRegionSize": 100, 
-                                               |   "pixelSize": "", 
-                                               |   "blendType": "Both", 
-                                               |   "blendWidth": None, 
-                                               |   "blendUnit": "Pixels", 
-                                               |   "requestSize": 1000, 
-                                               |   "minThinnessRatio": 0.05, 
+                                               |   "seamlinesMethod": "VORONOI",
+                                               |   "minRegionSize": 100,
+                                               |   "pixelSize": "",
+                                               |   "blendType": "Both",
+                                               |   "blendWidth": None,
+                                               |   "blendUnit": "Pixels",
+                                               |   "requestSize": 1000,
+                                               |   "minThinnessRatio": 0.05,
                                                |   "maxSliverSize": 20
-                                               |   "colorCorrectionMethod": "DODGING", 
-                                               |   "dodgingSurface": "Single_Color", 
-                                               |   "referenceImg": {"url": https://..."}, 
-                                               |   "skipRows": 10, 
-                                               |   "skipCols": 10, 
+                                               |   "colorCorrectionMethod": "DODGING",
+                                               |   "dodgingSurface": "Single_Color",
+                                               |   "referenceImg": {"url": https://..."},
+                                               |   "skipRows": 10,
+                                               |   "skipCols": 10,
                                                |   "reCalculateSats": "OVERWRITE"
-                                               |  }      
+                                               |  }
     -----------------------------------    --------------------------------------------------------------------
     gis                                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================================    ====================================================================
@@ -1521,10 +1521,10 @@ def generate_report(
     image_collection, report_format="PDF", *, gis=None, future=False, **kwargs
 ):
     """
-    This function is used to generate orthomapping report with image collection 
-    that has been block adjusted. The report would contain information about 
+    This function is used to generate orthomapping report with image collection
+    that has been block adjusted. The report would contain information about
     the quality of the adjusted images, the distribution of the control points, etc.
-    The output of this service tool is a downloadable html page. 
+    The output of this service tool is a downloadable html page.
 
     ===================    ====================================================================
     **Argument**           **Description**
@@ -1576,15 +1576,15 @@ def generate_report(
 ## query camera info
 ###################################################################################################
 def query_camera_info(camera_query=None, *, gis=None, future=False, **kwargs):
-    """ 
-    This service tool is used to query specific or the entire digital camera 
+    """
+    This service tool is used to query specific or the entire digital camera
     database. The digital camera database contains the specs
-    of digital camera sensors that were used to capture drone images. 
+    of digital camera sensors that were used to capture drone images.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    camera_query           Required String. This is a SQL query statement that can 
+    camera_query           Required String. This is a SQL query statement that can
                            be used to filter a portion of the digital camera
                            database.
                            Digital camera database can be queried using the fields Make, Model,
@@ -1633,17 +1633,17 @@ def query_camera_info(camera_query=None, *, gis=None, future=False, **kwargs):
 ###################################################################################################
 def query_control_points(image_collection, query, *, gis=None, future=False, **kwargs):
     """
-    Query for control points in an image collection. It allows users to query 
+    Query for control points in an image collection. It allows users to query
     among certain control point sets that has ground control points inside.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection on which to query 
+    image_collection       Required, the input image collection on which to query
                            the the control points.
 
                            The image_collection can be a portal Item or an image service URL or a URI.
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
@@ -1695,10 +1695,10 @@ def query_control_points(image_collection, query, *, gis=None, future=False, **k
 ###################################################################################################
 def reset_image_collection(image_collection, *, gis=None, future=False, **kwargs):
     """
-    Reset the image collection. It is used to reset the image collection to its 
-    original state. The image collection could be adjusted during the orthomapping 
-    workflow and if the user is not satisfied with the result, they will be able 
-    to clear any existing adjustment settings and revert the images back to 
+    Reset the image collection. It is used to reset the image collection to its
+    original state. The image collection could be adjusted during the orthomapping
+    workflow and if the user is not satisfied with the result, they will be able
+    to clear any existing adjustment settings and revert the images back to
     un-adjusted state
 
     ==================     ====================================================================
@@ -1706,7 +1706,7 @@ def reset_image_collection(image_collection, *, gis=None, future=False, **kwargs
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to reset
                            The image_collection can be a portal Item or an image service URL or a URI.
-                           
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.

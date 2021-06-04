@@ -69,7 +69,7 @@ class observablelist(list):
     def _on_change(self, old, new):
         """Called everytime the list is mutated (i.e. my_list.append('foo'))
         Overwrite this function with what you want your callback to be
-        
+
         Args
         ----
         old: a copy of the list object before the mutation
@@ -152,7 +152,7 @@ class observabledict(dict):
     def _on_change(self, old, new):
         """Called everytime the dict is mutated (i.e. my_dict['foo'] = 'bar')
         Overwrite this function with what you want your callback to be
-        
+
         Args
         ----
         old: a copy of the dictionary object before the mutation

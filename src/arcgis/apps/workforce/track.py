@@ -8,21 +8,21 @@ from .exceptions import WorkforceError
 
 
 class Track(FeatureModel):
-    """ Represents a track feature, which describes the historical location of a worker. V1 Projects
-        only.
+    """Represents a track feature, which describes the historical location of a worker. V1 Projects
+    only.
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        feature                Optional :class:`~arcgis.features.Feature`.
-                               A feature containing the assignments attributes. Mostly intended for
-                               internal usage. If supplied, other parameters are ignored.
-        ------------------     --------------------------------------------------------------------
-        geometry               Optional :class:`Dict`.
-                               A dictionary containing the assignment geometry
-        ------------------     --------------------------------------------------------------------
-        accuracy               Optional :class:`Float`. The accuracy of the point
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    feature                Optional :class:`~arcgis.features.Feature`.
+                           A feature containing the assignments attributes. Mostly intended for
+                           internal usage. If supplied, other parameters are ignored.
+    ------------------     --------------------------------------------------------------------
+    geometry               Optional :class:`Dict`.
+                           A dictionary containing the assignment geometry
+    ------------------     --------------------------------------------------------------------
+    accuracy               Optional :class:`Float`. The accuracy of the point
+    ==================     ====================================================================
     """
 
     def __init__(self, project, feature=None, geometry=None, accuracy=None):
@@ -44,16 +44,16 @@ class Track(FeatureModel):
 
     def update(self, geometry=None, accuracy=None):
         """
-            Updates the track point on the server
+        Updates the track point on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            geometry               Optional :class:`Dict`.
-                                   A dictionary containing the assignment geometry
-            ------------------     --------------------------------------------------------------------
-            accuracy               Optional :class:`Float`. The accuracy of the point
-            ==================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        geometry               Optional :class:`Dict`.
+                               A dictionary containing the assignment geometry
+        ------------------     --------------------------------------------------------------------
+        accuracy               Optional :class:`Float`. The accuracy of the point
+        ==================     ====================================================================
         """
         update_track(self.project, self, geometry, accuracy)
 
@@ -67,7 +67,7 @@ class Track(FeatureModel):
 
     @property
     def accuracy(self):
-        """ The horizontal accuracy of the location measurement, in meters."""
+        """The horizontal accuracy of the location measurement, in meters."""
         return self._feature.attributes[self._schema.accuracy]
 
     @accuracy.setter

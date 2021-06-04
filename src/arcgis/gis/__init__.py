@@ -50,8 +50,7 @@ def _tempinput(data):
 
 
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 
@@ -220,14 +219,14 @@ class GIS(object):
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
-    
+
     .. code-block:: python
 
         # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
-                  
+
     """
 
     _server_list = None
@@ -664,7 +663,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
-        """ Decrypts the .pfx file to be used with requests.
+        """Decrypts the .pfx file to be used with requests.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -709,7 +708,7 @@ class GIS(object):
         return key_file.name, cert_file.name
 
     def _config_is_in_new_format(self, config):
-        """ Any version <= 1.3.0 of the API used a different config file
+        """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
         one profile, it is in the new format
@@ -834,8 +833,8 @@ class GIS(object):
     def notebook_server(self) -> "List[NotebookServer]":
         """
         Provide access to the Notebook Server registerd with the organization or enterprise.
-        
-        :returns: List[`NotebookServer`] 
+
+        :returns: List[`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
@@ -1112,7 +1111,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _get_properties(self, force=False):
-        """ Returns the portal properties (using cache unless force=True). """
+        """Returns the portal properties (using cache unless force=True)."""
         return self._portal.get_properties(force)
 
     def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
@@ -3713,8 +3712,7 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
-        """ Gets the logged in user.
-        """
+        """Gets the logged in user."""
         if self._me is None:
             meuser = self._portal.logged_in_user()
             if meuser is not None:
@@ -3770,17 +3768,17 @@ class UserManager(object):
 
 class RoleManager(object):
     """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS.
-       Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
-       property of the :class:`~arcgis.gis.UserManager`
+    Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
+    property of the :class:`~arcgis.gis.UserManager`
 
-       .. code-block:: python
+    .. code-block:: python
 
-            # Usage Example
+         # Usage Example
 
-            >>> role_mgr = gis.users.roles
-            >>> type(role_mgr)
+         >>> role_mgr = gis.users.roles
+         >>> type(role_mgr)
 
-            <class 'arcgis.gis.RoleManager'>
+         <class 'arcgis.gis.RoleManager'>
     """
 
     def __init__(self, gis):
@@ -4596,7 +4594,7 @@ class ContentManager(object):
         item_id=None,
         **kwargs,
     ):
-        """ Adds content to the GIS by creating an item.
+        """Adds content to the GIS by creating an item.
 
         .. note::
             Content can be a file (such as a service definition, shapefile,
@@ -4991,7 +4989,7 @@ class ContentManager(object):
         snippet=None,
         item_id=None,
     ):
-        """ Creates a service in the Portal.
+        """Creates a service in the Portal.
 
 
         =======================    =============================================================
@@ -5155,7 +5153,7 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def get(self, itemid):
-        """ Returns the item object for the specified itemid.
+        """Returns the item object for the specified itemid.
 
 
         =======================    =============================================================
@@ -5361,7 +5359,7 @@ class ContentManager(object):
         categories=None,
         category_filters=None,
     ):
-        """ Searches for portal items.
+        """Searches for portal items.
 
         .. note::
             A few things that will be helpful to know...
@@ -6113,20 +6111,20 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name, service_type):
-        """ For a desired service name, determines if that service name is
-            available for use or not.
+        """For a desired service name, determines if that service name is
+        available for use or not.
 
-            ================  ======================================================================
-            **Argument**      **Description**
-            ----------------  ----------------------------------------------------------------------
-            service_name      Required string. A desired service name.
-            ----------------  ----------------------------------------------------------------------
-            service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
-            ================  ======================================================================
+        ================  ======================================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------------------
+        service_name      Required string. A desired service name.
+        ----------------  ----------------------------------------------------------------------
+        service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
+        ================  ======================================================================
 
-            :return:
-                 True if the specified service_name is available for the
-               specified service_type, False if the service_name is unavailable.
+        :return:
+             True if the specified service_name is available for the
+           specified service_type, False if the service_name is unavailable.
 
         """
         path = "portals/self/isServiceNameAvailable"
@@ -6150,7 +6148,7 @@ class ContentManager(object):
         owner=None,
         preserve_item_id=False,
     ):
-        """ Clone content to the GIS by creating new items.
+        """Clone content to the GIS by creating new items.
 
         .. note::
         Cloning an item will create a copy of the item and for certain
@@ -6199,9 +6197,9 @@ class ContentManager(object):
         ---------------------     --------------------------------------------------------------------
         owner                     Optional string. Defaults to the logged in user.
         ---------------------     --------------------------------------------------------------------
-        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS 
-                                  Online, the clone item will attempt to keep the same item ids for the 
-                                  items if available.  ArcGIS Enterprise must be 10.9+. 
+        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS
+                                  Online, the clone item will attempt to keep the same item ids for the
+                                  items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
 
         :return:
@@ -7134,7 +7132,7 @@ class Group(dict):
         )
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image """
+        """URL to the thumbnail image"""
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             return self._gis.url + "/home/images/group-no-image.png"
@@ -7424,7 +7422,7 @@ class Group(dict):
             return None
 
     def add_users(self, usernames=None, admins=None):
-        """ Adds users to this group.
+        """Adds users to this group.
 
         .. note::
             This method will only work if the user for the
@@ -8405,7 +8403,7 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-        """ Retrieves the URL to the thumbnail image.
+        """Retrieves the URL to the thumbnail image.
 
         :return:
            The thumbnail's URL.
@@ -8585,7 +8583,7 @@ class User(dict):
         new_security_answer=None,
         reset_by_email=False,
     ):
-        """ Resets a user's password, security question, and/or security answer.
+        """Resets a user's password, security question, and/or security answer.
 
         .. note::
             This function does not apply to those using enterprise accounts
@@ -8652,7 +8650,7 @@ class User(dict):
         security_question=None,
         security_answer=None,
     ):
-        """ Updates this user's properties.
+        """Updates this user's properties.
 
         .. note::
             Only pass in arguments for properties you want to update.
@@ -9360,7 +9358,7 @@ class Item(dict):
         """
         Provides access to the Notebook Item's Snapshots. If the user is not
         the owner of the `Item`, the snapshots will be an empty list.
-        
+
         :returns: List[SnapShot]
         """
         if (
@@ -10128,7 +10126,7 @@ class Item(dict):
             return None
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image. """
+        """URL to the thumbnail image."""
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             if self._gis.properties.portalName == "ArcGIS Online":
@@ -10147,9 +10145,9 @@ class Item(dict):
 
     @property
     def metadata(self):
-        """ Gets and sets the item metadata for the specified item.
-            Returns None if the item does not have metadata.
-            Items with metadata have 'Metadata' in their typeKeywords.
+        """Gets and sets the item metadata for the specified item.
+        Returns None if the item does not have metadata.
+        Items with metadata have 'Metadata' in their typeKeywords.
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
         try:
@@ -10847,7 +10845,7 @@ class Item(dict):
         return res
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
-        """ Updates an item in a Portal.
+        """Updates an item in a Portal.
 
 
         .. note::
@@ -11241,12 +11239,12 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
-        """ Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
+        """Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
-        """ Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
+        """Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
@@ -11327,7 +11325,7 @@ class Item(dict):
         return related_items
 
     def add_relationship(self, rel_item, rel_type):
-        """ Adds a relationship from this item to rel_item.
+        """Adds a relationship from this item to rel_item.
 
         .. note::
             Relationships are not tied to an item. They are directional links from an origin item
@@ -12099,7 +12097,7 @@ class Item(dict):
         return res
 
     def _check_publish_status(self, ret, folder):
-        """ Internal method to check the status of a publishing job.
+        """Internal method to check the status of a publishing job.
 
 
         ===============     ====================================================================
@@ -13137,8 +13135,7 @@ def rot13(s, b64=False, of=False):
 
 
 class _GISResource(object):
-    """ a GIS service
-    """
+    """a GIS service"""
 
     def __init__(self, url, gis=None):
 

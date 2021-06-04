@@ -23,7 +23,7 @@ class AssignmentType(FeatureModel):
     ------------------     --------------------------------------------------------------------
     name                   Optional :class:`String`. The name of the assignment type.
     ==================     ====================================================================
-    
+
     .. code-block:: python
 
         # Get an assignment type, update it, delete it
@@ -66,14 +66,14 @@ class AssignmentType(FeatureModel):
 
     def update(self, name=None):
         """
-            Updates the assignment type on the server
+        Updates the assignment type on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            name                   Optional :class:`String`.
-                                   The name of the assignment type
-            ==================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Optional :class:`String`.
+                               The name of the assignment type
+        ==================     ====================================================================
         """
         if self.project._is_v2_project:
             update_assignment_type_v2(self.project, self, name)

@@ -108,17 +108,17 @@ def get_layout_templates(gis=None):
     """
 
 
-This function returns the content of the GIS's layout templates formatted as dict.
+    This function returns the content of the GIS's layout templates formatted as dict.
 
-Parameters:
+    Parameters:
 
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-Returns:
-   output_json - layout templates as Python dict
+    Returns:
+       output_json - layout templates as Python dict
 
-See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
+    See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
     """
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool

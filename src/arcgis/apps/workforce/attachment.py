@@ -71,12 +71,12 @@ class Attachment(Model):
         return self._attachment_info
 
     def download(self, out_folder=None):
-        """ Downloads the attachment to the specified path.  If the path is omitted, the Attachment
-            will be saved to the current working directory, using the name property as the filename.
-            :param out_folder: The folder in which the attachment should be saved.  Defaults to the
-            current working directory.
+        """Downloads the attachment to the specified path.  If the path is omitted, the Attachment
+        will be saved to the current working directory, using the name property as the filename.
+        :param out_folder: The folder in which the attachment should be saved.  Defaults to the
+        current working directory.
 
-            :return: The absolute path to the downloaded file.
+        :return: The absolute path to the downloaded file.
         """
         if not out_folder:
             out_folder = os.getcwd()

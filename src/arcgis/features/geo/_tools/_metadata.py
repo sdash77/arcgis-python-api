@@ -65,10 +65,10 @@ class _Metadata(object):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return self.__dict__

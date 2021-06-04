@@ -65,9 +65,7 @@ class ServerDefaults(_BaseKube):
 
 ###########################################################################
 class ServerManager(_BaseKube):
-    """
-
-    """
+    """ """
 
     _gis = None
     _con = None
@@ -229,7 +227,7 @@ class SystemManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def servers(self):
-        """"""
+        """ """
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm

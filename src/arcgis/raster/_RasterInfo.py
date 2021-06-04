@@ -86,7 +86,7 @@ class RasterInfo(object):
     @property
     def pixel_size_x(self):
         """
-        Information about the pixel size of a raster in x direction 
+        Information about the pixel size of a raster in x direction
         """
         return self._pixel_size_x
 
@@ -97,7 +97,7 @@ class RasterInfo(object):
     @property
     def pixel_size_y(self):
         """
-        Information about the pixel size of a raster in y direction 
+        Information about the pixel size of a raster in y direction
         """
         return self._pixel_size_y
 
@@ -184,7 +184,7 @@ class RasterInfo(object):
 
         .. code-block:: python
 
-            # Usage Example : 
+            # Usage Example :
             rinfo = RasterInfo()
             rinfo.from_dict({'bandCount': 3,
                              'extent': {"xmin": 4488761.95,
@@ -199,9 +199,9 @@ class RasterInfo(object):
                                            PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
                                            PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
                                            PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-                                         }}, 
-                             'pixelSizeX': 0.0999999999999614, 
-                             'pixelSizeY': 0.1, 
+                                         }},
+                             'pixelSizeX': 0.0999999999999614,
+                             'pixelSizeY': 0.1,
                              'pixelType': 'U8'})
         """
         if raster_info_dict is not None and isinstance(raster_info_dict, dict):

@@ -1,12 +1,12 @@
 class FeatureSchema:
-    """ Describes the schema used to persist a FeatureModel, which may vary based on the particular
-        backend in use (AGO vs Enterprise).
+    """Describes the schema used to persist a FeatureModel, which may vary based on the particular
+    backend in use (AGO vs Enterprise).
     """
 
     def __init__(self, feature_layer):
-        """ Initializes a new FeatureSchema.
-            :param feature_layer: The FeatureLayer used to persist the FeatureModel.
-            :type feature_layer: arcgis.features.FeatureLayer
+        """Initializes a new FeatureSchema.
+        :param feature_layer: The FeatureLayer used to persist the FeatureModel.
+        :type feature_layer: arcgis.features.FeatureLayer
         """
         self._feature_layer = feature_layer
 
@@ -41,22 +41,21 @@ class FeatureSchema:
         return self._editor_tracking_field("editDateField")["name"]
 
     def _field_called(self, name):
-        """ Finds a field with a name similar to name, using a case-insensitive comparison.
-        """
+        """Finds a field with a name similar to name, using a case-insensitive comparison."""
         for field in self._feature_layer.properties.fields:
             if field["name"].lower() == name.lower():
                 return field
 
     def _editor_tracking_field(self, name):
-        """ Finds the editor tracking field identified by the name.  The name corresponds to one of
-            the universal editor tracking field names used in the FeatureLayer metadata, including
-            'creatorField', 'creationDateField', 'editorField', and 'editDateField'.
+        """Finds the editor tracking field identified by the name.  The name corresponds to one of
+        the universal editor tracking field names used in the FeatureLayer metadata, including
+        'creatorField', 'creationDateField', 'editorField', and 'editDateField'.
         """
         return self._field_called(self._feature_layer.properties.editFieldsInfo[name])
 
 
 class AssignmentSchema(FeatureSchema):
-    """ Describes the schema for an assignment :py:attr:`~arcgis.apps.workforce.Assignment.schema`
+    """Describes the schema for an assignment :py:attr:`~arcgis.apps.workforce.Assignment.schema`
     This is useful for getting the field names, which may be different depending on if
     ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
@@ -150,7 +149,7 @@ class AssignmentSchema(FeatureSchema):
 
 
 class DispatcherSchema(FeatureSchema):
-    """ Describes the schema for a dispatcher :py:attr:`~arcgis.apps.workforce.Dispatcher.schema`
+    """Describes the schema for a dispatcher :py:attr:`~arcgis.apps.workforce.Dispatcher.schema`
     This is useful for getting the field names, which may be different depending on if
     ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
@@ -172,7 +171,7 @@ class DispatcherSchema(FeatureSchema):
 
 
 class AssignmentTypeSchema(FeatureSchema):
-    """ Describes the schema for an assignment type :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
+    """Describes the schema for an assignment type :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
     This is useful for getting the field names, which may be different depending on if
     ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
@@ -184,9 +183,9 @@ class AssignmentTypeSchema(FeatureSchema):
 
 
 class IntegrationSchema(FeatureSchema):
-    """ Describes the schema for an integration :py:attr:`~arcgis.apps.workforce.Integration.schema`
-        This is useful for getting the field names, which may be different depending on if
-        ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
+    """Describes the schema for an integration :py:attr:`~arcgis.apps.workforce.Integration.schema`
+    This is useful for getting the field names, which may be different depending on if
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property
@@ -211,7 +210,7 @@ class IntegrationSchema(FeatureSchema):
 
 
 class TrackSchema(FeatureSchema):
-    """ Describes the schema for a track :py:attr:`~arcgis.apps.workforce.Track.schema`
+    """Describes the schema for a track :py:attr:`~arcgis.apps.workforce.Track.schema`
     This is useful for getting the field names, which may be different depending on if
     ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
@@ -223,7 +222,7 @@ class TrackSchema(FeatureSchema):
 
 
 class WorkerSchema(FeatureSchema):
-    """ Describes the schema for a worker :py:attr:`~arcgis.apps.workforce.Worker.schema`
+    """Describes the schema for a worker :py:attr:`~arcgis.apps.workforce.Worker.schema`
     This is useful for getting the field names, which may be different depending on if
     ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """

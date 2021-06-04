@@ -40,39 +40,39 @@ class AGOLUsageReports(BasePortalAdmin):
         future: bool = True,
     ):
         """
-        Generates the reports of the overall usage of the organizations. 
-        Reports define organization usage metrics for either a weekly or 
+        Generates the reports of the overall usage of the organizations.
+        Reports define organization usage metrics for either a weekly or
         monthly time frame.
-        
-        
+
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
         focus               Required String. The level to perform the report on.
-                            The allowed value is only `org`.  
+                            The allowed value is only `org`.
         ---------------     ----------------------------------------------------
         report_type         Required String. The type of report to generate. The
                             allowed values are `users`,`content`, or `credits`.
         ---------------     ----------------------------------------------------
         title               Optional String.  The Item's title.
         ---------------     ----------------------------------------------------
-        duration            Optional String.  This is the timeframe to generate 
-                            the report on.  The allowed values are: `weekly` or 
+        duration            Optional String.  This is the timeframe to generate
+                            the report on.  The allowed values are: `weekly` or
                             `monthly`.
         ---------------     ----------------------------------------------------
-        start_time          Optional datetime.datetime. The start time to begin 
+        start_time          Optional datetime.datetime. The start time to begin
                             reporting time.
         ---------------     ----------------------------------------------------
-        notify              Optional Boolean. The Job will print a message upon 
+        notify              Optional Boolean. The Job will print a message upon
                             completing of the task.
         ---------------     ----------------------------------------------------
-        future              Optional Boolean. Returns an asynchronous Job when 
+        future              Optional Boolean. Returns an asynchronous Job when
                             `True` when `False`, it returns an Item.
         ===============     ====================================================
-        
-        
+
+
         :returns: Async Job Object or Item
-        
+
         """
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
         params = {"f": "json", "reportType": focus, "reportSubType": report_type}

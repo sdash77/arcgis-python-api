@@ -6,7 +6,7 @@ from arcgis.features._version import Version
 ###########################################################################
 class ValidationManager(object):
     """
-    The Validation Server is responsible for exposing the management 
+    The Validation Server is responsible for exposing the management
     capabilities necessary to support evaluation of geodatabase rules.
     """
 
@@ -57,15 +57,15 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def update_error(self, error_features, version=None, return_edits=None, **kwargs):
         """
-        Updates errors on the validation tables.  
-        
+        Updates errors on the validation tables.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        error_features      Required List.  The error features to be updated. 
-                            
+        error_features      Required List.  The error features to be updated.
+
                             **Syntax**
-                            
+
                             ```
                             [
                                 {
@@ -76,40 +76,40 @@ class ValidationManager(object):
                                       "globalId" : <guid>,
                                       "fields" : {
                                         "name1" : <value1>,
-                                        "name2" : <value2> 
+                                        "name2" : <value2>
                                       }
                                     }
                                   ]
-                                }  
+                                }
                             ]
                             ```
         ---------------     --------------------------------------------------------------------
-        return_edits        Optional Boolean. `return_edits` returns features edited due to 
-                            errors update. Results returned are organized in a layer by layer 
-                            fashion. If it is set to `True`, each layer may have edited features 
+        return_edits        Optional Boolean. `return_edits` returns features edited due to
+                            errors update. Results returned are organized in a layer by layer
+                            fashion. If it is set to `True`, each layer may have edited features
                             returned in an editedFeatures object.
 
-                            The editedFeatures object returns full features including the original 
-                            features prior to delete, the original and current features for 
-                            updates and the current rows for inserts which may contain implicit 
+                            The editedFeatures object returns full features including the original
+                            features prior to delete, the original and current features for
+                            updates and the current rows for inserts which may contain implicit
                             changes (e.g. as a result of a calculation rule ).
 
                             The response includes no editedFeatures and `exceededTransferLimit=True`
-                            if the count of edited features to return is more than the maxRecordCount. 
-                            If clients are using this parameter to maintain a cache, they should 
+                            if the count of edited features to return is more than the maxRecordCount.
+                            If clients are using this parameter to maintain a cache, they should
                             invalidate the cache when `exceededTransferLimit = True` is returned.
-                            If the server encounters an error when generating the list of edits is 
+                            If the server encounters an error when generating the list of edits is
                             the response, `exceededTransferLimit = True` is also returned.
 
-                            Edited features are returned in the spatial reference of the feature 
+                            Edited features are returned in the spatial reference of the feature
                             service as defined by the services spatialReference object or by the
                             spatialReference of the layers extent object.
 
                             The default for this parameter is False.
         ===============     ====================================================================
-        
+
         :returns: dictionary
-        
+
         """
         url = self._url + "/updateErrors"
 
@@ -140,32 +140,32 @@ class ValidationManager(object):
     ):
         """
         Runs the topology rules and returns new errors if they exist.
-        
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         evaluation               Required List of Strings.  An array of evaluation types.
                                  Allowed Rule Types: `validation`, `calculation` and/or `topology`
         --------------------     --------------------------------------------------------------------
-        area                     Optional Envelope/Dict. Extent area to evaluate. 
+        area                     Optional Envelope/Dict. Extent area to evaluate.
         --------------------     --------------------------------------------------------------------
-        changes_in_version       Optional Boolean. representing whether to perform the evaluation on 
-                                 the features that have changed in the version (default is false). 
+        changes_in_version       Optional Boolean. representing whether to perform the evaluation on
+                                 the features that have changed in the version (default is false).
                                  Does not apply to the DEFAULT version.
-                                 
-                                 When set to true, the evaluationDate property for the version is 
-                                 updated. This is listed as a property for a version and can be 
+
+                                 When set to true, the evaluationDate property for the version is
+                                 updated. This is listed as a property for a version and can be
                                  accessed using the version resource and the version infos operation.
         --------------------     --------------------------------------------------------------------
-        selection                Optional List.  A set of features to evaluate.  This is an array of 
+        selection                Optional List.  A set of features to evaluate.  This is an array of
                                  layers and the global IDs or Object IDs of the features to examine.
-                                 
+
                                  If the `evaluation_type` is **topology** this parameter is ignored.
-                                 
+
                                  **Syntax**
-                                 
+
                                  ```
-                                 [ 
+                                 [
                                     {
                                       "id" : <layerId1>,
                                       "globalIds" : [ <globalId> ],
@@ -178,20 +178,20 @@ class ValidationManager(object):
                                     }
                                  ]
                                  ```
-        
+
         --------------------     --------------------------------------------------------------------
-        return_edits             Optional Boolean. returns features edited due to feature evaluation. 
-                                 Results returned are organized in a layer by layer fashion. If 
-                                 `return_edits` is set to true, each layer may have edited features 
+        return_edits             Optional Boolean. returns features edited due to feature evaluation.
+                                 Results returned are organized in a layer by layer fashion. If
+                                 `return_edits` is set to true, each layer may have edited features
                                  returned.
-                            
-                                 The default for this parameter is false. Always set to true when 
+
+                                 The default for this parameter is false. Always set to true when
                                  evaluating `topology` for a parcel fabric.
-                                 
+
         ====================     ====================================================================
-        
+
         :returns: dictionary
-        
+
         """
         url = self._url + "/evaluate"
         eval_lu = {

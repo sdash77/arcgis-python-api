@@ -72,7 +72,7 @@ class WMTSLayer(BaseOGC):
     def properties(self):
         """
         Returns the properties of the Layer.
-        
+
         :returns: PropertyMap
         """
         if self._properties is None:
@@ -105,8 +105,7 @@ class WMTSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     def _capabilities_url(self, service_url, vendor_kwargs=None):
-        """Return a capabilities url
-        """
+        """Return a capabilities url"""
         pieces = urlparse(service_url)
         args = parse_qs(pieces.query)
         if "service" not in args:
@@ -141,7 +140,7 @@ class WMTSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     def _xml_to_dictionary(self, t):
-        """ converts the xml to a dictionary object (recursivly)"""
+        """converts the xml to a dictionary object (recursivly)"""
         import json
         from collections import defaultdict
 

@@ -65,7 +65,7 @@ class GeoRSSLayer(BaseOGC):
     def point_symbol(self) -> InsensitiveDict:
         """
         Gets/Sets the Point Symbol for Point Geometries
-        
+
         :returns: InsensitiveDict
         """
         if self._point_symbol is None:
@@ -79,7 +79,7 @@ class GeoRSSLayer(BaseOGC):
     def point_symbol(self, value: dict):
         """
         Gets/Sets the Point Symbol for Point Geometries
-        
+
         :returns: InsensitiveDict
         """
         if isinstance(value, dict):
@@ -96,7 +96,7 @@ class GeoRSSLayer(BaseOGC):
     def line_symbol(self) -> InsensitiveDict:
         """
         Gets/Sets the Line Symbol for Polyline Geometries
-        
+
         :returns: InsensitiveDict
         """
         if self._line_symbol is None:
@@ -110,7 +110,7 @@ class GeoRSSLayer(BaseOGC):
     def line_symbol(self, value: dict):
         """
         Gets/Sets the Line Symbol for Polyline Geometries
-        
+
         :returns: InsensitiveDict
         """
         if isinstance(value, dict):
@@ -127,7 +127,7 @@ class GeoRSSLayer(BaseOGC):
     def polygon_symbol(self) -> InsensitiveDict:
         """
         Gets/Sets the Polygon Symbol for Polygon Geometries
-        
+
         :returns: InsensitiveDict
         """
         if self._polygon_symbol is None:
@@ -141,7 +141,7 @@ class GeoRSSLayer(BaseOGC):
     def polygon_symbol(self, value: dict):
         """
         Gets/Sets the Polygon Symbol for Polygon Geometries
-        
+
         :returns: InsensitiveDict
         """
         if isinstance(value, dict):
