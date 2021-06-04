@@ -121,7 +121,15 @@ class APIKey(object):
                           of app owner can be accessed if the privileges list is not 
                           configured.
         ================  ===============================================================================
-        
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.APIKey.update(http_referers = ["https://foo.com", "https://bar.com"],
+            >>>                   privileges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
+            >>>                   "premium:user:geocode", "premium:user:networkanalysis"])
+
         :returns:
             A dictionary
         
@@ -227,41 +235,29 @@ class APIKeyManager(object):
                           custom URI scheme where the code can be delivered.
                           
                           The value is a JSON string array.
-                          
-                          Example:
-
-                            [
-                                "https://app.example.com",
-                                "urn:ietf:wg:oauth:2.0:oob"
-                            ]
-                          
-        
         ----------------  -------------------------------------------------------------------------------
         privileges        Optional List. A list of the privileges that will be available for 
                           this API key.
-                          
-                          **Example**
-                          
-                          ```   
-                          
-                          [
-                          "portal:apikey:basemaps",
-                          "portal:app:access:item:itemId",
-                          "premium:user:geocode",
-                          "premium:user:networkanalysis"
-                          ]
-                          
-                          ```
 
-                          Note: Privileges can be configured for non  `API Key` type apps as 
-                          well. The list configured here will be used to grant access to items
-                          when item endpoint is accessed with app tokens. The checks will not 
-                          be applied to user tokens and they can continue accessing items 
-                          based on the current item sharing model. With app tokens, all items 
-                          of app owner can be accessed if the privileges list is not 
-                          configured.
+
+                         .. note::
+                            Privileges can be configured for non  `API Key` type apps as
+                            well. The list configured here will be used to grant access to items
+                            when item endpoint is accessed with app tokens. The checks will not
+                            be applied to user tokens and they can continue accessing items
+                            based on the current item sharing model. With app tokens, all items
+                            of app owner can be accessed if the privileges list is not
+                            configured.
         ================  ===============================================================================
-        
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.APIKeyManager.create(title ="title_name", tags = "tags, apiKey, Manager", http_referers = ["https://foo.com", "https://bar.com"],
+            >>>                           privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
+            >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
+
         :returns:
             An :class:`~arcgis.gis._impl.APIKey` object
         """
@@ -296,12 +292,18 @@ class APIKeyManager(object):
         ================  ===============================================================================
         **Parameter**     **Description**
         ----------------  -------------------------------------------------------------------------------
-        api_key           Required `APIKey`.  The key to validate against.
+        api_key           Required :class:`~arcgis.gis._impl.APIKey`.  The key to validate against.
         ----------------  -------------------------------------------------------------------------------
         privileges        Optional List. The list of the privileges to check for.  The list consists of 
                           a list of string values. 
         ================  ===============================================================================
-        
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.APIKeyManager.validate(ApiKey1)
+
         :returns:
             A boolean indicating success (True), or failure (False)
         

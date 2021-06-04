@@ -5,7 +5,6 @@ This module, the most important in the ArcGIS API for Python, provides functiona
 (create, read, update and delete) GIS users, groups and content. The module allows for access to the GIS services using
 Python and is an invaluable tool in the API.
 
-**TODO: Insert Examples and Code Snippets**
 """
 from __future__ import absolute_import
 import base64

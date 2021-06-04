@@ -3,8 +3,8 @@ from arcgis._impl.common._mixins import PropertyMap
 ###########################################################################
 class CertificateManager(object):
     """
-    The ``CertificateManager`` class provides the administor the ability to
-    register and unregister certficates with the :class:`~arcgis.gis.GIS`.
+    The ``CertificateManager`` class provides the administrator the ability to
+    register and unregister certificates with the :class:`~arcgis.gis.GIS`.
 
     .. note::
         This resource is
@@ -61,6 +61,11 @@ class CertificateManager(object):
         certificate	  Required String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.CertificateManager.add("certificate_name", "domain_name", "certificate_text")
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -92,6 +97,14 @@ class CertificateManager(object):
         cert_id           Required String.  The ID of the certificate to delete.
         ================  ===============================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.CertificateManager.get("certificate_id")
+
+        :returns:
+            A Dictionary (if found), else None
 
         The dictionary contains the following information:
 
@@ -106,9 +119,6 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         sslCertificate	  Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
-
-        :returns:
-            A Dictionary (if found), else None
 
         """
         found_cert_id = None
@@ -131,6 +141,12 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         cert_id           Required String.  The ID of the certificate to delete.
         ================  ===============================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.CertificateManager.delete("certificate_id")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -161,7 +177,11 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         certificate	  Optional String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
+        .. code-block:: python
 
+            # Usage Example
+
+            >>> gis.CertificateManager.update("certificate_id", "certificate_name", "certificate_domain", "certificate_text")
         :returns:
             A boolean indicating success (True), or failure (False)
 

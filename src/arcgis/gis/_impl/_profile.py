@@ -217,6 +217,12 @@ class ProfileManager(object):
         profile           Required String. The name of the profile to get the information about.
         ================  ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.ProfileManager.get("profile_name")
+
         :returns:
             A dictionary
 
@@ -255,6 +261,12 @@ class ProfileManager(object):
         ----------------  --------------------------------------------------------------------
         profile           Required String. The name of the profile to delete.
         ================  ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.ProfileManager.delete("profile_name")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -317,6 +329,12 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.ProfileManager.update(profile = "profile_name1", username = "User12345", key_file = "new_key_file")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -364,6 +382,12 @@ class ProfileManager(object):
         client_id         Optional String.  The client ID for oauth login.
         ================  ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis.ProfileManager.create("profile_name", url= "www.foo.com", username = "User1234",
+            >>>                           password = "Password1234", key_file = "key_file", cert_fle = "cert_file_name")
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -406,6 +430,13 @@ class ProfileManager(object):
         ----------------  --------------------------------------------------------------------
         gis               Required GIS. The connection object to update the profile with.
         ================  ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> gis = GIS("pro")
+            >>> gis.ProfileManager.save_as("Profile_name", gis)
 
         :returns: Boolean
 

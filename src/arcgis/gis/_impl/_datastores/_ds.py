@@ -58,9 +58,9 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The Data Store `Item` to describe.
+        item                   Required Item. The :class:`~arcgis.gis.Datastore` to describe.
         ------------------     --------------------------------------------------------------------
-        server_id              Optiona String. The unique id of the registered server.
+        server_id              Optional String. The unique id of the registered server.
         ------------------     --------------------------------------------------------------------
         path                   Optional String. The path to examine the data in.
         ------------------     --------------------------------------------------------------------
@@ -68,8 +68,14 @@ class PortalDataStore(object):
                                and for sub-folders, the object type should be listed as `folder`.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.describe(item= datastore_object1, server_id="server_name", path = "path_name")
+
         :returns:
-            A :class:`~arcgis.gis._impl._jb.StatusJob` object
+            A :class:`~arcgis.gis._impl..StatusJob` object
 
         """
         if isinstance(item, Item):
@@ -169,6 +175,12 @@ class PortalDataStore(object):
                                store to additional federated servers, see the note below. The default value is `false`.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.register(datastore_object1, "server_name")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -225,8 +237,14 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The Data Store `Item` to delete all published layers.
+        item                   Required Item. The :class:`~arcgis.gis.Datastore` to delete all published layers.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.delete_layers(datastore_object)
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -268,6 +286,12 @@ class PortalDataStore(object):
         item                   Required Item. The Data Store `Item` to list all published layers
                                and registered datasets.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.layers(datastore_object1)
 
         :returns: A List of bulk-published :class:`~arcgis.gis.Layer` objects
 
@@ -312,6 +336,12 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         tags                   Optional list. An array of descriptive words that describes the newly published dataset.  This will be added to the `Item`
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.publish(config= {"required" : "dictionary"}, "server_name")
 
         :returns:
             A :class:`~arcgis.gis._impl._jb.StatusJob` object
@@ -358,6 +388,12 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The :class:`~arcgis.gis.DataStore` object to list all registered servers.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.servers(datastore_object1)
 
         :returns:
             A List with the serverID, server name, server URL, and admin URLs
@@ -421,6 +457,12 @@ class PortalDataStore(object):
                                `StatusJob` is returned.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.publish_layers(datastore_object1, srv_config= {"required" : "dictionary"})
+
         :returns:
             Boolean when `future=False` else a :class:`~arcgis.gis._impl._jb.StatusJob` object
 
@@ -469,6 +511,12 @@ class PortalDataStore(object):
         """
         The ``unregister`` method removes the :class:`~arcgis.gis.Datastore` association from a server.
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.unregister(datastore_object1, "server_name")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -511,6 +559,12 @@ class PortalDataStore(object):
                                the datastore with.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.refresh_server(datastore_object1, "server_name")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -552,6 +606,12 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         config                 Optional dict. The connection information for a new datastore.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> datastore_manager.validate("server_name")
 
         :returns:
             A boolean indicating success (True), or failure (False)
