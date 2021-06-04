@@ -326,49 +326,49 @@ class AGOLAdminManager(object):
         start_date        Required datetime.datetime object. The beginning date to start with.
         ----------------  -------------------------------------------------------------------------------
         to_date           Optional datetime.datetime object. The ending date.  If not provided, the query
-                          will attempt to obtain all records till the current date.  
+                          will attempt to obtain all records till the current date.
         ----------------  -------------------------------------------------------------------------------
-        num               Optional Integer. The maximum number of records to return.  The maximum value 
-                          is 10,000 set by the ArcGIS REST API.  If the value of -1 is provided it will 
+        num               Optional Integer. The maximum number of records to return.  The maximum value
+                          is 10,000 set by the ArcGIS REST API.  If the value of -1 is provided it will
                           attempt to get all records for the date range.  The default is **100**.
         ----------------  -------------------------------------------------------------------------------
-        all_events        Optional Boolean. If `True`, all types of events are included.  If `False`, only 
+        all_events        Optional Boolean. If `True`, all types of events are included.  If `False`, only
                           actions targeted by the organization are included.  When exporting as `csv` this
                           parameter is `True`.
         ----------------  -------------------------------------------------------------------------------
-        event_id          Optional String. Filter events by specific target user name or target ID in a batch result set. 
-                          It can be the ID of an item, a group, a role, a collaboration, an identity 
+        event_id          Optional String. Filter events by specific target user name or target ID in a batch result set.
+                          It can be the ID of an item, a group, a role, a collaboration, an identity
                           provider, and so on.
         ----------------  -------------------------------------------------------------------------------
-        event_types       Optional String.  Filter events by a comma-separated list of target types in a 
+        event_types       Optional String.  Filter events by a comma-separated list of target types in a
                           batch result set.
 
-                          Values: a (organization), c (collaboration), cp (collaboration participate), 
-                                  cpg (collaboration participate group), cw (collaboration workspace), 
-                                  cwp (collaboration workspace participate), g (group), i (item), 
+                          Values: a (organization), c (collaboration), cp (collaboration participate),
+                                  cpg (collaboration participate group), cw (collaboration workspace),
+                                  cwp (collaboration workspace participate), g (group), i (item),
                                   idp (identity provider), inv (invitation), r (role), u (user)
         ----------------  -------------------------------------------------------------------------------
         actors            Optional String. Comma seperated list of usernames.
         ----------------  -------------------------------------------------------------------------------
-        owners            Optional String. Filter events by a comma-separated list of user names who own 
+        owners            Optional String. Filter events by a comma-separated list of user names who own
                           the action targets in a batch result set.
         ----------------  -------------------------------------------------------------------------------
-        actions           Optional String. Comma seperated list of actions to query for.  
-                     
-                          Values: `add`, `addusers`, `create`, `delete`, `removeusers`, `share`, `unshare`, 
+        actions           Optional String. Comma seperated list of actions to query for.
+
+                          Values: `add`, `addusers`, `create`, `delete`, `removeusers`, `share`, `unshare`,
                           `update`, `failedlogin`, `login`, and `updateUsers`.
         ----------------  -------------------------------------------------------------------------------
         ips               Optional String. Filter events by a comma-separated list of IP addresses in a batch result set.
         ----------------  -------------------------------------------------------------------------------
-        sort_order        Optional String.  Describes whether the results return in ascending or 
+        sort_order        Optional String.  Describes whether the results return in ascending or
                           descending chronological order. The default is ascending.
 
                           Values: `asc` or `desc`
         ----------------  -------------------------------------------------------------------------------
-        data_format       Optional String.  The way the data is returned to the user.  The response can 
-                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma 
+        data_format       Optional String.  The way the data is returned to the user.  The response can
+                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma
                           seperated file, and 'raw' returns the JSON string as a dictionary.
-                          
+
                           Values: `df`, `csv`, 'raw'
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.

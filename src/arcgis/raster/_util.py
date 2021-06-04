@@ -432,34 +432,36 @@ def _local_function_template(operation_number=None):
     return template_dict
 
 
-def _percentile_function_template(ignore_nodata=False, percentile=90,percentile_interpolation_type=False):
+def _percentile_function_template(
+    ignore_nodata=False, percentile=90, percentile_interpolation_type=False
+):
     template_dict = {
-      "name" : "Raster Function Template",
-      "description" : "A raster function template.",
-      "function" : {
-        "pixelType" : "UNKNOWN",
-        "name" : "Percentile Function",
-        "description" : "Compute percentile value across the input rasters.",
-        "type" : "PercentileFunction",
-        "_object_id" : 1
-      },
-      "arguments" : {
-        "Rasters" : {
-          "name" : "Rasters",
-          "isDataset" : False,
-          "isPublic" : False,
-          "type" : "RasterFunctionVariable",
-          "_object_id" : 2
+        "name": "Raster Function Template",
+        "description": "A raster function template.",
+        "function": {
+            "pixelType": "UNKNOWN",
+            "name": "Percentile Function",
+            "description": "Compute percentile value across the input rasters.",
+            "type": "PercentileFunction",
+            "_object_id": 1,
         },
-        "IgnoreNoData" : True,
-        "Percentile" : 90,
-        "InterpolatePercentile" : False,
-        "type" : "PercentileFunctionArguments",
-        "_object_id" : 3
-      },
-      "functionType" : 0,
-      "type" : "RasterFunctionTemplate",
-      "_object_id" : 4
+        "arguments": {
+            "Rasters": {
+                "name": "Rasters",
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 2,
+            },
+            "IgnoreNoData": True,
+            "Percentile": 90,
+            "InterpolatePercentile": False,
+            "type": "PercentileFunctionArguments",
+            "_object_id": 3,
+        },
+        "functionType": 0,
+        "type": "RasterFunctionTemplate",
+        "_object_id": 4,
     }
 
     if ignore_nodata is not None:
@@ -469,7 +471,9 @@ def _percentile_function_template(ignore_nodata=False, percentile=90,percentile_
         template_dict["arguments"]["Percentile"] = percentile
 
     if percentile_interpolation_type is not None:
-        template_dict["arguments"]["InterpolatePercentile"] = percentile_interpolation_type
+        template_dict["arguments"][
+            "InterpolatePercentile"
+        ] = percentile_interpolation_type
 
     return template_dict
 

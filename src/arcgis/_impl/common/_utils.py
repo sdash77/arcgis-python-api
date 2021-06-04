@@ -16,11 +16,11 @@ import functools
 # ----------------------------------------------------------------------
 def bytesto(size, to="m", bsize=1024):
     """convert bytes to megabytes, etc.
-       sample code:
-           print('mb= ' + str(bytesto(314575262000000, 'm')))
+    sample code:
+        print('mb= ' + str(bytesto(314575262000000, 'm')))
 
-       sample output:
-           mb= 300002347.946
+    sample output:
+        mb= 300002347.946
     """
 
     a = {"k": 1, "m": 2, "g": 3, "t": 4, "p": 5, "e": 6}
@@ -108,11 +108,11 @@ def _date_handler(obj):
 # ----------------------------------------------------------------------
 def local_time_to_online(dt=None):
     """
-       converts datetime object to a UTC timestamp for AGOL
-       Inputs:
-          dt - datetime object
-       Output:
-          Long value
+    converts datetime object to a UTC timestamp for AGOL
+    Inputs:
+       dt - datetime object
+    Output:
+       Long value
     """
 
     if dt is None:
@@ -129,12 +129,12 @@ def local_time_to_online(dt=None):
 # ----------------------------------------------------------------------
 def online_time_to_string(value, timeFormat):
     """
-       Converts a timestamp to date/time string
-       Inputs:
-          value - timestamp as long
-          timeFormat - output date/time format
-       Output:
-          string
+    Converts a timestamp to date/time string
+    Inputs:
+       value - timestamp as long
+       timeFormat - output date/time format
+    Output:
+       string
     """
     return datetime.datetime.fromtimestamp(value / 1000).strftime(timeFormat)
 
@@ -142,11 +142,11 @@ def online_time_to_string(value, timeFormat):
 # ----------------------------------------------------------------------
 def timestamp_to_datetime(timestamp):
     """
-       Converts a timestamp to a datetime object
-       Inputs:
-          timestamp - timestamp value as Long
-       output:
-          datetime object
+    Converts a timestamp to a datetime object
+    Inputs:
+       timestamp - timestamp value as Long
+    output:
+       datetime object
     """
     return datetime.datetime.fromtimestamp(timestamp / 1000)
 
@@ -168,8 +168,7 @@ def _tempinput(data):
 
 # --------------------------------------------------------------------------
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 
@@ -261,7 +260,7 @@ def zipws(path, outfile, keep=True):
 
 # --------------------------------------------------------------------------
 def _to_utf8(data):
-    """ Converts strings and collections of strings from unicode to utf-8. """
+    """Converts strings and collections of strings from unicode to utf-8."""
     if isinstance(data, dict):
         return {
             _to_utf8(key): _to_utf8(value)

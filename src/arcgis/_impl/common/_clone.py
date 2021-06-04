@@ -232,7 +232,7 @@ class _DeepCloner:
         return layer_properties
 
     def _get_item_definitions(self, item):
-        """" Get a list of definitions for the specified item.
+        """ " Get a list of definitions for the specified item.
         This method differs from get_item_definition in that it is run recursively to return the definitions of dependent items depending on the type.
         These definitions can be used to clone or download the items.
         Keyword arguments:
@@ -896,12 +896,16 @@ class _DeepCloner:
                                             None,
                                         )
                                         if not feature_service:
-                                            feature_service = _get_feature_service_related_item(
-                                                service_url, source
+                                            feature_service = (
+                                                _get_feature_service_related_item(
+                                                    service_url, source
+                                                )
                                             )
                                             if feature_service:
-                                                fs_definition = self._get_item_definitions(
-                                                    feature_service
+                                                fs_definition = (
+                                                    self._get_item_definitions(
+                                                        feature_service
+                                                    )
                                                 )
                                                 if fs_definition is not None:
                                                     item_definition.add_child(
@@ -1969,8 +1973,7 @@ class _TextItemDefinition(_ItemDefinition):
     """
 
     def clone(self):
-        """Clone the item in the target organization.
-        """
+        """Clone the item in the target organization."""
         try:
             new_item = None
             original_item = self.info
@@ -3718,8 +3721,7 @@ class _WebMapDefinition(_TextItemDefinition):
         self.use_org_basemap = use_org_basemap
 
     def clone(self):
-        """Clone the web map in the target organization.
-        """
+        """Clone the web map in the target organization."""
 
         try:
             new_item = None
@@ -4357,8 +4359,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         return self._update_url
 
     def clone(self):
-        """Clone the application in the target organization.
-        """
+        """Clone the application in the target organization."""
 
         try:
             new_item = None
@@ -4776,8 +4777,7 @@ class _FormDefinition(_ItemDefinition):
             xml_file.write(xml_string)
 
     def clone(self):
-        """Clone the form in the target organization.
-        """
+        """Clone the form in the target organization."""
         try:
             new_item = None
             original_item = self.info
@@ -5075,8 +5075,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
 
     def clone(self):
-        """Clone the quick capture project in the target organization.
-        """
+        """Clone the quick capture project in the target organization."""
         try:
             new_item = None
             original_item = self.info
@@ -5249,8 +5248,7 @@ class _NotebookDefinition(_ItemDefinition):
         self._source_url = source_url
 
     def clone(self):
-        """Clone the python notebook in the target organization.
-        """
+        """Clone the python notebook in the target organization."""
         try:
             new_item = None
             original_item = self.info
@@ -5314,8 +5312,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
     """
 
     def clone(self):
-        """Clone the form in the target organization.
-        """
+        """Clone the form in the target organization."""
 
         try:
             new_item = None
@@ -5478,8 +5475,7 @@ class _ProMapDefinition(_ItemDefinition):
     """
 
     def clone(self):
-        """Clone the pro map in the target organization.
-        """
+        """Clone the pro map in the target organization."""
 
         try:
             new_item = None
@@ -5571,8 +5567,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
     """
 
     def clone(self):
-        """Clone the pro map in the target organization.
-        """
+        """Clone the pro map in the target organization."""
 
         try:
             new_item = None
@@ -5651,8 +5646,10 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                     new_id = new_service[
                                                         "layer_id_mapping"
                                                     ][layer_id]
-                                                    new_connection_properties = copy.deepcopy(
-                                                        connection_properties
+                                                    new_connection_properties = (
+                                                        copy.deepcopy(
+                                                            connection_properties
+                                                        )
                                                     )
                                                     new_connection_properties[
                                                         "connection_info"
@@ -5676,9 +5673,11 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                             service_version_infos[
                                                                 new_service["url"]
                                                             ] = {}
-                                                    version_info = service_version_infos[
-                                                        new_service["url"]
-                                                    ]
+                                                    version_info = (
+                                                        service_version_infos[
+                                                            new_service["url"]
+                                                        ]
+                                                    )
                                                     for key, value in {
                                                         "defaultVersionName": "version",
                                                         "defaultVersionGuid": "versionguid",

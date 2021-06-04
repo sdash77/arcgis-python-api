@@ -625,7 +625,7 @@ class JournalStoryMap(object):
     # ----------------------------------------------------------------------
     @header.setter
     def header(self, value):
-        """"""
+        """ """
         if value is None:
             default = {
                 "social": {"bitly": True, "twitter": True, "facebook": True},
@@ -641,7 +641,7 @@ class JournalStoryMap(object):
     # ----------------------------------------------------------------------
     @property
     def theme(self):
-        """"""
+        """ """
         default = {
             "colors": {
                 "text": "#FFFFFF",
@@ -676,7 +676,7 @@ class JournalStoryMap(object):
     # ----------------------------------------------------------------------
     @theme.setter
     def theme(self, value):
-        """"""
+        """ """
         default = {
             "colors": {
                 "text": "#FFFFFF",

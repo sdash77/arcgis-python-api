@@ -2710,13 +2710,13 @@ class MultiPoint(Geometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = MultiPoint(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)
 
     # ----------------------------------------------------------------------
@@ -2781,13 +2781,13 @@ class Point(Geometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = Point(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)
 
     # ----------------------------------------------------------------------
@@ -2900,13 +2900,13 @@ class Polygon(Geometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = Polygon(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)
 
     @classmethod
@@ -3025,13 +3025,13 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = Polyline(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)
 
     @classmethod
@@ -3079,7 +3079,7 @@ class Envelope(Geometry):
     #    return hash(json.dumps(dict(self)))
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
-        """"""
+        """ """
         return self.polygon.svg(scale_factor, fill_color)
 
     # ----------------------------------------------------------------------
@@ -3164,13 +3164,13 @@ class Envelope(Geometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = Envelope(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)
 
 
@@ -3279,11 +3279,11 @@ class SpatialReference(BaseGeometry):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(d)
         self = SpatialReference(iterable=d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return dict(self)

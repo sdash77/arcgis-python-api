@@ -50,7 +50,7 @@ class BaseOGC(object):
     def properties(self):
         """
         Returns the properties of the Layer.
-        
+
         :returns: PropertyMap
         """
         return PropertyMap(self._lyr_json)

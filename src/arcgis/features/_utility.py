@@ -102,9 +102,9 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def disable_topology(self):
         """
-        Disables the network topology for a utility network. When the 
+        Disables the network topology for a utility network. When the
         topology is disabled, feature and association edits do not generate
-        dirty areas. Analytics and diagram generation can't be performed if 
+        dirty areas. Analytics and diagram generation can't be performed if
         the topology is not present.
 
         When the topology is disabled, the following happens:
@@ -112,13 +112,13 @@ class UtilityNetworkManager(object):
              - All current rows in the topology tables are deleted.
              - No dirty areas are generated from edits.
              - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
-        
-        To perform certain network configuration tasks, the network 
+
+        To perform certain network configuration tasks, the network
         topology must be disabled.
 
              - This operation must be executed by the portal utility network owner.
-             - The topology can be disabled in the default version or in a named version. 
-             
+             - The topology can be disabled in the default version or in a named version.
+
         :returns: Dictionary
         """
         url = "%s/disableTopology" % self._url
@@ -132,23 +132,23 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def enable_topology(self, error_count=10000):
         """
-        Enabling the network topology for a utility network is done on the 
-        **DEFAULT** version. Enabling is **not** supported in named versions. 
-        When the topology is enabled, all feature and association edits 
-        generate dirty areas, which are then consumed when the network 
+        Enabling the network topology for a utility network is done on the
+        **DEFAULT** version. Enabling is **not** supported in named versions.
+        When the topology is enabled, all feature and association edits
+        generate dirty areas, which are then consumed when the network
         topology is updated.
-        
-        
+
+
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        error_count                              Optional Integer. Sets the threshold when the `enable_topology` will 
-                                                 stop if the maximum number of errors is met. The default value is 
+        error_count                              Optional Integer. Sets the threshold when the `enable_topology` will
+                                                 stop if the maximum number of errors is met. The default value is
                                                  10,000.
         ====================================     ====================================================================
-        
+
         :returns: Dictionary
-        
+
         """
         if self._version_name.lower().find("default") == -1:
             raise Exception("Current version is not the `DEFAULT` version.")
@@ -403,9 +403,9 @@ class UtilityNetworkManager(object):
         Validating a network topology may include all or a subset of the
         dirty areas present in the network. Validation of network topology
         is supported synchronously and asynchronously.
-        
+
         :returns: Dictionary
-        
+
         """
         url = "%s/validateNetworkTopology" % self._url
         params = {

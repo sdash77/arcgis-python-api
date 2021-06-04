@@ -7,12 +7,12 @@ from .utils import add_features, update_features, remove_features, validate
 
 
 def get_dispatcher(project, object_id=None, global_id=None, user_id=None):
-    """ Gets the identified Dispatcher.  Exactly one form of identification should be provided.
-        :param project:
-        :param object_id: The dispatcher's OBJECTID.
-        :param global_id: The dispatcher's GlobalID.
-        :param user_id: The dispatcher's named user user_id.
-        :returns: Dispatcher
+    """Gets the identified Dispatcher.  Exactly one form of identification should be provided.
+    :param project:
+    :param object_id: The dispatcher's OBJECTID.
+    :param global_id: The dispatcher's GlobalID.
+    :param user_id: The dispatcher's named user user_id.
+    :returns: Dispatcher
     """
     if object_id:
         where = "{} = {}".format(project._dispatcher_schema.object_id, object_id)
@@ -27,18 +27,18 @@ def get_dispatcher(project, object_id=None, global_id=None, user_id=None):
 
 
 def get_dispatchers(project):
-    """ Gets all Dispatchers in the project.
-        :param project:
-        :returns: list of Dispatchers
+    """Gets all Dispatchers in the project.
+    :param project:
+    :returns: list of Dispatchers
     """
     return query_dispatchers(project, "1=1")
 
 
 def query_dispatchers(project, where):
-    """ Executes a query against the dispatchers feature layer.
-        :param project: The project in which to query dispatchers.
-        :param where: An ArcGIS where clause.
-        :returns: list of Dispatchers
+    """Executes a query against the dispatchers feature layer.
+    :param project: The project in which to query dispatchers.
+    :param where: An ArcGIS where clause.
+    :returns: list of Dispatchers
     """
     features = project.dispatchers_layer.query(where, return_all_records=True).features
     return [workforce.Dispatcher(project, feature) for feature in features]
@@ -57,7 +57,7 @@ def update_dispatcher(
     project, dispatcher, contact_number=None, name=None, user_id=None
 ):
     """
-        Updates a dispatcher and submits changes to the server
+    Updates a dispatcher and submits changes to the server
     """
     project._update_cached_objects()
     if contact_number:
@@ -70,15 +70,15 @@ def update_dispatcher(
 
 
 def add_dispatchers(project, dispatchers):
-    """ Adds Dispatchers to a project.
+    """Adds Dispatchers to a project.
 
-        Side effect: Upon successful addition on the server, the object_id and global_id fields of
-        each Dispatcher in dispatchers will be updated to the values assigned by the server.
+    Side effect: Upon successful addition on the server, the object_id and global_id fields of
+    each Dispatcher in dispatchers will be updated to the values assigned by the server.
 
-        :param project:
-        :param dispatchers: list of Dispatchers
-        :raises ValidationError: Indicates that one or more dispatchers failed validation.
-        :raises ServerError: Indicates that the server rejected the dispatchers.
+    :param project:
+    :param dispatchers: list of Dispatchers
+    :raises ValidationError: Indicates that one or more dispatchers failed validation.
+    :raises ServerError: Indicates that the server rejected the dispatchers.
     """
     project._update_cached_objects()
     if dispatchers:
@@ -107,11 +107,11 @@ def add_dispatchers(project, dispatchers):
 
 
 def update_dispatchers(project, dispatchers):
-    """ Updates Dispatchers.
-        :param project:
-        :param dispatchers: list of Dispatchers to update
-        :raises ValidationError: Indicates that one or more dispatchers failed validation.
-        :raises ServerError: Indicates that the server rejected the dispatchers.
+    """Updates Dispatchers.
+    :param project:
+    :param dispatchers: list of Dispatchers to update
+    :raises ValidationError: Indicates that one or more dispatchers failed validation.
+    :raises ServerError: Indicates that the server rejected the dispatchers.
     """
     project._update_cached_objects()
     if dispatchers:
@@ -123,11 +123,11 @@ def update_dispatchers(project, dispatchers):
 
 
 def delete_dispatchers(project, dispatchers):
-    """ Removes Dispatchers from the project.
-        :param project:
-        :param dispatchers: list of Dispatchers
-        :raises ValidationError: Indicates that one or more dispatchers failed validation.
-        :raises ServerError: Indicates that the server rejected the removal.
+    """Removes Dispatchers from the project.
+    :param project:
+    :param dispatchers: list of Dispatchers
+    :raises ValidationError: Indicates that one or more dispatchers failed validation.
+    :raises ServerError: Indicates that the server rejected the removal.
     """
     project._update_cached_objects()
     if dispatchers:

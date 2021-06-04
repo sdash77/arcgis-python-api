@@ -147,14 +147,14 @@ class Uploads(BaseServer):
 
     # ----------------------------------------------------------------------
     def _service_configuration(self, upload_id):
-        """ gets the serviceconfiguration.json info for an uploaded sd file"""
+        """gets the serviceconfiguration.json info for an uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def _initial_cache_settings(self, upload_id):
-        """ gets the initial cache settings for a given uploaded sd file"""
+        """gets the initial cache settings for a given uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
         params = {"f": "json"}
         return self._con.get(path=url, params=params)

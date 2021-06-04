@@ -192,7 +192,7 @@ def calculate_motion_statistics(
     }
 
     if output_name is None:
-        output_service_name = "Calculate_Motion_Stats_" + _id_generator()
+        output_service_name = _id_generator(prefix="Calculate_Motion_Stats_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -344,7 +344,7 @@ def enrich_from_grid(
     params["future"] = True
 
     if output_name is None:
-        output_service_name = "Enrich_Grid_" + _id_generator()
+        output_service_name = _id_generator(prefix="Enrich_Grid_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

@@ -323,7 +323,7 @@ class Events(object):
         =========================   ===========================================
         **Argument**                **Description**
         -------------------------   -------------------------------------------
-        action_type                 Required string. Actions can be one of 
+        action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
         -------------------------   -------------------------------------------
         widget                      Required MapWidget item. Name of the map

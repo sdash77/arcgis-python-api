@@ -56,10 +56,10 @@ class DataStoreManager(BaseServer):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor
-            Inputs:
-               url - admin url
-               gis - gis object
-               initialize - optional initializes the componenents in the class
+        Inputs:
+           url - admin url
+           gis - gis object
+           initialize - optional initializes the componenents in the class
         """
         connection = kwargs.pop("connection", None)
         initialize = False
@@ -103,15 +103,15 @@ class DataStoreManager(BaseServer):
     @property
     def config(self):
         """
-           Gets the data store configuration properties. These properties
-           affect the behavior of the data holdings of the server. For
-           example, the blockDataCopy property - when this property is false,
-           or not set at all, copying data to the site when publishing services
-           from a client application is allowed. This is the default behavior.
-           When this property is true, the client application is not allowed to
-           copy data to the site when publishing. Rather, the publisher is
-           required to register data items through which the service being
-           published can reference data. Values: true | false
+        Gets the data store configuration properties. These properties
+        affect the behavior of the data holdings of the server. For
+        example, the blockDataCopy property - when this property is false,
+        or not set at all, copying data to the site when publishing services
+        from a client application is allowed. This is the default behavior.
+        When this property is true, the client application is not allowed to
+        copy data to the site when publishing. Rather, the publisher is
+        required to register data items through which the service being
+        published can reference data. Values: true | false
         """
 
         """ jenn note -- need link or list of the possible data store configuration properties."""

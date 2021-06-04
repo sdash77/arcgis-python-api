@@ -950,8 +950,7 @@ class _GeoEnrichment(object):
 
     # ----------------------------------------------------------------------
     def standard_geography_level_info(self, country, hierarchy):
-        """
-        """
+        """ """
         as_dict = True
         countries = self.countries()
         if len(country) > 2:
@@ -980,10 +979,10 @@ class _GeoEnrichment(object):
     @property
     def limits(self):
         """
-        Provides the limits of the current GeoEnrichment Service.  This will allow 
-        users to determine how to break up the calls accordingly to ensure all data 
+        Provides the limits of the current GeoEnrichment Service.  This will allow
+        users to determine how to break up the calls accordingly to ensure all data
         is returned.
-        
+
         :returns: Pandas' DataFrame
         """
         if self._limits is None:

@@ -13,7 +13,7 @@ from IPython.display import HTML, display
 
 def get_dir_of_curr_exec_notebook():
     """
-    Returns the absolute path of the directory that the currently executing 
+    Returns the absolute path of the directory that the currently executing
     jupyter notebook resides in
     """
     try:
