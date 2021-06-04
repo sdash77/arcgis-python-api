@@ -86,8 +86,9 @@ class GIS(object):
     .. note::
 
         The ``GIS`` provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
-        as well as the results of your analysis. To create a new map, call the map() method. IE11 is no longer supported.
-        Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
+        as well as the results of your analysis. To create a new map, call the :attr:`~arcgis.gis.GIS.map` method.
+        IE11 is no longer supported. Please use the latest version of Google Chrome, Mozilla Firefox,
+        Apple Safari, or Microsoft Edge.
 
     The constructor constructs a ``GIS`` object given a url and user credentials to ArcGIS Online
     or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
@@ -8494,7 +8495,8 @@ class GroupApplication(object):
 
             # Usage Example
 
-            >>> groupapplication = GroupApplication()
+            >>> gis = GIS("pro")
+            >>> groupapplication = GroupApplication("www.url.com", gis)
     """
 
     _con = None
@@ -8552,7 +8554,7 @@ class GroupApplication(object):
 
             # Usage Example
 
-            >>> groupapplication = GroupApplication()
+            >>> groupapplication = GroupApplication("www.url.com", gis)
             >>> groupapplication.accept()
 
         :return:
@@ -8582,7 +8584,7 @@ class GroupApplication(object):
 
             # Usage Example
 
-            >>> groupapplication = GroupApplication()
+            >>> groupapplication = GroupApplication("www.url.com", gis)
             >>> groupapplication.delete()
 
         :return:
@@ -12100,9 +12102,9 @@ class Item(dict):
         Feature services can be created from  input files of various types, including
             1. csv files
             2. shapefiles
-            3. serviceDefinition files
-            4. featureCollection files
-            5. fileGeodatabase files
+            3. service definition files
+            4. feature collection files
+            5. file geodatabase files
         CSV files that contain location fields (i.e. address fields or XY fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
 
