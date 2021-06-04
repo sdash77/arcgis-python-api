@@ -9,8 +9,8 @@ from .._common import BaseServer
 ########################################################################
 class KML(BaseServer):
     """
-       This resource is a container for all the KMZ files created on the
-       server.
+    This resource is a container for all the KMZ files created on the
+    server.
     """
 
     _con = None
@@ -41,9 +41,9 @@ class KML(BaseServer):
     # ----------------------------------------------------------------------
     def create_KMZ(self, kmz_as_json):
         """
-           Creates a KMZ file from json.
-           See https://developers.arcgis.com/rest/enterprise-administration/server/createkmz.htm
-           for more information.
+        Creates a KMZ file from json.
+        See https://developers.arcgis.com/rest/enterprise-administration/server/createkmz.htm
+        for more information.
         """
         url = self._url + "/createKmz"
         params = {"f": "json", "kml": kmz_as_json}

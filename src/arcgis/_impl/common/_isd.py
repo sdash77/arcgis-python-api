@@ -82,13 +82,13 @@ class InsensitiveDict(MutableMapping):
 
     # ----------------------------------------------------------------------
     def __setstate__(self, d):
-        """unpickle support """
+        """unpickle support"""
         self.__dict__.update(InsensitiveDict(d).__dict__)
         self = InsensitiveDict(d)
 
     # ----------------------------------------------------------------------
     def __getstate__(self):
-        """ pickle support """
+        """pickle support"""
         return _ujson.loads(self.json)
 
     # ----------------------------------------------------------------------

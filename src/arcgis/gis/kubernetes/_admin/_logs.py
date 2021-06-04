@@ -107,7 +107,7 @@ class LogManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def settings(self):
-        """Gets the current log settings. """
+        """Gets the current log settings."""
         params = {"f": "json"}
         url = self._url + "/settings"
         try:

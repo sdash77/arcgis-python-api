@@ -186,7 +186,7 @@ class ClusterProtocol(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        """"""
+        """ """
         return json.dumps({"tcpClusterPort": self._tcpClusterPort})
 
     # ----------------------------------------------------------------------

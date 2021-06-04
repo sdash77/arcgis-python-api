@@ -73,13 +73,13 @@ def contains(geometry, sr=None):
 
 def crosses(geometry, sr=None):
     """Returns a feature if the intersection of the interiors of the two shapes is not empty and has a lower dimension
-     than the maximum dimension of the two shapes. Two lines that share an endpoint in common do not cross.
-     Valid for Line/Line, Line/Area, Multi-point/Area, and Multi-point/Line shape type combinations."""
+    than the maximum dimension of the two shapes. Two lines that share an endpoint in common do not cross.
+    Valid for Line/Line, Line/Area, Multi-point/Area, and Multi-point/Line shape type combinations."""
     return _filter(geometry, sr, "esriSpatialRelCrosses")
 
 
 def envelope_intersects(geometry, sr=None):
-    """Returns features if the envelope of the two shapes intersects. """
+    """Returns features if the envelope of the two shapes intersects."""
     return _filter(geometry, sr, "esriSpatialRelEnvelopeIntersects")
 
 
@@ -90,7 +90,7 @@ def index_intersects(geometry, sr=None):
 
 def overlaps(geometry, sr=None):
     """Returns a feature if the intersection of the two shapes results in an object of the same dimension, but different
-     from both of the shapes. Applies to Area/Area, Line/Line, and Multi-point/Multi-point shape type combinations."""
+    from both of the shapes. Applies to Area/Area, Line/Line, and Multi-point/Multi-point shape type combinations."""
     return _filter(geometry, sr, "esriSpatialRelOverlaps")
 
 

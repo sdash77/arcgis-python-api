@@ -31,7 +31,7 @@ class StatusJob(object):
                       user that the geoprocessing task has completed. The default is
                       False.
     ----------------  ---------------------------------------------------------------
-    extra_marker      Optional String. An extra piece of text to place infront of the 
+    extra_marker      Optional String. An extra piece of text to place infront of the
                       Job string for the __repr__ object.
     ================  ===============================================================
 

@@ -15,307 +15,540 @@ _use_async = True
 
 
 default_incidents = {
-    'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-               {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
-               {'alias': 'ID', 'name': 'ID', 'type': 'esriFieldTypeString', 'length': 128},
-               {'alias': 'Additional Time', 'name': 'AdditionalTime', 'type': 'esriFieldTypeDouble'},
-               {'alias': 'Additional Distance', 'name': 'AdditionalDistance', 'type': 'esriFieldTypeDouble'},
-               {'alias': 'Curb Approach', 'name': 'CurbApproach', 'type': 'esriFieldTypeSmallInteger'}],
-    'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {"alias": "ID", "name": "ID", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Additional Time",
+            "name": "AdditionalTime",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Additional Distance",
+            "name": "AdditionalDistance",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Curb Approach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
 default_facilities = {
-                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                            'length': 128},
-                                           {'alias': 'ID', 'name': 'ID', 'type': 'esriFieldTypeString', 'length': 128},
-                                           {'alias': 'Additional Time', 'name': 'AdditionalTime',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'Additional Distance', 'name': 'AdditionalDistance',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'Curb Approach', 'name': 'CurbApproach',
-                                            'type': 'esriFieldTypeSmallInteger'}], 'geometryType': 'esriGeometryPoint',
-                                'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {"alias": "ID", "name": "ID", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Additional Time",
+            "name": "AdditionalTime",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Additional Distance",
+            "name": "AdditionalDistance",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Curb Approach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
 default_point_barriers = {
-                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                            'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
-                                                             'type': 'esriFieldTypeInteger'},
-                                           {'alias': 'Additional Time', 'name': 'Additional_Time',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'Additional Distance', 'name': 'Additional_Distance',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'CurbApproach', 'name': 'CurbApproach',
-                                            'type': 'esriFieldTypeSmallInteger'}], 'geometryType': 'esriGeometryPoint',
-                                'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Barrier Type",
+            "name": "BarrierType",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Additional Time",
+            "name": "Additional_Time",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Additional Distance",
+            "name": "Additional_Distance",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "CurbApproach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
 default_line_barriers = {
-                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                            'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
-                                                             'type': 'esriFieldTypeDouble'}],
-                                'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
-                                'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                                'features': []}
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "SHAPE_Length",
+            "name": "SHAPE_Length",
+            "type": "esriFieldTypeDouble",
+        },
+    ],
+    "geometryType": "esriGeometryPolyline",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
 default_polygon_barriers = {
-                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                            'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
-                                                             'type': 'esriFieldTypeInteger'},
-                                           {'alias': 'Scaled Time Factor', 'name': 'ScaledTimeFactor',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'Scaled Distance Factor', 'name': 'ScaledDistanceFactor',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
-                                            'type': 'esriFieldTypeDouble'},
-                                           {'alias': 'SHAPE_Area', 'name': 'SHAPE_Area',
-                                            'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPolygon',
-                                'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Barrier Type",
+            "name": "BarrierType",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Scaled Time Factor",
+            "name": "ScaledTimeFactor",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Scaled Distance Factor",
+            "name": "ScaledDistanceFactor",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "SHAPE_Length",
+            "name": "SHAPE_Length",
+            "type": "esriFieldTypeDouble",
+        },
+        {"alias": "SHAPE_Area", "name": "SHAPE_Area", "type": "esriFieldTypeDouble"},
+    ],
+    "geometryType": "esriGeometryPolygon",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
 default_attributes = {
-                                'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                           {'alias': 'AttributeName', 'name': 'AttributeName',
-                                            'type': 'esriFieldTypeString', 'length': 255},
-                                           {'alias': 'ParameterName', 'name': 'ParameterName',
-                                            'type': 'esriFieldTypeString', 'length': 255},
-                                           {'alias': 'ParameterValue', 'name': 'ParameterValue',
-                                            'type': 'esriFieldTypeString', 'length': 25}], 'features': [{'attributes': {
-                                    'OBJECTID': 1, 'AttributeName': 'Any Hazmat Prohibited',
-                                    'ParameterValue': 'PROHIBITED', 'ParameterName': 'Restriction Usage'}}, {
-                                                                                                            'attributes': {
-                                                                                                                'OBJECTID': 2,
-                                                                                                                'AttributeName': 'Avoid Carpool Roads',
-                                                                                                                'ParameterValue': 'PROHIBITED',
-                                                                                                                'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 3,
-                                                                                                            'AttributeName': 'Avoid Express Lanes',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 4,
-                                                                                                            'AttributeName': 'Avoid Ferries',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 5,
-                                                                                                            'AttributeName': 'Avoid Gates',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 6,
-                                                                                                            'AttributeName': 'Avoid Limited Access Roads',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 7,
-                                                                                                            'AttributeName': 'Avoid Private Roads',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 8,
-                                                                                                            'AttributeName': 'Avoid Roads Unsuitable for Pedestrians',
-                                                                                                            'ParameterValue': 'AVOID_HIGH',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 9,
-                                                                                                            'AttributeName': 'Avoid Stairways',
-                                                                                                            'ParameterValue': 'AVOID_HIGH',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 10,
-                                                                                                            'AttributeName': 'Avoid Toll Roads',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 11,
-                                                                                                            'AttributeName': 'Avoid Toll Roads for Trucks',
-                                                                                                            'ParameterValue': 'AVOID_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 12,
-                                                                                                            'AttributeName': 'Avoid Truck Restricted Roads',
-                                                                                                            'ParameterValue': 'AVOID_HIGH',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 13,
-                                                                                                            'AttributeName': 'Avoid Unpaved Roads',
-                                                                                                            'ParameterValue': 'AVOID_HIGH',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 14,
-                                                                                                            'AttributeName': 'Axle Count Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Number of Axles'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 15,
-                                                                                                            'AttributeName': 'Axle Count Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 16,
-                                                                                                            'AttributeName': 'Driving a Bus',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 17,
-                                                                                                            'AttributeName': 'Driving a Delivery Vehicle',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 18,
-                                                                                                            'AttributeName': 'Driving a Taxi',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 19,
-                                                                                                            'AttributeName': 'Driving a Truck',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 20,
-                                                                                                            'AttributeName': 'Driving an Automobile',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 21,
-                                                                                                            'AttributeName': 'Driving an Emergency Vehicle',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 22,
-                                                                                                            'AttributeName': 'Height Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 23,
-                                                                                                            'AttributeName': 'Height Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Height (meters)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 24,
-                                                                                                            'AttributeName': 'Kingpin to Rear Axle Length Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 25,
-                                                                                                            'AttributeName': 'Kingpin to Rear Axle Length Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Kingpin to Rear Axle Length (meters)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 26,
-                                                                                                            'AttributeName': 'Length Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 27,
-                                                                                                            'AttributeName': 'Length Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Length (meters)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 28,
-                                                                                                            'AttributeName': 'Preferred for Pedestrians',
-                                                                                                            'ParameterValue': 'PREFER_LOW',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 29,
-                                                                                                            'AttributeName': 'Riding a Motorcycle',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 30,
-                                                                                                            'AttributeName': 'Roads Under Construction Prohibited',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 31,
-                                                                                                            'AttributeName': 'Semi or Tractor with One or More Trailers Prohibited',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 32,
-                                                                                                            'AttributeName': 'Single Axle Vehicles Prohibited',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 33,
-                                                                                                            'AttributeName': 'Tandem Axle Vehicles Prohibited',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 34,
-                                                                                                            'AttributeName': 'Through Traffic Prohibited',
-                                                                                                            'ParameterValue': 'AVOID_HIGH',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 35,
-                                                                                                            'AttributeName': 'Truck with Trailers Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Number of Trailers on Truck'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 36,
-                                                                                                            'AttributeName': 'Truck with Trailers Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 37,
-                                                                                                            'AttributeName': 'Use Preferred Hazmat Routes',
-                                                                                                            'ParameterValue': 'PREFER_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 38,
-                                                                                                            'AttributeName': 'Use Preferred Truck Routes',
-                                                                                                            'ParameterValue': 'PREFER_MEDIUM',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 39,
-                                                                                                            'AttributeName': 'WalkTime',
-                                                                                                            'ParameterValue': '5',
-                                                                                                            'ParameterName': 'Walking Speed (km/h)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 40,
-                                                                                                            'AttributeName': 'Walking',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 41,
-                                                                                                            'AttributeName': 'Weight Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 42,
-                                                                                                            'AttributeName': 'Weight Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Weight (kilograms)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 43,
-                                                                                                            'AttributeName': 'Weight per Axle Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 44,
-                                                                                                            'AttributeName': 'Weight per Axle Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Weight per Axle (kilograms)'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 45,
-                                                                                                            'AttributeName': 'Width Restriction',
-                                                                                                            'ParameterValue': 'PROHIBITED',
-                                                                                                            'ParameterName': 'Restriction Usage'}},
-                                                                                                        {'attributes': {
-                                                                                                            'OBJECTID': 46,
-                                                                                                            'AttributeName': 'Width Restriction',
-                                                                                                            'ParameterValue': '0',
-                                                                                                            'ParameterName': 'Vehicle Width (meters)'}}],
-                                'displayFieldName': '', 'exceededTransferLimit': False}
+    "fields": [
+        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "AttributeName",
+            "name": "AttributeName",
+            "type": "esriFieldTypeString",
+            "length": 255,
+        },
+        {
+            "alias": "ParameterName",
+            "name": "ParameterName",
+            "type": "esriFieldTypeString",
+            "length": 255,
+        },
+        {
+            "alias": "ParameterValue",
+            "name": "ParameterValue",
+            "type": "esriFieldTypeString",
+            "length": 25,
+        },
+    ],
+    "features": [
+        {
+            "attributes": {
+                "OBJECTID": 1,
+                "AttributeName": "Any Hazmat Prohibited",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 2,
+                "AttributeName": "Avoid Carpool Roads",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 3,
+                "AttributeName": "Avoid Express Lanes",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 4,
+                "AttributeName": "Avoid Ferries",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 5,
+                "AttributeName": "Avoid Gates",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 6,
+                "AttributeName": "Avoid Limited Access Roads",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 7,
+                "AttributeName": "Avoid Private Roads",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 8,
+                "AttributeName": "Avoid Roads Unsuitable for Pedestrians",
+                "ParameterValue": "AVOID_HIGH",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 9,
+                "AttributeName": "Avoid Stairways",
+                "ParameterValue": "AVOID_HIGH",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 10,
+                "AttributeName": "Avoid Toll Roads",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 11,
+                "AttributeName": "Avoid Toll Roads for Trucks",
+                "ParameterValue": "AVOID_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 12,
+                "AttributeName": "Avoid Truck Restricted Roads",
+                "ParameterValue": "AVOID_HIGH",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 13,
+                "AttributeName": "Avoid Unpaved Roads",
+                "ParameterValue": "AVOID_HIGH",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 14,
+                "AttributeName": "Axle Count Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Number of Axles",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 15,
+                "AttributeName": "Axle Count Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 16,
+                "AttributeName": "Driving a Bus",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 17,
+                "AttributeName": "Driving a Delivery Vehicle",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 18,
+                "AttributeName": "Driving a Taxi",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 19,
+                "AttributeName": "Driving a Truck",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 20,
+                "AttributeName": "Driving an Automobile",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 21,
+                "AttributeName": "Driving an Emergency Vehicle",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 22,
+                "AttributeName": "Height Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 23,
+                "AttributeName": "Height Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Height (meters)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 24,
+                "AttributeName": "Kingpin to Rear Axle Length Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 25,
+                "AttributeName": "Kingpin to Rear Axle Length Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Kingpin to Rear Axle Length (meters)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 26,
+                "AttributeName": "Length Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 27,
+                "AttributeName": "Length Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Length (meters)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 28,
+                "AttributeName": "Preferred for Pedestrians",
+                "ParameterValue": "PREFER_LOW",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 29,
+                "AttributeName": "Riding a Motorcycle",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 30,
+                "AttributeName": "Roads Under Construction Prohibited",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 31,
+                "AttributeName": "Semi or Tractor with One or More Trailers Prohibited",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 32,
+                "AttributeName": "Single Axle Vehicles Prohibited",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 33,
+                "AttributeName": "Tandem Axle Vehicles Prohibited",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 34,
+                "AttributeName": "Through Traffic Prohibited",
+                "ParameterValue": "AVOID_HIGH",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 35,
+                "AttributeName": "Truck with Trailers Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Number of Trailers on Truck",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 36,
+                "AttributeName": "Truck with Trailers Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 37,
+                "AttributeName": "Use Preferred Hazmat Routes",
+                "ParameterValue": "PREFER_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 38,
+                "AttributeName": "Use Preferred Truck Routes",
+                "ParameterValue": "PREFER_MEDIUM",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 39,
+                "AttributeName": "WalkTime",
+                "ParameterValue": "5",
+                "ParameterName": "Walking Speed (km/h)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 40,
+                "AttributeName": "Walking",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 41,
+                "AttributeName": "Weight Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 42,
+                "AttributeName": "Weight Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Weight (kilograms)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 43,
+                "AttributeName": "Weight per Axle Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 44,
+                "AttributeName": "Weight per Axle Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Weight per Axle (kilograms)",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 45,
+                "AttributeName": "Width Restriction",
+                "ParameterValue": "PROHIBITED",
+                "ParameterName": "Restriction Usage",
+            }
+        },
+        {
+            "attributes": {
+                "OBJECTID": 46,
+                "AttributeName": "Width Restriction",
+                "ParameterValue": "0",
+                "ParameterName": "Vehicle Width (meters)",
+            }
+        },
+    ],
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+}
 
-default_tolerance = {'distance': 10, 'units': 'esriMeters'}
-
+default_tolerance = {"distance": 10, "units": "esriMeters"}
 
 
 def find_closest_facilities(
@@ -338,7 +571,7 @@ def find_closest_facilities(
     route_shape="True Shape",
     route_line_simplification_tolerance=None,
     populate_directions=False,
-    directions_language ="en",
+    directions_language="en",
     directions_distance_units="Miles",
     directions_style_name="NA Desktop",
     time_zone_for_time_of_day="Geographically Local",
@@ -351,7 +584,8 @@ def find_closest_facilities(
     distance_impedance="Kilometers",
     output_format="Feature Set",
     gis=None,
-    future=False):
+    future=False,
+):
     """
     Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes,
     driving directions between the incidents and the chosen facilities, and a copy of the chosen facilities. You can use the tool, for example,
@@ -1272,68 +1506,77 @@ def find_closest_facilities(
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    url = gis.properties.helperServices.asyncClosestFacility.url[:-len('/FindClosestFacilities')]
+    url = gis.properties.helperServices.asyncClosestFacility.url[
+        : -len("/FindClosestFacilities")
+    ]
     tbx = import_toolbox(url, gis=gis)
-    defaults = dict(zip(tbx.find_closest_facilities.__annotations__.keys(),
-                        tbx.find_closest_facilities.__defaults__))
+    defaults = dict(
+        zip(
+            tbx.find_closest_facilities.__annotations__.keys(),
+            tbx.find_closest_facilities.__defaults__,
+        )
+    )
     if restrictions is None:
-        restrictions = defaults['restrictions']
+        restrictions = defaults["restrictions"]
     if incidents is None:
-        incidents = defaults['incidents']
+        incidents = defaults["incidents"]
 
     if facilities is None:
-        facilities = defaults['facilities']
+        facilities = defaults["facilities"]
 
     if point_barriers is None:
-        point_barriers = defaults['point_barriers']
+        point_barriers = defaults["point_barriers"]
 
     if line_barriers is None:
-        line_barriers = defaults['line_barriers']
+        line_barriers = defaults["line_barriers"]
 
     if polygon_barriers is None:
-        polygon_barriers = defaults['polygon_barriers']
+        polygon_barriers = defaults["polygon_barriers"]
 
     if attribute_parameter_values is None:
-        attribute_parameter_values = defaults['attribute_parameter_values']
+        attribute_parameter_values = defaults["attribute_parameter_values"]
 
     if route_line_simplification_tolerance is None:
-        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
+        route_line_simplification_tolerance = defaults[
+            "route_line_simplification_tolerance"
+        ]
 
     from arcgis._impl.common._utils import inspect_function_inputs
+
     params = {
-        "incidents" : incidents,
-        "facilities" : facilities,
-        "measurement_units" : measurement_units,
-        "analysis_region" : analysis_region,
-        "number_of_facilities_to_find" : number_of_facilities_to_find,
-        "cutoff" : cutoff,
-        "travel_direction" : travel_direction,
-        "use_hierarchy" : use_hierarchy,
-        "time_of_day" : time_of_day,
-        "time_of_day_usage" : time_of_day_usage,
-        "uturn_at_junctions" : uturn_at_junctions,
-        "point_barriers" : point_barriers,
-        "line_barriers" : line_barriers,
-        "polygon_barriers" : polygon_barriers,
-        "restrictions" : restrictions,
-        "attribute_parameter_values" : attribute_parameter_values,
-        "route_shape" : route_shape,
-        "route_line_simplification_tolerance" : route_line_simplification_tolerance,
-        "populate_directions" : populate_directions,
-        "directions_language" : directions_language,
-        "directions_distance_units" : directions_distance_units,
-        "directions_style_name" : directions_style_name,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "travel_mode" : travel_mode,
-        "impedance" : impedance,
-        "save_output_network_analysis_layer" : save_output_network_analysis_layer,
-        "overrides" : overrides,
-        "save_route_data" : save_route_data,
-        "time_impedance" : time_impedance,
-        "distance_impedance" : distance_impedance,
-        "output_format" : output_format,
-        "gis" : gis,
-        "future" : True
+        "incidents": incidents,
+        "facilities": facilities,
+        "measurement_units": measurement_units,
+        "analysis_region": analysis_region,
+        "number_of_facilities_to_find": number_of_facilities_to_find,
+        "cutoff": cutoff,
+        "travel_direction": travel_direction,
+        "use_hierarchy": use_hierarchy,
+        "time_of_day": time_of_day,
+        "time_of_day_usage": time_of_day_usage,
+        "uturn_at_junctions": uturn_at_junctions,
+        "point_barriers": point_barriers,
+        "line_barriers": line_barriers,
+        "polygon_barriers": polygon_barriers,
+        "restrictions": restrictions,
+        "attribute_parameter_values": attribute_parameter_values,
+        "route_shape": route_shape,
+        "route_line_simplification_tolerance": route_line_simplification_tolerance,
+        "populate_directions": populate_directions,
+        "directions_language": directions_language,
+        "directions_distance_units": directions_distance_units,
+        "directions_style_name": directions_style_name,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "travel_mode": travel_mode,
+        "impedance": impedance,
+        "save_output_network_analysis_layer": save_output_network_analysis_layer,
+        "overrides": overrides,
+        "save_route_data": save_route_data,
+        "time_impedance": time_impedance,
+        "distance_impedance": distance_impedance,
+        "output_format": output_format,
+        "gis": gis,
+        "future": True,
     }
     params = inspect_function_inputs(tbx.find_closest_facilities, **params)
     job = tbx.find_closest_facilities(**params)
@@ -1341,30 +1584,32 @@ def find_closest_facilities(
         return job
     return job.result()
 
+
 find_closest_facilities.__annotations__ = {
-    'incidents': FeatureSet,
-    'facilities': FeatureSet,
-    'measurement_units': str,
-    'analysis_region': str,
-    'number_of_facilities_to_find': int,
-    'cutoff': float,
-    'travel_direction': str,
-    'use_hierarchy': bool,
-    'time_of_day': datetime,
-    'time_of_day_usage': str,
-    'uturn_at_junctions': str,
-    'point_barriers': FeatureSet,
-    'line_barriers': FeatureSet,
-    'polygon_barriers': FeatureSet,
-    'restrictions': str,
-    'attribute_parameter_values': FeatureSet,
-    'route_shape': str,
-    'route_line_simplification_tolerance': LinearUnit,
-    'populate_directions': bool,
-    'directions_language': str,
-    'directions_distance_units': str,
-    'directions_style_name': str,
-    'time_zone_for_time_of_day': str,
-    'travel_mode': str,
-    'impedance': str,
-    'return': tuple}
+    "incidents": FeatureSet,
+    "facilities": FeatureSet,
+    "measurement_units": str,
+    "analysis_region": str,
+    "number_of_facilities_to_find": int,
+    "cutoff": float,
+    "travel_direction": str,
+    "use_hierarchy": bool,
+    "time_of_day": datetime,
+    "time_of_day_usage": str,
+    "uturn_at_junctions": str,
+    "point_barriers": FeatureSet,
+    "line_barriers": FeatureSet,
+    "polygon_barriers": FeatureSet,
+    "restrictions": str,
+    "attribute_parameter_values": FeatureSet,
+    "route_shape": str,
+    "route_line_simplification_tolerance": LinearUnit,
+    "populate_directions": bool,
+    "directions_language": str,
+    "directions_distance_units": str,
+    "directions_style_name": str,
+    "time_zone_for_time_of_day": str,
+    "travel_mode": str,
+    "impedance": str,
+    "return": tuple,
+}

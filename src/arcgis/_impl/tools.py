@@ -297,8 +297,7 @@ class BaseAnalytics(object):
 
 ###########################################################################
 class _GISService(object):
-    """ a GIS service
-    """
+    """a GIS service"""
 
     def __init__(self, url, gis=None):
         self._token = None
@@ -408,8 +407,8 @@ class _AsyncService(_GISService):
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
-        """ Submits an Analysis job and returns the job URL for monitoring the job
-            status in addition to the json response data for the submitted job."""
+        """Submits an Analysis job and returns the job URL for monitoring the job
+        status in addition to the json response data for the submitted job."""
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -428,7 +427,7 @@ class _AsyncService(_GISService):
         return task_url, resp, resp["jobId"]
 
     def _analysis_job_status(self, task_url, job_info):
-        """ Tracks the status of the submitted Analysis job."""
+        """Tracks the status of the submitted Analysis job."""
 
         if "jobId" in job_info:
             # Get the id of the Analysis job to track the status.
@@ -483,8 +482,8 @@ class _AsyncService(_GISService):
             raise Exception("No job url.")
 
     def _analysis_job_results(self, task_url, job_info, job_id=None):
-        """ Use the job result json to get information about the feature service
-            created from the Analysis job."""
+        """Use the job result json to get information about the feature service
+        created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #
@@ -5117,9 +5116,11 @@ class _OrthoMappingTools:
         if color_correction_method is None:
             color_correction_method = defaults["color_correction_method"]
         else:
-            color_correction_allowed_values = self._tbx.choice_list.compute_color_correction[
-                "color_correction_method"
-            ]
+            color_correction_allowed_values = (
+                self._tbx.choice_list.compute_color_correction[
+                    "color_correction_method"
+                ]
+            )
             if [element.lower() for element in color_correction_allowed_values].count(
                 color_correction_method.lower()
             ) <= 0:
@@ -5134,9 +5135,9 @@ class _OrthoMappingTools:
         if dodging_surface is None:
             dodging_surface = defaults["dodging_surface"]
         else:
-            dodging_surface_type_allowed_values = self._tbx.choice_list.compute_color_correction[
-                "dodging_surface"
-            ]
+            dodging_surface_type_allowed_values = (
+                self._tbx.choice_list.compute_color_correction["dodging_surface"]
+            )
             if [
                 element.lower() for element in dodging_surface_type_allowed_values
             ].count(dodging_surface.lower()) <= 0:
@@ -5227,9 +5228,9 @@ class _OrthoMappingTools:
         if image_location_accuracy is None:
             image_location_accuracy = defaults["image_location_accuracy"]
         else:
-            image_location_accuracy_allowed_values = self._tbx.choice_list.compute_control_points[
-                "image_location_accuracy"
-            ]
+            image_location_accuracy_allowed_values = (
+                self._tbx.choice_list.compute_control_points["image_location_accuracy"]
+            )
             if [
                 element.lower() for element in image_location_accuracy_allowed_values
             ].count(image_location_accuracy.lower()) <= 0:
@@ -6867,10 +6868,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         context: context (str). Optional parameter.
 
-	gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-	future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
         task = "CalculateDensity"
@@ -6942,32 +6943,32 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
 
         """
-            input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
+           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
 
-            output_name: outputDistanceName (str). Required parameter.
+           output_name: outputDistanceName (str). Required parameter.
 
-            maximum_distance: maximumDistance (LinearUnit). Optional parameter.
+           maximum_distance: maximumDistance (LinearUnit). Optional parameter.
 
-            output_cell_size: outputCellSize (LinearUnit). Optional parameter.
+           output_cell_size: outputCellSize (LinearUnit). Optional parameter.
 
-            output_direction_name: outputDirectionName (str). Optional parameter.
+           output_direction_name: outputDirectionName (str). Optional parameter.
 
-            output_allocation_name: outputAllocationName (str). Optional parameter.
+           output_allocation_name: outputAllocationName (str). Optional parameter.
 
-            allocation_field: allocationField (str). Optional parameter.
+           allocation_field: allocationField (str). Optional parameter.
 
-            context: context (str). Optional parameter.
+           context: context (str). Optional parameter.
 
-            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-            future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-         Returns the following as a named tuple:
-            output_distance_raster - outputDistanceRaster as a str
-            output_direction_raster - outputDirectionRaster as a str
-            output_allocation_raster - outputAllocationRaster as a str
+           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns the following as a named tuple:
+           output_distance_raster - outputDistanceRaster as a str
+           output_direction_raster - outputDirectionRaster as a str
+           output_allocation_raster - outputAllocationRaster as a str
         """
         task = "CalculateDistance"
         gis = self._gis
@@ -7135,8 +7136,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
 
-        """
-        """
+        """ """
         task = "CalculateTravelCost"
         gis = self._gis
 
@@ -7798,8 +7798,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
 
-        """
-        """
+        """ """
         task = "CreateViewshed"
 
         gis = self._gis
@@ -8894,13 +8893,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         force_flow  : Boolean, Specifies if edge cells will always flow outward or follow normal flow rules.
 
         flow_direction_type : Specifies which flow direction type to use.
-						      D8 - Use the D8 method. This is the default.
-						      MFD - Use the Multi Flow Direction (MFD) method.
-						      DINF - Use the D-Infinity method.
+                                                      D8 - Use the D8 method. This is the default.
+                                                      MFD - Use the Multi Flow Direction (MFD) method.
+                                                      DINF - Use the D-Infinity method.
 
         output_drop_name : An optional output drop raster .
-					       The drop raster returns the ratio of the maximum change in elevation from each cell
-					       along the direction of flow to the path length between centers of cells, expressed in percentages.
+                                               The drop raster returns the ratio of the maximum change in elevation from each cell
+                                               along the direction of flow to the path length between centers of cells, expressed in percentages.
 
         output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
             You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -9209,81 +9208,81 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-            This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
-            takes point data with values at each point and returns a raster of predicted values:
+        This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
+        takes point data with values at each point and returns a raster of predicted values:
 
-            * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
-                predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
-                schools or hospitals, for example.
-            * Predict heavy metal concentrations in crops based on samples taken from individual plants.
-            * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
-                conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
-                for each location in the field.
-            * Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid
-                rain).
+        * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
+            predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
+            schools or hospitals, for example.
+        * Predict heavy metal concentrations in crops based on samples taken from individual plants.
+        * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
+            conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
+            for each location in the field.
+        * Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid
+            rain).
 
-            Parameters
-            ----------
-            input_point_features : Required point layer containing locations with known values
-                The point layer that contains the points where the values have been measured.
+        Parameters
+        ----------
+        input_point_features : Required point layer containing locations with known values
+            The point layer that contains the points where the values have been measured.
 
-            interpolate_field : Required string -  field to interpolate
-                Choose the field whose values you wish to interpolate. The field must be numeric.
+        interpolate_field : Required string -  field to interpolate
+            Choose the field whose values you wish to interpolate. The field must be numeric.
 
-            optimize_for : Optional string - Choose your preference for speed versus accuracy.
-                More accurate predictions take longer to calculate. This parameter alters the default values of several other
-                parameters of Interpolate Points in order to optimize speed of calculation, accuracy of results, or a balance of
-                the two. By default, the tool will optimize for balance.
-                One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
+        optimize_for : Optional string - Choose your preference for speed versus accuracy.
+            More accurate predictions take longer to calculate. This parameter alters the default values of several other
+            parameters of Interpolate Points in order to optimize speed of calculation, accuracy of results, or a balance of
+            the two. By default, the tool will optimize for balance.
+            One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
 
-            transform_data : Optional bool - Choose whether to transform your data to the normal distribution.
-                Interpolation is most accurate for data that follows a normal (bell-shaped) distribution. If your data does not
-                appear to be normally distributed, you should perform a transformation.
+        transform_data : Optional bool - Choose whether to transform your data to the normal distribution.
+            Interpolation is most accurate for data that follows a normal (bell-shaped) distribution. If your data does not
+            appear to be normally distributed, you should perform a transformation.
 
-            size_of_local_models : Optional int - Size of local models
-                Interpolate Points works by building local interpolation models that are mixed together to create the final
-                prediction map. This parameter controls how many points will be contained in each local model. Smaller values
-                will make results more local and can reveal small-scale effects, but it may introduce some instability in the
-                calculations. Larger values will be more stable, but some local effects may be missed.
-                The value can range from 30 to 500, but typical values are between 50 and 200.
+        size_of_local_models : Optional int - Size of local models
+            Interpolate Points works by building local interpolation models that are mixed together to create the final
+            prediction map. This parameter controls how many points will be contained in each local model. Smaller values
+            will make results more local and can reveal small-scale effects, but it may introduce some instability in the
+            calculations. Larger values will be more stable, but some local effects may be missed.
+            The value can range from 30 to 500, but typical values are between 50 and 200.
 
-            number_of_neighbors : Optional int - Number of Neighbors
-                Predictions are calculated based on neighboring points. This parameter controls how many points will be used in
-                the calculation. Using a larger number of neighbors will generally produce more accurate results, but the
-                results take longer to calculate.
-                This value can range from 1 to 64, but typical values are between 5 and 15.
+        number_of_neighbors : Optional int - Number of Neighbors
+            Predictions are calculated based on neighboring points. This parameter controls how many points will be used in
+            the calculation. Using a larger number of neighbors will generally produce more accurate results, but the
+            results take longer to calculate.
+            This value can range from 1 to 64, but typical values are between 5 and 15.
 
-            output_cell_size : Optional LinearUnit - Output cell size
-                Enter the cell size and unit for the output rasters.
-                The available units are Feet, Miles, Meters, and Kilometers.
+        output_cell_size : Optional LinearUnit - Output cell size
+            Enter the cell size and unit for the output rasters.
+            The available units are Feet, Miles, Meters, and Kilometers.
 
-            output_prediction_error : Optional bool - Output prediction error
-                Choose whether you want to create a raster of standard errors for the predicted values.
-                Standard errors are useful because they provide information about the reliability of the predicted values.
-                A simple rule of thumb is that the true value will fall within two standard errors of the predicted value 95
-                percent of the time. For example, suppose a new location gets a predicted value of 50 with a standard error of
-                5. This means that this tool's best guess is that the true value at that location is 50, but it reasonably could
-                be as low as 40 or as high as 60. To calculate this range of reasonable values, multiply the standard error by
-                2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
-                value to get the lower end of the range.
+        output_prediction_error : Optional bool - Output prediction error
+            Choose whether you want to create a raster of standard errors for the predicted values.
+            Standard errors are useful because they provide information about the reliability of the predicted values.
+            A simple rule of thumb is that the true value will fall within two standard errors of the predicted value 95
+            percent of the time. For example, suppose a new location gets a predicted value of 50 with a standard error of
+            5. This means that this tool's best guess is that the true value at that location is 50, but it reasonably could
+            be as low as 40 or as high as 60. To calculate this range of reasonable values, multiply the standard error by
+            2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
+            value to get the lower end of the range.
 
-            output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-                You can pass in an existing Image Service Item from your GIS to use that instead.
-                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-                A RuntimeError is raised if a service by that name already exists
+        output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
 
-            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-            Returns
-            -------
-            named tuple with name values being :
+        Returns
+        -------
+        named tuple with name values being :
 
-             - output_raster (the output_raster item description is updated with the process_info),
+         - output_raster (the output_raster item description is updated with the process_info),
 
-             - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and
+         - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and
 
-             - output_error_raster (if output_prediction_error is set to True).
+         - output_error_raster (if output_prediction_error is set to True).
 
         """
         task = "InterpolatePoints"
@@ -9707,9 +9706,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "percentile_interpolation_type"
                 in self._tbx.choice_list.summarize_raster_within.keys()
             ):
-                percentile_interpolation_type_allowed_values = self._tbx.choice_list.summarize_raster_within[
-                    "percentile_interpolation_type"
-                ]
+                percentile_interpolation_type_allowed_values = (
+                    self._tbx.choice_list.summarize_raster_within[
+                        "percentile_interpolation_type"
+                    ]
+                )
                 if [
                     element.lower()
                     for element in percentile_interpolation_type_allowed_values
@@ -9993,26 +9994,26 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-        input_raster: inputRaster (str). Required parameter.
+         input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       output_cellsize: outputCellsize (str). Optional parameter.
+        output_cellsize: outputCellsize (str). Optional parameter.
 
-       resampling_method: resamplingMethod (str). Optional parameter.  Choice list:['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
+        resampling_method: resamplingMethod (str). Optional parameter.  Choice list:['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
 
-       clip_setting: clipSetting (str). Optional parameter.
+        clip_setting: clipSetting (str). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       Returns:
-           output_raster - outputRaster as a str
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns:
+            output_raster - outputRaster as a str
 
         """
 
@@ -10074,15 +10075,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
     def aggregate_multidimensional_raster(
         self,
         input_multidimensional_raster=None,
         output_name=None,
         dimension=None,
-        aggregation_method='MEAN',
+        aggregation_method="MEAN",
         variables=None,
-        aggregation_definition='ALL',
+        aggregation_definition="ALL",
         interval_keyword=None,
         interval_value=None,
         interval_unit=None,
@@ -10161,7 +10161,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "SUM",
                 "VARIETY",
                 "CUSTOM",
-                "PERCENTILE"
+                "PERCENTILE",
             ]
             if [element.lower() for element in aggregation_method_allowed_values].count(
                 aggregation_method.lower()
@@ -10222,12 +10222,18 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
-        percentile_interpolation_type_val=percentile_interpolation_type
+        percentile_interpolation_type_val = percentile_interpolation_type
         if percentile_interpolation_type is not None:
             percentile_interpolation_type_allowed_values = ["NEAREST", "LINEAR"]
-            if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
-                raise RuntimeError('percentile_interpolation_type can only be one of the following: '+str(percentile_interpolation_type_allowed_values))
-            percentile_interpolation_type_val=percentile_interpolation_type
+            if [
+                element.lower()
+                for element in percentile_interpolation_type_allowed_values
+            ].count(percentile_interpolation_type.lower()) <= 0:
+                raise RuntimeError(
+                    "percentile_interpolation_type can only be one of the following: "
+                    + str(percentile_interpolation_type_allowed_values)
+                )
+            percentile_interpolation_type_val = percentile_interpolation_type
             for element in percentile_interpolation_type_allowed_values:
                 if percentile_interpolation_type.upper() == element:
                     percentile_interpolation_type_val = element
@@ -10241,7 +10247,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if self._current_version is not None:
             current_version = self._current_version
-            if((current_version is not None) and current_version<10.91):
+            if (current_version is not None) and current_version < 10.91:
                 gpjob = self._tbx.aggregate_multidimensional_raster(
                     input_multidimensional_raster=input_multidimensional_raster,
                     output_name=output_raster,
@@ -10257,9 +10263,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                     ignore_nodata=ignore_nodata,
                     context=context,
                     gis=self._gis,
-                    future=True
+                    future=True,
                 )
-            elif((current_version is not None) and current_version>=10.91):
+            elif (current_version is not None) and current_version >= 10.91:
                 gpjob = self._tbx.aggregate_multidimensional_raster(
                     input_multidimensional_raster=input_multidimensional_raster,
                     output_name=output_raster,
@@ -10278,7 +10284,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     percentile_interpolation_type=percentile_interpolation_type,
                     context=context,
                     gis=self._gis,
-                    future=True
+                    future=True,
                 )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10304,26 +10310,26 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       method: method (str). Optional parameter.
-          Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
+        method: method (str). Optional parameter.
+           Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
 
-       temporal_interval: temporalInterval (str). Optional parameter.
-          Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
+        temporal_interval: temporalInterval (str). Optional parameter.
+           Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
 
-       ignore_nodata: ignoreNodata (bool). Optional parameter.
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10440,14 +10446,14 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10593,9 +10599,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if seasonal_period is not None:
             if "seasonal_period" in self._tbx.choice_list.generate_trend_raster.keys():
-                seasonal_period_allowed_values = self._tbx.choice_list.generate_trend_raster[
-                    "seasonal_period"
-                ]
+                seasonal_period_allowed_values = (
+                    self._tbx.choice_list.generate_trend_raster["seasonal_period"]
+                )
                 if [
                     element.lower() for element in seasonal_period_allowed_values
                 ].count(seasonal_period.lower()) <= 0:
@@ -10693,32 +10699,32 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['BY_VALUE', 'BY_INTERVAL']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['BY_VALUE', 'BY_INTERVAL']
 
-       dimension_values: dimensionValues (str). Optional parameter.
+        dimension_values: dimensionValues (str). Optional parameter.
 
-       start: start (str). Optional parameter.
+        start: start (str). Optional parameter.
 
-       end: end (str). Optional parameter.
+        end: end (str). Optional parameter.
 
-       interval_value: intervalValue (float). Optional parameter.
+        interval_value: intervalValue (float). Optional parameter.
 
-       interval_unit: intervalUnit (str). Optional parameter.
-          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+        interval_unit: intervalUnit (str). Optional parameter.
+           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10825,38 +10831,38 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_raster: inputRaster (str). Required parameter.
+        input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       dimension: dimension (str). Optional parameter.
+        dimension: dimension (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['ALL', 'INTERVAL_KEYWORD']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['ALL', 'INTERVAL_KEYWORD']
 
-       interval_keyword: intervalKeyword (str). Optional parameter.
-          Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY',
-          'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
+        interval_keyword: intervalKeyword (str). Optional parameter.
+           Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY',
+           'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       statistics_type: statisticsType (str). Optional parameter.
-          Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+        statistics_type: statisticsType (str). Optional parameter.
+           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
 
-       min_value: minValue (float). Optional parameter.
+        min_value: minValue (float). Optional parameter.
 
-       max_value: maxValue (float). Optional parameter.
+        max_value: maxValue (float). Optional parameter.
 
-       multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
+        multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
 
-       ignore_nodata: ignoreNodata (bool). Optional parameter.
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10976,21 +10982,21 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_raster: inputRaster (str). Required parameter.
+        input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       input_spectral_profile: inputSpectralProfile (str). Optional parameter.
+        input_spectral_profile: inputSpectralProfile (str). Optional parameter.
 
-       value_option: valueOption (str). Optional parameter.
-          Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
+        value_option: valueOption (str). Optional parameter.
+           Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -11057,36 +11063,36 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
 
-       dimension_ranges: dimensionRanges (str). Optional parameter.
+        dimension_ranges: dimensionRanges (str). Optional parameter.
 
-       dimension_values: dimensionValues (str). Optional parameter.
+        dimension_values: dimensionValues (str). Optional parameter.
 
-       dimension: dimension (str). Optional parameter.
+        dimension: dimension (str). Optional parameter.
 
-       start_of_first_iteration: recurrenceFrom (str). Optional parameter.
+        start_of_first_iteration: recurrenceFrom (str). Optional parameter.
 
-       end_of_first_iteration: recurrenceTo (str). Optional parameter.
+        end_of_first_iteration: recurrenceTo (str). Optional parameter.
 
-       iteration_step: recurrenceInterval (float). Optional parameter.
+        iteration_step: recurrenceInterval (float). Optional parameter.
 
-       iteration_unit: recurrenceUnit (str). Optional parameter.
-          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+        iteration_unit: recurrenceUnit (str). Optional parameter.
+           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -11189,27 +11195,27 @@ class _RasterAnalysisTools(BaseAnalytics):
     ):
         """
 
-        Parameters
+         Parameters
 
-       input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
+        input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
 
-       input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
+        input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
 
-       input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
+        input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
 
-       output_polyline_name: outputPolylineName (str). Required parameter.
+        output_polyline_name: outputPolylineName (str). Required parameter.
 
-       path_type: pathType (str). Optional parameter.
+        path_type: pathType (str). Optional parameter.
 
-       destination_field: destinationField (str). Optional parameter.
+        destination_field: destinationField (str). Optional parameter.
 
-        context: Context contains additional settings that affect task execution.
+         context: Context contains additional settings that affect task execution.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-        Returns
-        -------
-        output_raster : Image layer item
+         Returns
+         -------
+         output_raster : Image layer item
         """
         task = "CostPathAsPolyline"
         gis = self._gis
@@ -11855,12 +11861,12 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_neighbor_connections_service_name = (
                 "Output Neighbor Connections" + _id_generator()
             )
-            output_neighbor_connections_name = output_neighbor_connections_service_name.replace(
-                " ", "_"
+            output_neighbor_connections_name = (
+                output_neighbor_connections_service_name.replace(" ", "_")
             )
         else:
-            output_neighbor_connections_service_name = output_neighbor_connections_name.replace(
-                " ", "_"
+            output_neighbor_connections_service_name = (
+                output_neighbor_connections_name.replace(" ", "_")
             )
 
         folderId = None
@@ -12377,26 +12383,26 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       bands_for_detecting_change: bandsForDetectingChange (str). Optional parameter.
+        bands_for_detecting_change: bandsForDetectingChange (str). Optional parameter.
 
-       bands_for_temporal_masking: bandsForTemporalMasking (str). Optional parameter.
+        bands_for_temporal_masking: bandsForTemporalMasking (str). Optional parameter.
 
-       chi_squared_threshold: chiSquaredThreshold (float). Optional parameter.
+        chi_squared_threshold: chiSquaredThreshold (float). Optional parameter.
 
-       min_anomaly_observations: minAnomalyObservations (int). Optional parameter.
+        min_anomaly_observations: minAnomalyObservations (int). Optional parameter.
 
-       update_frequency: updateFrequency (float). Optional parameter.
+        update_frequency: updateFrequency (float). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -12467,45 +12473,45 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
+        input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
 
-       output_name: outputName (str). Optional parameter.
+        output_name: outputName (str). Optional parameter.
 
-       change_type: changeType (str). Optional parameter.
-          Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
+        change_type: changeType (str). Optional parameter.
+           Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
 
-       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.
+        max_number_of_changes: maxNumberOfChanges (int). Optional parameter.
 
-       segment_date: segmentDate (str). Optional parameter.
-          Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
+        segment_date: segmentDate (str). Optional parameter.
+           Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
 
-       change_direction: changeDirection (str). Optional parameter.
-          Choice list:ALL,INCREASE,DECREASE
+        change_direction: changeDirection (str). Optional parameter.
+           Choice list:ALL,INCREASE,DECREASE
 
-       filter_by_year: filterByYear (bool). Optional parameter.
+        filter_by_year: filterByYear (bool). Optional parameter.
 
-       min_year: minYear (int). Optional parameter.
+        min_year: minYear (int). Optional parameter.
 
-       max_year: maxYear (int). Optional parameter.
+        max_year: maxYear (int). Optional parameter.
 
-       filter_by_duration: filterByDuration (bool). Optional parameter.
+        filter_by_duration: filterByDuration (bool). Optional parameter.
 
-       min_duration: minDuration (float). Optional parameter.
+        min_duration: minDuration (float). Optional parameter.
 
-       max_duration: maxDuration (float). Optional parameter.
+        max_duration: maxDuration (float). Optional parameter.
 
-       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.
+        filter_by_magnitude: filterByMagnitude (bool). Optional parameter.
 
-       min_magnitude: minMagnitude (float). Optional parameter.
+        min_magnitude: minMagnitude (float). Optional parameter.
 
-       max_magnitude: maxMagnitude (float). Optional parameter.
+        max_magnitude: maxMagnitude (float). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -12523,9 +12529,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         if change_type is not None:
-            change_type_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                "change_type"
-            ]
+            change_type_allowed_values = (
+                self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                    "change_type"
+                ]
+            )
             if [element.lower() for element in change_type_allowed_values].count(
                 change_type.lower()
             ) <= 0:
@@ -12542,9 +12550,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "segment_date"
                 in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
             ):
-                segment_date_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                    "segment_date"
-                ]
+                segment_date_allowed_values = (
+                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                        "segment_date"
+                    ]
+                )
                 if [element.lower() for element in segment_date_allowed_values].count(
                     segment_date.lower()
                 ) <= 0:
@@ -12561,9 +12571,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "change_direction"
                 in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
             ):
-                change_direction_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster[
-                    "change_direction"
-                ]
+                change_direction_allowed_values = (
+                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                        "change_direction"
+                    ]
+                )
                 if [
                     element.lower() for element in change_direction_allowed_values
                 ].count(change_direction.lower()) <= 0:
@@ -12680,9 +12692,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_multidimensional_rasters
             )
 
-        manage_mode_allowed_values = self._tbx.choice_list.manage_multidimensional_raster[
-            "manage_mode"
-        ]
+        manage_mode_allowed_values = (
+            self._tbx.choice_list.manage_multidimensional_raster["manage_mode"]
+        )
         if [element.lower() for element in manage_mode_allowed_values].count(
             manage_mode.lower()
         ) <= 0:
@@ -12729,23 +12741,23 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       in_rasters: inRasters (str). Required parameter.
-       in_location_data: inLocationData (str). Required parameter.
-       output_name: outputTableName (str). Required parameter.
-       resampling_type: resamplingType (str). Optional parameter.
-          Choice list:NEAREST,BILINEAR,CUBIC
-       unique_id_field: uniqueIdField (str). Optional parameter.
-       acquisition_definition: acquisitionDefinition (str). Optional parameter.
-       statistics_type: statisticsType (str). Optional parameter.
-          Choice list:MINIMUM,MAXIMUM,MEDIAN,MEAN,SUM,MAJORITY,MINORITY,STD,PERCENTILE
-       percentile_value: percentileValue (str). Optional parameter.
-       buffer_distance: bufferDistance (str). Optional parameter.
-       layout: layout (str). Optional parameter.
-          Choice list:ROW_WISE,COLUMN_WISE
-       generate_feature_class: generateFeatureClass (bool). Required parameter.
-       context: context (str). Optional parameter.
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        in_rasters: inRasters (str). Required parameter.
+        in_location_data: inLocationData (str). Required parameter.
+        output_name: outputTableName (str). Required parameter.
+        resampling_type: resamplingType (str). Optional parameter.
+           Choice list:NEAREST,BILINEAR,CUBIC
+        unique_id_field: uniqueIdField (str). Optional parameter.
+        acquisition_definition: acquisitionDefinition (str). Optional parameter.
+        statistics_type: statisticsType (str). Optional parameter.
+           Choice list:MINIMUM,MAXIMUM,MEDIAN,MEAN,SUM,MAJORITY,MINORITY,STD,PERCENTILE
+        percentile_value: percentileValue (str). Optional parameter.
+        buffer_distance: bufferDistance (str). Optional parameter.
+        layout: layout (str). Optional parameter.
+           Choice list:ROW_WISE,COLUMN_WISE
+        generate_feature_class: generateFeatureClass (bool). Required parameter.
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
         """
 
         task = "Sample"
@@ -12982,15 +12994,15 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
+        input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
-          Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
-       context: context (str). Optional parameter.
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
+           Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
         """
 
         task = "MergeMultidimensionalRasters"
@@ -13005,9 +13017,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_multidimensional_rasters = self._set_multiple_raster_inputs(
             input_multidimensional_rasters
         )
-        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters[
-            "resolve_overlap_method"
-        ]
+        resolve_overlap_method_allowed_values = (
+            self._tbx.choice_list.merge_multidimensional_rasters[
+                "resolve_overlap_method"
+            ]
+        )
         if [element.lower() for element in resolve_overlap_method_allowed_values].count(
             resolve_overlap_method.lower()
         ) <= 0:
@@ -13062,40 +13076,40 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       processing_band: processingBand (str). Optional parameter.
+        processing_band: processingBand (str). Optional parameter.
 
-       snapping_date: snappingDate (str). Optional parameter.
+        snapping_date: snappingDate (str). Optional parameter.
 
-       max_num_segments: maxNumSegments (int). Optional parameter.
+        max_num_segments: maxNumSegments (int). Optional parameter.
 
-       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.
+        vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.
 
-       spike_threshold: spikeThreshold (float). Optional parameter.
+        spike_threshold: spikeThreshold (float). Optional parameter.
 
-       recovery_threshold: recoveryThreshold (float). Optional parameter.
+        recovery_threshold: recoveryThreshold (float). Optional parameter.
 
-       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.
+        prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.
 
-       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.
+        increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.
 
-       min_num_observations: minNumObservations (int). Optional parameter.
+        min_num_observations: minNumObservations (int). Optional parameter.
 
-       best_model_proportion: bestModelProportion (float). Optional parameter.
+        best_model_proportion: bestModelProportion (float). Optional parameter.
 
-       pvalue_threshold: pvalueThreshold (float). Optional parameter.
+        pvalue_threshold: pvalueThreshold (float). Optional parameter.
 
-       output_other_bands: outputOtherBands (bool). Optional parameter.
+        output_other_bands: outputOtherBands (bool). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -13330,9 +13344,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             if statistic_type.lower() == element.lower():
                 statistic_type = element
 
-        percentile_interpolation_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table[
-            "percentile_interpolation_type"
-        ]
+        percentile_interpolation_type_allowed_values = (
+            self._tbx.choice_list.zonal_statistics_as_table[
+                "percentile_interpolation_type"
+            ]
+        )
         if [
             element.lower() for element in percentile_interpolation_type_allowed_values
         ].count(percentile_interpolation_type.lower()) <= 0:
@@ -13410,31 +13426,31 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-       input_from_raster: inputFromRaster (str). Required parameter.  
+        input_from_raster: inputFromRaster (str). Required parameter.
 
-       input_to_raster: inputToRaster (str). Required parameter.  
+        input_to_raster: inputToRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+        output_name: outputName (str). Required parameter.
 
-       compute_change_method: computeChangeMethod (str). Optional parameter.  
-          Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+        compute_change_method: computeChangeMethod (str). Optional parameter.
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
 
-       from_classes: fromClasses (str). Optional parameter.  
+        from_classes: fromClasses (str). Optional parameter.
 
-       to_classes: toClasses (str). Optional parameter.  
+        to_classes: toClasses (str). Optional parameter.
 
-       filter_method: filterMethod (str). Optional parameter.  
-          Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
+        filter_method: filterMethod (str). Optional parameter.
+           Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
 
-       transition_class_colors: transitionClassColors (str). Optional parameter.  
-          Choice list:AVERAGE,FROM_COLOR,TO_COLOR
+        transition_class_colors: transitionClassColors (str). Optional parameter.
+           Choice list:AVERAGE,FROM_COLOR,TO_COLOR
 
-       context: context (str). Optional parameter.  
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -13451,9 +13467,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_to_raster = self._layer_input(input_layer=input_to_raster)
 
         if compute_change_method is not None:
-            compute_change_method_allowed_values = self._tbx.choice_list.compute_change_raster[
-                "compute_change_method"
-            ]
+            compute_change_method_allowed_values = (
+                self._tbx.choice_list.compute_change_raster["compute_change_method"]
+            )
             if [
                 element.lower() for element in compute_change_method_allowed_values
             ].count(compute_change_method.lower()) <= 0:
@@ -13481,9 +13497,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                     filter_method = element
 
         if transition_class_colors is not None:
-            transition_class_colors_allowed_values = self._tbx.choice_list.compute_change_raster[
-                "transition_class_colors"
-            ]
+            transition_class_colors_allowed_values = (
+                self._tbx.choice_list.compute_change_raster["transition_class_colors"]
+            )
             if [
                 element.lower() for element in transition_class_colors_allowed_values
             ].count(transition_class_colors.lower()) <= 0:
@@ -13538,93 +13554,93 @@ class _RasterAnalysisTools(BaseAnalytics):
         **kwargs
     ):
         """
-        Function can be used to train a deep learning model using the output from the 
-        export_training_data function. 
+        Function can be used to train a deep learning model using the output from the
+        export_training_data function.
         It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
         train_model function performs the training using the Raster Analytics server.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_folder                             Required string. This is the input location for the training sample data. 
-                                                 It can be the path of output location on the file share raster data store or a 
-                                                 shared file system path.  
-                                                 The training sample data folder needs to be the output of export_training_data function, 
-                                                 containing "images" and "labels" folder, 
-                                                 as well as the JSON model definition file written out together by the tool.  
-                                                 File share raster store path examples: 
-                                                   -  /rasterStores/yourRasterStoreFolderName/trainingSampleData 
-                                                   - /fileShares/yourFileShareFolderName/trainingSampleData  
-                                                File share path example: 
-                                                   - \\serverName\deepLearning\trainingSampleData 
+        input_folder                             Required string. This is the input location for the training sample data.
+                                                 It can be the path of output location on the file share raster data store or a
+                                                 shared file system path.
+                                                 The training sample data folder needs to be the output of export_training_data function,
+                                                 containing "images" and "labels" folder,
+                                                 as well as the JSON model definition file written out together by the tool.
+                                                 File share raster store path examples:
+                                                   -  /rasterStores/yourRasterStoreFolderName/trainingSampleData
+                                                   - /fileShares/yourFileShareFolderName/trainingSampleData
+                                                File share path example:
+                                                   - \\serverName\deepLearning\trainingSampleData
         ------------------------------------     --------------------------------------------------------------------
-        model_type                               Required string. The model type to use for training the deep learning model.  
-                                                 Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN 
-                                                  - SSD - The Single Shot Detector (SSD) is used for object detection.  
-                                                  - UNET - U-Net is used for pixel classification.   
-                                                  - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification. 
-                                                  - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.                                              
-                                                  - RETINANET - The RetinaNet is used for object detection.   
+        model_type                               Required string. The model type to use for training the deep learning model.
+                                                 Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                                  - SSD - The Single Shot Detector (SSD) is used for object detection.
+                                                  - UNET - U-Net is used for pixel classification.
+                                                  - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
+                                                  - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.
+                                                  - RETINANET - The RetinaNet is used for object detection.
                                                   - MASKRCNN - The MarkRCNN is used for object detection
         ------------------------------------     --------------------------------------------------------------------
         model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
+
                                                  eg: {"name1":"value1", "name2": "value2"}
         ------------------------------------     --------------------------------------------------------------------
         batch_size                               Optional int.
-                                                 The number of training samples to be processed for training at one time.  
-                                                 If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.   
+                                                 The number of training samples to be processed for training at one time.
+                                                 If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.
                                                  Example:
                                                     4
         ------------------------------------     --------------------------------------------------------------------
-        max_epochs                               Optional int. The maximum number of epochs that the model should be trained. 
-                                                 One epoch means the whole training dataset will be passed forward and backward 
-                                                 through the deep neural network one time. 
-                                             
+        max_epochs                               Optional int. The maximum number of epochs that the model should be trained.
+                                                 One epoch means the whole training dataset will be passed forward and backward
+                                                 through the deep neural network one time.
+
                                                  Example:
                                                     20
         ------------------------------------     --------------------------------------------------------------------
-        learning_rate                            Optional float. 
-                                                 The rate at which the weights are updated during the training. 
-                                                 It is a small positive value in the range between 0.0 and 1.0.  
-                                                 If learning rate is set to 0, it will extract the optimal learning rate 
-                                                 from the learning curve during the training process.   
+        learning_rate                            Optional float.
+                                                 The rate at which the weights are updated during the training.
+                                                 It is a small positive value in the range between 0.0 and 1.0.
+                                                 If learning rate is set to 0, it will extract the optimal learning rate
+                                                 from the learning curve during the training process.
                                                  Example:
                                                     0.0
         ------------------------------------     --------------------------------------------------------------------
-        backbone_model                           Optional string. 
-                                                 Specifies the preconfigured neural network to be used as an architecture for training the new model.  
-                                                 Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN , 
-                                                                  RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 , 
+        backbone_model                           Optional string.
+                                                 Specifies the preconfigured neural network to be used as an architecture for training the new model.
+                                                 Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN ,
+                                                                  RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
                                                                   VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
-                                                 Example: 
-                                                    RESNET34 
+                                                 Example:
+                                                    RESNET34
         ------------------------------------     --------------------------------------------------------------------
-        validation_percent                       Optional float. 
-                                                 The percentage (in %) of training sample data that will be used for validating the model.  
+        validation_percent                       Optional float.
+                                                 The percentage (in %) of training sample data that will be used for validating the model.
                                                  Example:
                                                     10
         ------------------------------------     --------------------------------------------------------------------
-        pretrained_model                         Optional dlpk portal item. 
-                                             
-                                                 The pretrained model to be used for fine tuning the new model. 
-                                                 It is a deep learning model package (dlpk) portal item.  
+        pretrained_model                         Optional dlpk portal item.
+
+                                                 The pretrained model to be used for fine tuning the new model.
+                                                 It is a deep learning model package (dlpk) portal item.
         ------------------------------------     --------------------------------------------------------------------
-        stop_training                            Optional bool. 
+        stop_training                            Optional bool.
                                                  Specifies whether early stopping will be implemented.
 
-                                                 True - The model training will stop when the model is no longer improving, 
+                                                 True - The model training will stop when the model is no longer improving,
                                                         regardless of the maximum epochs specified. This is the default.
                                                  False - The model training will continue until the maximum epochs is reached.
         ------------------------------------     --------------------------------------------------------------------
         freeze_model                             Optional bool.
-                                                 Specifies whether to freeze the backbone layers in the pretrained model, 
-                                                 so that the weights and biases in the backbone layers remain unchanged. 
+                                                 Specifies whether to freeze the backbone layers in the pretrained model,
+                                                 so that the weights and biases in the backbone layers remain unchanged.
 
-                                                 True - The predefined weights and biases will not be altered in the backboneModel. 
-                                                        This is the default. 
-                                                 False - The weights and biases of the backboneModel may be altered to better 
-                                                         fit your training samples. This may take more time to process but 
+                                                 True - The predefined weights and biases will not be altered in the backboneModel.
+                                                        This is the default.
+                                                 False - The weights and biases of the backboneModel may be altered to better
+                                                         fit your training samples. This may take more time to process but
                                                          usually could get better results.
         ------------------------------------     --------------------------------------------------------------------
         overwrite_model                          Optional bool.
@@ -13635,18 +13651,18 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                  True - The portal .dlpk item will be overwritten.
                                                  False - The portal .dlpk item will not be overwritten. This is the default.
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              Optional. trained deep learning model package can either be added as an item 
+        output_name                              Optional. trained deep learning model package can either be added as an item
                                                  to the portal or can be written to a datastore.
 
-                                                 To add as an item, specify the name of the output deep learning model package (item) 
+                                                 To add as an item, specify the name of the output deep learning model package (item)
                                                  to be created.
-                                                 Example: 
+                                                 Example:
 
                                                     "trainedModel"
 
                                                  In order to write the dlpk to fileshare datastore, specify the datastore path.
-                                             
-                                                 Example - 
+
+                                                 Example -
                                                     "/fileShares/filesharename/folder"
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -13656,14 +13672,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                  - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
                                                  - processorType - Sets the processor type. "CPU" or "GPU"
                                                  Eg: {"processorType" : "CPU"}
-                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 Setting context parameter will override the values set using arcgis.env
                                                  variable for this particular function.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
         ====================================     ====================================================================
 
         :return:
-            Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId. 
+            Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId.
         """
         task = "TrainDeepLearningModel"
         gis = self._gis
@@ -15365,70 +15381,70 @@ class _GeometryService(_GISService):
         self, polygons, lengthUnit, areaUnit, calculationType, sr=4326, future=False
     ):
         """
-           The areasAndLengths operation is performed on a geometry service
-           resource. This operation calculates areas and perimeter lengths
-           for each polygon specified in the input array.
+        The areasAndLengths operation is performed on a geometry service
+        resource. This operation calculates areas and perimeter lengths
+        for each polygon specified in the input array.
 
-           Inputs:
-              polygons - The array of polygons whose areas and lengths are
-                         to be computed.
-              lengthUnit - The length unit in which the perimeters of
-                           polygons will be calculated. If calculationType
-                           is planar, then lengthUnit can be any esriUnits
-                           constant. If lengthUnit is not specified, the
-                           units are derived from sr. If calculationType is
-                           not planar, then lengthUnit must be a linear
-                           esriUnits constant, such as esriSRUnit_Meter or
-                           esriSRUnit_SurveyMile. If lengthUnit is not
-                           specified, the units are meters. For a list of
-                           valid units, see esriSRUnitType Constants and
-                           esriSRUnit2Type Constant.
-              areaUnit - The area unit in which areas of polygons will be
-                         calculated. If calculationType is planar, then
-                         areaUnit can be any esriUnits constant. If
-                         areaUnit is not specified, the units are derived
-                         from sr. If calculationType is not planar, then
-                         areaUnit must be a linear esriUnits constant such
-                         as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                         areaUnit is not specified, then the units are
-                         meters. For a list of valid units, see
-                         esriSRUnitType Constants and esriSRUnit2Type
-                         constant.
-                         The list of valid esriAreaUnits constants include,
-                         esriSquareInches | esriSquareFeet |
-                         esriSquareYards | esriAcres | esriSquareMiles |
-                         esriSquareMillimeters | esriSquareCentimeters |
-                         esriSquareDecimeters | esriSquareMeters | esriAres
-                         | esriHectares | esriSquareKilometers.
-              calculationType -  The type defined for the area and length
-                                 calculation of the input geometries. The
-                                 type can be one of the following values:
-                                 planar - Planar measurements use 2D
-                                          Euclidean distance to calculate
-                                          area and length. Th- should
-                                          only be used if the area or
-                                          length needs to be calculated in
-                                          the given spatial reference.
-                                          Otherwise, use preserveShape.
-                                 geodesic - Use this type if you want to
-                                          calculate an area or length using
-                                          only the vertices of the polygon
-                                          and define the lines between the
-                                          points as geodesic segments
-                                          independent of the actual shape
-                                          of the polygon. A geodesic
-                                          segment is the shortest path
-                                          between two points on an ellipsoid.
-                                 preserveShape - This type calculates the
-                                          area or length of the geometry on
-                                          the surface of the Earth
-                                          ellipsoid. The shape of the
-                                          geometry in its coordinate system
-                                          is preserved.
-                                 future - boolean. This operation determines if the job
-                                          is run asynchronously or not.
-           Output:
-              JSON as dictionary
+        Inputs:
+           polygons - The array of polygons whose areas and lengths are
+                      to be computed.
+           lengthUnit - The length unit in which the perimeters of
+                        polygons will be calculated. If calculationType
+                        is planar, then lengthUnit can be any esriUnits
+                        constant. If lengthUnit is not specified, the
+                        units are derived from sr. If calculationType is
+                        not planar, then lengthUnit must be a linear
+                        esriUnits constant, such as esriSRUnit_Meter or
+                        esriSRUnit_SurveyMile. If lengthUnit is not
+                        specified, the units are meters. For a list of
+                        valid units, see esriSRUnitType Constants and
+                        esriSRUnit2Type Constant.
+           areaUnit - The area unit in which areas of polygons will be
+                      calculated. If calculationType is planar, then
+                      areaUnit can be any esriUnits constant. If
+                      areaUnit is not specified, the units are derived
+                      from sr. If calculationType is not planar, then
+                      areaUnit must be a linear esriUnits constant such
+                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
+                      areaUnit is not specified, then the units are
+                      meters. For a list of valid units, see
+                      esriSRUnitType Constants and esriSRUnit2Type
+                      constant.
+                      The list of valid esriAreaUnits constants include,
+                      esriSquareInches | esriSquareFeet |
+                      esriSquareYards | esriAcres | esriSquareMiles |
+                      esriSquareMillimeters | esriSquareCentimeters |
+                      esriSquareDecimeters | esriSquareMeters | esriAres
+                      | esriHectares | esriSquareKilometers.
+           calculationType -  The type defined for the area and length
+                              calculation of the input geometries. The
+                              type can be one of the following values:
+                              planar - Planar measurements use 2D
+                                       Euclidean distance to calculate
+                                       area and length. Th- should
+                                       only be used if the area or
+                                       length needs to be calculated in
+                                       the given spatial reference.
+                                       Otherwise, use preserveShape.
+                              geodesic - Use this type if you want to
+                                       calculate an area or length using
+                                       only the vertices of the polygon
+                                       and define the lines between the
+                                       points as geodesic segments
+                                       independent of the actual shape
+                                       of the polygon. A geodesic
+                                       segment is the shortest path
+                                       between two points on an ellipsoid.
+                              preserveShape - This type calculates the
+                                       area or length of the geometry on
+                                       the surface of the Earth
+                                       ellipsoid. The shape of the
+                                       geometry in its coordinate system
+                                       is preserved.
+                              future - boolean. This operation determines if the job
+                                       is run asynchronously or not.
+        Output:
+           JSON as dictionary
         """
         url = self._url + "/areasAndLengths"
         params = {
@@ -15475,12 +15491,12 @@ class _GeometryService(_GISService):
     # ----------------------------------------------------------------------
     def __geometryListToGeomTemplate(self, geometries):
         """
-            converts a list of common.Geometry objects to the geometry
-            template value
-            Input:
-               geometries - list of common.Geometry objects
-            Output:
-               Dictionary in geometry service template
+        converts a list of common.Geometry objects to the geometry
+        template value
+        Input:
+           geometries - list of common.Geometry objects
+        Output:
+           Dictionary in geometry service template
         """
         template = {"geometryType": None, "geometries": []}
         if isinstance(geometries, list) and len(geometries) > 0:
@@ -15509,13 +15525,13 @@ class _GeometryService(_GISService):
     # ----------------------------------------------------------------------
     def __geometryToGeomTemplate(self, geometry):
         """
-           Converts a single geometry object to a geometry service geometry
-           template value.
+        Converts a single geometry object to a geometry service geometry
+        template value.
 
-           Input:
-              geometry - geometry object
-           Output:
-              python dictionary of geometry template
+        Input:
+           geometry - geometry object
+        Output:
+           python dictionary of geometry template
         """
         template = {"geometryType": None, "geometry": None}
 
@@ -15538,7 +15554,7 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def __geomToStringArray(self, geometries, returnType="str"):
-        """ function to convert the geomtries to strings """
+        """function to convert the geomtries to strings"""
         listGeoms = []
         for g in geometries:
 
@@ -15604,15 +15620,15 @@ class _GeometryService(_GISService):
     # ----------------------------------------------------------------------
     def auto_complete(self, polygons=None, polylines=None, sr=None, future=False):
         """
-           The autoComplete operation simplifies the process of
-           constructing new polygons that are adjacent to other polygons.
-           It constructs polygons that fill in the gaps between existing
-           polygons and a set of polylines.
+        The autoComplete operation simplifies the process of
+        constructing new polygons that are adjacent to other polygons.
+        It constructs polygons that fill in the gaps between existing
+        polygons and a set of polylines.
 
-           Inputs:
-              polygons - array of Polygon objects
-              polylines - list of Polyline objects
-              sr - spatial reference of the input geometries WKID
+        Inputs:
+           polygons - array of Polygon objects
+           polylines - list of Polyline objects
+           sr - spatial reference of the input geometries WKID
         """
         url = self._url + "/autoComplete"
         params = {"f": "json"}
@@ -15663,34 +15679,34 @@ class _GeometryService(_GISService):
         future=False,
     ):
         """
-           The buffer operation is performed on a geometry service resource
-           The result of this operation is buffered polygons at the
-           specified distances for the input geometry array. Options are
-           available to union buffers and to use geodesic distance.
+        The buffer operation is performed on a geometry service resource
+        The result of this operation is buffered polygons at the
+        specified distances for the input geometry array. Options are
+        available to union buffers and to use geodesic distance.
 
-           Inputs:
-             geometries - The array of geometries to be buffered.
-             isSR - The well-known ID of the spatial reference or a spatial
-              reference JSON object for the input geometries.
-             distances - The distances that each of the input geometries is
-              buffered.
-             unit - The units for calculating each buffer distance. If unit
-              is not specified, the units are derived from bufferSR. If
-              bufferSR is not specified, the units are derived from inSR.
-             outSR - The well-known ID of the spatial reference or a
-              spatial reference JSON object for the input geometries.
-             bufferSR - The well-known ID of the spatial reference or a
-              spatial reference JSON object for the input geometries.
-             unionResults -  If true, all geometries buffered at a given
-              distance are unioned into a single (possibly multipart)
-              polygon, and the unioned geometry is placed in the output
-              array. The default is false
-             geodesic - Set geodesic to true to buffer the input geometries
-              using geodesic distance. Geodesic distance is the shortest
-              path between two points along the ellipsoid of the earth. If
-              geodesic is set to false, the 2D Euclidean distance is used
-              to buffer the input geometries. The default value depends on
-              the geometry type, unit and bufferSR.
+        Inputs:
+          geometries - The array of geometries to be buffered.
+          isSR - The well-known ID of the spatial reference or a spatial
+           reference JSON object for the input geometries.
+          distances - The distances that each of the input geometries is
+           buffered.
+          unit - The units for calculating each buffer distance. If unit
+           is not specified, the units are derived from bufferSR. If
+           bufferSR is not specified, the units are derived from inSR.
+          outSR - The well-known ID of the spatial reference or a
+           spatial reference JSON object for the input geometries.
+          bufferSR - The well-known ID of the spatial reference or a
+           spatial reference JSON object for the input geometries.
+          unionResults -  If true, all geometries buffered at a given
+           distance are unioned into a single (possibly multipart)
+           polygon, and the unioned geometry is placed in the output
+           array. The default is false
+          geodesic - Set geodesic to true to buffer the input geometries
+           using geodesic distance. Geodesic distance is the shortest
+           path between two points along the ellipsoid of the earth. If
+           geodesic is set to false, the 2D Euclidean distance is used
+           to buffer the input geometries. The default value depends on
+           the geometry type, unit and bufferSR.
         """
         url = self._url + "/buffer"
         params = {"f": "json", "inSR": inSR}

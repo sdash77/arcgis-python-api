@@ -333,7 +333,7 @@ class AttachmentManager(object):
         return results
 
     def get_list(self, oid):
-        """ returns the list of attachements for a given OBJECT ID """
+        """returns the list of attachements for a given OBJECT ID"""
         return self._layer._list_attachments(oid)["attachmentInfos"]
 
     def download(self, oid=None, attachment_id=None, save_path=None):
@@ -432,34 +432,34 @@ class AttachmentManager(object):
             return self._download_all(object_ids=oid, save_folder=save_path)
 
     def add(self, oid, file_path, keywords=None):
-        """ Adds an attachment to a feature layer
-            Input:
-              oid - string - OBJECTID value to add attachment to
-              file_path - string - path to file
-              keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
-            Output:
-              JSON Repsonse
+        """Adds an attachment to a feature layer
+        Input:
+          oid - string - OBJECTID value to add attachment to
+          file_path - string - path to file
+          keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
+        Output:
+          JSON Repsonse
         """
         return self._layer._add_attachment(oid, file_path, keywords=keywords)
 
     def delete(self, oid, attachment_id):
-        """ removes an attachment from a feature
-            Input:
-              oid - integer or string - id of feature
-              attachment_id - integer - id of attachment to erase
-            Output:
-               JSON response
+        """removes an attachment from a feature
+        Input:
+          oid - integer or string - id of feature
+          attachment_id - integer - id of attachment to erase
+        Output:
+           JSON response
         """
         return self._layer._delete_attachment(oid, attachment_id)
 
     def update(self, oid, attachment_id, file_path):
-        """ updates an existing attachment with a new file
-            Inputs:
-               oid - string/integer - Unique record ID
-               attachment_id - integer - Unique attachment identifier
-               file_path - string - path to new attachment
-            Output:
-               JSON response
+        """updates an existing attachment with a new file
+        Inputs:
+           oid - string/integer - Unique record ID
+           attachment_id - integer - Unique attachment identifier
+           file_path - string - path to new attachment
+        Output:
+           JSON response
         """
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
@@ -478,26 +478,26 @@ class SyncManager(object):
         self._fs = featsvc
 
     def get_list(self):
-        """ returns all the replicas for the feature layer collection """
+        """returns all the replicas for the feature layer collection"""
         return self._fs._replicas
 
     # ----------------------------------------------------------------------
     def unregister(self, replica_id):
         """
-           unregisters a replica from a feature layer collection
-           Inputs:
-             replica_id - The replicaID returned by the feature service
-                          when the replica was created.
+        unregisters a replica from a feature layer collection
+        Inputs:
+          replica_id - The replicaID returned by the feature service
+                       when the replica was created.
         """
         return self._fs._unregister_replica(replica_id)
 
     # ----------------------------------------------------------------------
     def get(self, replica_id):
         """
-           returns replica metadata for a specific replica.
-           Inputs:
-              replica_id - The replicaID returned by the feature service
-                           when the replica was created.
+        returns replica metadata for a specific replica.
+        Inputs:
+           replica_id - The replicaID returned by the feature service
+                        when the replica was created.
         """
         return self._fs._replica_info(replica_id)
 
@@ -1353,8 +1353,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
     @property
     def webhook_manager(self) -> WebHookServiceManager:
-        """
-        """
+        """ """
         if self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline:
             if self._wh is None:
                 self._wh = WebHookServiceManager(
@@ -1365,7 +1364,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a feature layer collection """
+        """refreshes a feature layer collection"""
         params = {"f": "json"}
         refresh_url = self._url + "/refresh"
         res = self._con.post(refresh_url, params)
@@ -1750,7 +1749,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
-        """ Internal method to check the status of the definition change.
+        """Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================
@@ -1806,22 +1805,22 @@ class FeatureLayerCollectionManager(_GISResource):
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict, future=False):
         """
-           The add_to_definition operation supports adding a definition
-           property to a hosted feature layer collection service. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The add_to_definition operation supports adding a definition
+        property to a hosted feature layer collection service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           This function will allow users to change or add additional values
-           to an already published service.
+        This function will allow users to change or add additional values
+        to an already published service.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the properties property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON message as dictionary
-              when `future=True`, concurrent.futures.Future is returned.
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the properties property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON message as dictionary
+           when `future=True`, concurrent.futures.Future is returned.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -1848,18 +1847,18 @@ class FeatureLayerCollectionManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict, future=False):
         """
-           The update_definition operation supports updating a definition
-           property in a hosted feature layer collection service. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The update_definition operation supports updating a definition
+        property in a hosted feature layer collection service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the properties property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON Message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the properties property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON Message as dictionary
         """
         definition = None
         if json_dict is not None:
@@ -2296,7 +2295,7 @@ class FeatureLayerManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a service """
+        """refreshes a service"""
         params = {"f": "json"}
         u_url = self._url + "/refresh"
         res = self._con.post(u_url, params)
@@ -2308,21 +2307,21 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict, future=False):
         """
-           The addToDefinition operation supports adding a definition
-           property to a hosted feature layer. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The addToDefinition operation supports adding a definition
+        property to a hosted feature layer. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           This function will allow users to change add additional values
-           to an already published service.
+        This function will allow users to change add additional values
+        to an already published service.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON message as dictionary
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2350,18 +2349,18 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict, future=False):
         """
-           The updateDefinition operation supports updating a definition
-           property in a hosted feature layer. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The updateDefinition operation supports updating a definition
+        property in a hosted feature layer. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON Message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON Message as dictionary
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2390,22 +2389,22 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict, future=False):
         """
-           The deleteFromDefinition operation supports deleting a
-           definition property from a hosted feature layer. The result of
-           this operation is a response indicating success or failure with
-           error code and description.
-           See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
-           for additional information on this function.
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.  Only
-                          include the items you want to remove from the
-                          FeatureService or layer.
+        The deleteFromDefinition operation supports deleting a
+        definition property from a hosted feature layer. The result of
+        this operation is a response indicating success or failure with
+        error code and description.
+        See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
+        for additional information on this function.
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.  Only
+                       include the items you want to remove from the
+                       FeatureService or layer.
 
-           Output:
-              JSON Message as dictionary
+        Output:
+           JSON Message as dictionary
 
         """
 
@@ -2434,23 +2433,23 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def truncate(self, attachment_only=False, asynchronous=False, wait=True):
         """
-           The truncate operation supports deleting all features or attachments
-           in a hosted feature service layer. The result of this operation is a
-           response indicating success or failure with error code and description.
-           See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
-           for additional information on this function.
-           Input:
-              attachment_only - Deletes all the attachments for this layer.
-                                None of the layer features will be deleted
-                                when attachmentOnly=true.
-              asynchronous - Supports options for asynchronous processing. The
-                      default format is false. It is recommended to set
-                      async=true for larger datasets.
-              wait - if async, wait to pause the process until the async
-                     operation is completed.
+        The truncate operation supports deleting all features or attachments
+        in a hosted feature service layer. The result of this operation is a
+        response indicating success or failure with error code and description.
+        See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
+        for additional information on this function.
+        Input:
+           attachment_only - Deletes all the attachments for this layer.
+                             None of the layer features will be deleted
+                             when attachmentOnly=true.
+           asynchronous - Supports options for asynchronous processing. The
+                   default format is false. It is recommended to set
+                   async=true for larger datasets.
+           wait - if async, wait to pause the process until the async
+                  operation is completed.
 
-           Output:
-              JSON Message as dictionary
+        Output:
+           JSON Message as dictionary
 
         """
         params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
@@ -2481,7 +2480,7 @@ class FeatureLayerManager(_GISResource):
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
-        """ Internal method to check the status of the definition change.
+        """Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================

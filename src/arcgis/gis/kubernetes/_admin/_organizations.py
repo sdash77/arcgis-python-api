@@ -43,8 +43,7 @@ class KubeOrgSecurity(object):
 
     @property
     def enterprise_user(self):
-        """
-        """
+        """ """
         url = f"{self._url}/users"
         return KubeEnterpriseUser(url, gis=self._gis)
 

@@ -10,7 +10,7 @@ def generate_direct_access_url(expiration=None, *, gis=None):
     ------------------------------------     --------------------------------------------------------------------
     expiration                               Optional integer.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs. 
+    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs.
                                              If not specified, the active GIS is used.
     ====================================     ====================================================================
 
@@ -34,7 +34,7 @@ def upload_imagery_to_agol_userstore(files, direct_access_url=None, *, gis=None)
     direct_access_url                        Optional string. The direct access url generated using generate_direct_access_url function.
                                              If not specified, the function would generate the direct access url internally which is valid for 1440 minutes.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs. 
+    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs.
                                              If not specified, the active GIS is used.
     ====================================     ====================================================================
 

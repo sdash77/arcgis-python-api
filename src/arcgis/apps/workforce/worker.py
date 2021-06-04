@@ -93,27 +93,27 @@ class Worker(FeatureModel):
         user_id=None,
     ):
         """
-            Updates the worker on the server
+        Updates the worker on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            geometry               Optional :class:`Dict`. The geometry of the worker.
-            ------------------     --------------------------------------------------------------------
-            contact_number         Optional :class:`String`. The contact number of the worker.
-            ------------------     --------------------------------------------------------------------
-            name                   Optional :class:`String`. The name of the worker.
-            ------------------     --------------------------------------------------------------------
-            notes                  Optional :class:`String`. The notes about the worker.
-            ------------------     --------------------------------------------------------------------
-            status                 Optional :class:`String`. The status of the worker.
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        geometry               Optional :class:`Dict`. The geometry of the worker.
+        ------------------     --------------------------------------------------------------------
+        contact_number         Optional :class:`String`. The contact number of the worker.
+        ------------------     --------------------------------------------------------------------
+        name                   Optional :class:`String`. The name of the worker.
+        ------------------     --------------------------------------------------------------------
+        notes                  Optional :class:`String`. The notes about the worker.
+        ------------------     --------------------------------------------------------------------
+        status                 Optional :class:`String`. The status of the worker.
 
-                                   `not_working`, `working`, `on_break`
-            ------------------     --------------------------------------------------------------------
-            title                  Optional :class:`String`. The title of the worker.
-            ------------------     --------------------------------------------------------------------
-            user_id                Optional :class:`String`. The user id of the worker
-            ==================     ====================================================================
+                               `not_working`, `working`, `on_break`
+        ------------------     --------------------------------------------------------------------
+        title                  Optional :class:`String`. The title of the worker.
+        ------------------     --------------------------------------------------------------------
+        user_id                Optional :class:`String`. The user id of the worker
+        ==================     ====================================================================
 
         """
         update_worker(
@@ -180,9 +180,9 @@ class Worker(FeatureModel):
     @property
     def status(self):
         """
-            Gets/Sets the :class:`String` status of the worker
+        Gets/Sets the :class:`String` status of the worker
 
-            `not_working`, `working`, `on_break`
+        `not_working`, `working`, `on_break`
         """
         lut = {
             0: "not_working",
@@ -216,8 +216,7 @@ class Worker(FeatureModel):
         self._feature.geometry = value
 
     def _validate(self, **kwargs):
-        """
-        """
+        """ """
         errors = super()._validate(**kwargs)
         errors += self._validate_name()
         errors += self._validate_status()

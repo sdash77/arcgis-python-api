@@ -17,68 +17,68 @@ def areas_and_lengths(
     future=False,
 ):
     """
-       The areas_and_lengths function calculates areas and perimeter lengths
-       for each polygon specified in the input array.
+    The areas_and_lengths function calculates areas and perimeter lengths
+    for each polygon specified in the input array.
 
-       Inputs:
-          polygons - The array of polygons whose areas and lengths are
-                     to be computed.
-          length_unit - The length unit in which the perimeters of
-                       polygons will be calculated. If calculation_type
-                       is planar, then length_unit can be any esriUnits
-                       constant. If lengthUnit is not specified, the
-                       units are derived from spatial_ref. If calculationType is
-                       not planar, then lengthUnit must be a linear
-                       esriUnits constant, such as esriSRUnit_Meter or
-                       esriSRUnit_SurveyMile. If length_unit is not
-                       specified, the units are meters. For a list of
-                       valid units, see esriSRUnitType Constants and
-                       esriSRUnit2Type Constant.
-          area_unit - The area unit in which areas of polygons will be
-                     calculated. If calculation_type is planar, then
-                     area_unit can be any esriUnits constant. If
-                     area_unit is not specified, the units are derived
-                     from spatial_ref. If calculation_type is not planar, then
-                     area_unit must be a linear esriUnits constant such
-                     as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                     area_unit is not specified, then the units are
-                     meters. For a list of valid units, see
-                     esriSRUnitType Constants and esriSRUnit2Type
-                     constant.
-                     The list of valid esriAreaUnits constants include,
-                     esriSquareInches | esriSquareFeet |
-                     esriSquareYards | esriAcres | esriSquareMiles |
-                     esriSquareMillimeters | esriSquareCentimeters |
-                     esriSquareDecimeters | esriSquareMeters | esriAres
-                     | esriHectares | esriSquareKilometers.
-          calculation_type -  The type defined for the area and length
-                             calculation of the input geometries. The
-                             type can be one of the following values:
-                             planar - Planar measurements use 2D
-                                      Euclidean distance to calculate
-                                      area and length. Th- should
-                                      only be used if the area or
-                                      length needs to be calculated in
-                                      the given spatial reference.
-                                      Otherwise, use preserveShape.
-                             geodesic - Use this type if you want to
-                                      calculate an area or length using
-                                      only the vertices of the polygon
-                                      and define the lines between the
-                                      points as geodesic segments
-                                      independent of the actual shape
-                                      of the polygon. A geodesic
-                                      segment is the shortest path
-                                      between two points on an ellipsoid.
-                             preserveShape - This type calculates the
-                                      area or length of the geometry on
-                                      the surface of the Earth
-                                      ellipsoid. The shape of the
-                                      geometry in its coordinate system
-                                      is preserved.
-        future - boolean. This operation determines if the job is run asynchronously or not.
-       Output:
-          JSON as dictionary
+    Inputs:
+       polygons - The array of polygons whose areas and lengths are
+                  to be computed.
+       length_unit - The length unit in which the perimeters of
+                    polygons will be calculated. If calculation_type
+                    is planar, then length_unit can be any esriUnits
+                    constant. If lengthUnit is not specified, the
+                    units are derived from spatial_ref. If calculationType is
+                    not planar, then lengthUnit must be a linear
+                    esriUnits constant, such as esriSRUnit_Meter or
+                    esriSRUnit_SurveyMile. If length_unit is not
+                    specified, the units are meters. For a list of
+                    valid units, see esriSRUnitType Constants and
+                    esriSRUnit2Type Constant.
+       area_unit - The area unit in which areas of polygons will be
+                  calculated. If calculation_type is planar, then
+                  area_unit can be any esriUnits constant. If
+                  area_unit is not specified, the units are derived
+                  from spatial_ref. If calculation_type is not planar, then
+                  area_unit must be a linear esriUnits constant such
+                  as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
+                  area_unit is not specified, then the units are
+                  meters. For a list of valid units, see
+                  esriSRUnitType Constants and esriSRUnit2Type
+                  constant.
+                  The list of valid esriAreaUnits constants include,
+                  esriSquareInches | esriSquareFeet |
+                  esriSquareYards | esriAcres | esriSquareMiles |
+                  esriSquareMillimeters | esriSquareCentimeters |
+                  esriSquareDecimeters | esriSquareMeters | esriAres
+                  | esriHectares | esriSquareKilometers.
+       calculation_type -  The type defined for the area and length
+                          calculation of the input geometries. The
+                          type can be one of the following values:
+                          planar - Planar measurements use 2D
+                                   Euclidean distance to calculate
+                                   area and length. Th- should
+                                   only be used if the area or
+                                   length needs to be calculated in
+                                   the given spatial reference.
+                                   Otherwise, use preserveShape.
+                          geodesic - Use this type if you want to
+                                   calculate an area or length using
+                                   only the vertices of the polygon
+                                   and define the lines between the
+                                   points as geodesic segments
+                                   independent of the actual shape
+                                   of the polygon. A geodesic
+                                   segment is the shortest path
+                                   between two points on an ellipsoid.
+                          preserveShape - This type calculates the
+                                   area or length of the geometry on
+                                   the surface of the Earth
+                                   ellipsoid. The shape of the
+                                   geometry in its coordinate system
+                                   is preserved.
+     future - boolean. This operation determines if the job is run asynchronously or not.
+    Output:
+       JSON as dictionary
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -91,19 +91,19 @@ def auto_complete(
     polygons=None, polylines=None, spatial_ref=None, gis=None, future=False
 ):
     """
-       The auto_complete function simplifies the process of
-       constructing new polygons that are adjacent to other polygons.
-       It constructs polygons that fill in the gaps between existing
-       polygons and a set of polylines.
+    The auto_complete function simplifies the process of
+    constructing new polygons that are adjacent to other polygons.
+    It constructs polygons that fill in the gaps between existing
+    polygons and a set of polylines.
 
-       Inputs:
-        polygons -
-         array of Polygon objects
-        polylines -
-         list of Polyline objects
-        spatial_ref -
-         spatial reference of the input geometries WKID
-        future - boolean. This operation determines if the job is run asynchronously or not.
+    Inputs:
+     polygons -
+      array of Polygon objects
+     polylines -
+      list of Polyline objects
+     spatial_ref -
+      spatial reference of the input geometries WKID
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -125,39 +125,39 @@ def buffer(
     future=False,
 ):
     """
-       The buffer function is performed on a geometry service resource
-       The result of this function is buffered polygons at the
-       specified distances for the input geometry array. Options are
-       available to union buffers and to use geodesic distance.
+    The buffer function is performed on a geometry service resource
+    The result of this function is buffered polygons at the
+    specified distances for the input geometry array. Options are
+    available to union buffers and to use geodesic distance.
 
-       Inputs:
+    Inputs:
 
-         geometries -
-          The array of geometries to be buffered.
-         in_sr -
-          The well-known ID of the spatial reference or a spatial
-          reference JSON object for the input geometries.
-         distances -
-          The distances that each of the input geometries is
-          buffered.
-         unit - The units for calculating each buffer distance. If unit
-          is not specified, the units are derived from bufferSR. If
-          bufferSR is not specified, the units are derived from in_sr.
-         out_sr - The well-known ID of the spatial reference or a
-          spatial reference JSON object for the input geometries.
-         buffer_sr - The well-known ID of the spatial reference or a
-          spatial reference JSON object for the input geometries.
-         union_results -  If true, all geometries buffered at a given
-          distance are unioned into a single (gis,possibly multipart)
-          polygon, and the unioned geometry is placed in the output
-          array. The default is false
-         geodesic - Set geodesic to true to buffer the input geometries
-          using geodesic distance. Geodesic distance is the shortest
-          path between two points along the ellipsoid of the earth. If
-          geodesic is set to false, the 2D Euclidean distance is used
-          to buffer the input geometries. The default value depends on
-          the geometry type, unit and bufferSR.
-        future - boolean. This operation determines if the job is run asynchronously or not.
+      geometries -
+       The array of geometries to be buffered.
+      in_sr -
+       The well-known ID of the spatial reference or a spatial
+       reference JSON object for the input geometries.
+      distances -
+       The distances that each of the input geometries is
+       buffered.
+      unit - The units for calculating each buffer distance. If unit
+       is not specified, the units are derived from bufferSR. If
+       bufferSR is not specified, the units are derived from in_sr.
+      out_sr - The well-known ID of the spatial reference or a
+       spatial reference JSON object for the input geometries.
+      buffer_sr - The well-known ID of the spatial reference or a
+       spatial reference JSON object for the input geometries.
+      union_results -  If true, all geometries buffered at a given
+       distance are unioned into a single (gis,possibly multipart)
+       polygon, and the unioned geometry is placed in the output
+       array. The default is false
+      geodesic - Set geodesic to true to buffer the input geometries
+       using geodesic distance. Geodesic distance is the shortest
+       path between two points along the ellipsoid of the earth. If
+       geodesic is set to false, the 2D Euclidean distance is used
+       to buffer the input geometries. The default value depends on
+       the geometry type, unit and bufferSR.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis

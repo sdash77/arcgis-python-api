@@ -6,10 +6,10 @@ from .utils import add_features, update_features, remove_features, validate
 
 
 def get_integration(project, integration_id=None):
-    """ Gets the identified Integration.  Exactly one integration_id should be provided.
-        :param project:
-        :param integration_id
-        :returns: Integration
+    """Gets the identified Integration.  Exactly one integration_id should be provided.
+    :param project:
+    :param integration_id
+    :returns: Integration
     """
     if integration_id:
         where = "{} = '{}'".format(
@@ -22,10 +22,10 @@ def get_integration(project, integration_id=None):
 
 
 def query_integrations(project, where):
-    """ Executes a query against the integrations table.
-        :param project: The project in which to query integrations.
-        :param where: An ArcGIS where clause.
-        :returns: list of Integrations
+    """Executes a query against the integrations table.
+    :param project: The project in which to query integrations.
+    :param where: An ArcGIS where clause.
+    :returns: list of Integrations
     """
     features = project.integrations_table.query(where, return_all_records=True).features
     return [workforce.Integration(project, feature) for feature in features]
@@ -50,12 +50,12 @@ def add_integration(
 
 
 def add_integrations(project, integrations):
-    """ Adds Integrations to a project.
+    """Adds Integrations to a project.
 
-        :param project:
-        :param integrations: list of Integrations
-        :raises ValidationError: Indicates that one or more integrations failed validation.
-        :raises ServerError: Indicates that the server rejected the integrations.
+    :param project:
+    :param integrations: list of Integrations
+    :raises ValidationError: Indicates that one or more integrations failed validation.
+    :raises ServerError: Indicates that the server rejected the integrations.
     """
     project._update_cached_objects()
     if integrations:
@@ -81,7 +81,7 @@ def update_integration(
     assignment_type=None,
 ):
     """
-        Updates an integration and submits changes to the server
+    Updates an integration and submits changes to the server
     """
     project._update_cached_objects()
     if integration_id:
@@ -97,11 +97,11 @@ def update_integration(
 
 
 def update_integrations(project, integrations):
-    """ Updates Integrations to a project.
-        :param project:
-        :param integrations: list of Integrations
-        :raises ValidationError: Indicates that one or more dispatchers failed validation.
-        :raises ServerError: Indicates that the server rejected the dispatchers.
+    """Updates Integrations to a project.
+    :param project:
+    :param integrations: list of Integrations
+    :raises ValidationError: Indicates that one or more dispatchers failed validation.
+    :raises ServerError: Indicates that the server rejected the dispatchers.
     """
     project._update_cached_objects()
     if integrations:
@@ -114,11 +114,11 @@ def update_integrations(project, integrations):
 
 
 def delete_integrations(project, integrations):
-    """ Removes Integrations from the project.
-        :param project:
-        :param integrations: list of Integrations
-        :raises ValidationError: Indicates that one or more integrations failed validation.
-        :raises ServerError: Indicates that the server rejected the removal.
+    """Removes Integrations from the project.
+    :param project:
+    :param integrations: list of Integrations
+    :raises ValidationError: Indicates that one or more integrations failed validation.
+    :raises ServerError: Indicates that the server rejected the removal.
     """
     project._update_cached_objects()
     if integrations:

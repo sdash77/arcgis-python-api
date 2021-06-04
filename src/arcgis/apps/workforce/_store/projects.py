@@ -11,10 +11,10 @@ import os
 
 
 def get_project(project_id, gis):
-    """ Loads and returns a workforce project.
-        :param gis: An authenticated arcigs.gis.GIS object.
-        :param project_id: The project's id. Version 1 - id of the project item. Version 2 - id of the feature service
-        :returns: workforce.Project
+    """Loads and returns a workforce project.
+    :param gis: An authenticated arcigs.gis.GIS object.
+    :param project_id: The project's id. Version 1 - id of the project item. Version 2 - id of the feature service
+    :returns: workforce.Project
     """
     item = Item(gis, project_id)
     return workforce.Project(item)
@@ -22,29 +22,29 @@ def get_project(project_id, gis):
 
 def create_project(title, summary=None, major_version=None, gis=None):
     """
-        Creates a new Workforce Project
+    Creates a new Workforce Project
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        title                  :class:`String`.
-                               The title of the Project to create (must be unique to the organization)
-        ------------------     --------------------------------------------------------------------
-        summary                :class:`String`.
-                               The summary of the Project
-        ------------------     --------------------------------------------------------------------
-        major_version          Optional :class:`Int`
-                               The version of the Project to create. 1 represents the original
-                               Workforce Project which does not support offline. 2 represents the newer
-                               Workforce Project which supports offline among other things. Defaults
-                               to 2 in GIS 8.2 and higher
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional :class:`~arcgis.gis.GIS`.
-                               The authenticated GIS to use.
-                               Defaults to the active GIS if None is provided.
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    title                  :class:`String`.
+                           The title of the Project to create (must be unique to the organization)
+    ------------------     --------------------------------------------------------------------
+    summary                :class:`String`.
+                           The summary of the Project
+    ------------------     --------------------------------------------------------------------
+    major_version          Optional :class:`Int`
+                           The version of the Project to create. 1 represents the original
+                           Workforce Project which does not support offline. 2 represents the newer
+                           Workforce Project which supports offline among other things. Defaults
+                           to 2 in GIS 8.2 and higher
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS`.
+                           The authenticated GIS to use.
+                           Defaults to the active GIS if None is provided.
+    ==================     ====================================================================
 
-        Returns a :class:`arcgis.apps.workforce.Project`
+    Returns a :class:`arcgis.apps.workforce.Project`
     """
 
     if gis is None:
@@ -556,16 +556,16 @@ def _v2_create_service_with_layers(
     title,
 ):
     """
-       Creates a service, adds, and layer and optionally enables attachments
-       :param gis: An authenticated GIS
-       :param folder_name: The name of the folder in which to place the service
-       :param service_name: The name of the service
-       :param assignments_layer_def: The assignments layer definition (dictionary)
-       :param workers_layer_def: The workers layer definition (dictionary)
-       :param dispatchers_table_def: The dispatchers table definition (dictionary)
-       :param assignment_type_table_def: The assignment type table definition (dictionary)
-       :param integration_table_def: The integration table definition (dictionary)
-       :return: The service item
+    Creates a service, adds, and layer and optionally enables attachments
+    :param gis: An authenticated GIS
+    :param folder_name: The name of the folder in which to place the service
+    :param service_name: The name of the service
+    :param assignments_layer_def: The assignments layer definition (dictionary)
+    :param workers_layer_def: The workers layer definition (dictionary)
+    :param dispatchers_table_def: The dispatchers table definition (dictionary)
+    :param assignment_type_table_def: The assignment type table definition (dictionary)
+    :param integration_table_def: The integration table definition (dictionary)
+    :return: The service item
     """
     default_extent = gis.properties["defaultExtent"]
     spatial_reference = default_extent["spatialReference"]

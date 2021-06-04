@@ -991,89 +991,89 @@ def generate_raster(
 ):
 
     """
-    .. image:: _static/images/ra_generate_raster/ra_generate_raster.png 
+    .. image:: _static/images/ra_generate_raster/ra_generate_raster.png
 
     Function  allows you to execute raster analysis on a distributed server deployment.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster_function                          Required, Raster function to perform analysis on the input raster dataset. 
-                                             The value can be a string keyword for predefined raster functions such as 
-                                             NDVI, a JSON object that describes a raster function chain with a built-in 
-                                             functions that are known to the server, or the contents of a raster 
+    raster_function                          Required, Raster function to perform analysis on the input raster dataset.
+                                             The value can be a string keyword for predefined raster functions such as
+                                             NDVI, a JSON object that describes a raster function chain with a built-in
+                                             functions that are known to the server, or the contents of a raster
                                              function template file (*.rft.xml).
 
-                                             Please refer to the complete list of Raster Analysis functions to execute 
-                                             on a distributed server: 
+                                             Please refer to the complete list of Raster Analysis functions to execute
+                                             on a distributed server:
                                              https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
     ------------------------------------     --------------------------------------------------------------------
-    function_arguments                       Optional, The dict to specify the raster function arguments' value. 
-                                             It is optional because the argument value can also be defined in the function template. 
-                                             The function_arguments parameter supports the RasterInfo argument for all raster functions. 
-                                             The information stored in RasterInfo allows you to specify the output raster dataset's 
+    function_arguments                       Optional, The dict to specify the raster function arguments' value.
+                                             It is optional because the argument value can also be defined in the function template.
+                                             The function_arguments parameter supports the RasterInfo argument for all raster functions.
+                                             The information stored in RasterInfo allows you to specify the output raster dataset's
                                              properties such as cell size, extent, and nodata..
 
                                              Example:
                                              {"Raster": {"url": <image service url>}, "ResamplingType": 1}
-   
+
                                              For specifying input Raster alone, portal Item can be passed. (i.e, parameter with name "Raster")
     ------------------------------------     --------------------------------------------------------------------
     output_raster_properties                 Optional dict, can be used to set the output raster's key metadata properties.
                                              {"SensorName": "Landsat 8", "CloudCover": 20}
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
+    process_as_multidimensional              Optional bool, Process as multidimensional if set to True,
                                              if the input is multidimensional raster.
     ------------------------------------     --------------------------------------------------------------------
-    build_transpose                          Optional bool, if set to true, transforms the output multidimensional 
+    build_transpose                          Optional bool, if set to true, transforms the output multidimensional
                                              raster. Valid only if process_as_multidimensional is set to True.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
+                                              - Mask (mask): Only cells that fall within the analysis
                                                 mask will be considered in the operation.
 
-                                                Example: 
+                                                Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -1081,22 +1081,22 @@ def generate_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                              - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
                                                 The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -1106,13 +1106,13 @@ def generate_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
+
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -1151,9 +1151,9 @@ def convert_feature_to_raster(
 ):
 
     """
-    .. image:: _static/images/ra_convert_feature_to_raster/ra_convert_feature_to_raster.png 
+    .. image:: _static/images/ra_convert_feature_to_raster/ra_convert_feature_to_raster.png
 
-    Creates a new ImageryLayer from an existing feature layer. 
+    Creates a new ImageryLayer from an existing feature layer.
     Any feature layer containing point, line, or polygon features can be converted to an ImageryLayer.
 
     The cell center is used to decide the value of the output raster pixel. The input field type determines
@@ -1183,40 +1183,40 @@ def convert_feature_to_raster(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
+                                              - Mask (mask): Only cells that fall within the analysis
                                                 mask will be considered in the operation.
 
-                                                Example: 
+                                                Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -1224,7 +1224,7 @@ def convert_feature_to_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -1232,7 +1232,7 @@ def convert_feature_to_raster(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -1242,13 +1242,13 @@ def convert_feature_to_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -1720,7 +1720,7 @@ def convert_raster_to_feature(
 ):
 
     """
-    .. image:: _static/images/ra_convert_raster_to_feature/ra_convert_raster_to_feature.png 
+    .. image:: _static/images/ra_convert_raster_to_feature/ra_convert_raster_to_feature.png
 
     Function converts imagery data to feature class vector data.
 
@@ -1740,7 +1740,7 @@ def convert_raster_to_feature(
 
                                              One of the following: ['Point', 'Line', 'Polygon']
     ------------------------------------     --------------------------------------------------------------------
-    simplify                                 Optional bool, This option that specifies how the features should be smoothed. It is 
+    simplify                                 Optional bool, This option that specifies how the features should be smoothed. It is
                                              only available for line and polygon output.
 
                                              True, then the features will be smoothed out. This is the default.
@@ -1756,40 +1756,40 @@ def convert_raster_to_feature(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
     ------------------------------------     --------------------------------------------------------------------
-    create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
+    create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of
                                              single-part or multipart features.
 
                                              - True: Specifies that multipart features will be created based on polygons that have the same value.
 
                                              - False: Specifies that individual features will be created for each polygon. This is the default.
     ------------------------------------     --------------------------------------------------------------------
-    max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
+    max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -1836,7 +1836,7 @@ def calculate_density(
 ):
 
     """
-    .. image:: _static/images/ra_calculate_density/ra_calculate_density.png 
+    .. image:: _static/images/ra_calculate_density/ra_calculate_density.png
 
     Density analysis takes known quantities of some phenomenon and creates a density map by spreading
     these quantities across the map. You can use this function, for example, to show concentrations of
@@ -1882,18 +1882,18 @@ def calculate_density(
                                              Provide a field specifying the number of incidents at each location. For example, if you have points that
                                              represent cities, you can use a field representing the population of the city as the count field, and the
                                              resulting population density layer will calculate larger population densities near cities with
-                                             larger populations. 
-                                             
+                                             larger populations.
+
                                              If the default choice of None is used, then each location will be assumed to represent a
                                              single count.
 
                                              Example: "myCountField"
     ------------------------------------     --------------------------------------------------------------------
     search_distance                          Optional dict, Enter a distance specifying how far to search to find point or line features when calculating density values.
-                                             
+
                                              For example, if you provide a search distance of 10,000 meters, the density of any location in the output layer
                                              is calculated based on features that are within 10,000 meters of the location. Any location that does not have
-                                             any incidents within 10,000 meters will receive a density value of zero. 
+                                             any incidents within 10,000 meters will receive a density value of zero.
                                              If no distance is provided, a default will be calculated that is based on the locations of the input features
                                              and the values in the count field (if a count field is provided).
 
@@ -1901,76 +1901,76 @@ def calculate_density(
     ------------------------------------     --------------------------------------------------------------------
     output_area_units                        Optional string - Output area units
                                              Specify the output area unit. Density is count divided by area, and this parameter specifies the unit of the
-                                             area in the density calculation. The available areal units are SQUARE_MILES and SQUARE_KILOMETERS. 
+                                             area in the density calculation. The available areal units are SQUARE_MILES and SQUARE_KILOMETERS.
 
                                              Example: "SQUARE_KILOMETERS"
     ------------------------------------     --------------------------------------------------------------------
     output_cell_size                         Optional dict - Output cell size
                                              Enter the cell size and unit for the output rasters.
-                                             
+
                                              Example: {distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
+                                              - Mask (mask): Only cells that fall within the analysis
                                                 mask will be considered in the operation.
 
-                                                Example: 
+                                                Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                              - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
                                                 The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
-    input_barriers                           Optional. The dataset that defines the barriers. The barriers can be 
-                                             a feature layer of polyline or polygon features. 
+    input_barriers                           Optional. The dataset that defines the barriers. The barriers can be
+                                             a feature layer of polyline or polygon features.
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -1980,14 +1980,14 @@ def calculate_density(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -2034,7 +2034,7 @@ def create_viewshed(
 ):
 
     """
-    .. image:: _static/images/ra_create_viewshed/ra_create_viewshed.png 
+    .. image:: _static/images/ra_create_viewshed/ra_create_viewshed.png
 
     Function  allows you to execute raster analysis on a distributed server deployment.
 
@@ -2052,23 +2052,23 @@ def create_viewshed(
 
                                              This parameter offers two methods: SPEED and ACCURACY.
 
-                                             Example: 
+                                             Example:
                                                 "ACCURACY"
     ------------------------------------     --------------------------------------------------------------------
-    maximum_viewing_distance                 Optional dict. This is a cutoff distance where the computation of 
-                                             visible areas stops. Beyond this distance, it is unknown whether the 
+    maximum_viewing_distance                 Optional dict. This is a cutoff distance where the computation of
+                                             visible areas stops. Beyond this distance, it is unknown whether the
                                              analysis points and the other objects can see each other.
 
                                              Supported units: Meters | Kilometers | Feet | Yards | Miles
 
-                                             Example: 
+                                             Example:
                                                  {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
-    maximum_viewing_distance_field           Optional string. Provide a field that specifies the maximum viewing distance 
-                                             for each observer. You can use any numerical field from the input 
+    maximum_viewing_distance_field           Optional string. Provide a field that specifies the maximum viewing distance
+                                             for each observer. You can use any numerical field from the input
                                              observer point features.
 
-                                             The value contained in the field must be in the same unit as the 
+                                             The value contained in the field must be in the same unit as the
                                              XY unit of the input elevation surface.
 
                                              Example:
@@ -2089,7 +2089,7 @@ def create_viewshed(
                                              Example:
                                                  "radius1"
     ------------------------------------     --------------------------------------------------------------------
-    viewing_distance_is_3d                   Optional bool. Specify whether the minimum_viewing_distance and maximum_viewing_distance 
+    viewing_distance_is_3d                   Optional bool. Specify whether the minimum_viewing_distance and maximum_viewing_distance
                                              input parameters are measured in a three-dimensional or two-dimensional way.
 
                                              - If True, the viewing distances are measured in 3D.
@@ -2100,62 +2100,62 @@ def create_viewshed(
 
                                              Supported units: Meters | Kilometers | Feet | Yards | Miles
 
-                                             Example: 
+                                             Example:
                                                  {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
     observers_elevation_field                Optional string. Provide a field that specifies the elevation for the observers.
 
-                                             You can use any numerical field from the input observer point features. 
-                                             The value contained in the field must be in the same unit as the Z unit 
+                                             You can use any numerical field from the input observer point features.
+                                             The value contained in the field must be in the same unit as the Z unit
                                              of the input elevation surface.
 
-                                             Example: 
+                                             Example:
                                                 "spot"
     ------------------------------------     --------------------------------------------------------------------
     observers_height                         Optional dict. The height above ground of your observer locations.
 
                                              Supported units: Meters | Kilometers | Feet | Yards | Miles
 
-                                             Example: 
+                                             Example:
                                                  {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
-    observers_height_field                   Optional string. Provide a field that specifies the height for the observers. 
+    observers_height_field                   Optional string. Provide a field that specifies the height for the observers.
                                              You can use any numerical field from the input observer point features.
 
-                                             The value contained in the field must be in the same unit as the 
+                                             The value contained in the field must be in the same unit as the
                                              Z unit of the input elevation surface.
 
-                                             Example: 
+                                             Example:
                                                 "offseta"
     ------------------------------------     --------------------------------------------------------------------
-    target_height                            Optional dict. Enter the height of structures, or people on the ground, 
+    target_height                            Optional dict. Enter the height of structures, or people on the ground,
                                              used to establish visibility.
 
                                              Supported units: Meters | Kilometers | Feet | Yards | Miles
 
-                                             Example: 
+                                             Example:
                                                  {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
-    target_height_field                      Optional string. Provide a field that specifies the height for the targets. 
+    target_height_field                      Optional string. Provide a field that specifies the height for the targets.
                                              You can use any numerical field from the input observer point features.
 
-                                             The value contained in the field must be in the same unit as the Z unit 
+                                             The value contained in the field must be in the same unit as the Z unit
                                              of the input elevation surface.
 
-                                             Example: 
+                                             Example:
                                                 "offsetb"
     ------------------------------------     --------------------------------------------------------------------
-    above_ground_level_output_name           Optional. If not provided, an Image Service is created by the method and 
+    above_ground_level_output_name           Optional. If not provided, an Image Service is created by the method and
                                              used as the above ground level output raster.
-                                             
+
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
-                                             Alternatively, you can pass in the name of the above ground level output 
+                                             Alternatively, you can pass in the name of the above ground level output
                                              Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
 
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
@@ -2163,56 +2163,56 @@ def create_viewshed(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
+                                              - Mask (mask): Only cells that fall within the analysis
                                                 mask will be considered in the operation.
 
-                                                Example: 
+                                                Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                              - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
                                                 The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -2222,14 +2222,14 @@ def create_viewshed(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -2283,7 +2283,7 @@ def interpolate_points(
 ):
 
     """
-    .. image:: _static/images/ra_interpolate_points/ra_interpolate_points.png 
+    .. image:: _static/images/ra_interpolate_points/ra_interpolate_points.png
 
     This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
     takes point data with values at each point and returns a raster of predicted values:
@@ -2307,18 +2307,18 @@ def interpolate_points(
     interpolate_field                        Required string -  field to interpolate
                                              Choose the field whose values you wish to interpolate. The field must be numeric.
 
-                                             Example: 
+                                             Example:
                                                 "myField"
     ------------------------------------     --------------------------------------------------------------------
     optimize_for                             Optional string.
                                              Choose your preference for speed versus accuracy.
-                                             More accurate predictions take longer to calculate. 
+                                             More accurate predictions take longer to calculate.
 
                                              This parameter alters the default values of several other
-                                             parameters of Interpolate Points in order to optimize speed of calculation, 
+                                             parameters of Interpolate Points in order to optimize speed of calculation,
                                              accuracy of results, or a balance of
-                                             the two. 
-                                             
+                                             the two.
+
                                              By default, the tool will optimize for balance.
 
                                              One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
@@ -2329,7 +2329,7 @@ def interpolate_points(
 
                                              - ACCURACY is optimized towards achieving the most accurate result, at the expense of some performance..
 
-                                             Example: 
+                                             Example:
                                                 "ACCURACY"
     ------------------------------------     --------------------------------------------------------------------
     transform_data                           Optional bool - Choose whether to transform your data to the normal distribution.
@@ -2338,7 +2338,7 @@ def interpolate_points(
                                              appear to be normally distributed, you should perform a transformation.
 
                                              - False means no transformation will be applied. This is suitable for data that is naturally normally distributed. This is the default.
-                                             
+
                                              - True applies a suitable transformation for data that is not normally distributed.
     ------------------------------------     --------------------------------------------------------------------
     size_of_local_models                     Optional int - Size of local models
@@ -2360,7 +2360,7 @@ def interpolate_points(
 
                                              Supported units: Meters | Kilometers | Feet | Miles
 
-                                             Example: 
+                                             Example:
                                                  {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
     output_prediction_error                  Optional bool. Choose whether you want to create a raster of standard errors for the predicted values.
@@ -2377,7 +2377,7 @@ def interpolate_points(
                                              2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
                                              value to get the lower end of the range.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
 
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
@@ -2385,40 +2385,40 @@ def interpolate_points(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
+                                              - Mask (mask): Only cells that fall within the analysis
                                                 mask will be considered in the operation.
 
-                                                Example: 
+                                                Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
@@ -2427,7 +2427,7 @@ def interpolate_points(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -2437,14 +2437,14 @@ def interpolate_points(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -2455,7 +2455,7 @@ def interpolate_points(
 
      - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data)
 
-     - output_error_raster (if output_prediction_error is set to True). 
+     - output_error_raster (if output_prediction_error is set to True).
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2488,9 +2488,9 @@ def classify(
 ):
 
     """
-    .. image:: _static/images/ra_classify/ra_classify.png 
+    .. image:: _static/images/ra_classify/ra_classify.png
 
-    The Classify function will create categories of pixels based on the input raster and 
+    The Classify function will create categories of pixels based on the input raster and
     the classifier definition dictionary that was generated from the train_classifier function.
 
     ================================     ====================================================================
@@ -2517,40 +2517,40 @@ def classify(
                                          method to be used as the output for the tool. A RuntimeError is raised
                                          if a service by that name already exists
     --------------------------------     --------------------------------------------------------------------
-    context                              context contains additional settings that affect task execution. 
+    context                              context contains additional settings that affect task execution.
 
                                          context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                          This function has the following settings:
 
                                             - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                            - Output Spatial Reference (outSR): The output raster will be 
+                                            - Output Spatial Reference (outSR): The output raster will be
                                             projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                            - Snap Raster (snapRaster): The output raster will have its 
+                                            - Snap Raster (snapRaster): The output raster will have its
                                               cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                            - Cell Size (cellSize): The output raster will have the resolution 
+                                            - Cell Size (cellSize): The output raster will have the resolution
                                               specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                            - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                            - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -2558,33 +2558,33 @@ def classify(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
 
-                                            - Resampling Method (resamplingMethod): The output raster will be 
+                                            - Resampling Method (resamplingMethod): The output raster will be
                                               resampled to method specified.
                                               The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
 
                                             - processAsMultidimensional - Specifies whether to process the input as a multidimensional raster.
 
-                                                - False - The input will not be processed as a multidimensional raster. 
-                                                  If the input is multidimensional, only the slice that is currently 
-                                                  displayed will be processed. 
-                                                - True - The input will be processed as a multidimensional raster and all 
+                                                - False - The input will not be processed as a multidimensional raster.
+                                                  If the input is multidimensional, only the slice that is currently
+                                                  displayed will be processed.
+                                                - True - The input will be processed as a multidimensional raster and all
                                                   slices will be processed to produce a new multidimensional raster.
-                                                         
+
                                                 Example:
                                                     {'processAsMultidimensional': True}
     --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
-    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -2594,14 +2594,14 @@ def classify(
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
-    tiles_only                           Keyword only parameter. Optional boolean. 
-                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                           Keyword only parameter. Optional boolean.
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                         at ArcGIS Image 9.1 release. 
+                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                         at ArcGIS Image 9.1 release.
 
-                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ================================     ====================================================================
 
     :return:
@@ -2636,7 +2636,7 @@ def segment(
 ):
 
     """
-    .. image:: _static/images/ra_segment/ra_segment.png 
+    .. image:: _static/images/ra_segment/ra_segment.png
 
     Groups together adjacent pixels having similar spectral and spatial characteristics into
     segments, known as objects.
@@ -2689,40 +2689,40 @@ def segment(
                                          method to be used as the output for the tool. A RuntimeError is raised
                                          if a service by that name already exists
     --------------------------------     --------------------------------------------------------------------
-    context                              context contains additional settings that affect task execution. 
+    context                              context contains additional settings that affect task execution.
 
                                          context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                          This function has the following settings:
 
                                             - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                            - Output Spatial Reference (outSR): The output raster will be 
+                                            - Output Spatial Reference (outSR): The output raster will be
                                             projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                            - Snap Raster (snapRaster): The output raster will have its 
+                                            - Snap Raster (snapRaster): The output raster will have its
                                               cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                            - Cell Size (cellSize): The output raster will have the resolution 
+                                            - Cell Size (cellSize): The output raster will have the resolution
                                               specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                            - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                            - Parallel Processing Factor (parallelProcessingFactor): controls
                                               Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -2730,22 +2730,22 @@ def segment(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
 
-                                            - Resampling Method (resamplingMethod): The output raster will be 
+                                            - Resampling Method (resamplingMethod): The output raster will be
                                               resampled to method specified.
                                               The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
     --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
-    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -2755,14 +2755,14 @@ def segment(
                                          Example:
                                              {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
-    tiles_only                           Keyword only parameter. Optional boolean. 
-                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                           Keyword only parameter. Optional boolean.
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                         at ArcGIS Image 9.1 release. 
+                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                         at ArcGIS Image 9.1 release.
 
-                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ================================     ====================================================================
 
     :return:
@@ -2797,9 +2797,9 @@ def train_classifier(
     **kwargs
 ):
     """
-    .. image:: _static/images/ra_train_classifier/ra_train_classifier.png 
+    .. image:: _static/images/ra_train_classifier/ra_train_classifier.png
 
-    The Train Classifier task is a service to train image classifiers and return an .ecs file in dictionary format. 
+    The Train Classifier task is a service to train image classifiers and return an .ecs file in dictionary format.
     The .ecs file is used in the classify function.
 
     ================================     ====================================================================
@@ -2851,7 +2851,7 @@ def train_classifier(
     --------------------------------     --------------------------------------------------------------------
     segmented_raster                     Required ImageryLayer object
     --------------------------------     --------------------------------------------------------------------
-    segment_attributes                   Optional string. The string of segment attributes used in the training (separated by semicolon). 
+    segment_attributes                   Optional string. The string of segment attributes used in the training (separated by semicolon).
                                          It is the permutation of the following attributes: COLOR; MEAN; STD; COUNT; COMPACTNESS; RECTANGULARITY.
 
                                          Example:
@@ -2859,8 +2859,8 @@ def train_classifier(
     --------------------------------     --------------------------------------------------------------------
     dimension_value_field                Contains dimension values in the input training sample feature class.
 
-                                         This parameter is required to classify a time series of raster data 
-                                         using the change analysis raster output from the 
+                                         This parameter is required to classify a time series of raster data
+                                         using the change analysis raster output from the
                                          analyze_changes_using_ccdc and analyze_changes_using_landtrendr function.
 
                                          Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -2868,7 +2868,7 @@ def train_classifier(
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
-    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                          results will be returned asynchronously.
     ================================     ====================================================================
 
@@ -3671,9 +3671,9 @@ def add_image(
 ###################################################################################################
 def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
     """
-    .. image:: _static/images/delete_image/delete_image.png 
+    .. image:: _static/images/delete_image/delete_image.png
 
-    ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset). 
+    ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset).
     The function will only delete the raster item in the mosaic dataset and will not remove the
     source image.
 
@@ -3684,12 +3684,12 @@ def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
                            This can be the 'itemID' of an exisiting portal item or a url
                            to an Image Service or a uri
     ------------------     --------------------------------------------------------------------
-    where                  Required string. A SQL ``where`` clause for selecting the images 
+    where                  Required string. A SQL ``where`` clause for selecting the images
                            to be deleted from the image collection
     ------------------     --------------------------------------------------------------------
     gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------     --------------------------------------------------------------------
-    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
     ==================     ====================================================================
 
@@ -3714,10 +3714,10 @@ def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
 ###################################################################################################
 def delete_image_collection(image_collection, *, gis=None, future=False, **kwargs):
     """
-    .. image:: _static/images/delete_image_collection/delete_image_collection.png 
+    .. image:: _static/images/delete_image_collection/delete_image_collection.png
 
     Delete the image collection. This service tool will delete the image collection
-    image service, that is, the portal-hosted image layer item. It will not delete 
+    image service, that is, the portal-hosted image layer item. It will not delete
     the source images that the image collection references.
 
     ==================     ====================================================================
@@ -3726,12 +3726,12 @@ def delete_image_collection(image_collection, *, gis=None, future=False, **kwarg
     image_collection       Required, the input image collection to delete.
 
                            The image_collection can be a portal Item or an image service URL or a URI.
-                            
+
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------     --------------------------------------------------------------------
-    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
     ==================     ====================================================================
 
@@ -3763,7 +3763,7 @@ def _flow_direction(
     **kwargs
 ):
     """
-    Replaces cells of a raster corresponding to a mask 
+    Replaces cells of a raster corresponding to a mask
     with the values of the nearest neighbors.
 
     Parameters
@@ -3777,8 +3777,8 @@ def _flow_direction(
                           MFD - Use the Multi Flow Direction (MFD) method.
                           DINF - Use the D-Infinity method.
 
-    output_drop_name : An optional output drop raster . 
-                       The drop raster returns the ratio of the maximum change in elevation from each cell 
+    output_drop_name : An optional output drop raster .
+                       The drop raster returns the ratio of the maximum change in elevation from each cell
                        along the direction of flow to the path length between centers of cells, expressed in percentages.
 
     output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
@@ -3788,12 +3788,12 @@ def _flow_direction(
 
     gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
             results will be returned asynchronously.
 
     Returns
     -------
-    output_raster : Image layer item 
+    output_raster : Image layer item
     """
 
     # task = "FlowDirection"
@@ -3837,36 +3837,36 @@ def _calculate_travel_cost(
 
     Parameters
     ----------
-    input_source : The layer that defines the sources to calculate the distance too. The layer 
+    input_source : The layer that defines the sources to calculate the distance too. The layer
                    can be raster or feature.
 
     input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
 
     input_surface_raster : A raster defining the elevation values at each cell location.
 
-    maximum_distance : The maximum distance to calculate out to. If no distance is provided, a default will 
+    maximum_distance : The maximum distance to calculate out to. If no distance is provided, a default will
                        be calculated that is based on the locations of the input sources.
 
     input_horizonal_raster : A raster defining the horizontal direction at each cell.
 
-    horizontal_factor : The Horizontal Factor defines the relationship between the horizontal cost 
+    horizontal_factor : The Horizontal Factor defines the relationship between the horizontal cost
                         factor and the horizontal relative moving angle.
 
     input_vertical_raster : A raster defining the vertical (z) value for each cell.
 
-    vertical_factor : The Vertical Factor defines the relationship between the vertical cost factor and 
+    vertical_factor : The Vertical Factor defines the relationship between the vertical cost factor and
                       the vertical relative moving angle (VRMA).
 
     source_cost_multiplier : Multiplier to apply to the cost values.
 
     source_start_cost : The starting cost from which to begin the cost calculations.
 
-    source_resistance_rate : This parameter simulates the increase in the effort to overcome costs 
+    source_resistance_rate : This parameter simulates the increase in the effort to overcome costs
                             as the accumulative cost increases.
 
     source_capacity : Defines the cost capacity for the traveler for a source.
 
-    source_direction : Defines the direction of the traveler when applying horizontal and vertical factors, 
+    source_direction : Defines the direction of the traveler when applying horizontal and vertical factors,
                        the source resistance rate, and the source starting cost.
 
     allocation_field : A field on theinputSourceRasterOrFeatures layer that holds the values that define each source.
@@ -3882,12 +3882,12 @@ def _calculate_travel_cost(
 
     gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
             results will be returned asynchronously.
 
     Returns
     -------
-    output_raster : Image layer item 
+    output_raster : Image layer item
     """
 
     # task = "CalculateTravelCost"
@@ -3933,17 +3933,17 @@ def optimum_travel_cost_network(
 ):
 
     """
-    .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png 
+    .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png
 
     Calculates the optimum cost network from a set of input regions.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_regions_raster                     Required Imagery Layer object. The layer that defines the regions to find the optimum travel cost netork for. 
+    input_regions_raster                     Required Imagery Layer object. The layer that defines the regions to find the optimum travel cost netork for.
                                              The layer can be raster or feature.
     ------------------------------------     --------------------------------------------------------------------
-    input_cost_raster                        Required Imagery Layer object. A raster defining the impedance or cost to 
+    input_cost_raster                        Required Imagery Layer object. A raster defining the impedance or cost to
                                              move planimetrically through each cell.
     ------------------------------------     --------------------------------------------------------------------
     output_optimum_network_name              Optional. If not provided, a feature layer is created by the method and used as the output.
@@ -3953,28 +3953,28 @@ def optimum_travel_cost_network(
     ------------------------------------     --------------------------------------------------------------------
     output_neighbor_network_name             Optional. This is the name of the output neighbour network feature layer that will be created.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -3982,7 +3982,7 @@ def optimum_travel_cost_network(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -3990,7 +3990,7 @@ def optimum_travel_cost_network(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -4025,7 +4025,7 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    datastore              Required string or list. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
+    datastore              Required string or list. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
                            It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
                            "/rasterStores/rasterstore"
                            or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
@@ -4034,13 +4034,13 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
                               | ds=analytics.get_datastores()
                               | ds_items =ds.search()
                               | ds_items[1]
-                              | ds_items[1] may be specified as input for datastore 
+                              | ds_items[1] may be specified as input for datastore
 
                            It can also be a list of datastore paths or list of datastore object containing a fileshare,
-                           rasterstore or cloudstore path. 
+                           rasterstore or cloudstore path.
 
                            In order to list the datastore items, one can specify just the name of the datastore
-                           
+
                            eg: fileShares
                            or
                            eg: cloudStore,rasterStore
@@ -4049,7 +4049,7 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
     ------------------     --------------------------------------------------------------------
     gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------     --------------------------------------------------------------------
-    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                            results will be returned asynchronously.
     ==================     ====================================================================
 
@@ -4080,23 +4080,23 @@ def build_footprints(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    image_collection                         Required. The input image collection.The image_collection can be a 
+    image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
                                              The image_collection must exist.
     ------------------------------------     --------------------------------------------------------------------
-    computation_method                       Optional string. Refine the footprints using one of the following methods: 
+    computation_method                       Optional string. Refine the footprints using one of the following methods:
                                              RADIOMETRY, GEOMETRY
                                              Default: RADIOMETRY
     ------------------------------------     --------------------------------------------------------------------
     value_range                              Optional. Parameter to specify the value range.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -4104,7 +4104,7 @@ def build_footprints(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -4112,7 +4112,7 @@ def build_footprints(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -4141,19 +4141,19 @@ def build_overview(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    image_collection                         Required. The input image collection.The image_collection can be a 
+    image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
                                              The image_collection must exist.
     ------------------------------------     --------------------------------------------------------------------
     cell_size                                optional float or int, to set the cell size for overview.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -4161,7 +4161,7 @@ def build_overview(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -4169,7 +4169,7 @@ def build_overview(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -4202,24 +4202,24 @@ def calculate_statistics(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    image_collection                         Required. The input image collection.The image_collection can be a 
+    image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
                                              The image_collection must exist.
     ------------------------------------     --------------------------------------------------------------------
     skip_factors                             optional dictionary, Controls the portion of the raster that is used when calculating the statistics.
-                                             
-                                             eg: 
-                                                | {"x":5,"y":5} 
+
+                                             eg:
+                                                | {"x":5,"y":5}
                                                 | x value represents - the number of horizontal pixels between samples
                                                 | y value represents - the number of vertical pixels between samples.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -4227,7 +4227,7 @@ def calculate_statistics(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -4238,7 +4238,7 @@ def calculate_statistics(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -4393,13 +4393,13 @@ def _calculate_distance(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_source_data                        The layer that defines the sources to calculate the distance to. 
-                                             The layer can be raster or feature. To use a raster input, it must 
+    input_source_data                        The layer that defines the sources to calculate the distance to.
+                                             The layer can be raster or feature. To use a raster input, it must
                                              be of integer type.
     ------------------------------------     --------------------------------------------------------------------
-    maximum_distance                         Defines the threshold that the accumulative distance values 
-                                             cannot exceed. If an accumulative Euclidean distance value exceeds 
-                                             this value, the output value for the cell location will be NoData. 
+    maximum_distance                         Defines the threshold that the accumulative distance values
+                                             cannot exceed. If an accumulative Euclidean distance value exceeds
+                                             this value, the output value for the cell location will be NoData.
                                              The default distance is to the edge of the output raster.
 
                                              Supported units: Meters | Kilometers | Feet | Miles
@@ -4415,46 +4415,46 @@ def _calculate_distance(
                                              Example:
                                              {"distance":"60","units":"Meters"}
     ------------------------------------     --------------------------------------------------------------------
-    allocation_field                         A field on the input_source_data layer that holds the values that 
+    allocation_field                         A field on the input_source_data layer that holds the values that
                                              defines each source.
 
                                              It can be an integer or a string field of the source dataset.
 
                                              The default for this parameter is 'Value'.
     ------------------------------------     --------------------------------------------------------------------
-    output_distance_name                     Optional. This is the output distance imagery layer that will be 
+    output_distance_name                     Optional. This is the output distance imagery layer that will be
                                              created.
 
-                                             If not provided, an imagery layer is created by the method 
+                                             If not provided, an imagery layer is created by the method
                                              and used as the output.
     ------------------------------------     --------------------------------------------------------------------
-    output_direction_name                    Optional. This is the output direction imagery layer that will be 
+    output_direction_name                    Optional. This is the output direction imagery layer that will be
                                              created.
 
-                                             If not provided, an imagery layer is created by the method 
+                                             If not provided, an imagery layer is created by the method
                                              and used as the output.
 
-                                             The output direction raster is in degrees, and indicates the 
-                                             direction to return to the closest source from each cell center. 
-                                             The values on the direction raster are based on compass directions, 
-                                             with 0 degrees reserved for the source cells. Thus, a value of 90 
+                                             The output direction raster is in degrees, and indicates the
+                                             direction to return to the closest source from each cell center.
+                                             The values on the direction raster are based on compass directions,
+                                             with 0 degrees reserved for the source cells. Thus, a value of 90
                                              means 90 degrees to the East, 180 is to the South, 270 is to the west,
                                              and 360 is to the North.
     ------------------------------------     --------------------------------------------------------------------
-    output_allocation_name                   Optional. This is the output allocation  imagery layer that will be 
+    output_allocation_name                   Optional. This is the output allocation  imagery layer that will be
                                              created.
 
-                                             If not provided, an imagery layer is created by the method 
+                                             If not provided, an imagery layer is created by the method
                                              and used as the output.
 
-                                             This parameter calculates, for each cell, the nearest source based 
+                                             This parameter calculates, for each cell, the nearest source based
                                              on Euclidean distance.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -4513,25 +4513,25 @@ def generate_multidimensional_anomaly(
     method                                   Optional String. Specifies the method that will be used to calculate
                                              the anomaly.
 
-                                             - DIFFERENCE_FROM_MEAN : The difference between a pixel value and the mean 
-                                               of that pixel's values across slices defined by the 
+                                             - DIFFERENCE_FROM_MEAN : The difference between a pixel value and the mean
+                                               of that pixel's values across slices defined by the
                                                interval will be calculated. This is the default.
 
-                                             - PERCENT_DIFFERENCE_FROM_MEAN : The percent difference between a pixel value 
-                                               and the mean of that pixel's values across 
+                                             - PERCENT_DIFFERENCE_FROM_MEAN : The percent difference between a pixel value
+                                               and the mean of that pixel's values across
                                                slices defined by the interval will be calculated.
 
                                              - PERCENT_OF_MEAN : The percent of the mean will be calculated.
 
-                                             - Z_SCORE : The z-score for each pixel will be calculated. 
-                                               A z-score of 0 indicates the pixel's value is identical to the mean. 
-                                               A z-score of 1 indicates the pixel's value is 1 standard deviation from the mean. 
+                                             - Z_SCORE : The z-score for each pixel will be calculated.
+                                               A z-score of 0 indicates the pixel's value is identical to the mean.
+                                               A z-score of 1 indicates the pixel's value is 1 standard deviation from the mean.
                                                If a z-score is 2, the pixel's value is 2 standard deviations from the mean, and so on.
 
-                                             - DIFFERENCE_FROM_MEDIAN : The difference between a pixel value and the median of that 
+                                             - DIFFERENCE_FROM_MEDIAN : The difference between a pixel value and the median of that
                                                pixel's values across slices defined by the interval will be calculated
 
-                                             - PERCENT_DIFFERENCE_FROM_MEDIAN : The percent difference between a pixel value and the 
+                                             - PERCENT_DIFFERENCE_FROM_MEDIAN : The percent difference between a pixel value and the
                                                median of that pixel's values across slices defined by the interval will be calculated.
 
                                              - PERCENT_OF_MEDIAN : The percent of the median will be calculated.
@@ -4560,7 +4560,7 @@ def generate_multidimensional_anomaly(
 
                                              - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -4568,40 +4568,40 @@ def generate_multidimensional_anomaly(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -4609,7 +4609,7 @@ def generate_multidimensional_anomaly(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -4619,7 +4619,7 @@ def generate_multidimensional_anomaly(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -4629,27 +4629,27 @@ def generate_multidimensional_anomaly(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     .. code-block:: python
 
-        # Usage Example 1: This example generates an anomaly multidimensional raster for temperature data, comparing pixel values with the mean 
+        # Usage Example 1: This example generates an anomaly multidimensional raster for temperature data, comparing pixel values with the mean
         # pixel value across all slices.
-        
-        generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_lyr_input, 
-                                                             variables=["oceantemp"], 
-                                                             method="PERCENT_DIFFERENCE_FROM_MEAN", 
-                                                             temporal_interval="YEARLY", 
-                                                             output_name="temp_anomaly", 
-                                                             ignore_nodata=True, 
+
+        generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_lyr_input,
+                                                             variables=["oceantemp"],
+                                                             method="PERCENT_DIFFERENCE_FROM_MEAN",
+                                                             temporal_interval="YEARLY",
+                                                             output_name="temp_anomaly",
+                                                             ignore_nodata=True,
                                                              gis=gis,
                                                              folder="generate_mdim_anomaly")
 
@@ -4694,11 +4694,11 @@ def build_multidimensional_transpose(
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -4706,28 +4706,28 @@ def build_multidimensional_transpose(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     delete_tranpose                          Optional boolean. Specifies whether to delete an existing transpose.
 
-                                                - True - The transpose, if it exists, will be deleted. No new transpose will be built. 
+                                                - True - The transpose, if it exists, will be deleted. No new transpose will be built.
 
-                                                - False - The transpose will be built. If there is an existing transpose, it will be overwritten. This is the default. 
+                                                - False - The transpose will be built. If there is an existing transpose, it will be overwritten. This is the default.
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
+    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
-    output_raster : Imagery Layer URL 
+    output_raster : Imagery Layer URL
 
     .. code-block:: python
 
@@ -4753,8 +4753,8 @@ def aggregate_multidimensional_raster(
     input_multidimensional_raster,
     dimension=None,
     variables=None,
-    aggregation_method='MEAN',
-    aggregation_definition='ALL',
+    aggregation_method="MEAN",
+    aggregation_definition="ALL",
     interval_keyword=None,
     interval_value=None,
     interval_unit=None,
@@ -4810,8 +4810,8 @@ def aggregate_multidimensional_raster(
 
                                              - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
-                                             - PERCENTILE: The percentile of values for a pixel will be calculated across all slices 
-                                               in the interval. The 90th percentile is calculated by default. You can specify other 
+                                             - PERCENTILE: The percentile of values for a pixel will be calculated across all slices
+                                               in the interval. The 90th percentile is calculated by default. You can specify other
                                                values (from 0 to 100) using the percentile_value parameter.
 
                                              - RANGE : Calculates the range of values for a pixel across all slices in the interval.
@@ -4823,7 +4823,7 @@ def aggregate_multidimensional_raster(
                                              - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
                                              - CUSTOM : Calculates the value of a pixel based on a custom raster function.
-                                               When the aggregation_method is set to CUSTOM, the aggregation_function parameter 
+                                               When the aggregation_method is set to CUSTOM, the aggregation_function parameter
                                                becomes available.
     ------------------------------------     --------------------------------------------------------------------
     aggregation_definition                   Optional String. Specifies the dimension interval for which the data
@@ -4842,46 +4842,46 @@ def aggregate_multidimensional_raster(
                                              when the aggregation_definition parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
-                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                             - HOURLY : The data values will be aggregated into hourly time steps,
                                                and the result will include every hour in the time series.
 
-                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                             - DAILY : The data values will be aggregated into daily time steps,
                                                and the result will include every day in the time series.
 
-                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                             - WEEKLY : The data values will be aggregated into weekly time steps,
                                                and the result will include every week in the time series.
 
-                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each
                                                (last period might have more or less than 10 days)
                                                and each month would output 3 slices.
 
-                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each
                                                (last period might have more or less than 5 days)
                                                and each month would output 6 slices.
 
-                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                             - MONTHLY : The data values will be aggregated into monthly time steps,
                                                and the result will include every month in the time series.
 
-                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps,
                                                and the result will include every quarter in the time series.
 
-                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                             - YEARLY : The data values will be aggregated into yearly time steps,
                                                and the result will include every year in the time series.
 
-                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
-                                               and the result includes each one aggregated value per day. 
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps,
+                                               and the result includes each one aggregated value per day.
                                                The output will include, at most, 366 daily time slices
 
-                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per week. 
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per week.
                                                The output will include, at most, 53 weekly time slices.
 
-                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per month. 
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per month.
                                                The output will include, at most, 12 monthly time slices.
 
-                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per quarter. 
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per quarter.
                                                The output will include, at most, 4 quarterly time slices.
     ------------------------------------     --------------------------------------------------------------------
     interval_value                           Optional String. The size of the interval that will be used for the
@@ -4906,13 +4906,13 @@ def aggregate_multidimensional_raster(
                                              - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
                                              - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
     ------------------------------------     --------------------------------------------------------------------
-    interval_ranges                          Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
-                                             that will be used to aggregate groups of values. 
+    interval_ranges                          Optional List of dictionary objects. Interval ranges specified as list of dictionary objects
+                                             that will be used to aggregate groups of values.
 
                                              This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
                                              If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
-                                             Syntax: 
+                                             Syntax:
                                                  [{"minValue":"<min value>","maxValue":"<max value>"},
                                                  {"minValue":"<min value>","maxValue":"<max value>"}]
 
@@ -4930,13 +4930,13 @@ def aggregate_multidimensional_raster(
     ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
                                              the analysis.
 
-                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels.
                                                This is the default.
 
                                              - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
     ------------------------------------     --------------------------------------------------------------------
-    dimensionless                            Optional Boolean. Specifies whether the layer will have dimension values. 
-                                             This parameter is only active if a single slice is selected to create a layer. 
+    dimensionless                            Optional Boolean. Specifies whether the layer will have dimension values.
+                                             This parameter is only active if a single slice is selected to create a layer.
 
                                              - True : The layer will not have dimension values.
 
@@ -4944,28 +4944,28 @@ def aggregate_multidimensional_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                         Optional float. The percentile to calculate. The default is 90, indicating 
+    percentile_value                         Optional float. The percentile to calculate. The default is 90, indicating
                                              the 90th percentile.
 
-                                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
-                                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
-                                             A value of 50 will produce essentially the same result as the median statistic. 
+                                             The values can range from 0 to 100. The 0th percentile is essentially equivalent
+                                             to the minimum statistic, and the 100th percentile is equivalent to maximum.
+                                             A value of 50 will produce essentially the same result as the median statistic.
 
-                                             This option is only honored if the aggregation_method parameter is set to PERCENTILE. 
+                                             This option is only honored if the aggregation_method parameter is set to PERCENTILE.
 
                                              Parameter available in ArcGIS Image Server 10.9.1 and higher.
 
                                              Example:
                                                  90
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+    percentile_interpolation_type            Optional string. Specifies the method of percentile interpolation that will be used when there is an
                                              even number of values from the input raster to be calculated
 
-                                             - NEAREST : The nearest available value to the desired percentile will be used. 
-                                               In this case, the output pixel type will be the same as that of the input 
+                                             - NEAREST : The nearest available value to the desired percentile will be used.
+                                               In this case, the output pixel type will be the same as that of the input
                                                value raster. This is the default
 
-                                             - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                             - LINEAR  : The weighted average of the two surrounding values from the desired
                                                percentile will be used. In this case, the output pixel type will be floating point.
 
                                              Parameter available in ArcGIS Image Server 10.9.1 and higher.
@@ -4973,7 +4973,7 @@ def aggregate_multidimensional_raster(
                                              Example:
                                                  NEAREST
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -4981,40 +4981,40 @@ def aggregate_multidimensional_raster(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -5022,7 +5022,7 @@ def aggregate_multidimensional_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -5030,7 +5030,7 @@ def aggregate_multidimensional_raster(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -5040,14 +5040,14 @@ def aggregate_multidimensional_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -5075,30 +5075,30 @@ def aggregate_multidimensional_raster(
 
         agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input,
                                                           variables=["cceiling","ccover","gust","temperature"],
-                                                          dimension="StdTime", 
-                                                          aggregation_method="MEAN", 
+                                                          dimension="StdTime",
+                                                          aggregation_method="MEAN",
                                                           aggregation_definition="INTERVAL_VALUE",
-                                                          interval_value=3, 
-                                                          interval_unit="HOURS", 
+                                                          interval_value=3,
+                                                          interval_unit="HOURS",
                                                           output_name="hourly_data",
-                                                          ignore_nodata=True, 
+                                                          ignore_nodata=True,
                                                           gis=gis,
                                                           folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'aggregate_mdim_raster'})
 
     .. code-block:: python
-        
-        # Usage Example 3: This example aggregates temperature data using a custom aggregation function for multiple variables. This example uses aggregation function 
+
+        # Usage Example 3: This example aggregates temperature data using a custom aggregation function for multiple variables. This example uses aggregation function
         # uploaded as a Raster Function Template item on portal.
 
-        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input, 
-                                                          variables=["temperature"], 
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input,
+                                                          variables=["temperature"],
                                                           dimension="StdTime",
                                                           aggregation_method="CUSTOM",
-                                                          aggregation_definition="INTERVAL_RANGES", 
-                                                          interval_ranges=[{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},{"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}], 
-                                                          aggregation_function=rft_item, 
-                                                          output_name="temp_range4", 
-                                                          ignore_nodata=True, 
+                                                          aggregation_definition="INTERVAL_RANGES",
+                                                          interval_ranges=[{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},{"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}],
+                                                          aggregation_function=rft_item,
+                                                          output_name="temp_range4",
+                                                          ignore_nodata=True,
                                                           gis=gis)
 
     """
@@ -5107,17 +5107,17 @@ def aggregate_multidimensional_raster(
 
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.aggregate_multidimensional_raster(
-        input_multidimensional_raster=input_multidimensional_raster, 
-        output_name=output_name, 
-        dimension=dimension, 
-        aggregation_method=aggregation_method, 
-        variables=variables, 
-        aggregation_definition=aggregation_definition, 
-        interval_keyword=interval_keyword, 
-        interval_value=interval_value, 
-        interval_unit=interval_unit, 
-        interval_ranges=interval_ranges, 
-        aggregation_function=aggregation_function, 
+        input_multidimensional_raster=input_multidimensional_raster,
+        output_name=output_name,
+        dimension=dimension,
+        aggregation_method=aggregation_method,
+        variables=variables,
+        aggregation_definition=aggregation_definition,
+        interval_keyword=interval_keyword,
+        interval_value=interval_value,
+        interval_unit=interval_unit,
+        interval_ranges=interval_ranges,
+        aggregation_function=aggregation_function,
         ignore_nodata=ignore_nodata,
         dimensionless=dimensionless,
         percentile_value=percentile_value,
@@ -5158,14 +5158,14 @@ def generate_trend_raster(
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Required String. The dimension along which a trend will be extracted 
+    dimension                                Required String. The dimension along which a trend will be extracted
                                              for the variable or variables selected in the analysis.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables for which trends will be calculated. 
-                                             If no variable is specified, the first variable in the multidimensional 
+    variables                                Optional List. The variable or variables for which trends will be calculated.
+                                             If no variable is specified, the first variable in the multidimensional
                                              raster will be analyzed.
     ------------------------------------     --------------------------------------------------------------------
-    trend_line_type                          Optional String. Specifies the type of line to be used to fit to the 
+    trend_line_type                          Optional String. Specifies the type of line to be used to fit to the
                                              pixel values along a dimension.
 
                                              - LINEAR : Fits the pixel values for a variable along a linear trend line. This is the default.
@@ -5175,10 +5175,10 @@ def generate_trend_raster(
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
 
                                              - MANN-KENDALL : Variable pixel values will be evaluated using the Mann-Kendall trend test. Option available in ArcGIS Image Server 10.9 and higher.
-                                             
+
                                              - SEASONAL-KENDALL : Variable pixel values will be evaluated using the Seasonal-Kendall trend test. Option available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    frequency                                Optional Integer. 
+    frequency                                Optional Integer.
 
                                              If the line_type parameter is set to HARMONIC, the default value is 1 ,or one harmonic cycle per year.
 
@@ -5187,12 +5187,12 @@ def generate_trend_raster(
     ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
                                              the analysis.
 
-                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels.
                                                This is the default.
 
                                              - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -5200,40 +5200,40 @@ def generate_trend_raster(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -5241,32 +5241,32 @@ def generate_trend_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     cycle_length                             Optional Float.
-                                             The length of periodic variation to model. This parameter is required 
-                                             when the Trend Line Type is set to Harmonic. For example, 
-                                             leaf greenness often has one strong cycle of variation in a 
-                                             single year, so the cycle length is 1 year. Hourly temperature 
-                                             data has one strong cycle of variation throughout a single day, 
+                                             The length of periodic variation to model. This parameter is required
+                                             when the Trend Line Type is set to Harmonic. For example,
+                                             leaf greenness often has one strong cycle of variation in a
+                                             single year, so the cycle length is 1 year. Hourly temperature
+                                             data has one strong cycle of variation throughout a single day,
                                              so the cycle length is 1 day. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    cycle_unit                               Optional String. Default is "YEARS". Specifies the time unit to be 
+    cycle_unit                               Optional String. Default is "YEARS". Specifies the time unit to be
                                              used for the length of harmonic cycle. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
+    rmse                                     Optional Boolean. Default value is True. Specifies whether the root
                                              mean square error (RMSE) of the trend fit line will be calculated.
                                              Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    r2                                       Optional Boolean. Default value is False. Specifies whether the 
-                                             R-squared goodness-of-fit statistic for the trend fit line will be calculated. 
+    r2                                       Optional Boolean. Default value is False. Specifies whether the
+                                             R-squared goodness-of-fit statistic for the trend fit line will be calculated.
                                              Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
-                                             p-value statistic for the slope coefficient of the trend line will be calculated. 
+    slope_p_value                            Optional Boolean. Default value is False. Specifies whether the
+                                             p-value statistic for the slope coefficient of the trend line will be calculated.
                                              Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     seasonal_period                          Optional String. Specifies the seasonal period. Default - "DAYS"
@@ -5277,7 +5277,7 @@ def generate_trend_raster(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -5287,14 +5287,14 @@ def generate_trend_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -5303,14 +5303,14 @@ def generate_trend_raster(
     .. code-block:: python
 
         # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
-        
-        trend_coeff_multidim  = generate_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
-                                                      variables=["NightLightData"], 
-                                                      dimension="StdTime", 
-                                                      trend_line_type='POLYNOMIAL', 
-                                                      frequency=2, 
-                                                      ignore_nodata=True, 
-                                                      output_name="polynomial_trend_coefficients", 
+
+        trend_coeff_multidim  = generate_trend_raster(input_multidimensional_raster=multidimensional_lyr_input,
+                                                      variables=["NightLightData"],
+                                                      dimension="StdTime",
+                                                      trend_line_type='POLYNOMIAL',
+                                                      frequency=2,
+                                                      ignore_nodata=True,
+                                                      output_name="polynomial_trend_coefficients",
                                                       gis=gis,
                                                       folder="generate_trend_raster")
 
@@ -5365,37 +5365,37 @@ def predict_using_trend_raster(
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables that will be predicted in 
+    variables                                Optional List. The variable or variables that will be predicted in
                                              the analysis. If no variables are specified, all variables will be used.
 
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Required String. Specifies the method used to provide prediction dimension values.
 
-                                             - BY_VALUE : The prediction will be calculated for a single dimension value or 
-                                               a list of dimension values defined by the dimension_values parameter. 
-                                               This is the default. 
-                                               
-                                               For example, you want to predict yearly precipitation for the years 
+                                             - BY_VALUE : The prediction will be calculated for a single dimension value or
+                                               a list of dimension values defined by the dimension_values parameter.
+                                               This is the default.
+
+                                               For example, you want to predict yearly precipitation for the years
                                                2050, 2100, and 2150.
 
-                                             - BY_INTERVAL - The prediction will be calculated for an interval of the dimension defined 
-                                               by a start and an end value. For example, you want to predict yearly precipitation for 
+                                             - BY_INTERVAL - The prediction will be calculated for an interval of the dimension defined
+                                               by a start and an end value. For example, you want to predict yearly precipitation for
                                                every year between 2050 and 2150.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_values                         Optional list. The dimension value or values to be used in the prediction. 
+    dimension_values                         Optional list. The dimension value or values to be used in the prediction.
 
                                              This parameter is required when dimension_def parameter is set to BY_VALUE.
     ------------------------------------     --------------------------------------------------------------------
-    start                                    Optional String.The start date, height, or depth of the dimension interval to be used 
+    start                                    Optional String.The start date, height, or depth of the dimension interval to be used
                                              in the prediction.
     ------------------------------------     --------------------------------------------------------------------
     end                                      Optional String. The end date, height, or depth of the dimension interval to be used in the prediction.
     ------------------------------------     --------------------------------------------------------------------
     interval_value                           Optional Float. The number of steps between two dimension values to be included in the prediction. The default value is 1
-                                                
+
                                              For example, to predict temperature values every five years, use a value of 5.
     ------------------------------------     --------------------------------------------------------------------
-    interval_unit                            Optional String. Specifies the unit that will be used for the value interval. 
+    interval_unit                            Optional String. Specifies the unit that will be used for the value interval.
                                              This parameter only applies when the dimension of analysis is a time dimension.
 
                                              - HOURS - The prediction will be calculated for each hour in the range of time described by the start, end, and interval_value parameters.
@@ -5408,7 +5408,7 @@ def predict_using_trend_raster(
 
                                              - YEARS - The prediction will be calculated for each year in the range of time described by the start, end, and interval_value parameters.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -5416,40 +5416,40 @@ def predict_using_trend_raster(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -5457,7 +5457,7 @@ def predict_using_trend_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -5465,7 +5465,7 @@ def predict_using_trend_raster(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -5475,14 +5475,14 @@ def predict_using_trend_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -5492,8 +5492,8 @@ def predict_using_trend_raster(
 
         # Usage Example 1: This example generates the forecasted precipitation and temperature for January 1, 2050, and January 1, 2100.
 
-        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
-                                                    variables=["temp","precip"], 
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input,
+                                                    variables=["temp","precip"],
                                                     dimension_definition='BY_VALUE',
                                                     dimension_values=["2050-01-01T00:00:00","2100-01-01T00:00:00"],
                                                     output_name="predicted_temp_precip",
@@ -5504,14 +5504,14 @@ def predict_using_trend_raster(
 
         # Usage Example 2: This example generates the forecasted NDVI values for each month in year 2025.
 
-        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
-                                                    variables=["NDVI"], 
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input,
+                                                    variables=["NDVI"],
                                                     dimension_definition='BY_INTERVAL',
                                                     start="2025-01-01T00:00:00",
                                                     end="2025-12-31T00:00:00",
                                                     interval_value=1,
                                                     interval_unit="MONTHS",
-                                                    output_name="predict_using_trend_raster", 
+                                                    output_name="predict_using_trend_raster",
                                                     gis=gis,
                                                     folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
 
@@ -5564,41 +5564,41 @@ def find_argument_statistics(
     input_raster                             Required ImageryLayer object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Required String. The dimension from which the statistic will be 
-                                             extracted. If the input raster is not a multidimensional raster, 
+    dimension                                Required String. The dimension from which the statistic will be
+                                             extracted. If the input raster is not a multidimensional raster,
                                              this parameter is not required.
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Required String. Specifies the dimension interval for which the data will be analyzed.
 
                                               -  ALL : The data values will be analyzed across all slices. This is the default.
 
-                                              -  INTERVAL_KEYWORD :The variable data will be analyzed using a commonly known interval. 
+                                              -  INTERVAL_KEYWORD :The variable data will be analyzed using a commonly known interval.
 
                                              Example:
                                                 'ALL'
     ------------------------------------     --------------------------------------------------------------------
-    interval_keyword                         Required String. Specifies the keyword interval that will be used 
-                                             when analyzing along the dimension. This parameter is required when the 
-                                             dimension_definition parameter is set to INTERVAL_KEYWORD, and the 
+    interval_keyword                         Required String. Specifies the keyword interval that will be used
+                                             when analyzing along the dimension. This parameter is required when the
+                                             dimension_definition parameter is set to INTERVAL_KEYWORD, and the
                                              analysis must be across time.
 
                                              Possible options:
-                                             HOURLY, DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, 
+                                             HOURLY, DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY,
                                              RECURRING_DAILY, RECURRING_WEEKLY, RECURRING_MONTHLY, RECURRING_QUARTERLY
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables to be analyzed. If the input 
-                                             raster is not multidimensional, the pixel values of the multiband raster 
-                                             are considered the variable. If the input raster is multidimensional and 
+    variables                                Optional List. The variable or variables to be analyzed. If the input
+                                             raster is not multidimensional, the pixel values of the multiband raster
+                                             are considered the variable. If the input raster is multidimensional and
                                              no variable is specified, all variables with the selected dimension will be analyzed.
 
-                                             For example, to find the years in which temperature values were highest, 
-                                             specify temperature as the variable to be analyzed. If you do not specify any 
-                                             variables and you have both temperature and precipitation variables, 
-                                             both variables will be analyzed and the output multidimensional raster will 
+                                             For example, to find the years in which temperature values were highest,
+                                             specify temperature as the variable to be analyzed. If you do not specify any
+                                             variables and you have both temperature and precipitation variables,
+                                             both variables will be analyzed and the output multidimensional raster will
                                              include both variables.
     ------------------------------------     --------------------------------------------------------------------
     statistics_type                          Optional String. Specifies the statistic to extract from the variable or variables along the given dimension.
-                                             
+
                                              - ARGUMENT_MIN : The dimension value at which the minimum variable value is reached will be extracted. This is the default.
 
                                              - ARGUMENT_MAX : The dimension value at which the maximum variable value is reached will be extracted.
@@ -5613,20 +5613,20 @@ def find_argument_statistics(
     ------------------------------------     --------------------------------------------------------------------
     max_value                                Optional Float. The maximum variable value to be used to extract the duration.
     ------------------------------------     --------------------------------------------------------------------
-    multiple_occurrence_value                Optional Integer. Specifies the pixel value to use to indicate that a given argument 
+    multiple_occurrence_value                Optional Integer. Specifies the pixel value to use to indicate that a given argument
                                              statistic was reached more than once in the input raster dataset. If not specified,
-                                             the pixel value will be the value of the dimension the first time the argument 
+                                             the pixel value will be the value of the dimension the first time the argument
                                              statistic was reached.
     ------------------------------------     --------------------------------------------------------------------
     ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
                                              the analysis.
 
-                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels.
                                                This is the default.
 
                                              - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -5634,40 +5634,40 @@ def find_argument_statistics(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -5675,7 +5675,7 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -5683,7 +5683,7 @@ def find_argument_statistics(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -5693,14 +5693,14 @@ def find_argument_statistics(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -5708,16 +5708,16 @@ def find_argument_statistics(
 
     .. code-block:: python
 
-        # Usage Example 1: This example finds the minimum precipitation and temperature values across a time series multidimensional raster. 
+        # Usage Example 1: This example finds the minimum precipitation and temperature values across a time series multidimensional raster.
         # If the same minimum value is found multiple times, the pixel value will be 99999.
 
-        arg_stat_output = arcgis.raster.analytics.find_argument_statistics(input_raster=input_layer, 
-                                                                                  dimension="StdTime", 
-                                                                                  variables=["precip","temp"], 
-                                                                                  statistics_type='ARGUMENT_MIN', 
-                                                                                  multiple_occurrence_value=99999, 
-                                                                                  ignore_nodata=True, 
-                                                                                  output_name="arg_stat_output", 
+        arg_stat_output = arcgis.raster.analytics.find_argument_statistics(input_raster=input_layer,
+                                                                                  dimension="StdTime",
+                                                                                  variables=["precip","temp"],
+                                                                                  statistics_type='ARGUMENT_MIN',
+                                                                                  multiple_occurrence_value=99999,
+                                                                                  ignore_nodata=True,
+                                                                                  output_name="arg_stat_output",
                                                                                   gis=gis,
                                                                                   folder="find_argument_statistics")
 
@@ -5725,14 +5725,14 @@ def find_argument_statistics(
 
         # Usage Example 2: This example finds the longest time interval for which salinity fell between 10 and 15 units of measurement in the multidimensional raster.
 
-        arg_stat_output = find_argument_statistics(input_raster=input_layer, 
-                                                   dimension="StdTime", 
-                                                   variables=["salinity"], 
-                                                   statistics_type='DURATION', 
-                                                   min_value=10, 
-                                                   max_value=15, 
-                                                   ignore_nodata=True, 
-                                                   output_name="arg_stat_output", 
+        arg_stat_output = find_argument_statistics(input_raster=input_layer,
+                                                   dimension="StdTime",
+                                                   variables=["salinity"],
+                                                   statistics_type='DURATION',
+                                                   min_value=10,
+                                                   max_value=15,
+                                                   ignore_nodata=True,
+                                                   output_name="arg_stat_output",
                                                    gis=gis,
                                                    folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
     """
@@ -5780,14 +5780,14 @@ def linear_spectral_unmixing(
     ------------------------------------     --------------------------------------------------------------------
     input_spectral_profile                   Required Dict or String. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
-    value_option                             Optional String. Specifies the options to define the output pixel values. 
+    value_option                             Optional String. Specifies the options to define the output pixel values.
 
-                                             - SUM_TO_ONE : Class values for each pixel are provided in decimal format with the sum 
+                                             - SUM_TO_ONE : Class values for each pixel are provided in decimal format with the sum
                                                of all classes equal to 1. For example, Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
 
                                              - NON_NEGATIVE : There will be no negative output values.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -5795,40 +5795,40 @@ def linear_spectral_unmixing(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -5836,7 +5836,7 @@ def linear_spectral_unmixing(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -5844,7 +5844,7 @@ def linear_spectral_unmixing(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -5854,14 +5854,14 @@ def linear_spectral_unmixing(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -5872,9 +5872,9 @@ def linear_spectral_unmixing(
         # Usage Example 1: This example calculates the fractional abundance of classes from a classifier definition file (.ecd)
         # located in a datastore registered with the raster analytics server and generates a multiband raster.
 
-        unmixing_output = linear_spectral_unmixing(input_raster=input_layer, 
+        unmixing_output = linear_spectral_unmixing(input_raster=input_layer,
                                                    input_spectral_profile="/fileShares/Mdim/SpectralUnmixing_json.ecd",
-                                                   output_name="linear_spectral_unmixing", 
+                                                   output_name="linear_spectral_unmixing",
                                                    gis=gis,
                                                    folder="linear_spectral_unmixing")
 
@@ -5888,10 +5888,10 @@ def linear_spectral_unmixing(
                                                      {"EndmemberID":2,"EndmemberName":"vegetation","SpectralProfile":[50,21,20,35,50,110,23]},
                                                      {"EndmemberID":3,"EndmemberName":"water","SpectralProfile":[51,20,14,9,7,116,4]}]}
 
-        unmixing_outputs = arcgis.raster.analytics.linear_spectral_unmixing(input_raster=multidimensional_lyr_input, 
+        unmixing_outputs = arcgis.raster.analytics.linear_spectral_unmixing(input_raster=multidimensional_lyr_input,
                                                                             input_spectral_profile=input_spectral_profile_dict,
                                                                             value_option=["SUM_TO_ONE","NON_NEGATIVE"],
-                                                                            output_name="linear_spectral_unmixing", 
+                                                                            output_name="linear_spectral_unmixing",
                                                                             gis=gis,
                                                                             folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
 
@@ -5937,8 +5937,8 @@ def subset_multidimensional_raster(
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional list. The variables that will be included in the output 
-                                             multidimensional raster. If no variable is specified, all of the 
+    variables                                Optional list. The variables that will be included in the output
+                                             multidimensional raster. If no variable is specified, all of the
                                              variables will be used.
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Optional String. Specifies the method that will be used to slice the dimension.
@@ -5951,23 +5951,23 @@ def subset_multidimensional_raster(
 
                                               - BY_VALUE : The dimension will be sliced using a list of dimension values.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_ranges                         Optional list of dicts. 
+    dimension_ranges                         Optional list of dicts.
 
-                                             This slices the data based on the dimension name and the 
-                                             minimum and maximum values for the range. 
+                                             This slices the data based on the dimension name and the
+                                             minimum and maximum values for the range.
 
                                              This parameter is required when the dimension_definition is set to BY_RANGE.
 
-                                             If dimension is StdTime, then the min value and max value must be specified in 
+                                             If dimension is StdTime, then the min value and max value must be specified in
                                              human readable time format (YYYY-MM-DDTHH:MM:SS).
 
                                              dimension_values has to be specified as:
 
-                                             [{"dimension":"<dimension_name>", 
-                                             "minValue":"<dimension_min_value>", 
+                                             [{"dimension":"<dimension_name>",
+                                             "minValue":"<dimension_min_value>",
                                              "maxValue":"<dimension_max_value>"},
-                                             {"dimension":"<dimension_name>", 
-                                             "minValue":"<dimension_min_value>", 
+                                             {"dimension":"<dimension_name>",
+                                             "minValue":"<dimension_min_value>",
                                              "maxValue":"<dimension_max_value>"}]
 
                                              Example:
@@ -5978,13 +5978,13 @@ def subset_multidimensional_raster(
                                                  "minValue":"-5000",
                                                  "maxValue":"-4000"}]
     ------------------------------------     --------------------------------------------------------------------
-    dimension_values                         Optional list of dicts. 
+    dimension_values                         Optional list of dicts.
 
                                              This slices the data based on the dimension name and the value specified.
 
                                              This parameter is required when the dimension_definition is set to BY_VALUE.
 
-                                             If dimension is StdTime, then the value must be specified in 
+                                             If dimension is StdTime, then the value must be specified in
                                              human readable time format (YYYY-MM-DDTHH:MM:SS).
 
                                              dimension_values has to be specified as:
@@ -5995,15 +5995,15 @@ def subset_multidimensional_raster(
                                                 [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
                                                 {"dimension":" StdZ ", "value":"-4000"}]
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Optional string. The dimension along which the variables will be sliced. 
+    dimension                                Optional string. The dimension along which the variables will be sliced.
     ------------------------------------     --------------------------------------------------------------------
-    start_of_first_iteration                 Optional string. The beginning of the interval. 
+    start_of_first_iteration                 Optional string. The beginning of the interval.
                                              This parameter is required when the dimension_definition is set to BY_ITERATION
     ------------------------------------     --------------------------------------------------------------------
-    end_of_first_iteration                   Optional String.The end of the interval. 
+    end_of_first_iteration                   Optional String.The end of the interval.
                                              This parameter is required when the dimension_definition is set to BY_ITERATION
     ------------------------------------     --------------------------------------------------------------------
-    iteration_step                           Optional Float. The interval over which the data will be sliced. 
+    iteration_step                           Optional Float. The interval over which the data will be sliced.
                                              This parameter is required when the dimension_definition is set to BY_ITERATION
     ------------------------------------     --------------------------------------------------------------------
     iteration_unit                           Optional String. The iteration unit.
@@ -6020,46 +6020,46 @@ def subset_multidimensional_raster(
 
                                              - YEARS -Uses years as the specified unit of time.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -6067,7 +6067,7 @@ def subset_multidimensional_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -6075,7 +6075,7 @@ def subset_multidimensional_raster(
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -6085,14 +6085,14 @@ def subset_multidimensional_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -6103,12 +6103,12 @@ def subset_multidimensional_raster(
         # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
         values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
 
-        subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr, 
+        subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr,
                                                        variables=["cceiling","ccover"],
                                                        dimension_definition='BY_VALUE',
                                                        dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
                                                                          {"dimension":"StdTime", "value":"2012-01-15T09:00:00"}]
-                                                       output_name="subset_op", 
+                                                       output_name="subset_op",
                                                        gis=gis,
                                                        folder="subset_multidimensional_raster")
 
@@ -6268,12 +6268,12 @@ def define_nodata(
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required ImageryLayer object. Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    nodata                                   Required dictionary. 
+    nodata                                   Required dictionary.
                                              The value must be specified in dict form and can have keys - noDataValues, includedRanges
-                                             e.g. 
-                                                  {"noDataValues": [0]} 
-                                                  {"noDataValues": [0, 255, 0]} 
-                                                  {"includedRanges": [0, 255]} 
+                                             e.g.
+                                                  {"noDataValues": [0]}
+                                                  {"noDataValues": [0, 255, 0]}
+                                                  {"includedRanges": [0, 255]}
                                                   {"includedRanges": [0, 255, 1, 255, 4, 250]}
     ------------------------------------     --------------------------------------------------------------------
     query_filter                             Optional str. An SQL statement to select specific raster in the image collection.
@@ -6285,17 +6285,17 @@ def define_nodata(
                                              Example:
                                                 3
     ------------------------------------     --------------------------------------------------------------------
-    composite_value                          Optional boolean. Choose whether all bands must be NoData in order 
+    composite_value                          Optional boolean. Choose whether all bands must be NoData in order
                                              for the pixel to be classified as NoData.
-                                              - False : If any of the bands have pixels of NoData, 
+                                              - False : If any of the bands have pixels of NoData,
                                                 then the pixel is classified as NoData. This is the default.
-                                              - True : All of the bands must have pixels of NoData in 
+                                              - True : All of the bands must have pixels of NoData in
                                                 order for the pixel to be classified as NoData.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
@@ -6362,33 +6362,33 @@ def optimal_path_as_line(
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_destination_data                   Required ImageryLayer or Feature Layer object. Portal Item can be passed.
-                                             A dataset that identifies locations from which the optimal path is 
+                                             A dataset that identifies locations from which the optimal path is
                                              determined to the least costly source.
 
-                                             If the input is a raster, it must consist of cells that have valid values 
-                                             for the destinations, and the remaining cells must be assigned NoData. 
+                                             If the input is a raster, it must consist of cells that have valid values
+                                             for the destinations, and the remaining cells must be assigned NoData.
                                              Zero is a valid value.
     ------------------------------------     --------------------------------------------------------------------
     input_distance_accumulation_raster       Required ImageryLayer object. Portal Item can be passed.
-                                             The distance accumulation raster is used 
-                                             to determine the optimal path from the sources to the destinations. 
+                                             The distance accumulation raster is used
+                                             to determine the optimal path from the sources to the destinations.
 
-                                             The distance accumulation raster is usually created with the 
-                                             arcgis.raster.functions.gbl.distance_accumulation or 
-                                             arcgis.raster.functions.gbl.distance_allocation functions.  Each cell 
-                                             in the distance accumulation raster represents the minimum 
+                                             The distance accumulation raster is usually created with the
+                                             arcgis.raster.functions.gbl.distance_accumulation or
+                                             arcgis.raster.functions.gbl.distance_allocation functions.  Each cell
+                                             in the distance accumulation raster represents the minimum
                                              accumulative cost distance over a surface from each cell to a set of source cells.
     ------------------------------------     --------------------------------------------------------------------
     input_back_direction_raster              Required ImageryLayer object. Portal Item can be passed.
-                                             The back direction raster contains calculated directions in degrees. 
-                                             The direction identifies the next cell along the optimal path back to 
+                                             The back direction raster contains calculated directions in degrees.
+                                             The direction identifies the next cell along the optimal path back to
                                              the least accumulative cost source while avoiding barriers.
 
-                                             The range of values is from 0 degrees to 360 degrees, with 0 
-                                             reserved for the source cells. Due east (right) is 90, and the 
+                                             The range of values is from 0 degrees to 360 degrees, with 0
+                                             reserved for the source cells. Due east (right) is 90, and the
                                              values increase clockwise (180 is south, 270 is west, and 360 is north)
     ------------------------------------     --------------------------------------------------------------------
-    destination_field                        Optional string. The field to be used to obtain values for the destination locations. 
+    destination_field                        Optional string. The field to be used to obtain values for the destination locations.
     ------------------------------------     --------------------------------------------------------------------
     path_type                                Optional string. A keyword defining the manner in which the values and zones on the input destination
                                              data will be interpreted in the cost path calculations.
@@ -6399,10 +6399,10 @@ def optimal_path_as_line(
 
                                               - EACH_CELL - For each cell with valid values on the input destination data, a least-cost path is determined and saved on the output raster. With this option, each cell of the input destination data is treated separately, and a least-cost path is determined for each from cell.
     ------------------------------------     --------------------------------------------------------------------
-    output_feature_name                      Optional. If not provided, a feature layer is created by the method 
+    output_feature_name                      Optional. If not provided, a feature layer is created by the method
                                              and used as the output.
 
-                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             You can pass in an existing feature layer Item from your GIS to use
                                              that instead.
 
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
@@ -6410,8 +6410,8 @@ def optimal_path_as_line(
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dict. Context contains additional settings that affect task execution.
     ------------------------------------     --------------------------------------------------------------------
-    create_network_paths                     Optional string or boolean. Specifies whether complete, and possibly 
-                                             overlapping, paths from the destinations to the sources are calculated 
+    create_network_paths                     Optional string or boolean. Specifies whether complete, and possibly
+                                             overlapping, paths from the destinations to the sources are calculated
                                              or if  nonoverlapping network paths are created.
 
                                              - `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations to the sources are calculated, which can be overlapping.  This is default.
@@ -6423,7 +6423,7 @@ def optimal_path_as_line(
     gis                                      Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -6478,35 +6478,35 @@ def optimal_region_connections(
     input_region_data                        Required ImageryLayer or Feature Layer object. Portal Item can be passed.
                                              The input regions to be connected by the optimal network.
 
-                                             If the region input is a raster, the regions are defined by groups 
-                                             of contiguous (adjacent) cells of the same value. Each region must 
-                                             be uniquely numbered. The cells that are not part of any region must 
-                                             be NoData. The raster type must be integer, and the values can be 
+                                             If the region input is a raster, the regions are defined by groups
+                                             of contiguous (adjacent) cells of the same value. Each region must
+                                             be uniquely numbered. The cells that are not part of any region must
+                                             be NoData. The raster type must be integer, and the values can be
                                              either positive or negative.
 
-                                             If the region input is a feature dataset, it can be polygons, 
-                                             lines, or points. Polygon feature regions cannot be composed 
+                                             If the region input is a feature dataset, it can be polygons,
+                                             lines, or points. Polygon feature regions cannot be composed
                                              of multipart polygons.
     ------------------------------------     --------------------------------------------------------------------
     input_barrier_data                       Required ImageryLayer or Feature Layer object. Portal Item can be passed.
                                              The dataset that defines the barriers.
 
-                                             The barriers can be defined by an integer or a floating-point raster, 
+                                             The barriers can be defined by an integer or a floating-point raster,
                                              or by a feature layer.
     ------------------------------------     --------------------------------------------------------------------
-    input_cost_raster                        Required ImageryLayer object. Portal Item can be passed. A raster 
-                                             defining the impedance or cost to move planimetrically through each 
+    input_cost_raster                        Required ImageryLayer object. Portal Item can be passed. A raster
+                                             defining the impedance or cost to move planimetrically through each
                                              cell.
 
-                                             The value at each cell location represents the cost-per-unit 
-                                             distance for moving through the cell. Each cell location value 
-                                             is multiplied by the cell resolution while also compensating 
+                                             The value at each cell location represents the cost-per-unit
+                                             distance for moving through the cell. Each cell location value
+                                             is multiplied by the cell resolution while also compensating
                                              for diagonal movement to obtain the total cost of passing through the cell.
 
-                                             The values of the cost raster can be integer or floating point, 
+                                             The values of the cost raster can be integer or floating point,
                                              but they cannot be negative or zero (you cannot have a negative or zero cost).
     ------------------------------------     --------------------------------------------------------------------
-    distance_method                          Optional String. Specifies whether to calculate the distance using a 
+    distance_method                          Optional String. Specifies whether to calculate the distance using a
                                              planar (flat earth) or a geodesic (ellipsoid) method.
 
                                              - PLANAR - The distance calculation will be performed on a projected flat plane using a 2D Cartesian coordinate system. This is the default.
@@ -6516,21 +6516,21 @@ def optimal_region_connections(
     connections_within_regions               Optional string. Default - GENERATE_CONNECTIONS
                                              Possible options: GENERATE_CONNECTIONS, NO_CONNECTIONS
     ------------------------------------     --------------------------------------------------------------------
-    output_optimal_lines_name                Optional. If not provided, a feature layer is created by the method 
+    output_optimal_lines_name                Optional. If not provided, a feature layer is created by the method
                                              and used as the output.
-                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             You can pass in an existing feature layer Item from your GIS to use
                                              that instead.
-                                             Alternatively, you can pass in the name of the output feature layer  
+                                             Alternatively, you can pass in the name of the output feature layer
                                              that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
 
-                                             This is the output polyline feature class of the optimal network of 
+                                             This is the output polyline feature class of the optimal network of
                                              paths necessary to connect each of the input regions.
 
-                                             Each path (or line) is uniquely numbered, and additional fields in the 
-                                             attribute table store specific information about the path. 
+                                             Each path (or line) is uniquely numbered, and additional fields in the
+                                             attribute table store specific information about the path.
                                              Those fields are the following:
-                                              
+
                                               - PATHID - Unique identifier for the path
 
                                               - PATHCOST - Total accumulative distance or cost for the path
@@ -6544,19 +6544,19 @@ def optimal_region_connections(
                                              Since each path is represented by a unique line, there will be
                                              multiple lines in locations where paths travel the same route.
     ------------------------------------     --------------------------------------------------------------------
-    output_neighbor_connections_name         Optional. If not provided, a feature layer is created by the method 
+    output_neighbor_connections_name         Optional. If not provided, a feature layer is created by the method
                                              and used as the output.
-                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             You can pass in an existing feature layer Item from your GIS to use
                                              that instead.
-                                             Alternatively, you can pass in the name of the output feature layer  
+                                             Alternatively, you can pass in the name of the output feature layer
                                              that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
 
-                                             This is the output polyline feature class identifying all paths from 
+                                             This is the output polyline feature class identifying all paths from
                                              each region to each of its closest or cost neighbors.
 
-                                             Each path (or line) is uniquely numbered, and additional fields in the 
-                                             attribute table store specific information about the path. 
+                                             Each path (or line) is uniquely numbered, and additional fields in the
+                                             attribute table store specific information about the path.
                                              Those fields are the following:
 
                                               - PATHID - Unique identifier for the path
@@ -6567,11 +6567,11 @@ def optimal_region_connections(
 
                                               - REGION2 - The other region the path connects
 
-                                             This information provides insight into the paths within the 
-                                             network and is particularly useful when deciding which paths 
+                                             This information provides insight into the paths within the
+                                             network and is particularly useful when deciding which paths
                                              should be removed if necessary.
 
-                                             Since each path is represented by a unique line, there will be 
+                                             Since each path is represented by a unique line, there will be
                                              multiple lines in locations where paths travel the same route.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
@@ -6579,7 +6579,7 @@ def optimal_region_connections(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -6727,7 +6727,7 @@ def analyze_changes_using_ccdc(
 ):
 
     """
-    Function evaluates changes in pixel values over time using the CCDC algorithm, 
+    Function evaluates changes in pixel values over time using the CCDC algorithm,
     and generates a multidimensional raster containing the model results.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
@@ -6741,77 +6741,77 @@ def analyze_changes_using_ccdc(
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
-                                             Each element in the list should be within the range 1 to n where n is the 
+                                             Each element in the list should be within the range 1 to n where n is the
                                              number of bands of the input raster.
 
                                              Example:
                                                   [1,2,3,4,6]
     ------------------------------------     --------------------------------------------------------------------
-    bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to 
-                                             mask for cloud, cloud shadow and snow. If band IDs are not provided, no 
+    bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to
+                                             mask for cloud, cloud shadow and snow. If band IDs are not provided, no
                                              masking will occur.
-                                             Each element in the list should be within the range 1 to n where n is 
+                                             Each element in the list should be within the range 1 to n where n is
                                              the number of bands of the input raster.
 
                                              Example:
                                                 [1,2]
     ------------------------------------     --------------------------------------------------------------------
-    chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an 
-                                             observation has a calculated change probability that is above this 
-                                             threshold, it is flagged as an anomaly, which is a potential change 
-                                             event. The default value is 0.99. 
+    chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an
+                                             observation has a calculated change probability that is above this
+                                             threshold, it is flagged as an anomaly, which is a potential change
+                                             event. The default value is 0.99.
 
                                              Example:
                                                 0.99
     ------------------------------------     --------------------------------------------------------------------
-    min_anomaly_observations                 Optional Integer. The minimum number of consecutive anomaly observations 
-                                             that must occur before an event is considered a change. A pixel must 
-                                             be flagged as an anomaly for the specified number of consecutive 
-                                             time slices before it is considered a true change. The default value is 6. 
+    min_anomaly_observations                 Optional Integer. The minimum number of consecutive anomaly observations
+                                             that must occur before an event is considered a change. A pixel must
+                                             be flagged as an anomaly for the specified number of consecutive
+                                             time slices before it is considered a true change. The default value is 6.
     ------------------------------------     --------------------------------------------------------------------
     update_frequency                         Optional Float. The value that represents the update frequency.
-                                             The default value is 1. 
+                                             The default value is 1.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution. 
+    context                                  Context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -6819,7 +6819,7 @@ def analyze_changes_using_ccdc(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -6827,7 +6827,7 @@ def analyze_changes_using_ccdc(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -6837,21 +6837,21 @@ def analyze_changes_using_ccdc(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return: Imagery layer item
 
     .. code-block:: python
 
-            # Usage Example 1: This example performs continuous change detection where only one band is used in the change detection 
+            # Usage Example 1: This example performs continuous change detection where only one band is used in the change detection
             # and the chi-squared probability threshold is 0.90.
             analyze_changes_using_ccdc_op = analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster,
                                                                        bands_for_detecting_change=[0],
@@ -6865,7 +6865,7 @@ def analyze_changes_using_ccdc(
 
     .. code-block:: python
 
-            # Usage Example 2: This example performs continuous change detection where bands 3 and 7 (indexed at 2 and 6) 
+            # Usage Example 2: This example performs continuous change detection where bands 3 and 7 (indexed at 2 and 6)
             # are used as snow, cloud, and cloud shadow mask.
             analyze_changes_using_ccdc_op = analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster,
                                                                        bands_for_detecting_change=[0,1,2,3,4,5,6],
@@ -6923,8 +6923,8 @@ def detect_change_using_change_analysis_raster(
 ):
 
     """
-    Function generates a raster containing pixel change information using the 
-    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc 
+    Function generates a raster containing pixel change information using the
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc
     or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
@@ -6948,9 +6948,9 @@ def detect_change_using_change_analysis_raster(
                                              Example:
                                                 "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
-    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated. This number corresponds to the number of bands in the output raster. 
-                                             The default is 1, meaning only one change date will be calculated, 
+    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will
+                                             be calculated. This number corresponds to the number of bands in the output raster.
+                                             The default is 1, meaning only one change date will be calculated,
                                              and the output raster will contain only one band.
 
                                              This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
@@ -6958,46 +6958,46 @@ def detect_change_using_change_analysis_raster(
                                              Example:
                                                 3
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution. 
+    context                                  Context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -7005,35 +7005,35 @@ def detect_change_using_change_analysis_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
-                                             of a change segment, or the end. 
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning
+                                             of a change segment, or the end.
 
-                                             This parameter is available only when the input change analysis raster is 
+                                             This parameter is available only when the input change analysis raster is
                                              the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
-                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment.
 
                                              Example:
                                                 "END_OF_SEGMENT"
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    change_direction                         Optional string. The direction of change to be included in the analysis. 
-                                             For example, choose Increasing to only extract date of change information for 
-                                             periods where the change is in the positive or increasing direction. 
+    change_direction                         Optional string. The direction of change to be included in the analysis.
+                                             For example, choose Increasing to only extract date of change information for
+                                             periods where the change is in the positive or increasing direction.
 
-                                             This parameter is available only when the input change analysis raster 
-                                             is the output from the analyze_changes_using_landtrendr function. 
+                                             This parameter is available only when the input change analysis raster
+                                             is the output from the analyze_changes_using_landtrendr function.
 
                                                 - ALL - All change directions will be included in the output. This is the default.
                                                 - INCREASE - Only change in the positive or increasing direction will be included in the output.
-                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output.
 
                                              Example:
                                                 "DECREASE"
@@ -7042,7 +7042,7 @@ def detect_change_using_change_analysis_raster(
     ------------------------------------     --------------------------------------------------------------------
     filter_by_year                           Optional boolean. Specifies whether to filter by a range of years.
 
-                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output.
                                                 - False - Do not filter results by year. This is the default.
 
                                              Example:
@@ -7050,46 +7050,46 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
-                                             is required if the filter_by_year parameter is set to True. 
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter
+                                             is required if the filter_by_year parameter is set to True.
 
                                              Example:
                                                 2000
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_year                                 Optional int. The latest year to use to filter results. This parameter 
-                                             is required if the filter_by_year parameter is set to True. 
+    max_year                                 Optional int. The latest year to use to filter results. This parameter
+                                             is required if the filter_by_year parameter is set to True.
 
                                              Example:
                                                 2005
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
-                                             This parameter is available only when the input change analysis raster 
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration.
+                                             This parameter is available only when the input change analysis raster
                                              is the output from the analyze_changes_using_landtrendr function.
 
-                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output. 
-                                                - False - Do not filter results by duration. This is the default. 
+                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
+                                                - False - Do not filter results by duration. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_duration                             Optional float. The minimum number of consecutive years to include in 
-                                             the results. This parameter is required if the filter_by_duration parameter 
-                                             is set to True 
+    min_duration                             Optional float. The minimum number of consecutive years to include in
+                                             the results. This parameter is required if the filter_by_duration parameter
+                                             is set to True
 
                                              Example:
                                                 2
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_duration                             Optional float. The maximum number of consecutive years to include 
-                                             in the results. This parameter is required if the filter_by_duration 
-                                             parameter is set to True 
+    max_duration                             Optional float. The maximum number of consecutive years to include
+                                             in the results. This parameter is required if the filter_by_duration
+                                             parameter is set to True
 
                                              Example:
                                                 4
@@ -7099,24 +7099,24 @@ def detect_change_using_change_analysis_raster(
     filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude.
 
                                                 - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
-                                                - False - Do not filter results by magnitude. This is the default. 
+                                                - False - Do not filter results by magnitude. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
-                                             This parameter is required if the filter_by_magnitude 
-                                             parameter is set to True. 
+    min_magnitude                            Optional float. The minimum magnitude to include in the results.
+                                             This parameter is required if the filter_by_magnitude
+                                             parameter is set to True.
 
                                              Example:
                                                 0.25
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
-                                             This parameter is required if the filter_by_magnitude parameter is set 
+    max_magnitude                            Optional float. The maximum magnitude to include in the results.
+                                             This parameter is required if the filter_by_magnitude parameter is set
                                              to True.
 
                                              Example:
@@ -7124,9 +7124,9 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
-                                             parameter is available only when the input change analysis raster 
-                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This
+                                             parameter is available only when the input change analysis raster
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - True - Filter results by start value so that only the change that starts with value defined by a range.
                                                 - False - Do not filter by start value. This is the default.
@@ -7136,8 +7136,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_start_value                          Optional float. The minimum value that defines the range of start value. 
-                                             This parameter is required if the filter_by_start_value parameter is set 
+    min_start_value                          Optional float. The minimum value that defines the range of start value.
+                                             This parameter is required if the filter_by_start_value parameter is set
                                              to True.
 
                                              Example:
@@ -7145,8 +7145,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_start_value                          Optional float. The maximum value that defines the range of start value. 
-                                             This parameter is required if the filter_by_start_value parameter is 
+    max_start_value                          Optional float. The maximum value that defines the range of start value.
+                                             This parameter is required if the filter_by_start_value parameter is
                                              set to True.
 
                                              Example:
@@ -7154,20 +7154,20 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
-                                             is available only when the input change analysis raster is the output 
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter
+                                             is available only when the input change analysis raster is the output
                                              from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - True - Filter results by end value so that only the change that ends with value defined by a range.
-                                                - False - Do not filter results by end value. This is the default. 
+                                                - False - Do not filter results by end value. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_end_value                            Optional float. The minimum value that defines the range of end value. 
-                                             This parameter is required if the filter_by_end_value parameter is set 
+    min_end_value                            Optional float. The minimum value that defines the range of end value.
+                                             This parameter is required if the filter_by_end_value parameter is set
                                              to True.
 
                                              Example:
@@ -7175,8 +7175,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_end_value                            Optional float. The maximum value that defines the range of end value. 
-                                             This parameter is required if the filter_by_end_value parameter is set 
+    max_end_value                            Optional float. The maximum value that defines the range of end value.
+                                             This parameter is required if the filter_by_end_value parameter is set
                                              to True.
 
                                              Example:
@@ -7187,7 +7187,7 @@ def detect_change_using_change_analysis_raster(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -7197,14 +7197,14 @@ def detect_change_using_change_analysis_raster(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -7214,7 +7214,7 @@ def detect_change_using_change_analysis_raster(
         # Usage Example 1: This example returns the most recent date at which pixels changed in the input time series.
 
         detect_change_op = detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                      change_type="TIME_OF_LATEST_CHANGE", 
+                                                                      change_type="TIME_OF_LATEST_CHANGE",
                                                                       max_number_of_changes=1,
                                                                       gis=gis)
 
@@ -7281,14 +7281,14 @@ def manage_multidimensional_raster(
     target_multidimensional_raster           Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    manage_mode                              Optional string. Specifies the type of modification that will be performed 
+    manage_mode                              Optional string. Specifies the type of modification that will be performed
                                              on the target raster.
 
                                                 - ADD_DIMENSION - Add a new dimension to the multidimensional raster information.
 
                                                 - APPEND_SLICES - Add slices from another multidimensional raster. Slices are added to the end of the slices for a dimension. This is the default.
 
-                                                - APPEND_VARIABLES - Add one or more variable from another multidimensional raster. 
+                                                - APPEND_VARIABLES - Add one or more variable from another multidimensional raster.
 
                                                 - REPLACE_SLICES - Replace existing slices from another multidimensional raster, at specific dimension values.
 
@@ -7296,36 +7296,36 @@ def manage_multidimensional_raster(
 
                                                 - REMOVE_DIMENSION - Convert a single slice multidimensional raster into a dimensionless raster.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables that will be modified in the 
-                                             target multidimensional raster. This is required if the operation 
-                                             being performed is a modification of an existing variable. 
+    variables                                Optional List. The variable or variables that will be modified in the
+                                             target multidimensional raster. This is required if the operation
+                                             being performed is a modification of an existing variable.
 
-                                             If no variable is specified, the first variable in the target 
-                                             multidimensional raster will be modified. 
+                                             If no variable is specified, the first variable in the target
+                                             multidimensional raster will be modified.
     ------------------------------------     --------------------------------------------------------------------
-    input_multidimensional_rasters           Optional list of input multidimensional raster. This is required 
-                                             when manage_mode is set to APPEND_SLICES, REPLACE_SLICES, or APPEND_VARIABLES. 
+    input_multidimensional_rasters           Optional list of input multidimensional raster. This is required
+                                             when manage_mode is set to APPEND_SLICES, REPLACE_SLICES, or APPEND_VARIABLES.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_name                           Optional string. The name of the dimension to be added to the dataset. 
+    dimension_name                           Optional string. The name of the dimension to be added to the dataset.
                                              This is required if manage_mode is set to ADD_DIMENSION.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_value                          Optional string. The value of the dimension to be added. 
+    dimension_value                          Optional string. The value of the dimension to be added.
                                              This is required if manage_mode is set to ADD_DIMENSION.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_description                    Optional string. The description of the dimension to be added. 
+    dimension_description                    Optional string. The description of the dimension to be added.
                                              This is required if manage_mode is set to ADD_DIMENSION.
     ------------------------------------     --------------------------------------------------------------------
     dimension_unit                           Optional string. The unit of the dimension to be modified.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
+    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
-    output_raster : Imagery Layer URL 
+    output_raster : Imagery Layer URL
 
     """
 
@@ -7512,7 +7512,7 @@ def merge_multidimensional_rasters(
 ):
 
     """
-    Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
+    Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
@@ -7520,7 +7520,7 @@ def merge_multidimensional_rasters(
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_rasters           Required list of ImageryLayer object. List of input multidimensional rasters to be combined.
     ------------------------------------     --------------------------------------------------------------------
-    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters in the combined datasets. 
+    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters in the combined datasets.
 
                                                - FIRST - The pixel value in the overlapping areas will be the value from the first raster in the list of input rasters. This is the default.
 
@@ -7534,7 +7534,7 @@ def merge_multidimensional_rasters(
 
                                                - SUM - The pixel value in the overlapping areas will be the total sum of the overlapping pixels.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -7542,40 +7542,40 @@ def merge_multidimensional_rasters(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution. 
+    context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -7583,31 +7583,31 @@ def merge_multidimensional_rasters(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                              - Resampling Method (resamplingMethod): The output raster will be
                                                 resampled to method specified.
                                                 The supported values are: Bilinear, Nearest, Cubic.
 
                                                 Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                                    {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
@@ -7665,7 +7665,7 @@ def analyze_changes_using_landtrendr(
 ):
 
     """
-    Function evaluates changes in pixel values over time using the Landsat-based detection of trends 
+    Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
     Function available in ArcGIS Image Server 10.9 and higher.
 
@@ -7675,158 +7675,158 @@ def analyze_changes_using_landtrendr(
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    processing_band                          Optional string. The band to use for segmenting the pixel value 
-                                             trajectories over time. Choose the band that will best capture the 
-                                             changes in the feature you want to observe. 
+    processing_band                          Optional string. The band to use for segmenting the pixel value
+                                             trajectories over time. Choose the band that will best capture the
+                                             changes in the feature you want to observe.
 
-                                             If no band value is specified and the input is multiband imagery, 
-                                             the first band in the multiband image will be used. 
+                                             If no band value is specified and the input is multiband imagery,
+                                             the first band in the multiband image will be used.
 
                                              Example:
                                                   "Band_1"
     ------------------------------------     --------------------------------------------------------------------
-    snapping_date                            Optional string. The date used to select a slice for each year in the 
-                                             input multidimensional dataset. The slice with the date closest to 
-                                             the snapping date will be selected. This parameter is required if 
-                                             the input dataset contains sub-yearly data. 
+    snapping_date                            Optional string. The date used to select a slice for each year in the
+                                             input multidimensional dataset. The slice with the date closest to
+                                             the snapping date will be selected. This parameter is required if
+                                             the input dataset contains sub-yearly data.
 
-                                             The default is "06-30" (or June 30), approximately midway through a calendar year. 
+                                             The default is "06-30" (or June 30), approximately midway through a calendar year.
 
                                              Example:
                                                 "06-30"
     ------------------------------------     --------------------------------------------------------------------
-    max_num_segments                         Optional int. The maximum number of segments to be fitted to the 
-                                             time series for each pixel. The default is 5. 
+    max_num_segments                         Optional int. The maximum number of segments to be fitted to the
+                                             time series for each pixel. The default is 5.
 
                                              Example:
                                                 5
     ------------------------------------     --------------------------------------------------------------------
-    vertex_count_overshoot                   Optional int. The number of additional vertices beyond 
-                                             max_num_segments + 1 that can be used to fit the model during 
-                                             the initial stage of identifying vertices. Later in the modeling 
-                                             process, the number of additional vertices will be reduced to 
-                                             max_num_segments + 1. The default is 2. 
+    vertex_count_overshoot                   Optional int. The number of additional vertices beyond
+                                             max_num_segments + 1 that can be used to fit the model during
+                                             the initial stage of identifying vertices. Later in the modeling
+                                             process, the number of additional vertices will be reduced to
+                                             max_num_segments + 1. The default is 2.
 
                                              Example:
                                                 2
     ------------------------------------     --------------------------------------------------------------------
-    spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies 
-                                             in the pixel value trajectory. The value must range between 0 and 1, 
-                                             where 1 means no dampening. The default is 0.9. 
+    spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies
+                                             in the pixel value trajectory. The value must range between 0 and 1,
+                                             where 1 means no dampening. The default is 0.9.
 
                                              Example:
                                                 0.9
     ------------------------------------     --------------------------------------------------------------------
-    recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment 
-                                             has a recovery rate that is faster than 1/recovery threshold, the segment 
-                                             is discarded and not included in the time series model. The value must 
-                                             range between 0 and 1. The default is 0.25. 
+    recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment
+                                             has a recovery rate that is faster than 1/recovery threshold, the segment
+                                             is discarded and not included in the time series model. The value must
+                                             range between 0 and 1. The default is 0.25.
 
                                              Example:
                                                 0.25
     ------------------------------------     --------------------------------------------------------------------
-    prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year 
-                                             recovery will be excluded. 
+    prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year
+                                             recovery will be excluded.
 
-                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default. 
+                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default.
 
-                                                - False - Segments that exhibit a one year recovery will not be excluded. 
-
-                                             Example:
-                                                True
-    ------------------------------------     --------------------------------------------------------------------
-    increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend. 
-
-                                                - True - The recovery has an increasing trend. This is the default. 
-
-                                                - False - The recovery has a decreasing trend. 
+                                                - False - Segments that exhibit a one year recovery will not be excluded.
 
                                              Example:
                                                 True
     ------------------------------------     --------------------------------------------------------------------
-    min_num_observations                     Optional int. The minimum number of valid observations required to 
-                                             perform fitting. The number of years in the input multidimensional 
-                                             dataset must be equal to or greater than this value. The default is 6. 
+    increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend.
+
+                                                - True - The recovery has an increasing trend. This is the default.
+
+                                                - False - The recovery has a decreasing trend.
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    min_num_observations                     Optional int. The minimum number of valid observations required to
+                                             perform fitting. The number of years in the input multidimensional
+                                             dataset must be equal to or greater than this value. The default is 6.
 
                                              Example:
                                                 6
     ------------------------------------     --------------------------------------------------------------------
-    best_model_proportion                    Optional float. The best model proportion value. During the model 
-                                             selection process, the tool will calculate the p-value for each 
-                                             model and select a model that has the most vertices while 
-                                             maintaining the smallest (most significant) p-value based on this 
-                                             proportion value. A value of 1 means the model has the lowest 
-                                             p-value but may not have a high number of vertices. 
-                                             The default is 1.25. 
+    best_model_proportion                    Optional float. The best model proportion value. During the model
+                                             selection process, the tool will calculate the p-value for each
+                                             model and select a model that has the most vertices while
+                                             maintaining the smallest (most significant) p-value based on this
+                                             proportion value. A value of 1 means the model has the lowest
+                                             p-value but may not have a high number of vertices.
+                                             The default is 1.25.
 
                                              Example:
                                                 1.25
     ------------------------------------     --------------------------------------------------------------------
-    pvalue_threshold                         Optional float. The p-value threshold for a model to be selected. 
-                                             After the vertices are detected in the initial stage of the model 
-                                             fitting, the tool will fit each segment and calculate the p-value 
-                                             to determine the significance of the model. On the next iteration, 
-                                             the model will decrease the number of segments by one and 
-                                             recalculate the p-value. This will continue and, if the p-value 
-                                             is smaller than the value specified in this parameter, the model 
-                                             will be selected and the tool will stop searching for a better model. 
-                                             If no such model is selected, the tool will select a model with a 
-                                             p-value smaller than the lowest p-value × best model proportion value. 
-                                             The default is 0.01. 
+    pvalue_threshold                         Optional float. The p-value threshold for a model to be selected.
+                                             After the vertices are detected in the initial stage of the model
+                                             fitting, the tool will fit each segment and calculate the p-value
+                                             to determine the significance of the model. On the next iteration,
+                                             the model will decrease the number of segments by one and
+                                             recalculate the p-value. This will continue and, if the p-value
+                                             is smaller than the value specified in this parameter, the model
+                                             will be selected and the tool will stop searching for a better model.
+                                             If no such model is selected, the tool will select a model with a
+                                             p-value smaller than the lowest p-value × best model proportion value.
+                                             The default is 0.01.
 
                                              Example:
                                                 0.01
     ------------------------------------     --------------------------------------------------------------------
-    output_other_bands                       Optional boolean. Specifies whether other bands will be included in the 
+    output_other_bands                       Optional boolean. Specifies whether other bands will be included in the
                                              segmentation process.
 
-                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands. 
+                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands.
 
-                                                - False - Other bands will not be included. This is the default. 
+                                                - False - Other bands will not be included. This is the default.
 
                                              Example:
                                                 2
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution. 
+    context                                  Context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -7834,7 +7834,7 @@ def analyze_changes_using_landtrendr(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
@@ -7842,7 +7842,7 @@ def analyze_changes_using_landtrendr(
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -7852,21 +7852,21 @@ def analyze_changes_using_landtrendr(
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return: Imagery layer item
 
     .. code-block:: python
 
-            # Usage Example 1: 
+            # Usage Example 1:
             analyze_changes_using_landtrendr_op = analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
                                                                                processing_band="Band_1")
 
@@ -8156,7 +8156,7 @@ def compute_change_raster(
 ):
 
     """
-    Function calculates the absolute, relative, or categorical difference between two raster datasets.  
+    Function calculates the absolute, relative, or categorical difference between two raster datasets.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
@@ -8164,7 +8164,7 @@ def compute_change_raster(
     ------------------------------------     --------------------------------------------------------------------
     input_from_raster                        Required ImageryLayer object. The initial or earlier raster to be analyzed.
     ------------------------------------     --------------------------------------------------------------------
-    input_to_raster                          Required ImageryLayer object. The final or later raster to be analyzed. 
+    input_to_raster                          Required ImageryLayer object. The final or later raster to be analyzed.
                                              This is the raster that will be compared to the initial raster.
     ------------------------------------     --------------------------------------------------------------------
     compute_change_method                    Optional String. Specifies the type of calculation to perform between
@@ -8177,7 +8177,7 @@ def compute_change_raster(
                                              Example:
                                                 "DIFFERENCE"
     ------------------------------------     --------------------------------------------------------------------
-    from_classes                             Optional String or List. Class names from the input_from_raster parameter 
+    from_classes                             Optional String or List. Class names from the input_from_raster parameter
                                              to be included in the computation. If no classes are provided, all classes
                                              will be included.
 
@@ -8187,7 +8187,7 @@ def compute_change_raster(
                                              Example:
                                                 ["Water", "Developed"]
     ------------------------------------     --------------------------------------------------------------------
-    to_classes                               Optional String or List. Class names from the input_to_raster parameter 
+    to_classes                               Optional String or List. Class names from the input_to_raster parameter
                                              to be included in the computation. If no classes are provided, all classes
                                              will be included.
 
@@ -8221,7 +8221,7 @@ def compute_change_raster(
                                              Example:
                                                 "AVERAGE"
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
@@ -8229,40 +8229,40 @@ def compute_change_raster(
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution. 
+    context                                  Context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
-                                         
+
                                              This function has the following settings:
 
                                               - Extent (extent): A bounding box that defines the analysis area.
-                                            
-                                                Example: 
+
+                                                Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
-                                                    "ymax": 45.6, 
+                                                    "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
+                                              - Output Spatial Reference (outSR): The output raster will be
                                                 projected into the output spatial reference.
-                                                
-                                                Example: 
+
+                                                Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
+                                              - Snap Raster (snapRaster): The output raster will have its
                                                 cells aligned with the specified snap raster.
-                                                        
-                                                Example: 
+
+                                                Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                              - Cell Size (cellSize): The output raster will have the resolution
                                                 specified by cell size.
 
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
                                                 Raster Processing (CPU) service instances.
 
                                                 Example:
@@ -8270,24 +8270,24 @@ def compute_change_raster(
 
                                                     {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total 
+                                                    Syntax example with a specified percentage of total
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
+                                             at ArcGIS Image 9.1 release.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.

@@ -1325,7 +1325,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @basemap.setter
     def basemap(self, value):
         """What basemap you would like to apply to the map (‘topo’,
-                ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
+        ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
         """
         from arcgis.widgets import MapView
 
@@ -3581,7 +3581,7 @@ class VectorTileLayer(Layer):
 
 ###########################################################################
 class MapImageLayerManager(_GISResource):
-    """ allows administration (if access permits) of ArcGIS Online hosted map image layers.
+    """allows administration (if access permits) of ArcGIS Online hosted map image layers.
     A map image layer offers access to map and layer content.
     """
 
@@ -4474,7 +4474,10 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -4516,7 +4519,11 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(

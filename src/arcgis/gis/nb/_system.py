@@ -198,16 +198,17 @@ class SystemManager(object):
         if "asyncJobs" in res:
             return res["asyncJobs"]
         return res
+
     # ----------------------------------------------------------------------
 
     def delete_all_jobs(self) -> bool:
         """
-        Administrators can clean up an open notebook and execute notebook 
-        jobs on demand. Administrators can view and delete all jobs.  
-        Non-administrative users with create and edit notebook privileges 
-        can only view and delete their own jobs. 
+        Administrators can clean up an open notebook and execute notebook
+        jobs on demand. Administrators can view and delete all jobs.
+        Non-administrative users with create and edit notebook privileges
+        can only view and delete their own jobs.
         Only jobs in completed or failed states will be cleaned up.
-        
+
         :returns: Boolean
         """
         params = {"f": "json"}

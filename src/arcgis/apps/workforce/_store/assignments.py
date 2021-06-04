@@ -7,11 +7,11 @@ from .utils import add_features, remove_features, update_features, validate
 
 
 def get_assignment(project, object_id=None, global_id=None):
-    """ Gets the identified Assignment.  Exactly one form of identification should be provided.
-        :param project:
-        :param object_id: The assignment's OBJECTID.
-        :param global_id: The assignment's GlobalID.
-        :returns: Assignment
+    """Gets the identified Assignment.  Exactly one form of identification should be provided.
+    :param project:
+    :param object_id: The assignment's OBJECTID.
+    :param global_id: The assignment's GlobalID.
+    :returns: Assignment
     """
     if object_id:
         where = "{} = {}".format(project._assignment_schema.object_id, object_id)
@@ -26,18 +26,18 @@ def get_assignment(project, object_id=None, global_id=None):
 
 
 def get_assignments(project):
-    """ Gets all Assignments in the project.
-        :param project:
-        :returns: list of Assignments
+    """Gets all Assignments in the project.
+    :param project:
+    :returns: list of Assignments
     """
     return query_assignments(project, "1=1")
 
 
 def query_assignments(project, where="1=1"):
-    """ Executes a query against the assignments feature layer.
-        :param project: The project in which to query assignments.
-        :param where: An ArcGIS where clause.
-        :returns: list of Assignments
+    """Executes a query against the assignments feature layer.
+    :param project: The project in which to query assignments.
+    :param where: An ArcGIS where clause.
+    :returns: list of Assignments
     """
     assignments = []
     assignment_features = project.assignments_layer.query(
@@ -52,16 +52,16 @@ def query_assignments(project, where="1=1"):
 
 
 def add_assignments(project, assignments):
-    """ Adds Assignments to a project.
+    """Adds Assignments to a project.
 
-        Side effect: Upon successful addition on the server, the object_id and global_id fields of
-        each Assignment in assignments will be updated to the values assigned by the server.
+    Side effect: Upon successful addition on the server, the object_id and global_id fields of
+    each Assignment in assignments will be updated to the values assigned by the server.
 
-        :param project:
-        :param assignments: list of Assignments
-        :returns the list of Assignments
-        :raises ValidationError: Indicates that one or more assignments failed validation.
-        :raises ServerError: Indicates that the server rejected the assignments.
+    :param project:
+    :param assignments: list of Assignments
+    :returns the list of Assignments
+    :raises ValidationError: Indicates that one or more assignments failed validation.
+    :raises ServerError: Indicates that the server rejected the assignments.
     """
     project._update_cached_objects()
     use_global_ids = True
@@ -128,11 +128,11 @@ def add_assignment(
 
 
 def update_assignments(project, assignments):
-    """ Updates Assignments.
-        :param project:
-        :param assignments: list of Assignments to update
-        :raises ValidationError: Indicates that one or more assignments failed validation.
-        :raises ServerError: Indicates that the server rejected the updates.
+    """Updates Assignments.
+    :param project:
+    :param assignments: list of Assignments to update
+    :raises ValidationError: Indicates that one or more assignments failed validation.
+    :raises ServerError: Indicates that the server rejected the updates.
     """
     project._update_cached_objects()
     for assignment in assignments:
@@ -215,11 +215,11 @@ def update_assignment(
 
 
 def delete_assignments(project, assignments):
-    """ Removes assignments from the project.
-        :param project:
-        :param assignments: list of Assignments
-        :raises ValidationError: Indicates that one or more assignments failed validation.
-        :raises ServerError: Indicates that the server rejected the removal.
+    """Removes assignments from the project.
+    :param project:
+    :param assignments: list of Assignments
+    :raises ValidationError: Indicates that one or more assignments failed validation.
+    :raises ServerError: Indicates that the server rejected the removal.
     """
     project._update_cached_objects()
     for assignment in assignments:

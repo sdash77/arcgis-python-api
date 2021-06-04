@@ -380,7 +380,9 @@ def arg_statistics(
 
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {"Rasters": raster,},
+        "rasterFunctionArguments": {
+            "Rasters": raster,
+        },
         "variableName": "Rasters",
     }
 
@@ -633,7 +635,9 @@ def aspect(raster):
 
     template_dict = {
         "rasterFunction": "Aspect",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -647,9 +651,9 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     :param raster: the input raster / imagery layer
     :param band_indexes: band indexes or expression. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)"
     :param astype: output pixel type
-    :param method: int. The type of band arithmetic algorithm you want to deploy. 
+    :param method: int. The type of band arithmetic algorithm you want to deploy.
                    You can define your custom algorithm, or choose a predefined index.
-                   0 = UserDefined, 
+                   0 = UserDefined,
                    1 = NDVI,
                    2 = SAVI,
                    3 = TSAVI,
@@ -748,7 +752,7 @@ def tsavi(raster, band_indexes="4 3 0.33 0.50 1.50", astype=None):
 def msavi(raster, band_indexes="4 3", astype=None):
     """
     Modified Soil Adjusted Vegetation Index
-    
+
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
 
     :param raster: the input raster / imagery layer
@@ -764,7 +768,7 @@ def gemi(raster, band_indexes="4 3", astype=None):
     Global Environmental Monitoring Index
 
     GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
-    
+
     where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
 
     :param raster: the input raster / imagery layer
@@ -863,11 +867,11 @@ def sr(raster, band_indexes="4 3", astype=None):
 def ndvire(raster, band_indexes="7 6", astype=None):
     """
     Red-Edge NDVI (NDVIre)
-    The Red-Edge NDVI (NDVIre) is a vegetation index for estimating 
-    vegetation health using the red-edge band. It is especially useful 
-    for estimating crop health in the mid to late stages of growth where 
+    The Red-Edge NDVI (NDVIre) is a vegetation index for estimating
+    vegetation health using the red-edge band. It is especially useful
+    for estimating crop health in the mid to late stages of growth where
     the chlorophyll concentration is relatively higher. Also, NDVIre can
-    be used to map the within-field variability of nitrogen foliage to 
+    be used to map the within-field variability of nitrogen foliage to
     understand the fertilizer requirements of crops.
 
     NDVIre = (NIR-RedEdge)/(NIR+RedEdge)
@@ -882,13 +886,13 @@ def ndvire(raster, band_indexes="7 6", astype=None):
 
 def srre(raster, band_indexes="7 6", astype=None):
     """
-    The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the 
-    amount of healthy and stressed vegetation. It is the ratio of light scattered 
+    The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the
+    amount of healthy and stressed vegetation. It is the ratio of light scattered
     in the NIR and red-edge bands, which reduces the effects of atmosphere and topography.
 
-    Values are high for vegetation with high canopy closure and healthy vegetation, 
-    lower for high canopy closure and stressed vegetation, and low for soil, water, 
-    and nonvegetated features. The range of values is from 0 to about 30, where healthy 
+    Values are high for vegetation with high canopy closure and healthy vegetation,
+    lower for high canopy closure and stressed vegetation, and low for soil, water,
+    and nonvegetated features. The range of values is from 0 to about 30, where healthy
     vegetation generally falls between values of 1 to 10.
 
     SRre = NIR / RedEdge
@@ -903,9 +907,9 @@ def srre(raster, band_indexes="7 6", astype=None):
 
 def mtvi2(raster, band_indexes="7 5 3", astype=None):
     """
-    The Modified Triangular Vegetation Index (MTVI2) is a vegetation index 
-    for detecting leaf chlorophyll content at the canopy scale while being 
-    relatively insensitive to leaf area index. It uses reflectance in the green, 
+    The Modified Triangular Vegetation Index (MTVI2) is a vegetation index
+    for detecting leaf chlorophyll content at the canopy scale while being
+    relatively insensitive to leaf area index. It uses reflectance in the green,
     red, and near-infrared (NIR) bands
 
     MTVI2 = (1.5*(1.2*(NIR-Green)-2.5*(Red-Green))/sqrt((2*NIR+1)^2-(6*NIR-5*sqrt(Red))-0.5))
@@ -920,8 +924,8 @@ def mtvi2(raster, band_indexes="7 5 3", astype=None):
 
 def rtvi_core(raster, band_indexes="7 6 3", astype=None):
     """
-    The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index 
-    for estimating leaf area index and biomass. This index uses reflectance 
+    The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index
+    for estimating leaf area index and biomass. This index uses reflectance
     in the NIR, red-edge, and green spectral bands
 
     RTVICore = [100(NIR-RedEdge)-10(NIR-Green)]
@@ -936,8 +940,8 @@ def rtvi_core(raster, band_indexes="7 6 3", astype=None):
 
 def cire(raster, band_indexes="7 6", astype=None):
     """
-    The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating 
-    the chlorophyll content in leaves using the ratio of reflectivity in the 
+    The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating
+    the chlorophyll content in leaves using the ratio of reflectivity in the
     near-infrared (NIR) and red-edge bands.
 
     CIre = [(NIR / RedEdge)-1]
@@ -952,8 +956,8 @@ def cire(raster, band_indexes="7 6", astype=None):
 
 def cig(raster, band_indexes="7 3", astype=None):
     """
-    The Chlorophyll Index - Green (CIg) is a vegetation index for estimating 
-    the chlorophyll content in leaves using the ratio of reflectivity in 
+    The Chlorophyll Index - Green (CIg) is a vegetation index for estimating
+    the chlorophyll content in leaves using the ratio of reflectivity in
     the near-infrared (NIR) and green bands.
 
     CIg = [(NIR / Green)-1]
@@ -968,8 +972,8 @@ def cig(raster, band_indexes="7 3", astype=None):
 
 def ndwi(raster, band_indexes="5 3", astype=None):
     """
-    The Normalized Difference Water Index (NDWI) is an index for delineating and 
-    monitoring content changes in surface water. It is computed with the near-infrared 
+    The Normalized Difference Water Index (NDWI) is an index for delineating and
+    monitoring content changes in surface water. It is computed with the near-infrared
     (NIR) and green bands.
 
     NDWI = (Green - NIR)/(Green +NIR)
@@ -984,9 +988,9 @@ def ndwi(raster, band_indexes="5 3", astype=None):
 
 def evi(raster, band_indexes="5 4 2", astype=None):
     """
-    The Enhanced Vegetation Index (EVI) is an optimized vegetation index that accounts 
-    for atmospheric influences and vegetation background signal. It's similar to NDVI, 
-    but is less sensitive to background and atmospheric noise, and it does not become 
+    The Enhanced Vegetation Index (EVI) is an optimized vegetation index that accounts
+    for atmospheric influences and vegetation background signal. It's similar to NDVI,
+    but is less sensitive to background and atmospheric noise, and it does not become
     saturated NDVI when viewing areas with very dense green vegetation.
 
     EVI =  2.5 * [(NIR - Red)/(NIR + (6*Red) - (7.5*Blue) + 1)]
@@ -1001,9 +1005,9 @@ def evi(raster, band_indexes="5 4 2", astype=None):
 
 def iron_oxide(raster, band_indexes="4 2", astype=None):
     """
-    The Iron Oxide (IO) ratio is a geological index for identifying rock 
-    features that have experienced oxidation of iron-bearing sulfides 
-    using the red and blue bands. IO is useful in identifying iron oxide 
+    The Iron Oxide (IO) ratio is a geological index for identifying rock
+    features that have experienced oxidation of iron-bearing sulfides
+    using the red and blue bands. IO is useful in identifying iron oxide
     features below vegetation canopies, and is used in mineral composite mapping.
 
     IronOxide = Red / Blue
@@ -1018,7 +1022,7 @@ def iron_oxide(raster, band_indexes="4 2", astype=None):
 
 def ferrous_minerals(raster, band_indexes="6 5", astype=None):
     """
-    The Ferrous Minerals (FM) ratio is a geological index for identifying 
+    The Ferrous Minerals (FM) ratio is a geological index for identifying
     rock features containing some quantity of iron-bearing minerals using
     the shortwave infrared (SWIR) and near-infrared (NIR) bands. FM is used
     in mineral composite mapping.
@@ -1035,8 +1039,8 @@ def ferrous_minerals(raster, band_indexes="6 5", astype=None):
 
 def clay_minerals(raster, band_indexes="6 7", astype=None):
     """
-    The Clay Minerals (CM) ratio is a geological index for identifying 
-    mineral features containing clay and alunite using two shortwave 
+    The Clay Minerals (CM) ratio is a geological index for identifying
+    mineral features containing clay and alunite using two shortwave
     infrared (SWIR) bands. CM is used in mineral composite mapping.
 
     CM = SWIR1 / SWIR2
@@ -1147,7 +1151,7 @@ def ndsi(raster, band_indexes="4 6", astype=None):
 
 def mndwi(raster, band_indexes="3 6", astype=None):
     """
-    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement 
+    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement
     of open water features. It also diminishes built-up area features that are often correlated with open
     water in other indices.
 
@@ -1180,7 +1184,7 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     classifies a segmented raster to a categorical raster.
 
     :param raster1: the first raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: Optional segmentation raster -  If provided, pixels in each segment will get same class assignments. 
+    :param raster2: Optional segmentation raster -  If provided, pixels in each segment will get same class assignments.
                     imagery layers filtered by where clause, spatial and temporal filters
     :param classifier_definition: the classifier parameters as a Python dictionary / json format
 
@@ -1263,7 +1267,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
                      | [<value2>, <red2>, <green2>, <blue2>]
                      | ],
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object. 
+                      or a color ramp object.
                       For more information about colorramp object, see color ramp object at
                       https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param astype: output pixel type
@@ -1370,7 +1374,9 @@ def convolution(raster, kernel=None, astype=None):
 
     template_dict = {
         "rasterFunction": "Convolution",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -1573,15 +1579,15 @@ def geometric(
     :param raster: The input raster.
     :param geodata_transforms: Please refer to the Geodata Transformations documentation for more details.
     :param append_geodata_xform: Optional boolean. Indicates whether the geodata transformation is appended to the existing one from the input raster.
-    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for 
-                     elevation datasets with vertical units in meters. If your elevation uses other 
-                     vertical units, enter a Z Factor to rescale to meters. For example, if your 
-                     elevation units are in feet, you would use a value of 0.3048 to convert your 
+    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for
+                     elevation datasets with vertical units in meters. If your elevation uses other
+                     vertical units, enter a Z Factor to rescale to meters. For example, if your
+                     elevation units are in feet, you would use a value of 0.3048 to convert your
                      elevation units from feet to meters.
-    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM. 
+    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM.
                      This could be used to offset elevation values that do not start at sea level.
     :param constant_z: Optional double. Specify a constant elevation to use for the Geometric function.
-    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values, 
+    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values,
                           unless your DEM is already referenced to ellipsoidal heights.
     :param tolerance: Optional double. Specify the maximum tolerable error in the geometric function, given in number of pixels.
     :param dem: Optional Raster. Specify the DEM to use for the Geometric function
@@ -1644,7 +1650,7 @@ def hillshade(
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
     For more information, see
     `hillshade function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm>`__ and `How hillshade works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm>`__.
-    
+
     The arguments for the hillshade function are as follows:
 
     :param dem: input DEM
@@ -1717,7 +1723,7 @@ def local(
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
                                  Applicable for operations - Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.
     :return: the output raster
 
@@ -2456,7 +2462,7 @@ def majority(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband. 
+    :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2488,7 +2494,7 @@ def max(
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband. 
+    :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2521,7 +2527,7 @@ def mean(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband. 
+    :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2554,7 +2560,7 @@ def med(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband. 
+    :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2587,7 +2593,7 @@ def min(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband. 
+    :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2620,7 +2626,7 @@ def minority(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2707,7 +2713,7 @@ def cellstats_range(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2848,7 +2854,7 @@ def std(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2881,7 +2887,7 @@ def sum(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
     :return: the output raster
 
     """
@@ -2950,7 +2956,7 @@ def variety(
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband. 
+    :param process_as_multiband: True or False, set to True to process as multiband.
     :return: the output raster
 
     """
@@ -3058,21 +3064,21 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
     The con operation.Performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
-    
+
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
-    :returns: the output raster  
+    :returns: the output raster
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To extract raster from flow direction raster layer that only covers the watershed. 
-                       rasters: 
-                       ["Input raster representing the true or false result of the desired condition. It can be of integer or floating point type.", 
-                        "The input whose values will be used as the output cell values if the condition is true. It can be an integer or a floating point raster, or a constant value.", 
+        USAGE EXAMPLE: To extract raster from flow direction raster layer that only covers the watershed.
+                       rasters:
+                       ["Input raster representing the true or false result of the desired condition. It can be of integer or floating point type.",
+                        "The input whose values will be used as the output cell values if the condition is true. It can be an integer or a floating point raster, or a constant value.",
                         "The input whose values will be used as the output cell values if the condition is false. It can be an integer or a floating point raster, or a constant value."]
 
         con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
@@ -3085,7 +3091,7 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The value from a position raster is used to determine from which raster in 
+    The value from a position raster is used to determine from which raster in
     a list of input rasters the output cell value will be obtained.
     The arguments for this function are as follows:
 
@@ -3116,20 +3122,20 @@ def mask(
     The arguments for the mask function are as follows:
 
     :param raster: input raster
-    :param no_data_values: list of strings ["band0_val","band1_val",...]. The NoData values can be specified 
-                           for each band. The index of each element in no_data_values list 
+    :param no_data_values: list of strings ["band0_val","band1_val",...]. The NoData values can be specified
+                           for each band. The index of each element in no_data_values list
                            represents the no data value in the corresponding band.
 
                            You can specify more than one value by entering a space-delimited string for each index.
                            e.g., ["band0_val1 band0_val2", "band1_val1 band1_val2",...]
-    :param included_ranges: list of floats [band0_lowerbound,band0_upperbound,band1_lowerbound,band1_upperbound, band2_.....], 
+    :param included_ranges: list of floats [band0_lowerbound,band0_upperbound,band1_lowerbound,band1_upperbound, band2_.....],
                             The included ranges can be specified for each band by specifying a minimum and maximum value.
-    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData 
+    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData
                                    values will impact the output image.
 
                                    - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a
                                      specified band, then that cell in the output image will be NoData.
-                                   - 1 (MatchAll) :  The NoData values you specify for each band must occur 
+                                   - 1 (MatchAll) :  The NoData values you specify for each band must occur
                                      in the same cell for the output image to contain the NoData cell.
     :param astype: output pixel type
     :return: the output raster
@@ -3165,7 +3171,7 @@ def ml_classify(raster, signature, astype=None):
     algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
     your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.
     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
-    
+
     The arguments for the ml_classify function are as follows:
 
     :param raster: input raster
@@ -3466,7 +3472,7 @@ def shaded_relief(
     :param remove_edge_effect: boolean, True or False
     :param astype: output pixel type
     :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object. 
+                      or a color ramp object.
                       For more information about colorramp object, see color ramp object at
                       https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
@@ -3524,7 +3530,7 @@ def slope(
     slope represents the rate of change of elevation for each pixel. For more information, see
     `slope function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm>`__
     and `How slope works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-slope-works.htm>`__.
-    
+
     The arguments for the slope function are as follows:
 
     :param dem: input DEM
@@ -3581,7 +3587,7 @@ def focal_statistics(
     """
     The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
     For more information, see `statistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm>`__.
-    
+
     The arguments for the statistics function are as follows:
 
     :param raster: input raster
@@ -3589,7 +3595,7 @@ def focal_statistics(
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
-                      
+
                       1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
 
                       - Min - Calculates the minimum value of the pixels within the neighborhood
@@ -3608,7 +3614,7 @@ def focal_statistics(
     .. note::
         The focal_statistics() function is different from the focal_stats() function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.  
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.
         The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
         The focal_statistics() function supports only Rectangle.
@@ -3775,8 +3781,8 @@ def stretch(
 def threshold(raster, astype=None):
     """
     The binary threshold function produces the binary image. It uses the Otsu method and assumes the input image to have
-    a bi-modal histogram. 
-    
+    a bi-modal histogram.
+
     The arguments for the threshold function are as follows:
 
     :param raster: input raster
@@ -3814,7 +3820,7 @@ def transpose_bits(
     """
     The transpose_bits function performs a bit operation. It extracts bit values from the source data and assigns them
     to new bits in the output data.
-    
+
     The arguments for the transpose_bits function are as follows:
 
     If constant_fill_check is False, it assumes there is an input fill_raster. If an input fill_raster is not given,
@@ -3879,10 +3885,10 @@ def transpose_bits(
 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
-    The unit_conversion function performs unit conversions. 
-    
+    The unit_conversion function performs unit conversions.
+
     The arguments for the unit_conversion function are as follows:
-    
+
     from_unit and to_unit take the following str values:
     Speed Units: MetersPerSecond, KilometersPerHour, Knots, FeetPerSecond, MilesPerHour
     Temperature Units: Celsius,Fahrenheit,Kelvin
@@ -3951,7 +3957,7 @@ def vector_field_renderer(
 ):
     """
     The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.
-    
+
     The arguments for the vector_field_renderer function are as follows:
 
     :param raster: input raster
@@ -4124,7 +4130,7 @@ def complex(raster):
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
     value to convert the pixel type to floating point for each pixel. It takes
-    no argument but an optional input raster. For more information, see 
+    no argument but an optional input raster. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/complex-function.htm
 
     :param raster: the input raster / imagery layer
@@ -4134,7 +4140,9 @@ def complex(raster):
 
     template_dict = {
         "rasterFunction": "Complex",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4144,11 +4152,11 @@ def colormap_to_rgb(raster):
     """
     The function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
-    raster. This function takes no arguments except an input raster. For 
-    qualified image service, there are two situations when ColormapToRGB 
-    function is automatically applied: The "colormapToRGB" property of the 
-    image service is set to true; or, client asks to export image into jpg 
-    or png format. For more information, see 
+    raster. This function takes no arguments except an input raster. For
+    qualified image service, there are two situations when ColormapToRGB
+    function is automatically applied: The "colormapToRGB" property of the
+    image service is set to true; or, client asks to export image into jpg
+    or png format. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm)
 
     :param raster: the input raster / imagery layer
@@ -4159,17 +4167,19 @@ def colormap_to_rgb(raster):
 
     template_dict = {
         "rasterFunction": "ColormapToRGB",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
 def statistics_histogram(raster, statistics=None, histograms=None):
-    """"
+    """ "
     The function is used to define the statistics and histogram of a raster.
-    It is normally used for control the default display of exported image. 
-    For more information, see Statistics and Histogram function, 
+    It is normally used for control the default display of exported image.
+    For more information, see Statistics and Histogram function,
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm
 
     :param raster: the input raster / imagery layer
@@ -4181,7 +4191,9 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 
     template_dict = {
         "rasterFunction": "StatisticsHistogram",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if statistics is not None:
@@ -4195,19 +4207,19 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 def tasseled_cap(raster):
     """
     The function is designed to analyze and map vegetation and urban development
-    changes detected by various satellite sensor systems. It is known as the 
+    changes detected by various satellite sensor systems. It is known as the
     Tasseled Cap transformation due to the shape of the graphical distribution
-    of data. This function takes no arguments except a raster. The input for 
-    this function is the source raster of image service. There are no other 
-    parameters for this function because all the information is derived from 
-    the input's properties and key metadata (bands, data type, and sensor name). 
-    Only imagery from the Landsat MSS, Landsat TM, Landsat ETM+, IKONOS, 
+    of data. This function takes no arguments except a raster. The input for
+    this function is the source raster of image service. There are no other
+    parameters for this function because all the information is derived from
+    the input's properties and key metadata (bands, data type, and sensor name).
+    Only imagery from the Landsat MSS, Landsat TM, Landsat ETM+, IKONOS,
     QuickBird, WorldView-2 and RapidEye sensors are supported. Prior to applying
     this function, there should not be any functions that would alter the pixel
     values in the function chain, such as the Stretch, Apparent Reflectance or
-    Pansharpening function. The only exception is for Landsat ETM+; when using 
-    Landsat ETM+, the Apparent Reflectance function must precede the Tasseled 
-    Cap function. For more information, see 
+    Pansharpening function. The only exception is for Landsat ETM+; when using
+    Landsat ETM+, the Apparent Reflectance function must precede the Tasseled
+    Cap function. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm
 
     :param raster: the input raster / imagery layer
@@ -4218,14 +4230,16 @@ def tasseled_cap(raster):
 
     template_dict = {
         "rasterFunction": "TasseledCap",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
 
 
 def identity(raster):
-    """"
+    """ "
     The function is used to define the source raster as part of the default
     mosaicking behavior of the mosaic dataset. This function is a no-op function
     and takes no arguments except a raster. For more information, see
@@ -4239,7 +4253,9 @@ def identity(raster):
 
     template_dict = {
         "rasterFunction": "Identity",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4265,7 +4281,9 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
 
     template_dict = {
         "rasterFunction": "ColorspaceConversion",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     template_dict["rasterFunctionArguments"]["ConversionType"] = conversion_types[
@@ -4278,7 +4296,7 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
 def grayscale(raster, conversion_parameters=None):
     """
     The Grayscale function converts a multi-band image into a single-band grayscale
-    image. Specified weights are applied to each of the input bands, and a 
+    image. Specified weights are applied to each of the input bands, and a
     normalization is applied for output. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/grayscale-function.htm
 
@@ -4291,7 +4309,9 @@ def grayscale(raster, conversion_parameters=None):
 
     template_dict = {
         "rasterFunction": "Grayscale",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if conversion_parameters is not None and isinstance(conversion_parameters, list):
@@ -4306,8 +4326,8 @@ def spectral_conversion(raster, conversion_matrix):
     """
     The SpectralConversion function applies a matrix to a multi-band image to
     affect the spectral values of the output. In the matrix, different weights
-    can be assigned to all the input bands to calculate each of the output 
-    bands. The column/row size of the matrix equals to the band count of input 
+    can be assigned to all the input bands to calculate each of the output
+    bands. The column/row size of the matrix equals to the band count of input
     raster. For more information, see Spectral Conversion function
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm
 
@@ -4341,9 +4361,9 @@ def raster_calculator(
     The RasterCalculator function provides access to all existing math functions
     so you can make calls to them when building your expressions. The calculator
     function requires single-band inputs. If you need to perform expressions on
-    bands in a multispectral image as part of a function chain, you can use 
-    the Extract Bands Function before the RasterCalculator function. 
-    For more info including operators supported, see Calculator function 
+    bands in a multispectral image as part of a function chain, you can use
+    the Extract Bands Function before the RasterCalculator function.
+    For more info including operators supported, see Calculator function
     http://pro.arcgis.com/en/pro-app/help/data/imagery/calculator-function.htm
 
     :param raster: array of rasters
@@ -4394,11 +4414,11 @@ def speckle(
     damp_factor=None,
 ):
     """
-    The Speckle function filters the speckled radar dataset to smooth out the 
+    The Speckle function filters the speckled radar dataset to smooth out the
     noise while retaining the edges or sharp features in the image. Four speckle
     reduction filtering algorithms are provided through this function. For more
-    information including required and optional parameters for each filter and 
-    the default parameter values, see Speckle function 
+    information including required and optional parameters for each filter and
+    the default parameter values, see Speckle function
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm
 
     :param raster: input raster type
@@ -4423,7 +4443,9 @@ def speckle(
 
     template_dict = {
         "rasterFunction": "Speckle",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     template_dict["rasterFunctionArguments"]["FilterType"] = filter_types[filter_type]
@@ -4459,8 +4481,8 @@ def pansharpen(
 ):
     """
     The Pansharpening function uses a higher-resolution panchromatic raster to
-    fuse with a lower-resolution, multiband raster. It can generate colorized 
-    multispectral image with higher resolution. For more information, see 
+    fuse with a lower-resolution, multiband raster. It can generate colorized
+    multispectral image with higher resolution. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm
 
     :param pan_raster: raster, which is panchromatic
@@ -4550,10 +4572,10 @@ def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm
 
     :param raster: array of rasters
-    :param fields: array of string fields of the input rasters to be used for weighting.				 
-    :param influences: array of double, Each input raster is weighted according to its importance, or 
-				       its influence. The sum of the influence weights must equal 1
-    :param remaps: array of strings, Each value in an input raster is assigned a new value based on the remap. The remap value can be a valid value or a NoData value.    
+    :param fields: array of string fields of the input rasters to be used for weighting.
+    :param influences: array of double, Each input raster is weighted according to its importance, or
+                                       its influence. The sum of the influence weights must equal 1
+    :param remaps: array of strings, Each value in an input raster is assigned a new value based on the remap. The remap value can be a valid value or a NoData value.
     :param eval_from: required, numeric value of evaluation scale from
     :param eval_to: required, numeric value of evaluation scale to
     :return: output raster with function applied
@@ -4584,9 +4606,9 @@ def weighted_sum(rasters, fields, weights):
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
 
     :param raster: array of rasters
-    :param fields: array of string fields of the input rasters to be used for weighting.				 
-    :param weights: array of double, The weight value by which to multiply the raster. 
-				    It can be any positive or negative decimal value.    
+    :param fields: array of string fields of the input rasters to be used for weighting.
+    :param weights: array of double, The weight value by which to multiply the raster.
+                                    It can be any positive or negative decimal value.
     :return: output raster with function applied
     """
 
@@ -4757,7 +4779,7 @@ def focal_stats(
 
 def lookup(raster, field=None):
     """
-    Creates a new raster by looking up values found in another field in the table of the input raster. 
+    Creates a new raster by looking up values found in another field in the table of the input raster.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/lookup-function.htm
 
     :param raster: The input raster that contains a field from which to create a new raster.
@@ -4770,7 +4792,9 @@ def lookup(raster, field=None):
 
     template_dict = {
         "rasterFunction": "Lookup",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if field is not None:
@@ -4795,14 +4819,14 @@ def raster_collection_function(
     Creates a new raster by applying item, aggregation and processing function
 
     :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
-    :param item_function: The raster function template to be applied on each item of the mosaic dataset. 
-                          Create an RFT object out of the raster function template item on the portal and 
-                          specify that as the input to item_function 
+    :param item_function: The raster function template to be applied on each item of the mosaic dataset.
+                          Create an RFT object out of the raster function template item on the portal and
+                          specify that as the input to item_function
     :param aggregation_function: The aggregation function to be applied on the mosaic dataset.
-                                 Create an RFT object out of the raster function template item on the portal and 
-                                 specify that as the input to aggregation_function 
+                                 Create an RFT object out of the raster function template item on the portal and
+                                 specify that as the input to aggregation_function
     :param processing_function: The processing template to be applied on the imagery layer.
-                                Create an RFT object out of the raster function template item on the portal and 
+                                Create an RFT object out of the raster function template item on the portal and
                                 specify that as the input to processing_function.
     :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
                                         will be aggregated.
@@ -4820,46 +4844,46 @@ def raster_collection_function(
                                              when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
-                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                             - HOURLY : The data values will be aggregated into hourly time steps,
                                                and the result will include every hour in the time series.
 
-                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                             - DAILY : The data values will be aggregated into daily time steps,
                                                and the result will include every day in the time series.
 
-                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                             - WEEKLY : The data values will be aggregated into weekly time steps,
                                                and the result will include every week in the time series.
 
-                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each
                                                (last period might have more or less than 10 days)
                                                and each month would output 3 slices.
 
-                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each
                                                (last period might have more or less than 5 days)
                                                and each month would output 6 slices.
 
-                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                             - MONTHLY : The data values will be aggregated into monthly time steps,
                                                and the result will include every month in the time series.
 
-                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps,
                                                and the result will include every quarter in the time series.
 
-                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                             - YEARLY : The data values will be aggregated into yearly time steps,
                                                and the result will include every year in the time series.
 
-                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
-                                               and the result includes each one aggregated value per day. 
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps,
+                                               and the result includes each one aggregated value per day.
                                                The output will include, at most, 366 daily time slices
 
-                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per week. 
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per week.
                                                The output will include, at most, 53 weekly time slices.
 
-                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per month. 
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per month.
                                                The output will include, at most, 12 monthly time slices.
 
-                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per quarter. 
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per quarter.
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
@@ -4883,20 +4907,20 @@ def raster_collection_function(
                           - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
                           - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
                           - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
-    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
-                            that will be used to aggregate groups of values. 
+    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects
+                            that will be used to aggregate groups of values.
 
                             This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
                             If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
-                            Syntax: 
+                            Syntax:
                                 [{"minValue":"<min value>","maxValue":"<max value>"},
                                 {"minValue":"<min value>","maxValue":"<max value>"}]
 
                             Example:
                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
-    
+
 
     :return: the output raster with function applied on it
     """
@@ -5037,21 +5061,21 @@ def raster_collection_function(
 
 def monitor_vegetation(raster, method="NDVI", band_indexes=None, astype=None):
     """
-    The monitor_vegetation function performs an arithmetic operation on the bands 
-    of a performs an arithmetic operation on the bands of a multiband raster layer 
+    The monitor_vegetation function performs an arithmetic operation on the bands
+    of a performs an arithmetic operation on the bands of a multiband raster layer
     to reveal vegetation coverage information of the study area.
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
 
     :param raster: the input raster / imagery layer
-    :param method: String. The method to create the vegetation index layer. 
-                    The different vegetation indexes can help highlight certain features or reduce various noise. 
+    :param method: String. The method to create the vegetation index layer.
+                    The different vegetation indexes can help highlight certain features or reduce various noise.
                     NDVI, SAVI, TSAVI, MSAVI, GEMI, PVI, GVITM, Sultan, VARI, GNDVI, SR, NDVIre, SRre, MTVI2,
                     RTVICore, CIre, CIg, NDWI, EVI
                     Default is NDVI.
     :param band_indexes: band indexes
     :param astype: output pixel type
 
-    :return: output raster 
+    :return: output raster
     """
     if band_indexes is None:
         raise RuntimeError("band_indexes cannot be None")
@@ -5104,33 +5128,33 @@ def constant_raster(constant, raster_info, gis=None):
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
     :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
-                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified.
 
-                        Example for RasterInfo dict - 
+                        Example for RasterInfo dict -
 
-                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
-                        "ymin": 5478609.805, 
-                        "xmax": 4489727.05, 
-                        "ymax": 5479555.305, 
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95,
+                        "ymin": 5478609.805,
+                        "xmax": 4489727.05,
+                        "ymax": 5479555.305,
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
-                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\", 0.0], 
-                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
-                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
-                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\", 0.0],
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"],
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0],
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0],
                         PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
-                        }}, 
-                        'pixelSizeX': 0.0999999999999614, 
-                        'pixelSizeY': 0.1, 
+                        }},
+                        'pixelSizeX': 0.0999999999999614,
+                        'pixelSizeY': 0.1,
                         'pixelType': 'U8'}
 
 
     :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
                 If not provided, active gis will be used to do this.
-                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+                If gis parameter is not specified the output of constant_raster() cannot be displayed.
 
-    :return: output raster 
+    :return: output raster
     """
 
     template_dict = {"rasterFunction": "Constant", "rasterFunctionArguments": {}}
@@ -5190,25 +5214,25 @@ def random_raster(
     Creates a virtual raster with random values for each cell.
 
     :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
-                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified.
 
-                        Example for RasterInfo dict - 
+                        Example for RasterInfo dict -
 
-                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
-                        "ymin": 5478609.805, 
-                        "xmax": 4489727.05, 
-                        "ymax": 5479555.305, 
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95,
+                        "ymin": 5478609.805,
+                        "xmax": 4489727.05,
+                        "ymax": 5479555.305,
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
-                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0], 
-                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
-                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
-                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0],
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"],
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0],
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0],
                         PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
-                        }}, 
-                        'pixelSizeX': 0.0999999999999614, 
-                        'pixelSizeY': 0.1, 
+                        }},
+                        'pixelSizeX': 0.0999999999999614,
+                        'pixelSizeY': 0.1,
                         'pixelType': 'U8'}
 
     :param distribution: Optional int. Specify the random value distribution method to use.
@@ -5228,17 +5252,17 @@ def random_raster(
 
                         - UniformInteger - An integer distribution with the defined range.
 
-                        - Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+                        - Normal - A normal distribution with a defined {normal_mean} and {std_dev}.
 
                         - Exponential - An exponential distribution with a defined {exp_mean}.
 
                         - Poisson - A Poisson distribution with a defined {Mean}.
 
                         - Gamma - A gamma distribution with a defined {alpha} and {beta}.
-                                
+
                         - Binomial - A binomial distribution with a defined {N} and {probability}.
 
-                        - Geometric - A geometric distribution with a defined {probability}. 
+                        - Geometric - A geometric distribution with a defined {probability}.
 
                         - NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
 
@@ -5264,9 +5288,9 @@ def random_raster(
 
     :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
                 If not provided, active gis will be used to do this.
-                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+                If gis parameter is not specified the output of constant_raster() cannot be displayed.
 
-    :return: output raster 
+    :return: output raster
     """
 
     template_dict = {"rasterFunction": "Random", "rasterFunctionArguments": {}}
@@ -5359,13 +5383,13 @@ def aggregate_cells(
     Generates a reduced-resolution version of a raster.
 
     :param raster: the input raster
-    :param cell_factor: The factor by which to multiply the cell size of the input raster to 
+    :param cell_factor: The factor by which to multiply the cell size of the input raster to
                         obtain the desired resolution for the output raster.
-                        For example, a cell factor value of three would result in an output cell 
+                        For example, a cell factor value of three would result in an output cell
                         size three times larger than that of the input raster.
                         The value must be an integer greater than 1.
     :param aggregation_type: Optional int. Establishes how the value for each output cell will be determined.
-                             The values of the input cells encompassed by the coarser output cell 
+                             The values of the input cells encompassed by the coarser output cell
                              are aggregated by one of the following statistics:
 
                                 - 2 (MAXIMUM) : The largest value of the input cells.
@@ -5374,41 +5398,43 @@ def aggregate_cells(
                                 - 5 (MINIMUM) : The smallest value of the input cells.
                                 - 9 (SUM) : The sum (total) of the input cell values.This is the default.
 
-    :param extent_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows 
+    :param extent_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows
                             or columns are not a multiple of the cell factor.
-                                - True : Expands the top or right boundaries of the input raster so 
-                                  the total number of cells in a row or column is a multiple 
-                                  of the cell factor. Those expanded cells are given a value 
-                                  of NoData. With this option, the output raster can cover a 
+                                - True : Expands the top or right boundaries of the input raster so
+                                  the total number of cells in a row or column is a multiple
+                                  of the cell factor. Those expanded cells are given a value
+                                  of NoData. With this option, the output raster can cover a
                                   larger spatial extent than the input raster. This is the default.
-                                - False : Reduces the number of rows or columns in the output raster by 1. 
-                                  This will truncate the remaining cells on the top or right 
-                                  boundaries of the input raster, making the number of rows 
+                                - False : Reduces the number of rows or columns in the output raster by 1.
+                                  This will truncate the remaining cells on the top or right
+                                  boundaries of the input raster, making the number of rows
                                   or columns in the input raster a multiple of the cell factor.
-                                  With this option, the output raster can cover a smaller 
+                                  With this option, the output raster can cover a smaller
                                   spatial extent than the input raster.
 
     :param ignore_nodata: Optional boolean. Denotes whether NoData values are ignored by the aggregation calculation.
 
-                          - True : Specifies that if NoData values exist for any of the cells that fall within the 
-                            spatial extent of a larger cell on the output raster, the NoData values will be 
-                            ignored when determining the value for output cell locations. Only input cells 
+                          - True : Specifies that if NoData values exist for any of the cells that fall within the
+                            spatial extent of a larger cell on the output raster, the NoData values will be
+                            ignored when determining the value for output cell locations. Only input cells
                             within the extent of the output cell that have data values will be used in
                             determining the value of the output cell. This is the default.
-                          - False : Specifies that if any cell that falls within the spatial extent of a larger 
-                            cell on the output raster has a value of NoData, the value for that output 
-                            cell location will be NoData.When the this option is used, it is implied 
-                            that when cells within an aggregation contain the NoData value, 
-                            there is insufficient information to perform the specified calculations 
+                          - False : Specifies that if any cell that falls within the spatial extent of a larger
+                            cell on the output raster has a value of NoData, the value for that output
+                            cell location will be NoData.When the this option is used, it is implied
+                            that when cells within an aggregation contain the NoData value,
+                            there is insufficient information to perform the specified calculations
                             necessary to determine an output value.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Aggregate",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if cell_factor is not None:
@@ -5468,30 +5494,30 @@ def generate_trend(
     Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
 
     :param raster: The input multidimensional raster.
-    :param dimension_name: Required String. The dimension along which a trend will be extracted for the 
+    :param dimension_name: Required String. The dimension along which a trend will be extracted for the
                            variable or variables selected in the analysis.
     :param regression_type: Optional Integer or String. Specifies the type of line to be used to fit to the pixel values along a dimension.
 
                             - 0 (LINEAR) : Fits the pixel values for a variable along a linear trend line. This is the default.
                             - 1 (HARMONIC) : Fits the pixel values for a variable along a harmonic trend line.
                             - 2 (POLYNOMIAL) : Fits the pixel values for a variable along a second-order polynomial trend line.
-                            - 3 (MANN-KENDALL) : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
-                            - 4 (SEASONAL-KENDALL) : Variable pixel values will be evaluated using the Seasonal-Kendall trend test. 
+                            - 3 (MANN-KENDALL) : Variable pixel values will be evaluated using the Mann-Kendall trend test.
+                            - 4 (SEASONAL-KENDALL) : Variable pixel values will be evaluated using the Seasonal-Kendall trend test.
 
     :param cycle_length: Optional Integer. The length of periodic variation to model. This parameter is required when Trend Line Type is
-                         set to Harmonic. For example, leaf greenness often has one strong cycle of variation in a single year, so the 
-                         cycle length is 1 year. Hourly temperature data has one strong cycle of variation throughout a single day, 
+                         set to Harmonic. For example, leaf greenness often has one strong cycle of variation in a single year, so the
+                         cycle length is 1 year. Hourly temperature data has one strong cycle of variation throughout a single day,
                          so the cycle length is 1 day. Default is 1.
     :param cycle_unit: Optional String. Specifies the time unit to be used for the length of harmonic cycle. Options: "DAYS", "YEARS" (This is the default).
 
-    :param harmonic_frequency: Optional Integer. The frequency number to use in the trend fitting. This parameter specifies the 
-                               frequency of cycles in a year. The default value is 1, or one harmonic cycle per year. 
+    :param harmonic_frequency: Optional Integer. The frequency number to use in the trend fitting. This parameter specifies the
+                               frequency of cycles in a year. The default value is 1, or one harmonic cycle per year.
                                This parameter is only included in the trend analysis for a harmonic regression (regression_type=1).
-    :param polynomial_order: Optional Integer. The polynomial order number to use in the trend fitting. This parameter specifies the 
-                             polynomial order. The default value is 2, or second-order polynomial. This parameter 
+    :param polynomial_order: Optional Integer. The polynomial order number to use in the trend fitting. This parameter specifies the
+                             polynomial order. The default value is 2, or second-order polynomial. This parameter
                              is only included in the trend analysis for a polynomial regression (regression_type=2).
     :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored in the analysis.
-                          
+
                           - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. This is the default.
                           - False : The analysis will result in NoData if there are any NoData values for the pixels along the given dimension.
 
@@ -5507,20 +5533,22 @@ def generate_trend(
 
     :param slope_p_value: Optional Boolean. Specifies whether to calculate the p-value statistic for the slope coefficient of the trend line.
 
-                          - True : The p-value will be calculated and displayed when the tool is finished running. 
+                          - True : The p-value will be calculated and displayed when the tool is finished running.
                           - False : The p-value will not be calculated. This is the default.
 
     :param seasonal_period: Optional String. Specifies the seasonal period. Default - "DAYS"
                             Possible Options - "DAYS", "MONTHS"
 
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "TrendAnalysis",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if dimension_name is not None:
@@ -5600,10 +5628,10 @@ def predict_using_trend(
                                       - 0 (BY_VALUE) : The prediction will be calculated for a single dimension value. For example, you want to predict yearly precipitation for the years 2050, 2100, and 2150. This is the default.
                                       - 1 (BY_INTERVAL) : The prediction will be calculated for an interval of the dimension defined by a start and an end value. For example, you want to predict yearly precipitation for every year between 2050 and 2150.
 
-    :param dimension_values: Optional List. The dimension value or values to be used in the prediction. The format of the time, 
-                             depth, and height values must match the format of the dimension values used to 
-                             generate the trend raster. If the trend raster was generated for the StdTime dimension, 
-                             the format should be YYYY-MM-DDTHH:MM:SS, 
+    :param dimension_values: Optional List. The dimension value or values to be used in the prediction. The format of the time,
+                             depth, and height values must match the format of the dimension values used to
+                             generate the trend raster. If the trend raster was generated for the StdTime dimension,
+                             the format should be YYYY-MM-DDTHH:MM:SS,
                              for example, 2050-01-01T00:00:00.
 
     :param start: Optional String or Integer. The start date, height, or depth of the dimension interval to be used in the prediction.
@@ -5625,13 +5653,15 @@ def predict_using_trend(
 
                             - YEARS - The prediction will be calculated for each year in the range of time described by the start, end, and interval_value parameters.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Trend",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     dimension_definition_type_dict = {"BY_VALUE": 0, "BY_INTERVAL": 1}
@@ -5677,7 +5707,7 @@ def linear_spectral_unmixing(
 ):
 
     """
-    Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels. 
+    Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels.
 
     :param raster: The input raster.
     :param spectral_profile_def: Optional dict. The class spectral profile information.
@@ -5688,20 +5718,22 @@ def linear_spectral_unmixing(
 
     :param sum_to_one: Optional bool. Specifies the options to define the output pixel values.
 
-                        - True : Class values for each pixel are provided in decimal format with the sum of all classes equal to 1. 
+                        - True : Class values for each pixel are provided in decimal format with the sum of all classes equal to 1.
 
-                          Example: 
+                          Example:
                             Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
 
                         - False : The sum of all classes in a pixel can exceed 1. This is the default.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "SpectralUnmixing",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if spectral_profile_def is not None:
@@ -5733,11 +5765,11 @@ def multidimensional_filter(
 ):
 
     """
-    Applies a filter on a multidimensional raster. Function creates a raster layer 
+    Applies a filter on a multidimensional raster. Function creates a raster layer
     from a multidimensional raster by slicing data along defined variables and dimensions.
 
     :param raster: The input multidimensional raster
-    :param variables: Optional List. The list of variables that will be included in the output 
+    :param variables: Optional List. The list of variables that will be included in the output
                       multidimensional raster layer. If no variable is specified, the first variable will be used.
 
     :param dimension_definition: Optional String. Specifies the method that will be used to slice the dimension.
@@ -5750,11 +5782,11 @@ def multidimensional_filter(
 
                                     - BY_VALUES : The dimension will be sliced using a list of dimension values.
 
-    :param dimension: Optional String. The dimension along which the variables will be sliced. 
+    :param dimension: Optional String. The dimension along which the variables will be sliced.
                       This parameter is required when the dimension_definition is set to BY_ITERATION.
 
     :param dimension_ranges: Optional list of dicts. This slices the data based on the dimension name and the minimum and maximum values for the range. This parameter is required when the dimension_definition is set to BY_RANGE.
-                             If dimension is StdTime, then the min value and max value must be specified in 
+                             If dimension is StdTime, then the min value and max value must be specified in
                              human readable time format (YYYY-MM-DDTHH:MM:SS). The input should be specified as:
                              [{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"},{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"}]
 
@@ -5764,21 +5796,21 @@ def multidimensional_filter(
     :param dimension_values: Optional List of Dicts. This slices the data based on the dimension name and the value specified.
                              This parameter is required when the dimension_definition is set to BY_VALUE.
 
-                             If dimension is StdTime, then the value must be specified in 
+                             If dimension is StdTime, then the value must be specified in
                              human readable time format (YYYY-MM-DDTHH:MM:SS). The input should be specified as:
                              [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
 
                              Example:
                                  [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},{"dimension":" StdZ ", "value":"-4000"}]
 
-    :param start_of_first_iteration: Optional String. The beginning of the interval. 
+    :param start_of_first_iteration: Optional String. The beginning of the interval.
                                      This parameter is required when the dimension_definition is set to BY_ITERATION
-    :param end_of_first_iteration: Optional String. The end of the interval. 
+    :param end_of_first_iteration: Optional String. The end of the interval.
                                    This parameter is required when the dimension_definition is set to BY_ITERATION
-    :param iteration_step: Optional Float. The frequency with which the data will be sliced. 
+    :param iteration_step: Optional Float. The frequency with which the data will be sliced.
                            This parameter is required when the dimension_definition is set to BY_ITERATION
                            The default is 3.
-    :param iteration_unit: Optional String. Specifies the iteration unit. 
+    :param iteration_unit: Optional String. Specifies the iteration unit.
                            This parameter is required when the dimension_definition is set to BY_ITERATION
                            and the dimension parameter is set to StdTime.
 
@@ -5797,7 +5829,7 @@ def multidimensional_filter(
                            - True - The layer will not have dimension values.
                            - False - The layer will have a dimension value. This is the default.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -5917,22 +5949,24 @@ def s1_radiometric_calibration(raster, calibration_type=None):
     :param raster: The input raster.
                    The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
 
-                   The function will use the LUT file either to apply the thermal correction or to 
+                   The function will use the LUT file either to apply the thermal correction or to
                    remove the correction, depending on the contents of the LUT.
     :param calibration_type: Optional string or int. one of four calibration types:
-    
+
                              - "beta_nought" (0) - produces an output containing the radar brightness coefficient.
                              - "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
                              - "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
                              - None - Specify None to not apply a correction. This is the default.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "S1RadiometricCalibration",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
@@ -5960,16 +5994,18 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
     :param raster: The input raster.
                    The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
 
-                   The function will use the LUT file either to apply the thermal correction or to 
+                   The function will use the LUT file either to apply the thermal correction or to
                    remove the correction, depending on the contents of the LUT.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "S1ThermalNoiseRemoval",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -5993,31 +6029,31 @@ def interpolate_irregular_data(
     --------------------------------     --------------------------------------------------------------------
     value_field                          Optional string. The name of the field that contains the value of the points to be interpolated.
     --------------------------------     --------------------------------------------------------------------
-    cell_size                            Optional int. The cell size for the output raster dataset. 
+    cell_size                            Optional int. The cell size for the output raster dataset.
     --------------------------------     --------------------------------------------------------------------
     interpolation_method                 Optional int or string. The resampling method to use for interpolation:
 
-                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel 
+                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel
                                              exists, no new pixel can be created in the output. This is the default.
 
-                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center 
-                                             points of each cell in the irregular raster to interpolate a surface 
+                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center
+                                             points of each cell in the irregular raster to interpolate a surface
                                              that is then converted to a regular raster.
 
-                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a 
-                                             query point and applies weights to them based on proportionate 
+                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a
+                                             query point and applies weights to them based on proportionate
                                              areas to interpolate a value.
 
-                                          -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a 
-                                             linearly weighted combination of a set of sample points or cells. 
+                                          -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a
+                                             linearly weighted combination of a set of sample points or cells.
                                              The weight is a function of the inverse of the distance from the known points or cells.
     --------------------------------     --------------------------------------------------------------------
     radius                               Optional int. The number of pixels to be included for resampling. The default value is 3 pixels.
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Optional gis. gis parameter can be specified to render the output raster 
+    gis                                  Optional gis. gis parameter can be specified to render the output raster
                                          dynamically using the raster rendering service of the gis.
                                          If not provided, active gis will be used to do this.
-                                         If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed. 
+                                         If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed.
     ================================     ====================================================================
 
     :returns: output raster with function applied
@@ -6082,7 +6118,7 @@ def interpolate_irregular_data(
 
 
 def _simple_collection(raster, md_info=None):
-    """"
+    """ "
     The function is used to define the source raster as part of the default
     mosaicking behavior of the mosaic dataset. This function is a no-op function
     and takes no arguments except a raster. For more information, see
@@ -6095,7 +6131,9 @@ def _simple_collection(raster, md_info=None):
 
     template_dict = {
         "rasterFunction": "SimpleCollection",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Rasters",
     }
 
@@ -6103,7 +6141,6 @@ def _simple_collection(raster, md_info=None):
         template_dict["rasterFunctionArguments"]["MultidimensionalInfo"] = md_info
 
     return _clone_layer(layer, template_dict, raster_ra)
-
 
 
 def aggregate(
@@ -6118,11 +6155,11 @@ def aggregate(
     ignore_nodata=False,
     dimensionless=False,
     percentile_value=90,
-    percentile_interpolation_type="NEAREST"
-    ):
+    percentile_interpolation_type="NEAREST",
+):
     """
      Creates a new raster by applying an aggregation function
-    :param raster: Input Raster. 
+    :param raster: Input Raster.
     :param aggregation_function: Optional String. Specifies the mathematical method that will be used
                                to combine the aggregated slices in an interval.
 
@@ -6138,8 +6175,8 @@ def aggregate(
 
                                 - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
-                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. 
-                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the 
+                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval.
+                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the
                                   percentile_value parameter.
 
                                 - RANGE : Calculates the range of values for a pixel across all slices in the interval.
@@ -6150,9 +6187,9 @@ def aggregate(
 
                                 - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
-                                You may also pass custom aggregation function. 
-                                Create an RFT object out of the raster function template item on the portal and 
-                                specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
+                                You may also pass custom aggregation function.
+                                Create an RFT object out of the raster function template item on the portal and
+                                specify that as the input to aggregation_function or directly specify the RFT in JSON format as the
                                 aggregation_function.
 
     :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
@@ -6171,46 +6208,46 @@ def aggregate(
                                              when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                              the aggregation must be across time.
 
-                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                             - HOURLY : The data values will be aggregated into hourly time steps,
                                                and the result will include every hour in the time series.
 
-                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                             - DAILY : The data values will be aggregated into daily time steps,
                                                and the result will include every day in the time series.
 
-                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                             - WEEKLY : The data values will be aggregated into weekly time steps,
                                                and the result will include every week in the time series.
 
-                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each
                                                (last period might have more or less than 10 days)
                                                and each month would output 3 slices.
 
-                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each
                                                (last period might have more or less than 5 days)
                                                and each month would output 6 slices.
 
-                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                             - MONTHLY : The data values will be aggregated into monthly time steps,
                                                and the result will include every month in the time series.
 
-                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps,
                                                and the result will include every quarter in the time series.
 
-                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                             - YEARLY : The data values will be aggregated into yearly time steps,
                                                and the result will include every year in the time series.
 
-                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
-                                               and the result includes each one aggregated value per day. 
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps,
+                                               and the result includes each one aggregated value per day.
                                                The output will include, at most, 366 daily time slices
 
-                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per week. 
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per week.
                                                The output will include, at most, 53 weekly time slices.
 
-                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per month. 
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per month.
                                                The output will include, at most, 12 monthly time slices.
 
-                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
-                                               and the result will include one aggregated value per quarter. 
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
+                                               and the result will include one aggregated value per quarter.
                                                The output will include, at most, 4 quarterly time slices.
 
     :param interval_value: Optional String. The size of the interval that will be used for the
@@ -6234,50 +6271,50 @@ def aggregate(
                           - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
                           - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
                           - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
-    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
-                            that will be used to aggregate groups of values. 
+    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects
+                            that will be used to aggregate groups of values.
 
                             This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
                             If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
-                            Syntax: 
+                            Syntax:
                                 [{"minValue":"<min value>","maxValue":"<max value>"},
                                 {"minValue":"<min value>","maxValue":"<max value>"}]
 
                             Example:
                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
-    
+
     :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
 
                             - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
                             - False : The function will result in NoData if there are any NoData values.
 
-    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values. 
+    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values.
                           This parameter is only active if a single slice is selected to create a layer.
 
                             - True : The layer will not have dimension values.
                             - False : The layer will have dimension values. This is the default.
 
-    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating 
+    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating
                              the 90th percentile.
 
-                             The values can range from 0 to 100. The 0th percentile is essentially equivalent 
-                             to the minimum statistic, and the 100th percentile is equivalent to maximum. 
-                             A value of 50 will produce essentially the same result as the median statistic. 
-                             This option is only honored if the aggregation_function parameter is set to PERCENTILE. 
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent
+                             to the minimum statistic, and the 100th percentile is equivalent to maximum.
+                             A value of 50 will produce essentially the same result as the median statistic.
+                             This option is only honored if the aggregation_function parameter is set to PERCENTILE.
 
                              Example:
                                 90
 
-    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an 
+    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an
                                           even number of values from the input raster to be calculated
 
-                                            - NEAREST : The nearest available value to the desired percentile will be used. 
-                                              In this case, the output pixel type will be the same as that of the input 
+                                            - NEAREST : The nearest available value to the desired percentile will be used.
+                                              In this case, the output pixel type will be the same as that of the input
                                               value raster. This is the default
 
-                                            - LINEAR  : The weighted average of the two surrounding values from the desired 
+                                            - LINEAR  : The weighted average of the two surrounding values from the desired
                                               percentile will be used. In this case, the output pixel type will be floating point.
 
                                           Example:
@@ -6285,7 +6322,10 @@ def aggregate(
     :return: the output raster with function applied on it
     """
 
-    from arcgis.raster._util import _local_function_template, _percentile_function_template
+    from arcgis.raster._util import (
+        _local_function_template,
+        _percentile_function_template,
+    )
 
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -6329,7 +6369,13 @@ def aggregate(
 
             if opnum is None:
                 if aggregation_function.upper() == "PERCENTILE":
-                    template_dict["rasterFunctionArguments"]["AggregationFunction"] = _percentile_function_template(ignore_nodata=ignore_nodata, percentile=percentile_value,percentile_interpolation_type=percentile_interpolation_type)
+                    template_dict["rasterFunctionArguments"][
+                        "AggregationFunction"
+                    ] = _percentile_function_template(
+                        ignore_nodata=ignore_nodata,
+                        percentile=percentile_value,
+                        percentile_interpolation_type=percentile_interpolation_type,
+                    )
                 else:
                     raise RuntimeError("Invalid aggregation_function")
             else:
@@ -6426,12 +6472,20 @@ def aggregate(
 
     if dimensionless is not None:
         if dimensionless:
-            aggregated_layer =  _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
-            return multidimensional_filter(aggregated_layer, dimensionless=dimensionless)
+            aggregated_layer = _clone_layer(
+                layer, template_dict, raster_ra, variable_name="RasterCollection"
+            )
+            return multidimensional_filter(
+                aggregated_layer, dimensionless=dimensionless
+            )
         else:
-            return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+            return _clone_layer(
+                layer, template_dict, raster_ra, variable_name="RasterCollection"
+            )
 
-    return _clone_layer(layer, template_dict, raster_ra, variable_name="RasterCollection")
+    return _clone_layer(
+        layer, template_dict, raster_ra, variable_name="RasterCollection"
+    )
 
 
 def compute_change(
@@ -6468,16 +6522,16 @@ def compute_change(
                                              Example:
                                                   "DIFFERENCE"
     ------------------------------------     --------------------------------------------------------------------
-    from_class_values                        Optional list. List of integer values corresponding to the ClassValue 
-                                             field in raster1. 
+    from_class_values                        Optional list. List of integer values corresponding to the ClassValue
+                                             field in raster1.
                                              Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
-    to_class_values                          Optional list. List of integer values corresponding to the ClassValue 
-                                             field in raster2. 
+    to_class_values                          Optional list. List of integer values corresponding to the ClassValue
+                                             field in raster2.
                                              Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
     filter_method                            Optional string. Default value is "CHANGED_PIXELS_ONLY" (1).
-                                             
+
                                              Possible options are:
 
                                              - ALL
@@ -6645,7 +6699,7 @@ def detect_change_using_change_analysis_raster(
 ):
 
     """
-    Function generates a raster containing pixel change information using the 
+    Function generates a raster containing pixel change information using the
     output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function
     or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -6669,9 +6723,9 @@ def detect_change_using_change_analysis_raster(
                                              Example:
                                                 "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
-    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated. This number corresponds to the number of bands in the output raster. 
-                                             The default is 1, meaning only one change date will be calculated, 
+    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will
+                                             be calculated. This number corresponds to the number of bands in the output raster.
+                                             The default is 1, meaning only one change date will be calculated,
                                              and the output raster will contain only one band.
 
                                              This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
@@ -6679,38 +6733,38 @@ def detect_change_using_change_analysis_raster(
                                              Example:
                                                 3
     ------------------------------------     --------------------------------------------------------------------
-    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
-                                             of a change segment, or the end. 
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning
+                                             of a change segment, or the end.
 
-                                             This parameter is available only when the input change analysis raster is 
+                                             This parameter is available only when the input change analysis raster is
                                              the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
-                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment.
 
                                              Example:
                                                 "END_OF_SEGMENT"
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    change_direction                         Optional string. The direction of change to be included in the analysis. 
-                                             For example, choose Increasing to only extract date of change information for 
-                                             periods where the change is in the positive or increasing direction. 
+    change_direction                         Optional string. The direction of change to be included in the analysis.
+                                             For example, choose Increasing to only extract date of change information for
+                                             periods where the change is in the positive or increasing direction.
 
-                                             This parameter is available only when the input change analysis raster 
+                                             This parameter is available only when the input change analysis raster
                                              is the output from the analyze_changes_using_landtrendr function.
 
-                                                - ALL - All change directions will be included in the output. This is the default. 
-                                                - INCREASE - Only change in the positive or increasing direction will be included in the output. 
-                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+                                                - ALL - All change directions will be included in the output. This is the default.
+                                                - INCREASE - Only change in the positive or increasing direction will be included in the output.
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output.
 
                                              Example:
                                                 "DECREASE"
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years. 
+    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years.
 
-                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output.
                                                 - False - Do not filter results by year. This is the default.
 
                                              Example:
@@ -6718,73 +6772,73 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
-                                             is required if the filter_by_year parameter is set to True. 
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter
+                                             is required if the filter_by_year parameter is set to True.
 
                                              Example:
                                                 2000
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_year                                 Optional int. The latest year to use to filter results. This parameter 
-                                             is required if the filter_by_year parameter is set to True. 
+    max_year                                 Optional int. The latest year to use to filter results. This parameter
+                                             is required if the filter_by_year parameter is set to True.
 
                                              Example:
                                                 2005
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
-                                             This parameter is available only when the input change analysis raster 
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration.
+                                             This parameter is available only when the input change analysis raster
                                              is the output from the analyze_changes_using_landtrendr function.
 
                                                 - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
-                                                - False - Do not filter results by duration. This is the default. 
+                                                - False - Do not filter results by duration. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_duration                             Optional float. The minimum number of consecutive years to include in 
-                                             the results. This parameter is required if the filter_by_duration parameter 
-                                             is set to True 
+    min_duration                             Optional float. The minimum number of consecutive years to include in
+                                             the results. This parameter is required if the filter_by_duration parameter
+                                             is set to True
 
                                              Example:
                                                 2
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_duration                             Optional float. The maximum number of consecutive years to include 
-                                             in the results. This parameter is required if the filter_by_duration 
-                                             parameter is set to True 
+    max_duration                             Optional float. The maximum number of consecutive years to include
+                                             in the results. This parameter is required if the filter_by_duration
+                                             parameter is set to True
 
                                              Example:
                                                 4
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude. 
+    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude.
 
                                                 - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
-                                                - False - Do not filter results by magnitude. This is the default. 
+                                                - False - Do not filter results by magnitude. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
-                                             This parameter is required if the filter_by_magnitude 
-                                             parameter is set to True. 
+    min_magnitude                            Optional float. The minimum magnitude to include in the results.
+                                             This parameter is required if the filter_by_magnitude
+                                             parameter is set to True.
 
                                              Example:
                                                 0.25
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
-                                             This parameter is required if the filter_by_magnitude parameter is set 
+    max_magnitude                            Optional float. The maximum magnitude to include in the results.
+                                             This parameter is required if the filter_by_magnitude parameter is set
                                              to True.
 
                                              Example:
@@ -6792,9 +6846,9 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
-                                             parameter is available only when the input change analysis raster 
-                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This
+                                             parameter is available only when the input change analysis raster
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - True - Filter results by start value so that only the change that starts with value defined by a range.
                                                 - False - Do not filter by start value. This is the default.
@@ -6804,8 +6858,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_start_value                          Optional float. The minimum value that defines the range of start value. 
-                                             This parameter is required if the filter_by_start_value parameter is set 
+    min_start_value                          Optional float. The minimum value that defines the range of start value.
+                                             This parameter is required if the filter_by_start_value parameter is set
                                              to True.
 
                                              Example:
@@ -6813,8 +6867,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_start_value                          Optional float. The maximum value that defines the range of start value. 
-                                             This parameter is required if the filter_by_start_value parameter is 
+    max_start_value                          Optional float. The maximum value that defines the range of start value.
+                                             This parameter is required if the filter_by_start_value parameter is
                                              set to True.
 
                                              Example:
@@ -6822,20 +6876,20 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
-                                             is available only when the input change analysis raster is the output 
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter
+                                             is available only when the input change analysis raster is the output
                                              from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
                                                 - True - Filter results by end value so that only the change that ends with value defined by a range.
-                                                - False - Do not filter results by end value. This is the default. 
+                                                - False - Do not filter results by end value. This is the default.
 
                                              Example:
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    min_end_value                            Optional float. The minimum value that defines the range of end value. 
-                                             This parameter is required if the filter_by_end_value parameter is set 
+    min_end_value                            Optional float. The minimum value that defines the range of end value.
+                                             This parameter is required if the filter_by_end_value parameter is set
                                              to True.
 
                                              Example:
@@ -6843,8 +6897,8 @@ def detect_change_using_change_analysis_raster(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    max_end_value                            Optional float. The maximum value that defines the range of end value. 
-                                             This parameter is required if the filter_by_end_value parameter is set 
+    max_end_value                            Optional float. The maximum value that defines the range of end value.
+                                             This parameter is required if the filter_by_end_value parameter is set
                                              to True.
 
                                              Example:
@@ -6861,7 +6915,9 @@ def detect_change_using_change_analysis_raster(
 
     template_dict = {
         "rasterFunction": "DetectChange",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -6997,7 +7053,7 @@ def trend_to_rgb(raster, model_type=0):
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required ImageryLayer object. 
+    raster                                   Required ImageryLayer object.
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Optional String. Specifies the model type.
 
@@ -7017,7 +7073,9 @@ def trend_to_rgb(raster, model_type=0):
 
     template_dict = {
         "rasterFunction": "TrendToRGB",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -7047,14 +7105,14 @@ def apparent_reflectance(
 ):
 
     """
-    Function calibrates the digital number (DN) values of imagery from some satellite 
-    sensors. The calibration uses sun elevation, acquisition date, sensor gain and 
+    Function calibrates the digital number (DN) values of imagery from some satellite
+    sensors. The calibration uses sun elevation, acquisition date, sensor gain and
     bias for each band to derive Top of Atmosphere reflectance, plus sun angle correction.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required ImageryLayer object. 
+    raster                                   Required ImageryLayer object.
     ------------------------------------     --------------------------------------------------------------------
     radiance_gain_values                     Optional list. The radiance gain values
     ------------------------------------     --------------------------------------------------------------------
@@ -7066,21 +7124,21 @@ def apparent_reflectance(
     ------------------------------------     --------------------------------------------------------------------
     sun_elevation                            This is sun elevation value, expressed in degrees.
     ------------------------------------     --------------------------------------------------------------------
-    albedo                                   Optional bool The results of the Apparent Reflectance function can also 
-                                             be expressed as albedo, which is the percentage of the available 
-                                             energy reflected by the planetary surface. Albedo data is used 
-                                             by scientific users for complex modeling and technical 
+    albedo                                   Optional bool The results of the Apparent Reflectance function can also
+                                             be expressed as albedo, which is the percentage of the available
+                                             energy reflected by the planetary surface. Albedo data is used
+                                             by scientific users for complex modeling and technical
                                              remote-sensing applications.
 
                                                 - False - The function returns apparent reflectance values. This is the default.
-                                                
+
                                                 - True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
     ------------------------------------     --------------------------------------------------------------------
-    scale_factor                             Optional int. Your apparent reflectance output value can be expressed 
-                                             as an integer. The scaling factor is multiplied by the albedo to 
+    scale_factor                             Optional int. Your apparent reflectance output value can be expressed
+                                             as an integer. The scaling factor is multiplied by the albedo to
                                              convert all floating-point values into integer values.
 
-                                             If the scale factor is either 0 or not specified, default scaling 
+                                             If the scale factor is either 0 or not specified, default scaling
                                              will be applied depending on the pixel type of the input data:
 
                                                  For 16-bit unsigned data types, the default scale factor is 50,000.
@@ -7090,7 +7148,7 @@ def apparent_reflectance(
                                                  The scaling factor is always applied when the output is apparent reflectance.
                                                  No scaling is applied when the output is albedo.
     ------------------------------------     --------------------------------------------------------------------
-    offset                                   Optional int. 	
+    offset                                   Optional int.
                                              Your scaled albedo value can optionally have an offset value:
 
                                              For 16-bit unsigned data types, the default scale offset is 5,000.
@@ -7106,7 +7164,9 @@ def apparent_reflectance(
 
     template_dict = {
         "rasterFunction": "Reflectance",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
         "variableName": "Raster",
     }
 
@@ -7190,18 +7250,20 @@ def apparent_reflectance(
 def buffered(raster):
 
     """
-    The Buffered function is used to optimize the performance of complex function chains. 
+    The Buffered function is used to optimize the performance of complex function chains.
     It stores the output from the part of the function chain that comes before it in memory.
 
     :param raster: The input raster.
 
-    :return: output raster 
+    :return: output raster
     """
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "BufferedRaster",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -7211,7 +7273,7 @@ def rasterize_features(
     raster, feature_class, class_index_field=None, resolve_overlap_method=0
 ):
     """
-    Converts features to raster. Features are assigned pixel values based on the feature's OBJECTID (default). 
+    Converts features to raster. Features are assigned pixel values based on the feature's OBJECTID (default).
     Optionally, the pixel values can be based on a user defined value field in the input feature's attribute table.
 
     ================================     ====================================================================
@@ -7225,16 +7287,16 @@ def rasterize_features(
     --------------------------------     --------------------------------------------------------------------
     resolve_overlap_method               Optional int or string. Determine how to manage features that overlap:
 
-                                         - FIRST - The overlapping areas will be assigned a value from the first 
+                                         - FIRST - The overlapping areas will be assigned a value from the first
                                            dataset listed.
 
-                                         - LAST - The overlapping areas will be assigned a value from the last 
+                                         - LAST - The overlapping areas will be assigned a value from the last
                                            dataset listed.
 
-                                         - SMALLEST - The overlapping areas will be assigned a value from the 
+                                         - SMALLEST - The overlapping areas will be assigned a value from the
                                            smaller of the features.
 
-                                         - LARGEST - The overlapping areas will be assigned a value from the 
+                                         - LARGEST - The overlapping areas will be assigned a value from the
                                            larger of the features.
     ================================     ====================================================================
 
@@ -7248,7 +7310,9 @@ def rasterize_features(
 
     template_dict = {
         "rasterFunction": "RasterizeFeatureClass",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if feature_class is not None:
@@ -7353,7 +7417,7 @@ def reproject(
     y_registration_point=0,
 ):
     """
-    Modifies the projection of a raster dataset, mosaic dataset, or raster item in a 
+    Modifies the projection of a raster dataset, mosaic dataset, or raster item in a
     mosaic dataset. It can also resample the data to a new cell size and define an origin.
 
     ================================     ====================================================================
@@ -7369,24 +7433,24 @@ def reproject(
                                             |    "latestWkid" : 4176
                                             | }
     --------------------------------     --------------------------------------------------------------------
-    x_cell_size                          Optional.The x-dimension to which the data should be resampled. 
-                                         This is optional. If the value is 0 or less, the output envelope 
+    x_cell_size                          Optional.The x-dimension to which the data should be resampled.
+                                         This is optional. If the value is 0 or less, the output envelope
                                          (extent and cell sizes) is calculated from the input raster.
     --------------------------------     --------------------------------------------------------------------
-    y_cell_size                          Optional.The y-dimension to which the data should be resampled. 
-                                         This is optional. If the value is 0 or less, the output envelope 
+    y_cell_size                          Optional.The y-dimension to which the data should be resampled.
+                                         This is optional. If the value is 0 or less, the output envelope
                                          (extent and cell sizes) is calculated from the input raster.
     --------------------------------     --------------------------------------------------------------------
-    x_registration_point                 Optional. The x-coordinate used to define the upper left corner 
-                                         of the dataset. This coordinate must be defined in the units of 
-                                         the new spatial reference. If both the x_cell_size and y_cell_size 
+    x_registration_point                 Optional. The x-coordinate used to define the upper left corner
+                                         of the dataset. This coordinate must be defined in the units of
+                                         the new spatial reference. If both the x_cell_size and y_cell_size
                                          parameters are greater than 0,  they are used along with the
                                          x_registration_point and y_registration_point
                                          parameters to define the output envelope.
     --------------------------------     --------------------------------------------------------------------
-    y_registration_point                 Optional. The y-coordinate used to define the upper left corner of the dataset. 
-                                         This coordinate must be defined in the units of the new spatial reference. 
-                                         If both the x_cell_size and y_cell_size parameters are greater than 0, 
+    y_registration_point                 Optional. The y-coordinate used to define the upper left corner of the dataset.
+                                         This coordinate must be defined in the units of the new spatial reference.
+                                         If both the x_cell_size and y_cell_size parameters are greater than 0,
                                          they are used along with the x_registration_point and y_registration_point
                                          parameters to define the output envelope.
     ================================     ====================================================================
@@ -7398,7 +7462,9 @@ def reproject(
 
     template_dict = {
         "rasterFunction": "Reproject",
-        "rasterFunctionArguments": {"Raster": raster,},
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
 
     if spatial_reference is not None:
@@ -7427,20 +7493,20 @@ def heat_index(
 ):
     """
     Calculates apparent temperature based on ambient temperature and relative humidity. The apparent temperature is often described as how hot it feels to the human body.
-    
+
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    temperature_raster                   The raster that represent temperature. A single-band raster where pixel 
+    temperature_raster                   The raster that represent temperature. A single-band raster where pixel
                                          values represent ambient air temperature.
     --------------------------------     --------------------------------------------------------------------
-    relative_humidity_raster             The raster that represent relative humidity. A single-band raster 
+    relative_humidity_raster             The raster that represent relative humidity. A single-band raster
                                          where pixel values represent relative humidity as a percentage value between 0 and 100.
     --------------------------------     --------------------------------------------------------------------
-    temperature_units                    Optional String. The unit of measurement associated with the input 
+    temperature_units                    Optional String. The unit of measurement associated with the input
                                          temperature raster. Available input units are Celsius, Fahrenheit, and Kelvin.
     --------------------------------     --------------------------------------------------------------------
-    heat_index_units                     Optional String. The unit of measurement associated with the output raster. 
+    heat_index_units                     Optional String. The unit of measurement associated with the output raster.
                                          Available output units are Celsius, Fahrenheit, and Kelvin.
     ================================     ====================================================================
 
@@ -7492,22 +7558,22 @@ def wind_chill(
     """
     The Wind Chill function is useful for identifying dangerous winter conditions that, depending on exposure times to
     the elements, can result in frostbite or even hypothermia. Wind chill is a way to measure how cold an individual
-    feels when wind is taken into account with already cold temperatures. The faster the wind speed, the more 
+    feels when wind is taken into account with already cold temperatures. The faster the wind speed, the more
     quickly the body will lose heat and the colder they will feel.
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    temperature_raster                   The raster that represent temperature. A single-band raster where pixel 
+    temperature_raster                   The raster that represent temperature. A single-band raster where pixel
                                          values represent ambient air temperature.
     --------------------------------     --------------------------------------------------------------------
-    wind_speed_raster                    The raster that represent relative humidity. A single-band raster 
+    wind_speed_raster                    The raster that represent relative humidity. A single-band raster
                                          where pixel values represent wind speed.
     --------------------------------     --------------------------------------------------------------------
-    temperature_units                    Optional String. The unit of measurement associated with the input 
+    temperature_units                    Optional String. The unit of measurement associated with the input
                                          temperature raster. Available input units are Celsius, Fahrenheit, and Kelvin.
     --------------------------------     --------------------------------------------------------------------
-    wind_speed_units                     Optional String.  Defines the unit of measurement for the wind-speed raster. 
+    wind_speed_units                     Optional String.  Defines the unit of measurement for the wind-speed raster.
                                          Available input units are mph, km/h, ft/s and kn. Each represents
 
                                            - Miles Per Hour (mph)
@@ -7516,7 +7582,7 @@ def wind_chill(
                                            - Feet Per Second (ft/s)
                                            - Knots (kn)
     --------------------------------     --------------------------------------------------------------------
-    wind_chill_units                     Optional String. The unit of measurement associated with the output 
+    wind_chill_units                     Optional String. The unit of measurement associated with the output
                                          raster. Available output units are Celsius, Fahrenheit, and Kelvin.
     ================================     ====================================================================
 
@@ -7567,8 +7633,8 @@ def aspect_slope(raster, z_factor=1):
     --------------------------------     --------------------------------------------------------------------
     raster                               The input raster.
     --------------------------------     --------------------------------------------------------------------
-    z_factor                             A multiplication factor that converts the vertical (elevation) values 
-                                         to the linear units of the horizontal (x,y) coordinate system. 
+    z_factor                             A multiplication factor that converts the vertical (elevation) values
+                                         to the linear units of the horizontal (x,y) coordinate system.
                                          "Use larger values to add vertical exaggeration.
     ================================     ====================================================================
 
@@ -7796,7 +7862,7 @@ class RFT:
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        gis                   optional, GIS on which the RFT object is based on. 
+        gis                   optional, GIS on which the RFT object is based on.
         =================     ====================================================================
 
         :return: dictionary
@@ -7972,10 +8038,10 @@ class RFT:
                                                 )
                                         else:
                                             if (
-                                                ("value" in element["arguments"])
-                                                and "arguments"
-                                                in element["arguments"]["value"]
-                                            ):
+                                                "value" in element["arguments"]
+                                            ) and "arguments" in element["arguments"][
+                                                "value"
+                                            ]:
                                                 self._apply_argument(
                                                     element["arguments"]["value"][
                                                         "arguments"

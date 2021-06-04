@@ -42,9 +42,7 @@ _log = logging.getLogger(__name__)
 
 
 def _from_xy(df, x_column, y_column, sr=None):
-    """
-
-    """
+    """ """
     from arcgis.geometry import SpatialReference, Geometry
     from arcgis.features import SpatialDataFrame
 
@@ -334,8 +332,7 @@ def from_featureclass(filename, **kwargs):
 def _arcpy_to_featureclass(
     df, out_name, out_location=None, overwrite=True, out_sr=None, skip_invalid=True
 ):
-    """
-    """
+    """ """
     import arcgis
     import numpy as np
     import datetime

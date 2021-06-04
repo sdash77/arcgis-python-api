@@ -6,10 +6,10 @@ from .utils import validate, add_features, update_features, remove_features
 
 
 def get_assignment_type_v2(project, code=None, name=None):
-    """ Gets the identified AssignmentType. Exactly one form of identification should be provided.
-        :param project:
-        :param code: The AssignmentType GlobalID.
-        :param name: The AssignmentType name.
+    """Gets the identified AssignmentType. Exactly one form of identification should be provided.
+    :param project:
+    :param code: The AssignmentType GlobalID.
+    :param name: The AssignmentType name.
     """
     assignment_types = get_assignment_types_v2(project)
     if code:
@@ -20,18 +20,18 @@ def get_assignment_type_v2(project, code=None, name=None):
 
 
 def get_assignment_types_v2(project):
-    """ Gets all AssignmentTypes for the project.
-        :param project:
-        :returns: A list of AssignmentTypes.
+    """Gets all AssignmentTypes for the project.
+    :param project:
+    :returns: A list of AssignmentTypes.
     """
     return query_assignment_types(project, "1=1")
 
 
 def query_assignment_types(project, where="1=1"):
-    """ Executes a query against the assignment types table.
-        :param project: The project in which to query assignment types.
-        :param where: An ArcGIS where clause.
-        :returns: list of Assignment Types
+    """Executes a query against the assignment types table.
+    :param project: The project in which to query assignment types.
+    :param where: An ArcGIS where clause.
+    :returns: list of Assignment Types
     """
     assignment_type_features = project.assignment_types_table.query(
         where, return_all_records=True
@@ -51,10 +51,10 @@ def add_assignment_type_v2(project, name):
 
 
 def add_assignment_types_v2(project, assignment_types):
-    """ Adds an AssignmentType to a project.
-        :param project:
-        :param assignment_types: list of AssignmentTypes
-        :raises ValidationError: Indicates that one or more assignment types failed validation.
+    """Adds an AssignmentType to a project.
+    :param project:
+    :param assignment_types: list of AssignmentTypes
+    :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     for assignment_type in assignment_types:
         validate(assignment_type._validate)
@@ -67,10 +67,10 @@ def add_assignment_types_v2(project, assignment_types):
 
 
 def update_assignment_types_v2(project, assignment_types):
-    """ Updates the AssignmentTypes.
-        :param project:
-        :param assignment_types: list of AssignmentTypes
-        :raises ValidationError: Indicates that one or more assignment types failed validation.
+    """Updates the AssignmentTypes.
+    :param project:
+    :param assignment_types: list of AssignmentTypes
+    :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     for assignment_type in assignment_types:
         validate(assignment_type._validate_for_update)
@@ -88,9 +88,9 @@ def update_assignment_type_v2(project, assignment_type, name=None):
 
 
 def delete_assignment_types_v2(project, assignment_types):
-    """ Removes AssignmentTypes from the project.
-        :param project:
-        :param assignment_types: list of AssignmentTypes.
+    """Removes AssignmentTypes from the project.
+    :param project:
+    :param assignment_types: list of AssignmentTypes.
     """
     for assignment_type in assignment_types:
         validate(assignment_type._validate_for_remove)

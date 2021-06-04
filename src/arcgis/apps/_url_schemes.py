@@ -893,18 +893,18 @@ def _validate_survey123_url(survey, center, fields):
 
 def build_tracker_url(portal_url=None, url_type="Web"):
     """
-        Creates a url that can be used to open ArcGIS Tracker
+    Creates a url that can be used to open ArcGIS Tracker
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when tracker
-                               is launched via the url scheme.
-        ------------------     --------------------------------------------------------------------
-        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal_url             Optional :class:`String` The portal that should be used when tracker
+                           is launched via the url scheme.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+    ==================     ====================================================================
 
-        :return: :class:`String`
+    :return: :class:`String`
     """
     url = "https://tracker.arcgis.app"
     if url_type == "App":
@@ -922,33 +922,33 @@ def build_workforce_url(
     assignment_status=None,
 ):
     """
-        Creates a url that can be used to open ArcGIS Workforce
+    Creates a url that can be used to open ArcGIS Workforce
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when Workforce
-                               is launched via the url scheme.
-        ------------------     --------------------------------------------------------------------
-        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
-        ------------------     --------------------------------------------------------------------
-        webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
-                               The item id, webmap, or item representing the map to open in Workforce.
-                               Item can be of type Web Map. This can be referenced
-                               at the project level using project.worker_webmap
-        ------------------     --------------------------------------------------------------------
-        assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
-                               The assignment or assignment global id that should be opened in Workforce.
-                               Note that webmap must be provided for this parameter to be added to the URL.
-        ------------------     --------------------------------------------------------------------
-        assignment_status      Optional :class:`Integer`
-                               The status given to an assignment opened in Workforce. Statuses 1-5
-                               are supported (Assigned, In Progress, Completed, Declined, Paused).
-                               Note that webmap and assignment must be provided for this parameter to be
-                               added to the URL.
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal_url             Optional :class:`String` The portal that should be used when Workforce
+                           is launched via the url scheme.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+    ------------------     --------------------------------------------------------------------
+    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                           The item id, webmap, or item representing the map to open in Workforce.
+                           Item can be of type Web Map. This can be referenced
+                           at the project level using project.worker_webmap
+    ------------------     --------------------------------------------------------------------
+    assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
+                           The assignment or assignment global id that should be opened in Workforce.
+                           Note that webmap must be provided for this parameter to be added to the URL.
+    ------------------     --------------------------------------------------------------------
+    assignment_status      Optional :class:`Integer`
+                           The status given to an assignment opened in Workforce. Statuses 1-5
+                           are supported (Assigned, In Progress, Completed, Declined, Paused).
+                           Note that webmap and assignment must be provided for this parameter to be
+                           added to the URL.
+    ==================     ====================================================================
 
-        :return: :class:`String`
+    :return: :class:`String`
     """
     url = "https://workforce.arcgis.app"
     if url_type == "App":

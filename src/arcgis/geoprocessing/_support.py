@@ -169,8 +169,8 @@ def _feature_input(input_layer):
 
 
 def _analysis_job(gptool, task, params):
-    """ Submits an Analysis job and returns the job URL for monitoring the job
-        status in addition to the json response data for the submitted job."""
+    """Submits an Analysis job and returns the job URL for monitoring the job
+    status in addition to the json response data for the submitted job."""
 
     # Unpack the Analysis job parameters as a dictionary and add token and
     # formatting parameters to the dictionary. The dictionary is used in the
@@ -192,7 +192,7 @@ def _analysis_job(gptool, task, params):
 
 
 def _analysis_job_status(gptool, task_url, job_info):
-    """ Tracks the status of the submitted Analysis job."""
+    """Tracks the status of the submitted Analysis job."""
 
     if "jobId" in job_info:
         # Get the id of the Analysis job to track the status.
@@ -262,8 +262,8 @@ def _analysis_job_status(gptool, task_url, job_info):
 
 
 def _analysis_job_results(gptool, task_url, job_info, job_id=None):
-    """ Use the job result json to get information about the feature service
-        created from the Analysis job."""
+    """Use the job result json to get information about the feature service
+    created from the Analysis job."""
 
     # Get the paramUrl to get information about the Analysis job results.
     #

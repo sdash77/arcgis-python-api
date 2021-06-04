@@ -1086,7 +1086,7 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def relogin(self, expiration=None):
-        """ Re-authenticates with the portal using the same username/password. """
+        """Re-authenticates with the portal using the same username/password."""
         if expiration is None:
             expiration = self._expiration
         self.logout()
@@ -1094,20 +1094,20 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def logout(self):
-        """ Logs out of the portal. """
+        """Logs out of the portal."""
         self._token = None
         self._create_time = None
 
     # ----------------------------------------------------------------------
     @property
     def is_logged_in(self):
-        """ Returns true if logged into the portal. """
+        """Returns true if logged into the portal."""
         return (self._auth in ["ANON", "UNKNOWN"]) == False
 
     # ----------------------------------------------------------------------
     @property
     def product(self):
-        """ Returns true if logged into the portal. """
+        """Returns true if logged into the portal."""
         return self._product
 
     # ----------------------------------------------------------------------

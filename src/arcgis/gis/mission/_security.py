@@ -44,17 +44,17 @@ class SecurityManager(object):
     def _modify_server_role(self, role):
         """
         Allows for the modification of the server role from federated to standalone.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         role                   Required String. The value that determines if the server is federated
-                               or standalone.  This allowed values are: "FEDERATED_SERVER" or 
+                               or standalone.  This allowed values are: "FEDERATED_SERVER" or
                                "STANDALONE_SERVER".
         ==================     ====================================================================
-        
+
         :returns: Dict
-        
+
         """
         url = self._url + "/config/changeServerRole"
         function = None
@@ -80,7 +80,7 @@ class SecurityManager(object):
         allowedAdminAccessIPs           (Allowed Administration Access IPs). A comma separated list of client machine IP addresses that are allowed access to ArcGIS Server. This can be used as an additional security measure to prevent unauthorized access to the site.
         ---------------------------     --------------------------------------------------------------------
         allowDirectAccess               (Allow direct administrator access). A boolean that indicates if a user with administrator privileges can access the server through port 6080. If true, all users with administrative access are allowed to access the Administrator Directory and ArcGIS Server Manager through port 6080. If false, users in the identity store are blocked from accessing the server through port 6080. This forces users to access the site through ArcGIS Web Adaptor. The default value is true.
-    
+
                                         Before disabling administrative access on port 6080, ArcGIS Server must be configured to use web tier authentication (WEB_ADAPTOR) and at least one user in the identity store must have administrator privileges to the site. The primary site administrator account will still be able to administer the site through port 6080.
 
                                         To fully disable access on port 6080, you can optionally disabled the primary site administrator account. If ArcGIS Server Manager becomes unavailable or the web server is unable to authenticate users that have administrator privileges, you will be unable to administer your site. To recover from this site, re-enable the primary site administrator account and connect to the site through port 6080 with this account.
@@ -104,13 +104,13 @@ class SecurityManager(object):
                                         Values: HTTP | HTTP_AND_HTTPS | HTTPS
         ---------------------------     --------------------------------------------------------------------
         roleStoreConfig                 (Role Store). Connection information about the currently active role store.
-                                    
+
         ---------------------------     --------------------------------------------------------------------
         securityEnabled                 (Security Enabled). A boolean that indicates if security is enabled for any GIS service. The default value is true.
         ---------------------------     --------------------------------------------------------------------
         sslEnabled                      (SSL Enabled). A boolean that indicates if the site is accessible over HTTPS (SSL). The default value is false.
         ---------------------------     --------------------------------------------------------------------
-        userStoreConfig                 (User Store). Connection information about the currently active user store.                                        
+        userStoreConfig                 (User Store). Connection information about the currently active user store.
         ---------------------------     --------------------------------------------------------------------
         virtualDirsSecurityEnabled      (Virtual Directories Security Enabled). A boolean that indicates if the server's virtual directories are secured and require authentication. If true, accessing the content in the arcgisoutput, arcgisjobs, and arcgisinput directories over HTTP will require user authentication. This will negatively impact performance. The default value is false.
         ---------------------------     --------------------------------------------------------------------
@@ -138,10 +138,10 @@ class SecurityManager(object):
         ---------------------------     --------------------------------------------------------------------
         token                           A token obtained from Portal for ArcGIS for use by ArcGIS Server for initial validation.
         ===========================     ====================================================================
-        
 
 
-        
+
+
 
         """
         url = self._url + "/config"
@@ -165,7 +165,7 @@ class SecurityManager(object):
         allowedAdminAccessIPs           (Allowed Administration Access IPs). A comma separated list of client machine IP addresses that are allowed access to ArcGIS Server. This can be used as an additional security measure to prevent unauthorized access to the site.
         ---------------------------     --------------------------------------------------------------------
         allowDirectAccess               (Allow direct administrator access). A boolean that indicates if a user with administrator privileges can access the server through port 6080. If true, all users with administrative access are allowed to access the Administrator Directory and ArcGIS Server Manager through port 6080. If false, users in the identity store are blocked from accessing the server through port 6080. This forces users to access the site through ArcGIS Web Adaptor. The default value is true.
-    
+
                                         Before disabling administrative access on port 6080, ArcGIS Server must be configured to use web tier authentication (WEB_ADAPTOR) and at least one user in the identity store must have administrator privileges to the site. The primary site administrator account will still be able to administer the site through port 6080.
 
                                         To fully disable access on port 6080, you can optionally disabled the primary site administrator account. If ArcGIS Server Manager becomes unavailable or the web server is unable to authenticate users that have administrator privileges, you will be unable to administer your site. To recover from this site, re-enable the primary site administrator account and connect to the site through port 6080 with this account.
@@ -189,13 +189,13 @@ class SecurityManager(object):
                                         Values: HTTP | HTTP_AND_HTTPS | HTTPS
         ---------------------------     --------------------------------------------------------------------
         roleStoreConfig                 (Role Store). Connection information about the currently active role store.
-                                    
+
         ---------------------------     --------------------------------------------------------------------
         securityEnabled                 (Security Enabled). A boolean that indicates if security is enabled for any GIS service. The default value is true.
         ---------------------------     --------------------------------------------------------------------
         sslEnabled                      (SSL Enabled). A boolean that indicates if the site is accessible over HTTPS (SSL). The default value is false.
         ---------------------------     --------------------------------------------------------------------
-        userStoreConfig                 (User Store). Connection information about the currently active user store.                                        
+        userStoreConfig                 (User Store). Connection information about the currently active user store.
         ---------------------------     --------------------------------------------------------------------
         virtualDirsSecurityEnabled      (Virtual Directories Security Enabled). A boolean that indicates if the server's virtual directories are secured and require authentication. If true, accessing the content in the arcgisoutput, arcgisjobs, and arcgisinput directories over HTTP will require user authentication. This will negatively impact performance. The default value is false.
         ---------------------------     --------------------------------------------------------------------
@@ -223,7 +223,7 @@ class SecurityManager(object):
         ---------------------------     --------------------------------------------------------------------
         token                           A token obtained from Portal for ArcGIS for use by ArcGIS Server for initial validation.
         ===========================     ====================================================================
-        
+
 
 
         """

@@ -32,7 +32,7 @@ class GeoData(BaseServer):
 
     # ----------------------------------------------------------------------
     def unRegisterReplica(self, replicaGUID):
-        """ unRegisterReplica operation is performed on a Geodata Service
+        """unRegisterReplica operation is performed on a Geodata Service
         resource (POST only). This operation unregisters a replica on the
         geodata service. Unregistering a replica is only supported when
         logged in as an admin user. You can provide arguments to the
@@ -40,7 +40,7 @@ class GeoData(BaseServer):
         Inputs:
             replicaID - The ID of the replica. The ID of a replica can be
                         found by accessing the Geodata Service Replicas
-                        resource. """
+                        resource."""
 
         url = self._url + "/unRegisterReplica"
         params = {"f": "json", "replicaID": replicaGUID}
