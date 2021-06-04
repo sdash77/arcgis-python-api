@@ -19,7 +19,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple
+from typing import Tuple, Any, Dict
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
