@@ -5,7 +5,7 @@ from .._common import BaseServer
 ########################################################################
 class Info(BaseServer):
     """
-       A read-only resource that returns meta information about the server.
+    A read-only resource that returns meta information about the server.
     """
 
     _con = None
@@ -34,8 +34,8 @@ class Info(BaseServer):
     # ----------------------------------------------------------------------
     def available_time_zones(self):
         """
-           Returns an enumeration of all the time zones of which the server
-           is aware. This is used by the GIS service publishing tools
+        Returns an enumeration of all the time zones of which the server
+        is aware. This is used by the GIS service publishing tools
         """
         url = self._url + "/getAvailableTimeZones"
         params = {"f": "json"}

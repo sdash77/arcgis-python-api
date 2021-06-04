@@ -134,7 +134,12 @@ def skew(geom, x_angle=0, y_angle=0):
     A = np.matrix([[1, math.tan(x_angle)], [math.tan(y_angle), 1]])
     if isinstance(geom, dict) or isinstance(geom, GEOM_TYPES):
         if "x" in geom and "y" in geom:  # translates point
-            matrix = np.matrix([[geom["x"]], [geom["y"]],])
+            matrix = np.matrix(
+                [
+                    [geom["x"]],
+                    [geom["y"]],
+                ]
+            )
             val = (A * matrix).tolist()
             geom["x"] = val[0][0]
             geom["y"] = val[1][0]
@@ -158,7 +163,12 @@ def skew(geom, x_angle=0, y_angle=0):
             return geom
         elif "points" in geom:  # translates Multipoint
             for pt in geom["points"]:
-                matrix = np.matrix([[pt[0]], [pt[1]],])
+                matrix = np.matrix(
+                    [
+                        [pt[0]],
+                        [pt[1]],
+                    ]
+                )
                 val = (A * matrix).tolist()
                 pt[0] = val[0][0]
                 pt[1] = val[1][0]

@@ -89,8 +89,7 @@ def _camelCase_to_underscore(name):
 
 
 def _call_generator(fnname, spec):
-    """Generate GP function based on spec
-    """
+    """Generate GP function based on spec"""
     varnames = ()
     defaults = ()
     if len(spec) > 0:
@@ -605,8 +604,8 @@ class _AsyncResource(_GISResource):
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
-        """ Submits an Analysis job and returns the job URL for monitoring the job
-            status in addition to the json response data for the submitted job."""
+        """Submits an Analysis job and returns the job URL for monitoring the job
+        status in addition to the json response data for the submitted job."""
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -625,7 +624,7 @@ class _AsyncResource(_GISResource):
         return task_url, resp, resp["jobId"]
 
     def _analysis_job_status(self, task_url, job_info):
-        """ Tracks the status of the submitted Analysis job."""
+        """Tracks the status of the submitted Analysis job."""
 
         if "jobId" in job_info:
             # Get the id of the Analysis job to track the status.
@@ -682,8 +681,8 @@ class _AsyncResource(_GISResource):
             raise Exception("No job url.")
 
     def _analysis_job_results(self, task_url, job_info, job_id=None):
-        """ Use the job result json to get information about the feature service
-            created from the Analysis job."""
+        """Use the job result json to get information about the feature service
+        created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #

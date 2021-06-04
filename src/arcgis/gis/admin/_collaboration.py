@@ -6,8 +6,7 @@ import functools
 
 
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 

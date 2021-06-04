@@ -6,40 +6,43 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
+
 _log = _logging.getLogger(__name__)
 
 
-def solve_location_allocation(facilities,
-                              demand_points,
-                              measurement_units=None,
-                              analysis_region=None,
-                              problem_type=None,
-                              number_of_facilities_to_find=None,
-                              default_measurement_cutoff=None,
-                              default_capacity=None,
-                              target_market_share=None,
-                              measurement_transformation_model=None,
-                              measurement_transformation_factor=None,
-                              travel_direction=None,
-                              time_of_day=None,
-                              time_zone_for_time_of_day=None,
-                              uturn_at_junctions=None,
-                              point_barriers=None,
-                              line_barriers=None,
-                              polygon_barriers = None,
-                              use_hierarchy=True,
-                              restrictions = None,
-                              attribute_parameter_values = None,
-                              allocation_line_shape=None,
-                              travel_mode=None,
-                              impedance=None,
-                              save_output_network_analysis_layer=False,
-                              overrides=None,
-                              time_impedance=None,
-                              distance_impedance=None,
-                              output_format=None,
-                              gis=None,
-                              future=False):
+def solve_location_allocation(
+    facilities,
+    demand_points,
+    measurement_units=None,
+    analysis_region=None,
+    problem_type=None,
+    number_of_facilities_to_find=None,
+    default_measurement_cutoff=None,
+    default_capacity=None,
+    target_market_share=None,
+    measurement_transformation_model=None,
+    measurement_transformation_factor=None,
+    travel_direction=None,
+    time_of_day=None,
+    time_zone_for_time_of_day=None,
+    uturn_at_junctions=None,
+    point_barriers=None,
+    line_barriers=None,
+    polygon_barriers=None,
+    use_hierarchy=True,
+    restrictions=None,
+    attribute_parameter_values=None,
+    allocation_line_shape=None,
+    travel_mode=None,
+    impedance=None,
+    save_output_network_analysis_layer=False,
+    overrides=None,
+    time_impedance=None,
+    distance_impedance=None,
+    output_format=None,
+    gis=None,
+    future=False,
+):
     """
     The ``solve_location_allocation`` tool chooses the best location or locations from a set of input locations. Input to this tool includes facilities,
     which provide goods or services, and demand points, which consume the goods and services. The objective is to find the facilities that supply the
@@ -882,48 +885,54 @@ def solve_location_allocation(facilities,
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncLocationAllocation.url
     tbx = import_toolbox(url, gis=gis)
-    defaults = dict(zip(tbx.solve_location_allocation.__annotations__.keys(),
-                        tbx.solve_location_allocation.__defaults__))
+    defaults = dict(
+        zip(
+            tbx.solve_location_allocation.__annotations__.keys(),
+            tbx.solve_location_allocation.__defaults__,
+        )
+    )
     if default_capacity is None:
-        default_capacity = defaults['default_capacity']
+        default_capacity = defaults["default_capacity"]
     if target_market_share is None:
-        target_market_share = defaults['target_market_share']
+        target_market_share = defaults["target_market_share"]
     if number_of_facilities_to_find is None:
-        number_of_facilities_to_find = defaults['number_of_facilities_to_find']
+        number_of_facilities_to_find = defaults["number_of_facilities_to_find"]
     if problem_type is None:
-        problem_type = defaults['problem_type']
+        problem_type = defaults["problem_type"]
 
     if measurement_units is None:
-        measurement_units = defaults['measurement_units']
+        measurement_units = defaults["measurement_units"]
 
     if measurement_transformation_model is None:
-        measurement_transformation_model = defaults['measurement_transformation_model']
+        measurement_transformation_model = defaults["measurement_transformation_model"]
     if measurement_transformation_factor is None:
-        measurement_transformation_factor = defaults['measurement_transformation_factor']
+        measurement_transformation_factor = defaults[
+            "measurement_transformation_factor"
+        ]
     if travel_direction is None:
-        travel_direction = defaults['travel_direction']
+        travel_direction = defaults["travel_direction"]
     if time_of_day is None:
-        time_of_day = defaults['time_of_day']
+        time_of_day = defaults["time_of_day"]
     if time_zone_for_time_of_day is None:
-        time_zone_for_time_of_day = defaults['time_zone_for_time_of_day']
+        time_zone_for_time_of_day = defaults["time_zone_for_time_of_day"]
     if use_hierarchy is None:
-        use_hierarchy = defaults['use_hierarchy']
+        use_hierarchy = defaults["use_hierarchy"]
 
     if uturn_at_junctions:
-        uturn_at_junctions = defaults['uturn_at_junctions']
+        uturn_at_junctions = defaults["uturn_at_junctions"]
     if impedance is None:
-        impedance = defaults['impedance']
+        impedance = defaults["impedance"]
     if travel_mode is None:
-        travel_mode = defaults['travel_mode']
+        travel_mode = defaults["travel_mode"]
     if allocation_line_shape is None:
-        allocation_line_shape = defaults['allocation_line_shape']
+        allocation_line_shape = defaults["allocation_line_shape"]
     if restrictions is None:
-        restrictions = defaults['restrictions']
+        restrictions = defaults["restrictions"]
     if facilities is None:
-        facilities = defaults['facilities']
+        facilities = defaults["facilities"]
 
     if demand_points is None:
-        demand_points = defaults['demand_points']
+        demand_points = defaults["demand_points"]
 
     if point_barriers is None:
         point_barriers = defaults["point_barriers"]
@@ -935,71 +944,74 @@ def solve_location_allocation(facilities,
         polygon_barriers = defaults["polygon_barriers"]
 
     if attribute_parameter_values is None:
-        attribute_parameter_values = defaults['attribute_parameter_values']
+        attribute_parameter_values = defaults["attribute_parameter_values"]
     from arcgis._impl.common._utils import inspect_function_inputs
+
     params = {
-        "facilities" : facilities,
-        "demand_points" : demand_points,
-        "measurement_units" : measurement_units,
-        "analysis_region" : analysis_region,
-        "problem_type" : problem_type,
-        "number_of_facilities_to_find" : number_of_facilities_to_find,
-        "default_measurement_cutoff" : default_measurement_cutoff,
-        "default_capacity" : default_capacity,
-        "target_market_share" : target_market_share,
-        "measurement_transformation_model" : measurement_transformation_model,
-        "measurement_transformation_factor" : measurement_transformation_factor,
-        "travel_direction" : travel_direction,
-        "time_of_day" : time_of_day,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "uturn_at_junctions" : uturn_at_junctions,
-        "point_barriers" : point_barriers,
-        "line_barriers" : line_barriers,
-        "polygon_barriers" : polygon_barriers,
-        "use_hierarchy" : use_hierarchy,
-        "restrictions" : restrictions,
-        "attribute_parameter_values" : attribute_parameter_values,
-        "allocation_line_shape" : allocation_line_shape,
-        "travel_mode" : travel_mode,
-        "impedance" : impedance,
-        "save_output_network_analysis_layer" : save_output_network_analysis_layer,
-        "overrides" : overrides,
-        "time_impedance" : time_impedance,
-        "distance_impedance" : distance_impedance,
-        "output_format" : output_format,
-        "gis" : gis,
-        "future" : True
+        "facilities": facilities,
+        "demand_points": demand_points,
+        "measurement_units": measurement_units,
+        "analysis_region": analysis_region,
+        "problem_type": problem_type,
+        "number_of_facilities_to_find": number_of_facilities_to_find,
+        "default_measurement_cutoff": default_measurement_cutoff,
+        "default_capacity": default_capacity,
+        "target_market_share": target_market_share,
+        "measurement_transformation_model": measurement_transformation_model,
+        "measurement_transformation_factor": measurement_transformation_factor,
+        "travel_direction": travel_direction,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "uturn_at_junctions": uturn_at_junctions,
+        "point_barriers": point_barriers,
+        "line_barriers": line_barriers,
+        "polygon_barriers": polygon_barriers,
+        "use_hierarchy": use_hierarchy,
+        "restrictions": restrictions,
+        "attribute_parameter_values": attribute_parameter_values,
+        "allocation_line_shape": allocation_line_shape,
+        "travel_mode": travel_mode,
+        "impedance": impedance,
+        "save_output_network_analysis_layer": save_output_network_analysis_layer,
+        "overrides": overrides,
+        "time_impedance": time_impedance,
+        "distance_impedance": distance_impedance,
+        "output_format": output_format,
+        "gis": gis,
+        "future": True,
     }
     params = inspect_function_inputs(tbx.solve_location_allocation, **params)
-    params['future'] = True
+    params["future"] = True
     job = tbx.solve_location_allocation(**params)
     if future:
         return job
     return job.result()
 
+
 solve_location_allocation.__annotations__ = {
-    'facilities': FeatureSet,
-    'demand_points': FeatureSet,
-    'measurement_units': str,
-    'analysis_region': str,
-    'problem_type': str,
-    'number_of_facilities_to_find': int,
-    'default_measurement_cutoff': float,
-    'default_capacity': float,
-    'target_market_share': float,
-    'measurement_transformation_model': str,
-    'measurement_transformation_factor': float,
-    'travel_direction': str,
-    'time_of_day': datetime,
-    'time_zone_for_time_of_day': str,
-    'uturn_at_junctions': str,
-    'point_barriers': FeatureSet,
-    'line_barriers': FeatureSet,
-    'polygon_barriers': FeatureSet,
-    'use_hierarchy': bool,
-    'restrictions': str,
-    'attribute_parameter_values': FeatureSet,
-    'allocation_line_shape': str,
-    'travel_mode': str,
-    'impedance': str,
-    'return': tuple}
+    "facilities": FeatureSet,
+    "demand_points": FeatureSet,
+    "measurement_units": str,
+    "analysis_region": str,
+    "problem_type": str,
+    "number_of_facilities_to_find": int,
+    "default_measurement_cutoff": float,
+    "default_capacity": float,
+    "target_market_share": float,
+    "measurement_transformation_model": str,
+    "measurement_transformation_factor": float,
+    "travel_direction": str,
+    "time_of_day": datetime,
+    "time_zone_for_time_of_day": str,
+    "uturn_at_junctions": str,
+    "point_barriers": FeatureSet,
+    "line_barriers": FeatureSet,
+    "polygon_barriers": FeatureSet,
+    "use_hierarchy": bool,
+    "restrictions": str,
+    "attribute_parameter_values": FeatureSet,
+    "allocation_line_shape": str,
+    "travel_mode": str,
+    "impedance": str,
+    "return": tuple,
+}

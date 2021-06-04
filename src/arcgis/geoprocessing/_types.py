@@ -64,7 +64,7 @@ class DataFile(object):
         ----------------  --------------------------------------------------------
         item_id           optional string,  The id of the uploaded file returned
                           as a result of the upload operation.
-                          
+
         ----------------  --------------------------------------------------------
         portal_item       optional Item. A data type item used for GP tool.
         ================  ========================================================

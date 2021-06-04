@@ -6,13 +6,13 @@ from ... import workforce
 
 
 def add_features(feature_layer, features, use_global_ids=False):
-    """ Adds features to the feature_layer.  The input features will be updated upon successful
-        adding on the server, such that they contain the server-assigned object_ids and global_ids.
-        :param feature_layer: An arcgis.features.FeatureLayer.
-        :param features: list of arcgis.features.Features.
-        :param use_global_ids: use global ids or not
-        :returns: The added features.
-        :raises ServerError: Indicates that the server rejected the new features.
+    """Adds features to the feature_layer.  The input features will be updated upon successful
+    adding on the server, such that they contain the server-assigned object_ids and global_ids.
+    :param feature_layer: An arcgis.features.FeatureLayer.
+    :param features: list of arcgis.features.Features.
+    :param use_global_ids: use global ids or not
+    :returns: The added features.
+    :raises ServerError: Indicates that the server rejected the new features.
     """
     if features:
         feature_set = FeatureSet(features)
@@ -34,10 +34,10 @@ def add_features(feature_layer, features, use_global_ids=False):
 
 
 def update_features(feature_layer, features):
-    """ Updates features in a feature_layer.
-        :param feature_layer: An arcgis.features.FeatureLayer.
-        :param features: list of arcgis.features.Features.  Each feature must have an object id.
-        :raises ServerError: Indicates that the server rejected the updates.
+    """Updates features in a feature_layer.
+    :param feature_layer: An arcgis.features.FeatureLayer.
+    :param features: list of arcgis.features.Features.  Each feature must have an object id.
+    :raises ServerError: Indicates that the server rejected the updates.
     """
     if features:
         response = feature_layer.edit_features(updates=FeatureSet(features))
@@ -52,10 +52,10 @@ def update_features(feature_layer, features):
 
 
 def remove_features(feature_layer, features):
-    """ Removes features from a feature_layer.
-        :param feature_layer: An arcgis.features.FeatureLayer.
-        :param features: list of arcgis.features.Features.  Each feature must have an object id.
-        :raises ServerError: Indicates that the server rejected the removals.
+    """Removes features from a feature_layer.
+    :param feature_layer: An arcgis.features.FeatureLayer.
+    :param features: list of arcgis.features.Features.  Each feature must have an object id.
+    :raises ServerError: Indicates that the server rejected the removals.
     """
     if features:
         object_id_attr = feature_layer.properties["objectIdField"]
@@ -73,10 +73,10 @@ def remove_features(feature_layer, features):
 
 
 def validate(validate_fn, **kwargs):
-    """ Runs a Model validation routine, and raises the first ValidationError if any are returned.
-        :param validate_fn: A function that takes no positional arguments, and returns a list of
-        ValidationErrors.  Any **kwargs given to this function will be passed to validate_fn.
-        :raises ValidationError: Indicates that the validation_fn returned a ValidationError.
+    """Runs a Model validation routine, and raises the first ValidationError if any are returned.
+    :param validate_fn: A function that takes no positional arguments, and returns a list of
+    ValidationErrors.  Any **kwargs given to this function will be passed to validate_fn.
+    :raises ValidationError: Indicates that the validation_fn returned a ValidationError.
     """
     validation_failures = validate_fn(**kwargs)
     if validation_failures:

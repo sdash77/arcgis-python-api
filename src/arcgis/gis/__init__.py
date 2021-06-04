@@ -51,8 +51,7 @@ def _tempinput(data):
 
 
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 
@@ -676,7 +675,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
-        """ Decrypts the .pfx file to be used with requests.
+        """Decrypts the .pfx file to be used with requests.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -721,7 +720,7 @@ class GIS(object):
         return key_file.name, cert_file.name
 
     def _config_is_in_new_format(self, config):
-        """ Any version <= 1.3.0 of the API used a different config file
+        """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
         one profile, it is in the new format
@@ -1134,7 +1133,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _get_properties(self, force=False):
-        """ Returns the portal properties (using cache unless force=True). """
+        """Returns the portal properties (using cache unless force=True)."""
         return self._portal.get_properties(force)
 
     def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
@@ -3852,9 +3851,11 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
+
         """
             The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
         """
+
         if self._me is None:
             meuser = self._portal.logged_in_user()
             if meuser is not None:
@@ -3918,6 +3919,7 @@ class UserManager(object):
 
 
 class RoleManager(object):
+
     """
         The ``RoleManager`` class is a helper class to manage custom :class:`roles <arcgis.gis.Role>` for
         :class:`~arcgis.gis.User` in a GIS. It is available as the :attr:`~arcgis.gis.UserManager.roles`
@@ -3926,14 +3928,14 @@ class RoleManager(object):
         .. note::
             Users don't create this class directly.
 
-       .. code-block:: python
+    .. code-block:: python
 
-            # Usage Example
+         # Usage Example
 
-            >>> role_mgr = gis.users.roles
-            >>> type(role_mgr)
+         >>> role_mgr = gis.users.roles
+         >>> type(role_mgr)
 
-            <class 'arcgis.gis.RoleManager'>
+         <class 'arcgis.gis.RoleManager'>
     """
 
     def __init__(self, gis):
@@ -4792,6 +4794,7 @@ class ContentManager(object):
         item_id=None,
         **kwargs,
     ):
+
         """
         The ``add`` method adds content to the GIS by creating an :class:`~arcgis.gis.Item`.
 
@@ -5219,9 +5222,11 @@ class ContentManager(object):
         snippet=None,
         item_id=None,
     ):
+
         """
         The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
         passed when calling ``create_service``.
+
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -5389,9 +5394,9 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def get(self, itemid):
+
         """
         The ``get`` method returns the :class:`~arcgis.gis.Item` object for the specified itemid.
-
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -5605,8 +5610,10 @@ class ContentManager(object):
         categories=None,
         category_filters=None,
     ):
+
         """
         The ``search`` method searches for portal items.
+
 
         .. note::
             A few things that will be helpful to know...
@@ -6404,17 +6411,18 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name, service_type):
+
         """
             The ``is_service_name_available`` method determines if that service name is
             available for use or not, for the specified service type.
 
-            ================  ======================================================================
-            **Argument**      **Description**
-            ----------------  ----------------------------------------------------------------------
-            service_name      Required string. A desired service name.
-            ----------------  ----------------------------------------------------------------------
-            service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
-            ================  ======================================================================
+        ================  ======================================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------------------
+        service_name      Required string. A desired service name.
+        ----------------  ----------------------------------------------------------------------
+        service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
+        ================  ======================================================================
 
             .. code-block:: python
 
@@ -6448,6 +6456,7 @@ class ContentManager(object):
         owner=None,
         preserve_item_id=False,
     ):
+
         """
         The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
         objects.
@@ -6500,9 +6509,9 @@ class ContentManager(object):
         ---------------------     --------------------------------------------------------------------
         owner                     Optional string. Defaults to the logged in user.
         ---------------------     --------------------------------------------------------------------
-        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS 
-                                  Online, the clone item will attempt to keep the same item ids for the 
-                                  items if available.  ArcGIS Enterprise must be 10.9+. 
+        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS
+                                  Online, the clone item will attempt to keep the same item ids for the
+                                  items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
 
         .. code-block:: python
@@ -7532,12 +7541,14 @@ class Group(dict):
         )
 
     def get_thumbnail_link(self):
+
         """
         The ``get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
         :return:
             A URL linked to the thumbnail image.
         """
+
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             return self._gis.url + "/home/images/group-no-image.png"
@@ -7842,6 +7853,7 @@ class Group(dict):
             return None
 
     def add_users(self, usernames=None, admins=None):
+
         """
         The ``adds_users`` method adds users to this group.
 
@@ -8902,10 +8914,11 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
+
         """
         ``The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
-        :return:
+        :returns:
            The thumbnail's URL.
         """
         thumbnail_file = self.thumbnail
@@ -9084,9 +9097,11 @@ class User(dict):
         new_security_answer=None,
         reset_by_email=False,
     ):
+
         """
         The ``reset`` method resets a user's password, security question, and/or security answer.
         If a new security question is specified, a new security answer should be provided.
+
 
         .. note::
             This function does not apply to those using enterprise accounts
@@ -9161,6 +9176,7 @@ class User(dict):
         security_question=None,
         security_answer=None,
     ):
+
         """
         The ``update`` method updates this user's properties based on the arguments passed when calling ``update``.
 
@@ -10725,12 +10741,14 @@ class Item(dict):
             return None
 
     def get_thumbnail_link(self):
+
         """
         The ``get_thumbnail_link`` method is similar to the ``get_thumbnail`` method, but retrieves the link to the
         item's thumbnail rather than the bytes that make up the thumbnail for this item.
 
         :return:
            The link to the item's thumbnail. """
+
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             if self._gis.properties.portalName == "ArcGIS Online":
@@ -10749,11 +10767,13 @@ class Item(dict):
 
     @property
     def metadata(self):
+
         """ The ``metadata`` property gets and sets the item metadata for the specified item.
             ``metadata`` returns None if the item does not have metadata.
 
             .. note::
                 Items with metadata have 'Metadata' in their typeKeywords.
+
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
         try:
@@ -11471,6 +11491,7 @@ class Item(dict):
         return res
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
+
         """
         The ``update`` method updates an item in a Portal.
 
@@ -11876,6 +11897,7 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
+
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
         This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
@@ -11974,6 +11996,7 @@ class Item(dict):
         return related_items
 
     def add_relationship(self, rel_item, rel_type):
+
         """ The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
 
         .. note::
@@ -12784,7 +12807,7 @@ class Item(dict):
         return res
 
     def _check_publish_status(self, ret, folder):
-        """ Internal method to check the status of a publishing job.
+        """Internal method to check the status of a publishing job.
 
 
         ===============     ====================================================================
@@ -13504,8 +13527,8 @@ class Item(dict):
             >>> item.register(app_type = "browser",
             >>>             redirect_uris = [ "https://app.example.com", "urn:ietf:wg:oauth:2.0:oob" ],
             >>>             http_referers = [ "https://foo.com", "https://bar.com" ],
-            >>>            privileges = [portal:apikey:basemaps, portal:app:access:item:itemId,
-            >>>                         premium:user:geocode, premium:user:networkanalysis]
+            >>>            privileges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
+            >>>                         "premium:user:geocode", "premium:user:networkanalysis"]
                               )
         :return: A dictionary
 
@@ -13819,8 +13842,7 @@ def rot13(s, b64=False, of=False):
 
 
 class _GISResource(object):
-    """ a GIS service
-    """
+    """a GIS service"""
 
     def __init__(self, url, gis=None):
 

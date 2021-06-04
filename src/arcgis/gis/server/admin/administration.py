@@ -19,9 +19,9 @@ from ..._impl._con import Connection
 class Server(BaseServer):
     """
     An ArcGIS Server site used for hosting GIS web services.
-    
-    This class can be directly instantied when working with stand-alone (unfederated) ArcGIS Server sites. 
-    
+
+    This class can be directly instantied when working with stand-alone (unfederated) ArcGIS Server sites.
+
     This class is not directly created when working with federated ArcGIS Server sites, instead use the
     :class:`ServerManager` :func:`~ServerManager.list` or :func:`~ServerManager.get` methods.
 
@@ -733,7 +733,7 @@ class Server(BaseServer):
         will continue to function as they did previously. Note that certain
         administrative operations such as adding and removing machines from a
         site are still available in READ_ONLY mode.
-        
+
         :returns: `Mode` class
         """
         if self.resources is None:
@@ -787,7 +787,7 @@ class SiteManager(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """Gets the site properties. """
+        """Gets the site properties."""
         return self._sm.properties
 
     # ----------------------------------------------------------------------

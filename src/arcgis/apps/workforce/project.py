@@ -21,7 +21,7 @@ class Project:
     ------------------     --------------------------------------------------------------------
     item                   Required :class:`~arcgis.gis.Item`. The item that
                            the contains the project.
-                           
+
                            For a version 1 Workforce project, this is an item of type
                            `Workforce Project`. For a version 2 Workforce project, this is an
                            item of type `Feature Service` with typeKeyword `Workforce Project`
@@ -37,7 +37,7 @@ class Project:
         project = arcgis.apps.workforce.Project(item)
         assignments = project.assignments.search()
         workers = project.workers.search()
-        
+
         # Create v1 "Classic" Workforce project and v2 "offline-enabled" project
         v1_project = arcgis.apps.workforce.create_project('v1_project', major_version=1)
         v2_project = arcgis.apps.workforce.create_project('v2_project', major_version=2)
@@ -47,7 +47,7 @@ class Project:
 
     def __init__(self, item):
         """
-            :param item: The project's arcigs.gis.Item
+        :param item: The project's arcigs.gis.Item
         """
         self.gis = item._gis
         if "Workforce Project" in item.typeKeywords:
@@ -72,7 +72,7 @@ class Project:
 
     def _update_cached_assignment_types(self):
         """
-            Updates the cached assignment types
+        Updates the cached assignment types
         """
         self._cached_assignment_types = {
             a.code: a for a in self.assignment_types.search()
@@ -80,8 +80,8 @@ class Project:
 
     def _update_cached_objects(self):
         """
-            Caches the types, workers, and dispatchers for quicker assignment creation when querying
-            Should be called when querying assignments
+        Caches the types, workers, and dispatchers for quicker assignment creation when querying
+        Should be called when querying assignments
         """
         self._update_cached_assignment_types()
         self._cached_workers = {w.id: w for w in self.workers.search()}
@@ -121,8 +121,8 @@ class Project:
 
     def delete(self):
         """
-            Deletes the project, group, folder, layers, and webmaps.
-            Assumes the currently signed in user owns the project or is an admin.
+        Deletes the project, group, folder, layers, and webmaps.
+        Assumes the currently signed in user owns the project or is an admin.
         """
         title = self.title
         owner = self._item.owner

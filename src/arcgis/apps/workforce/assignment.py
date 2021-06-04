@@ -83,7 +83,7 @@ class Assignment(FeatureModel):
     worker                 Optional :class:`~arcgis.apps.workforce.Worker`.
                            The worker assigned to the assignment
     ==================     ====================================================================
-    
+
     .. code-block:: python
 
         # Get an assignment and update it
@@ -224,71 +224,71 @@ class Assignment(FeatureModel):
         worker=None,
     ):
         """
-            Updates the assignment on the server
+        Updates the assignment on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            geometry               Optional :class:`Dict`.
-                                   A dictionary containing the assignment geometry
-            ------------------     --------------------------------------------------------------------
-            assignment_type        Optional :class:`~arcgis.apps.workforce.AssignmentType`.
-                                   The assignment type that represents this assignment.
-            ------------------     --------------------------------------------------------------------
-            assigned_date          Optional :class:`Date`
-                                   The date and time the assignment was assigned
-            ------------------     --------------------------------------------------------------------
-            assignment_read        Optional :class:`Bool`.
-                                   A flag indicating that the mobile worker has seen the assignment.
-                                   Version 1 Projects Only
-            ------------------     --------------------------------------------------------------------
-            completed_date         Optional :class:`Date`.
-                                   The date the assignment was completed
-            ------------------     --------------------------------------------------------------------
-            declined_comment       Optional :class:`String`.
-                                   The comment submitted by the mobile worker.
-            ------------------     --------------------------------------------------------------------
-            declined_date          Optional :class:`Date`.
-                                   The date the assignment was declined.
-            ------------------     --------------------------------------------------------------------
-            description            Optional :class:`Description`.
-                                   The description associated with the assignment.
-            ------------------     --------------------------------------------------------------------
-            dispatcher             Optional :class:`~arcgis.apps.workforce.Dispatcher`.
-                                   The dispatcher that assigned/created the assignment.
-            ------------------     --------------------------------------------------------------------
-            due_date               Optional :class:`Date`.
-                                   The date the assignment is due.
-            ------------------     --------------------------------------------------------------------
-            in_progress_date       Optional :class:`Date`.
-                                   The date the assignment was started.
-            ------------------     --------------------------------------------------------------------
-            location               Optional :class:`String`.
-                                   The location or address of the assignment.
-            ------------------     --------------------------------------------------------------------
-            notes                  Optional :class:`String`.
-                                   The notes associated with the assignment.
-            ------------------     --------------------------------------------------------------------
-            paused_date            Optional :class:`Date`.
-                                   The date and time the assignment was paused.
-            ------------------     --------------------------------------------------------------------
-            priority               Optional :class:`String`.
-                                   The priority of the assignment
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        geometry               Optional :class:`Dict`.
+                               A dictionary containing the assignment geometry
+        ------------------     --------------------------------------------------------------------
+        assignment_type        Optional :class:`~arcgis.apps.workforce.AssignmentType`.
+                               The assignment type that represents this assignment.
+        ------------------     --------------------------------------------------------------------
+        assigned_date          Optional :class:`Date`
+                               The date and time the assignment was assigned
+        ------------------     --------------------------------------------------------------------
+        assignment_read        Optional :class:`Bool`.
+                               A flag indicating that the mobile worker has seen the assignment.
+                               Version 1 Projects Only
+        ------------------     --------------------------------------------------------------------
+        completed_date         Optional :class:`Date`.
+                               The date the assignment was completed
+        ------------------     --------------------------------------------------------------------
+        declined_comment       Optional :class:`String`.
+                               The comment submitted by the mobile worker.
+        ------------------     --------------------------------------------------------------------
+        declined_date          Optional :class:`Date`.
+                               The date the assignment was declined.
+        ------------------     --------------------------------------------------------------------
+        description            Optional :class:`Description`.
+                               The description associated with the assignment.
+        ------------------     --------------------------------------------------------------------
+        dispatcher             Optional :class:`~arcgis.apps.workforce.Dispatcher`.
+                               The dispatcher that assigned/created the assignment.
+        ------------------     --------------------------------------------------------------------
+        due_date               Optional :class:`Date`.
+                               The date the assignment is due.
+        ------------------     --------------------------------------------------------------------
+        in_progress_date       Optional :class:`Date`.
+                               The date the assignment was started.
+        ------------------     --------------------------------------------------------------------
+        location               Optional :class:`String`.
+                               The location or address of the assignment.
+        ------------------     --------------------------------------------------------------------
+        notes                  Optional :class:`String`.
+                               The notes associated with the assignment.
+        ------------------     --------------------------------------------------------------------
+        paused_date            Optional :class:`Date`.
+                               The date and time the assignment was paused.
+        ------------------     --------------------------------------------------------------------
+        priority               Optional :class:`String`.
+                               The priority of the assignment
 
-                                   `none`, `low`, `medium`, `high`, `critical`
-            ------------------     --------------------------------------------------------------------
-            status                 Optional :class:`String`.
-                                   The status of the assignment.
+                               `none`, `low`, `medium`, `high`, `critical`
+        ------------------     --------------------------------------------------------------------
+        status                 Optional :class:`String`.
+                               The status of the assignment.
 
-                                   `unassigned`, `assigned`, `in_progress`, `completed`, `declined`,
-                                   `paused`, `canceled`
-            ------------------     --------------------------------------------------------------------
-            work_order_id          Optional :class:`String`.
-                                   The work order id associated with the assignment.
-            ------------------     --------------------------------------------------------------------
-            worker                 Optional :class:`~arcgis.apps.workforce.Worker`.
-                                   The worker assigned to the assignment
-            ==================     ====================================================================
+                               `unassigned`, `assigned`, `in_progress`, `completed`, `declined`,
+                               `paused`, `canceled`
+        ------------------     --------------------------------------------------------------------
+        work_order_id          Optional :class:`String`.
+                               The work order id associated with the assignment.
+        ------------------     --------------------------------------------------------------------
+        worker                 Optional :class:`~arcgis.apps.workforce.Worker`.
+                               The worker assigned to the assignment
+        ==================     ====================================================================
         """
         update_assignment(
             self.project,
@@ -509,9 +509,9 @@ class Assignment(FeatureModel):
     @property
     def priority(self):
         """
-            Gets/Sets the :class:`String` priority of the assignment
+        Gets/Sets the :class:`String` priority of the assignment
 
-            `none`, `low`, `medium`, `high`, `critical`
+        `none`, `low`, `medium`, `high`, `critical`
         """
         lut = {0: "none", 1: "low", 2: "medium", 3: "high", 4: "critical"}
         if self._feature.attributes[self._schema.priority] is not None:
@@ -543,10 +543,10 @@ class Assignment(FeatureModel):
     @property
     def status(self):
         """
-            Gets/Sets the :class:`String` status of the assignment
+         Gets/Sets the :class:`String` status of the assignment
 
-           `unassigned`, `assigned`, `in_progress`, `completed`, `declined`,
-           `paused`, `canceled`
+        `unassigned`, `assigned`, `in_progress`, `completed`, `declined`,
+        `paused`, `canceled`
         """
         lut = {
             0: "unassigned",

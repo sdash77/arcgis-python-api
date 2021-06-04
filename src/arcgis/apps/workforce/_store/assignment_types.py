@@ -6,10 +6,10 @@ from .utils import validate
 
 
 def get_assignment_type(project, code=None, name=None):
-    """ Gets the identified AssignmentType. Exactly one form of identification should be provided.
-        :param project:
-        :param code: The AssignmentType code.
-        :param name: The AssignmentType name.
+    """Gets the identified AssignmentType. Exactly one form of identification should be provided.
+    :param project:
+    :param code: The AssignmentType code.
+    :param name: The AssignmentType name.
     """
     assignment_types = get_assignment_types(project)
     if code:
@@ -20,9 +20,9 @@ def get_assignment_type(project, code=None, name=None):
 
 
 def get_assignment_types(project):
-    """ Gets all AssignmentTypes for the project.
-        :param project:
-        :returns: A list of AssignmentTypes.
+    """Gets all AssignmentTypes for the project.
+    :param project:
+    :returns: A list of AssignmentTypes.
     """
     assignment_type_field = get_assignment_type_field(
         project, project.assignments_layer
@@ -43,13 +43,13 @@ def add_assignment_type(project, coded_value=None, name=None):
 
 
 def add_assignment_types(project, assignment_types):
-    """ Adds an AssignmentType to a project.
+    """Adds an AssignmentType to a project.
 
-        Side effect: Each AssignmentType in assignment_types will be assigned a unique code.
+    Side effect: Each AssignmentType in assignment_types will be assigned a unique code.
 
-        :param project:
-        :param assignment_types: list of AssignmentTypes
-        :raises ValidationError: Indicates that one or more assignment types failed validation.
+    :param project:
+    :param assignment_types: list of AssignmentTypes
+    :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     if assignment_types:
         assignment_type_field = get_assignment_type_field(
@@ -81,10 +81,10 @@ def add_assignment_types(project, assignment_types):
 
 
 def update_assignment_types(project, assignment_types):
-    """ Updates the AssignmentTypes.
-        :param project:
-        :param assignment_types: list of AssignmentTypes
-        :raises ValidationError: Indicates that one or more assignment types failed validation.
+    """Updates the AssignmentTypes.
+    :param project:
+    :param assignment_types: list of AssignmentTypes
+    :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
     if assignment_types:
         assignment_type_field = get_assignment_type_field(
@@ -117,9 +117,9 @@ def update_assignment_type(project, assignment_type, name=None):
 
 
 def delete_assignment_types(project, assignment_types):
-    """ Removes AssignmentTypes from the project.
-        :param project:
-        :param assignment_types: list of AssignmentTypes.
+    """Removes AssignmentTypes from the project.
+    :param project:
+    :param assignment_types: list of AssignmentTypes.
     """
     if assignment_types:
         assignment_type_codes = [a.code for a in assignment_types]

@@ -55,17 +55,17 @@ class StatisticFilter(object):
     # ----------------------------------------------------------------------
     @property
     def filter(self):
-        """ returns the key/value pair of a geometry filter """
+        """returns the key/value pair of a geometry filter"""
         return self._array
 
 
 ########################################################################
 class LayerDefinitionFilter(object):
     """
-       Allows you to filter the features of individual layers in the
-       query by specifying definition expressions for those layers. A
-       definition expression for a layer that is published with the
-       service will always be honored.
+    Allows you to filter the features of individual layers in the
+    query by specifying definition expressions for those layers. A
+    definition expression for a layer that is published with the
+    service will always be honored.
     """
 
     _ids = []
@@ -78,7 +78,7 @@ class LayerDefinitionFilter(object):
 
     # ----------------------------------------------------------------------
     def addFilter(self, layer_id, where=None, outFields="*"):
-        """ adds a layer definition filter """
+        """adds a layer definition filter"""
         import copy
 
         f = copy.deepcopy(self._filterTemplate)
@@ -91,44 +91,44 @@ class LayerDefinitionFilter(object):
 
     # ----------------------------------------------------------------------
     def removeFilter(self, filter_index):
-        """ removes a layer filter based on position in filter list """
+        """removes a layer filter based on position in filter list"""
         f = self._filter[filter_index]
         self._filter.remove(f)
 
     # ----------------------------------------------------------------------
     def removeAll(self):
-        """ removes all items from the filter """
+        """removes all items from the filter"""
         self._filter = []
 
     # ----------------------------------------------------------------------
     @property
     def filter(self):
-        """ returns the filter object as a list of layer defs """
+        """returns the filter object as a list of layer defs"""
         return self._filter
 
 
 ########################################################################
 class GeometryFilter(object):
-    """ creates a geometry filter for queries
-        Inputs:
-           geomObject - a common.Geometry or arcpy.Geometry object
-           spatialFilter - The spatial relationship to be applied on the
-                           input geometry while performing the query. The
-                           supported spatial relationships include
-                           intersects, contains, envelope intersects,
-                           within, etc. The default spatial relationship
-                           is intersects (esriSpatialRelIntersects).
-           bufferDistance - if filter type esriSpatialRelWithin is selected
-                            and the service supports that select type, then
-                            the geometry will be buffered at a given.
-                            Can be of type integer or float.
-           units - the value the distance units represents. Valid values
-                   are: "esriSRUnit_Meter", "esriSRUnit_StatuteMile",
-                        "esriSRUnit_Foot", "esriSRUnit_Kilometer",
-                         "esriSRUnit_NauticalMile", and
-                         "esriSRUnit_USNauticalMile"
-       Raises:
-          AttributeError for invalid inputs
+    """creates a geometry filter for queries
+     Inputs:
+        geomObject - a common.Geometry or arcpy.Geometry object
+        spatialFilter - The spatial relationship to be applied on the
+                        input geometry while performing the query. The
+                        supported spatial relationships include
+                        intersects, contains, envelope intersects,
+                        within, etc. The default spatial relationship
+                        is intersects (esriSpatialRelIntersects).
+        bufferDistance - if filter type esriSpatialRelWithin is selected
+                         and the service supports that select type, then
+                         the geometry will be buffered at a given.
+                         Can be of type integer or float.
+        units - the value the distance units represents. Valid values
+                are: "esriSRUnit_Meter", "esriSRUnit_StatuteMile",
+                     "esriSRUnit_Foot", "esriSRUnit_Kilometer",
+                      "esriSRUnit_NauticalMile", and
+                      "esriSRUnit_USNauticalMile"
+    Raises:
+       AttributeError for invalid inputs
     """
 
     _allowedFilters = [
@@ -186,7 +186,7 @@ class GeometryFilter(object):
     # ----------------------------------------------------------------------
     @property
     def spatialRelation(self):
-        """ gets the filter type """
+        """gets the filter type"""
         return self._spatialAction
 
     # ----------------------------------------------------------------------
@@ -203,19 +203,19 @@ class GeometryFilter(object):
     # ----------------------------------------------------------------------
     @property
     def geometryType(self):
-        """ returns the geometry type """
+        """returns the geometry type"""
         return self._geomObject.type
 
     # ----------------------------------------------------------------------
     @property
     def geometry(self):
-        """ gets the geometry object used by the filter """
+        """gets the geometry object used by the filter"""
         return self._geomObject
 
     # ----------------------------------------------------------------------
     @geometry.setter
     def geometry(self, geometry):
-        """ sets the geometry value """
+        """sets the geometry value"""
 
         if isinstance(geometry, (Polygon, Point, Polyline, MultiPoint)):
             self._geomObject = geometry
@@ -226,7 +226,7 @@ class GeometryFilter(object):
     # ----------------------------------------------------------------------
     @property
     def filter(self):
-        """ returns the key/value pair of a geometry filter """
+        """returns the key/value pair of a geometry filter"""
 
         val = {
             "geometryType": self.geometryType,
@@ -242,7 +242,7 @@ class GeometryFilter(object):
 
 ########################################################################
 class TimeFilter(object):
-    """ Implements the time filter """
+    """Implements the time filter"""
 
     _startTime = None
     _endTime = None

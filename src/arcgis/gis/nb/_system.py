@@ -200,6 +200,23 @@ class SystemManager(object):
         return res
 
     # ----------------------------------------------------------------------
+
+    def delete_all_jobs(self) -> bool:
+        """
+        Administrators can clean up an open notebook and execute notebook
+        jobs on demand. Administrators can view and delete all jobs.
+        Non-administrative users with create and edit notebook privileges
+        can only view and delete their own jobs.
+        Only jobs in completed or failed states will be cleaned up.
+
+        :returns: Boolean
+        """
+        params = {"f": "json"}
+        url = self._url + "/jobs/deleteAll"
+        resp = self._con.post(url, params)
+        return resp["status"] == "success"
+
+    # ----------------------------------------------------------------------
     def list_jobs(self, num: int = 100, details: bool = False) -> list:
         """
         This resource is a collection of all the administrative jobs

@@ -33,7 +33,7 @@ except:
 
 
 class Feature(object):
-    """ Entities located in space with a set of properties can be represented as features.
+    """Entities located in space with a set of properties can be represented as features.
 
     .. code-block:: python
 
@@ -134,7 +134,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def as_row(self):
-        """ :return: the feature as a tuple containing two lists:
+        """:return: the feature as a tuple containing two lists:
 
         =============     ===========================================================
         **List of:**          **Description**
@@ -158,7 +158,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry(self):
-        """ :return: the feature geometry"""
+        """:return: the feature geometry"""
         if self._geom is None:
             if "geometry" in self._dict.keys():
                 self._geom = self._dict["geometry"]
@@ -189,7 +189,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """ :return: attribute field names for the feature as a list of strings"""
+        """:return: attribute field names for the feature as a list of strings"""
         if "attributes" in self._dict:
             self._attributes = self._dict["attributes"]
             return list(self._attributes.keys())
@@ -199,7 +199,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """ :return: the geometry type of the feature as a string"""
+        """:return: the geometry type of the feature as a string"""
         if self._geom_type is None:
             if self.geometry is not None:
                 if hasattr(self.geometry, "type"):
@@ -240,7 +240,7 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        """"""
+        """ """
         return json.dumps(self.as_dict, default=_date_handler)
 
     __repr__ = __str__
@@ -1306,7 +1306,9 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
+            return FeatureSet.from_dict(
+                self.properties["layers"][0]["featureSet"],
+            )
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[

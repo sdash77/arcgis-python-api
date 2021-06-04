@@ -24,7 +24,7 @@ class ProfileManager(object):
 
     # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
-        """ Any version <= 1.3.0 of the API used a different config file
+        """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
         one profile, it is in the new format
@@ -421,8 +421,9 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def save_as(self, profile, gis):
         """
+
         The ``save_as`` method saves and adds the provided :class:`~arcgis.gis.GIS` object to the profile.
-        
+
         ================  ====================================================================
         **Parameter**     **Description**
         ----------------  --------------------------------------------------------------------

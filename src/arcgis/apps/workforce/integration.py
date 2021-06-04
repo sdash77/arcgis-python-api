@@ -31,7 +31,7 @@ class Integration(FeatureModel):
     ------------------     --------------------------------------------------------------------
     assignment_type        Optional :class:`String`. The assignment type for the integration
     ==================     ====================================================================
-    
+
     .. code-block:: python
 
         # Get an integration, update it, delete it
@@ -78,20 +78,20 @@ class Integration(FeatureModel):
         self, integration_id=None, prompt=None, url_template=None, assignment_type=None
     ):
         """
-            Updates the dispatcher on the server
+        Updates the dispatcher on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            integration_id         Optional :class:`String`. The id for the integration
-            ------------------     --------------------------------------------------------------------
-            prompt                 Optional :class:`String`. The prompt in the mobile app for the
-                                   integration
-            ------------------     --------------------------------------------------------------------
-            url_template           Optional :class:`String`. The url that the prompt links to
-            ------------------     --------------------------------------------------------------------
-            assignment_type        Optional :class:`String`. The assignment type for the integration
-            ==================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        integration_id         Optional :class:`String`. The id for the integration
+        ------------------     --------------------------------------------------------------------
+        prompt                 Optional :class:`String`. The prompt in the mobile app for the
+                               integration
+        ------------------     --------------------------------------------------------------------
+        url_template           Optional :class:`String`. The url that the prompt links to
+        ------------------     --------------------------------------------------------------------
+        assignment_type        Optional :class:`String`. The assignment type for the integration
+        ==================     ====================================================================
 
         """
         update_integration(
