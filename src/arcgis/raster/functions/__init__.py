@@ -2493,6 +2493,7 @@ def max(
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
     :param process_as_multiband: Set to True to process as multiband.
     :return: the output raster
@@ -5418,13 +5419,13 @@ def aggregate_cells(
                             spatial extent of a larger cell on the output raster, the NoData values will be
                             ignored when determining the value for output cell locations. Only input cells
                             within the extent of the output cell that have data values will be used in
-                            determining the value of the output cell. This is the default.
+                            determining the value of the output cell.
                           - False : Specifies that if any cell that falls within the spatial extent of a larger
                             cell on the output raster has a value of NoData, the value for that output
                             cell location will be NoData.When the this option is used, it is implied
                             that when cells within an aggregation contain the NoData value,
                             there is insufficient information to perform the specified calculations
-                            necessary to determine an output value.
+                            necessary to determine an output value. This is the default.
 
     :return: output raster
     """
