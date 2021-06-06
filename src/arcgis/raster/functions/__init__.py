@@ -6287,8 +6287,8 @@ def aggregate(
 
     :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
 
-                            - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
-                            - False : The function will result in NoData if there are any NoData values.
+                            - True : The function will include all valid pixels and ignore any NoData pixels.
+                            - False : The function will result in NoData if there are any NoData values. This is the default.
 
     :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values.
                           This parameter is only active if a single slice is selected to create a layer.
