@@ -242,21 +242,21 @@ class DataStores(_BaseKube):
     def validate(self, item: Dict[str, Any]) -> bool:
         """
         Validates that the path (for file shares) or connection string (for
-        databases) for a specific data item is accessible to every server 
+        databases) for a specific data item is accessible to every server
         node in the site by checking against the JSON representing the data
-        item, ensuring that the data item can be registered and used 
+        item, ensuring that the data item can be registered and used
         successfully within the server's data store.
 
-        Validating a data item does not automatically register it for you. 
-        You need to explicitly register your data item by invoking the 
+        Validating a data item does not automatically register it for you.
+        You need to explicitly register your data item by invoking the
         register operation.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
                                See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
-        ==================     ====================================================================        
+        ==================     ====================================================================
         """
         params = {"item": item, "f": "json"}
         url = self._url + "/validateDataItem"
