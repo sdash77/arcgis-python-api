@@ -216,7 +216,6 @@ class DataStores(_BaseKube):
         return stores
 
     # ----------------------------------------------------------------------
-    # ----------------------------------------------------------------------
     def add(self, item):
         """
         Registers a new data item with the data store.
@@ -239,6 +238,32 @@ class DataStores(_BaseKube):
             return DataStore(url, self._gis, self)
         else:
             return None
+
+    def validate(self, item: Dict[str, Any]) -> bool:
+        """
+        Validates that the path (for file shares) or connection string (for
+        databases) for a specific data item is accessible to every server 
+        node in the site by checking against the JSON representing the data
+        item, ensuring that the data item can be registered and used 
+        successfully within the server's data store.
+
+        Validating a data item does not automatically register it for you. 
+        You need to explicitly register your data item by invoking the 
+        register operation.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required string. The JSON representing the data item.
+                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        ==================     ====================================================================        
+        """
+        params = {"item": item, "f": "json"}
+        url = self._url + "/validateDataItem"
+        return (
+            self._con.post(path=url, postdata=params).get("status", "failed")
+            == "success"
+        )
 
     # ----------------------------------------------------------------------
     def _register_data_item(self, item):
