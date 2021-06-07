@@ -99,7 +99,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_feed_status(self):
         print("\n ---- test_feed_status ----")
         try:
-            response = self.feed_item.status()
+            response = self.feed_item.status
             assert response and response.get("status")
 
         except AssertionError as assertErrorException:
@@ -117,7 +117,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_feed_metrics(self):
         print("\n ---- test_feed_metrics ----")
         try:
-            response = self.feed_item.metrics()
+            response = self.feed_item.metrics
             assert response and response.get("itemId")
 
         except AssertionError as assertErrorException:

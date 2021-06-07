@@ -1,5 +1,3 @@
-from arcgis._impl.common._mixins import PropertyMap
-
 from ._task import Task
 
 
@@ -13,24 +11,22 @@ class BigDataAnalytics(Task):
     _gis = None
     _url = None
     _util = None
-    _bigdata_analytics_item = None
-    _serialized_object = None
+    _item = None
 
-    def __init__(self, gis, util, bigdata_analytics_item=None):
+    def __init__(self, gis, util, item=None):
         self._gis = gis
         self._util = util
 
-        if bigdata_analytics_item:
-            self._bigdata_analytics_item = bigdata_analytics_item
-            self._id = bigdata_analytics_item["id"]
-            self._serialized_object = PropertyMap(self._bigdata_analytics_item)
+        if item:
+            self._item = item
+            self._id = item["id"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         return "<%s id:%s label:%s>" % (
             type(self).__name__,
             self._id,
-            self._bigdata_analytics_item["label"],
+            self._item["label"],
         )
 
     # ----------------------------------------------------------------------
@@ -51,6 +47,7 @@ class BigDataAnalytics(Task):
         return self._util._stop("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
+    @property
     def status(self):
         """
         Get the status of the running Big Data Analytics for the given id
@@ -59,6 +56,7 @@ class BigDataAnalytics(Task):
         return self._util._status("analytics/bigdata", self._id)
 
     # ----------------------------------------------------------------------
+    @property
     def metrics(self):
         """
         Get the metrics of the running Big Data Analytics for the given id
@@ -74,11 +72,3 @@ class BigDataAnalytics(Task):
          False (for failure) a dictionary with details is returned.
         """
         return self._util._delete("analytics/bigdata", self._id)
-
-    # ----------------------------------------------------------------------
-    def serialized_object(self):
-        """
-        Big Data Analytics items in form property names and values
-        :return: A serialized object of bigdata_analytics item
-        """
-        return self._serialized_object

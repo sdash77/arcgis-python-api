@@ -106,7 +106,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_realtime_analytics_status(self):
         print("\n ---- test_realtime_analytics_status ----")
         try:
-            response = self.realtime_analytics_item.status()
+            response = self.realtime_analytics_item.status
             assert response and response.get("status")
 
         except AssertionError as assertErrorException:
@@ -124,7 +124,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_realtime_analytics_metrics(self):
         print("\n ---- test_realtime_analytics_metrics ----")
         try:
-            response = self.realtime_analytics_item.metrics()
+            response = self.realtime_analytics_item.metrics
             assert response and response.get("itemId")
 
         except AssertionError as assertErrorException:

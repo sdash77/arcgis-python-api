@@ -38,18 +38,18 @@ Feed
 .. autoclass:: arcgis.realtime.velocity.Feed
     :members:
     :undoc-members:
-    :exclude-members: serialized_object
+    :exclude-members:
 
 RealTimeAnalytics
 -------------------------
 .. autoclass:: arcgis.realtime.velocity.RealTimeAnalytics
     :members:
     :undoc-members:
-    :exclude-members: serialized_object
+    :exclude-members:
 
 BigDataAnalytics
 -------------------------
 .. autoclass:: arcgis.realtime.velocity.BigDataAnalytics
     :members:
     :undoc-members:
-    :exclude-members: serialized_object
+    :exclude-members:

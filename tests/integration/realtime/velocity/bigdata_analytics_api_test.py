@@ -107,7 +107,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_bigdata_analytics_status ----")
 
         try:
-            response = self.bigdata_analytics_item.status()
+            response = self.bigdata_analytics_item.status
             assert response and response.get("status")
 
         except AssertionError as assertErrorException:
@@ -126,7 +126,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_bigdata_analytics_metrics ----")
 
         try:
-            response = self.bigdata_analytics_item.metrics()
+            response = self.bigdata_analytics_item.metrics
             assert response and response.get("itemId")
 
         except AssertionError as assertErrorException:

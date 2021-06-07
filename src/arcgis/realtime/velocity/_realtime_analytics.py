@@ -1,5 +1,3 @@
-from arcgis._impl.common._mixins import PropertyMap
-
 from ._task import Task
 
 
@@ -13,24 +11,22 @@ class RealTimeAnalytics(Task):
     _gis = None
     _url = None
     _util = None
-    _realtime_analytics_item = None
-    _serialized_object = None
+    _item = None
 
-    def __init__(self, gis, util, realtime_analytics_item=None):
+    def __init__(self, gis, util, item=None):
         self._gis = gis
         self._util = util
 
-        if realtime_analytics_item:
-            self._realtime_analytics_item = realtime_analytics_item
-            self._id = realtime_analytics_item["id"]
-            self._serialized_object = PropertyMap(self._realtime_analytics_item)
+        if item:
+            self._item = item
+            self._id = item["id"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         return "<%s id:%s label:%s>" % (
             type(self).__name__,
             self._id,
-            self._realtime_analytics_item["label"],
+            self._item["label"],
         )
 
     # ----------------------------------------------------------------------
@@ -51,6 +47,7 @@ class RealTimeAnalytics(Task):
         return self._util._stop("analytics/realtime", self._id)
 
     # ----------------------------------------------------------------------
+    @property
     def status(self):
         """
         Get the status of the running Real-Time Analytics for the given id
@@ -59,6 +56,7 @@ class RealTimeAnalytics(Task):
         return self._util._status("analytics/realtime", self._id)
 
     # ----------------------------------------------------------------------
+    @property
     def metrics(self):
         """
         Get the metrics of the running Real-Time Analytics for the given id
@@ -74,11 +72,3 @@ class RealTimeAnalytics(Task):
          False (for failure) a dictionary with details is returned.
         """
         return self._util._delete("analytics/realtime", self._id)
-
-    # ----------------------------------------------------------------------
-    def serialized_object(self):
-        """
-        Real-Time Analytics items in form property names and values
-        :return: A serialized object of realtime_analytics item
-        """
-        return self._serialized_object
