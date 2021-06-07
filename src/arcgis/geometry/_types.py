@@ -2623,11 +2623,15 @@ class Geometry(BaseGeometry):
 ###########################################################################
 class MultiPoint(Geometry):
     """
-    A multipoint contains an array of points, along with a spatialReference
-    field. A multipoint can also have boolean-valued hasZ and hasM fields.
+    A ``multipoint`` contains an array of points, along with a :class:`~arcgis.geometry.SpatialReference`
+    field. A ``multipoint`` can also have boolean-valued `hasZ` and `hasM` fields.
     These fields control the interpretation of elements of the points
-    array. Omitting an hasZ or hasM field is equivalent to setting it to
-    false.
+    array.
+
+    .. note::
+        Omitting an `hasZ` or `hasM` field is equivalent to setting it to
+        false.
+
     Each element of the points array is itself an array of two, three, or
     four numbers. It will have two elements for 2D points, two or three
     elements for 2D points with Ms, three elements for 3D points, and three
@@ -2637,8 +2641,10 @@ class MultiPoint(Geometry):
     3D points, the Z coordinate is required and is at index 2. For 3D
     points with Ms, the Z coordinate is at index 2, and the M coordinate,
     if present, is at index 3.
-    An empty multipoint has a points field with no elements. Empty points
-    are ignored.
+
+    .. note::
+        An empty multipoint has a points field with no elements. Empty points
+        are ignored.
     """
 
     _type = "Multipoint"
@@ -2659,19 +2665,26 @@ class MultiPoint(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``MultiPoint`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1.0, fill_color=None):
-        """Returns a group of SVG circle elements for the MultiPoint geometry.
+        """
+        The ``svg`` method returns a group of SVG circle element for the ``MultiPoint`` geometry.
 
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG circle diameters.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG circle diameter.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            A group of SVG circle elements
         """
         if self.is_empty:
             return "<g />"
@@ -2700,7 +2713,12 @@ class MultiPoint(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``MultiPoint`` as a np.array
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "points" in self:
@@ -2738,10 +2756,10 @@ class MultiPoint(Geometry):
 ########################################################################
 class Point(Geometry):
     """
-    A point contains x and y fields along with a spatialReference field. A
-    point can also contain m and z fields. A point is empty when its x
-    field is present and has the value null or the string "NaN". An empty
-    point has no location in space.
+    The ``Point`` class contains x and y fields along with a :class:`~arcgis.geometry.SpatialReference` field. A
+    ``Point`` can also contain m and z fields. A ``Point`` is empty when its x
+    field is present and has the value `null` or the string `NaN`. An empty
+    ``point`` has **no** location in space.
     """
 
     _type = "Point"
@@ -2756,19 +2774,26 @@ class Point(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Point`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
-        """Returns SVG circle element for the Point geometry.
+        """
+        The ``svg`` method returns a SVG circle element for the ``Point`` geometry.
 
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG circle diameter.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG circle diameter.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            An SVG circle element
         """
         if self.is_empty:
             return "<g />"
@@ -2796,7 +2821,12 @@ class Point(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``point`` as a np.array
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
