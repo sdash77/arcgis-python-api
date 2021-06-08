@@ -65,7 +65,10 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.add("certificate_name", "domain_name", "certificate_text")
+            >>> gis.CertificateManager.add(name="certificate_name",
+            >>>                            domain = "domain_name",
+            >>>                            certificate = "certificate_text")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 
@@ -101,7 +104,7 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.get("certificate_id")
+            >>> gis.CertificateManager.get(cert_id= "certificate_id")
 
         :returns:
             A Dictionary (if found), else None
@@ -146,7 +149,7 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.delete("certificate_id")
+            >>> gis.CertificateManager.delete(cert_id="certificate_id")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -177,11 +180,16 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         certificate	  Optional String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
+
         .. code-block:: python
 
             # Usage Example
 
-            >>> gis.CertificateManager.update("certificate_id", "certificate_name", "certificate_domain", "certificate_text")
+            >>> gis.CertificateManager.update(cert_id ="certificate_id",
+            >>>                               name = "certificate_name",
+            >>>                               domain ="certificate_domain",
+            >>>                               certificate = "certificate_text")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 

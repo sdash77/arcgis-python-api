@@ -128,8 +128,10 @@ class APIKey(object):
             # Usage Example
 
             >>> gis.APIKey.update(http_referers = ["https://foo.com", "https://bar.com"],
-            >>>                   privileges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
-            >>>                   "premium:user:geocode", "premium:user:networkanalysis"])
+            >>>                 privileges = ["portal:apikey:basemaps",
+            >>>                               "portal:app:access:item:itemId",
+            >>>                               "premium:user:geocode",
+            >>>                               "premium:user:networkanalysis"])
 
         :returns:
             A dictionary

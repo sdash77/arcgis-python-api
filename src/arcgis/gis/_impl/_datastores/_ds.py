@@ -187,7 +187,7 @@ class PortalDataStore(object):
         .. note::
             To create a :class:`~arcgis.gis.Datastore` object from an existing :class:`~arcgis.gis.dataStore`,
             see the `Create a data store item from an existing data store <https://enterprise.arcgis.com/en/portal/latest/administer/windows/create-item-from-existing-data-store.htm#ESRI_SECTION1_58D081604CF841AC80D527D34A67660C>`_
-            page in the Arcgis Online resources.
+            page in the ArcGIS Online resources.
 
         """
         if isinstance(item, Item):

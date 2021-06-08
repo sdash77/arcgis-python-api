@@ -333,7 +333,9 @@ class ProfileManager(object):
 
             # Usage Example
 
-            >>> gis.ProfileManager.update(profile = "profile_name1", username = "User12345", key_file = "new_key_file")
+            >>> gis.ProfileManager.update(profile = "profile_name1",
+            >>>                           username = "User12345",
+            >>>                           key_file = "new_key_file")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -386,8 +388,13 @@ class ProfileManager(object):
 
             # Usage Example
 
-            >>> gis.ProfileManager.create("profile_name", url= "www.foo.com", username = "User1234",
-            >>>                           password = "Password1234", key_file = "key_file", cert_fle = "cert_file_name")
+            >>> gis.ProfileManager.create("profile_name",
+            >>>                           url= "www.foo.com",
+            >>>                           username = "User1234",
+            >>>                           password = "Password1234",
+            >>>                           key_file = "key_file",
+            >>>                           cert_fle = "cert_file_name")
+
         :returns:
             A boolean indicating success (True), or failure (False)
 

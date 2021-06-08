@@ -848,8 +848,8 @@ class GIS(object):
     @_lazy_property
     def notebook_server(self) -> "List[NotebookServer]":
         """
-        The ``notebook_server`` property provides access to the Notebook Server registerd with the organization or
-        enterprise.
+        The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
+        with the organization or enterprise.
 
         :returns: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
@@ -1583,7 +1583,7 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
 
         :returns:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.server.Job` when `future=True`
+            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.server.admin._services.Job` when `future=True`
         """
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
@@ -1643,7 +1643,7 @@ class GroupMigrationManager(object):
         ================  ===============================================================================
 
         :returns:
-            A dictionary --or-- :class:`~arcgis.gis.workflowmanager._workflow_manager.Job` when `future=True`
+            A dictionary --or-- :class:`~arcgis.gis.server.admin._services.Job` when `future=True`
         """
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
