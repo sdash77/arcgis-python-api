@@ -382,7 +382,11 @@ class Portal(object):
             path += "/" + folder_id
 
         path += "/addItem"
-        resp = self.con.post(path, postdata, files)
+
+        if "text" in postdata:
+            resp = self.con.post_multipart(path, postdata, files)
+        else:
+            resp = self.con.post(path, postdata, files)
         if resp and resp.get("success"):
             return resp["id"]
 
@@ -2468,7 +2472,10 @@ class Portal(object):
         if folder:
             path += "/" + folder
         path += "/items/" + itemid + "/update"
-        resp = self.con.post(path, postdata, files)
+        if "text" in postdata:
+            resp = self.con.post_multipart(path, postdata, files)
+        else:
+            resp = self.con.post(path, postdata, files)
         if resp:
             return resp.get("success")
 
