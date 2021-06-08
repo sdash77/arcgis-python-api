@@ -34,34 +34,44 @@ class _Util:
         return self._parse_response(response)
 
     # ----------------------------------------------------------------------
-    def _put_request(self, type, id, payload={}):
+    def _put_request(self, task_type, id, payload=None):
         """
         Private wrapper function that  builds the absolute url from
         the base url + sub-path and then passing it to the xhr PUT reqest
         gis._con.put(<url>, <params>, <payload>)
 
         :param path: feeds | realtime | bigdata
+        :param id: unique id of a task
         :return: Endpoint response
         """
-        path = f"{type}/{id}/"
+        path = f"{task_type}/{id}/"
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
+
+        if payload is None:
+            payload = {}
+
         params = {**self._params, "data": payload}
         response = self._gis._con.put(url, params, post_json=True, try_json=False)
 
         return self._parse_response(response)
 
     # ----------------------------------------------------------------------
-    def _post_request(self, type, id, payload={}):
+    def _post_request(self, task_type, id, payload=None):
         """
         Private wrapper function that  builds the absolute url from
         the base url + sub-path and then passing it to the xhr POST reqest
         gis._con.post(<url>, <params>, <payload>)
 
-        :param path: feeds | realtime | bigdata
+        :param task_type: feeds | realtime | bigdata
+        :param id: unique id of a task
         :return: Endpoint response
         """
-        path = f"{type}/{id}/"
+        path = f"{task_type}/{id}/"
         url = f'{self._base_url}{path}?{self._params.get("authorization")}'
+
+        if payload is None:
+            payload = {}
+
         params = {**self._params, "data": payload}
 
         response = self._gis._con.post(url, params, post_json=True, try_json=True)
@@ -84,73 +94,73 @@ class _Util:
         return self._parse_response(response, return_boolean_for_success=True)
 
     # ----------------------------------------------------------------------
-    def _get(self, type, id):
+    def _get(self, task_type, id):
         """
          Generic task operation to get item by id
-        :param type: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         :return: Endpoint response for start task
         """
-        path = f"{type}/{id}"
+        path = f"{task_type}/{id}"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
-    def _start(self, type, id):
+    def _start(self, task_type, id):
         """
          Generic start task operation
-        :param type: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         :return: Endpoint response for start task
         """
-        path = f"{type}/{id}/start"
+        path = f"{task_type}/{id}/start"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
-    def _stop(self, type, id):
+    def _stop(self, task_type, id):
         """
         Generic stop task operation
-        :param type: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         Return True if the task was successfully stopped.
 
         :returns: boolean
          a dictionary with error details.
         """
-        path = f"{type}/{id}/stop"
+        path = f"{task_type}/{id}/stop"
         response = self._get_request(path)
 
         return response.get("status") == "success"
 
     # ----------------------------------------------------------------------
-    def _status(self, type, id):
+    def _status(self, task_type, id):
         """
-        Generic get status task with possible taskTypes: feed | realtime | bigdata
-        :param type: feed | realtime | bigdata
+        Generic get status task with possible task types: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         :return: endpoint response for task status
         """
-        path = f"{type}/{id}/status"
+        path = f"{task_type}/{id}/status"
         return self._get_request(path)
 
     # ----------------------------------------------------------------------
-    def _metrics(self, type, id):
+    def _metrics(self, task_type, id):
         """
-        Generic get metrics task with possible taskTypes: feed | realtime | bigdata
-        :param type: feed | realtime | bigdata
+        Generic get metrics task with possible task types: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         :return: endpoint response for task metrics
         """
-        return self._post_request(type, id)
+        return self._post_request(task_type, id)
 
     # ----------------------------------------------------------------------
-    def _delete(self, type, id):
+    def _delete(self, task_type, id):
         """
-        :param type: feed | realtime | bigdata
+        :param task_type: feed | realtime | bigdata
         :param id: unique id of a task
         :return: A bool containing True (for success) or
          False (for failure) a dictionary with details is returned.
         """
-        path = f"{type}/{id}"
+        path = f"{task_type}/{id}"
         return self._delete_request(path)
 
     # ----------------------------------------------------------------------
