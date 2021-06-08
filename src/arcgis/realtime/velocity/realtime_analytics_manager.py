@@ -8,7 +8,6 @@ class RealTimeAnalyticsManager:
     """
 
     _gis = None
-    _url = None
     _util = None
 
     def __init__(self, url, gis):
@@ -16,7 +15,6 @@ class RealTimeAnalyticsManager:
         :param url: Base url of Velocity.
         :param gis: An authenticated arcigs.gis.GIS object.
         """
-        self._url = url
         self._gis = gis
 
         self._util = _Util(gis, url)

@@ -9,7 +9,6 @@ class BigDataAnalytics(Task):
 
     _id = ""
     _gis = None
-    _url = None
     _util = None
     _item = None
 

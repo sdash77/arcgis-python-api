@@ -8,11 +8,10 @@ class Feed(Task):
 
     _id = ""
     _gis = None
-    _url = None
     _util = None
     _item = None
 
-    def __init__(self, url, gis, util, item=None):
+    def __init__(self, gis, util, item=None):
         self._gis = gis
         self._util = util
         self._item = item
