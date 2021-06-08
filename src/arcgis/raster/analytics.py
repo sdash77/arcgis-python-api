@@ -1367,8 +1367,8 @@ def copy_raster(
                                          "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", 
                                          "Landsat 1-5 MSS","Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", 
                                          "NetCDF", "Pleiades-1", "QuickBird", "RapidEye", "Raster Dataset", 
-                                         "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", 
-                                         "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
+                                         "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer",
+                                         "UAV/UAS", "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
                                          
 
@@ -1444,21 +1444,67 @@ def copy_raster(
 
         # Usage Example 1: This example creates a tiled image layer in ArcGIS Online. (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster="C:\\data\\input_raster.tif",
+        copy_raster_op = copy_raster(input_raster=r"C:\data\input_raster.tif",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
                                      tiles_only=True)
-
-    .. code-block:: python
 
         # Usage Example 2: This example creates a tiled image layer in AGOL from the datasets detected in the input folder. (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster="C:\\data",
+        copy_raster_op = copy_raster(input_raster=r"C:\data",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
                                      tiles_only=True)
+        
+        # Usage Example 3: This example creates an image layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
+
+        copy_raster_op_landsat15 = copy_raster(input_raster=r"C:\data\Landsat15MSS",
+                                               output_name="landsat15_op",
+                                               raster_type_name="Landsat 1-5 MSS",
+                                               raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
+                                               gis=gis)
+
+        # Usage Example 4: This example creates an image layer using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
+
+        copy_raster_op_sentinel2 = copy_raster(input_raster=r"C:\data\Sentinel2",
+                                               output_name="sentinel2_op",
+                                               raster_type_name="Sentinel-2",
+                                               raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
+                                               gis=gis)
+
+        # Usage Example 5: This example creates an image layer using Pleiades-1 Raster Type with an Ortho product and a Pansharpen template.
+
+        copy_raster_op_pleiades1 = copy_raster(input_raster=r"C:\data\Pleiades1",
+                                               output_name="pleiades1_op",
+                                               raster_type_name="Pleiades-1",
+                                               raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
+                                               gis=gis)
+
+        # Usage Example 6: This example creates an image layer using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
+
+        copy_raster_op_spot6 = copy_raster(input_raster=r"C:\data\SPOT6",
+                                          output_name="spot6_op",
+                                          raster_type_name="SPOT 6",
+                                          raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
+                                          gis=gis)
+
+        # Usage Example 7: This example creates an image layer using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
+
+        copy_raster_op_worldview2 = copy_raster(input_raster=r"C:\data\WorldView",
+                                                output_name="worldview2_op",
+                                                raster_type_name="WorldView-2",
+                                                raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
+                                                gis=gis)    
+
+        # Usage Example 8: This example creates an image layer from Tiled Imagery Layers.
+
+        copy_raster_op_til = copy_raster(input_raster=[tile_lyr_input1, tile_lyr_input2],
+                                         output_name="til_op",
+                                         raster_type_name="Tiled Imagery Layer", 
+                                         gis = gis)
+
 
     """
 
@@ -2953,7 +2999,7 @@ def create_image_collection(
                                          "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
                                          "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
                                          "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                         "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
+                                         "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
                                          "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
                                          "ZY3-CRESDA"]         
                                          
@@ -3494,15 +3540,63 @@ def create_image_collection(
                                                       raster_type_params=params,
                                                       out_sr=32632)
 
-    .. code-block:: python
+.. code-block:: python
 
         # Usage Example 2: This example creates a dynamic image layer in AGOL from the datasets detected in the input folder.
 
         img_coll_result = create_image_collection(image_collection="imageCollection",
-                                                  input_rasters="C:\\data",
+                                                  input_rasters=r"C:\data",
                                                   raster_type_name="Raster Dataset",
                                                   gis=gis,
                                                   tiles_only=False)
+
+        
+        # Usage Example 3: This example creates an image layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
+
+        landsat15_collection = create_image_collection(image_collection="landsat15_collection",
+                                                       input_rasters=r"C:\data\Landsat15MSS",
+                                                       raster_type_name="Landsat 1-5 MSS",
+                                                       raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
+                                                       gis=gis)
+
+        # Usage Example 4: This example creates an image layer using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
+
+        sentinel2_collection = create_image_collection(image_collection="sentinel2_collection",
+                                                       input_rasters=r"C:\data\Sentinel2",
+                                                       raster_type_name="Sentinel-2",
+                                                       raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
+                                                       gis=gis)
+
+       # Usage Example 5: This example creates an image layer using Pleiades-1 Raster Type with an Ortho product and a Pansharpened template.
+
+        pleiades1_collection = create_image_collection(image_collection="pleiades1_collection",
+                                                       input_rasters=r"C:\data\Pleiades1",
+                                                       raster_type_name="Pleiades-1",
+                                                       raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
+                                                       gis=gis)
+
+        # Usage Example 6: This example creates an image layer using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
+
+        spot6_collection = create_image_collection(image_collection="spot6_collection",
+                                                   input_rasters=r"C:\data\SPOT6",
+                                                   raster_type_name="SPOT 6",
+                                                   raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
+                                                   gis=gis)
+
+        # Usage Example 7: This example creates an image layer using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
+
+        worldview2_collection = create_image_collection(image_collection="worldview2_collection",
+                                                        input_rasters=r"C:\data\WorldView",
+                                                        raster_type_name="WorldView-2",
+                                                        raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
+                                                        gis=gis)
+
+        # Usage Example 8: This example creates an image layer from Tiled Imagery Layers.
+
+        worldview2_collection = create_image_collection(image_collection="tiled_collection",
+                                                        input_rasters=[tile_lyr_input1, tile_lyr_input2],
+                                                        raster_type_name="Tiled Imagery Layer",
+                                                        gis=gis)
 
     """
 
