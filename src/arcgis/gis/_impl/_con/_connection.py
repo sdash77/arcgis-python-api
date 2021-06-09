@@ -761,13 +761,13 @@ class Connection(object):
             mp_encoder = MultipartEncoder(fields=params)
             if post_json:  # edge case workflow
                 resp = self._session.post(
-                    url=url, json=params, cert=cert, files=files, timeout=10
+                    url=url, json=params, cert=cert, files=files, timeout=600
                 )
             else:
                 # data=mp_encoder
                 self._session.headers.update({"Content-Type": mp_encoder.content_type})
                 resp = self._session.post(
-                    url=url, data=mp_encoder, cert=cert, files=files, timeout=10
+                    url=url, data=mp_encoder, cert=cert, files=files, timeout=600
                 )
                 self._session.headers.pop("Content-Type")
                 print(resp)
@@ -961,11 +961,11 @@ class Connection(object):
                         params[k] = v.json
             if post_json:  # edge case workflow
                 resp = self._session.post(
-                    url=url, json=params, cert=cert, files=files, timeout=10
+                    url=url, json=params, cert=cert, files=files, timeout=600
                 )
             else:
                 resp = self._session.post(
-                    url=url, data=params, cert=cert, files=files, timeout=10
+                    url=url, data=params, cert=cert, files=files, timeout=600
                 )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
