@@ -6427,6 +6427,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         upload_rasters_list = []
         items_on_server = False
         # input rasters
+
+        #parse input and convert to url if it is imagery layer
+        from arcgis.raster import ImageryLayer
+        if isinstance(input_rasters, ImageryLayer):
+            input_rasters = input_rasters.url
+        elif isinstance(input_rasters, list):
+            for pos, raster in enumerate(input_rasters):
+               if isinstance(raster, ImageryLayer):
+                   input_rasters[pos] = raster.url
+
+
         if isinstance(input_rasters, str):
             if os.path.exists(input_rasters):
                 input_rasters = [input_rasters]
@@ -6468,7 +6479,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                     input_rasters_dict.update({"itemsOnServer": True})
                 input_raster_specified = True
             elif len(url_list) > 0:
-                input_rasters_dict = {"urls": url_list}
+                if raster_type_name.lower() == "tiled imagery layer":
+                    input_rasters_dict = {"tiled_urls": url_list}
+                    raster_type_name = "Raster Dataset"
+                else:
+                    input_rasters_dict = {"urls": url_list}
                 input_raster_specified = True
             elif len(uri_list) > 0:
                 input_rasters_dict = {"uris": uri_list}
@@ -6479,7 +6494,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
                 if "http:" in input_rasters or "https:" in input_rasters:
-                    input_rasters_dict = {"url": input_rasters}
+                    if raster_type_name.lower() == "tiled imagery layer":
+                        input_rasters_dict = {"tiled_url": input_rasters}
+                        raster_type_name = "Raster Dataset"
+                    else:
+                        input_rasters_dict = {"url": input_rasters}
                 else:
                     input_rasters_dict = {"uri": input_rasters}
             else:
@@ -10036,7 +10055,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+        if not isinstance(input_raster, str) and not isinstance(input_raster, list) and not raster_type_name:
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:
