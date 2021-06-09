@@ -11033,17 +11033,15 @@ class Item(dict):
 
         if self.type == "Feature Service":
             params["stype"] = "features"
-            if len(self.layers)> 0 and \
-               not self.layers[0].container:
+            if len(self.layers) > 0 and not self.layers[0].container:
                 params["name"] = os.path.basename(
                     os.path.abspath(
                         os.path.join(self.layers[0]._url, ".." + os.sep + "..")
                     )
                 )
-            else: # hasattr(self, "url") and self.url and len(self.url) > 0:
+            else:  # hasattr(self, "url") and self.url and len(self.url) > 0:
                 params["name"] = os.path.basename(os.path.dirname(self.url))
-            
-            
+
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
         if self.type == "Map Service":
