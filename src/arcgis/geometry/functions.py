@@ -1,5 +1,6 @@
 """
-Functions which take geometric types as parameters and return geometric type results.
+The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` types as parameters and return
+:class:`~arcgis.geometry.Geometry` type results.
 """
 
 import arcgis.env
@@ -17,68 +18,64 @@ def areas_and_lengths(
     future=False,
 ):
     """
-    The areas_and_lengths function calculates areas and perimeter lengths
-    for each polygon specified in the input array.
+    The ``areas_and_lengths`` function calculates areas and perimeter lengths
+    for each :class:`~arcgis.geometry.Polygon` specified in the input array.
 
-    Inputs:
-       polygons - The array of polygons whose areas and lengths are
-                  to be computed.
-       length_unit - The length unit in which the perimeters of
-                    polygons will be calculated. If calculation_type
-                    is planar, then length_unit can be any esriUnits
-                    constant. If lengthUnit is not specified, the
-                    units are derived from spatial_ref. If calculationType is
-                    not planar, then lengthUnit must be a linear
-                    esriUnits constant, such as esriSRUnit_Meter or
-                    esriSRUnit_SurveyMile. If length_unit is not
-                    specified, the units are meters. For a list of
-                    valid units, see esriSRUnitType Constants and
-                    esriSRUnit2Type Constant.
-       area_unit - The area unit in which areas of polygons will be
-                  calculated. If calculation_type is planar, then
-                  area_unit can be any esriUnits constant. If
-                  area_unit is not specified, the units are derived
-                  from spatial_ref. If calculation_type is not planar, then
-                  area_unit must be a linear esriUnits constant such
-                  as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                  area_unit is not specified, then the units are
-                  meters. For a list of valid units, see
-                  esriSRUnitType Constants and esriSRUnit2Type
-                  constant.
-                  The list of valid esriAreaUnits constants include,
-                  esriSquareInches | esriSquareFeet |
-                  esriSquareYards | esriAcres | esriSquareMiles |
-                  esriSquareMillimeters | esriSquareCentimeters |
-                  esriSquareDecimeters | esriSquareMeters | esriAres
-                  | esriHectares | esriSquareKilometers.
-       calculation_type -  The type defined for the area and length
-                          calculation of the input geometries. The
-                          type can be one of the following values:
-                          planar - Planar measurements use 2D
-                                   Euclidean distance to calculate
-                                   area and length. Th- should
-                                   only be used if the area or
-                                   length needs to be calculated in
-                                   the given spatial reference.
-                                   Otherwise, use preserveShape.
-                          geodesic - Use this type if you want to
-                                   calculate an area or length using
-                                   only the vertices of the polygon
-                                   and define the lines between the
-                                   points as geodesic segments
-                                   independent of the actual shape
-                                   of the polygon. A geodesic
-                                   segment is the shortest path
-                                   between two points on an ellipsoid.
-                          preserveShape - This type calculates the
-                                   area or length of the geometry on
-                                   the surface of the Earth
-                                   ellipsoid. The shape of the
-                                   geometry in its coordinate system
-                                   is preserved.
-     future - boolean. This operation determines if the job is run asynchronously or not.
-    Output:
-       JSON as dictionary
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    polygons          The array of polygons whose areas and lengths are to be computed.
+    ----------------  -------------------------------------------------------------------------------
+    length_unit       The length unit in which the perimeters of
+                      polygons will be calculated. If ``calculation_type``
+                      is planar, then length_unit can be any esriUnits
+                      constant. If lengthUnit is not specified, the
+                      units are derived from ``spatial_ref``. If ``calculationType`` is
+                      not planar, then `lengthUnit` must be a linear
+                      esriUnits constant, such as `esriSRUnit_Meter` or
+                      `esriSRUnit_SurveyMile`. If ``length_unit`` is not
+                      specified, the units are meters. For a list of
+                      valid units, see `esriSRUnitType Constants` and
+                      `esriSRUnit2Type Constant`.
+    ----------------  -------------------------------------------------------------------------------
+    area_unit         The area unit in which areas of polygons will be
+                      calculated. If calculation_type is planar, then
+                      area_unit can be any `esriUnits` constant. If
+                      ``area_unit`` is not specified, the units are derived
+                      from ``spatial_ref``. If ``calculation_type`` is not planar, then
+                      ``area_unit`` must be a linear `esriUnits` constant such
+                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
+                      area_unit is not specified, then the units are
+                      meters. For a list of valid units, see
+                      `esriSRUnitType Constants` and `esriSRUnit2Type
+                      constant`.
+                      The list of valid esriAreaUnits constants include,
+                      `esriSquareInches | esriSquareFeet |
+                      esriSquareYards | esriAcres | esriSquareMiles |
+                      esriSquareMillimeters | esriSquareCentimeters |
+                      esriSquareDecimeters | esriSquareMeters | esriAres
+                      | esriHectares | esriSquareKilometers.`
+    ----------------  -------------------------------------------------------------------------------
+    calculation_type  The type defined for the area and length calculation of the input geometries. The type can be one
+                      of the following values:
+
+                          1. planar - Planar measurements use 2D Euclidean distance to calculate area and length. This
+                          should only be used if the area or length needs to be calculated in the given
+                          :class:`~arcgis.geometry.SpatialReference`. Otherwise, use ``preserveShape``.
+
+                          2. geodesic - Use this type if you want to calculate an area or length using only the vertices
+                          of the :class:`~arcgis.geometry.Polygon` and define the lines between the points as geodesic
+                          segments independent of the actual shape of the :class:`~arcgis.geometry.Polygon`. A geodesic
+                          segment is the shortest path between two points on an ellipsoid.
+
+                          3. preserveShape - This type calculates the area or length of the geometry on the surface of
+                          the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
+    ----------------  -------------------------------------------------------------------------------
+     future            A required Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        JSON as dictionary
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -91,19 +88,25 @@ def auto_complete(
     polygons=None, polylines=None, spatial_ref=None, gis=None, future=False
 ):
     """
-    The auto_complete function simplifies the process of
-    constructing new polygons that are adjacent to other polygons.
+    The ``auto_complete`` function simplifies the process of
+    constructing new :class:`~arcgis.geometry.Polygon` objects that are adjacent to other polygons.
     It constructs polygons that fill in the gaps between existing
-    polygons and a set of polylines.
+    polygons and a set of :class:`~arcgis.geometry.Polyline` objects.
 
-    Inputs:
-     polygons -
-      array of Polygon objects
-     polylines -
-      list of Polyline objects
-     spatial_ref -
-      spatial reference of the input geometries WKID
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    polygons          An array of :class:`~arcgis.geometry.Polygon` objects
+    ----------------  -------------------------------------------------------------------------------
+    polylines         An List of :class:`~arcgis.geometry.Polyline` objects
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries WKID
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -125,39 +128,53 @@ def buffer(
     future=False,
 ):
     """
-    The buffer function is performed on a geometry service resource
-    The result of this function is buffered polygons at the
-    specified distances for the input geometry array. Options are
-    available to union buffers and to use geodesic distance.
+    The ``buffer`` function is performed on a geometry service resource
+    The result of this function is a buffered :class:`~arcgis.geometry.Polygon` at the
+    specified distances for the input :class:`~arcgis.geometry.Geometry` array.
 
-    Inputs:
+    .. note::
+        The options are available to union buffers and to use geodesic distance.
 
-      geometries -
-       The array of geometries to be buffered.
-      in_sr -
-       The well-known ID of the spatial reference or a spatial
-       reference JSON object for the input geometries.
-      distances -
-       The distances that each of the input geometries is
-       buffered.
-      unit - The units for calculating each buffer distance. If unit
-       is not specified, the units are derived from bufferSR. If
-       bufferSR is not specified, the units are derived from in_sr.
-      out_sr - The well-known ID of the spatial reference or a
-       spatial reference JSON object for the input geometries.
-      buffer_sr - The well-known ID of the spatial reference or a
-       spatial reference JSON object for the input geometries.
-      union_results -  If true, all geometries buffered at a given
-       distance are unioned into a single (gis,possibly multipart)
-       polygon, and the unioned geometry is placed in the output
-       array. The default is false
-      geodesic - Set geodesic to true to buffer the input geometries
-       using geodesic distance. Geodesic distance is the shortest
-       path between two points along the ellipsoid of the earth. If
-       geodesic is set to false, the 2D Euclidean distance is used
-       to buffer the input geometries. The default value depends on
-       the geometry type, unit and bufferSR.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        The array of geometries to be buffered
+    ----------------  -------------------------------------------------------------------------------
+    in_sr             The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a spatial
+                      reference JSON object for the input geometries.
+    ----------------  -------------------------------------------------------------------------------
+    distances         The distances that each of the input geometries is
+                      buffered.
+    ----------------  -------------------------------------------------------------------------------
+    unit              The units for calculating each buffer distance. If unit
+                      is not specified, the units are derived from `bufferSR`. If
+                      `bufferSR` is not specified, the units are derived from `in_sr`.
+    ----------------  -------------------------------------------------------------------------------
+    out_sr            The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
+                      spatial reference JSON object for the output geometries.
+    ----------------  -------------------------------------------------------------------------------
+    buffer_sr         The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
+                      spatial reference JSON object for the buffer geometries.
+    ----------------  -------------------------------------------------------------------------------
+    union_results     If true, all geometries buffered at a given
+                      distance are unioned into a single (gis,possibly multipart)
+                      :class:`~arcgis.geometry.Polygon`, and the unioned geometry is placed in the output
+                      array. The default is False.
+    ----------------  -------------------------------------------------------------------------------
+    geodesic          Set geodesic to true to buffer the input geometries
+                      using geodesic distance. Geodesic distance is the shortest
+                      path between two points along the ellipsoid of the earth. If
+                      geodesic is set to False, the 2D Euclidean distance is used
+                      to buffer the input geometries.
+
+                      .. note::
+                        The default value depends on the `geometry type`, `unit` and `bufferSR`.
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -176,17 +193,27 @@ def buffer(
 
 def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     """
-    The convex_hull function is performed on a geometry service
+    The `convex_hull` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. It returns the convex hull of the input geometry. The
-    input geometry can be a point, multipoint, polyline, or polygon.
-    The convex hull is typically a polygon but can also be a polyline
-    or point in degenerate cases.
+    input geometry can be a :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+    :class:`~arcgis.geometry.Polyline` , or :class:`~arcgis.geometry.Polygon`.
 
-    Inputs:
-       geometries - The geometries whose convex hull is to be created.
-       spatial_ref - The well-known ID or a spatial reference JSON object for
-            the output geometry.
-       future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        The convex hull is typically a polygon but can also be a polyline
+        or point in degenerate cases.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        The geometries whose convex hull is to be created.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        The convex hull of the :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -195,26 +222,40 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
 
 def cut(cutter, target, spatial_ref=None, gis=None, future=False):
     """
-    The cut function is performed on a geometry service resource. This
-    function splits the target polyline or polygon where it's crossed
-    by the cutter polyline.
-    At 10.1 and later, this function calls simplify on the input
-    cutter and target geometries.
+    The `cut` function is performed on a :class:`~arcgis.geometry.Geometry` service resource. This
+    function splits the target :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` where it is
+    crossed by the cutter polyline.
 
-    Inputs:
-       cutter - The polyline that will be used to divide the target
-        into pieces where it crosses the target.The spatial reference
-        of the polylines is specified by spatial_ref. The structure of the
-        polyline is the same as the structure of the JSON polyline
-        objects returned by the ArcGIS REST API.
-       target - The array of polylines/polygons to be cut. The
-        structure of the geometry is the same as the structure of the
-        JSON geometry objects returned by the ArcGIS REST API. The
-        spatial reference of the target geometry array is specified by
-        spatial_ref.
-       spatial_ref - The well-known ID or a spatial reference JSON object for
-        the output geometry.
-       future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        At 10.1 and later, this function calls simplify on the input
+        cutter and target geometries.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    cutter            The :class:`~arcgis.geometry.Polyline` that will be used to divide the target
+                      into pieces where it crosses the target.The spatial reference
+                      of the polylines is specified by ``spatial_ref``.
+
+                      .. note::
+                        The structure of the
+                        polyline is the same as the structure of the JSON polyline
+                        objects returned by the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    geometries        The array of :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be cut.
+                      The structure of the geometry is the same as the structure of the
+                      JSON geometry objects returned by the ArcGIS REST API. The
+                      spatial reference of the target geometry array is specified by
+                      spatial_ref.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or a JSON
+                      object for the output geometry
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A List of :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -231,34 +272,48 @@ def densify(
     future=False,
 ):
     """
-    The densify function is performed using the GIS's geometry engine.
-    This function densifies geometries by plotting points between
-    existing vertices.
+    The ``densify`` function is performed using the :class:`~arcgis.gis.GIS` geometry engine.
+    This function densifies :class:`~arcgis.geometry.Geometry` objects by plotting :class:`~arcgis.geometry.Point`
+    objects between existing vertices.
 
-    Inputs:
-       geometries - The array of geometries to be densified. The
-        structure of each geometry in the array is the same as the
-        structure of the JSON geometry objects returned by the ArcGIS
-        REST API.
-       spatial_ref - The well-known ID or a spatial reference JSON object for
-        the input polylines. For a list of valid WKID values, see
-        Projected coordinate systems and Geographic coordinate systems.
-       max_segment_length - All segments longer than maxSegmentLength are
-        replaced with sequences of lines no longer than
-        max_segment_length.
-       length_unit - The length unit of max_segment_length. If geodesic is
-        set to false, then the units are derived from spatial_ref, and
-        length_unit is ignored. If geodesic is set to true, then
-        length_unit must be a linear unit. In a case where length_unit is
-        not specified and spatial_ref is a PCS, the units are derived from spatial_ref.
-        In a case where length_unit is not specified and spatial_ref is a GCS,
-        then the units are meters.
-       geodesic - If geodesic is set to true, then geodesic distance is
-        used to calculate max_segment_length. Geodesic distance is the
-        shortest path between two points along the ellipsoid of the
-        earth. If geodesic is set to false, then 2D Euclidean distance
-        is used to calculate max_segment_length. The default is false.
-       future - boolean. This operation determines if the job is run asynchronously or not.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        The array of geometries to be densified. The
+                      structure of each geometry in the array is the same as the
+                      structure of the JSON geometry objects returned by the ArcGIS
+                      REST API.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       The ``well-known ID`` or a spatial reference JSON object for
+                      the input :class:`~arcgis.geometry.Polyline` object.
+
+                      .. note::
+                        For a list of valid WKID values, see
+                        Projected coordinate systems and Geographic coordinate systems.
+    ----------------  -------------------------------------------------------------------------------
+    max_segment_len   All segments longer than ``maxSegmentLength`` are
+                      replaced with sequences of lines no longer than ``max_segment_length``.
+    ----------------  -------------------------------------------------------------------------------
+    length_unit       The length unit of ``max_segment_length``. If ``geodesic`` is
+                      set to `false`, then the units are derived from ``spatial_ref``, and
+                      ``length_unit`` is ignored. If ``geodesic`` is set to `true`, then
+                      ``length_unit`` must be a linear unit. In a case where ``length_unit`` is
+                      not specified and ``spatial_ref`` is a PCS, the units are derived from ``spatial_ref``.
+                      In a case where ``length_unit`` is not specified and ``spatial_ref`` is a GCS,
+                      then the units are meters.
+    ----------------  -------------------------------------------------------------------------------
+    geodesic          If geodesic is set to true, then geodesic distance is
+                      used to calculate max_segment_length. Geodesic distance is the
+                      shortest path between two points along the ellipsoid of the
+                      earth. If geodesic is set to false, then 2D Euclidean distance
+                      is used to calculate max_segment_length. The default is false.
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -274,26 +329,41 @@ def densify(
 
 def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     """
-    The difference function is performed on a geometry service
+    The ``difference`` function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
     between each element of an array of geometries and another geometry
     the so-called difference geometry. In other words, let B be the
     difference geometry. For each geometry, A, in the input geometry
     array, it constructs A-B.
 
-    Inputs:
-      geometries -  An array of points, multipoints, polylines or
-       polygons. The structure of each geometry in the array is the
-       same as the structure of the JSON geometry objects returned by
-       the ArcGIS REST API.
       geometry - A single geometry of any type and of a dimension equal
        to or greater than the elements of geometries. The structure of
        geometry is the same as the structure of the JSON geometry
        objects returned by the ArcGIS REST API. The use of simple
        syntax is not supported.
-      spatial_ref - The well-known ID of the spatial reference or a spatial
-       reference JSON object for the input geometries.
-      future - boolean. This operation determines if the job is run asynchronously or not.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single geometry of any type and of a dimension equal
+                      to or greater than the elements of geometries. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A :class:`~arcgis.geometry.Geometry` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -312,28 +382,37 @@ def distance(
     future=False,
 ):
     """
-    The distance function is performed on a geometry service resource.
-    It reports the 2D Euclidean or geodesic distance between the two
-    geometries.
+    The ``distance`` function is performed on a geometry service resource.
+    It reports the `2D Euclidean` or `geodesic` distance between the two
+    :class:`~arcgis.geometry.Geometry` objects.
 
-    Inputs:
-     spatial_ref - The well-known ID or a spatial reference JSON object for
-      input geometries.
-     geometry1 - The geometry from which the distance is to be
-      measured. The structure of the geometry is same as the structure
-      of the JSON geometry objects returned by the ArcGIS REST API.
-     geometry2 - The geometry from which the distance is to be
-      measured. The structure of the geometry is same as the structure
-      of the JSON geometry objects returned by the ArcGIS REST API.
-     distanceUnit - specifies the units for measuring distance between
-      the geometry1 and geometry2 geometries.
-     geodesic - If geodesic is set to true, then the geodesic distance
-      between the geometry1 and geometry2 geometries is returned.
-      Geodesic distance is the shortest path between two points along
-      the ellipsoid of the earth. If geodesic is set to false or not
-      specified, the planar distance is returned. The default value is
-      false.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry1        The :class:`~arcgis.geometry.Geometry` object from which the distance is measured.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    geometry2        The :class:`~arcgis.geometry.Geometry` object to which the distance is measured.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    geodesic          If ``geodesic`` is set to true, then the geodesic distance
+                      between the ``geometry1`` and ``geometry2`` geometries is returned.
+                      Geodesic distance is the shortest path between two points along
+                      the ellipsoid of the earth. If ``geodesic`` is set to false or not
+                      specified, the planar distance is returned. The default value is false.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -346,38 +425,55 @@ def find_transformation(
     in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False
 ):
     """
-    The find_transformations function is performed on a geometry
+    The ``find_transformations`` function is performed on a :class:`~arcgis.geometry.Geometry`
     service resource. This function returns a list of applicable
     geographic transformations you should use when projecting
-    geometries from the input spatial reference to the output spatial
-    reference. The transformations are in JSON format and are returned
+    geometries from the input :class:`~arcgis.geometry.SpatialReference` to the output
+    :class:`~arcgis.geometry.SpatialReference`. The transformations are in JSON format and are returned
     in order of most applicable to least applicable. Recall that a
     geographic transformation is not needed when the input and output
     spatial references have the same underlying geographic coordinate
     systems. In this case, findTransformations returns an empty list.
-    Every returned geographic transformation is a forward
-    transformation meaning that it can be used as-is to project from
-    the input spatial reference to the output spatial reference. In the
-    case where a predefined transformation needs to be applied in the
-    reverse direction, it is returned as a forward composite
-    transformation containing one transformation and a transformForward
-    element with a value of false.
 
-    Inputs:
-       in_sr - The well-known ID (gis,WKID) of the spatial reference or a
-         spatial reference JSON object for the input geometries
-       out_sr - The well-known ID (gis,WKID) of the spatial reference or a
-         spatial reference JSON object for the input geometries
-       extent_of_interest -  The bounding box of the area of interest
-         specified as a JSON envelope. If provided, the extent of
-         interest is used to return the most applicable geographic
-         transformations for the area. If a spatial reference is not
-         included in the JSON envelope, the in_sr is used for the
-         envelope.
-       num_of_results - The number of geographic transformations to
-         return. The default value is 1. If num_of_results has a value of
-         -1, all applicable transformations are returned.
-       future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        Every returned geographic transformation is a forward
+        transformation meaning that it can be used as-is to project from
+        the input spatial reference to the output spatial reference. In the
+        case where a predefined transformation needs to be applied in the
+        reverse direction, it is returned as a forward composite
+        transformation containing one transformation and a transformForward
+        element with a value of false.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    in_sr             The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a spatial
+                      reference JSON object for the input geometries.
+    ----------------  -------------------------------------------------------------------------------
+    out_sr            The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
+                      spatial reference JSON object for the output geometries.
+    ----------------  -------------------------------------------------------------------------------
+    ext_of_interest   The bounding box of the area of interest specified as a JSON envelope.If provided, the extent of
+                      interest is used to return the most applicable geographic
+                      transformations for the area.
+
+                      .. note::
+                        If a :class:`~arcgis.geometry.SpatialReference` is not
+                        included in the JSON envelope, the ``in_sr`` is used for the
+                        envelope.
+
+    ----------------  -------------------------------------------------------------------------------
+    num_of_results    The number of geographic transformations to
+                      return. The default value is 1.
+
+                      .. note::
+                        If ``num_of_results`` has a value of -1, all applicable transformations are returned.
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A List of geographic transformations
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -390,49 +486,61 @@ def from_geo_coordinate_string(
     spatial_ref, strings, conversion_type, conversion_mode=None, gis=None, future=False
 ):
     """
-    The from_geo_coordinate_string function is performed on a geometry
+    The ``from_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
     service resource. The function converts an array of well-known
     strings into xy-coordinates based on the conversion type and
-    spatial reference supplied by the user. An optional conversion mode
+    :class:`~arcgis.geometry.SpatialReference` supplied by the user. An optional conversion mode
     parameter is available for some conversion types.
 
-    Inputs:
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference json object.
-     strings - An array of strings formatted as specified by
-      conversion_type.
-      Syntax: [<string1>,...,<stringN>]
-      Example: ["01N AA 66021 00000","11S NT 00000 62155",
-                "31U BT 94071 65288"]
-     conversion_type - The conversion type of the input strings.
-      Valid conversion types are:
-       MGRS - Military Grid Reference System
-       USNG - United States National Grid
-       UTM - Universal Transverse Mercator
-       GeoRef - World Geographic Reference System
-       GARS - Global Area Reference System
-       DMS - Degree Minute Second
-       DDM - Degree Decimal Minute
-       DD - Decimal Degree
-     conversion_mode - Conversion options for MGRS, UTM and GARS
-      conversion types.
-      Conversion options for MGRS and UTM conversion types.
-      Valid conversion modes for MGRS are:
-       mgrsDefault - Default. Uses the spheroid from the given spatial
-        reference.
-       mgrsNewStyle - Treats all spheroids as new, like WGS 1984. The
-        180 degree longitude falls into Zone 60.
-       mgrsOldStyle - Treats all spheroids as old, like Bessel 1841.
-        The 180 degree longitude falls into Zone 60.
-       mgrsNewWith180InZone01 - Same as mgrsNewStyle except the 180
-        degree longitude falls into Zone 01.
-       mgrsOldWith180InZone01 - Same as mgrsOldStyle except the 180
-        degree longitude falls into Zone 01.
-      Valid conversion modes for UTM are:
-       utmDefault - Default. No options.
-       utmNorthSouth - Uses north/south latitude indicators instead of
-        zone numbers. Non-standard. Default is recommended
-      future - boolean. This operation determines if the job is run asynchronously or not.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    strings           An array of strings formatted as specified by conversion_type.
+                      Syntax: [<string1>,...,<stringN>]
+                      Example: ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
+    ----------------  -------------------------------------------------------------------------------
+    conversion-type   The conversion type of the input strings.
+
+                      .. note::
+                        Valid conversion types are:
+                        `MGRS` - Military Grid Reference System
+                        `USNG` - United States National Grid
+                        `UTM` - Universal Transverse Mercator
+                        `GeoRef` - World Geographic Reference System
+                        `GARS` - Global Area Reference System
+                        `DMS` - Degree Minute Second
+                        `DDM` - Degree Decimal Minute
+                        `DD` - Decimal Degree
+    ----------------  -------------------------------------------------------------------------------
+    conversion_mode   Conversion options for MGRS, UTM and GARS conversion types.
+
+                      .. note::
+                        Valid conversion modes for MGRS are:
+                        `mgrsDefault` - Default. Uses the spheroid from the given spatial reference.
+
+                        `mgrsNewStyle` - Treats all spheroids as new, like WGS 1984. The 80 degree longitude falls into Zone 60.
+
+                        `mgrsOldStyle` - Treats all spheroids as old, like Bessel 1841. The 180 degree longitude falls into Zone 60.
+
+                        `mgrsNewWith180InZone01` - Same as mgrsNewStyle except the 180 degree longitude falls into Zone 01
+
+                        `mgrsOldWith180InZone01` - Same as mgrsOldStyle except the 180 degree longitude falls into Zone 01
+
+                      .. note::
+                        Valid conversion modes for UTM are:
+                            `utmDefault` - Default. No options.
+                            `utmNorthSouth` - Uses north/south latitude indicators instead of
+                            `zone numbers` - Non-standard. Default is recommended
+
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of (x,y) coordinates
     """
     if gis is None:
         gis = arcgis.env.active_gis

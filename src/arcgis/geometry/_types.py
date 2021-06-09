@@ -1639,18 +1639,17 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
-        A tuple of angle and distance to another point using a
-        measurement type.
+        The ``angle_distance_to`` method retrieves a tuple of angle and distance to another
+        :class:`~arcgis.geometry.Point` using a measurement type.
 
         .. note::
-            If `ArcPy` is not installed, none is returned.
+            The ``angle_distance_to`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
 
-        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required Geometry.  A arcgis.Geometry object.
+        second_geometry     Required Geometry. An :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
         method              Optional String. PLANAR measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
@@ -1659,7 +1658,7 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :returns: a tuple of angle and distance to another point using a measurement type.
+        :returns: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1676,9 +1675,10 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def boundary(self):
         """
-        Constructs the boundary of the geometry.
+        The ``boundary`` method constructs the boundary of the :class:`~arcgis.geometry.Geometry` object.
 
-        :returns: arcgis.geometry.Polyline
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1691,9 +1691,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def buffer(self, distance):
         """
-        Constructs a polygon at a specified distance from the geometry.
+        The buffer method constructs a :class:`~arcgis.geometry.Polygon` at a specified distance from the
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy**
+        .. note::
+            The ``buffer`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1703,7 +1705,7 @@ class Geometry(BaseGeometry):
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Polygon
+        :returns: A :class:`~arcgis.geometry.Polygon` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1715,21 +1717,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def clip(self, envelope):
         """
-        Constructs the intersection of the geometry and the specified extent.
-        If `ArcPy` is not installed, none is returned.
+        The ``clip`` method constructs the intersection of the :class:`~arcgis.geometry.Geometry` object and the
+        specified extent.
 
-        **Requires ArcPy**
-
+        .. note::
+            The ``clip`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
+        envelope            Required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns: output geometry clipped to extent
-
+        :returns:
+            The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -1750,14 +1752,16 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry contains the comparison geometry.
+        The ``contain`` method indicates if the base :class:`~arcgis.geometry.Geometry` object contains the comparison
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``contain`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional string. The spatial relationship type.
 
@@ -1766,7 +1770,8 @@ class Geometry(BaseGeometry):
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating containment (True), or no containment (False)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1785,8 +1790,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def convex_hull(self):
         """
-        Constructs the geometry that is the minimal bounding polygon such
-        that all outer angles are convex.
+        The ``convex_hull`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the minimal bounding
+        :class:`~arcgis.geometry.Polygon` such that all outer angles are convex.
+
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1856,18 +1864,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
-        Indicates if the two geometries intersect in a geometry of a lesser
-        shape type.
+        The ``crosses`` method indicates if the two :class:`~arcgis.geometry.Geometry` objects intersect in a
+        geometry of a lesser shape type.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``crosses`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating yes (True), or no (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1884,18 +1894,19 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def cut(self, cutter):
         """
-        Splits this geometry into a part left of the cutting polyline, and
-        a part right of it.
+        The ``cut`` method splits this :class:`~arcgis.geometry.Geometry` object into a part left of the cutting
+        :class:`~arcgis.geometry.Polyline` and a part right of it.
 
-        **Requires ArcPy**
+        .. note::
+            The ``cut`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        cutter              Required Polyline. The cuttin polyline geometry
+        cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two geometries
+        :returns: a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1908,14 +1919,15 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
-        Creates a new geometry with added vertices
+        The ``densify`` method creates a new :class:`~arcgis.geometry.Geometry` object with added vertices
 
-        **Requires ArcPy**
+        .. note::
+            The ``densify`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
+        method              Required String. The type of densification: ``DISTANCE``, ``ANGLE``, or ``GEODESIC``
         ---------------     --------------------------------------------------------------------
         distance            Required float. The maximum distance between vertices. The actual
                             distance between vertices will usually be less than the maximum
@@ -1925,14 +1937,15 @@ class Geometry(BaseGeometry):
                             reference. If using a type of GEODESIC, the distance is measured
                             in meters.
         ---------------     --------------------------------------------------------------------
-        deviation           Required float. Densify uses straight lines to approximate curves.
+        deviation           Required float. ``Densify`` uses straight lines to approximate curves.
                             You use deviation to control the accuracy of this approximation.
                             The deviation is the maximum distance between the new segment and
                             the original curve. The smaller its value, the more segments will
                             be required to approximate the curve.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A new :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1947,20 +1960,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
-        Constructs the geometry that is composed only of the region unique
-        to the base geometry but not part of the other geometry. The
-        following illustration shows the results when the red polygon is the
-        source geometry.
+        The ``difference`` method constructs the :class:`~arcgis.geometry.Geometry` object that is composed only of the
+        region unique to the base geometry but not part of the other geometry.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``difference`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1980,18 +1993,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
-        Indicates if the base and comparison geometries share no points in
-        common.
+        The ``disjoint`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects share no
+        :class:`~arcgis.geometry.Point` objects in common.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``disjoint`` method requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating no :class:`~arcgis.geometry.Point` objects in common (True), or some in common
+            (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2008,19 +2024,22 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
-        Returns the minimum distance between two geometries. If the
+        The ``distance_to`` method retrieves the minimum distance between two :class:`~arcgis.geometry.Geometry` objects. If the
         geometries intersect, the minimum distance is 0.
-        Both geometries must have the same projection.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            Both geometries must have the same projection.
+
+        .. note::
+            The ``distance_to`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: float
+        :returns: A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2039,16 +2058,17 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
-        Indicates if the base and comparison geometries are of the same
-        shape type and define the same set of points in the plane. This is
+        The ``equals`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects are of the
+        same shape type and define the same set of points in the plane. This is
         a 2D comparison only; M and Z values are ignored.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``equals`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
         :returns: boolean
@@ -2069,10 +2089,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
-        Creates a new simplified geometry using a specified maximum offset
-        tolerance.
+        The ``generalize`` method creates a new simplified :class:`~arcgis.geometry.Geometry` object using a specified
+        maximum offset tolerance.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``generalize`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2080,7 +2101,8 @@ class Geometry(BaseGeometry):
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2093,26 +2115,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
-        Returns the area of the feature using a measurement type.
+        The ``get_area`` method retrieves the area of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``get_area`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. LANAR measurements reflect the projection of
+        method              Required String. `LANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Optional String. Areal unit of measure keywords: ACRES | ARES | HECTARES
+        units               Optional String. Areal unit of measure keywords: `ACRES | ARES | HECTARES
                             | SQUARECENTIMETERS | SQUAREDECIMETERS | SQUAREINCHES | SQUAREFEET
                             | SQUAREKILOMETERS | SQUAREMETERS | SQUAREMILES |
-                            SQUAREMILLIMETERS | SQUAREYARDS
+                            SQUAREMILLIMETERS | SQUAREYARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2125,25 +2148,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_length(self, method, units):
         """
-        Returns the length of the feature using a measurement type.
+        The ``get_length`` method retrieves the length of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``get_length`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. PLANAR measurements reflect the projection of
+        method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Required String. Linear unit of measure keywords: CENTIMETERS |
+        units               Required String. Linear unit of measure keywords: `CENTIMETERS |
                             DECIMETERS | FEET | INCHES | KILOMETERS | METERS | MILES |
-                            MILLIMETERS | NAUTICALMILES | YARDS
+                            MILLIMETERS | NAUTICALMILES | YARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns:
+            A float representing the length of the :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2156,18 +2181,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_part(self, index=None):
         """
-        Returns an array of point objects for a particular part of geometry
-        or an array containing a number of arrays, one for each part.
+        The ``get_part`` method retrieves an array of :class:`~arcgis.geometry.Point` objects for a particular part of
+        a :class:`~arcgis.geometry.Geometry` object or an array containing a number of arrays, one for each part.
 
-        **Requires ArcPy**
+        .. note::
+            The ``get_part`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        index               Required Integer. The index position of the geometry.
+        index               Required Integer. The index position of the :class:`~arcgis.geometry.Geometry` object.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        :return:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2178,29 +2205,31 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
-        Constructs a geometry that is the geometric intersection of the two
-        input geometries. Different dimension values can be used to create
+        The ``intersect`` method constructs a :class:`~arcgis.geometry.Geometry` object that is the geometric
+        intersection of the two input geometries. Different dimension values can be used to create
         different shape types. The intersection of two geometries of the
         same shape type is a geometry containing only the regions of overlap
         between the original geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``intersect`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         dimension           Required Integer. The topological dimension (shape type) of the
                             resulting geometry.
 
-                            + 1  -A zero-dimensional geometry (point or multipoint).
-                            + 2  -A one-dimensional geometry (polyline).
-                            + 4  -A two-dimensional geometry (polygon).
+                            + 1  -A zero-dimensional geometry (:class:`~arcgis.geometry.point` or :class:`~arcgis.geometry.MultiPoint`).
+                            + 2  -A one-dimensional geometry (:class:`~arcgis.geometry.Polyline`).
+                            + 4  -A two-dimensional geometry (:class:`~arcgis.geometry.Polygon`).
 
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating an intersection (True), or no intersection (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2235,20 +2264,23 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
-        Returns a measure from the start point of this line to the in_point.
+        The ``measure_on_line`` retrieves a measure from the start :class:`~arcgis.geometry.Point` of this line to
+        the ``in_point``.
 
-        **Requires ArcPy**
+        .. note::
+            The ``measure_on_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional Boolean. If False, the measure will be returned as a
                             distance; if True, the measure will be returned as a percentage.
         ===============     ====================================================================
 
-        :return: float
+        :return:
+            A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2263,19 +2295,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
-        Indicates if the intersection of the two geometries has the same
-        shape type as one of the input geometries and is not equivalent to
+        The ``overlaps`` method indicates if the intersection of the two :class:`~arcgis.geometry.Geometry` objects has
+        the same shape type as one of the input geometries and is **not** equivalent to
         either of the input geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``overlaps`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :return:
+            A boolean indicating an intersection of same shape type (True), or different type (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2292,10 +2326,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
         """
-        Returns a point at a given angle and distance in degrees and meters
-        using the specified measurement type.
+        The ``point_from_angle_and_distance`` retrieves a :class:`~arcgis.geometry.Point` at a given angle and distance,
+        in degrees and meters, using the specified measurement type.
 
-        **Requires ArcPy**
+        .. note::
+            The ``point_from_angle_and_distance`` requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2304,14 +2339,15 @@ class Geometry(BaseGeometry):
         ---------------     --------------------------------------------------------------------
         distance            Required Float. The distance in meters to the returned point.
         ---------------     --------------------------------------------------------------------
-        method              Optional String. PLANAR measurements reflect the projection of geographic
+        method              Optional String. `PLANAR` measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            account the curvature of the earth). `GEODESIC`, `GREAT_ELLIPTIC`,
+                            `LOXODROME`, and `PRESERVE_SHAPE` measurement types may be chosen as
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
 
         """
@@ -2327,10 +2363,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
-        Returns a point on a line at a specified distance from the beginning
-        of the line.
+        The ``position_along_line`` method retrieves a :class:`~arcgis.geometry.Point` on a line at a specified distance
+        from the beginning of the line.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``position_along_line`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2340,11 +2377,13 @@ class Geometry(BaseGeometry):
         use_percentage      Optional Boolean. The distance may be specified as a fixed unit
                             of measure or a ratio of the length of the line. If True, value
                             is used as a percentage; if False, value is used as a distance.
-                            For percentages, the value should be expressed as a double from
-                            0.0 (0%) to 1.0 (100%).
+                            .. note::
+                                For percentages, the value should be expressed as a double from
+                                0.0 (0%) to 1.0 (100%).
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2366,23 +2405,23 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
-        Projects a geometry and optionally applies a geotransformation.
+        The ``project_as`` method projects a :class:`~arcgis.geometry.Geometry` object and optionally applies a
+        ``geotransformation``.
 
-        **Requires ArcPy or pyproj>=1.9 and PROJ.4**
+        .. note::
+            The ``project_as`` method requires ArcPy or pyproj>=1.9 and PROJ.4
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
-                                 SpatialReference object or the coordinate system name.
+                                 :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The geotransformation name.
+        transformation_name      Required String. The ``geotransformation`` name.
         ====================     ====================================================================
 
-        Parameter:
-         :spatial_reference: - The new spatial reference. This can be a
-          SpatialReference object or the coordinate system name.
-         :transformation_name: - The geotransformation name.
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         from six import string_types, integer_types
 
@@ -2476,23 +2515,26 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry, use_percentage=False):
         """
-        Finds the point on the polyline nearest to the in_point and the
-        distance between those points. Also returns information about the
-        side of the line the in_point is on as well as the distance along
+        The ``query_point_and_distance`` method finds the :class:`~arcgis.geometry.Point` on the
+        :class:`~arcgis.geometry.Polyline` nearest to the `in_point` and the
+        distance between those points. ``query_point_and_distance`` retrieves information about the
+        side of the line the `in_point` is on as well as the distance along
         the line where the nearest point occurs.
 
-        **Requires ArcPy**
+        .. note::
+            The ``query_point_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional boolean - if False, the measure will be returned as
                             distance, True, measure will be a percentage
         ===============     ====================================================================
 
-        :return: tuple
+        :returns:
+            A tuple
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2507,11 +2549,13 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def segment_along_line(self, start_measure, end_measure, use_percentage=False):
         """
-        Returns a Polyline between start and end measures. Similar to
-        Polyline.positionAlongLine but will return a polyline segment between
-        two points on the polyline instead of a single point.
+        The ``segment_along_line`` method retrieves a :class:`~arcgis.geometry.Polyline` between ``start`` and ``end``
+        measures. ``segment_along_line`` is similar to the :attr:`~arcgis.geometry.Polyline.positionAlongLine` method
+        but will return a polyline segment between two points on the polyline instead of a single
+        :class:`~arcgis.geometry.Point`.
 
-        **Requires ArcPy**
+        .. note::
+            The ``segment_along_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2523,9 +2567,12 @@ class Geometry(BaseGeometry):
         use_percentage      Optional Boolean. The start and end measures may be specified as
                             fixed units or as a ratio.
                             If True, start_measure and end_measure are used as a percentage; if
-                            False, start_measure and end_measure are used as a distance. For
-                            percentages, the measures should be expressed as a double from 0.0
-                            (0 percent) to 1.0 (100 percent).
+                            False, start_measure and end_measure are used as a distance.
+
+                            .. note::
+                                For
+                                percentages, the measures should be expressed as a double from 0.0
+                                (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
         """
@@ -2543,9 +2590,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
-        Returns a new point based on in_point snapped to this geometry.
+        The ``snap_to_line`` method retrieves a new :class:`~arcgis.geometry.Point` based on `in_point` snapped to this
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy**
+        .. note::
+            The ``snap_to_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2553,7 +2602,8 @@ class Geometry(BaseGeometry):
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Point` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2566,20 +2616,23 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def symmetric_difference(self, second_geometry):
         """
-        Constructs the geometry that is the union of two geometries minus the
-        instersection of those geometries.
+        The ``symmetric_difference`` method constructs a new :class:`~arcgis.geometry.Geometry` object that is the union
+        of two geometries minus the intersection of those geometries.
 
-        The two input geometries must be the same shape type.
+        .. note::
+            The two input geometries must be the same shape type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``symmetric_difference`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2602,17 +2655,22 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
-        Indicates if the boundaries of the geometries intersect.
+        The ``touches`` method indicates if the boundaries of the two :class:`~arcgis.geometry.Geometry` objects
+        intersect.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``touches`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` method. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :returns:
+            A boolean indicating whether the :class:`~arcgis.geometry.Geometry` objects touch (True), or if they do not
+            touch (False)
+
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -2628,18 +2686,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def union(self, second_geometry):
         """
-        Constructs the geometry that is the set-theoretic union of the input
-        geometries.
+        The ``union`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
+        of the input geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``union`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2657,24 +2717,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry is within the comparison geometry.
+        The ``within`` method indicates if the base :class:`~arcgis.geometry.Geometry` object is within the comparison
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``within`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional String. The spatial relationship type.
 
-                            - BOUNDARY  - Relationship has no restrictions for interiors or boundaries.
-                            - CLEMENTINI  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
-                            - PROPER  - Boundaries of geometries must not intersect.
+                            - `BOUNDARY`  - Relationship has no restrictions for interiors or boundaries.
+                            - `CLEMENTINI`  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
+                            - `PROPER`  - Boundaries of geometries must not intersect.
 
         ===============     ====================================================================
 
-        :return: boolean
+        :returns:
+            A boolean indicating the :class:`~arcgis.geometry.Geometry` object is within (True), or not within (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
