@@ -5552,8 +5552,8 @@ class ImageryLayer(Layer):
             return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
-        if self._original_info !={}:
-            return self._original_info 
+        if self._original_info != {}:
+            return self._original_info
         else:
             url = self._url
 
@@ -5567,27 +5567,31 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
 
             dictdata = {}
-            token=None
+            token = None
             try:
                 dictdata = self._con.post(self.url, params)
             except Exception as e:
                 try:
-                    if ((hasattr(self, "_lazy_token")) and self._lazy_token is None) or not hasattr(self, "_lazy_token"):
-                        token = self._gis._con.generate_portal_server_token(serverUrl=self._url)
+                    if (
+                        (hasattr(self, "_lazy_token")) and self._lazy_token is None
+                    ) or not hasattr(self, "_lazy_token"):
+                        token = self._gis._con.generate_portal_server_token(
+                            serverUrl=self._url
+                        )
                         self._lazy_token = token
                 except Exception as e:
                     token = self._token
                 try:
                     dictdata = self._con.post(self.url, params, token=token)
                 except Exception as e:
-                    if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
+                    if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                         dictdata = self._con.get(self.url, params, token=token)
                     elif str(e).lower().find("token required") > -1:
                         dictdata = self._con.get(self.url, params)
                     else:
                         raise e
             self._original_info = dictdata
-            return self._original_info 
+            return self._original_info
 
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
