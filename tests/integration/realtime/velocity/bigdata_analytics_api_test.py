@@ -172,13 +172,5 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
-def print_result(response):
-    if type(response) == str:
-        print(response)
-    else:
-        for key in response:
-            print(key + " : " + format(response[key]))
-
-
 if __name__ == "__main__":
     unittest.main()
