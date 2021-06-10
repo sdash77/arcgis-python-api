@@ -1110,7 +1110,7 @@ def flow_accumulation(
     flow_direction_type="D8",
 ):
 
-    """"
+    """ "
     Replaces cells of a raster corresponding to a mask
     with the values of the nearest neighbors.
 
@@ -1176,7 +1176,7 @@ def flow_direction(
     generate_out_drop_raster=False,
 ):
     """
-    .. image:: _static/images/flow_direction/flow_direction.png 
+    .. image:: _static/images/flow_direction/flow_direction.png
 
     The ``flow_direction`` task creates a raster of flow direction from each cell to its steepest downslope neighbor.
 
@@ -1186,67 +1186,67 @@ def flow_direction(
 
     The D8 flow method models flow direction from each cell to its steepest downslope neighbor.
 
-    The output of the FlowDirection task run with the D8 flow direction type is an integer 
+    The output of the FlowDirection task run with the D8 flow direction type is an integer
     raster whose values range from 1-255. The values for each direction from the center are the following:
 
     .. image:: _static/images/flow_direction/D8.gif
 
-    For example, if the direction of steepest drop was to the left of the current 
+    For example, if the direction of steepest drop was to the left of the current
     processing cell, its flow direction would be coded at 16.
 
     The following are additional considerations for using the D8 flow method:
 
-        * If a cell is lower than its eight neighbors, that cell is given the value 
-          of its lowest neighbor, and flow is defined toward this cell. If multiple 
-          neighbors have the lowest value, the cell is still given this value, but 
-          flow is defined with one of the two methods explained below. This is used 
+        * If a cell is lower than its eight neighbors, that cell is given the value
+          of its lowest neighbor, and flow is defined toward this cell. If multiple
+          neighbors have the lowest value, the cell is still given this value, but
+          flow is defined with one of the two methods explained below. This is used
           to filter out one-cell sinks, which are considered noise.
-        * If a cell has the same change in z-value in multiple directions and that 
-          cell is part of a sink, the flow direction is referred to as undefined. In 
-          such cases, the value for that cell in the output flow direction raster will 
-          be the sum of those directions. For example, if the change in z-value is the 
-          same both to the right (flow direction = 1) and down (flow direction = 4), 
+        * If a cell has the same change in z-value in multiple directions and that
+          cell is part of a sink, the flow direction is referred to as undefined. In
+          such cases, the value for that cell in the output flow direction raster will
+          be the sum of those directions. For example, if the change in z-value is the
+          same both to the right (flow direction = 1) and down (flow direction = 4),
           the flow direction for that cell is 5.
-        * If a cell has the same change in z-value in multiple directions and is not 
-          part of a sink, the flow directions is assigned with a lookup table defining 
+        * If a cell has the same change in z-value in multiple directions and is not
+          part of a sink, the flow directions is assigned with a lookup table defining
           the most likely direction. See Greenlee (1987).
-        * The output drop raster is calculated as the difference in z-value divided by 
-          the path length between the cell centers, expressed in percentages. For adjacent 
-          cells, this is analogous to the percent slop between cells. Across a flat area, 
-          the distance becomes the distance to the nearest cell of lower elevation. 
-          The result is a map of percent rise in the path of steepest descent from 
+        * The output drop raster is calculated as the difference in z-value divided by
+          the path length between the cell centers, expressed in percentages. For adjacent
+          cells, this is analogous to the percent slop between cells. Across a flat area,
+          the distance becomes the distance to the nearest cell of lower elevation.
+          The result is a map of percent rise in the path of steepest descent from
           each cell.
-        * When calculating a drop raster in flat areas, the distance to diagonally 
-          adjacent cells (1.41421 * cell size) is approximated by 1.5 * cell 
+        * When calculating a drop raster in flat areas, the distance to diagonally
+          adjacent cells (1.41421 * cell size) is approximated by 1.5 * cell
           size for improved performance.
-        * With the forceFlow parameter set to the default value False, a cell 
-          at the edge of the surface raster will flow towards the inner cell 
-          with the steepest z-value. If the drop is less than or equal to zero, 
-          the cell will flow out of the surface raster.    
+        * With the forceFlow parameter set to the default value False, a cell
+          at the edge of the surface raster will flow towards the inner cell
+          with the steepest z-value. If the drop is less than or equal to zero,
+          the cell will flow out of the surface raster.
 
     **MFD flow modeling algorithm**
 
-    The MFD algorithm, described by Qin et al. (2007), partitions flow from a cell to all downslope neighbors. 
-    A flow-partition exponent is created from an adaptive approach based on local terrain conditions and is used 
+    The MFD algorithm, described by Qin et al. (2007), partitions flow from a cell to all downslope neighbors.
+    A flow-partition exponent is created from an adaptive approach based on local terrain conditions and is used
     to determine fraction of flow draining to all downslope neighbors.
 
-    When the MFD flow direction output is added to a map, it only displays the D8 flow direction. 
-    As MFD flow directions have potentially multiple values tied to each cell (each value corresponds 
-    to proportion of flow to each downslope neighbor), it is not easily visualized. However, an MFD 
-    flow direction output raster is an input recognized by the FlowAccumulation task that would utilize 
+    When the MFD flow direction output is added to a map, it only displays the D8 flow direction.
+    As MFD flow directions have potentially multiple values tied to each cell (each value corresponds
+    to proportion of flow to each downslope neighbor), it is not easily visualized. However, an MFD
+    flow direction output raster is an input recognized by the FlowAccumulation task that would utilize
     the MFD flow directions to proportion and accumulate flow from each cell to all downslope neighbors.
 
     **DINF flow modeling algorithm**
 
-    The DINF flow method, described by Tarboton (1997), determines flow direction as the steepest 
-    downward slope on eight triangular facets formed in a 3x3 cell window centered on the cell of 
-    interest. The flow direction output is a floating-point raster represented as a single angle in 
+    The DINF flow method, described by Tarboton (1997), determines flow direction as the steepest
+    downward slope on eight triangular facets formed in a 3x3 cell window centered on the cell of
+    interest. The flow direction output is a floating-point raster represented as a single angle in
     degrees going counter-clockwise from 0 (due east) to 360 (also due east).
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_surface_raster                 Required. The input raster representing a continuous surface. 
+    input_surface_raster                 Required. The input raster representing a continuous surface.
     --------------------------------     --------------------------------------------------------------------
     force_flow                           Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
 
@@ -1269,7 +1269,7 @@ def flow_direction(
                                          If set to true, the output will be a named tuple with name values being
                                          output_flow_direction_service and output_drop_service.
     ================================     ====================================================================
- 
+
     :returns: output raster with function applied
 
     .. code-block:: python
@@ -3130,25 +3130,25 @@ def calculate_distance(
                                                out_var.output_distance_service -> gives you the output distance imagery layer item
                                                out_var.out_back_direction_service -> gives you the output back direction raster imagery layer item
 
-    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
-                            NoData where there are no barriers. Barriers are represented by valid values including zero. 
-                            The barriers can be defined by an integer or floating-point raster. 
-  
-    :param distance_method: Optional String. Determines whether to calculate the distance using a planar (flat earth) 
+    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain
+                            NoData where there are no barriers. Barriers are represented by valid values including zero.
+                            The barriers can be defined by an integer or floating-point raster.
+
+    :param distance_method: Optional String. Determines whether to calculate the distance using a planar (flat earth)
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            Planar - Planar measurements use 2D Cartesian mathematics to calculate
+                            length and area. The option is only available when measuring in a
+                            projected coordinate system and the 2D plane of that coordinate system
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            Geodesic - The shortest line between two points on the earth's surface
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output
                             projection, the results do not change.
 
                             .. note::
 
-                            One use for a geodesic line is when you want to determine the shortest 
+                            One use for a geodesic line is when you want to determine the shortest
                             distance between two cities for an airplane's flight path. This is also
                             known as a great circle line if based on a sphere rather than an ellipsoid.
 
@@ -3400,15 +3400,15 @@ def sink(input_flow_direction_raster):
 
     The value type for the Sink function output raster layer is floating point.
 
-    For more information, see 
+    For more information, see
     https://pro.arcgis.com/en/pro-app/help/data/imagery/sink-function.htm
 
     Parameters
     ----------
-    :param input_flow_direction_raster: Required. The input raster that shows the direction 
+    :param input_flow_direction_raster: Required. The input raster that shows the direction
                                         of flow out of each cell.
 
-                                        The flow direction raster can be created by 
+                                        The flow direction raster can be created by
                                         running the Flow Direction function.
 
     :return: output raster with function applied
@@ -3443,18 +3443,18 @@ def snap_pour_point(
     """
     Snaps pour points to the cell of highest flow accumulation within a specified distance.
 
-    For more information, see 
+    For more information, see
     https://pro.arcgis.com/en/pro-app/help/data/imagery/snap-pour-point-function.htm
 
     Parameters
     ----------
-    :param in_pour_point_data: Required. The input pour point locations that are to be snapped. 
-                               For an input raster layer, all cells that are not 
-                               NoData (that is, have a value) will be considered 
+    :param in_pour_point_data: Required. The input pour point locations that are to be snapped.
+                               For an input raster layer, all cells that are not
+                               NoData (that is, have a value) will be considered
                                pour points and will be snapped.
 
     :param in_accumulation_raster: optional raster; The input flow accumulation raster layer.
-    :param snap_distance: Optional. Maximum distance, in map units, to search for a cell of higher 
+    :param snap_distance: Optional. Maximum distance, in map units, to search for a cell of higher
                           accumulated flow. Default is 0
     :param pour_point_field: Optional. Field used to assign values to the pour point locations.
 
@@ -3570,22 +3570,22 @@ def stream_order(
 
 def expand(input_raster, number_of_cells, zone_values):
     """
-    Expands specified zones of a raster by a specified number of cells. 
+    Expands specified zones of a raster by a specified number of cells.
     https://pro.arcgis.com/en/pro-app/help/data/imagery/expand-function.htm
 
     Parameters
     ----------
-    :param input_raster: Required. The input raster for which the identified zones are to 
+    :param input_raster: Required. The input raster for which the identified zones are to
                          be expanded.
                          It must be of integer type.
 
     :param number_of_cells: Required. The number of cells to expand by.
                             The value must be integer, and can be 1 or greater.
 
-    :param zone_values: Required. The list of zones to expand. The zone values 
+    :param zone_values: Required. The list of zones to expand. The zone values
                         must be integer, and they can be in any order.
-                        The zone values can be specified as a list or as a string. 
-                        If specified as a string and if it is required to specify multiple zones, 
+                        The zone values can be specified as a list or as a string.
+                        If specified as a string and if it is required to specify multiple zones,
                         use a semicolon (";") to separate the zone values.
 
     :return: output raster with function applied
@@ -3621,7 +3621,7 @@ def expand(input_raster, number_of_cells, zone_values):
 
 def shrink(input_raster, number_of_cells, zone_values):
     """
-    Shrinks the selected zones by a specified number of cells by replacing them with 
+    Shrinks the selected zones by a specified number of cells by replacing them with
     the value of the cell that is most frequent in its neighborhood.
     https://pro.arcgis.com/en/pro-app/help/data/imagery/shrink-function.htm
 
@@ -3634,8 +3634,8 @@ def shrink(input_raster, number_of_cells, zone_values):
                             The value must be integer, and can be 1 or greater.
 
     :param zone_values: Required. The list of zones to shrink. The zone values must be integer, and they can be in any order.
-                        The zone values can be specified as a list or as a string. 
-                        If specified as a string and if it is required to specify multiple zones, 
+                        The zone values can be specified as a list or as a string.
+                        If specified as a string and if it is required to specify multiple zones,
                         use a semicolon (";") to separate the zone values.
 
 
@@ -4379,51 +4379,51 @@ def optimal_path_as_raster(
 
 def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
     """
-    The boundary_clean function smooths the boundary between zones in a raster. 
+    The boundary_clean function smooths the boundary between zones in a raster.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required. The input raster for which the boundary between zones will 
-                                         be smoothed. It must be of integer type.  
+    input_raster                         Required. The input raster for which the boundary between zones will
+                                         be smoothed. It must be of integer type.
     --------------------------------     --------------------------------------------------------------------
-    sort_type                            Optional string. Specifies the type of sorting to use in the smoothing process. The sorting determines the priority by which cells can expand into their neighbors. The sorting can be done based on zone value or zone area. 
-                                         The available choices are: ['NO_SORT', 'DESCEND', 'ASCEND'] 
+    sort_type                            Optional string. Specifies the type of sorting to use in the smoothing process. The sorting determines the priority by which cells can expand into their neighbors. The sorting can be done based on zone value or zone area.
+                                         The available choices are: ['NO_SORT', 'DESCEND', 'ASCEND']
                                          The default is: 'NO_SORT'.
 
-                                         * ``NO_SORT`` - The zones are not sorted by size. Zones with larger values 
-                                           will have a higher priority to expand into zones with 
-                                           smaller values in the smoothed output. This is the default. 
+                                         * ``NO_SORT`` - The zones are not sorted by size. Zones with larger values
+                                           will have a higher priority to expand into zones with
+                                           smaller values in the smoothed output. This is the default.
 
-                                         * ``DESCEND`` - Sorts zones in descending order by size. Zones with 
-                                           larger total areas have a higher priority to expand into 
-                                           zones with smaller total areas. This option will tend to 
-                                           eliminate or reduce the prevalence of cells from smaller 
-                                           zones in the smoothed output. 
+                                         * ``DESCEND`` - Sorts zones in descending order by size. Zones with
+                                           larger total areas have a higher priority to expand into
+                                           zones with smaller total areas. This option will tend to
+                                           eliminate or reduce the prevalence of cells from smaller
+                                           zones in the smoothed output.
 
-                                         * ``ASCEND`` - Sorts zones in ascending order by size. Zones with smaller 
-                                           total areas have a higher priority to expand into zones 
-                                           with larger total areas. This option will tend to preserve 
-                                           or increase the prevalence of cells from smaller zones in 
-                                           the smoothed output. 
+                                         * ``ASCEND`` - Sorts zones in ascending order by size. Zones with smaller
+                                           total areas have a higher priority to expand into zones
+                                           with larger total areas. This option will tend to preserve
+                                           or increase the prevalence of cells from smaller zones in
+                                           the smoothed output.
     --------------------------------     --------------------------------------------------------------------
-    number_of_runs                       Optional String or Boolean. Specifies the number of times the smoothing 
-                                         process will take place, twice or once. 
+    number_of_runs                       Optional String or Boolean. Specifies the number of times the smoothing
+                                         process will take place, twice or once.
 
-                                         * ``TWO_WAY`` (true) - Performs an expansion and shrinking operation two 
-                                           times.  For the first time the operation is performed according to the 
-                                           specified sorting type. Then an additional  expansion and shrinking 
-                                           operation is performed, but with the priority reversed. This is the default. 
-                                         * ``ONE_WAY`` (false) - Performs the expansion and shrinking operation 
-                                           once, according to the sorting type. 
+                                         * ``TWO_WAY`` (true) - Performs an expansion and shrinking operation two
+                                           times.  For the first time the operation is performed according to the
+                                           specified sorting type. Then an additional  expansion and shrinking
+                                           operation is performed, but with the priority reversed. This is the default.
+                                         * ``ONE_WAY`` (false) - Performs the expansion and shrinking operation
+                                           once, according to the sorting type.
     ================================     ====================================================================
- 
+
     :returns: output raster with function applied
 
     .. code-block:: python
 
-            # Usage Example: 
+            # Usage Example:
             boundary_clean_output =  boundary_clean(input_raster = imagery_layer, sort_type = "NO_SORT", number_of_runs="TWO_WAY")
 
             boundary_clean_item = boundary_clean_output.save()
@@ -4492,94 +4492,94 @@ def viewshed(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required. The input surface raster. It can be an integer or a 
-                                         floating-point raster. 
+    input_raster                         Required. The input surface raster. It can be an integer or a
+                                         floating-point raster.
 
-                                         The input is transformed into a 3D geocentric coordinate system 
-                                         during the visibility calculation. NoData cells on the input raster 
+                                         The input is transformed into a 3D geocentric coordinate system
+                                         during the visibility calculation. NoData cells on the input raster
                                          do not block the visibility determination.
     --------------------------------     --------------------------------------------------------------------
-    input_observer_features              Required. The input feature class that identifies the observer locations. 
+    input_observer_features              Required. The input feature class that identifies the observer locations.
                                          It can be point, multipoint, or polyline features.
 
-                                         The input feature class is transformed into a 3D geocentric coordinate 
-                                         system during the visibility calculation. Observers outside of the 
-                                         extent of the surface raster, or located on NoData cells, will be 
+                                         The input feature class is transformed into a 3D geocentric coordinate
+                                         system during the visibility calculation. Observers outside of the
+                                         extent of the surface raster, or located on NoData cells, will be
                                          ignored in the calculation.
     --------------------------------     --------------------------------------------------------------------
-    analysis_method                      Choose the method by which the visibility will be calculated. 
+    analysis_method                      Choose the method by which the visibility will be calculated.
                                          This option allows you to trade some accuracy for increased performance.
 
-                                          - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster 
+                                          - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster
                                             in order to establish visible areas. This is the default method.
 
-                                          - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on 
-                                            the perimeter of the visible areas in order to 
-                                            establish visibility areas. This method has a 
-                                            better performance than the ALL_SIGHTLINES method 
+                                          - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on
+                                            the perimeter of the visible areas in order to
+                                            establish visibility areas. This method has a
+                                            better performance than the ALL_SIGHTLINES method
                                             since less sightlines are in the calculation.
     --------------------------------     --------------------------------------------------------------------
-    analysis_type                        Choose which type of visibility analysis you wish to perform, 
-                                         either determining how visible each cell is to the observers, or 
+    analysis_type                        Choose which type of visibility analysis you wish to perform,
+                                         either determining how visible each cell is to the observers, or
                                          identifying for each surface location which observers are visible.
 
-                                         - FREQUENCY - The number of times that each pixel location in the input 
-                                           surface raster can be seen by the input observation locations 
-                                           (as points or as vertices for polyline observer features). 
+                                         - FREQUENCY - The number of times that each pixel location in the input
+                                           surface raster can be seen by the input observation locations
+                                           (as points or as vertices for polyline observer features).
                                            This is the default.
-                                         - OBSERVERS - The output identifies exactly which observer points are 
-                                           visible from each raster surface location. The allowed 
+                                         - OBSERVERS - The output identifies exactly which observer points are
+                                           visible from each raster surface location. The allowed
                                            maximum number of input observers is 32 with this analysis type.
     --------------------------------     --------------------------------------------------------------------
-    vertical_error                       The amount of uncertainty, measured as Root Mean Square error (RMSE), 
-                                         in the surface elevation values. It is a floating-point value representing 
-                                         the expected error of the input elevation values. When this parameter 
-                                         is assigned a value greater than 0, the output visibility raster will be 
-                                         floating point. In this case, each pixel value on the output visibility 
-                                         raster represents the sum of probabilities that the cell is visible to 
+    vertical_error                       The amount of uncertainty, measured as Root Mean Square error (RMSE),
+                                         in the surface elevation values. It is a floating-point value representing
+                                         the expected error of the input elevation values. When this parameter
+                                         is assigned a value greater than 0, the output visibility raster will be
+                                         floating point. In this case, each pixel value on the output visibility
+                                         raster represents the sum of probabilities that the cell is visible to
                                          any of the observers.
 
-                                         When the Analysis Type is OBSERVERS or the Analysis Method is 
+                                         When the Analysis Type is OBSERVERS or the Analysis Method is
                                          PERIMETER_SIGHTLINES, this parameter is not honoured.
     --------------------------------     --------------------------------------------------------------------
     refractivity_coefficient             Optional integer. Coefficient of the refraction of visible light in air.
 
                                          The default value is 0.13.
     --------------------------------     --------------------------------------------------------------------
-    surface_offset                       This value indicates a vertical distance (in surface units) to be added 
-                                         to the z-value of each target pixel as it is considered for visibility. 
+    surface_offset                       This value indicates a vertical distance (in surface units) to be added
+                                         to the z-value of each target pixel as it is considered for visibility.
                                          It should be a positive integer or floating-point value.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all 
-                                         the observers. To specify different values for each observer, set this 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all
+                                         the observers. To specify different values for each observer, set this
                                          parameter to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
     observer_elevation                   This value is used to define the surface elevations of the observer points or vertices.
 
-                                         It can be a field in the input input_observer_features or a numerical value. 
-                                         If this parameter is not specified, the observer elevation will be obtained 
-                                         from the surface raster using bilinear interpolation. If this parameter is 
-                                         set to a value, then that value will be applied to all the observers. 
-                                         To specify different values for each observer, set this parameter to a 
+                                         It can be a field in the input input_observer_features or a numerical value.
+                                         If this parameter is not specified, the observer elevation will be obtained
+                                         from the surface raster using bilinear interpolation. If this parameter is
+                                         set to a value, then that value will be applied to all the observers.
+                                         To specify different values for each observer, set this parameter to a
                                          field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
-    observer_offset                      This value indicates a vertical distance (in surface units) to be added 
+    observer_offset                      This value indicates a vertical distance (in surface units) to be added
                                          to observer elevation. It should be a positive integer or floating-point value.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all the observers. 
-                                         To specify different values for each observer, set this parameter to a field in 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all the observers.
+                                         To specify different values for each observer, set this parameter to a field in
                                          the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
-    inner_radius                         This value defines the start (minimum) distance from which visibility is 
-                                         determined. Pixels closer than this distance are considered not visible in 
-                                         the output but can still block visibility of the pixels between the 
+    inner_radius                         This value defines the start (minimum) distance from which visibility is
+                                         determined. Pixels closer than this distance are considered not visible in
+                                         the output but can still block visibility of the pixels between the
                                          inner_radius and the outer_radius. The default value is 0.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all 
-                                         the observers. To specify different values for each observer, set this 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all
+                                         the observers. To specify different values for each observer, set this
                                          parameter to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
     inner_radius_is_3d                   Type of distance for the inner radius parameter.
@@ -4587,12 +4587,12 @@ def viewshed(
                                             - False - Inner Radius is to be interpreted as a 2D distance. This is the default.
                                             - True - Inner Radius is to be interpreted as a 3D distance.
     --------------------------------     --------------------------------------------------------------------
-    outer_radius                         This value defines the maximum distance from which visibility is determined. 
+    outer_radius                         This value defines the maximum distance from which visibility is determined.
                                          Pixels beyond this distance are excluded from the analysis.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all the 
-                                         observers. To specify different values for each observer, set this parameter 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all the
+                                         observers. To specify different values for each observer, set this parameter
                                          to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
     outer_radius_is_3d                   Type of distance for the outer_radius parameter.
@@ -4600,43 +4600,43 @@ def viewshed(
                                             - False - outer_radius is to be interpreted as a 2D distance. This is the default.
                                             - True - outer_radius is to be interpreted as a 3D distance.
     --------------------------------     --------------------------------------------------------------------
-    horizontal_start_angle               This value defines the start angle of the horizontal scan range. 
-                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north. 
+    horizontal_start_angle               This value defines the start angle of the horizontal scan range.
+                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north.
                                          The default value is 0.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all the 
-                                         observers. To specify different values for each observer, set this parameter 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all the
+                                         observers. To specify different values for each observer, set this parameter
                                          to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
-    horizontal_end_angle                 This value defines the end angle of the horizontal scan range. 
-                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north. 
+    horizontal_end_angle                 This value defines the end angle of the horizontal scan range.
+                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north.
                                          The default value is 360.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all the 
-                                         observers. To specify different values for each observer, set this parameter 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all the
+                                         observers. To specify different values for each observer, set this parameter
                                          to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
-    vertical_upper_angle                 This value defines the upper vertical angle limit of the scan above a horizontal plane. 
-                                         The value should be specified in degrees from 0 to 90.0, which can be integer or 
+    vertical_upper_angle                 This value defines the upper vertical angle limit of the scan above a horizontal plane.
+                                         The value should be specified in degrees from 0 to 90.0, which can be integer or
                                          floating point. The default value is 90.0.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all 
-                                         the observers. To specify different values for each observer, 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all
+                                         the observers. To specify different values for each observer,
                                          set this parameter to a field in the input_observer_features.
     --------------------------------     --------------------------------------------------------------------
-    vertical_lower_angle                 This value defines the lower vertical angle limit of the scan below a horizontal plane. 
-                                         The value should be specified in degrees from -90.0 to 0, which can be integer or 
+    vertical_lower_angle                 This value defines the lower vertical angle limit of the scan below a horizontal plane.
+                                         The value should be specified in degrees from -90.0 to 0, which can be integer or
                                          floating point. The default value is -90.0.
 
-                                         It can be a field in the input_observer_features or a numerical value. 
-                                         If this parameter is set to a value, that value will be applied to all the observers. 
-                                         To specify different values for each observer, set this parameter to a field in the 
+                                         It can be a field in the input_observer_features or a numerical value.
+                                         If this parameter is set to a value, that value will be applied to all the observers.
+                                         To specify different values for each observer, set this parameter to a field in the
                                          input_observer_features.
     ================================     ====================================================================
- 
+
     :returns: output raster with function applied
 
     """

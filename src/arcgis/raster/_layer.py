@@ -338,7 +338,7 @@ class ImageryLayerCacheManager(_GISResource):
         extent              optional dictionary,  If specified, the tiles within
                             this extent will be deleted or will be deleted based
                             on the service's full extent.
-                            
+
                             Example:
                                 | 6224324.092137296,487347.5253569535,
                                 | 11473407.698535524,4239488.369818687
@@ -694,7 +694,7 @@ class ImageryLayer(Layer):
 
         :return:
             | #Structure of the return value for a two band imagery layer
-            | [ 
+            | [
             |  {#band 1
             |  "size":256,
             |  "min":560,
@@ -726,7 +726,7 @@ class ImageryLayer(Layer):
     @property
     def raster_info(self):
         """
-        Returns information about the ImageryLayer such as 
+        Returns information about the ImageryLayer such as
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
         if self._raster_info != {}:
@@ -1912,8 +1912,8 @@ class ImageryLayer(Layer):
         ------------------------------  --------------------------------------------------------------------
         as_df                           optional boolean. Returns the query result as a dataframe object
         ------------------------------  --------------------------------------------------------------------
-        raster_query                    optional string.  Make query based on key properties of each 
-                                        raster catalog item. Any legal SQL where clause operating on the 
+        raster_query                    optional string.  Make query based on key properties of each
+                                        raster catalog item. Any legal SQL where clause operating on the
                                         key properties of raster catalog items is allowed.
 
                                         Example: LANDSAT_WRS_PATH >= 150 AND LANDSAT_WRS_PATH<= 165
@@ -1924,7 +1924,7 @@ class ImageryLayer(Layer):
         :returns: A FeatureSet containing the footprints (features) matching the query when
                   return_geometry is True, else a dictionary containing the expected return
                   type.
-         """
+        """
 
         def _feat_to_row(feature):
             from arcgis.geometry import Geometry
@@ -2261,7 +2261,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        muldidef              optional array. Multidimensional definition used for querying 
+        muldidef              optional array. Multidimensional definition used for querying
                               dimensional slices of the input image service.
                               See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         =================     ====================================================================
@@ -2299,16 +2299,16 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        variable              Optional string. For an image service that has multidimensional 
-                              information, this parameter can be used to request statistics for 
-                              each variable. If not specified, it will return statistics for the 
-                              whole image service. Eligible variable names can be queried from 
+        variable              Optional string. For an image service that has multidimensional
+                              information, this parameter can be used to request statistics for
+                              each variable. If not specified, it will return statistics for the
+                              whole image service. Eligible variable names can be queried from
                               multidimensional_info property of the Imagery Layer object.
         =================     ====================================================================
 
         .. code-block:: python
 
-            # Usage Example 1: This example returns the statistics of an Imagery Layer object. 
+            # Usage Example 1: This example returns the statistics of an Imagery Layer object.
             lyr_input.statistics()
 
         :returns: dictionary containing the statistics.
@@ -2331,7 +2331,7 @@ class ImageryLayer(Layer):
         """
         Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
         get_histograms
-        get_histograms() can return histogram for each variable if used with multidimensional ImageryLayer 
+        get_histograms() can return histogram for each variable if used with multidimensional ImageryLayer
         object by specifing value for variable parameter.
 
         If histogram is not found, returns None. In this case, call the compute_histograms().
@@ -2341,8 +2341,8 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        variable              Optional string. For an image service that has multidimensional 
-                              information, this parameter can be used to request histograms for 
+        variable              Optional string. For an image service that has multidimensional
+                              information, this parameter can be used to request histograms for
                               each variable. It will return histograms for the whole ImageryLayer
                               if not specified.
                               This parameter is available from 10.8.1
@@ -2935,10 +2935,10 @@ class ImageryLayer(Layer):
                             See the raster function objects for the JSON syntax and examples.
                             https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
-        variable            Optional String. This parameter can be used to request a 
-                            colormap for each variable for an image service that has 
-                            multidimensional information. It will return a colormap 
-                            for the whole image service if not specified. Eligible variable names 
+        variable            Optional String. This parameter can be used to request a
+                            colormap for each variable for an image service that has
+                            multidimensional information. It will return a colormap
+                            for the whole image service if not specified. Eligible variable names
                             can be queried from multidimensional_info property of the Imagery Layer object.
                             This parameter is available from 10.8.1
         ===============     ====================================================================
@@ -3627,15 +3627,15 @@ class ImageryLayer(Layer):
 
     def query_boundary(self, out_sr=None):
         """
-        The Query Boundary operation is supported by image services based on mosaic datasets 
+        The Query Boundary operation is supported by image services based on mosaic datasets
         or raster datasets.
 
-        For an image service based on a mosaic dataset, the result of this operation 
-        includes the geometry shape of the mosaicked items' boundary and area of 
+        For an image service based on a mosaic dataset, the result of this operation
+        includes the geometry shape of the mosaicked items' boundary and area of
         coverage in square meters.
 
-        For an image service based on a raster dataset, the result of this operation 
-        includes the geometry shape of the dataset's envelope boundary and area of 
+        For an image service based on a raster dataset, the result of this operation
+        includes the geometry shape of the dataset's envelope boundary and area of
         coverage in square meters.
 
         Added at 10.6
@@ -3645,14 +3645,14 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         out_sr                The spatial reference of the boundary's geometry.
 
-                              The spatial reference can be specified as either a well-known ID or 
+                              The spatial reference can be specified as either a well-known ID or
                               as a spatial reference JSON object.
-                               
-                              If the outSR is not specified, the boundary will be reported in the 
+
+                              If the outSR is not specified, the boundary will be reported in the
                               spatial reference of the image service.
 
                               Example:
-                                4326                                
+                                4326
         =================     ====================================================================
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
@@ -3688,7 +3688,7 @@ class ImageryLayer(Layer):
         dimension_field_names=None,
     ):
 
-        """ 
+        """
         Opertion to get the multidimensional info.
         ==============================  ====================================================================
         **Arguments**                   **Description**
@@ -3733,7 +3733,7 @@ class ImageryLayer(Layer):
         ==============================  ====================================================================
 
         :returns: A dict representing the md info
-         """
+        """
         if self.tiles_only:
             raise RuntimeError(
                 "This operation cannot be performed on a TilesOnly Service"
@@ -3933,12 +3933,12 @@ class ImageryLayer(Layer):
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
+                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
                                                  Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
 
-                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -4066,14 +4066,14 @@ class ImageryLayer(Layer):
 
                                                  One of the following: ['Point', 'Line', 'Polygon']
         ------------------------------------     --------------------------------------------------------------------
-        simplify                                 Optional bool, This option that specifies how the features should be smoothed. It is 
+        simplify                                 Optional bool, This option that specifies how the features should be smoothed. It is
                                                  only available for line and polygon output.
 
                                                  True, then the features will be smoothed out. This is the default.
 
                                                  if False, then The features will follow exactly the cell boundaries of the raster dataset.
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output 
+        output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output
         .
                                                  You can pass in an existing Feature Service Item from your GIS to use that instead.
 
@@ -4082,19 +4082,19 @@ class ImageryLayer(Layer):
 
                                                  A RuntimeError is raised if a service by that name already exists
         ------------------------------------     --------------------------------------------------------------------
-        create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
+        create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of
                                                  single-part or multipart features.
 
                                                  True: Specifies that multipart features will be created based on polygons that have the same value.
 
                                                  False: Specifies that individual features will be created for each polygon. This is the default.
         ------------------------------------     --------------------------------------------------------------------
-        max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
+        max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS object. If not speficied, the currently active connection
                                                  is used.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously.
         ====================================     ====================================================================
 
@@ -5246,53 +5246,53 @@ class ImageryLayer(Layer):
     ):
 
         """
-        A temporal profile serves as a basic analysis tool for imagery data in a time series. 
-        Visualizing change over time with the temporal profile allows trends to be displayed 
+        A temporal profile serves as a basic analysis tool for imagery data in a time series.
+        Visualizing change over time with the temporal profile allows trends to be displayed
         and compared with variables, bands, or values from other dimensions simultaneously.
 
-        Using the functionality in temporal profile charts, you can perform trend analysis, gain insight into 
-        multidimensional raster data at given locations, and plot values that are changing over time 
+        Using the functionality in temporal profile charts, you can perform trend analysis, gain insight into
+        multidimensional raster data at given locations, and plot values that are changing over time
         in the form of a line graph.
 
-        Temporal profile charts can be used in various scientific applications involving time series 
-        analysis of raster data, and the graphical output of results can be used directly as 
+        Temporal profile charts can be used in various scientific applications involving time series
+        analysis of raster data, and the graphical output of results can be used directly as
         input for strategy management and decision making.
 
-        The x-axis of the temporal profile displays the time in continuous time intervals. The time field is 
+        The x-axis of the temporal profile displays the time in continuous time intervals. The time field is
         obtained from the timeInfo of the image service.
-    
+
         The y-axis of the temporal profile displays the variable value.
 
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        points                                   Required list of point Geometry objects. 
+        points                                   Required list of point Geometry objects.
         ------------------------------------     --------------------------------------------------------------------
-        time_field                               Required string. The time field that will be used for plotting 
+        time_field                               Required string. The time field that will be used for plotting
                                                  temporal profile.
-                                             
-                                                 If not specified the time field is obtained from the timeInfo of 
+
+                                                 If not specified the time field is obtained from the timeInfo of
                                                  the image service.
         ------------------------------------     --------------------------------------------------------------------
-        variables                                Required list of variable names. 
+        variables                                Required list of variable names.
                                                  For non multidimensional data, the variable would be name of the Sensor.
-                                                 To plot the graph against all sensors specify - "ALL_SENSORS" 
+                                                 To plot the graph against all sensors specify - "ALL_SENSORS"
         ------------------------------------     --------------------------------------------------------------------
-        bands                                    Optional list of band indices. By default takes the 
-                                                 first band (band index - 0). 
-                                                 For a multiband data, you can compare the time change of different 
+        bands                                    Optional list of band indices. By default takes the
+                                                 first band (band index - 0).
+                                                 For a multiband data, you can compare the time change of different
                                                  bands over different locations.
         ------------------------------------     --------------------------------------------------------------------
         time_extent                              Optional list of date time object. This represents the time extent
         ------------------------------------     --------------------------------------------------------------------
-        dimension                                Optional list of dimension names. This option works specifically on 
+        dimension                                Optional list of dimension names. This option works specifically on
                                                  multidimensional data containing a time dimension and other dimensions.
 
-                                                 The temporal profile is created based on the specific values in other 
-                                                 dimensions, such as depth at the corresponding time value. For example, 
-                                                 soil moisture data usually includes both a time dimension and vertical 
-                                                 dimension below the earth's surface, resulting in a temporal profile 
+                                                 The temporal profile is created based on the specific values in other
+                                                 dimensions, such as depth at the corresponding time value. For example,
+                                                 soil moisture data usually includes both a time dimension and vertical
+                                                 dimension below the earth's surface, resulting in a temporal profile
                                                  at 0.1, 0.2, and 0.3 meters below the ground.
         ------------------------------------     --------------------------------------------------------------------
         dimension_values                         Optional list of dimension values. This parameter can be used to specify
@@ -5307,13 +5307,13 @@ class ImageryLayer(Layer):
                                                  linear : Fits the pixel values for a variable along a linear trend line.
                                                  harmonic : Fits the pixel values for a variable along a harmonic trend line.
         ------------------------------------     --------------------------------------------------------------------
-        trend_order                              optional number. The frequency number to use in the trend fitting. 
-                                                 This parameter specifies the frequency of cycles in a year. 
+        trend_order                              optional number. The frequency number to use in the trend fitting.
+                                                 This parameter specifies the frequency of cycles in a year.
                                                  The default value is 1, or one harmonic cycle per year.
 
                                                  This parameter is only included in the trend analysis for a harmonic regression.
         ------------------------------------     --------------------------------------------------------------------
-        plot_properties                          Optional dict. This parameter can be used to set the figure 
+        plot_properties                          Optional dict. This parameter can be used to set the figure
                                                  properties. These are the matplotlib.pyplot.figure() parameters and values
                                                  specified in dict format.
 
@@ -5901,7 +5901,7 @@ def _get_engine(engine):
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    engine                                   Required string. 
+    engine                                   Required string.
                                                 Possible options:
                                                 "arcpy" : Returns arcpy engine
                                                 "image_server" : Returns image server engine
@@ -5920,8 +5920,8 @@ class Raster:
 
     Usage: arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)
 
-    The Raster class can work with arcpy engine or image server engine. By default, 
-    if the path is an image service url, then the Raster class uses the image server engine 
+    The Raster class can work with arcpy engine or image server engine. By default,
+    if the path is an image service url, then the Raster class uses the image server engine
     for processing and if it is a local path it uses the arcpy engine.
 
     ====================================     ====================================================================
@@ -5934,11 +5934,11 @@ class Raster:
 
                                                 path = "https://myserver/arcgis/rest/services/CharlotteLAS/ImageServer"
     ------------------------------------     --------------------------------------------------------------------
-    is_multidimensional                      Optional boolean. Determines whether the input raster will be 
-                                             treated as multidimensional. 
+    is_multidimensional                      Optional boolean. Determines whether the input raster will be
+                                             treated as multidimensional.
 
                                              Specify True if the input is multidimensional and should be
-                                             processed as multidimensional, where processing occurs for every 
+                                             processed as multidimensional, where processing occurs for every
                                              slice in the dataset. Specify False if the input is not
                                              multidimensional, or if it is multidimensional and should not be
                                              processed as multidimensional.
@@ -5963,18 +5963,18 @@ class Raster:
                                              to apply to the raster. See ``arcgis.mapping.display_colormaps()`` for
                                              a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
-    opacity                                  Optional number. When displaying a raster in a 
+    opacity                                  Optional number. When displaying a raster in a
                                              :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
                                              is completely transparent, 1 is completely opaque.
                                              Default: 1
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
-                                                - "arcpy" : Use the arcpy engine for processing. 
+                                                - "arcpy" : Use the arcpy engine for processing.
 
                                                 - "image_server" : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. GIS of the Raster object. 
+    gis                                      Optional. GIS of the Raster object.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -6114,7 +6114,7 @@ class Raster:
 
     @property
     def vmin(self):
-        """When displaying a 1 band raster with the `cmap` argument specified 
+        """When displaying a 1 band raster with the `cmap` argument specified
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the lower end of that range.
         """
@@ -6137,7 +6137,7 @@ class Raster:
 
     @property
     def vmax(self):
-        """When displaying a 1 band raster with the `cmap` argument specified 
+        """When displaying a 1 band raster with the `cmap` argument specified
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the upper end of that range.
         """
@@ -6177,7 +6177,7 @@ class Raster:
 
     @property
     def width(self):
-        """returns width of the raster in the units of its spatial reference """
+        """returns width of the raster in the units of its spatial reference"""
         return self._engine_obj.width
 
     @property
@@ -6277,26 +6277,26 @@ class Raster:
 
     @property
     def variables(self):
-        """returns the variable names and their dimensions in the multidimensional raster dataset. 
-        For example, a multidimensional raster containing temperature data over 24 months would 
+        """returns the variable names and their dimensions in the multidimensional raster dataset.
+        For example, a multidimensional raster containing temperature data over 24 months would
         return the following: ['temp(StdTime=24)']"""
         return self._engine_obj.variables
 
     @property
     def slices(self):
-        """returns the attribute information of each slice, 
-        including its variable name, dimension names, and 
+        """returns the attribute information of each slice,
+        including its variable name, dimension names, and
         dimension values returned as a list of dictionaries."""
         return self._engine_obj.slices
 
     @property
     def band_names(self):
-        """returns the band names of the raster """
+        """returns the band names of the raster"""
         return self._engine_obj.band_names
 
     @property
     def block_size(self):
-        """returns the block size of the raster """
+        """returns the block size of the raster"""
         return self._engine_obj.block_size
 
     @property
@@ -6316,7 +6316,7 @@ class Raster:
 
     @property
     def no_data_values(self):
-        """returns the NoData value for each band in the multiband raster """
+        """returns the NoData value for each band in the multiband raster"""
         return self._engine_obj.no_data_values
 
     @property
@@ -6336,8 +6336,8 @@ class Raster:
 
     @property
     def read_only(self):
-        """returns whether the raster cell values are writable or not using the [row, column] notation. 
-        When this property is True, they are not writable. Otherwise, they are writable. """
+        """returns whether the raster cell values are writable or not using the [row, column] notation.
+        When this property is True, they are not writable. Otherwise, they are writable."""
         return self._engine_obj.read_only
 
     @property
@@ -6350,7 +6350,7 @@ class Raster:
     @property
     def raster_info(self):
         """
-        Returns information about the ImageryLayer such as 
+        Returns information about the ImageryLayer such as
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
         return self._engine_obj.raster_info
@@ -6449,7 +6449,7 @@ class Raster:
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        band_ids_or_names     required list. The index number or names of the bands to return as 
+        band_ids_or_names     required list. The index number or names of the bands to return as
                               Raster objects. If not specified, all bands will be extracted.
         =================     ====================================================================
 
@@ -6501,7 +6501,7 @@ class Raster:
         dimension_name                           Required string. the name of the dimension
         ------------------------------------     --------------------------------------------------------------------
         return_as_datetime_object                Set to  True, to return the dimension values as datetime object.
-                                                 Valid only if the dimension name is 
+                                                 Valid only if the dimension name is
         ====================================     ====================================================================
 
         :returns: list. The dimension values along the given dimension within the given variable.
@@ -6548,7 +6548,7 @@ class Raster:
 
     def set_property(self, property_name, property_value):
         """
-        Add a customized property to the raster. If the property name exists, 
+        Add a customized property to the raster. If the property name exists,
         the existing property value will be overwritten.
 
         (Operation is not supported on image services)
@@ -6567,7 +6567,7 @@ class Raster:
 
     def get_property(self, property_name):
         """
-        Returns the value of the given property. 
+        Returns the value of the given property.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -6595,30 +6595,30 @@ class Raster:
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
         upper_left_corner     2-D tuple. a tuple with 2 values representing the number of pixels along x and y
-                              direction relative to the origin_coordinate. E.g., (2, 0), means that 
-                              the real origin to extract the array is 2 pixels away in x 
+                              direction relative to the origin_coordinate. E.g., (2, 0), means that
+                              the real origin to extract the array is 2 pixels away in x
                               direction from the origin_coordinate
         -----------------     --------------------------------------------------------------------
         origin_coordinate     2-d tuple (X, Y). The x and y values are in map units.
                               If no value is specified, the top left corner of the calling raster,
         -----------------     --------------------------------------------------------------------
-        ncols                 integer. the number of columns from the real origin in the calling 
+        ncols                 integer. the number of columns from the real origin in the calling
                               raster to convert to the NumPy array.
-                              If no value is specified, the number of columns of the calling raster 
+                              If no value is specified, the number of columns of the calling raster
                               will be used. Default: None
         -----------------     --------------------------------------------------------------------
-        nrows                 integer. the number of rows from the real origin in the calling 
+        nrows                 integer. the number of rows from the real origin in the calling
                               raster to convert to the NumPy array.
-                              If no value is specified, the number of rows of the calling raster 
+                              If no value is specified, the number of rows of the calling raster
                               will be used. Default: None
         -----------------     --------------------------------------------------------------------
-        nodata_to_value       numeric. pixels with nodata values in the raster would be assigned 
-                              with the given value in  the NumPy array. If no value is specified, 
+        nodata_to_value       numeric. pixels with nodata values in the raster would be assigned
+                              with the given value in  the NumPy array. If no value is specified,
                               the NoData value of the calling raster will be used. Default: None
         -----------------     --------------------------------------------------------------------
-        cell_size             2-D tuple. a tuple with 2 values shows the x_cell_size and y_cell_size, 
+        cell_size             2-D tuple. a tuple with 2 values shows the x_cell_size and y_cell_size,
                               e.g., cell_size = (2, 2).
-                              if no value is specified, the original cell size of the calling raster 
+                              if no value is specified, the original cell size of the calling raster
                               will be used. Otherwise, pixels would be resampled to the requested cell_size
         =================     ====================================================================
 
@@ -6648,27 +6648,27 @@ class Raster:
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        array                 required numpy.ndarray. the array must be in the shape of (slices, 
-                              height, width, bands) for writing a multidimensional raster and 
+        array                 required numpy.ndarray. the array must be in the shape of (slices,
+                              height, width, bands) for writing a multidimensional raster and
                               (height, width bands) for writing a normal raster
         -----------------     --------------------------------------------------------------------
-        upper_left_corner     2-D tuple.a tuple with 2 values representing the number of pixels 
-                              along x and y direction that shows the position relative to the 
+        upper_left_corner     2-D tuple.a tuple with 2 values representing the number of pixels
+                              along x and y direction that shows the position relative to the
                               origin_coordinate. E.g., (2, 0), means that the position from which the
-                              numpy array will be written into the calling Raster is 2 pixels away 
+                              numpy array will be written into the calling Raster is 2 pixels away
                               in x direction from the origin_coordinate.
                               Default value is (0, 0)
         -----------------     --------------------------------------------------------------------
         origin_coordinate     2-d tuple (X, Y) from where the numpy array will be written
-                              into the calling Raster. The x- and y-values are in map units. 
+                              into the calling Raster. The x- and y-values are in map units.
                               If no value is specified, the top left corner of the
-                              calling raster, 
+                              calling raster,
         -----------------     --------------------------------------------------------------------
-        value_to_nodata       numeric. The value in the numpy array assigned to be the 
+        value_to_nodata       numeric. The value in the numpy array assigned to be the
                               NoData values in the calling Raster.
 
 
-                              If no value is specified, the NoData value of the calling Raster will 
+                              If no value is specified, the NoData value of the calling Raster will
                               be used. Default None
         =================     ====================================================================
 
@@ -6727,8 +6727,8 @@ class Raster:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster. 
-                                                 If a variable is not specified and the raster is multidimensional, 
+        variable_name                            Optional string. The variable name of the multidimensional raster.
+                                                 If a variable is not specified and the raster is multidimensional,
                                                  the color map of the first variable will be returned.
         ====================================     ====================================================================
 
@@ -6747,10 +6747,10 @@ class Raster:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        color_map                                Optional (string, dict): The color map to apply to the raster. This 
-                                                 can be a string indicating the name of the color map or color ramp 
-                                                 to use, for example, NDVI or Yellow To Red, respectively. This can 
-                                                 also be a Python dictionary with a custom color map or color ramp 
+        color_map                                Optional (string, dict): The color map to apply to the raster. This
+                                                 can be a string indicating the name of the color map or color ramp
+                                                 to use, for example, NDVI or Yellow To Red, respectively. This can
+                                                 also be a Python dictionary with a custom color map or color ramp
                                                  object.
 
                                                  For example:
@@ -6763,8 +6763,8 @@ class Raster:
 
                                                  customized colorramp object, e.g., {"type": "algorithmic", "fromColor": [115, 76, 0, 255],"toColor": [255, 25, 86, 255], "algorithm": "esriHSVAlgorithm"}
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
-                                                 If a variable is not specified and the raster is multidimensional, the color 
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset.
+                                                 If a variable is not specified and the raster is multidimensional, the color
                                                  map of the first variable will be set.
         ====================================     ====================================================================
 
@@ -6779,8 +6779,8 @@ class Raster:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
-                                                 If a variable is not specified and the raster is multidimensional, 
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset.
+                                                 If a variable is not specified and the raster is multidimensional,
                                                  the statistics of the first variable will be returned.
         ====================================     ====================================================================
 
@@ -6791,7 +6791,7 @@ class Raster:
 
     def set_statistics(self, statistics_obj, variable_name=None):
         """
-        Sets the statistics for the raster. If the raster is multiband, it sets the statistics for each band. 
+        Sets the statistics for the raster. If the raster is multiband, it sets the statistics for each band.
         If the raster is multidimensional, it sets the statistics for a variable.
 
         (Operation is not supported on image services)
@@ -6799,13 +6799,13 @@ class Raster:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        color_map                                Optional list of statistics objects. A list of Python dictionaries containing statistics and corresponding 
-                                                 values to set. For example, [{'min': 10, 'max': 20}] sets the minimum 
-                                                 and maximum pixel values. 
+        color_map                                Optional list of statistics objects. A list of Python dictionaries containing statistics and corresponding
+                                                 values to set. For example, [{'min': 10, 'max': 20}] sets the minimum
+                                                 and maximum pixel values.
 
-                                                 If the raster is multiband, the statistics for each band will be set with 
-                                                 each dictionary in the list. The first band will use the statistics in the 
-                                                 first dictionary. The second band will use the statistics in the second 
+                                                 If the raster is multiband, the statistics for each band will be set with
+                                                 each dictionary in the list. The first band will use the statistics in the
+                                                 first dictionary. The second band will use the statistics in the second
                                                  dictionary, and so on.
 
                                                  min - The minimum pixel value
@@ -6817,13 +6817,13 @@ class Raster:
                                                  skipX - The horizontal skip factor
                                                  skipY - The vertical skip factor
 
-                                                 For example: 
+                                                 For example:
 
-                                                 [{'min': val, 'max': val, 'mean': val, 'standardDeviation': val, 
+                                                 [{'min': val, 'max': val, 'mean': val, 'standardDeviation': val,
                                                  'median': val, 'mode': val, 'count': val}, ...]
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster. 
-                                                 If a variable is not specified and the raster is multidimensional, 
+        variable_name                            Optional string. The variable name of the multidimensional raster.
+                                                 If a variable is not specified and the raster is multidimensional,
                                                  the statistics of the first variable will be set.
         ====================================     ====================================================================
 
@@ -6834,14 +6834,14 @@ class Raster:
 
     def get_histograms(self, variable_name=None):
         """
-        Returns the histograms of the raster. If the raster is multidimensional, it returns the histogram of a variable. 
+        Returns the histograms of the raster. If the raster is multidimensional, it returns the histogram of a variable.
         If the raster is multiband, it returns the histogram of each band.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
-                                                 If a variable is not specified and the raster is multidimensional, 
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset.
+                                                 If a variable is not specified and the raster is multidimensional,
                                                  the histogram of the first variable will be returned.
         ====================================     ====================================================================
 
@@ -6861,9 +6861,9 @@ class Raster:
         ------------------------------------     --------------------------------------------------------------------
         histogram_obj                            Optional list of histogram objects(dict),
 
-                                                 If the raster is multiband, the histogram for each band will be set 
-                                                 with each dictionary in the list. The first band will use the histogram 
-                                                 in the first dictionary. The second band will use the histogram in 
+                                                 If the raster is multiband, the histogram for each band will be set
+                                                 with each dictionary in the list. The first band will use the histogram
+                                                 in the first dictionary. The second band will use the histogram in
                                                  the second dictionary, and so on.
 
                                                  size - The number of bins in the histogram
@@ -6878,8 +6878,8 @@ class Raster:
 
                                                  [{'size': number_of_bins, 'min': min_val, 'max': max_val, 'counts': [pixel_count_at_each_bin, ...]}, ...]
         ------------------------------------     --------------------------------------------------------------------
-        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
-                                                 If a variable is not specified and the raster is multidimensional, 
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset.
+                                                 If a variable is not specified and the raster is multidimensional,
                                                  the histogram will be set for the first variable.
         ====================================     ====================================================================
 
@@ -6897,27 +6897,27 @@ class Raster:
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        md_raster             Required multidimensional raster. The multidimensional raster containing 
-                              the slices to be appended. 
+        md_raster             Required multidimensional raster. The multidimensional raster containing
+                              the slices to be appended.
 
-                              This raster must have the same variables, with the same dimension names, 
-                              as the target raster. The cell sizes, extents, and spatial reference 
-                              systems must also match. 
+                              This raster must have the same variables, with the same dimension names,
+                              as the target raster. The cell sizes, extents, and spatial reference
+                              systems must also match.
 
-                              The slices in this raster must be for dimension values that follow 
+                              The slices in this raster must be for dimension values that follow
                               the dimension values of the slices in the target raster.
 
-                              If a variable has two dimensions, slices will be appended along 
-                              one dimension. The other dimension must have the same number of 
-                              slices as the dimension in the target raster. 
-                              
-                              For example, if a salinity variable contains slices over time and 
-                              depth dimensions, time slices can be appended to another salinity 
-                              multidimensional raster but only if the same number of depth slices 
-                              exist in both rasters. 
+                              If a variable has two dimensions, slices will be appended along
+                              one dimension. The other dimension must have the same number of
+                              slices as the dimension in the target raster.
+
+                              For example, if a salinity variable contains slices over time and
+                              depth dimensions, time slices can be appended to another salinity
+                              multidimensional raster but only if the same number of depth slices
+                              exist in both rasters.
         =================     ====================================================================
 
-        :returns (string): A string containing the variable names and the associated dimensions in the multidimensional raster. 
+        :returns (string): A string containing the variable names and the associated dimensions in the multidimensional raster.
                            For example, if the resulting raster has 10 time slices with precipitation data, it will return 'prcp(StdTime=10)'.
 
         """
@@ -6934,7 +6934,7 @@ class Raster:
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Required string. The variable name of the multidimensional raster dataset.
         ------------------------------------     --------------------------------------------------------------------
-        variable_attributes                      Required dict that contains attribute information to replace the current 
+        variable_attributes                      Required dict that contains attribute information to replace the current
                                                  attribute information of the variable.
 
                                                  For example:
@@ -7013,8 +7013,8 @@ class Raster:
         **kwargs,
     ):
         """
-        When run using image_server engine, save() persists this raster to the GIS as an Imagery Layer item. 
-        If for_viz is True, a new Item is created that uses the applied raster functions for visualization at 
+        When run using image_server engine, save() persists this raster to the GIS as an Imagery Layer item.
+        If for_viz is True, a new Item is created that uses the applied raster functions for visualization at
         display resolution using on-the-fly image processing.
         If for_viz is False, distributed raster analysis is used for generating a new raster information product by
         applying raster functions at source resolution across the extent of the output imagery layer.
@@ -7024,8 +7024,8 @@ class Raster:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              optional string. 
-        
+        output_name                              optional string.
+
                                                  When run using image_server engine, specify output name.
                                                  If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
@@ -7035,7 +7035,7 @@ class Raster:
                                                  Image Layer Item from your GIS to use that instead.
                                                  A RuntimeError is raised if a layer by that name already exists
 
-                                                 When run using arcpy engine, output_name is the name string 
+                                                 When run using arcpy engine, output_name is the name string
                                                  representing the output location.
         ------------------------------------     --------------------------------------------------------------------
         for_viz                                  optional boolean. If True, a new Item is created that uses the
@@ -7135,7 +7135,7 @@ class Raster:
                                 it's json representation or as an arcgis.geometry.SpatialReference
                                 object.
                                 If the image_sr is not specified, bbox is assumed to be in the
-                                spatial reference of the raster. 
+                                spatial reference of the raster.
                                 (Available only when image_server engine is used)
         ----------------------  --------------------------------------------------------------------
         size                    optional list. The size (width * height) of the exported image in
@@ -7627,7 +7627,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def width(self):
-        """returns width of the raster in the units of its spatial reference """
+        """returns width of the raster in the units of its spatial reference"""
         return super().width
 
     @property
@@ -7963,7 +7963,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
     @property
     def raster_info(self):
         """
-        Returns information about the ImageryLayer such as 
+        Returns information about the ImageryLayer such as
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
         return super().raster_info
@@ -8732,7 +8732,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
     @property
     def width(self):
-        """returns width of the raster in the units of its spatial reference """
+        """returns width of the raster in the units of its spatial reference"""
         width = self._raster.extent.width
         return width
 
@@ -8874,7 +8874,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
     @property
     def raster_info(self):
         """
-        Returns information about the ImageryLayer such as 
+        Returns information about the ImageryLayer such as
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
         if self._raster_info != {}:
@@ -9202,7 +9202,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
                                 it's json representation or as an arcgis.geometry.SpatialReference
                                 object.
                                 If the image_sr is not specified, bbox is assumed to be in the
-                                spatial reference of the raster. 
+                                spatial reference of the raster.
                                 (Available only when image_server engine is used)
         ----------------------  --------------------------------------------------------------------
         size                    optional list. The size (width * height) of the exported image in
@@ -9630,7 +9630,7 @@ def _get_raster_collection_engine(engine):
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    engine                                   Required string. 
+    engine                                   Required string.
                                                 Possible options:
                                                 "arcpy" : Returns arcpy engine
                                                 "image_server" : Returns image server engine
@@ -9660,57 +9660,57 @@ from ._util import _local_function_template, _get_geometry, _get_extent
 
 class RasterCollection:
     """
-    The RasterCollection object allows a group of rasters to be sorted and 
+    The RasterCollection object allows a group of rasters to be sorted and
     filtered easily, and prepares a collection for additional processing and analysis.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    rasters                                  The input raster datasets. Supported inputs include a list of 
-                                             local or datastore rasters, a mosaic dataset, a multidimensional 
-                                             raster in Cloud Raster Format, a NetCDF file, or an image service. 
-                                             If you're using a list of raster datasets, all rasters must have 
+    rasters                                  The input raster datasets. Supported inputs include a list of
+                                             local or datastore rasters, a mosaic dataset, a multidimensional
+                                             raster in Cloud Raster Format, a NetCDF file, or an image service.
+                                             If you're using a list of raster datasets, all rasters must have
                                              the same cell size and spatial reference.
 
                                              arcpy should be available if the input is a local raster dataset.
     ------------------------------------     --------------------------------------------------------------------
-    attribute_dict                           Optional dict. attribute information to be added to each raster, 
-                                             when the input is a list of rasters. For each key-value pair, 
-                                             the key is the attribute name and the value is a list of values 
-                                             that represent the attribute value for each raster. For example, 
-                                             to add a name field to a list of three rasters, use 
+    attribute_dict                           Optional dict. attribute information to be added to each raster,
+                                             when the input is a list of rasters. For each key-value pair,
+                                             the key is the attribute name and the value is a list of values
+                                             that represent the attribute value for each raster. For example,
+                                             to add a name field to a list of three rasters, use
                                              {"name": ["Landsat8_Jan", "Landsat8_Feb", "Landsat8_Mar"]}.
     ------------------------------------     --------------------------------------------------------------------
-    where_clause                             Optional string. An expression that limits the records returned. 
+    where_clause                             Optional string. An expression that limits the records returned.
     ------------------------------------     --------------------------------------------------------------------
-    query_geometry                           Optional. An object that filters the items such that 
+    query_geometry                           Optional. An object that filters the items such that
                                              only those that intersect with the object will be returned.
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
-                                                - "arcpy" : Use the arcpy engine for processing. 
+                                                - "arcpy" : Use the arcpy engine for processing.
 
                                                 - "image_server" : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS of the RasterCollection object. 
+    gis                                      Optional GIS of the RasterCollection object.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional. Additional properties to control the creation of RasterCollection.
                                              The context parameter would be honoured by all other collections created from this
                                              i.e., the map/filter outputs. The filter/map methods also support the context parameter
-                                             which can be configured separately for each method. 
+                                             which can be configured separately for each method.
 
                                              Currently available:
 
                                                  -  query_boundary:
-                                                    The boolean value set to this option determines whether to add SHAPE field to the RasterCollection. 
-                                                    The value in the SHAPE field represents the boundary/geometry of the raster. 
-                                                    The query_boundary parameter is honoured only when the RasterCollection 
+                                                    The boolean value set to this option determines whether to add SHAPE field to the RasterCollection.
+                                                    The value in the SHAPE field represents the boundary/geometry of the raster.
+                                                    The query_boundary parameter is honoured only when the RasterCollection
                                                     is created from a list of Rasters.
 
                                                     - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
-                                                    
+
                                                     - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
-                                                    
+
                                                     By default, query_boundary is set to True, i.e, SHAPE field will be added.
 
                                                     Example:
@@ -9903,7 +9903,7 @@ class RasterCollection:
                               on the specification of the STAC API in use and the request_method
                               parameter value).
 
-                              For the “bbox” query parameter, `arcgis.geometry.Envelope <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#envelope>`__ 
+                              For the “bbox” query parameter, `arcgis.geometry.Envelope <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#envelope>`__
                               and `arcgis.geometry.Polygon <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#polygon>`__
                               objects are also accepted (in any spatial reference).
 
@@ -9950,7 +9950,7 @@ class RasterCollection:
                                     "POST"
         -----------------     --------------------------------------------------------------------
         request_params        This parameter can be used to set the properties for making the STAC
-                              API search request. These are the `requests.post() <https://requests.readthedocs.io/en/master/api/#requests.post>`__ 
+                              API search request. These are the `requests.post() <https://requests.readthedocs.io/en/master/api/#requests.post>`__
                               or `requests.get() <https://requests.readthedocs.io/en/master/api/#requests.get>`__
                               method parameters and values will be specified in dictionary format.
 
@@ -10295,22 +10295,22 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         where_clause                             Optional String. An SQL expression used to select a subset of rasters
         ------------------------------------     --------------------------------------------------------------------
-        query_geometry_or_extent                 Optional Geometry object. Items in the collection that fails to 
+        query_geometry_or_extent                 Optional Geometry object. Items in the collection that fails to
                                                  intersect the given geometry will be excluded
         ------------------------------------     --------------------------------------------------------------------
-        raster_query                             Optional string. An SQL expression used to select a subset of rasters 
+        raster_query                             Optional string. An SQL expression used to select a subset of rasters
                                                  by the raster's key properties.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10350,25 +10350,25 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         end_time                                 Optional String representation of the end time.
         ------------------------------------     --------------------------------------------------------------------
-        time_field_name                          Optional string. the name of the field containing the time information 
+        time_field_name                          Optional string. the name of the field containing the time information
                                                  for each item. Default: "StdTime"
         ------------------------------------     --------------------------------------------------------------------
-        date_time_format                         Optional string. the time format that is used to format the time field values. 
-                                                 Please ref the python date time standard for this argument. 
+        date_time_format                         Optional string. the time format that is used to format the time field values.
+                                                 Please ref the python date time standard for this argument.
                                                  https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-                                                 Default is None and this means using the Pro standard time format 
+                                                 Default is None and this means using the Pro standard time format
                                                  '%Y-%m-%dT%H:%M:%S' and ignoring the following sub-second.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10408,40 +10408,40 @@ class RasterCollection:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        calendar_field                           Required String, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 
+        calendar_field                           Required String, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR',
                                                  'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR'
         ------------------------------------     --------------------------------------------------------------------
         start                                    Required integer.
-                                                 The start value of the calendar_field. For example, to filter all 
-                                                 items that were collected in January, 
+                                                 The start value of the calendar_field. For example, to filter all
+                                                 items that were collected in January,
 
                                                  filtered_rc = rc.filter_by_calendar_range(calendar_field="MONTH", start=1).
         ------------------------------------     --------------------------------------------------------------------
         end                                      Optional integer.
 
-                                                 The end value of the calendar_field. For example, to filter all items 
-                                                 that were collected in the first 5 days of each year, 
+                                                 The end value of the calendar_field. For example, to filter all items
+                                                 that were collected in the first 5 days of each year,
 
-                                                 filtered_rc = rc.filter_by_calendar_range(calendar_field="DAY_OF_YEAR", 
+                                                 filtered_rc = rc.filter_by_calendar_range(calendar_field="DAY_OF_YEAR",
                                                  start=1, end=5)
         ------------------------------------     --------------------------------------------------------------------
-        time_field_name                          Optional string. The name of the field that contains the time attribute 
+        time_field_name                          Optional string. The name of the field that contains the time attribute
                                                  for each item in the collection. The default is StdTime.
         ------------------------------------     --------------------------------------------------------------------
-        date_time_format                         Optional string. The time format of the values in the time field. 
-                                                 For example, if the input time value is "1990-01-31", the 
+        date_time_format                         Optional string. The time format of the values in the time field.
+                                                 For example, if the input time value is "1990-01-31", the
                                                  date_time_format is "%Y-%m-%d".
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10474,20 +10474,20 @@ class RasterCollection:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        query_geometry_or_extent                 Required object that filters the items such that only those that 
-                                                 intersect with the object will be returned. This can be specified 
+        query_geometry_or_extent                 Required object that filters the items such that only those that
+                                                 intersect with the object will be returned. This can be specified
                                                  with a Geometry object, Raster object, ImageryLayer object.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10508,7 +10508,7 @@ class RasterCollection:
 
     def filter_by_attribute(self, field_name, operator, field_values, context=None):
         """
-        Filters the collection of raster items by an attribute query and returns a raster collection 
+        Filters the collection of raster items by an attribute query and returns a raster collection
         containing only the items that satisfy the query.
 
         ====================================     ====================================================================
@@ -10516,7 +10516,7 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The field name to use in the filter.
         ------------------------------------     --------------------------------------------------------------------
-        operator                                 Required string. The keyword to filter the attributes. 
+        operator                                 Required string. The keyword to filter the attributes.
                                                  Keywords include the following:
 
                                                   -  CONTAINS - The attribute in the field contains the specified string, list, or number.
@@ -10547,19 +10547,19 @@ class RasterCollection:
 
                                                   -  STARTS_WITH - The attribute starts with the specified string or number.
         ------------------------------------     --------------------------------------------------------------------
-        field_values                             Required object. The attribute value or values against which to compare. 
+        field_values                             Required object. The attribute value or values against which to compare.
                                                  This can be specified as a string, a list, or a number.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10585,7 +10585,7 @@ class RasterCollection:
         self, property_name, operator, property_values, context=None
     ):
         """
-        Filters the collection of raster items by a raster property query and returns a raster collection 
+        Filters the collection of raster items by a raster property query and returns a raster collection
         containing only the items that satisfy the query.
 
         ====================================     ====================================================================
@@ -10593,7 +10593,7 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         property_name                            Required string. The name of the property to use in the filter.
         ------------------------------------     --------------------------------------------------------------------
-        operator                                 Required string. The keyword to filter the attributes. 
+        operator                                 Required string. The keyword to filter the attributes.
                                                  Keywords include the following:
 
                                                   -  CONTAINS - The attribute in the field contains the specified string, list, or number.
@@ -10624,19 +10624,19 @@ class RasterCollection:
 
                                                   -  STARTS_WITH - The attribute starts with the specified string or number.
         ------------------------------------     --------------------------------------------------------------------
-        field_values                             Required object. The property value or values against which to compare. 
+        field_values                             Required object. The property value or values against which to compare.
                                                  This can be specified as a string, a list, or a number.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10667,19 +10667,19 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The name of the field to use for sorting.
         ------------------------------------     --------------------------------------------------------------------
-        ascending                                Optional bool. Specifies whether to sort in ascending or descending order. 
+        ascending                                Optional bool. Specifies whether to sort in ascending or descending order.
                                                  (The default value is True)
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -10691,7 +10691,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a sorted RasterCollection object 
+        :returns: a sorted RasterCollection object
 
         """
         return self._ras_coll_engine_obj.sort(
@@ -10707,10 +10707,10 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The name of the field from which to extract values.
         ------------------------------------     --------------------------------------------------------------------
-        max_count                                Optional integer. An integer that specifies the maximum number of 
-                                                 field values to be returned. The values will be returned in the 
-                                                 order that the raster items are ordered in the collection. If 
-                                                 no value is specified, all the field values for the given field 
+        max_count                                Optional integer. An integer that specifies the maximum number of
+                                                 field values to be returned. The values will be returned in the
+                                                 order that the raster items are ordered in the collection. If
+                                                 no value is specified, all the field values for the given field
                                                  will be returned.
         ====================================     ====================================================================
 
@@ -10723,7 +10723,7 @@ class RasterCollection:
 
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         """
-        Returns a multidimensional raster dataset, in which each item in the raster collection is a 
+        Returns a multidimensional raster dataset, in which each item in the raster collection is a
         slice in the multidimensional raster.
 
         ====================================     ====================================================================
@@ -10731,14 +10731,14 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         variable_field_name                      Required string. The name of the field that contains the variable names.
         ------------------------------------     --------------------------------------------------------------------
-        dimension_field_names                    Required string. The name of the field or fields that contains the dimension names. 
+        dimension_field_names                    Required string. The name of the field or fields that contains the dimension names.
                                                  This can be specified as a single string or a list of strings.
 
-                                                 For time-related dimensions, the field name must match one of the 
-                                                 following to be recognized as a time field: StdTime, Date, Time, 
-                                                 or AcquisitionDate. For nontime-related dimensions, the values in 
-                                                 those fields must be type Double. If there are two or more dimensions, 
-                                                 use a comma to separate the fields (for example, 
+                                                 For time-related dimensions, the field name must match one of the
+                                                 following to be recognized as a time field: StdTime, Date, Time,
+                                                 or AcquisitionDate. For nontime-related dimensions, the values in
+                                                 those fields must be type Double. If there are two or more dimensions,
+                                                 use a comma to separate the fields (for example,
                                                  dimension_field_names = ["Time", "Depth"]).
         ====================================     ====================================================================
 
@@ -10752,15 +10752,15 @@ class RasterCollection:
 
     def max(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the maximum pixel values for that 
+        Returns a raster object in which each band contains the maximum pixel values for that
         band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, each with four bands, 
-        the max method will calculate the maximum pixel value that occurs across all raster 
-        items for band 1, band 2, band 3, and band 4; a four-band raster is returned. 
-        Band numbers are matched between raster items using the band index, so the items 
+        For example, if there are ten raster items in the raster collection, each with four bands,
+        the max method will calculate the maximum pixel value that occurs across all raster
+        items for band 1, band 2, band 3, and band 4; a four-band raster is returned.
+        Band numbers are matched between raster items using the band index, so the items
         in the raster collection must follow the same band order.
-        
+
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
@@ -10777,15 +10777,15 @@ class RasterCollection:
 
     def min(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the minimum pixel values for that 
+        Returns a raster object in which each band contains the minimum pixel values for that
         band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, each with four bands, 
-        the min method will calculate the minimum pixel value that occurs across all raster 
-        items for band 1, band 2, band 3, and band 4; a four-band raster is returned. 
-        Band numbers are matched between raster items using the band index, so the items 
+        For example, if there are ten raster items in the raster collection, each with four bands,
+        the min method will calculate the minimum pixel value that occurs across all raster
+        items for band 1, band 2, band 3, and band 4; a four-band raster is returned.
+        Band numbers are matched between raster items using the band index, so the items
         in the raster collection must follow the same band order.
-        
+
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
@@ -10801,14 +10801,14 @@ class RasterCollection:
 
     def median(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the median pixel values 
+        Returns a raster object in which each band contains the median pixel values
         for that band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, 
-        each with four bands, the median method will calculate the median pixel value 
-        that occurs across all raster items for band 1, for band 2, for band 3, 
-        and for band 4; a four-band raster is returned. Band numbers are matched 
-        between raster items using the band index, so the items in the raster 
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the median method will calculate the median pixel value
+        that occurs across all raster items for band 1, for band 2, for band 3,
+        and for band 4; a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items in the raster
         collection must follow the same band order.
 
         ====================================     ====================================================================
@@ -10826,14 +10826,14 @@ class RasterCollection:
 
     def mean(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the average pixel values 
+        Returns a raster object in which each band contains the average pixel values
         for that band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, 
-        each with four bands, the mean method will calculate the mean pixel value 
-        that occurs across all raster items for band 1, for band 2, for band 3, 
-        and for band 4; a four-band raster is returned. Band numbers are matched 
-        between raster items using the band index, so the items in the raster 
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the mean method will calculate the mean pixel value
+        that occurs across all raster items for band 1, for band 2, for band 3,
+        and for band 4; a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items in the raster
         collection must follow the same band order.
 
         ====================================     ====================================================================
@@ -10851,16 +10851,16 @@ class RasterCollection:
 
     def majority(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the pixel 
-        value that occurs most frequently for that band across all 
+        Returns a raster object in which each band contains the pixel
+        value that occurs most frequently for that band across all
         rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, 
-        each with four bands, the majority method will determine the 
-        pixel value that occurs most frequently across all raster 
-        items for band 1, for band 2, for band 3, and for band 4; 
-        a four-band raster is returned. Band numbers are matched 
-        between raster items using the band index, so the items 
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the majority method will determine the
+        pixel value that occurs most frequently across all raster
+        items for band 1, for band 2, for band 3, and for band 4;
+        a four-band raster is returned. Band numbers are matched
+        between raster items using the band index, so the items
         in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
@@ -10879,14 +10879,14 @@ class RasterCollection:
 
     def sum(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the sum 
+        Returns a raster object in which each band contains the sum
         of pixel values for that band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, 
-        each with four bands, the sum method will calculate the sum of pixel 
-        values for each pixel that occurs across all raster items for band 1, 
-        band 2, band 3, and band 4; a four-band raster is returned. 
-        Band numbers are matched between raster items using the band index, 
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the sum method will calculate the sum of pixel
+        values for each pixel that occurs across all raster items for band 1,
+        band 2, band 3, and band 4; a four-band raster is returned.
+        Band numbers are matched between raster items using the band index,
         so the items in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
@@ -10898,19 +10898,19 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object        
+        :returns: a Raster object
         """
         return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata)
 
     def mosaic(self, mosaic_method="FIRST"):
         """
-        Returns a Raster object in which all items in a raster collection 
+        Returns a Raster object in which all items in a raster collection
         have been mosaicked into a single raster.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        mosaic_method                            Optional string. The method used to handle overlapping areas 
+        mosaic_method                            Optional string. The method used to handle overlapping areas
                                                  between adjacent raster items. Mosaic method options include the following:
 
                                                    - FIRST -  Determines the pixel value from the first raster that is overlapping.
@@ -10929,7 +10929,7 @@ class RasterCollection:
         ====================================     ====================================================================
 
         :returns: a Raster object
-        
+
         """
         return self._ras_coll_engine_obj.mosaic(mosaic_method=mosaic_method)
 
@@ -10977,26 +10977,26 @@ class RasterCollection:
 
     def select_bands(self, band_ids_or_names, context=None):
         """
-        Selects a list of bands from every raster item in a raster collection and 
+        Selects a list of bands from every raster item in a raster collection and
         returns a raster collection that contains raster items with only the selected bands.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        band_ids_or_names                        Required. The names or index numbers of bands to be included in 
-                                                 the returned raster items. This can be specified with a single string, 
+        band_ids_or_names                        Required. The names or index numbers of bands to be included in
+                                                 the returned raster items. This can be specified with a single string,
                                                  integer, or a list of strings or integers.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -11009,7 +11009,7 @@ class RasterCollection:
         ====================================     ====================================================================
 
         :returns: a RasterCollection that contains raster items with only the selected bands.
-        
+
         """
         return self._ras_coll_engine_obj.select_bands(
             band_ids_or_names=band_ids_or_names, context=context
@@ -11022,21 +11022,21 @@ class RasterCollection:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        func                                     Required. The Python function to map over the raster collection. 
-                                                 The return value of the function must be a dictionary in which one 
-                                                 of the keys is raster. For example, 
+        func                                     Required. The Python function to map over the raster collection.
+                                                 The return value of the function must be a dictionary in which one
+                                                 of the keys is raster. For example,
                                                  {"raster": output_raster_object, "name": input_item_name["name"]}.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-                                                 The default value for the context parameter would be the same as that of the 
+                                                 The default value for the context parameter would be the same as that of the
                                                  context settings applied to the parent collection.
 
                                                  Currently available:
 
                                                      -  query_boundary:
-                                                        This boolean value set to this option determines whether to add SHAPE field 
-                                                        to the RasterCollection. The value in the SHAPE field represents the 
-                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
                                                         only when the RasterCollection is created from a list of Rasters.
 
                                                         - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
@@ -11049,7 +11049,7 @@ class RasterCollection:
         ====================================     ====================================================================
 
         :returns: a new RasterCollection created from the existing RasterCollection after applying the func on each item.
-        
+
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
@@ -11279,10 +11279,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             where_clause = ""
         if raster_query is None:
             raster_query = ""
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filter(
-            where_clause=where_clause,
-            query_geometry_or_extent=query_geometry_or_extent,
-            raster_query=raster_query,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filter(
+                where_clause=where_clause,
+                query_geometry_or_extent=query_geometry_or_extent,
+                raster_query=raster_query,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11300,8 +11302,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(
-            start_time=start_time, end_time=end_time, time_field_name=time_field_name
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByTime(
+                start_time=start_time,
+                end_time=end_time,
+                time_field_name=time_field_name,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11338,12 +11344,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByCalendarRange(
-            calendar_field=calendar_field,
-            start=start,
-            end=end,
-            time_field_name=time_field_name,
-            date_time_format=date_time_format,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByCalendarRange(
+                calendar_field=calendar_field,
+                start=start,
+                end=end,
+                time_field_name=time_field_name,
+                date_time_format=date_time_format,
+            )
         )
         # newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
         newcollection._ras_coll_engine_obj._df = (
@@ -11357,8 +11365,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         newcollection = self._clone_raster_collection(context=context)
         if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
             query_geometry_or_extent = query_geometry_or_extent.as_arcpy
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(
-            query_geometry_or_extent=query_geometry_or_extent
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByGeometry(
+                query_geometry_or_extent=query_geometry_or_extent
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11369,8 +11379,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(
-            field_name=field_name, operator=operator, field_values=field_values
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByAttribute(
+                field_name=field_name, operator=operator, field_values=field_values
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11383,10 +11395,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(
-            property_name=property_name,
-            operator=operator,
-            property_values=property_values,
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.filterByRasterProperty(
+                property_name=property_name,
+                operator=operator,
+                property_values=property_values,
+            )
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11397,8 +11411,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(
-            field_name=field_name, ascending=ascending
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.sort(field_name=field_name, ascending=ascending)
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -11450,8 +11464,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.selectBands(
-            band_ids_or_names
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.selectBands(band_ids_or_names)
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -12403,9 +12417,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 )
             newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
         if query_geometry_or_extent is not None:
-            newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.filter_by_geometry(
-                query_geometry_or_extent
-            )._as_df()
+            newcollection._ras_coll_engine_obj._df = (
+                newcollection._ras_coll_engine_obj.filter_by_geometry(
+                    query_geometry_or_extent
+                )._as_df()
+            )
         if raster_query is not None:
             props_list = []
             for ele in self:

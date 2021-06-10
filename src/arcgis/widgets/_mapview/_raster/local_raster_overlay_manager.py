@@ -28,21 +28,21 @@ class RasterData:
 class LocalRasterOverlayManager:
     """
     .. warning::
-        Overlying local rasters on a ``MapView`` instance have the following 
+        Overlying local rasters on a ``MapView`` instance have the following
         limitations:
-        
+
         - Local raster overlays do not persist beyond the notebook session on
           published web maps/web scenes -- you would need to seperately publish
           these local rasters.
-        
-        - The entire raster image data is placed on the MapView's canvas with 
-          no performance optimizations. This means no pyramids, no dynamic 
-          downsampling, etc. Please be mindful of the size of the local raster 
+
+        - The entire raster image data is placed on the MapView's canvas with
+          no performance optimizations. This means no pyramids, no dynamic
+          downsampling, etc. Please be mindful of the size of the local raster
           and your computer's hardware limitations.
-        
-        - Pixel values and projections are not guaranteed to be accurate, 
-          especially when the local raster's Spatial Reference doesn't 
-          reproject accurately to Web Mercator (what the ``MapView`` 
+
+        - Pixel values and projections are not guaranteed to be accurate,
+          especially when the local raster's Spatial Reference doesn't
+          reproject accurately to Web Mercator (what the ``MapView``
           widget uses).
     """
 
@@ -164,7 +164,7 @@ class LocalRasterOverlayManager:
     _jupyter_notebook_dir_override = ""
 
     def set_current_executing_nb_dir(self, path: str):
-        """To display in a notebook, rasters must be placed in the 
+        """To display in a notebook, rasters must be placed in the
         ``_image_overlays`` folder in the same directory as the current
         executing notebook. This value is normally inferred. To override,
         call this function with the path to the current executing notebook.

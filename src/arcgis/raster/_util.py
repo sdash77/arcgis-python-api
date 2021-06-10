@@ -13,7 +13,7 @@ import numbers
 import time
 import os
 from urllib.parse import urljoin
-import requests
+import sys
 
 
 import logging as _logging
@@ -22,8 +22,13 @@ _LOGGER = _logging.getLogger(__name__)
 
 try:
     import numpy as _np
-    import matplotlib.pyplot as _plt
-    from matplotlib.pyplot import cm as _cm
+    import requests as _requests
+    from azure.storage.blob import ContainerClient
+    from azure.core.exceptions import (
+        ClientAuthenticationError,
+        ServiceResponseError,
+        ServiceRequestError,
+    )
 except:
     pass
 
@@ -432,6 +437,52 @@ def _local_function_template(operation_number=None):
     return template_dict
 
 
+def _percentile_function_template(
+    ignore_nodata=False, percentile=90, percentile_interpolation_type=False
+):
+    template_dict = {
+        "name": "Raster Function Template",
+        "description": "A raster function template.",
+        "function": {
+            "pixelType": "UNKNOWN",
+            "name": "Percentile Function",
+            "description": "Compute percentile value across the input rasters.",
+            "type": "PercentileFunction",
+            "_object_id": 1,
+        },
+        "arguments": {
+            "Rasters": {
+                "name": "Rasters",
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 2,
+            },
+            "IgnoreNoData": True,
+            "Percentile": 90,
+            "InterpolatePercentile": False,
+            "type": "PercentileFunctionArguments",
+            "_object_id": 3,
+        },
+        "functionType": 0,
+        "type": "RasterFunctionTemplate",
+        "_object_id": 4,
+    }
+
+    if ignore_nodata is not None:
+        template_dict["arguments"]["IgnoreNoData"] = ignore_nodata
+
+    if percentile is not None:
+        template_dict["arguments"]["Percentile"] = percentile
+
+    if percentile_interpolation_type is not None:
+        template_dict["arguments"][
+            "InterpolatePercentile"
+        ] = percentile_interpolation_type
+
+    return template_dict
+
+
 def _get_geometry(data):
     if data is None:
         return None
@@ -550,10 +601,301 @@ def _generate_direct_access_url(gis=None, expiration=None):
         raise RuntimeError("Couldn't generate direct access url")
 
 
-def _upload_imagery_agol(
-    files, gis=None, direct_access_url=None, raster_type_name=None
+def _print_on_same_line(msg):
+    """helper method for printing text on same line"""
+    last_msg_length = (
+        len(_print_on_same_line.last_msg)
+        if hasattr(_print_on_same_line, "last_msg")
+        else 0
+    )
+    print(" " * last_msg_length, end="\r")
+    print(msg, end="\r")
+    sys.stdout.flush()
+    _print_on_same_line.last_msg = msg
+
+
+def _print_progress_bar(
+    iteration,
+    total,
+    prefix="",
+    suffix="",
+    decimals=1,
+    length=100,
+    unit="items",
+    fill="█",
 ):
-    """uploads a file to the image layer to AGOL and returns the list of urls"""
+    """method for displaying a progress bar"""
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + "-" * (length - filled_length)
+
+    _print_on_same_line(
+        f"\r{prefix} |{bar}| {percent}% complete ({iteration}/{total} {unit})\t{suffix}"
+    )
+    if iteration == total:
+        print("\n")
+
+
+def _ra_upload_allowed_extensions():
+    """
+    returns a list of valid file upload extensions supported for creating
+    hosted imagery layers from raster datasets on Enterprise/AGOL
+    """
+    return "1b,5gud,a11,a12,a13,a14,a15,a16,a17,a18,a19,a1a,a1b,a1c,a1d,a1e,\
+            a1f,a1g,a1h,a1j,a21,a22,a23,a24,a25,a26,a27,a28,a29,a2a,a2b,a2c,\
+            a2d,a2e,a2f,a2g,a2h,a2j,a31,a32,a33,a34,a35,a36,a37,a38,a39,a3a,\
+            a3b,a3c,a3d,a3e,a3f,a3g,a3h,a3j,a41,a42,a43,a44,a45,a46,a47,a48,\
+            a49,a4a,a4b,a4c,a4d,a4e,a4f,a4g,a4h,a4j,adf,ads,afr,asc,at1,at2,\
+            at3,at4,at5,at6,at7,at8,at9,ata,atb,atc,atd,ate,atf,atg,ath,atj,\
+            att,aux,avg,bag,bil,bin,bip,blw,blx,bmp,bpw,bqw,bsq,bt,bundle,\
+            bundlx,c11,c12,c13,c14,c15,c16,c17,c18,c19,c1a,c1b,c1c,c1d,c1e,\
+            c1f,c1g,c1h,c1j,c21,c22,c23,c24,c25,c26,c27,c28,c29,c2a,c2b,c2c,\
+            c2d,c2e,c2f,c2g,c2h,c2j,c41,c42,c43,c44,c45,c46,c47,c48,c49,c4a,\
+            c4b,c4c,c4d,c4e,c4f,c4g,c4h,c4j,c51,c52,c53,c54,c55,c56,c57,c58,\
+            c59,c5a,c5b,c5c,c5d,c5e,c5f,c5g,c5h,c5j,c61,c62,c63,c64,c65,c66,\
+            c67,c68,c69,c6a,c6b,c6c,c6d,c6e,c6f,c6g,c6h,c6j,c71,c72,c73,c74,\
+            c75,c76,c77,c78,c79,c7a,c7b,c7c,c7d,c7e,c7f,c7g,c7h,c7j,c81,c82,\
+            c83,c84,c85,c86,c87,c88,c89,c8a,c8b,c8c,c8d,c8e,c8f,c8g,c8h,c8j,\
+            c91,c92,c93,c94,c95,c96,c97,c98,c99,c9a,c9b,c9c,c9d,c9e,c9f,c9g,\
+            c9h,c9j,ca1,ca2,ca3,ca4,ca5,ca6,ca7,ca8,ca9,caa,cab,cac,cad,cae,\
+            caf,cag,cah,caj,cb1,cb2,cb3,cb4,cb5,cb6,cb7,cb8,cb9,cba,cbb,cbc,\
+            cbd,cbe,cbf,cbg,cbh,cbj,cc1,cc2,cc3,cc4,cc5,cc6,cc7,cc8,cc9,cca,\
+            ccb,ccc,ccd,cce,ccf,ccg,cch,ccj,cd1,cd2,cd3,cd4,cd5,cd6,cd7,cd8,\
+            cd9,cda,cdb,cdc,cdd,cde,cdf,cdg,cdh,cdi,cdj,ce1,ce2,ce3,ce4,ce5,\
+            ce6,ce7,ce8,ce9,cea,ceb,cec,ced,cee,cef,ceg,ceh,cej,cf1,cf2,cf3,\
+            cf4,cf5,cf6,cf7,cf8,cf9,cfa,cfb,cfc,cfd,cfe,cff,cfg,cfh,cfj,cg1,\
+            cg2,cg3,cg4,cg5,cg6,cg7,cg8,cg9,cga,cgb,cgc,cgd,cge,cgf,cgg,cgh,\
+            cgj,ch1,ch2,ch3,ch4,ch5,ch6,ch7,ch8,ch9,cha,chb,chc,chd,che,chf,\
+            chg,chh,chj,cit,cj1,cj2,cj3,cj4,cj5,cj6,cj7,cj8,cj9,cja,cjb,cjc,\
+            cjd,cje,cjf,cjg,cjh,cjj,ck1,ck2,ck3,ck4,ck5,ck6,ck7,ck8,ck9,cka,\
+            ckb,ckc,ckd,cke,ckf,ckg,ckh,ckj,cl1,cl2,cl3,cl4,cl5,cl6,cl7,cl8,\
+            cl9,cla,clb,clc,cld,cle,clf,clg,clh,clj,clr,cm1,cm2,cm3,cm4,cm5,\
+            cm6,cm7,cm8,cm9,cma,cmb,cmc,cmd,cme,cmf,cmg,cmh,cmj,cn1,cn2,cn3,\
+            cn4,cn5,cn6,cn7,cn8,cn9,cna,cnb,cnc,cnd,cne,cnf,cng,cnh,cnj,co1,\
+            co2,co3,co4,co5,co6,co7,co8,co9,coa,cob,coc,cod,coe,cof,cog,coh,\
+            coj,cos,cot,cp1,cp2,cp3,cp4,cp5,cp6,cp7,cp8,cp9,cpa,cpb,cpc,cpd,\
+            cpe,cpf,cpg,cph,cpj,cq1,cq2,cq3,cq4,cq5,cq6,cq7,cq8,cq9,cqa,cqb,\
+            cqc,cqd,cqe,cqf,cqg,cqh,cqj,cr1,cr2,cr3,cr4,cr5,cr6,cr7,cr8,cr9,\
+            cra,crb,crc,crd,cre,crf,crg,crh,crj,cs1,cs2,cs3,cs4,cs5,cs6,cs7,\
+            cs8,cs9,csa,csb,csc,csd,cse,csf,csg,csh,csj,ct1,ct2,ct3,ct4,ct5,\
+            ct6,ct7,ct8,ct9,cta,ctb,ctc,ctd,cte,ctf,ctg,cth,ctj,cub,dat,dbf,\
+            ddf,dem,dim,dt0,dt1,dt2,elas,eph,ers,f11,f12,f13,f14,f15,f16,f17,\
+            f18,f19,f1a,f1b,f1c,f1d,f1e,f1f,f1g,f1h,f1j,f21,f22,f23,f24,f25,\
+            f26,f27,f28,f29,f2a,f2b,f2c,f2d,f2e,f2f,f2g,f2h,f2j,f31,f32,f33,\
+            f34,f35,f36,f37,f38,f39,f3a,f3b,f3c,f3d,f3e,f3f,f3g,f3h,f3j,f41,\
+            f42,f43,f44,f45,f46,f47,f48,f49,f4a,f4b,f4c,f4d,f4e,f4f,f4g,f4h,\
+            f4j,f51,f52,f53,f54,f55,f56,f57,f58,f59,f5a,f5b,f5c,f5d,f5e,f5f,\
+            f5g,f5h,f5j,fit,flt,fst,gc,geo,gff,gif,gis,gn1,gn2,gn3,gn4,gn7,gn9,\
+            gna,gnb,gnc,gnd,gng,gnj,gr2,grb,grb2,grc,grd,grib,grib2,gtx,gxf,h1,\
+            h4,h5,ha1,ha1,ha2,ha3,ha4,ha5,ha6,ha7,ha8,ha9,haa,hab,hac,had,hae,\
+            haf,hag,hah,haj,hdf,hdf4,hdf5,hdr,he4,he5,hf2,hgt,hr1,hr2,hr3,hr4,\
+            hr5,hr6,hr7,hr8,i1,i11,i12,i13,i14,i15,i16,i17,i18,i19,i1a,i1b,i1c,\
+            i1d,i1e,i1f,i1g,i1h,i1j,i2,i21,i22,i23,i24,i25,i26,i27,i28,i29,i2a,\
+            i2b,i2c,i2d,i2e,i2f,i2g,i2h,i2j,i3,i31,i32,i33,i34,i35,i36,i37,i38,\
+            i39,i3a,i3b,i3c,i3d,i3e,i3f,i3g,i3h,i3j,i4,i41,i42,i43,i44,i45,i46,\
+            i47,i48,i49,i4a,i4b,i4c,i4d,i4e,i4f,i4g,i4h,i4j,i5,i51,i52,i53,i54,\
+            i55,i56,i57,i58,i59,i5a,i5b,i5c,i5d,i5e,i5f,i5g,i5h,i5j,i6,i7,i8,i9,\
+            idx,ige,imd,img,iv1,iv2,iv3,iv4,iv5,iv6,iv7,iv8,iv9,iva,ivb,ivc,ivd,\
+            ive,ivf,ivg,ivh,ivj,j2c,j2k,ja1,ja2,ja3,ja4,ja5,ja6,ja7,ja8,ja9,jaa,\
+            jab,jac,jad,jae,jaf,jag,jah,jaj,jg1,jg2,jg3,jg4,jg5,jg6,jg7,jg8,jg9,\
+            jga,jgb,jgc,jgd,jge,jgf,jgg,jgh,jgj,jgw,jn1,jn2,jn3,jn4,jn5,jn6,jn7,\
+            jn8,jn9,jna,jnb,jnc,jnd,jne,jnf,jng,jnh,jnj,jo1,jo2,jo3,jo4,jo5,jo6,\
+            jo7,jo8,jo9,joa,job,joc,jod,joe,jof,jog,joh,joj,jp2,jpc,jpg,jpw,jpx,\
+            jr1,jr2,jr3,jr4,jr5,jr6,jr7,jr8,jr9,jra,jrb,jrc,jrd,jre,jrf,jrg,jrh,\
+            jrj,json,kap,l11,l12,l13,l14,l15,l16,l17,l18,l19,l1a,l1b,l1c,l1d,l1e,\
+            l1f,l1g,l1h,l1j,l21,l22,l23,l24,l25,l26,l27,l28,l29,l2a,l2b,l2c,l2d,\
+            l2e,l2f,l2g,l2h,l2j,l31,l32,l33,l34,l35,l36,l37,l38,l39,l3a,l3b,l3c,\
+            l3d,l3e,l3f,l3g,l3h,l3j,l41,l42,l43,l44,l45,l46,l47,l48,l49,l4a,l4b,\
+            l4c,l4d,l4e,l4f,l4g,l4h,l4j,l51,l52,l53,l54,l55,l56,l57,l58,l59,l5a,\
+            l5b,l5c,l5d,l5e,l5f,l5g,l5h,l5j,lan,las,lbl,lf1,lf2,lf3,lf4,lf5,lf6,\
+            lf7,lf8,lf9,lfa,lfb,lfc,lfd,lfe,lff,lfg,lfh,lfj,lgg,ln1,ln2,ln3,ln4,\
+            ln5,ln6,ln7,ln8,ln9,lna,lnb,lnc,lnd,lne,lnf,lng,lnh,lnj,lrc,m11,m12,\
+            m13,m14,m15,m16,m17,m18,m19,m1a,m1b,m1c,m1d,m1e,m1f,m1g,m1h,m1j,m21,\
+            m22,m23,m24,m25,m26,m27,m28,m29,m2a,m2b,m2c,m2d,m2e,m2f,m2g,m2h,m2j,\
+            map,max,memory,met,mi1,mi2,mi3,mi4,mi5,mi6,mi7,mi8,mi9,mia,mib,mic,\
+            mid,mie,mif,mig,mih,mij,min,mm1,mm2,mm3,mm4,mm5,mm6,mm7,mm8,mm9,mma,\
+            mmb,mmc,mmd,mme,mmf,mmg,mmh,mmj,mpl,mpr,mrf,mtl,n1,nc,nc4,nes,nsf,ntf,\
+            oa1,oa2,oa3,oa4,oa5,oa6,oa7,oa8,oa9,oaa,oab,oac,oad,oae,oaf,oag,oah,\
+            oaj,oh1,oh2,oh3,oh4,oh5,oh6,oh7,oh8,oh9,oha,ohb,ohc,ohd,ohe,ohf,ohg,\
+            ohh,ohj,on1,on2,on3,on4,on5,on6,on7,on8,on9,ona,onb,onc,ond,one,onf,\
+            ong,onh,onj,ovr,ow1,ow2,ow3,ow4,ow5,ow6,ow7,ow8,ow9,owa,owb,owc,owd,\
+            owe,owf,owg,owh,owj,paux,pbm,pgm,pgw,pix,png,ppm,prj,pro,properties,\
+            psi,pvl,r0,raw,rpb,rpc,rrd,rst,rv1,rv2,rv3,rv4,rv5,rv6,rv7,rv8,rv9,\
+            rva,rvb,rvc,rvd,rve,rvf,rvg,rvh,rvj,sdat,sdw,sid,sta,stk,sv,tc1,tc2,\
+            tc3,tc4,tc5,tc6,tc7,tc8,tc9,tca,tcb,tcc,tcd,tce,tcf,tcg,tch,tcj,ter,\
+            tf1,tf2,tf3,tf4,tf5,tf6,tf7,tf8,tf9,tfa,tfb,tfc,tfd,tfe,tff,tfg,tfh,\
+            tfj,tfrd,tfw,tif,tiff,til,tl1,tl2,tl3,tl4,tl5,tl6,tl7,tl8,tl9,tla,tlb,\
+            tlc,tld,tle,tlf,tlg,tlh,tlj,tn1,tn2,tn3,tn4,tn5,tn6,tn7,tn8,tn9,tna,\
+            tnb,tnc,tnd,tne,tnf,tng,tnh,tnj,toc,tp1,tp2,tp3,tp4,tp5,tp6,tp7,tp8,\
+            tp9,tpa,tpb,tpc,tpd,tpe,tpf,tpg,tph,tpj,tq1,tq2,tq3,tq4,tq5,tq6,tq7,\
+            tq8,tq9,tqa,tqb,tqc,tqd,tqe,tqf,tqg,tqh,tqj,tr1,tr2,tr3,tr4,tr5,tr6,\
+            tr7,tr8,tr9,tra,trb,trc,trd,tre,trf,trg,trh,trj,trl,tt1,tt2,tt3,tt4,\
+            tt5,tt6,tt7,tt8,tt9,tta,ttb,ttc,ttd,tte,ttf,ttg,tth,ttj,txt,ul1,ul2,\
+            ul3,ul4,ul5,ul6,ul7,ul8,ul9,ula,ulb,ulc,uld,ule,ulf,ulg,ulh,ulj,vh1,\
+            vh2,vh3,vh4,vh5,vh6,vh7,vh8,vh9,vha,vhb,vhc,vhd,vhe,vhf,vhg,vhh,vhj,\
+            view,vn1,vn2,vn3,vn4,vn5,vn6,vn7,vn8,vn9,vna,vnb,vnc,vnd,vne,vnf,vng,\
+            vnh,vnj,vrt,vt1,vt2,vt3,vt4,vt5,vt6,vt7,vt8,vt9,vta,vtb,vtc,vtd,vte,\
+            vtf,vtg,vth,vtj,wo,xml,xpm,xyz".split(
+        ","
+    )
+
+
+class _ImageryUploaderAGOL:
+    """helper class for concurrently uploading multiple files to user's rasterstore on AGOL"""
+
+    def __init__(self, file_list, container, auto_renew, upload_properties, gis):
+
+        self.file_list = file_list
+        self.container = container
+        self.auto_renew = auto_renew
+        self.gis = gis
+        self.all_files = []
+        for i, d in enumerate(file_list):
+            self.all_files.extend([(f, i) for f in d["files_list"]])
+        self.url_list = []
+        use_defaults = False
+        if upload_properties is None or not isinstance(upload_properties, dict):
+            upload_properties_lower = {
+                "maxuploadconcurrency": 6,
+                "maxworkerthreads": None,
+                "displayprogress": False,
+            }
+            use_defaults = True
+        else:
+            upload_properties_lower = {
+                k.lower(): v for k, v in upload_properties.items()
+            }
+
+        if "maxuploadconcurrency" in upload_properties_lower and (
+            isinstance(upload_properties_lower["maxuploadconcurrency"], int)
+            or upload_properties_lower["maxuploadconcurrency"] is None
+        ):
+            self.max_upload_concurrency = upload_properties_lower[
+                "maxuploadconcurrency"
+            ]
+        else:
+            self.max_upload_concurrency = 6
+
+        if "maxworkerthreads" in upload_properties_lower and (
+            isinstance(upload_properties_lower["maxworkerthreads"], int)
+            or upload_properties_lower["maxworkerthreads"] is None
+        ):
+            self.max_worker_threads = upload_properties_lower["maxworkerthreads"]
+        else:
+            self.max_worker_threads = None
+
+        display_flag = _arcgis.env.verbose
+        if "displayprogress" in upload_properties_lower and isinstance(
+            upload_properties_lower["displayprogress"], bool
+        ):
+            self.display_progress = upload_properties_lower["displayprogress"]
+            if not self.display_progress and not use_defaults:
+                display_flag = False
+        else:
+            self.display_progress = False
+
+        if display_flag:
+            self.display_progress = True
+
+    def upload_file(self, file_item):
+        """method to upload single file"""
+        file_name, i = file_item
+        prefix = self.file_list[i]["prefix"]
+        current_time_str = prefix[:-1][8:]
+        is_dir = self.file_list[i]["is_dir"]
+        if is_dir:
+            root = os.path.dirname(file_name)
+            basename_len = self.file_list[i]["basename_len"]
+            blobname = prefix + (root + "/" + os.path.basename(file_name))[
+                basename_len + 1 :
+            ].replace(os.sep, "/")
+        else:
+            blobname = prefix + os.path.basename(file_name).replace(os.sep, "/")
+
+        while True:
+            try:
+                blob = self.container.get_blob_client(blobname)
+
+                with open(file_name, "rb") as data:
+                    blob.upload_blob(
+                        data,
+                        blob_type="BlockBlob",
+                        max_concurrency=self.max_upload_concurrency,
+                    )
+
+                url = blob.url.split("?", 1)[0]
+
+                if is_dir:
+                    if url != "":
+                        url = url[
+                            0 : url.find(current_time_str) + len(current_time_str)
+                        ]
+                        if url not in self.url_list:
+                            self.url_list.append(url)
+                else:
+                    self.url_list.append(url)
+                break
+            except (
+                ClientAuthenticationError,
+                ServiceResponseError,
+                ServiceRequestError,
+            ) as err:
+                if self.auto_renew:
+                    sas_url = _generate_direct_access_url(self.gis)
+                    self.container = ContainerClient.from_container_url(sas_url)
+                    continue
+                else:
+                    raise
+            except Exception as err:
+                raise err
+
+        return file_name
+
+    def upload_all_files(self):
+        """method to upload multiple files concurrently"""
+        result = self.run(self.all_files)
+        return result
+
+    def run(self, all_files):
+        """helper method for creating a thread pool for uploading multiple files"""
+        import concurrent.futures as _cf
+
+        if self.display_progress:
+            l = len(all_files)
+            start = time.time()
+            _print_progress_bar(0, l, prefix=" ", suffix=" ", length=30, unit="files")
+
+        with _cf.ThreadPoolExecutor(self.max_worker_threads) as executor:
+            futures = [executor.submit(self.upload_file, arg) for arg in all_files]
+
+            if self.display_progress:
+                current = 0
+                for future in _cf.as_completed(futures):
+                    res = future.result()
+                    current += 1
+                    end = time.time()
+                    elapsed_time = str(datetime.timedelta(seconds=end - start))
+                    time_comp = ":" if current == l else ">"
+                    _print_progress_bar(
+                        current,
+                        l,
+                        prefix=f"{os.path.basename(res)} uploaded",
+                        suffix=f"[time elapsed{time_comp} {elapsed_time}]",
+                        length=30,
+                        unit="files",
+                    )
+
+        return self.url_list
+
+
+def _upload_imagery_agol(
+    files,
+    gis=None,
+    direct_access_url=None,
+    auto_renew=True,
+    upload_properties=None,
+):
+    """uploads imagery to user's rasterstore on AGOL and returns the list of urls"""
 
     try:
         from azure.storage.blob import ContainerClient
@@ -563,9 +905,10 @@ def _upload_imagery_agol(
             ServiceRequestError,
         )
     except:
-        print(
-            "Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
-        (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)"
+        _LOGGER.warning(
+            "Install Azure library packages for Python."
+            + "(Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)"
+            + "\n(https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)"
         )
     gis = _arcgis.env.active_gis if gis is None else gis
     if direct_access_url is None:
@@ -576,89 +919,49 @@ def _upload_imagery_agol(
     if not isinstance(files, list):
         files = [files]
 
-    url_list = []
-    url = ""
-    set_root = True
+    file_list = []
+    time_list = []
+    allowed_extensions = _ra_upload_allowed_extensions()
+
     for file in files:
+        to_upload = True
+        file_dict = {}
         current_time = int(time.time())
-        current_time_str = str(current_time)
-        prefix = "_images/" + str(current_time) + "/"
+        while current_time in time_list:
+            current_time += 1
+        time_list.append(current_time)
+        file_dict["prefix"] = "_images/" + str(current_time) + "/"
+        file_dict["file_name"] = file
+
         if os.path.exists(file):
             if os.path.isdir(file):
-                if raster_type_name is None:
-                    set_root = False
-                elif (
-                    file.endswith(".crf") and raster_type_name == "Raster Dataset"
-                ) or raster_type_name != "Raster Dataset":
-                    set_root = True
-                folder = os.path.basename(file)
-                basename_len = len(os.path.dirname(file))
-                for root, d_names, f_names in os.walk(file):
-                    for f in f_names:
-                        blobname = prefix + (root + "/" + f)[
-                            basename_len + 1 :
-                        ].replace(os.sep, "/")
-                        filepath = os.path.join(root, f)
-                        path = ("/" + root + "/" + f)[basename_len + 1 :].replace(
-                            os.sep, "/"
-                        )
-                        while True:
-                            try:
-                                blob = container.get_blob_client(blobname)
-                                with open(filepath, "rb") as data:
-                                    blob.upload_blob(data, blob_type="BlockBlob")
-                                url = blob.url.split("?", 1)[0]
-                                if set_root:
-                                    break
-                                else:
-                                    uri_dict = {"uri": url, "path": path}
-                                    url_list.append(uri_dict)
-                            except (
-                                ClientAuthenticationError,
-                                ServiceResponseError,
-                                ServiceRequestError,
-                            ) as err:
-                                if direct_access_url is None:
-                                    sas_url = _generate_direct_access_url(gis)
-                                    container = ContainerClient.from_container_url(
-                                        sas_url
-                                    )
-                                    continue
-                                else:
-                                    raise
-                            except Exception as err:
-                                raise err
-                            break
-                if set_root:
-                    if url != "":
-                        url = url[
-                            0 : url.find(current_time_str) + len(current_time_str)
-                        ]
-                        url_list.append(url)
+                file_dict["is_dir"] = True
+                file_dict["basename_len"] = len(os.path.dirname(file))
+                file_dict["files_list"] = [
+                    os.path.join(root, f)
+                    for root, d_names, f_names in os.walk(file)
+                    for f in f_names
+                    if os.path.splitext(f)[1][1:].lower() in allowed_extensions
+                ]
+                if len(file_dict["files_list"]) == 0:
+                    to_upload = False
             else:
-                blobname = prefix + os.path.basename(file).replace(os.sep, "/")
-                while True:
-                    try:
-                        blob = container.get_blob_client(blobname)
-                        with open(file, "rb") as data:
-                            blob.upload_blob(data, blob_type="BlockBlob")
-                        url = blob.url.split("?", 1)[0]
-                        url_list.append(url)
-                    except (
-                        ClientAuthenticationError,
-                        ServiceResponseError,
-                        ServiceRequestError,
-                    ) as err:
-                        if direct_access_url is None:
-                            sas_url = _generate_direct_access_url(gis)
-                            container = ContainerClient.from_container_url(sas_url)
-                            continue
-                        else:
-                            raise
-                    except Exception as err:
-                        raise err
-                    break
+                file_dict["is_dir"] = False
+                if os.path.splitext(file)[1][1:].lower() in allowed_extensions:
+                    file_dict["files_list"] = [file]
+                else:
+                    to_upload = False
 
+            if to_upload:
+                file_list.append(file_dict)
+
+    if len(file_list) == 0:
+        raise RuntimeError("No supported files to upload")
+
+    uploader = _ImageryUploaderAGOL(
+        file_list, container, auto_renew, upload_properties, gis
+    )
+    url_list = uploader.upload_all_files()
     return url_list
 
 
@@ -949,7 +1252,7 @@ def _get_all_stac_catalog_items(stac_json, request_params={}):
     :return generator (of all items retrived in the Catalog)
     """
     for item_link in _get_stac_links(stac_json, "item"):
-        item_res = requests.get(item_link, **request_params)
+        item_res = _requests.get(item_link, **request_params)
         if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
             "application/json",
             "application/geo+json",
@@ -961,7 +1264,7 @@ def _get_all_stac_catalog_items(stac_json, request_params={}):
 
     children = _get_stac_links(stac_json, "child")
     for child in children:
-        child_res = requests.get(child, **request_params)
+        child_res = _requests.get(child, **request_params)
         if child_res.status_code != 200 or child_res.headers.get(
             "content-type"
         ) not in [

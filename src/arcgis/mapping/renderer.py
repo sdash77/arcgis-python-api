@@ -12,26 +12,28 @@ from arcgis.geometry import _types
 from arcgis.mapping._utils import _get_list_value
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 
-__all__ = ['generate_renderer']
+__all__ = ["generate_renderer"]
 
 RENDERER_TYPES = {
-    "d" : "dot density",
-    "s" : 'simple',#
-    "u" : 'unique',#
-    "u-a" : 'unique',#
-    'h' : 'heatmap',#
-    'c' : 'ClassBreaks',#
-    "p" : 'Predominance',
-    'str' : 'Stretch',#
-    't' : "Temporal",#
-    'v' : "vector field"#
+    "d": "dot density",
+    "s": "simple",  #
+    "u": "unique",  #
+    "u-a": "unique",  #
+    "h": "heatmap",  #
+    "c": "ClassBreaks",  #
+    "p": "Predominance",
+    "str": "Stretch",  #
+    "t": "Temporal",  #
+    "v": "vector field",  #
 }
+
 
 class _DotDensity(object):
     """
     Creates the dot density renderer for Polygon Geometries.
 
     """
+
     _df = None
     _attributes = None
     _dot_value = None
@@ -44,18 +46,20 @@ class _DotDensity(object):
     _seed = 1
     _outline = None
     _type = "dotDensity"
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 df,
-                 attributes,
-                 dot_value,
-                 ref_scale,
-                 unit,
-                 blend_dots=False,
-                 shape="s",
-                 size=1,
-                 background=None,
-                 seed=1):
+    # ----------------------------------------------------------------------
+    def __init__(
+        self,
+        df,
+        attributes,
+        dot_value,
+        ref_scale,
+        unit,
+        blend_dots=False,
+        shape="s",
+        size=1,
+        background=None,
+        seed=1,
+    ):
         """initalizer"""
         self._df = df
         self._attributes = attributes
@@ -66,22 +70,25 @@ class _DotDensity(object):
         self._dot_shape = shape
         self._dot_size = size
         if background is None:
-            background = [0,0,0,0]
+            background = [0, 0, 0, 0]
         else:
-            background = self._cmap(color=background, cstep=None, alpha=.1)
+            background = self._cmap(color=background, cstep=None, alpha=0.1)
         self._bg_color = background
         self._seed = seed
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def data(self):
         """gets the data"""
         return self._df
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def renderer_type(self):
         """returns the current renderer type"""
         return self._type
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def background(self):
         """
@@ -91,58 +98,65 @@ class _DotDensity(object):
 
         """
         return self._bg_color
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def shape(self):
         """
         Returns the shape of the dots
         """
         return self._dot_shape
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @shape.setter
     def shape(self, value):
         """
         Sets the shape of the dots in the renderer.
         """
         POINT_STYLES_DISPLAY = {
-            "o" : "Circle", #default
-            "+" : "Cross",
-            "d" : "Diamond",
-            "s" : "Square",
-            "x" : "X"
+            "o": "Circle",  # default
+            "+": "Cross",
+            "d": "Diamond",
+            "s": "Square",
+            "x": "X",
         }
         if str(value).lower() in POINT_STYLES_DISPLAY:
             self._dot_shape = POINT_STYLES_DISPLAY[str(value).lower()]
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def unit(self):
         """gets/sets the units"""
         return self._unit
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @unit.setter
     def unit(self, value):
         """gets/sets the units"""
         self._unit = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def size(self):
         """returns the size of the dots"""
         return self._dot_size
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def ref_scale(self):
         """reference scale"""
         return self._ref_scale
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @ref_scale.setter
     def ref_scale(self, value):
-        """"""
+        """ """
         if isinstance(value, (int, float)):
             self._ref_scale = value
         else:
             raise ValueError("Value must be an int or float.")
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @size.setter
     def size(self, value):
         """
@@ -150,13 +164,14 @@ class _DotDensity(object):
         """
         self._dot_size = float(value)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @background.setter
     def background(self, value):
         """sets the background color"""
         import random
+
         if isinstance(value, str):
-            cstep = random.randint(0,255)
+            cstep = random.randint(0, 255)
             color = value
             alpha = 1
             self._bg_color = _cmap2rgb(color, cstep, alpha)
@@ -165,7 +180,7 @@ class _DotDensity(object):
         else:
             raise ValueError("Invalid color specified.")
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def attributes(self):
         """
@@ -174,30 +189,34 @@ class _DotDensity(object):
         if self._attributes is None:
             self._attributes = []
         return self._attributes
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _cmap(self, color, cstep=None, alpha=1):
         """processes the colors"""
         import random
+
         if isinstance(color, (list, tuple)) and len(color) == 4:
             return color
         else:
             if cstep is None:
-                cstep = random.randint(0,255)
+                cstep = random.randint(0, 255)
             if color is None:
-                color = 'jet'
+                color = "jet"
             return _cmap2rgb(color, cstep, alpha)
         return
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _cmap2rgb(self, colors, step, alpha=1):
         """converts a color map to RGBA list"""
         from matplotlib import cm
+
         t = getattr(cm, colors)(step, bytes=True)
         t = [int(i) for i in t]
         t[-1] = alpha * 255
         return t
-    #----------------------------------------------------------------------
-    def add_attribute(self, label, field,
-                      color, cstep=None, alpha=1):
+
+    # ----------------------------------------------------------------------
+    def add_attribute(self, label, field, color, cstep=None, alpha=1):
         """
         Assigns an attribute to the dot density renderer
 
@@ -219,22 +238,19 @@ class _DotDensity(object):
         :returns: Boolean
 
         """
-        mapped_names = [n['field'].lower() for n in self.attributes]
+        mapped_names = [n["field"].lower() for n in self.attributes]
         if field.lower() in mapped_names:
             raise ValueError("Field already assigned to a label.")
         if field in self._df.columns:
             self._attributes.append(
-                {
-                    'field' : field,
-                    'label' : label,
-                    'color' : self._cmap(color)
-                }
+                {"field": field, "label": label, "color": self._cmap(color)}
             )
             return True
         else:
             raise ValueError("Field not found in dataset.")
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def remove_attribute(self, field):
         """
         Removes the attribute to the dot density renderer.
@@ -248,196 +264,188 @@ class _DotDensity(object):
         :returns: Boolean
 
         """
-        mapped_names = [n['field'].lower() for n in self.attributes if 'field' in n]
+        mapped_names = [n["field"].lower() for n in self.attributes if "field" in n]
         if field.lower() in mapped_names:
             idx = mapped_names.index(field.lower())
             self._attributes.pop(idx)
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def add_expression(self, expression, title, label, color):
         """
         Adds an arcade expression to the attributes
 
 
         """
-        self._attributes.append({
-            "valueExpression": expression,
-            "valueExpressionTitle": title,
-            "label": label,
-            "color": self._cmap(color)
-        })
-    #----------------------------------------------------------------------
+        self._attributes.append(
+            {
+                "valueExpression": expression,
+                "valueExpressionTitle": title,
+                "label": label,
+                "color": self._cmap(color),
+            }
+        )
+
+    # ----------------------------------------------------------------------
     def remove_expression(self, label):
         """
         Adds an arcade expression to the attributes
 
 
         """
-        labels = [n['label'].lower() for n in self.attributes if 'label' in n]
+        labels = [n["label"].lower() for n in self.attributes if "label" in n]
         if label.lower() in labels:
             idx = labels.index(label.lower())
             self._attributes.pop(idx)
             return True
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def dot_value(self):
         """
         Get/Sets what each dot is worth. This should be an float/integer.
         """
         return self._dot_value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @dot_value.setter
     def dot_value(self, value):
         """
         Get/Sets what each dot is worth. This should be an float/integer.
         """
         self._dot_value = value
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def renderer(self):
         """returns the JSON renderer"""
         r = {
             "type": "dotDensity",
-            "outline" : "null",
+            "outline": "null",
             "attributes": self.attributes,
             "backgroundColor": self.background,
             "blendDots": self._blend_dots,
             "dotShape": self.shape,
             "dotSize": self.size,
-            "legendOptions": {
-                "unit": self.unit
-            },
+            "legendOptions": {"unit": self.unit},
             "referenceDotValue": self.dot_value,
             "referenceScale": self.ref_scale,
-            "seed": self._seed
+            "seed": self._seed,
         }
         return r
 
-def _size_info(field, min_value, max_value,
-               min_size=6, max_size=37.5, unit='unknown'):
-    """
-    """
-    return {
-         'type' : 'sizeInfo',
-          'field' : field,
-          'valueUnit' : unit,
-          'minSize' : min_size,
-          'maxSize' : max_size,
-          'minDataValue' : min_value,
-          'maxDataValue' : max_value
-     }
 
-def _color_info(field:str,
-                values:list,
-                steps:int=6,
-                colors:str='Reds_r' )-> dict:
+def _size_info(field, min_value, max_value, min_size=6, max_size=37.5, unit="unknown"):
+    """ """
+    return {
+        "type": "sizeInfo",
+        "field": field,
+        "valueUnit": unit,
+        "minSize": min_size,
+        "maxSize": max_size,
+        "minDataValue": min_value,
+        "maxDataValue": max_value,
+    }
+
+
+def _color_info(
+    field: str, values: list, steps: int = 6, colors: str = "Reds_r"
+) -> dict:
     """
     Creates the Color Infomration Visual Variable from a collection of information.
 
     """
-    d = {
-         'type' : 'colorInfo',
-          'field' : field,
-          'stops' : []
-     }
+    d = {"type": "colorInfo", "field": field, "stops": []}
     import numpy as np
-    steps = np.linspace(0,254, steps, endpoint=True, dtype=int).tolist()
+
+    steps = np.linspace(0, 254, steps, endpoint=True, dtype=int).tolist()
 
     cmaps = [_cmap2rgb(colors, step) for step in steps]
     uvalues = list(set(values))
     sorted(uvalues)
-    psteps = uvalues[::int(len(uvalues)/len(steps))]
+    psteps = uvalues[:: int(len(uvalues) / len(steps))]
     if psteps[-1] != uvalues[-1]:
         psteps.append(uvalues[-1])
-        steps = np.linspace(0,254, len(steps)+ 1, endpoint=True, dtype=int).tolist()
+        steps = np.linspace(0, 254, len(steps) + 1, endpoint=True, dtype=int).tolist()
         cmaps = [_cmap2rgb(colors, step) for step in steps]
 
-    #value_index = [uvalues[int(s*step_size)] for s in range(steps)]
-    for k,v in dict(zip(psteps, cmaps)).items():
-        d['stops'].append(
-              {
-                   'value' : k,
-                    'color' : v,
-                    'label' : None
-               }
-          )
+    # value_index = [uvalues[int(s*step_size)] for s in range(steps)]
+    for k, v in dict(zip(psteps, cmaps)).items():
+        d["stops"].append({"value": k, "color": v, "label": None})
     return d
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def _trans_info(data, **kwargs):
     """creates a transparancy information for visual variables"""
     ti = None
-    if 'trans_info_field' in kwargs:
+    if "trans_info_field" in kwargs:
         ti = {}
 
-        ti['field'] = kwargs.pop('trans_info_field', None)
-        ti['normalizationField'] = kwargs.pop('trans_norm_field', None)
-        stops = kwargs.pop('trans_stops', None)
-        if stops is None and \
-           data:
+        ti["field"] = kwargs.pop("trans_info_field", None)
+        ti["normalizationField"] = kwargs.pop("trans_norm_field", None)
+        stops = kwargs.pop("trans_stops", None)
+        if stops is None and data:
             stops = []
-            transp = 100/len(data)
+            transp = 100 / len(data)
             for d in data:
 
-                stops.append({
-                    "stop": {
-                        "value": d,
-                        "transparency": transp
-                    }
-                })
+                stops.append({"stop": {"value": d, "transparency": transp}})
                 transp += transp
                 del d
             del data
         elif data is None and stops is None:
             raise Exception("Cannot create transparancy info.")
 
-        ti['stops'] = stops
-        ti['type'] = 'transparancyInfo'
-        ti['valueExpression'] = kwargs.pop('trans_value_exp', None)
-        ti['valueExpressionTitle'] = kwargs.pop('trans_exp_title', None)
+        ti["stops"] = stops
+        ti["type"] = "transparancyInfo"
+        ti["valueExpression"] = kwargs.pop("trans_value_exp", None)
+        ti["valueExpressionTitle"] = kwargs.pop("trans_exp_title", None)
     return ti
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def _si_creator(**kwargs):
     """creates the size information from key/value pairs"""
-    si = {
-        'type' : 'sizeInfo'
-    }
-    if 'si_field' in kwargs or \
-       'si_minSize' in kwargs:
-        si['expression'] = kwargs.pop('si_expresion', 'view.scale')
-        si['field'] = kwargs.pop('si_field', None)
-        si['maxDataValue'] = kwargs.pop('si_max_data_value', None)
-        si['maxSize'] = kwargs.pop('si_max_size', 20)
-        si['minDatavalue'] = kwargs.pop('si_min_data_value', None)
-        si['minSize'] = kwargs.pop('si_min_size', 10)
+    si = {"type": "sizeInfo"}
+    if "si_field" in kwargs or "si_minSize" in kwargs:
+        si["expression"] = kwargs.pop("si_expresion", "view.scale")
+        si["field"] = kwargs.pop("si_field", None)
+        si["maxDataValue"] = kwargs.pop("si_max_data_value", None)
+        si["maxSize"] = kwargs.pop("si_max_size", 20)
+        si["minDatavalue"] = kwargs.pop("si_min_data_value", None)
+        si["minSize"] = kwargs.pop("si_min_size", 10)
 
-        si['normalizationField'] = kwargs.pop('si_norm_field', None)
-        si['stops'] = kwargs.pop('si_stops', None)
-        if 'si_target' in kwargs:
-            si['target'] = kwargs.pop('si_target', None)
-        si['valueExpression'] = kwargs.pop('si_expression', None)
-        si['valueExpressionTitle'] = kwargs.pop('si_expression_title', None)
-        si['valueUnit'] = kwargs.pop('si_value_unit', None)
+        si["normalizationField"] = kwargs.pop("si_norm_field", None)
+        si["stops"] = kwargs.pop("si_stops", None)
+        if "si_target" in kwargs:
+            si["target"] = kwargs.pop("si_target", None)
+        si["valueExpression"] = kwargs.pop("si_expression", None)
+        si["valueExpressionTitle"] = kwargs.pop("si_expression_title", None)
+        si["valueUnit"] = kwargs.pop("si_value_unit", None)
         return si
     else:
         return None
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def _ri_creator(**kwargs):
     """creates rotation information for visual variables"""
-    ri = {
-        'type' : 'rotationInfo'
-    }
-    if 'ri_type' in kwargs:
-        ri['rotatationType'] = kwargs.pop('ri_type')
-        ri['valueExpression'] = kwargs.pop('ri_expression', None)
-        ri['valueExpressionTitle'] = kwargs.pop('ri_expression_title', 'ri_title')
-        ri['field'] = kwargs.pop('ri_field', None)
+    ri = {"type": "rotationInfo"}
+    if "ri_type" in kwargs:
+        ri["rotatationType"] = kwargs.pop("ri_type")
+        ri["valueExpression"] = kwargs.pop("ri_expression", None)
+        ri["valueExpressionTitle"] = kwargs.pop("ri_expression_title", "ri_title")
+        ri["field"] = kwargs.pop("ri_field", None)
 
         return ri
     return None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def visual_variables(geometry_type, sdf_or_list, **kwargs):
     """
     a function to create visual variables
@@ -534,9 +542,8 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
 
     """
     v = []
-    if isinstance(sdf_or_list, SpatialDataFrame) and \
-       'trans_info_field' in kwargs:
-        trans_info_field = kwargs['trans_info_field']
+    if isinstance(sdf_or_list, SpatialDataFrame) and "trans_info_field" in kwargs:
+        trans_info_field = kwargs["trans_info_field"]
         data = sdf_or_list[trans_info_field].unique().tolist()
     elif isinstance(sdf_or_list, (tuple, list)):
         data = list(set(sdf_or_list))
@@ -552,13 +559,16 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
         v.append(ri)
     return v
 
-#--------------------------------------------------------------------------
-def generate_renderer(geometry_type,
-                      sdf_or_series=None,
-                      label=None,
-                      render_type=None,
-                      colors=None,
-                      **symbol_args):
+
+# --------------------------------------------------------------------------
+def generate_renderer(
+    geometry_type,
+    sdf_or_series=None,
+    label=None,
+    render_type=None,
+    colors=None,
+    **symbol_args
+):
     """
     Generates the Renderer JSON
 
@@ -907,55 +917,66 @@ def generate_renderer(geometry_type,
 
     """
     import numpy as np
+
     if colors is None:
-        colors = 'jet'
+        colors = "jet"
     if isinstance(colors, str):
-        colors = colors.split(',')
-    elif isinstance(colors, list) and \
-         len(colors) == 4 and \
-         all([isinstance(i, int) for i in colors]):
+        colors = colors.split(",")
+    elif (
+        isinstance(colors, list)
+        and len(colors) == 4
+        and all([isinstance(i, int) for i in colors])
+    ):
         colors = [colors]
-    if 'alpha' in symbol_args:
-        alpha = symbol_args['alpha']
+    if "alpha" in symbol_args:
+        alpha = symbol_args["alpha"]
     else:
         alpha = 1
 
     renderer = None
     vv = []
-    if 'size_field' in symbol_args:
-        size_field = symbol_args.pop('size_field')
-        vv.append(_size_info(field=size_field,
-                             min_value=sdf_or_series[size_field].min(),
-                             max_value=sdf_or_series[size_field].max(),
-                             min_size=symbol_args.pop('min_size', 1),
-                             max_size=symbol_args.pop('max_size', 24.1),
-                             unit=symbol_args.pop('size_units', 'unknown')))
-    if 'ci_field' in symbol_args:
-        color_field = symbol_args.pop('ci_field')
-        vv.append(_color_info(field=color_field,
-                              values=sdf_or_series[color_field],
-                              steps=symbol_args.pop('ci_steps', 3),
-                              colors=symbol_args.pop('ci_color', 'Reds_r')))
-    if 'opacity_expression' in symbol_args and \
-       'opacity_stops' in symbol_args:
-        vv.append({
-            'type': "transparencyInfo",
-            'valueExpression': symbol_args.pop('opacity_expression'),
-            'valueExpressionTitle': "Opacity Expression",
-            'stops': symbol_args.pop("opacity_stops")
-          })
-    if render_type is None and \
-       str(geometry_type).lower() != 'raster':
-        render_type = 's'
-    elif render_type is None and \
-        str(geometry_type).lower() == 'raster':
-        render_type = 'str'
+    if "size_field" in symbol_args:
+        size_field = symbol_args.pop("size_field")
+        vv.append(
+            _size_info(
+                field=size_field,
+                min_value=sdf_or_series[size_field].min(),
+                max_value=sdf_or_series[size_field].max(),
+                min_size=symbol_args.pop("min_size", 1),
+                max_size=symbol_args.pop("max_size", 24.1),
+                unit=symbol_args.pop("size_units", "unknown"),
+            )
+        )
+    if "ci_field" in symbol_args:
+        color_field = symbol_args.pop("ci_field")
+        vv.append(
+            _color_info(
+                field=color_field,
+                values=sdf_or_series[color_field],
+                steps=symbol_args.pop("ci_steps", 3),
+                colors=symbol_args.pop("ci_color", "Reds_r"),
+            )
+        )
+    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
+        vv.append(
+            {
+                "type": "transparencyInfo",
+                "valueExpression": symbol_args.pop("opacity_expression"),
+                "valueExpressionTitle": "Opacity Expression",
+                "stops": symbol_args.pop("opacity_stops"),
+            }
+        )
+    if render_type is None and str(geometry_type).lower() != "raster":
+        render_type = "s"
+    elif render_type is None and str(geometry_type).lower() == "raster":
+        render_type = "str"
     elif render_type.lower() not in RENDERER_TYPES:
         raise Exception("Invalid Renderer type.")
     else:
         render_type = render_type.lower()
-    if render_type == 'd' and geometry_type == 'polygon':
+    if render_type == "d" and geometry_type == "polygon":
         import pandas as pd
+
         if isinstance(sdf_or_series, pd.DataFrame) == False:
             raise Exception("DotDensity only works for Polygon DataFrames")
 
@@ -963,60 +984,65 @@ def generate_renderer(geometry_type,
         dot_value = symbol_args.pop("dot_value")
         ref_scale = symbol_args.pop("ref_scale")
         unit = symbol_args.pop("unit")
-        blend_dots = symbol_args.pop('blend_dots', False)
+        blend_dots = symbol_args.pop("blend_dots", False)
         shape = symbol_args.pop("shape", "s")
-        size = symbol_args.pop('size', 1)
-        background = symbol_args.pop('background', None)
+        size = symbol_args.pop("size", 1)
+        background = symbol_args.pop("background", None)
         seed = 1
-        return _DotDensity(df=sdf_or_series,
-                           attributes=attributes,
-                           dot_value=dot_value,
-                           ref_scale=ref_scale,
-                           unit=unit,
-                           blend_dots=blend_dots,
-                           shape=shape,
-                           size=size,
-                           background=background, seed=seed).renderer
-    elif render_type == 'd' and geometry_type != 'polygon':
+        return _DotDensity(
+            df=sdf_or_series,
+            attributes=attributes,
+            dot_value=dot_value,
+            ref_scale=ref_scale,
+            unit=unit,
+            blend_dots=blend_dots,
+            shape=shape,
+            size=size,
+            background=background,
+            seed=seed,
+        ).renderer
+    elif render_type == "d" and geometry_type != "polygon":
         raise Exception("Dot Density is only supported by polygons")
-    if render_type == 's':
-        symbol = symbol_args.pop('symbol', None)
+    if render_type == "s":
+        symbol = symbol_args.pop("symbol", None)
         if symbol is None:
             symbol = create_symbol(
                 geometry_type=geometry_type.lower(),
-                symbol_type=symbol_args.pop('symbol_type', None),
-                symbol_style=symbol_args.pop('symbol_style', None),
+                symbol_type=symbol_args.pop("symbol_type", None),
+                symbol_style=symbol_args.pop("symbol_style", None),
                 colors=colors[0],
-                **symbol_args)
+                **symbol_args
+            )
         renderer = {
-            "type" : "simple",
-            'label' : label,
-            "description" : symbol_args.pop('description', ""),
-            "rotationExpression" : symbol_args.pop("rotation_expression", ""),
-            "rotationType" : symbol_args.pop("rotation_type", 'arithmetic'),
-            "visualVariables" : symbol_args.pop("visual_variables", vv),
-            "symbol" : symbol
+            "type": "simple",
+            "label": label,
+            "description": symbol_args.pop("description", ""),
+            "rotationExpression": symbol_args.pop("rotation_expression", ""),
+            "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
+            "symbol": symbol,
         }
         return renderer
     elif render_type.lower() == "h":
-        if sdf_or_series is None and \
-           'field' in symbol_args:
-            raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
-                             " or Pandas DataFrame for this type of renderer")
+        if sdf_or_series is None and "field" in symbol_args:
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                + " or Pandas DataFrame for this type of renderer"
+            )
         colorStops = []
-        field = symbol_args.pop('field', None)
-        stops = symbol_args.pop('stops', 3)
-        ratio = symbol_args.pop('ratio', .01)
-        show_none = symbol_args.pop('show_none', False)
-        maxPixelIntensity = symbol_args.pop('max_intensity', 10)
-        minPixelIntensity = symbol_args.pop('min_intensity', 0)
+        field = symbol_args.pop("field", None)
+        stops = symbol_args.pop("stops", 3)
+        ratio = symbol_args.pop("ratio", 0.01)
+        show_none = symbol_args.pop("show_none", False)
+        maxPixelIntensity = symbol_args.pop("max_intensity", 10)
+        minPixelIntensity = symbol_args.pop("min_intensity", 0)
         r = 0
         if stops < 3:
             stops = 3
-        ratios = np.linspace(0,1, num=stops)
-        for idx, cstep in enumerate(np.linspace(0,255,
-                                 num=stops,
-                                 dtype=np.int).tolist()):
+        ratios = np.linspace(0, 1, num=stops)
+        for idx, cstep in enumerate(
+            np.linspace(0, 255, num=stops, dtype=np.int).tolist()
+        ):
             if r == 0 and show_none == True:
                 calpha = alpha
             elif r == 0 and show_none == False:
@@ -1026,31 +1052,30 @@ def generate_renderer(geometry_type,
 
             colorStops.append(
                 {
-                    'ratio' : ratios[idx],
-                    'color' : _cmap2rgb(colors=colors[0],
-                                        step=cstep,
-                                        alpha=calpha)
+                    "ratio": ratios[idx],
+                    "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
                 }
             )
             r += ratio
             del cstep
         renderer = {
-            'type' : 'heatmap',
-            'field' : field,
-            'blurRadius' : symbol_args.pop('blur_radius', 10),
-            "maxPixelIntensity" : maxPixelIntensity,
-            "minPixelIntensity" : minPixelIntensity,
-            "colorStops" : colorStops
+            "type": "heatmap",
+            "field": field,
+            "blurRadius": symbol_args.pop("blur_radius", 10),
+            "maxPixelIntensity": maxPixelIntensity,
+            "minPixelIntensity": minPixelIntensity,
+            "colorStops": colorStops,
         }
         return renderer
-    elif render_type in ['u', 'p'] and\
-         "field1" in symbol_args:
+    elif render_type in ["u", "p"] and "field1" in symbol_args:
         if sdf_or_series is None:
-            raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
-                             " or Pandas DataFrame for this type of renderer")
-        st = symbol_args.pop('symbol_type', None)
-        ss = symbol_args.pop('symbol_style', None)
-        default_symbol = symbol_args.pop('default_symbol', None)
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                + " or Pandas DataFrame for this type of renderer"
+            )
+        st = symbol_args.pop("symbol_type", None)
+        ss = symbol_args.pop("symbol_style", None)
+        default_symbol = symbol_args.pop("default_symbol", None)
         if default_symbol is None:
             if isinstance(colors, (list, tuple)):
                 ccmap = colors[0]
@@ -1061,12 +1086,15 @@ def generate_renderer(geometry_type,
                 symbol_type=st,
                 symbol_style=ss,
                 colors=ccmap,
-                **symbol_args)
+                **symbol_args
+            )
         field1 = symbol_args.pop("field1", None)
         if field1 is None:
-            raise ValueError("You must provide a single field name to use unique value renderer as field1='columnname'")
-        field2 = symbol_args.pop('field2', None)
-        field3 = symbol_args.pop('field2', None)
+            raise ValueError(
+                "You must provide a single field name to use unique value renderer as field1='columnname'"
+            )
+        field2 = symbol_args.pop("field2", None)
+        field3 = symbol_args.pop("field2", None)
         fields = [field1]
         if field2 is not None:
             fields.append(field2)
@@ -1074,32 +1102,38 @@ def generate_renderer(geometry_type,
             fields.append(field3)
         if isinstance(fields, str):
             fields = [fields]
-        field_delimiter = symbol_args.pop('field_delimiter', ',')
+        field_delimiter = symbol_args.pop("field_delimiter", ",")
         rotation_expression = symbol_args.pop("rotation_expression", None)
         rotation_type = symbol_args.pop("rotation_type", "arithmetic")
 
         renderer = {
-            "type" : "uniqueValue",
-            "defaultLabel" : symbol_args.pop('default_label', "Other"),
-            "defaultSymbol" : default_symbol,
-            "fieldDelimiter" : field_delimiter,
-            "rotationExpression" : rotation_expression,
-            "rotationType" : rotation_type,
-            "valueExpression" : symbol_args.pop("arcade_expression", None),
-            "valueExpressionTitle" : symbol_args.pop("arcade_title", None),
-            "visualVariables" : symbol_args.pop('visual_variables', vv)
+            "type": "uniqueValue",
+            "defaultLabel": symbol_args.pop("default_label", "Other"),
+            "defaultSymbol": default_symbol,
+            "fieldDelimiter": field_delimiter,
+            "rotationExpression": rotation_expression,
+            "rotationType": rotation_type,
+            "valueExpression": symbol_args.pop("arcade_expression", None),
+            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
         }
-        unique_values = symbol_args.pop('unique_values', None)
+        unique_values = symbol_args.pop("unique_values", None)
         if unique_values is None:
             c = 1
             for f in fields:
-                renderer['field%s' % c] = f
+                renderer["field%s" % c] = f
                 c += 1
             if len(fields) == 1:
                 uvals = sdf_or_series[fields[0]].unique().tolist()
             else:
-                uvals = sdf_or_series.groupby(fields).size().reset_index().rename(
-                    columns={0:'count'}).drop(columns='count').tolist()
+                uvals = (
+                    sdf_or_series.groupby(fields)
+                    .size()
+                    .reset_index()
+                    .rename(columns={0: "count"})
+                    .drop(columns="count")
+                    .tolist()
+                )
                 uvals2 = []
                 for r in uvals:
                     row = []
@@ -1112,29 +1146,36 @@ def generate_renderer(geometry_type,
                     uvals = uvals[:255]
             unique_values = []
             for idx, uval in enumerate(uvals):
-                unique_values.append({
-                    "value" : uval,
-                    "label" : uval,
-                    "description" : "",
-                    "symbol" : create_symbol(
-                        geometry_type=geometry_type.lower(),
-                        symbol_type=st,
-                        symbol_style=ss,
-                        colors=_get_list_value(idx, colors),
-                        **symbol_args)
-                })
-            renderer['uniqueValueInfos'] = unique_values
+                unique_values.append(
+                    {
+                        "value": uval,
+                        "label": uval,
+                        "description": "",
+                        "symbol": create_symbol(
+                            geometry_type=geometry_type.lower(),
+                            symbol_type=st,
+                            symbol_style=ss,
+                            colors=_get_list_value(idx, colors),
+                            **symbol_args
+                        ),
+                    }
+                )
+            renderer["uniqueValueInfos"] = unique_values
         else:
-            renderer['uniqueValueInfos'] = unique_values
-    elif render_type in ['u-a', 'u'] and \
-         "field1" not in symbol_args and\
-         'arcade_expression' in symbol_args:
+            renderer["uniqueValueInfos"] = unique_values
+    elif (
+        render_type in ["u-a", "u"]
+        and "field1" not in symbol_args
+        and "arcade_expression" in symbol_args
+    ):
         if sdf_or_series is None:
-            raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
-                             " or Pandas DataFrame for this type of renderer")
-        st = symbol_args.pop('symbol_type', None)
-        ss = symbol_args.pop('symbol_style', None)
-        default_symbol = symbol_args.pop('default_symbol', None)
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                + " or Pandas DataFrame for this type of renderer"
+            )
+        st = symbol_args.pop("symbol_type", None)
+        ss = symbol_args.pop("symbol_style", None)
+        default_symbol = symbol_args.pop("default_symbol", None)
         if default_symbol is None:
             if isinstance(colors, (list, tuple)):
                 ccmap = colors[0]
@@ -1145,39 +1186,44 @@ def generate_renderer(geometry_type,
                 symbol_type=st,
                 symbol_style=ss,
                 colors=ccmap,
-                **symbol_args)
-        field_delimiter = symbol_args.pop('field_delimiter', ',')
+                **symbol_args
+            )
+        field_delimiter = symbol_args.pop("field_delimiter", ",")
         rotation_expression = symbol_args.pop("rotation_expression", None)
         rotation_type = symbol_args.pop("rotation_type", "arithmetic")
 
         renderer = {
-            "type" : "uniqueValue",
-            "defaultLabel" : symbol_args.pop('default_label', "Other"),
-            "defaultSymbol" : default_symbol,
-            "fieldDelimiter" : field_delimiter,
-            "rotationExpression" : rotation_expression,
-            "rotationType" : rotation_type,
-            "valueExpression" : symbol_args.pop("arcade_expression", None),
-            "valueExpressionTitle" : symbol_args.pop("arcade_title", None),
-            "visualVariables" : symbol_args.pop('visual_variables', vv)
+            "type": "uniqueValue",
+            "defaultLabel": symbol_args.pop("default_label", "Other"),
+            "defaultSymbol": default_symbol,
+            "fieldDelimiter": field_delimiter,
+            "rotationExpression": rotation_expression,
+            "rotationType": rotation_type,
+            "valueExpression": symbol_args.pop("arcade_expression", None),
+            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
         }
-        if 'unique_values' not in symbol_args:
+        if "unique_values" not in symbol_args:
             raise ValueError("unique_values must be provided if field1 is not given.")
-        renderer['uniqueValueInfos'] = symbol_args.pop("unique_values")
+        renderer["uniqueValueInfos"] = symbol_args.pop("unique_values")
     elif render_type == "v":
         renderer = {
-            'type' : 'vectorField',
-            'visualVariables' : symbol_args.pop('visual_variables', vv),
-            'style' : symbol_args.pop('style'),
-            'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
-            'flowRepresentation' : symbol_args.pop('flow', 'flow_from'),
-            'attributeField' : symbol_args.pop('attribute_field', None)
+            "type": "vectorField",
+            "visualVariables": symbol_args.pop("visual_variables", vv),
+            "style": symbol_args.pop("style"),
+            "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
+            "flowRepresentation": symbol_args.pop("flow", "flow_from"),
+            "attributeField": symbol_args.pop("attribute_field", None),
         }
     elif render_type == "c":
         if sdf_or_series is None:
-            raise ValueError("sdf_or_series must be a Pandas' Series, SpatialDataFrame" + \
-                             " or Pandas DataFrame for this type of renderer")
-        class_count = symbol_args.pop('class_count', 3) # number of classess for class break
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series, SpatialDataFrame"
+                + " or Pandas DataFrame for this type of renderer"
+            )
+        class_count = symbol_args.pop(
+            "class_count", 3
+        )  # number of classess for class break
         if len(colors) > 1:
             default_color = colors[1]
             color = colors[0]
@@ -1185,128 +1231,144 @@ def generate_renderer(geometry_type,
             default_color = colors[0]
             color = colors[0]
         try:
-            if isinstance(sdf_or_series, SpatialDataFrame) or \
-               hasattr(sdf_or_series, 'geometry_type'):
+            if isinstance(sdf_or_series, SpatialDataFrame) or hasattr(
+                sdf_or_series, "geometry_type"
+            ):
                 gt = sdf_or_series.geometry_type
-            elif hasattr(sdf_or_series, 'spatial') and \
-                 sdf_or_series.spatial.name and \
-                 hasattr(sdf_or_series.spatial, 'geometry_type'):
+            elif (
+                hasattr(sdf_or_series, "spatial")
+                and sdf_or_series.spatial.name
+                and hasattr(sdf_or_series.spatial, "geometry_type")
+            ):
                 gt = sdf_or_series.spatial.geometry_type[0]
         except:
-            raise Exception("geometry_type not found, please ensure DataFrame is spatially enabled.")
+            raise Exception(
+                "geometry_type not found, please ensure DataFrame is spatially enabled."
+            )
         renderer = {
-            "type" : "classBreaks",
-            "valueExpression" : symbol_args.pop('arcade_expression', None),
-            'valueExpressionTitle' : symbol_args.pop('arcade_title', None),
-            'visualVariables' : symbol_args.pop('visual_variables', vv),
-            'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
-            'rotationExpression' : symbol_args.pop('rotation_expression', None),
-            'normalizationType' : symbol_args.pop('normalization_type', None),
-            'normalizationTotal' : symbol_args.pop('normalization_total', None),
-            'normalizationField' : symbol_args.pop('normalization_field', None),
-            'minValue' : symbol_args.pop('min_value', 0),
-            'field' : symbol_args.pop('field'),
-            'defaultSymbol' : symbol_args.pop('default_symbol', create_symbol(
-                geometry_type=gt,
-                colors=default_color)
-                                              ),
-            'defaultLabel' : symbol_args.pop('default_label', 'Other'),
-            'classificationMethod' : symbol_args.pop('method', None),
-            'classBreakInfos' : [],
-            'backgroundFillSymbol' : symbol_args.pop('background_fill_symbol', None)
+            "type": "classBreaks",
+            "valueExpression": symbol_args.pop("arcade_expression", None),
+            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
+            "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
+            "rotationExpression": symbol_args.pop("rotation_expression", None),
+            "normalizationType": symbol_args.pop("normalization_type", None),
+            "normalizationTotal": symbol_args.pop("normalization_total", None),
+            "normalizationField": symbol_args.pop("normalization_field", None),
+            "minValue": symbol_args.pop("min_value", 0),
+            "field": symbol_args.pop("field"),
+            "defaultSymbol": symbol_args.pop(
+                "default_symbol", create_symbol(geometry_type=gt, colors=default_color)
+            ),
+            "defaultLabel": symbol_args.pop("default_label", "Other"),
+            "classificationMethod": symbol_args.pop("method", None),
+            "classBreakInfos": [],
+            "backgroundFillSymbol": symbol_args.pop("background_fill_symbol", None),
         }
-        minValue = sdf_or_series[renderer['field']].min()
-        maxValue = sdf_or_series[renderer['field']].max()
+        minValue = sdf_or_series[renderer["field"]].min()
+        maxValue = sdf_or_series[renderer["field"]].max()
+
         def pairwise(iterable, fillvalue=999):
             "s -> (s0,s1), (s1,s2), (s2, s3), ..."
             import itertools
+
             a, b = itertools.tee(iterable)
             next(b, fillvalue)
             return itertools.zip_longest(a, b)
+
         # calculate the class breaks from column data
         cbs = []
-        breaks = np.linspace(minValue, maxValue,
-                             num=class_count).tolist()
-        steps = np.linspace(0, 255,
-                            len(breaks),
-                            dtype=np.int)
-        ss = symbol_args.pop('symbol_style', None)
-        st = symbol_args.pop('symbol_type', None)
+        breaks = np.linspace(minValue, maxValue, num=class_count).tolist()
+        steps = np.linspace(0, 255, len(breaks), dtype=np.int)
+        ss = symbol_args.pop("symbol_style", None)
+        st = symbol_args.pop("symbol_type", None)
         import sys
+
         for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
             gt = None
-            if isinstance(sdf_or_series, SpatialDataFrame) or \
-               hasattr(sdf_or_series, 'geometry_type'):
+            if isinstance(sdf_or_series, SpatialDataFrame) or hasattr(
+                sdf_or_series, "geometry_type"
+            ):
                 gt = sdf_or_series.geometry_type
-            elif hasattr(sdf_or_series, 'spatial') and \
-                 sdf_or_series.spatial.name and \
-                 hasattr(sdf_or_series.spatial, 'geometry_type'):
+            elif (
+                hasattr(sdf_or_series, "spatial")
+                and sdf_or_series.spatial.name
+                and hasattr(sdf_or_series.spatial, "geometry_type")
+            ):
                 gt = sdf_or_series.spatial.geometry_type[0]
-            cbs.append({
-
-                'classMaxValue' : pair[1] or pair[0],
-                'label' : "%s - %s" % (pair[0], pair[1] or pair[0]),
-                'description' : "%s - %s" % (pair[0], pair[1] or pair[0]),
-                'symbol' : create_symbol(geometry_type=gt,
-                                         symbol_style=ss,
-                                         symbol_type=st,
-                                         colors=color,
-                                         cstep=steps[idx],
-                                         **symbol_args)
-
-            })
+            cbs.append(
+                {
+                    "classMaxValue": pair[1] or pair[0],
+                    "label": "%s - %s" % (pair[0], pair[1] or pair[0]),
+                    "description": "%s - %s" % (pair[0], pair[1] or pair[0]),
+                    "symbol": create_symbol(
+                        geometry_type=gt,
+                        symbol_style=ss,
+                        symbol_type=st,
+                        colors=color,
+                        cstep=steps[idx],
+                        **symbol_args
+                    ),
+                }
+            )
             del pair
-        renderer['classBreakInfos'] = cbs
-        for key in [k for k,v in renderer.items() if v is None]:
+        renderer["classBreakInfos"] = cbs
+        for key in [k for k, v in renderer.items() if v is None]:
             del renderer[key]
         return renderer
     elif render_type == "str":
         renderer = {
-            'computeGamma' : symbol_args.pop('compute_gamma', True),
-            'dra' : symbol_args.pop('dra', None),
-            'gamma' : symbol_args.pop('gamma', None),
-            'max' : symbol_args.pop('max_value', None),
-            'min' : symbol_args.pop('min_value', None),
-            'maxPercent' : symbol_args.pop('max_percent', None),
-            'minPercent' : symbol_args.pop('min_percent', None),
-            "numberOfStandardDeviations" : symbol_args.pop('std', None),
-            'sigmoidStrengthLevel' : symbol_args.pop('sigmoid', None),
-            'statistics' : symbol_args.pop('statistics', None),
-            'stretchType' : symbol_args.pop('type', 'none'),
-            'type' : 'rasterStretch',
-            'useGamma' : symbol_args.pop('use_gamma', False)
+            "computeGamma": symbol_args.pop("compute_gamma", True),
+            "dra": symbol_args.pop("dra", None),
+            "gamma": symbol_args.pop("gamma", None),
+            "max": symbol_args.pop("max_value", None),
+            "min": symbol_args.pop("min_value", None),
+            "maxPercent": symbol_args.pop("max_percent", None),
+            "minPercent": symbol_args.pop("min_percent", None),
+            "numberOfStandardDeviations": symbol_args.pop("std", None),
+            "sigmoidStrengthLevel": symbol_args.pop("sigmoid", None),
+            "statistics": symbol_args.pop("statistics", None),
+            "stretchType": symbol_args.pop("type", "none"),
+            "type": "rasterStretch",
+            "useGamma": symbol_args.pop("use_gamma", False),
         }
         return renderer
     elif render_type == "t":
         renderer = {
-            'type' : 'temporal',
-            'latestObservationRenderer' : symbol_args.pop('latest_observation',
-                                                          generate_renderer(
-                                                              geometry_type="point",
-                                                              label="Latest",
-                                                              render_type='s',
-                                                              colors=colors,
-                                                              sdf_or_series=sdf_or_series,
-                                                              **symbol_args)
-                                                          ),
-            'observationRenderer' : symbol_args.pop('observation',
-                                                    generate_renderer(
-                                                        geometry_type="point",
-                                                        label="Observation",
-                                                        render_type='s',
-                                                        colors=colors,
-                                                        sdf_or_series=sdf_or_series,
-                                                        **symbol_args)
-                                                    ),
-            'trackRenderer' : symbol_args.pop('track',
-                                              generate_renderer(
-                                                  geometry_type="polyline",
-                                                  label="Track",
-                                                  render_type='s',
-                                                  colors=colors,
-                                                  sdf_or_series=sdf_or_series,
-                                                  **symbol_args)
-                                              )
+            "type": "temporal",
+            "latestObservationRenderer": symbol_args.pop(
+                "latest_observation",
+                generate_renderer(
+                    geometry_type="point",
+                    label="Latest",
+                    render_type="s",
+                    colors=colors,
+                    sdf_or_series=sdf_or_series,
+                    **symbol_args
+                ),
+            ),
+            "observationRenderer": symbol_args.pop(
+                "observation",
+                generate_renderer(
+                    geometry_type="point",
+                    label="Observation",
+                    render_type="s",
+                    colors=colors,
+                    sdf_or_series=sdf_or_series,
+                    **symbol_args
+                ),
+            ),
+            "trackRenderer": symbol_args.pop(
+                "track",
+                generate_renderer(
+                    geometry_type="polyline",
+                    label="Track",
+                    render_type="s",
+                    colors=colors,
+                    sdf_or_series=sdf_or_series,
+                    **symbol_args
+                ),
+            ),
         }
         return renderer
     return renderer

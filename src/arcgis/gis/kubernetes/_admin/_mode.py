@@ -1,7 +1,9 @@
 from ._base import _BaseKube
+
 ###########################################################################
 class Mode(_BaseKube):
     _url = None
+
     @property
     def read_only(self) -> bool:
         """
@@ -12,8 +14,8 @@ class Mode(_BaseKube):
         """
         return self.properties
 
-    #----------------------------------------------------------------------
-    def update(self, read_only:bool, description:str=None) -> dict:
+    # ----------------------------------------------------------------------
+    def update(self, read_only: bool, description: str = None) -> dict:
         """
         Updates the site's mode to set it in read only
 
@@ -33,9 +35,8 @@ class Mode(_BaseKube):
         params = {"isReadOnly": read_only}
         if description:
 
-            params['message'] = description
-        res = self._con.post(path=url,
-                              params=params)
-        if 'success' in res:
-            return res['success']
+            params["message"] = description
+        res = self._con.post(path=url, params=params)
+        if "success" in res:
+            return res["success"]
         return res

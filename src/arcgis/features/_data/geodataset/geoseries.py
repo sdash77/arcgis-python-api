@@ -58,7 +58,7 @@ def _convert_array_args(args):
 
 
 class _CoordinateIndexer(_NDFrameIndexer):
-    """ Indexing by coordinate slices """
+    """Indexing by coordinate slices"""
 
     def _getitem_tuple(self, tup):
         obj = self.obj
@@ -160,8 +160,7 @@ class GeoSeries(BaseSpatialPandas, Series):
     # ----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
-        """Returns a GeoSeries of GeoJSON Dictionary
-        """
+        """Returns a GeoSeries of GeoJSON Dictionary"""
         return self.apply(lambda x: x.__geo_interface__)
 
     @property
@@ -185,7 +184,7 @@ class GeoSeries(BaseSpatialPandas, Series):
         return False
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))

@@ -8,9 +8,11 @@ from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+
+
 class DataStore(_BaseKube):
     _parent = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, parent, initialize=False):
         """Constructor
 
@@ -33,7 +35,8 @@ class DataStore(_BaseKube):
         self._parent = parent
         if initialize:
             self._init(gis._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self, force=True):
         """
         Removes the datastore from the Kubernetes Site
@@ -42,11 +45,14 @@ class DataStore(_BaseKube):
 
         """
         if self.properties.systemManaged == False:
-            return self._parent._unregister_data_item(path=self.properties.path, force=force)
+            return self._parent._unregister_data_item(
+                path=self.properties.path, force=force
+            )
         else:
             raise Exception("System Managed DataStore cannot be removed.")
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def status(self):
         """
@@ -55,9 +61,10 @@ class DataStore(_BaseKube):
         :return: Dict
         """
         url = self._url + "/status"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def switch_role(self):
         """
         This operation promotes a standby relational data store to act as
@@ -67,11 +74,13 @@ class DataStore(_BaseKube):
         :returns: Boolean
         """
         url = self._url + "/switchRole"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
+
 ###########################################################################
 class DataStores(_BaseKube):
     _con = None
@@ -79,7 +88,7 @@ class DataStores(_BaseKube):
     _json_dict = None
     _json = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
 
@@ -93,22 +102,21 @@ class DataStores(_BaseKube):
         ==================     ====================================================================
 
         """
-        super(DataStores, self).__init__(gis=gis,
-                                         url=url)
+        super(DataStores, self).__init__(gis=gis, url=url)
         self._url = url
         self._gis = gis
         self._con = gis._con
         if initialize:
             self._init(gis._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
+        params = {"f": "json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = connection.get(path=self._url, params=params)
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = InsensitiveDict(result)
@@ -120,13 +128,16 @@ class DataStores(_BaseKube):
         except:
             self._json_dict = {}
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return '<%s at %s>' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+        return "<%s at %s>" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -135,7 +146,8 @@ class DataStores(_BaseKube):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __getattr__(self, name):
         """adds dot notation to any class"""
         if self._properties is None:
@@ -143,45 +155,55 @@ class DataStores(_BaseKube):
         try:
             return self._properties.__getitem__(name)
         except:
-            for k,v in self._json_dict.items():
+            for k, v in self._json_dict.items():
                 if k.lower() == name.lower():
                     return v
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
-    #----------------------------------------------------------------------
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+            )
+
+    # ----------------------------------------------------------------------
     def __getitem__(self, key):
         """helps make object function like a dictionary object"""
         try:
             return self._properties.__getitem__(key)
         except KeyError:
-            for k,v in self._json_dict.items():
+            for k, v in self._json_dict.items():
                 if k.lower() == key.lower():
                     return v
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
-                                                                        key))
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, key)
+            )
         except:
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__,
-                                                                        key))
-    #----------------------------------------------------------------------
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, key)
+            )
+
+    # ----------------------------------------------------------------------
     @property
     def url(self):
         """gets/sets the service url"""
         return self._url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @url.setter
     def url(self, value):
         """gets/sets the service url"""
         self._url = value
         self.refresh()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __iter__(self):
         """creates iterable for classes properties"""
-        for k,v in self._json_dict.items():
-            yield k,v
-    #----------------------------------------------------------------------
+        for k, v in self._json_dict.items():
+            yield k, v
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def stores(self):
         """
@@ -192,10 +214,10 @@ class DataStores(_BaseKube):
             url = f"{self._url}/{ds['id']}"
             stores.append(DataStore(url, gis=self._gis, parent=self))
         return stores
-    #----------------------------------------------------------------------
-    #----------------------------------------------------------------------
-    def add(self,
-            item):
+
+    # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    def add(self, item):
         """
         Registers a new data item with the data store.
 
@@ -212,12 +234,13 @@ class DataStores(_BaseKube):
 
         """
         res = self._register_data_item(item=item)
-        if res['status'] == 'success' or res['status'] == 'exists':
+        if res["status"] == "success" or res["status"] == "exists":
             url = self._url + f"/{res['id']}"
             return DataStore(url, self._gis, self)
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _register_data_item(self, item):
         """
         Registers a new data item with the server's data store.
@@ -232,14 +255,11 @@ class DataStores(_BaseKube):
         :return:
             A response
         """
-        params = {
-            "item" : item,
-            "f" : "json"
-        }
+        params = {"item": item, "f": "json"}
         url = self._url + "/registerItem"
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def _unregister_data_item(self, path):
         """
         Unregisters a data item that has been previously registered with
@@ -264,26 +284,25 @@ class DataStores(_BaseKube):
 
         """
         url = self._url + "/unregisterItem"
-        params = {
-            "f" : "json",
-            "itempath" : path,
-            "force" : True
-        }
+        params = {"f": "json", "itempath": path, "force": True}
         res = self._con.post(path=url, postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
-        elif 'success' in res:
-            return res['success']
+        if "status" in res:
+            return res["status"] == "success"
+        elif "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
-    def search(self,
-               parent_path=None,
-               ancestor_path=None,
-               types=None,
-               id=None,
-               is_managed=None,
-               json=False,
-               **kwargs):
+
+    # ----------------------------------------------------------------------
+    def search(
+        self,
+        parent_path=None,
+        ancestor_path=None,
+        types=None,
+        id=None,
+        is_managed=None,
+        json=False,
+        **kwargs,
+    ):
         """
         Use this operation to search through the various data items that are registered in the server's data store.
 
@@ -313,23 +332,22 @@ class DataStores(_BaseKube):
 
         """ jenn note: list of possible types """
         params = {
-            "f" : "json",
+            "f": "json",
         }
         if parent_path is not None:
-            params['parentPath'] = parent_path
+            params["parentPath"] = parent_path
         if ancestor_path is not None:
-            params['ancestorPath'] = ancestor_path
+            params["ancestorPath"] = ancestor_path
         if types is not None:
-            params['types'] = types
+            params["types"] = types
         if id is not None:
-            params['id'] = id
+            params["id"] = id
         if "decrypt" in kwargs.keys():
             params["decrypt"] = kwargs["decrypt"]
         if is_managed is not None:
-            params['isManaged'] = is_managed
+            params["isManaged"] = is_managed
         url = self._url + "/findItems"
-        res = self._con.post(path=url,
-                             postdata=params)
+        res = self._con.post(path=url, postdata=params)
         if "items" in res and json == False:
             stores = []
             for ds in res["items"]:
@@ -337,9 +355,10 @@ class DataStores(_BaseKube):
                 stores.append(DataStore(url, gis=self._gis, parent=self))
             return stores
         elif "items" in res and json:
-            return res['items']
+            return res["items"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def config(self):
         """
@@ -356,9 +375,10 @@ class DataStores(_BaseKube):
         :return: dict
         """
         url = self._url + "/config"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @config.setter
     def config(self, config):
         """
@@ -377,9 +397,6 @@ class DataStores(_BaseKube):
         """
         if config is None:
             config = {}
-        params = {
-            "f" : "json",
-            "datastoreConfig" : config
-        }
+        params = {"f": "json", "datastoreConfig": config}
         url = self._url + "/config/update"
         return self._con.post(path=url, postdata=params)

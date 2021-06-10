@@ -510,7 +510,7 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
-        """ list attachments for a given OBJECT ID """
+        """list attachments for a given OBJECT ID"""
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
@@ -1789,7 +1789,10 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -2095,8 +2098,10 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-            ","
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2249,23 +2254,29 @@ class FeatureLayer(Layer):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = [v.lower() for v in [
-            "Executing",
-            "Pending",
-            "InProgress",
-            "Completed",
-            "Failed ImportChanges",
-            "ExportChanges",
-            "ExportingData",
-            "ExportingSnapshot",
-            "ExportAttachments",
-            "ImportAttachments",
-            "ProvisioningReplica",
-            "UnRegisteringReplica",
-            "CompletedWithErrors",
-        ]]
+        status_allowed = [
+            v.lower()
+            for v in [
+                "Executing",
+                "Pending",
+                "InProgress",
+                "Completed",
+                "Failed ImportChanges",
+                "ExportChanges",
+                "ExportingData",
+                "ExportingSnapshot",
+                "ExportAttachments",
+                "ImportAttachments",
+                "ProvisioningReplica",
+                "UnRegisteringReplica",
+                "CompletedWithErrors",
+            ]
+        ]
         status = con.get(url, params)
-        while status["status"].lower() in status_allowed and status["status"].lower() != "completed":
+        while (
+            status["status"].lower() in status_allowed
+            and status["status"].lower() != "completed"
+        ):
             if status["status"].lower() == "completed":
                 return status
             elif status["status"].lower() == "completedwitherrors":
@@ -2681,24 +2692,33 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url, postdata=params,)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
-        """ returns results of query """
+        """returns results of query"""
         try:
             if "add_token" in kwargs:
                 result = self._con.post(
                     path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
             else:
-                result = self._con.post(path=url, postdata=params,)
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                )
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -2767,7 +2787,7 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _query_df(self, url, params, **kwargs):
-        """ returns results of a query as a pd.DataFrame"""
+        """returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np
@@ -3417,7 +3437,7 @@ class FeatureLayerCollection(_GISResource):
 
     @property
     def manager(self):
-        """ helper object to manage the feature layer collection, update it's definition, etc """
+        """helper object to manage the feature layer collection, update it's definition, etc"""
         if self._admin is None:
             url = self._url
             res = search("/rest/", url).span()
@@ -3764,7 +3784,7 @@ class FeatureLayerCollection(_GISResource):
         out_sr=None,
     ):
         """
-           queries the feature layer collection
+        queries the feature layer collection
         """
         qurl = self._url + "/query"
         params = {
@@ -3913,7 +3933,7 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     @property
     def _replicas(self):
-        """ returns all the replicas for a feature service """
+        """returns all the replicas for a feature service"""
         params = {
             "f": "json",
         }

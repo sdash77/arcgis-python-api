@@ -24,13 +24,14 @@ class MapFeatureLayer(Layer):
     Map Feature Layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
     GIS. `MapFeatureLayer` objects can be obtained through the layers attribute on map image service Items in the GIS.
     """
+
     _metadatamanager = None
     _renderer = None
     _storage = None
     _dynamic_layer = None
     _attachments = None
     _time_filter = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a map feature layer given a feature layer URL
@@ -41,6 +42,7 @@ class MapFeatureLayer(Layer):
         """
         if gis is None:
             import arcgis
+
             gis = arcgis.env.active_gis
         if str(url).lower().endswith("/"):
             url = url[:-1]
@@ -49,50 +51,55 @@ class MapFeatureLayer(Layer):
         self._attachments = None
         self._dynamic_layer = dynamic_layer
         self._time_filter = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : "FeatureLayer",
-                      'url' : url }
+        lyr_dict = {"type": "FeatureLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': "FeatureLayer", 'url': url}
+        lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     @lru_cache(maxsize=10)
     def attachements(self):
         """
         Provides a manager to work with attachments if the MapFeatureLayer supports this functionality
         """
-        if "supportsQueryAttachments" in self.properties and \
-           self.properties["supportsQueryAttachments"] and \
-           self._attachments is None:
+        if (
+            "supportsQueryAttachments" in self.properties
+            and self.properties["supportsQueryAttachments"]
+            and self._attachments is None
+        ):
             from arcgis.features.managers import AttachmentManager
+
             self._attachments = AttachmentManager(self)
         return self._attachments
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def time_filter(self):
         """
@@ -112,7 +119,7 @@ class MapFeatureLayer(Layer):
         """
         return self._time_filter
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @time_filter.setter
     def time_filter(self, value):
         """
@@ -131,9 +138,10 @@ class MapFeatureLayer(Layer):
         :returns: String of datetime values as milliseconds from epoch
         """
         import datetime as _dt
+
         v = []
         if isinstance(value, _dt.datetime):
-            self._time_filter = f"{int(value.timestamp() * 1000)}" # means single time
+            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
         elif isinstance(value, (tuple, list)):
             for idx, d in enumerate(value):
                 if idx > 1:
@@ -152,7 +160,7 @@ class MapFeatureLayer(Layer):
         else:
             raise Exception("Invalid datetime filter")
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def renderer(self):
         """
@@ -162,11 +170,12 @@ class MapFeatureLayer(Layer):
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
+
         if self._renderer is None and "drawingInfo" in self.properties:
             self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
         return self._renderer
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @renderer.setter
     def renderer(self, value):
         """
@@ -176,6 +185,7 @@ class MapFeatureLayer(Layer):
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
+
         if isinstance(value, (dict, PropertyMap)):
             self._renderer = InsensitiveDict(dict(value))
         elif value is None:
@@ -184,7 +194,7 @@ class MapFeatureLayer(Layer):
             raise ValueError("Invalid renderer type.")
         self._refresh = value
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @classmethod
     def fromitem(cls, item, layer_id=0):
         """
@@ -196,16 +206,19 @@ class MapFeatureLayer(Layer):
 
         return MapImageLayer.fromitem(item).layers[layer_id]
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def container(self):
         """
         The `MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
-            self._storage = MapImageLayer(url=self._url.rstrip(digits)[:-1], gis=self._gis)
+            self._storage = MapImageLayer(
+                url=self._url.rstrip(digits)[:-1], gis=self._gis
+            )
         return self._storage
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export_attachments(self, output_folder, label_field=None):
         """
         Exports attachments from the map feature layer in Imagenet format using the output_label_field.
@@ -224,7 +237,7 @@ class MapFeatureLayer(Layer):
         import urllib
         import hashlib
 
-        if not self.properties['hasAttachments']:
+        if not self.properties["hasAttachments"]:
             raise Exception("Map Feature Layer doesn't have any attachments.")
 
         if not os.path.exists(output_folder):
@@ -232,22 +245,22 @@ class MapFeatureLayer(Layer):
 
         object_attachments_mapping = {}
 
-        object_id_field = self.properties['objectIdField']
+        object_id_field = self.properties["objectIdField"]
 
         dataframe_merged = pandas.merge(
             self.query().sdf,
             self.attachments.search(as_df=True),
             left_on=object_id_field,
-            right_on='PARENTOBJECTID'
+            right_on="PARENTOBJECTID",
         )
 
         token = self._con.token
 
-        internal_folder = os.path.join(output_folder, 'images')
+        internal_folder = os.path.join(output_folder, "images")
         if not os.path.exists(internal_folder):
             os.mkdir(internal_folder)
 
-        folder = 'images'
+        folder = "images"
         for row in dataframe_merged.iterrows():
 
             if label_field is not None:
@@ -259,10 +272,13 @@ class MapFeatureLayer(Layer):
                 os.mkdir(path)
 
             if token is not None:
-                url = '{}/{}/attachments/{}?token={}'.format(self.url, row[1][object_id_field], row[1]["ID"],
-                                                             self._con.token)
+                url = "{}/{}/attachments/{}?token={}".format(
+                    self.url, row[1][object_id_field], row[1]["ID"], self._con.token
+                )
             else:
-                url = '{}/{}/attachments/{}'.format(self.url, row[1][object_id_field], row[1]["ID"])
+                url = "{}/{}/attachments/{}".format(
+                    self.url, row[1][object_id_field], row[1]["ID"]
+                )
 
             if not object_attachments_mapping.get(row[1][object_id_field]):
                 object_attachments_mapping[row[1][object_id_field]] = []
@@ -270,22 +286,24 @@ class MapFeatureLayer(Layer):
             content = urllib.request.urlopen(url).read()
 
             md5_hash = hashlib.md5(content).hexdigest()
-            attachment_path = os.path.join(path, f'{md5_hash}.jpg')
+            attachment_path = os.path.join(path, f"{md5_hash}.jpg")
 
-            object_attachments_mapping[row[1][object_id_field]].append(os.path.join('images', os.path.join(folder, f'{md5_hash}.jpg')))
+            object_attachments_mapping[row[1][object_id_field]].append(
+                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
+            )
 
             if os.path.exists(attachment_path):
                 continue
-            file = open(attachment_path, 'wb')
+            file = open(attachment_path, "wb")
             file.write(content)
             file.close()
 
-        mapping_path = os.path.join(output_folder, 'mapping.txt')
-        file = open(mapping_path, 'w')
+        mapping_path = os.path.join(output_folder, "mapping.txt")
+        file = open(mapping_path, "w")
         file.write(json.dumps(object_attachments_mapping))
         file.close()
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):
         """
         This operation groups data using the supplied definition
@@ -311,19 +329,17 @@ class MapFeatureLayer(Layer):
 
         """
         if self._dynamic_layer:
-            url = "%s/generateRenderer" % self._url.split('?')[0]
+            url = "%s/generateRenderer" % self._url.split("?")[0]
         else:
             url = "%s/generateRenderer" % self._url
-        params = {'f' : 'json',
-                  'classificationDef' : definition
-                  }
+        params = {"f": "json", "classificationDef": definition}
         if where:
-            params['where'] = where
+            params["where"] = where
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _add_attachment(self, oid, file_path):
         """
         Adds an attachment to a feature service
@@ -340,32 +356,32 @@ class MapFeatureLayer(Layer):
 
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             if self._dynamic_layer:
-                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-                params['layer'] = self._dynamic_layer
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
-            files = {'attachment': file_path}
-            res = self._con.post(path=attach_url,
-                                 postdata=params,
-                                 files=files, token=self._token)
+            files = {"attachment": file_path}
+            res = self._con.post(
+                path=attach_url, postdata=params, files=files, token=self._token
+            )
             return res
         else:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
-                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-                params['layer'] = self._dynamic_layer
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
-            params['uploadId'] = itemid
-            res = self._con.post(attach_url,
-                                 params)
-            if res['addAttachmentResult']['success'] == True:
+            params["uploadId"] = itemid
+            res = self._con.post(attach_url, params)
+            if res["addAttachmentResult"]["success"] == True:
                 container._delete_upload(itemid)
             return res
+
     # ----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
         """
@@ -381,13 +397,10 @@ class MapFeatureLayer(Layer):
 
         :returns: dictionary
         """
-        params = {
-            "f": "json",
-            "attachmentIds": "%s" % attachment_id
-        }
+        params = {"f": "json", "attachmentIds": "%s" % attachment_id}
         if self._dynamic_layer:
-            url = self._url.split('?')[0] + "/%s/deleteAttachments" % oid
-            params['layer'] = self._dynamic_layer
+            url = self._url.split("?")[0] + "/%s/deleteAttachments" % oid
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
         return self._con.post(url, params, token=self._token)
@@ -410,37 +423,30 @@ class MapFeatureLayer(Layer):
         :returns: dictionary
 
         """
-        params = {
-            "f": "json",
-            "attachmentId": "%s" % attachment_id
-        }
-        files = {'attachment': file_path}
+        params = {"f": "json", "attachmentId": "%s" % attachment_id}
+        files = {"attachment": file_path}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + f"/{oid}/updateAttachment"
-            params['layer'] = self._dynamic_layer
+            url = self.url.split("?")[0] + f"/{oid}/updateAttachment"
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url,
-                             postdata=params,
-                             files=files, token=self._token)
+        res = self._con.post(path=url, postdata=params, files=files, token=self._token)
         return res
 
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
-        """ list attachments for a given OBJECT ID """
+        """list attachments for a given OBJECT ID"""
 
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + "/%s/attachments" % oid
-            params['layer'] = self._dynamic_layer
+            url = self.url.split("?")[0] + "/%s/attachments" % oid
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/attachments" % oid
         return self._con.get(path=url, params=params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def get_unique_values(self, attribute, query_string='1=1'):
+    def get_unique_values(self, attribute, query_string="1=1"):
         """Return a list of unique values for a given attribute
 
         ===============================     ====================================================================
@@ -454,49 +460,57 @@ class MapFeatureLayer(Layer):
         ===============================     ====================================================================
         """
 
-        result = self.query(query_string, return_geometry=False, out_fields=attribute,return_distinct_values=True)
+        result = self.query(
+            query_string,
+            return_geometry=False,
+            out_fields=attribute,
+            return_distinct_values=True,
+        )
         return [feature.attributes[attribute] for feature in result.features]
+
     # ----------------------------------------------------------------------
-    def query(self,
-              where="1=1",
-              text=None, # new
-              out_fields="*",
-              time_filter=None,
-              geometry_filter=None,
-              return_geometry=True,
-              return_count_only=False,
-              return_ids_only=False,
-              return_distinct_values=False,
-              return_extent_only=False,
-              group_by_fields_for_statistics=None,
-              statistic_filter=None,
-              result_offset=None,
-              result_record_count=None,
-              object_ids=None,
-              distance=None,
-              units=None,
-              max_allowable_offset=None,
-              out_sr=None,
-              geometry_precision=None,
-              gdb_version=None,
-              order_by_fields=None,
-              out_statistics=None,
-              return_z=False,
-              return_m=False,
-              multipatch_option=None,
-              quantization_parameters=None,
-              return_centroid=False,
-              return_all_records=True,
-              result_type=None,
-              historic_moment=None,
-              sql_format=None,
-              return_true_curves=False,
-              return_exceeded_limit_features=None,
-              as_df=False,
-              datum_transformation=None,
-              range_values=None,
-              parameter_values=None,
-              **kwargs):
+    def query(
+        self,
+        where="1=1",
+        text=None,  # new
+        out_fields="*",
+        time_filter=None,
+        geometry_filter=None,
+        return_geometry=True,
+        return_count_only=False,
+        return_ids_only=False,
+        return_distinct_values=False,
+        return_extent_only=False,
+        group_by_fields_for_statistics=None,
+        statistic_filter=None,
+        result_offset=None,
+        result_record_count=None,
+        object_ids=None,
+        distance=None,
+        units=None,
+        max_allowable_offset=None,
+        out_sr=None,
+        geometry_precision=None,
+        gdb_version=None,
+        order_by_fields=None,
+        out_statistics=None,
+        return_z=False,
+        return_m=False,
+        multipatch_option=None,
+        quantization_parameters=None,
+        return_centroid=False,
+        return_all_records=True,
+        result_type=None,
+        historic_moment=None,
+        sql_format=None,
+        return_true_curves=False,
+        return_exceeded_limit_features=None,
+        as_df=False,
+        datum_transformation=None,
+        range_values=None,
+        parameter_values=None,
+        **kwargs,
+    ):
         """
         Queries a map feature layer based on a sql statement
 
@@ -750,115 +764,119 @@ class MapFeatureLayer(Layer):
         if self._dynamic_layer is None:
             url = self._url + "/query"
         else:
-            url = "%s/query" % self._url.split('?')[0]
+            url = "%s/query" % self._url.split("?")[0]
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if result_type is not None:
-            params['resultType'] = result_type
+            params["resultType"] = result_type
         if historic_moment is not None:
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if sql_format is not None:
-            params['sqlFormat'] = sql_format
+            params["sqlFormat"] = sql_format
         if return_true_curves is not None:
-            params['returnTrueCurves'] = return_true_curves
+            params["returnTrueCurves"] = return_true_curves
         if return_exceeded_limit_features is not None:
-            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
-        params['where'] = where
-        params['returnGeometry'] = return_geometry
-        params['returnDistinctValues'] = return_distinct_values
-        params['returnCentroid'] = return_centroid
-        params['returnCountOnly'] = return_count_only
-        params['returnExtentOnly'] = return_extent_only
-        params['returnIdsOnly'] = return_ids_only
-        params['returnZ'] = return_z
-        params['returnM'] = return_m
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+        params["where"] = where
+        params["returnGeometry"] = return_geometry
+        params["returnDistinctValues"] = return_distinct_values
+        params["returnCentroid"] = return_centroid
+        params["returnCountOnly"] = return_count_only
+        params["returnExtentOnly"] = return_extent_only
+        params["returnIdsOnly"] = return_ids_only
+        params["returnZ"] = return_z
+        params["returnM"] = return_m
         if parameter_values:
-            params['parameterValues']
+            params["parameterValues"]
         if range_values:
-            params['rangeValues'] = range_values
+            params["rangeValues"] = range_values
         if not datum_transformation is None:
-            params['datumTransformation'] = datum_transformation
+            params["datumTransformation"] = datum_transformation
 
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
-            out_fields = ','.join(out_fields)
+            out_fields = ",".join(out_fields)
 
-        if out_fields != '*' and not return_distinct_values:
+        if out_fields != "*" and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
-                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
-                if object_id_field not in out_fields.split(','):
+                object_id_field = [
+                    x.name
+                    for x in self.properties.fields
+                    if x.type == "esriFieldTypeOID"
+                ][0]
+                if object_id_field not in out_fields.split(","):
                     out_fields = object_id_field + "," + out_fields
             except (IndexError, AttributeError):
                 pass
-        params['outFields'] = out_fields
+        params["outFields"] = out_fields
         if return_count_only or return_extent_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
-            params['resultRecordCount'] = result_record_count
+            params["resultRecordCount"] = result_record_count
         if result_offset and not return_all_records:
-            params['resultOffset'] = result_offset
+            params["resultOffset"] = result_offset
         if quantization_parameters:
-            params['quantizationParameters'] = quantization_parameters
+            params["quantizationParameters"] = quantization_parameters
         if multipatch_option:
-            params['multipatchOption'] = multipatch_option
+            params["multipatchOption"] = multipatch_option
         if order_by_fields:
-            params['orderByFields'] = order_by_fields
+            params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
-        if statistic_filter and \
-                isinstance(statistic_filter, StatisticFilter):
-            params['outStatistics'] = statistic_filter.filter
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params["outStatistics"] = statistic_filter.filter
         if out_statistics:
-            params['outStatistics'] = out_statistics
+            params["outStatistics"] = out_statistics
         if text:
-            params['text'] = text
+            params["text"] = text
         if out_sr:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if max_allowable_offset:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if gdb_version:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if geometry_precision:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         if object_ids:
-            params['objectIds'] = object_ids
+            params["objectIds"] = object_ids
         if distance:
-            params['distance'] = distance
+            params["distance"] = distance
         if units:
-            params['units'] = units
+            params["units"] = units
 
         if time_filter is None and self.time_filter:
-            params['time'] = self.time_filter
+            params["time"] = self.time_filter
         elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
                 if starttime is None:
-                    starttime = 'null'
+                    starttime = "null"
                 if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
             elif isinstance(time_filter, dict):
                 for key, val in time_filter.items():
                     params[key] = val
             else:
-                params['time'] = _date_handler(time_filter)
+                params["time"] = _date_handler(time_filter)
 
-        if geometry_filter and \
-                isinstance(geometry_filter, GeometryFilter):
+        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter and \
-                isinstance(geometry_filter, dict):
+        elif geometry_filter and isinstance(geometry_filter, dict):
             for key, val in geometry_filter.items():
                 params[key] = val
         if len(kwargs) > 0:
             for key, val in kwargs.items():
-                if key in ('returnCountOnly','returnExtentOnly','returnIdsOnly') and val:
+                if (
+                    key in ("returnCountOnly", "returnExtentOnly", "returnIdsOnly")
+                    and val
+                ):
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
                     return_all_records = False
                 params[key] = val
@@ -869,75 +887,86 @@ class MapFeatureLayer(Layer):
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
-        params['returnCountOnly'] = True
+        params["returnCountOnly"] = True
         record_count = self._query(url, params, raw=as_raw)
-        if 'maxRecordCount' in self.properties:
-            max_records = self.properties['maxRecordCount']
+        if "maxRecordCount" in self.properties:
+            max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
 
         supports_pagination = True
-        if ('advancedQueryCapabilities' not in self.properties or \
-                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+        if (
+            "advancedQueryCapabilities" not in self.properties
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+        ):
             supports_pagination = False
 
-        params['returnCountOnly'] = False
+        params["returnCountOnly"] = False
         if record_count == 0 and as_df:
             from arcgis.features.geo._array import GeoArray
             import numpy as np
             import pandas as pd
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : np.datetime64,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
             columns = {}
             for fld in self.properties.fields:
                 fld = dict(fld)
-                columns[fld['name']] = _fld_lu[fld['type']]
-            if "geometryType" in self.properties and \
-               not self.properties.geometryType is None:
-                columns['SHAPE'] = object
+                columns[fld["name"]] = _fld_lu[fld["type"]]
+            if (
+                "geometryType" in self.properties
+                and not self.properties.geometryType is None
+            ):
+                columns["SHAPE"] = object
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if 'SHAPE' in df.columns:
-                df['SHAPE'] = GeoArray([])
+            if "SHAPE" in df.columns:
+                df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params['resultRecordCount'] = record_count
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
+
                 df = self._query_df(url, params)
-                dt_fields = [fld['name'] for fld in self.properties.fields \
-                             if fld['type'] == 'esriFieldTypeDate']
-                if 'SHAPE' in df.columns:
-                    df.spatial.set_geometry('SHAPE')
+                dt_fields = [
+                    fld["name"]
+                    for fld in self.properties.fields
+                    if fld["type"] == "esriFieldTypeDate"
+                ]
+                if "SHAPE" in df.columns:
+                    df.spatial.set_geometry("SHAPE")
                     df.spatial.renderer = self.renderer
                     df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                            df[fld] = pd.to_datetime(
+                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                            df[fld] = pd.to_datetime(
+                                df[fld], infer_datetime_format=True
+                            )
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -948,18 +977,18 @@ class MapFeatureLayer(Layer):
         df = None
         dfs = []
         if not supports_pagination:
-            params['returnIdsOnly'] = True
+            params["returnIdsOnly"] = True
             oid_info = self._query(url, params, raw=as_raw)
-            params['returnIdsOnly'] = False
-            for ids in chunks(oid_info['objectIds'], max_records):
+            params["returnIdsOnly"] = False
+            for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
-                params['where'] = sql
+                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -969,14 +998,14 @@ class MapFeatureLayer(Layer):
                     dfs.append(df)
         else:
             while True:
-                params['resultRecordCount'] = max_records
-                params['resultOffset'] = max_records * i
+                params["resultRecordCount"] = max_records
+                params["resultOffset"] = max_records * i
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -994,43 +1023,52 @@ class MapFeatureLayer(Layer):
                 i += 1
         if as_df:
             import pandas as pd
-            dt_fields = [fld['name'] for fld in self.properties.fields \
-                         if fld['type'] == 'esriFieldTypeDate']
+
+            dt_fields = [
+                fld["name"]
+                for fld in self.properties.fields
+                if fld["type"] == "esriFieldTypeDate"
+            ]
             if len(dfs) == 1:
                 df = dfs[0]
             else:
                 df = pd.concat(dfs, sort=True)
                 df.reset_index(drop=True, inplace=True)
-            if 'SHAPE' in df.columns:
-                df.spatial.set_geometry('SHAPE')
+            if "SHAPE" in df.columns:
+                df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 if fld in df.columns:
 
                     try:
-                        df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                        df[fld] = pd.to_datetime(
+                            df[fld] / 1000, infer_datetime_format=True, unit="s"
+                        )
                     except:
-                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
+                        df[fld] = pd.to_datetime(
+                            df[fld], infer_datetime_format=True, errors="coerce"
+                        )
             return df
         return result
+
     # ----------------------------------------------------------------------
-    def query_related_records(self,
-                              object_ids,
-                              relationship_id,
-                              out_fields="*",
-                              definition_expression=None,
-                              return_geometry=True,
-                              max_allowable_offset=None,
-                              geometry_precision=None,
-                              out_wkid=None,
-                              gdb_version=None,
-                              return_z=False,
-                              return_m=False,
-                              historic_moment=None,
-                              return_true_curve=False):
+    def query_related_records(
+        self,
+        object_ids,
+        relationship_id,
+        out_fields="*",
+        definition_expression=None,
+        return_geometry=True,
+        max_allowable_offset=None,
+        geometry_precision=None,
+        out_wkid=None,
+        gdb_version=None,
+        return_z=False,
+        return_m=False,
+        historic_moment=None,
+        return_true_curve=False,
+    ):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -1113,34 +1151,32 @@ class MapFeatureLayer(Layer):
             "outFields": out_fields,
             "returnGeometry": return_geometry,
             "returnM": return_m,
-            "returnZ": return_z
+            "returnZ": return_z,
         }
         if historic_moment:
             if hasattr(historic_moment, "timestamp"):
                 historic_moment = int(historic_moment.timestamp() * 1000)
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if return_true_curve:
-            params['returnTrueCurves'] = return_true_curve
+            params["returnTrueCurves"] = return_true_curve
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if gdb_version is not None:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if definition_expression is not None:
-            params['definitionExpression'] = definition_expression
-        if out_wkid is not None and \
-                isinstance(out_wkid, SpatialReference):
-            params['outSR'] = out_wkid
-        elif out_wkid is not None and \
-                isinstance(out_wkid, dict):
-            params['outSR'] = out_wkid
+            params["definitionExpression"] = definition_expression
+        if out_wkid is not None and isinstance(out_wkid, SpatialReference):
+            params["outSR"] = out_wkid
+        elif out_wkid is not None and isinstance(out_wkid, dict):
+            params["outSR"] = out_wkid
         if max_allowable_offset is not None:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if geometry_precision is not None:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         if self._dynamic_layer is None:
             qrr_url = self._url + "/queryRelatedRecords"
         else:
-            qrr_url = "%s/queryRelatedRecords" % self._url.split('?')[0]
+            qrr_url = "%s/queryRelatedRecords" % self._url.split("?")[0]
 
         return self._con.post(path=qrr_url, postdata=params, token=self._token)
 
@@ -1162,47 +1198,61 @@ class MapFeatureLayer(Layer):
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
             pop_url = self._url + "/%s/htmlPopup" % oid
-            params = {
-                'f': "json"
-            }
+            params = {"f": "json"}
 
             return self._con.get(path=pop_url, params=params, token=self._token)
         return ""
+
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
-                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
-                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
-                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status_allowed = [
+            "Pending",
+            "InProgress",
+            "Completed",
+            "Failed ImportChanges",
+            "ExportChanges",
+            "ExportingData",
+            "ExportingSnapshot",
+            "ExportAttachments",
+            "ImportAttachments",
+            "ProvisioningReplica",
+            "UnRegisteringReplica",
+            "CompletedWithErrors",
+        ]
         status = con.get(url, params)
-        while status['status'] in status_allowed and \
-              status['status'] != 'Completed':
-            if status['status'] == 'Completed':
+        while status["status"] in status_allowed and status["status"] != "Completed":
+            if status["status"] == "Completed":
                 return status
-            elif status['status'] == 'CompletedWithErrors':
+            elif status["status"] == "CompletedWithErrors":
                 break
-            elif 'fail' in status['status'].lower():
+            elif "fail" in status["status"].lower():
                 break
-            elif 'error' in status['status'].lower():
+            elif "error" in status["status"].lower():
                 break
             status = con.get(url, params)
         return status
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False):
-        """ returns results of query """
+        """returns results of query"""
         try:
-            result = self._con.post(path=url,
-                                    postdata=params, token=self._token)
+            result = self._con.post(path=url, postdata=params, token=self._token)
         except Exception as queryException:
-            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            error_list = [
+                "Error performing query operation",
+                "HTTP Error 504: GATEWAY_TIMEOUT",
+            ]
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
-                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
-                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                max_record = (
+                    int(params["resultRecordCount"])
+                    if "resultRecordCount" in params
+                    else 1000
+                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1212,13 +1262,17 @@ class MapFeatureLayer(Layer):
                     i = 0
                     result = None
                     while max_rec * i < max_record:
-                        params['resultRecordCount'] = max_rec if max_rec*(i+1) <= max_record else (max_record - max_rec*i)
-                        params['resultOffset'] = offset + max_rec * i
+                        params["resultRecordCount"] = (
+                            max_rec
+                            if max_rec * (i + 1) <= max_record
+                            else (max_record - max_rec * i)
+                        )
+                        params["resultOffset"] = offset + max_rec * i
                         try:
                             records = self._query(url, params, raw=True)
                             if result:
-                                for feature in records['features']:
-                                    result['features'].append(feature)
+                                for feature in records["features"]:
+                                    result["features"].append(feature)
                             else:
                                 result = records
                             i += 1
@@ -1231,18 +1285,18 @@ class MapFeatureLayer(Layer):
         def is_true(x):
             if isinstance(x, bool) and x:
                 return True
-            elif isinstance(x, str) and x.lower() == 'true':
+            elif isinstance(x, str) and x.lower() == "true":
                 return True
             else:
                 return False
 
-        if 'error' in result:
+        if "error" in result:
             raise ValueError(result)
-        if 'returnCountOnly' in params and is_true(params['returnCountOnly']):
-            return result['count']
-        elif 'returnIdsOnly' in params and is_true(params['returnIdsOnly']):
+        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
+            return result["count"]
+        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
             return result
-        elif 'extent' in result:
+        elif "extent" in result:
             return result
         elif is_true(raw):
             return result
@@ -1251,74 +1305,86 @@ class MapFeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _query_df(self, url, params):
-        """ returns results of a query as a pd.DataFrame"""
+        """returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np
-        if [float(i) for i in pd.__version__.split('.')] < [1,0,0]:
+
+        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : pd.datetime,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": pd.datetime,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
         else:
             from datetime import datetime as _datetime
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : _datetime,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": _datetime,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
+
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
             from arcgis.geometry import Geometry
-            geom = feature['geometry'] if 'geometry' in feature else None
-            attribs = feature['attributes'] if 'attributes' in feature else {}
-            if 'centroid' in feature:
+
+            geom = feature["geometry"] if "geometry" in feature else None
+            attribs = feature["attributes"] if "attributes" in feature else {}
+            if "centroid" in feature:
                 if attribs is None:
-                    attribs = {'centroid' : feature['centroid']}
-                elif 'centroid' in attribs:
+                    attribs = {"centroid": feature["centroid"]}
+                elif "centroid" in attribs:
                     import uuid
+
                     fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature['centroid']
+                    attribs[fld] = feature["centroid"]
                 else:
-                    attribs['centroid'] = feature['centroid']
+                    attribs["centroid"] = feature["centroid"]
             if geom:
                 if "spatialReference" not in geom:
                     geom["spatialReference"] = sr
-                attribs['SHAPE'] = Geometry(geom)
+                attribs["SHAPE"] = Geometry(geom)
             return attribs
-        #------------------------------------------------------------------
+
+        # ------------------------------------------------------------------
         try:
-            featureset_dict = self._con.post(url, params,
-                                             token=self._token)
+            featureset_dict = self._con.post(url, params, token=self._token)
         except Exception as queryException:
-            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            error_list = [
+                "Error performing query operation",
+                "HTTP Error 504: GATEWAY_TIMEOUT",
+            ]
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
-                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
-                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                max_record = (
+                    int(params["resultRecordCount"])
+                    if "resultRecordCount" in params
+                    else 1000
+                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -1328,14 +1394,17 @@ class MapFeatureLayer(Layer):
                     i = 0
                     featureset_dict = None
                     while max_rec * i < max_record:
-                        params['resultRecordCount'] = max_rec if max_rec * (i + 1) <= max_record else (
-                                    max_record - max_rec * i)
-                        params['resultOffset'] = offset + max_rec * i
+                        params["resultRecordCount"] = (
+                            max_rec
+                            if max_rec * (i + 1) <= max_record
+                            else (max_record - max_rec * i)
+                        )
+                        params["resultOffset"] = offset + max_rec * i
                         try:
                             records = self._query(url, params, raw=True)
                             if featureset_dict is not None:
-                                for feature in records['features']:
-                                    featureset_dict['features'].append(feature)
+                                for feature in records["features"]:
+                                    featureset_dict["features"].append(feature)
                             else:
                                 featureset_dict = records
                             i += 1
@@ -1345,79 +1414,85 @@ class MapFeatureLayer(Layer):
             else:
                 raise queryException
 
-        if len(featureset_dict['features']) == 0:
+        if len(featureset_dict["features"]) == 0:
             return pd.DataFrame([])
         sr = None
-        if 'spatialReference' in featureset_dict:
-            sr = featureset_dict['spatialReference']
+        if "spatialReference" in featureset_dict:
+            sr = featureset_dict["spatialReference"]
 
         df = None
         dtypes = None
         geom = None
         names = None
         dfields = []
-        rows = [feature_to_row(row, sr) \
-                for row in featureset_dict['features']]
+        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
-        if 'fields' in featureset_dict:
+        if "fields" in featureset_dict:
             dtypes = {}
             names = []
-            fields = featureset_dict['fields']
+            fields = featureset_dict["fields"]
             for fld in fields:
-                if fld['type'] != "esriFieldTypeGeometry":
-                    dtypes[fld['name']] = _fld_lu[fld['type']]
-                    names.append(fld['name'])
-                if fld['type'] == 'esriFieldTypeDate':
-                    dfields.append(fld['name'])
-        if 'SHAPE' in featureset_dict:
-            df.spatial.set_geometry('SHAPE')
+                if fld["type"] != "esriFieldTypeGeometry":
+                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
+                    names.append(fld["name"])
+                if fld["type"] == "esriFieldTypeDate":
+                    dfields.append(fld["name"])
+        if "SHAPE" in featureset_dict:
+            df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
-            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+            df[dfields] = df[dfields].apply(pd.to_datetime, unit="ms")
         return df
+
 
 ###########################################################################
 class MapRasterLayer(MapFeatureLayer):
     """
     A Map Raster Layer represents a geo-referenced image hosted in a Map Service.
     """
+
     @property
     def _lyr_dict(self):
         url = self.url
 
         if "lods" in self.container.properties:
-            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
+            lyr_dict = {"type": "ArcGISTiledMapServiceLayer", "url": url}
 
         else:
-            lyr_dict =  { 'type' : type(self.container).__name__, 'url' : url }
+            lyr_dict = {"type": type(self.container).__name__, "url": url}
 
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
 
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
         if "lods" in self.container.properties:
-            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : self.container.url }
+            lyr_dict = {"type": "ArcGISTiledMapServiceLayer", "url": self.container.url}
 
         else:
-            lyr_dict =  { 'type' : type(self.container).__name__, 'url' : self.container.url }
+            lyr_dict = {
+                "type": type(self.container).__name__,
+                "url": self.container.url,
+            }
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
+
 ###########################################################################
 class MapTable(MapFeatureLayer):
     """
@@ -1437,59 +1512,62 @@ class MapTable(MapFeatureLayer):
         """
         return item.tables[table_id]
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : "FeatureLayer",
-                      'url' : url }
+        lyr_dict = {"type": "FeatureLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': "FeatureLayer", 'url': url}
+        lyr_dict = {"type": "FeatureLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
-    def query(self,
-              where="1=1",
-              out_fields="*",
-              time_filter=None,
-              return_count_only=False,
-              return_ids_only=False,
-              return_distinct_values=False,
-              group_by_fields_for_statistics=None,
-              statistic_filter=None,
-              result_offset=None,
-              result_record_count=None,
-              object_ids=None,
-              gdb_version=None,
-              order_by_fields=None,
-              out_statistics=None,
-              return_all_records=True,
-              historic_moment=None,
-              sql_format=None,
-              return_exceeded_limit_features=None,
-              as_df=False,
-              range_values=None,
-              parameter_values=None,
-              **kwargs):
+
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        where="1=1",
+        out_fields="*",
+        time_filter=None,
+        return_count_only=False,
+        return_ids_only=False,
+        return_distinct_values=False,
+        group_by_fields_for_statistics=None,
+        statistic_filter=None,
+        result_offset=None,
+        result_record_count=None,
+        object_ids=None,
+        gdb_version=None,
+        order_by_fields=None,
+        out_statistics=None,
+        return_all_records=True,
+        historic_moment=None,
+        sql_format=None,
+        return_exceeded_limit_features=None,
+        as_df=False,
+        range_values=None,
+        parameter_values=None,
+        **kwargs,
+    ):
         """
         Queries a Table Layer based on a set of criteria.
 
@@ -1651,76 +1729,79 @@ class MapTable(MapFeatureLayer):
         if self._dynamic_layer is None:
             url = self._url + "/query"
         else:
-            url = "%s/query" % self._url.split('?')[0]
+            url = "%s/query" % self._url.split("?")[0]
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if historic_moment is not None:
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if sql_format is not None:
-            params['sqlFormat'] = sql_format
+            params["sqlFormat"] = sql_format
         if return_exceeded_limit_features is not None:
-            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
-        params['where'] = where
-        params['returnDistinctValues'] = return_distinct_values
-        params['returnCountOnly'] = return_count_only
-        params['returnIdsOnly'] = return_ids_only
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+        params["where"] = where
+        params["returnDistinctValues"] = return_distinct_values
+        params["returnCountOnly"] = return_count_only
+        params["returnIdsOnly"] = return_ids_only
 
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
-            out_fields = ','.join(out_fields)
+            out_fields = ",".join(out_fields)
 
-        if out_fields != '*' and not return_distinct_values:
+        if out_fields != "*" and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
-                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
-                if object_id_field not in out_fields.split(','):
+                object_id_field = [
+                    x.name
+                    for x in self.properties.fields
+                    if x.type == "esriFieldTypeOID"
+                ][0]
+                if object_id_field not in out_fields.split(","):
                     out_fields = object_id_field + "," + out_fields
             except (IndexError, AttributeError):
                 pass
-        params['outFields'] = out_fields
+        params["outFields"] = out_fields
         if return_count_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
-            params['resultRecordCount'] = result_record_count
+            params["resultRecordCount"] = result_record_count
         if result_offset and not return_all_records:
-            params['resultOffset'] = result_offset
+            params["resultOffset"] = result_offset
         if order_by_fields:
-            params['orderByFields'] = order_by_fields
+            params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
-        if statistic_filter and \
-                isinstance(statistic_filter, StatisticFilter):
-            params['outStatistics'] = statistic_filter.filter
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params["outStatistics"] = statistic_filter.filter
         if out_statistics:
-            params['outStatistics'] = out_statistics
+            params["outStatistics"] = out_statistics
         if gdb_version:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if object_ids:
-            params['objectIds'] = object_ids
+            params["objectIds"] = object_ids
 
         if time_filter is None and self.time_filter:
-            params['time'] = self.time_filter
+            params["time"] = self.time_filter
         elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
                 if starttime is None:
-                    starttime = 'null'
+                    starttime = "null"
                 if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
             elif isinstance(time_filter, dict):
                 for key, val in time_filter.items():
                     params[key] = val
             else:
-                params['time'] = _date_handler(time_filter)
+                params["time"] = _date_handler(time_filter)
 
         if len(kwargs) > 0:
             for key, val in kwargs.items():
-                if key in ('returnCountOnly', 'returnIdsOnly') and val:
+                if key in ("returnCountOnly", "returnIdsOnly") and val:
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
                     return_all_records = False
                 params[key] = val
@@ -1731,75 +1812,86 @@ class MapTable(MapFeatureLayer):
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
-        params['returnCountOnly'] = True
+        params["returnCountOnly"] = True
         record_count = self._query(url, params, raw=as_raw)
-        if 'maxRecordCount' in self.properties:
-            max_records = self.properties['maxRecordCount']
+        if "maxRecordCount" in self.properties:
+            max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
 
         supports_pagination = True
-        if ('advancedQueryCapabilities' not in self.properties or \
-                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+        if (
+            "advancedQueryCapabilities" not in self.properties
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+        ):
             supports_pagination = False
 
-        params['returnCountOnly'] = False
+        params["returnCountOnly"] = False
         if record_count == 0 and as_df:
             from arcgis.features.geo._array import GeoArray
             import numpy as np
             import pandas as pd
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : np.datetime64,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
             columns = {}
             for fld in self.properties.fields:
                 fld = dict(fld)
-                columns[fld['name']] = _fld_lu[fld['type']]
-            if "geometryType" in self.properties and \
-               not self.properties.geometryType is None:
-                columns['SHAPE'] = object
+                columns[fld["name"]] = _fld_lu[fld["type"]]
+            if (
+                "geometryType" in self.properties
+                and not self.properties.geometryType is None
+            ):
+                columns["SHAPE"] = object
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if 'SHAPE' in df.columns:
-                df['SHAPE'] = GeoArray([])
+            if "SHAPE" in df.columns:
+                df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params['resultRecordCount'] = record_count
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
+
                 df = self._query_df(url, params)
-                dt_fields = [fld['name'] for fld in self.properties.fields \
-                             if fld['type'] == 'esriFieldTypeDate']
-                if 'SHAPE' in df.columns:
-                    df.spatial.set_geometry('SHAPE')
+                dt_fields = [
+                    fld["name"]
+                    for fld in self.properties.fields
+                    if fld["type"] == "esriFieldTypeDate"
+                ]
+                if "SHAPE" in df.columns:
+                    df.spatial.set_geometry("SHAPE")
                     df.spatial.renderer = self.renderer
                     df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                            df[fld] = pd.to_datetime(
+                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                            df[fld] = pd.to_datetime(
+                                df[fld], infer_datetime_format=True
+                            )
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -1810,18 +1902,18 @@ class MapTable(MapFeatureLayer):
         df = None
         dfs = []
         if not supports_pagination:
-            params['returnIdsOnly'] = True
+            params["returnIdsOnly"] = True
             oid_info = self._query(url, params, raw=as_raw)
-            params['returnIdsOnly'] = False
-            for ids in chunks(oid_info['objectIds'], max_records):
+            params["returnIdsOnly"] = False
+            for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
-                params['where'] = sql
+                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -1831,14 +1923,14 @@ class MapTable(MapFeatureLayer):
                     dfs.append(df)
         else:
             while True:
-                params['resultRecordCount'] = max_records
-                params['resultOffset'] = max_records * i
+                params["resultRecordCount"] = max_records
+                params["resultOffset"] = max_records * i
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -1856,27 +1948,30 @@ class MapTable(MapFeatureLayer):
                 i += 1
         if as_df:
             import pandas as pd
-            dt_fields = [fld['name'] for fld in self.properties.fields \
-                         if fld['type'] == 'esriFieldTypeDate']
+
+            dt_fields = [
+                fld["name"]
+                for fld in self.properties.fields
+                if fld["type"] == "esriFieldTypeDate"
+            ]
             if len(dfs) == 1:
                 df = dfs[0]
             else:
                 df = pd.concat(dfs, sort=True)
                 df.reset_index(drop=True, inplace=True)
-            if 'SHAPE' in df.columns:
-                df.spatial.set_geometry('SHAPE')
+            if "SHAPE" in df.columns:
+                df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
+                    df[fld] = pd.to_datetime(
+                        df[fld] / 1000, infer_datetime_format=True, unit="s"
+                    )
                 except:
                     df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
             return df
         return result
-
 
 
 ###########################################################################
@@ -1906,23 +2001,25 @@ class _MSILayerFactory(type):
         print(s_layer.properties.name)
         >> 'pipe_properties'
     """
-    def __call__(cls,
-                 url,
-                 gis=None,
-                 container=None,
-                 dynamic_layer=None):
+
+    def __call__(cls, url, gis=None, container=None, dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
         props = lyr.properties
-        if 'type' in props and \
-           props.type.lower() == 'table':
-            return MapTable(url=url, gis=gis, container=container, dynamic_layer=container)
-        elif 'type' in props and \
-           props.type.lower() == 'raster layer':
-            return MapRasterLayer(url=url, gis=gis, container=container, dynamic_layer=container)
-        elif 'type' in props and \
-           props.type.lower() == 'feature layer':
-            return MapFeatureLayer(url=url, gis=gis, container=container, dynamic_layer=container)
+        if "type" in props and props.type.lower() == "table":
+            return MapTable(
+                url=url, gis=gis, container=container, dynamic_layer=container
+            )
+        elif "type" in props and props.type.lower() == "raster layer":
+            return MapRasterLayer(
+                url=url, gis=gis, container=container, dynamic_layer=container
+            )
+        elif "type" in props and props.type.lower() == "feature layer":
+            return MapFeatureLayer(
+                url=url, gis=gis, container=container, dynamic_layer=container
+            )
         return lyr
+
+
 ###########################################################################
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
@@ -1951,11 +2048,11 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         >> 'pipe_properties'
 
     """
+
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a Map Services Layer given a URL and GIS
         """
-        super(MapServiceLayer, self).__init__(url=url, gis=gis,
-                                              container=container,
-                                              dynamic_layer=container)
-
+        super(MapServiceLayer, self).__init__(
+            url=url, gis=gis, container=container, dynamic_layer=container
+        )

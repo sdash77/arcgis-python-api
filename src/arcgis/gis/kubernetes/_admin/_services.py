@@ -17,16 +17,19 @@ class KubeService(object):
     can perform business logic or expose the service through additional
     formats or protocols.
     """
+
     _url = None
     _con = None
     _gis = None
     _properties = None
+
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
-    def change_provier(self, provider:str) -> bool:
+
+    # ----------------------------------------------------------------------
+    def change_provier(self, provider: str) -> bool:
         """
         This operation is used to update an individual service to use either
         a dedicated or shared instance type. When a qualified service is
@@ -51,21 +54,16 @@ class KubeService(object):
 
         :returns: boolean
         """
-        lu = {
-            'dmaps' : "DMaps",
-            "arcobjects11" : "ArcObjects11"
-        }
+        lu = {"dmaps": "DMaps", "arcobjects11": "ArcObjects11"}
         provider = lu[provider.lower()]
-        params = {
-            'f' : 'json',
-            'provider' : provider
-        }
+        params = {"f": "json", "provider": provider}
         url = "{self._url}/changeProvider"
         res = self._con.post(url, params)
         if "status" in res:
             return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
         Removes the service from the hosting server
@@ -74,12 +72,13 @@ class KubeService(object):
 
         """
         url = f"{self._url}/delete"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def status(self) -> dict:
         """
@@ -92,9 +91,10 @@ class KubeService(object):
         state of a service.
         """
         url = f"{self._url}/status"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start(self) -> bool:
         """
         Starts the service
@@ -103,9 +103,10 @@ class KubeService(object):
         """
 
         url = f"{self._url}/start"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop(self) -> bool:
         """
         Stops the service
@@ -114,9 +115,10 @@ class KubeService(object):
         """
 
         url = f"{self._url}/stop"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def restart(self) -> bool:
         """
         Recycles the current service
@@ -124,7 +126,8 @@ class KubeService(object):
         """
         self.stop()
         return self.start()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
         """
@@ -143,13 +146,14 @@ class KubeService(object):
         """
         if self._properties is None:
             url = self._url
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             res = self._con.get(url, params)
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, properties:dict):
+    def properties(self, properties: dict):
         """
 
         To edit a service, you need to submit the complete JSON representation of
@@ -167,16 +171,12 @@ class KubeService(object):
         """
         historic = dict(self.properties)
         historic.update(properties)
-        params = {
-            'f' : 'json',
-            'service' : historic
-        }
+        params = {"f": "json", "service": historic}
         url = f"{self._url}/edit"
         res = self._con.post(url, params)
         self._properties = None
-        if 'status' in res and not res['status'] == 'success':
+        if "status" in res and not res["status"] == "success":
             raise Exception(str(res))
-
 
 
 ###########################################################################
@@ -187,16 +187,19 @@ class ServicesManager(object):
     new sub-folder by using the Create Folder operation as well as a new
     GIS service by using the Create Service method.
     """
+
     _gis = None
     _url = None
     _folder = None
     _types = None
     _properties = None
-    def __init__(self, url:str, gis:"GIS"):
+
+    def __init__(self, url: str, gis: "GIS"):
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def services_properties(self):
         """
@@ -207,10 +210,11 @@ class ServicesManager(object):
         pre-existing services in your organization. To update these services,
         you must edit the individual service's properties.
         """
-        return self._con.get(self._url + "/properties", {'f' : 'json'})
-    #----------------------------------------------------------------------
+        return self._con.get(self._url + "/properties", {"f": "json"})
+
+    # ----------------------------------------------------------------------
     @services_properties.setter
-    def services_properties(self, properties:dict):
+    def services_properties(self, properties: dict):
         """
         This resource is used to provide default settings for new services
         when they are published to the server. You can use the update
@@ -221,11 +225,13 @@ class ServicesManager(object):
 
 
         """
-        res = self._con.post(self._url + "/properties", {'f' : 'json',
-                                                         'properties' : properties})
-        if res['status'] != 'success':
+        res = self._con.post(
+            self._url + "/properties", {"f": "json", "properties": properties}
+        )
+        if res["status"] != "success":
             raise Exception(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> dict:
         """
@@ -234,17 +240,19 @@ class ServicesManager(object):
         :returns: dict
         """
         url = self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         self._properties = self._con.get(url, params)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def folder(self):
         """returns the current folder"""
         return self._folder or "/"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @folder.setter
-    def folder(self, folder:str):
+    def folder(self, folder: str):
         """get/set the current folder"""
         if folder is None:
             self._folder = "/"
@@ -252,8 +260,9 @@ class ServicesManager(object):
             self._folder = folder
         else:
             raise Exception("Folder does not exist.")
-    #----------------------------------------------------------------------
-    def list(self, folder:str=None) -> list:
+
+    # ----------------------------------------------------------------------
+    def list(self, folder: str = None) -> list:
         """lists the services in the current folder"""
         services = []
         if folder is None and self.folder != "/":
@@ -264,15 +273,18 @@ class ServicesManager(object):
             url = f"{self._url}/{folder}"
         else:
             url = self._url
-        res = self._con.get(url, {'f' : 'json'})
+        res = self._con.get(url, {"f": "json"})
         if "services" in res:
             return [
-                KubeService(url=f"{url}/{service['serviceName']}.{service['type']}",
-                            gis=self._gis) \
-                for service in res['services']
-                    ]
+                KubeService(
+                    url=f"{url}/{service['serviceName']}.{service['type']}",
+                    gis=self._gis,
+                )
+                for service in res["services"]
+            ]
         return []
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def folders(self) -> list:
         """
@@ -281,8 +293,9 @@ class ServicesManager(object):
         :returns: List[str]
 
         """
-        return self.properties.get('folders', [])
-    #----------------------------------------------------------------------
+        return self.properties.get("folders", [])
+
+    # ----------------------------------------------------------------------
     @property
     def types(self) -> dict:
         """
@@ -292,9 +305,10 @@ class ServicesManager(object):
 
         """
         if self._types is None:
-            self._types = self._con.get(f"{self._url}/types", {'f' : 'json'})
+            self._types = self._con.get(f"{self._url}/types", {"f": "json"})
         return self._types
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def extensions(self) -> dict:
         """
@@ -304,26 +318,30 @@ class ServicesManager(object):
 
         :return: Dict
         """
-        return self._con.get(f"{self._url}/types/extensions", {'f' : 'json'})
-    #----------------------------------------------------------------------
+        return self._con.get(f"{self._url}/types/extensions", {"f": "json"})
+
+    # ----------------------------------------------------------------------
     @property
     def providers(self) -> dict:
         """
         returns the supported provider types for the GIS services in your organization.
         """
-        return self._con.get(f"{self._url}/types/providers", {'f' : 'json'})
-    #----------------------------------------------------------------------
-    def exists(self, *, service_name:str=None, folder:str=None, service_type:str=None) -> dict:
+        return self._con.get(f"{self._url}/types/providers", {"f": "json"})
+
+    # ----------------------------------------------------------------------
+    def exists(
+        self, *, service_name: str = None, folder: str = None, service_type: str = None
+    ) -> dict:
         """
         This operation checks if a folder or service exists on the server.
 
         :returns: dict
         """
         params = {
-            'f' : 'json',
-            'folderName' : folder,
-            'serviceName' : service_name,
-            'type' : service_type
+            "f": "json",
+            "folderName": folder,
+            "serviceName": service_name,
+            "type": service_type,
         }
         for key in list(params.keys()):
             if params[key] is None:
@@ -332,13 +350,16 @@ class ServicesManager(object):
         url = f"{self._url}/exists"
         res = self._con.post(url, params)
         return res
-    #----------------------------------------------------------------------
-    def can_create(self,
-                   service_type:str,
-                   *,
-                   folder:str=None,
-                   service:dict=None,
-                   options:dict=None) -> bool:
+
+    # ----------------------------------------------------------------------
+    def can_create(
+        self,
+        service_type: str,
+        *,
+        folder: str = None,
+        service: dict = None,
+        options: dict = None,
+    ) -> bool:
         """
         Checks if a service can be generated. It is recommended that the user
         check if the service can be created before calling `create_service`.
@@ -360,18 +381,21 @@ class ServicesManager(object):
         """
         url = f"{self._url}/canCreateService"
         params = {
-            'f' : 'json',
-            'folderName' : folder,
-            'serviceType' : service_type,
-            'service' : service,
-            'options' : options
+            "f": "json",
+            "folderName": folder,
+            "serviceType": service_type,
+            "service": service,
+            "options": options,
         }
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
-    def create_service(self, service_json:dict=None, input_upload_id:str=None, folder:str=None) -> bool:
+
+    # ----------------------------------------------------------------------
+    def create_service(
+        self, service_json: dict = None, input_upload_id: str = None, folder: str = None
+    ) -> bool:
         """
         Creates a new GIS service in a folder (either the root or a sub-folder) by
         submitting a JSON representation of the service to this operation.
@@ -392,24 +416,20 @@ class ServicesManager(object):
         if isinstance(service_json, dict):
             service_json = json.dumps(service_json)
 
-
         if folder:
             url = f"{self._url}/{folder}/createService"
         elif folder is None and (self.folder or self.folder != "/"):
             url = f"{self._url}/{self.folder}/createService"
         else:
             url = f"{self._url}/createService"
-        params = {
-            'f' : 'json',
-            'serviceJson' : service_json
-        }
+        params = {"f": "json", "serviceJson": service_json}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
 
-    #----------------------------------------------------------------------
-    def create_folder(self, folder:str) -> bool:
+    # ----------------------------------------------------------------------
+    def create_folder(self, folder: str) -> bool:
         """
         Creates a folder on the hosting server
 
@@ -422,16 +442,14 @@ class ServicesManager(object):
         :return: boolean
         """
         url = self._url + "/createFolder"
-        params = {
-            'f' : 'json',
-            'folderName' : folder
-        }
+        params = {"f": "json", "folderName": folder}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
-    def _delete_folder(self, folder:str) -> bool:
+
+    # ----------------------------------------------------------------------
+    def _delete_folder(self, folder: str) -> bool:
         """
         Removes a folder on the hosting server
 
@@ -443,19 +461,18 @@ class ServicesManager(object):
 
         :return: boolean
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if folder in self.folders:
             u_url = self._url + "/%s/deleteFolder" % folder
             res = self._con.post(path=u_url, postdata=params, try_json=False)
             return not folder in self.folders
-            #if 'status' in res:
+            # if 'status' in res:
             #    return res['status'] == 'success'
-            #return res
+            # return res
         else:
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def refresh_auto_deployment(self) -> bool:
         """
         This operation auto-deploys the System or Utility services if they failed to be deployed
@@ -466,14 +483,15 @@ class ServicesManager(object):
 
         """
         url = f"{self._url}/refreshAutodeployedServices"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         else:
             return res
-    #----------------------------------------------------------------------
 
-    #----------------------------------------------------------------------
-    #----------------------------------------------------------------------
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------

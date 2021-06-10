@@ -71,6 +71,13 @@ MaskRCNN
     :inherited-members:
     :undoc-members:
 
+MMDetection
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMDetection
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Pixel Classification Models
 ---------------------------
 UnetClassifier

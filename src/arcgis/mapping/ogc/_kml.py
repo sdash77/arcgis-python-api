@@ -6,6 +6,7 @@ from arcgis.gis import GIS
 from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
+
 ###########################################################################
 class KMLLayer(BaseOGC):
     """
@@ -28,33 +29,36 @@ class KMLLayer(BaseOGC):
 
 
     """
+
     _type = "KML"
+
     def __init__(self, url, **kwargs):
         """initializer"""
         super(KMLLayer, self)
         self._url = url
-        self._title = kwargs.pop('title', "KML Layer")
-        self._id = kwargs.pop('id', uuid.uuid4().hex)
-        self._min_scale, self._max_scale = kwargs.pop('scale', (-1,-1))
-        self._opacity = kwargs.pop('opacity', 1)
-        self._copyright = kwargs.pop('copyright', None)
+        self._title = kwargs.pop("title", "KML Layer")
+        self._id = kwargs.pop("id", uuid.uuid4().hex)
+        self._min_scale, self._max_scale = kwargs.pop("scale", (-1, -1))
+        self._opacity = kwargs.pop("opacity", 1)
+        self._copyright = kwargs.pop("copyright", None)
         self._gis = None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
         """Represents the MapView's widget JSON format"""
-        add_layer =  {
-            "type" : self._type,
-            'url' : self._url,
-            'opacity' : self.opacity,
-            'minScale' : self.scale[0],
-            'maxScale' : self.scale[1],
-            'id' : self._id,
-            'title' : self.title
+        add_layer = {
+            "type": self._type,
+            "url": self._url,
+            "opacity": self.opacity,
+            "minScale": self.scale[0],
+            "maxScale": self.scale[1],
+            "id": self._id,
+            "title": self.title,
         }
-        if self.scale == (-1,-1):
-            del add_layer['minScale']
-            del add_layer['maxScale']
+        if self.scale == (-1, -1):
+            del add_layer["minScale"]
+            del add_layer["maxScale"]
         return add_layer
 
     @property

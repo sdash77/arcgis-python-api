@@ -1,9 +1,11 @@
 import json
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 
+
 class Server(_BaseKube):
     """Represents a single kubernetes service"""
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, server_json):
         """
         Updates the server JSON
@@ -12,63 +14,63 @@ class Server(_BaseKube):
 
         """
         url = f"{self._url}/edit"
-        params = {
-            "f" : "json",
-            "serverJson" : server_json
-        }
+        params = {"f": "json", "serverJson": server_json}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def status(self):
         """returns the status of the server"""
         url = f"{self._url}/status"
-        params = {'f' :'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def stop(self):
         """returns the status of the server"""
         url = f"{self._url}/stop"
-        params = {'f' :'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def start(self):
         """returns the status of the server"""
         url = f"{self._url}/start"
-        params = {'f' :'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
 
 ###########################################################################
 class ServerDefaults(_BaseKube):
     @property
     def properties(self):
-        return 'foo'
+        return "foo"
+
     @properties.setter
     def properties(self, value):
         if self.properties != value:
             url = self._url + "/edit"
-            params = {
-                "f" : "json",
-                "propertyJson" : value
-            }
+            params = {"f": "json", "propertyJson": value}
             self._con.post(url, params)
+
+
 ###########################################################################
 class ServerManager(_BaseKube):
-    """
+    """ """
 
-    """
     _gis = None
     _con = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def list(self):
         """
@@ -82,7 +84,8 @@ class ServerManager(_BaseKube):
             url = f"{self._url}/{server.id}"
             servers.append(Server(url, self._gis))
         return servers
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def defaults(self):
         """
         Returns the default properties for each server type.
@@ -92,13 +95,15 @@ class ServerManager(_BaseKube):
         """
         d = []
         url = f"{self._url}/properties"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
 
-        if 'properties' in res:
-            for i in res['properties']:
+        if "properties" in res:
+            for i in res["properties"]:
                 purl = f"{url}/{i['id']}"
                 d.append(ServerDefaults(url=purl, gis=self._gis))
         return d
+
+
 ###########################################################################
 class Indexer(_BaseKube):
     """
@@ -119,7 +124,7 @@ class Indexer(_BaseKube):
         :returns: dict
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         url = f"{self._url}/status"
         return self._con.get(url, params)
 
@@ -142,15 +147,12 @@ class Indexer(_BaseKube):
 
         """
         url = f"{self._url}/reindex"
-        params = {
-            "f" : 'json',
-            "mode" : mode,
-            "includes" : includes
-        }
+        params = {"f": "json", "mode": mode, "includes": includes}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
 
 class SystemManager(_BaseKube):
     """
@@ -158,9 +160,10 @@ class SystemManager(_BaseKube):
     for your deployment such as the configuration store, licenses, and
     deployment-wide security.
     """
+
     _indexer = None
     _sm = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
 
@@ -174,14 +177,14 @@ class SystemManager(_BaseKube):
         ==================     ====================================================================
 
         """
-        super(SystemManager, self).__init__(gis=gis,
-                                            url=url)
+        super(SystemManager, self).__init__(gis=gis, url=url)
         self._url = url
         self._gis = gis
         self._con = gis._con
         if initialize:
             self._init(gis._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -191,9 +194,10 @@ class SystemManager(_BaseKube):
         :return: dict
         """
         url = f"{self._url}/properties"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
         """
@@ -203,10 +207,10 @@ class SystemManager(_BaseKube):
         :return: dict
         """
         url = f"{self._url}/properties/update"
-        params = {'f' : 'json',
-                  'properties' : value}
+        params = {"f": "json", "properties": value}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def indexer(self):
         """
@@ -219,10 +223,11 @@ class SystemManager(_BaseKube):
             url = f"{self._url}/indexer"
             self._indexer = Indexer(url=url, gis=self._gis)
         return self._indexer
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def servers(self):
-        """"""
+        """ """
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm

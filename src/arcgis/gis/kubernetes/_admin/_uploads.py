@@ -17,15 +17,15 @@ class Uploads(_BaseKube):
     with the kubernetes site properties API.
 
     """
+
     _uploads = None
     _con = None
     _json = None
     _json_dict = None
     _url = None
 
-    #----------------------------------------------------------------------
-    def __init__(self, url, gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor"""
         if url.lower().find("uploads") < -1:
             self._url = url + "/uploads"
@@ -35,7 +35,7 @@ class Uploads(_BaseKube):
         self._json_dict = {}
         self._json = ""
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def uploads(self):
         """
@@ -52,12 +52,10 @@ class Uploads(_BaseKube):
         uploadFileExtensionWhitelist property with the kubernetes site properties API.
 
         """
-        params = {
-            "f" :"json"
-        }
-        return self._con.get(path=self._url,
-                            params=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(path=self._url, params=params)
+
+    # ----------------------------------------------------------------------
     def delete(self, item_id):
         """
         Deletes the uploaded item and its configuration.
@@ -73,14 +71,13 @@ class Uploads(_BaseKube):
 
         """
         url = self._url + "/%s/delete" % item_id
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         res = self._con.post(path=url, postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def item(self, item_id):
         """
         This resource represents an item that has been uploaded to the
@@ -99,11 +96,10 @@ class Uploads(_BaseKube):
          :item_id: uploaded id identifier
         """
         url = self._url + "/%s" % item_id
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def upload(self, path, description=None):
         """
         Uploads a new item to the kubernetes site. Once the operation is completed
@@ -123,37 +119,32 @@ class Uploads(_BaseKube):
 
         """
         url = self._url + "/upload"
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         files = {}
-        files['itemFile'] = path
+        files["itemFile"] = path
         if description:
-            params['description'] = description
-        res = self._con.post(path=url,
-                             postdata=params,
-                             files=files)
-        if 'status' in res and \
-           res['status'] == 'success':
+            params["description"] = description
+        res = self._con.post(path=url, postdata=params, files=files)
+        if "status" in res and res["status"] == "success":
             return True, res
         return False, res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _service_configuration(self, upload_id):
-        """ gets the serviceconfiguration.json info for an uploaded sd file"""
+        """gets the serviceconfiguration.json info for an uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _initial_cache_settings(self, upload_id):
-        """ gets the initial cache settings for a given uploaded sd file"""
+        """gets the initial cache settings for a given uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    def upload_by_part(self,
-                       item_id,
-                       part_number,
-                       part):
+
+    # ----------------------------------------------------------------------
+    def upload_by_part(self, item_id, part_number, part):
         """
         Uploads a new item to the kubernetes site. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
@@ -173,16 +164,12 @@ class Uploads(_BaseKube):
 
         """
         url = self._url + "{iid}/uploadPart".format(iid=item_id)
-        params = {
-            "f" : "json",
-            "partNumber" : part_number
-        }
+        params = {"f": "json", "partNumber": part_number}
         files = {}
-        files['partFile'] = part
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
-    #----------------------------------------------------------------------
+        files["partFile"] = part
+        return self._con.post(path=url, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
     def commit(self, item_id, parts=None):
         """
         Use this operation to complete the upload of all the parts that
@@ -203,12 +190,11 @@ class Uploads(_BaseKube):
         :return: Boolean
 
         """
-        params = {'f': 'json'}
-        url = self._url + '/{iid}/commit'.format(iid=item_id)
+        params = {"f": "json"}
+        url = self._url + "/{iid}/commit".format(iid=item_id)
         if parts:
-            params['parts'] = parts
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+            params["parts"] = parts
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res

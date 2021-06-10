@@ -4,23 +4,29 @@ from collections import namedtuple
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 
+
 class SnapShot(object):
     """
     A single snapshot instance for a Notebook item.
     """
+
     _sm = None
     _item = None
-    def __init__(self, item:Item, sm:"SnapshotManager", properties:dict):
+
+    def __init__(self, item: Item, sm: "SnapshotManager", properties: dict):
         self._item = item
         self._sm = sm
         self.properties = properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return f"<SnapShot {self.properties['properties']['name']}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
-        return f"<SnapShot {self.properties['properties']['name']}>"       
-    #----------------------------------------------------------------------
+        return f"<SnapShot {self.properties['properties']['name']}>"
+
+    # ----------------------------------------------------------------------
     def download(self):
         """
         Retrieves a snap shot locally on disk.
@@ -30,11 +36,12 @@ class SnapShot(object):
 
         """
         params = {
-            "item" : self._item,
-            "snapshot" : self.properties['resourceKey'],
+            "item": self._item,
+            "snapshot": self.properties["resourceKey"],
         }
         return self._sm._download(**params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def save_as_item(self, title):
         """
         Converts a Snapshot to a new notebook `Item`.
@@ -48,10 +55,10 @@ class SnapShot(object):
         :returns: Item
         """
         return self._sm._convert(
-            item=self._item,
-            snapshot=self.properties['resourceKey'],
-            title=title)
-    #----------------------------------------------------------------------
+            item=self._item, snapshot=self.properties["resourceKey"], title=title
+        )
+
+    # ----------------------------------------------------------------------
     def restore(self, preserve=True, description=None):
         """
         Rolls back the notebook to a previous snapshot state
@@ -68,12 +75,15 @@ class SnapShot(object):
 
         :return: dict
         """
-        return self._sm._restore(item=self._item,
-                                 title=title,
-                                 snapshot=self.properties['resourceKey'],
-                                 preserve=preserve,
-                                 description=description)
-    #----------------------------------------------------------------------
+        return self._sm._restore(
+            item=self._item,
+            title=title,
+            snapshot=self.properties["resourceKey"],
+            preserve=preserve,
+            description=description,
+        )
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes a snapshot associated with the notebook item
@@ -89,32 +99,36 @@ class SnapShot(object):
         :return: bool
 
         """
-        res = self._sm._delete(item=self._item,
-                               snapshot=self.properties['resourceKey'])
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._sm._delete(item=self._item, snapshot=self.properties["resourceKey"])
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
+
 ###########################################################################
 class SnapshotManager(object):
     """
     Allows for management and creation of snapshots (save points) for ArcGIS Notebooks.
     """
+
     _gis = None
     _url = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the endpoint"""
         if self._properties is None:
-            res = self._gis._con.get(self._url, {'f' : 'json'})
+            res = self._gis._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _convert(self, item, snapshot, title):
         """
         Converts a Snapshot to a new notebook.
@@ -131,22 +145,23 @@ class SnapshotManager(object):
         :returns: Item
 
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
+        if isinstance(item, Item) and item.type.lower() == "notebook":
             url = f"{self._url}/convertToItem"
             params = {
-                "f" : "json",
-                "itemId" : item.id,
-                "resourceKey" : snapshot,
-                "notebookTitle" : title
+                "f": "json",
+                "itemId": item.id,
+                "resourceKey": snapshot,
+                "notebookTitle": title,
             }
             res = self._gis._con.post(url, params)
-            if 'itemId' in res:
-                return Item(gis=self._gis, itemid=res['itemId'])
+            if "itemId" in res:
+                return Item(gis=self._gis, itemid=res["itemId"])
             else:
                 return res
         else:
             raise ValueError("`item` must be a Notebook")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _download(self, item, snapshot):
         """
         Retrieves a snap shot locally on disk.
@@ -163,16 +178,17 @@ class SnapshotManager(object):
 
 
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
+        if isinstance(item, Item) and item.type.lower() == "notebook":
             url = f"{self._url}/download"
             params = {
-                "itemId" : item.itemid,
-                "resourceKey" : snapshot,
+                "itemId": item.itemid,
+                "resourceKey": snapshot,
             }
             return self._gis._con.post(url, params, try_json=False)
         else:
             raise ValueError("`item` must be a Notebook")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def create(self, item, name, description=None, notebook_json=None, access=False):
         """
         Creates a Snapshot of a Given Item.
@@ -196,21 +212,22 @@ class SnapshotManager(object):
         :return: dict
 
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
+        if isinstance(item, Item) and item.type.lower() == "notebook":
             params = {
-                'f' : 'json',
-                'itemId' : item.id,
-                'name' : name,
-                'description' : description or "",
-                'privateAccess' : access,
+                "f": "json",
+                "itemId": item.id,
+                "name": name,
+                "description": description or "",
+                "privateAccess": access,
             }
 
-            params['notebookJSON'] = notebook_json or ""
+            params["notebookJSON"] = notebook_json or ""
             url = f"{self._url}/create"
             return self._gis._con.post(url, params)
         else:
             raise ValueError("`item` must be a Notebook")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self, item):
         """
         Returns a list of SnapShots for a notebook item.
@@ -224,21 +241,29 @@ class SnapshotManager(object):
         :return: namedtuple of snapshot properties
 
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
+        if isinstance(item, Item) and item.type.lower() == "notebook":
             params = {
-                'f' : 'json',
-                'itemId' : item.id,
+                "f": "json",
+                "itemId": item.id,
             }
             url = f"{self._url}/list"
             res = self._gis._con.post(url, params)
-            if 'status' in res and res['status'] == 'success' and len(res['snapshots']) > 0:
-                snaptuple = namedtuple("SnapshotInfo", res['snapshots'][0])
-                return [SnapShot(item=item, sm=self, properties=snap) for snap in res['snapshots']]
+            if (
+                "status" in res
+                and res["status"] == "success"
+                and len(res["snapshots"]) > 0
+            ):
+                snaptuple = namedtuple("SnapshotInfo", res["snapshots"][0])
+                return [
+                    SnapShot(item=item, sm=self, properties=snap)
+                    for snap in res["snapshots"]
+                ]
             else:
                 return []
         else:
             raise ValueError("`item` must be a Notebook")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _restore(self, item, snapshot, preserve=True, description=None, title=None):
         """
         Rolls back the notebook to a previous snapshot state
@@ -260,20 +285,21 @@ class SnapshotManager(object):
 
         :return: dict
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
+        if isinstance(item, Item) and item.type.lower() == "notebook":
             params = {
-            "itemId" : item.id,
-            "resourceKey" : snapshot,
-            "preserveCurrentAsSnapshot" : preserve,
-            "description" : description or "",
-            "title" : title or "",
-            "f": "json"
+                "itemId": item.id,
+                "resourceKey": snapshot,
+                "preserveCurrentAsSnapshot": preserve,
+                "description": description or "",
+                "title": title or "",
+                "f": "json",
             }
             url = f"{self._url}/restore"
             return self._gis._con.post(url, params)
         else:
             raise ValueError("`item` must be a Notebook")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _delete(self, item, snapshot):
         """
         Deletes a snapshot associated with the notebook item
@@ -289,14 +315,9 @@ class SnapshotManager(object):
         :return: dict
 
         """
-        if isinstance(item, Item) and item.type.lower() == 'notebook':
-            params = {
-            "itemId" : item.id,
-            "resourceKeys" : snapshot,
-            "f": "json"
-            }
+        if isinstance(item, Item) and item.type.lower() == "notebook":
+            params = {"itemId": item.id, "resourceKeys": snapshot, "f": "json"}
             url = f"{self._url}/delete"
             return self._gis._con.post(url, params)
         else:
             raise ValueError("`item` must be a Notebook")
-

@@ -5,8 +5,8 @@ assignment, history and attachments for individual jobs can be accessed. Additio
 roles, users, groups, and searches can be view, modified or created.
 """
 
-from . _workflow_manager import WorkflowManager
-from . _workflow_manager import WorkflowManagerAdmin
-from . _workflow_manager import JobManager
-from . _workflow_manager import Job
-from . _workflow_manager import JobDiagram
+from ._workflow_manager import WorkflowManager
+from ._workflow_manager import WorkflowManagerAdmin
+from ._workflow_manager import JobManager
+from ._workflow_manager import Job
+from ._workflow_manager import JobDiagram

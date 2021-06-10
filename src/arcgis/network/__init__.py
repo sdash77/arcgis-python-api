@@ -4,6 +4,14 @@ for operations such as finding the closest facility, the best route for a vehicl
 vehicles, locating facilities using location allocation, calculating an OD cost matrix, and generating service areas.
 """
 
-from ._layer import NetworkLayer, NetworkDataset, ClosestFacilityLayer, ServiceAreaLayer, RouteLayer, NAJob, ODCostMatrixLayer
+from ._layer import (
+    NetworkLayer,
+    NetworkDataset,
+    ClosestFacilityLayer,
+    ServiceAreaLayer,
+    RouteLayer,
+    NAJob,
+    ODCostMatrixLayer,
+)
 
 from . import analysis

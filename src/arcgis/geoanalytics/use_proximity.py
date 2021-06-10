@@ -137,7 +137,7 @@ def trace_proximity_events(
     tbx = import_toolbox(url_or_item=url, gis=gis)
 
     if output_name is None:
-        output_service_name = "Trace Proximity Events_" + _id_generator()
+        output_service_name = _id_generator(prefix="Trace Proximity Events_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -387,7 +387,7 @@ def create_buffers(
     if distance_unit is None:
         params["distance_unit"] = None
     if output_name is None:
-        output_service_name = "Create Buffers_" + _id_generator()
+        output_service_name = _id_generator(prefix="Create Buffers_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

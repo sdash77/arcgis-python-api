@@ -1,5 +1,6 @@
 import json
 from arcgis.gis import Layer, _GISResource, Item, GIS
+
 ###########################################################################
 class Object3DLayer(Layer):
     """
@@ -29,6 +30,7 @@ class Object3DLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
@@ -39,30 +41,31 @@ class Object3DLayer(Layer):
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : "SceneLayer",
-                      'url' : url }
+        lyr_dict = {"type": "SceneLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': "SceneLayer", 'url': url}
+        lyr_dict = {"type": "SceneLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
 
 ###########################################################################
 class IntegratedMeshLayer(Layer):
@@ -93,6 +96,7 @@ class IntegratedMeshLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
@@ -103,30 +107,31 @@ class IntegratedMeshLayer(Layer):
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : "IntegratedMeshLayer",
-                      'url' : url }
+        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': "IntegratedMeshLayer", 'url': url}
+        lyr_dict = {"type": "IntegratedMeshLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
 
 ###########################################################################
 class Point3DLayer(Layer):
@@ -157,40 +162,43 @@ class Point3DLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
         super(Point3DLayer, self).__init__(url, gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : "SceneLayer",
-                      'url' : url }
+        lyr_dict = {"type": "SceneLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': "SceneLayer", 'url': url}
+        lyr_dict = {"type": "SceneLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
 
 ###########################################################################
 class PointCloudLayer(Layer):
@@ -221,6 +229,7 @@ class PointCloudLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
@@ -231,30 +240,32 @@ class PointCloudLayer(Layer):
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : 'PointCloudLayer',
-                      'url' : url }
+        lyr_dict = {"type": "PointCloudLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': 'PointCloudLayer', 'url': url}
+        lyr_dict = {"type": "PointCloudLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
+
 ###########################################################################
 class BuildingLayer(Layer):
     """
@@ -284,6 +295,7 @@ class BuildingLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
@@ -294,30 +306,32 @@ class BuildingLayer(Layer):
     def _lyr_dict(self):
         url = self.url
 
-        lyr_dict =  { 'type' : 'BuildingSceneLayer',
-                      'url' : url }
+        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
         if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+            lyr_dict["serviceToken"] = self._token
 
         if self.filter is not None:
-            lyr_dict['filter'] = self.filter
+            lyr_dict["filter"] = self.filter
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            url += "?token=" + self._token
 
-        lyr_dict = {'type': 'BuildingSceneLayer', 'url': url}
+        lyr_dict = {"type": "BuildingSceneLayer", "url": url}
 
         if self.filter is not None:
-            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter
+            lyr_dict["time"] = self._time_filter
         return lyr_dict
+
+
 ###########################################################################
 class _SceneLayerFactory(type):
     """
@@ -345,14 +359,13 @@ class _SceneLayerFactory(type):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
-    def __call__(cls,
-                 url,
-                 gis=None):
+
+    def __call__(cls, url, gis=None):
         lyr = Layer(url=url, gis=gis)
         props = lyr.properties
-        if 'sublayers' in props:
+        if "sublayers" in props:
             return BuildingLayer(url=url, gis=gis)
-        elif 'layerType' in props:
+        elif "layerType" in props:
             lt = props.layerType
         else:
             lt = props.layers[0].layerType
@@ -367,6 +380,8 @@ class _SceneLayerFactory(type):
         elif str(lt).lower() == "IntegratedMesh".lower():
             return IntegratedMeshLayer(url=url, gis=gis)
         return lyr
+
+
 ###########################################################################
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
@@ -396,6 +411,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
+
     def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
