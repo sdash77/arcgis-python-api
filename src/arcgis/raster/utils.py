@@ -23,12 +23,7 @@ def generate_direct_access_url(expiration=None, *, gis=None):
 
 
 def upload_imagery_to_agol_userstore(
-    files,
-    direct_access_url=None,
-    auto_renew=True,
-    upload_properties=None,
-    *,
-    gis=None
+    files, direct_access_url=None, auto_renew=True, upload_properties=None, *, gis=None
 ):
     """
     Uploads file/files to the user's rasterstore on ArcGIS Online and returns the list of urls.
