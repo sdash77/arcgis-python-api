@@ -468,7 +468,7 @@ class Geometry(BaseGeometry):
 
         If `ArcPy` is not installed, none is returned.
 
-        .. Warning::
+        .. note::
             The ``as_arcpy`` method requires ArcPy
 
         :returns:
@@ -1997,7 +1997,7 @@ class Geometry(BaseGeometry):
         :class:`~arcgis.geometry.Point` objects in common.
 
         .. note::
-            The ``disjoint`` method requires ArcPy/Shapely**
+            The ``disjoint`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2377,6 +2377,7 @@ class Geometry(BaseGeometry):
         use_percentage      Optional Boolean. The distance may be specified as a fixed unit
                             of measure or a ratio of the length of the line. If True, value
                             is used as a percentage; if False, value is used as a distance.
+
                             .. note::
                                 For percentages, the value should be expressed as a double from
                                 0.0 (0%) to 1.0 (100%).
@@ -2599,7 +2600,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` - A second geometry
         ===============     ====================================================================
 
         :returns:

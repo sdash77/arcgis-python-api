@@ -24,14 +24,14 @@ def areas_and_lengths(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    polygons          The array of polygons whose areas and lengths are to be computed.
+    polygons          The array of :class:`~arcgis.geometry.Polygon` whose areas and lengths are to be computed.
     ----------------  -------------------------------------------------------------------------------
     length_unit       The length unit in which the perimeters of
                       polygons will be calculated. If ``calculation_type``
-                      is planar, then length_unit can be any esriUnits
-                      constant. If lengthUnit is not specified, the
+                      is planar, then ``length_unit`` can be any esriUnits
+                      constant. If ``length_unit`` is not specified, the
                       units are derived from ``spatial_ref``. If ``calculationType`` is
-                      not planar, then `lengthUnit` must be a linear
+                      not planar, then ``length_unit`` must be a linear
                       esriUnits constant, such as `esriSRUnit_Meter` or
                       `esriSRUnit_SurveyMile`. If ``length_unit`` is not
                       specified, the units are meters. For a list of
@@ -205,7 +205,11 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        The geometries whose convex hull is to be created.
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
@@ -280,10 +284,11 @@ def densify(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        The array of geometries to be densified. The
-                      structure of each geometry in the array is the same as the
-                      structure of the JSON geometry objects returned by the ArcGIS
-                      REST API.
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       The ``well-known ID`` or a spatial reference JSON object for
                       the input :class:`~arcgis.geometry.Polyline` object.
@@ -335,12 +340,6 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     the so-called difference geometry. In other words, let B be the
     difference geometry. For each geometry, A, in the input geometry
     array, it constructs A-B.
-
-      geometry - A single geometry of any type and of a dimension equal
-       to or greater than the elements of geometries. The structure of
-       geometry is the same as the structure of the JSON geometry
-       objects returned by the ArcGIS REST API. The use of simple
-       syntax is not supported.
 
     ================  ===============================================================================
     **Keys**          **Description**
@@ -531,9 +530,9 @@ def from_geo_coordinate_string(
 
                       .. note::
                         Valid conversion modes for UTM are:
-                            `utmDefault` - Default. No options.
-                            `utmNorthSouth` - Uses north/south latitude indicators instead of
-                            `zone numbers` - Non-standard. Default is recommended
+                        `utmDefault` - Default. No options.
+                        `utmNorthSouth` - Uses north/south latitude indicators instead of
+                        `zone numbers` - Non-standard. Default is recommended
 
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
@@ -553,23 +552,39 @@ def generalize(
     spatial_ref, geometries, max_deviation, deviation_unit, gis=None, future=False
 ):
     """
-    The generalize function is performed on a geometry service
-    resource. The generalize function simplifies the input geometries
-    using the Douglas-Peucker algorithm with a specified maximum
-    deviation distance. The output geometries will contain a subset of
-    the original input vertices.
+    The ``generalize`` function is performed on a :class:`~arcgis.geometry.Geometry` service
+    resource. The `generalize` function simplifies the input geometries
+    using the `Douglas-Peucker` algorithm with a specified maximum
+    deviation distance.
 
-    Inputs:
-     spatial_ref - The well-known ID or a spatial reference JSON object for the
-      input geometries.
-     geometries - The array of geometries to be generalized.
-     max_deviation - max_deviation sets the maximum allowable offset,
-      which will determine the degree of simplification. This value
-      limits the distance the output geometry can differ from the input
-      geometry.
-     deviation_unit - A unit for maximum deviation. If a unit is not
-      specified, the units are derived from spatial_ref.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        The output geometries will contain a subset of
+        the original input vertices.
+
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        The array :class:`~arcgis.geometry.Geometry` objects to be generalized.
+    ----------------  -------------------------------------------------------------------------------
+    max_deviation     ``max_deviation`` sets the maximum allowable offset,
+                      which will determine the degree of simplification. This value
+                      limits the distance the output geometry can differ from the input
+                      geometry.
+    ----------------  -------------------------------------------------------------------------------
+    deviation_unit          If ``geodesic`` is set to true, then the geodesic distance
+                      between the ``geometry1`` and ``geometry2`` geometries is returned.
+                      Geodesic distance is the shortest path between two points along
+                      the ellipsoid of the earth. If ``geodesic`` is set to false or not
+                      specified, the planar distance is returned. The default value is false.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of the simplified :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -580,23 +595,37 @@ def generalize(
 
 def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     """
-    The intersect function is performed on a geometry service
+    The ``intersect`` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. This function constructs the set-theoretic intersection
-    between an array of geometries and another geometry. The dimension
-    of each resultant geometry is the minimum dimension of the input
-    geometry in the geometries array and the other geometry specified
-    by the geometry parameter.
+    between an array of geometries and another geometry.
 
-    Inputs:
-     spatial_ref - The well-known ID or a spatial reference JSON object for the
-      input geometries.
-     geometries - An array of points, multipoints, polylines, or
-      polygons. The structure of each geometry in the array is the same
-      as the structure of the JSON geometry objects returned by the
-      ArcGIS REST API.
-     geometry - A single geometry of any type with a dimension equal to
-      or greater than the elements of geometries.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        The dimension of each resultant geometry is the minimum dimension of the input
+        geometry in the geometries array and the other geometry specified by the geometry parameter.
+
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type and of a dimension equal
+                      to or greater than the elements of geometries. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -607,18 +636,26 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
 
 def label_points(spatial_ref, polygons, gis=None, future=False):
     """
-    The label_points function is performed on a geometry service
-    resource. The labelPoints function calculates an interior point
-    for each polygon specified in the input array. These interior
+    The ``label_points`` function is performed on a :class:`~arcgis.geometry.Geometry` service
+    resource. The ``labelPoints`` function calculates an interior :class:`~arcgis.geometry.Point`
+    for each :class:`~arcgis.geometry.Polygon` specified in the input array. These interior
     points can be used by clients for labeling the polygons.
 
-    Inputs:
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference JSON object for the input polygons.
-     polygons - The array of polygons whose label points are to be
-      computed. The spatial reference of the polygons is specified by
-      spatial_ref.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    polygons          An array of :class:`~arcgis.geometry.Polygon` objects whose label :class:`~arcgis.geometry.Point`
+                      objects are to be computed. The spatial reference of the polygons is specified by
+                      ``spatial_ref``.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of :class:`~arcgis.geometry.Point` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -629,38 +666,47 @@ def lengths(
     spatial_ref, polylines, length_unit, calculation_type, gis=None, future=False
 ):
     """
-    The lengths function is performed on a geometry service resource.
-    This function calculates the 2D Euclidean or geodesic lengths of
-    each polyline specified in the input array.
+    The ``lengths`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
+    This function calculates the` 2D Euclidean` or `geodesic` lengths of
+    each :class:`~arcgis.geometry.Polyline` specified in the input array.
 
-    Inputs:
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference JSON object for the input polylines.
-     polylines - The array of polylines whose lengths are to be
-      computed.
-     length_unit - The unit in which lengths of polylines will be
-      calculated. If calculation_type is planar, then length_unit can be
-      any esriUnits constant. If calculation_type is planar and
-      length_unit is not specified, then the units are derived from spatial_ref.
-      If calculation_type is not planar, then length_unit must be a
-      linear esriUnits constant such as esriSRUnit_Meter or
-      esriSRUnit_SurveyMile. If calculation_type is not planar and
-      length_unit is not specified, then the units are meters.
-     calculation_type - calculation_type defines the length calculation
-      for the geometry. The type can be one of the following values:
-        planar - Planar measurements use 2D Euclidean distance to
-         calculate length. This type should only be used if the length
-         needs to be calculated in the given spatial reference.
-         Otherwise, use preserveShape.
-        geodesic - Use this type if you want to calculate a length
-         using only the vertices of the polygon and define the lines
-         between the vertices as geodesic segments independent of the
-         actual shape of the polyline. A geodesic segment is the
-         shortest path between two points on an earth ellipsoid.
-        preserveShape - This type calculates the length of the geometry
-         on the surface of the earth ellipsoid. The shape of the
-         geometry in its coordinate system is preserved.
-        future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    polylines         The array of :class:`~arcgis.geometry.Polyline` whose lengths are to be computed.
+    ----------------  -------------------------------------------------------------------------------
+    length_unit       The length unit in which the length of
+                      :class:`~arcgis.geometry.Polyline` will be calculated. If ``calculation_type``
+                      is planar, then ``length_unit`` can be any `esriUnits`
+                      constant. If ``lengthUnit`` is not specified, the
+                      units are derived from ``spatial_ref``. If ``calculationType`` is
+                      not planar, then `lengthUnit` must be a linear
+                      esriUnits constant, such as `esriSRUnit_Meter` or
+                      `esriSRUnit_SurveyMile`. If ``length_unit`` is not
+                      specified, the units are meters. For a list of
+                      valid units, see `esriSRUnitType Constants` and
+                      `esriSRUnit2Type Constant`.
+    ----------------  -------------------------------------------------------------------------------
+    calculation_type  The type defined for the length calculation of the input geometries. The type can be one
+                      of the following values:
+
+                          1. planar - Planar measurements use 2D Euclidean distance to calculate area and length. This
+                          should only be used if the area or length needs to be calculated in the given
+                          :class:`~arcgis.geometry.SpatialReference`. Otherwise, use ``preserveShape``.
+
+                          2. geodesic - Use this type if you want to calculate an area or length using only the vertices
+                          of the :class:`~arcgis.geometry.Polygon` and define the lines between the points as geodesic
+                          segments independent of the actual shape of the :class:`~arcgis.geometry.Polygon`. A geodesic
+                          segment is the shortest path between two points on an ellipsoid.
+
+                          3. preserveShape - This type calculates the area or length of the geometry on the surface of
+                          the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
+    ----------------  -------------------------------------------------------------------------------
+     future            A required Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A list of floats of 2D-Euclidean or Geodesic lengths
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -681,48 +727,64 @@ def offset(
     future=False,
 ):
     """
-    The offset function is performed on a geometry service resource.
+    The ``offset`` function is performed on a ``geometry`` service resource.
     This function constructs geometries that are offset from the
     given input geometries. If the offset parameter is positive, the
     constructed offset will be on the right side of the geometry. Left
-    side offsets are constructed with negative parameters. Tracing the
-    geometry from its first vertex to the last will give you a
-    direction along the geometry. It is to the right and left
-    perspective of this direction that the positive and negative
-    parameters will dictate where the offset is constructed. In these
-    terms, it is simple to infer where the offset of even horizontal
-    geometries will be constructed.
+    side offsets are constructed with negative parameters.
 
-    Inputs:
-     geometries -  The array of geometries to be offset.
-     offset_distance - Specifies the distance for constructing an offset
-      based on the input geometries. If the offset_distance parameter is
-      positive, the constructed offset will be on the right side of the
-      curve. Left-side offsets are constructed with negative values.
-     offset_unit - A unit for offset distance. If a unit is not
-      specified, the units are derived from spatial_ref.
-     offset_how - The offset_how parameter determines how outer corners
-      between segments are handled. The three options are as follows:
-       esriGeometryOffsetRounded - Rounds the corner between extended
-        offsets.
-       esriGeometryOffsetBevelled - Squares off the corner after a
-        given ratio distance.
-       esriGeometryOffsetMitered - Attempts to allow extended offsets
-        to naturally intersect, but if that intersection occurs too far
-        from the corner, the corner is eventually bevelled off at a
-        fixed distance.
-     bevel_ratio - bevel_ratio is multiplied by the offset distance, and
-      the result determines how far a mitered offset intersection can
-      be located before it is bevelled. When mitered is specified,
-      bevel_ratio is ignored and 10 is used internally. When bevelled is
-      specified, 1.1 will be used if bevel_ratio is not specified.
-      bevel_ratio is ignored for rounded offset.
-     simplify_result - if simplify_result is set to true, then self
-      intersecting loops will be removed from the result offset
-      geometries. The default is false.
-     spatial_ref - The well-known ID or a spatial reference JSON object for the
-      input geometries.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        Tracing the geometry from its first vertex to the last will give you a
+        direction along the geometry. It is to the right and left
+        perspective of this direction that the positive and negative
+        parameters will dictate where the offset is constructed. In these
+        terms, it is simple to infer where the offset of even horizontal geometries will be constructed.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    offset_distance   Specifies the distance for constructing an offset
+                      based on the input geometries.
+
+                      .. note::
+                        If the ``offset_distance`` parameter is
+                        positive, the constructed offset will be on the right side of the
+                        curve. Left-side offsets are constructed with negative values.
+    ----------------  -------------------------------------------------------------------------------
+    offset_unit       A unit for offset distance. If a unit is not specified, the units are derived from
+                      ``spatial_ref``.
+    ----------------  -------------------------------------------------------------------------------
+    offset_how        The ``offset_how`` parameter determines how outer corners between segments are handled.
+                      The three options are as follows:
+                        1. ``esriGeometryOffsetRounded`` - Rounds the corner between extended offsets.
+                        2. ``esriGeometryOffsetBevelled`` - Squares off the corner after a given ratio distance.
+                        3. ``esriGeometryOffsetMitered`` - Attempts to allow extended offsets to naturally intersect,
+                        but if that intersection occurs too far from the corner, the corner is eventually bevelled off
+                        at a fixed distance.
+    ----------------  -------------------------------------------------------------------------------
+    bevel_ratio       ``bevel_ratio`` is multiplied by the ``offset_distance``, and
+                      the result determines how far a mitered offset intersection can
+                      be located before it is bevelled. When mitered is specified,
+                      bevel_ratio is ignored and 10 is used internally. When bevelled is
+                      specified, 1.1 will be used if bevel_ratio is not specified.
+                      ``bevel_ratio`` is ignored for rounded offset.
+    ----------------  -------------------------------------------------------------------------------
+    simplify_result   if ``simplify_result`` is set to true, then self
+                      intersecting loops will be removed from the result offset geometries. The default is false.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -748,36 +810,53 @@ def project(
     future=False,
 ):
     """
-    The project function is performed on a geometry service resource.
+    The ``project`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function projects an array of input geometries from the input
-    spatial reference to the output spatial reference.
+    :class:`~arcgis.geometry.SpatialReference` to the output :class:`~arcgis.geometry.SpatialReference`
 
-    Inputs:
-     geometries - The list of geometries to be projected.
-     in_sr - The well-known ID (gis,WKID) of the spatial reference or a
-      spatial reference JSON object for the input geometries.
-     out_sr - The well-known ID (gis,WKID) of the spatial reference or a
-      spatial reference JSON object for the input geometries.
-     transformation - The WKID or a JSON object specifying the
-      geographic transformation (gis,also known as datum transformation) to
-      be applied to the projected geometries. Note that a
-      transformation is needed only if the output spatial reference
-      contains a different geographic coordinate system than the input
-      spatial reference.
-     transform_forward - A Boolean value indicating whether or not to
-      transform forward. The forward or reverse direction of
-      transformation is implied in the name of the transformation. If
-      transformation is specified, a value for the transformForward
-      parameter must also be specified. The default value is false.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    in_sr             The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a spatial
+                      reference JSON object for the input geometries.
+    ----------------  -------------------------------------------------------------------------------
+    out_sr            The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
+                      spatial reference JSON object for the output geometries.
+    ----------------  -------------------------------------------------------------------------------
+    transformations   The WKID or a JSON object specifying the
+                      geographic transformation (gis,also known as datum transformation) to be applied to the projected
+                      geometries.
 
-    Example:
-     input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
-     result = project(geometries = input_geom, in_sr = 3857, out_sr = 4326)
+                      .. note::
+                        A transformation is needed only if the output :class:`~arcgis.geometry.SpatialReference`
+                        contains a different geographic coordinate system than the input
+                        spatial reference.
 
-    returns:
-     a list of geometries in the out_sr coordinate system, for instance:
-     [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
+    ----------------  -------------------------------------------------------------------------------
+    transformforward  A Boolean value indicating whether or not to transform forward. The forward or reverse direction
+                      of transformation is implied in the name of the transformation. If
+                      transformation is specified, a value for the ``transform_Forward``
+                      parameter must also be specified. The default value is false.
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    .. code-block:: python
+
+        #Usage Example
+
+        >>> input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
+        >>> result = project(geometries = input_geom, in_sr = 3857, out_sr = 4326)
+
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects in the out_sr coordinate system, for instance:
+        [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -796,32 +875,40 @@ def relation(
     future=False,
 ):
     """
-    The relation function is performed on a geometry service resource.
+    The ``relation`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function determines the pairs of geometries from the input
     geometry arrays that participate in the specified spatial relation.
     Both arrays are assumed to be in the spatial reference specified by
-    spatial_ref, which is a required parameter. Geometry types cannot be mixed
-    within an array. The relations are evaluated in 2D. In other words,
-    z coordinates are not used.
+    ``spatial_ref``, which is a required parameter. Geometry types cannot be mixed
+    within an array.
 
-    Inputs:
-     geometries1 - The first array of geometries used to compute the
-      relations.
-     geometries2 -The second array of geometries used to compute the
-     relations.
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference JSON object for the input geometries.
-     spatial_relation - The spatial relationship to be tested between the two
-      input geometry arrays.
-      Values: esriGeometryRelationCross | esriGeometryRelationDisjoint |
-      esriGeometryRelationIn | esriGeometryRelationInteriorIntersection |
-      esriGeometryRelationIntersection | esriGeometryRelationLineCoincidence |
-      esriGeometryRelationLineTouch | esriGeometryRelationOverlap |
-      esriGeometryRelationPointTouch | esriGeometryRelationTouch |
-      esriGeometryRelationWithin | esriGeometryRelationRelation
-     relation_param - The Shape Comparison Language string to be
-      evaluated.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        The relations are evaluated in 2D. In other words, `z` coordinates are not used.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry1         The first array of :class:`~arcgis.geometry.Geometry` objects to compute relations.
+    ----------------  -------------------------------------------------------------------------------
+    geometry2         The second array of :class:`~arcgis.geometry.Geometry` objects to compute relations.
+    ----------------  -------------------------------------------------------------------------------
+    relation_param    The Shape Comparison Language string to be evaluated.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_relation  The spatial relationship to be tested between the two input geometry arrays.
+                      Values: `esriGeometryRelationCross | esriGeometryRelationDisjoint |
+                      esriGeometryRelationIn | esriGeometryRelationInteriorIntersection |
+                      esriGeometryRelationIntersection | esriGeometryRelationLineCoincidence |
+                      esriGeometryRelationLineTouch | esriGeometryRelationOverlap |
+                      esriGeometryRelationPointTouch | esriGeometryRelationTouch |
+                      esriGeometryRelationWithin | esriGeometryRelationRelation`
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of paired :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -837,18 +924,27 @@ def relation(
 
 def reshape(spatial_ref, target, reshaper, gis=None, future=False):
     """
-    The reshape function is performed on a geometry service resource.
-    It reshapes a polyline or polygon feature by constructing a
+    The ``reshape`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
+    It reshapes a :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` feature by constructing a
     polyline over the feature. The feature takes the shape of the
-    reshaper polyline from the first place the reshaper intersects the
+    `reshaper` polyline from the first place the `reshaper` intersects the
     feature to the last.
 
-    Input:
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference JSON object for the input geometries.
-     target -  The polyline or polygon to be reshaped.
-     reshaper - The single-part polyline that does the reshaping.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    target            The :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be reshaped.
+    ----------------  -------------------------------------------------------------------------------
+    reshaper          The single-part :class:`~arcgis.geometry.Polyline` that does the reshaping.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or a JSON
+                      object for the input geometry
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -857,16 +953,27 @@ def reshape(spatial_ref, target, reshaper, gis=None, future=False):
 
 def simplify(spatial_ref, geometries, gis=None, future=False):
     """
-    The simplify function is performed on a geometry service resource.
-    Simplify permanently alters the input geometry so that the geometry
+    The ``simplify`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
+    ``simplify`` permanently alters the input geometry so that the geometry
     becomes topologically consistent. This resource applies the ArcGIS
-    simplify function to each geometry in the input array.
+    ``simplify`` function to each geometry in the input array.
 
-    Inputs:
-    spatial_ref - The well-known ID of the spatial reference or a spatial
-      reference JSON object for the input geometries.
-    geometries - The array of geometries to be simplified.
-    future - boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -885,59 +992,75 @@ def to_geo_coordinate_string(
     future=False,
 ):
     """
-    The to_geo_coordinate_string function is performed on a geometry
+    The ``to_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
     service resource. The function converts an array of
     xy-coordinates into well-known strings based on the conversion type
-    and spatial reference supplied by the user. Optional parameters are
-    available for some conversion types. Note that if an optional
-    parameter is not applicable for a particular conversion type, but a
-    value is supplied for that parameter, the value will be ignored.
+    and :class:`~arcgis.geometry.SpatialReference` supplied by the :class:`~arcgis.gis.User`. Optional parameters are
+    available for some conversion types.
 
-    Inputs:
-      spatial_ref -  The well-known ID of the spatial reference or a spatial
-       reference json object.
-      coordinates - An array of xy-coordinates in JSON format to be
-       converted. Syntax: [[x1,y2],...[xN,yN]]
-      conversion_type - The conversion type of the input strings.
-       Allowed Values:
-        MGRS - Military Grid Reference System
-        USNG - United States National Grid
-        UTM - Universal Transverse Mercator
-        GeoRef - World Geographic Reference System
-        GARS - Global Area Reference System
-        DMS - Degree Minute Second
-        DDM - Degree Decimal Minute
-        DD - Decimal Degree
-      conversion_mode - Conversion options for MGRS and UTM conversion
-       types.
-       Valid conversion modes for MGRS are:
-        mgrsDefault - Default. Uses the spheroid from the given spatial
-         reference.
-        mgrsNewStyle - Treats all spheroids as new, like WGS 1984. The
-         180 degree longitude falls into Zone 60.
-        mgrsOldStyle - Treats all spheroids as old, like Bessel 1841.
-         The 180 degree longitude falls into Zone 60.
-        mgrsNewWith180InZone01 - Same as mgrsNewStyle except the 180
-         degree longitude falls into Zone 01.
-        mgrsOldWith180InZone01 - Same as mgrsOldStyle except the 180
-         degree longitude falls into Zone 01.
-       Valid conversion modes for UTM are:
-        utmDefault - Default. No options.
-        utmNorthSouth - Uses north/south latitude indicators instead of
-         zone numbers. Non-standard. Default is recommended.
-      num_of_digits - The number of digits to output for each of the
-       numerical portions in the string. The default value for
-       num_of_digits varies depending on conversion_type.
-      rounding - If true, then numeric portions of the string are
-       rounded to the nearest whole magnitude as specified by
-       numOfDigits. Otherwise, numeric portions of the string are
-       truncated. The rounding parameter applies only to conversion
-       types MGRS, USNG and GeoRef. The default value is true.
-      addSpaces - If true, then spaces are added between components of
-       the string. The addSpaces parameter applies only to conversion
-       types MGRS, USNG and UTM. The default value for MGRS is false,
-       while the default value for both USNG and UTM is true.
-      future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note:;
+        If an optional parameter is not applicable for a particular conversion type, but a
+        value is supplied for that parameter, the value will be ignored.
+
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    coordinates       An array of xy-coordinates in JSON format to be converted. Syntax: [[x1,y2],...[xN,yN]]
+    ----------------  -------------------------------------------------------------------------------
+    conversion-type   The conversion type of the input strings.
+
+                      .. note::
+                        Valid conversion types are:
+                        `MGRS` - Military Grid Reference System
+                        `USNG` - United States National Grid
+                        `UTM` - Universal Transverse Mercator
+                        `GeoRef` - World Geographic Reference System
+                        `GARS` - Global Area Reference System
+                        `DMS` - Degree Minute Second
+                        `DDM` - Degree Decimal Minute
+                        `DD` - Decimal Degree
+    ----------------  -------------------------------------------------------------------------------
+    conversion_mode   Conversion options for MGRS, UTM and GARS conversion types.
+
+                      .. note::
+                        Valid conversion modes for MGRS are:
+                        `mgrsDefault` - Default. Uses the spheroid from the given spatial reference.
+
+                        `mgrsNewStyle` - Treats all spheroids as new, like WGS 1984. The 80 degree longitude falls into Zone 60.
+
+                        `mgrsOldStyle` - Treats all spheroids as old, like Bessel 1841. The 180 degree longitude falls into Zone 60.
+
+                        `mgrsNewWith180InZone01` - Same as mgrsNewStyle except the 180 degree longitude falls into Zone 01
+
+                        `mgrsOldWith180InZone01` - Same as mgrsOldStyle except the 180 degree longitude falls into Zone 01
+
+                      .. note::
+                        Valid conversion modes for UTM are:
+                        `utmDefault` - Default. No options.
+                        `utmNorthSouth` - Uses north/south latitude indicators instead of
+                        `zone numbers` - Non-standard. Default is recommended
+    ----------------  -------------------------------------------------------------------------------
+    num_of_digits     The number of digits to output for each of the numerical portions in the string. The default
+                      value for ``num_of_digits`` varies depending on ``conversion_type``.
+    ----------------  -------------------------------------------------------------------------------
+    rounding          If ``True``, then numeric portions of the string are rounded to the nearest whole magnitude as
+                      specified by
+                      num_of_digits. Otherwise, numeric portions of the string are
+                      truncated. The rounding parameter applies only to conversion
+                      types `MGRS`, `USNG` and `GeoRef`. The default value is ``True``.
+    ----------------  -------------------------------------------------------------------------------
+    addSpaces         If ``True``, then spaces are added between components of the string. The ``addSpaces`` parameter
+                      applies only to conversion types `MGRS`, `USNG` and `UTM`. The default value for `MGRS` is
+                      ``False``, while the default value for both `USNG` and `UTM` is ``True``.
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of Strings
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -957,39 +1080,53 @@ def trim_extend(
     spatial_ref, polylines, trim_extend_to, extend_how=0, gis=None, future=False
 ):
     """
-    The trim_extend function is performed on a geometry service
-    resource. This function trims or extends each polyline specified
-    in the input array, using the user-specified guide polylines. When
-    trimming features, the part to the left of the oriented cutting
-    line is preserved in the output, and the other part is discarded.
-    An empty polyline is added to the output array if the corresponding
-    input polyline is neither cut nor extended.
+    The ``trim_extend`` function is performed on a :class:`~arcgis.geometry.Geometry` service
+    resource. This function trims or extends each :class:`~arcgis.geometry.Polyline` specified
+    in the input array, using the user-specified guide polylines.
 
-    Inputs:
-     spatial_ref - The well-known ID of the spatial reference or a spatial
-       reference json object.
-     polylines - An array of polylines to be trimmed or extended.
-     trim_extend_to - A polyline that is used as a guide for trimming or
-      extending input polylines.
-     extend_how - A flag that is used along with the trimExtend
-      function.
-      0 - By default, an extension considers both ends of a path. The
-       old ends remain, and new points are added to the extended ends.
-       The new points have attributes that are extrapolated from
-       adjacent existing segments.
-      1 - If an extension is performed at an end, relocate the end
-       point to the new position instead of leaving the old point and
-       adding a new point at the new position.
-      2 - If an extension is performed at an end, do not extrapolate
-       the end-segment's attributes for the new point. Instead, make
-       its attributes the same as the current end. Incompatible with
-       esriNoAttributes.
-      4 - If an extension is performed at an end, do not extrapolate
-       the end-segment's attributes for the new point. Instead, make
-       its attributes empty. Incompatible with esriKeepAttributes.
-      8 - Do not extend the 'from' end of any path.
-      16 - Do not extend the 'to' end of any path.
-     future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        When trimming features, the part to the left of the oriented cutting
+        line is preserved in the output, and the other part is discarded.
+        An empty :class:`~arcgis.geometry.Polyline` is added to the output array if the corresponding
+        input polyline is neither cut nor extended.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    polylines         An array of :class:`~arcgis.geometry.Polyline` objects to trim or extend
+    ----------------  -------------------------------------------------------------------------------
+    trim_extend_to    A :class:`~arcgis.geometry.Polyline` that is used as a guide for trimming or
+                      extending input polylines.
+    ----------------  -------------------------------------------------------------------------------
+    extend_how        A flag that is used along with the trimExtend function.
+
+                      ``0`` - By default, an extension considers both ends of a path. The
+                      old ends remain, and new points are added to the extended ends.
+                      The new points have attributes that are extrapolated from adjacent existing segments.
+
+                      ``1`` - If an extension is performed at an end, relocate the end
+                      point to the new position instead of leaving the old point and
+                      adding a new point at the new position.
+
+                      ``2`` - If an extension is performed at an end, do not extrapolate
+                      the end-segment's attributes for the new point. Instead, make
+                      its attributes the same as the current end. Incompatible with `esriNoAttributes`.
+
+                      ``4`` - If an extension is performed at an end, do not extrapolate
+                      the end-segment's attributes for the new point. Instead, make
+                      its attributes empty. Incompatible with esriKeepAttributes.
+
+                      ``8`` - Do not extend the 'from' end of any path.
+
+                      ``16`` - Do not extend the 'to' end of any path.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        An array of :class:`~arcgis.geometry.Polyline` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1000,15 +1137,29 @@ def trim_extend(
 
 def union(spatial_ref, geometries, gis=None, future=False):
     """
-    The union function is performed on a geometry service resource.
+    The ``union`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function constructs the set-theoretic union of the geometries
-    in the input array. All inputs must be of the same type.
+    in the input array.
 
-    Inputs:
-    spatial_ref - The well-known ID of the spatial reference or a spatial
-     reference json object.
-    geometries - The array of geometries to be unioned.
-    future - boolean. This operation determines if the job is run asynchronously or not.
+    .. note::
+        All inputs must be of the same type.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+                      :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
+                      The structure of each geometry in the array is the
+                      same as the structure of the JSON geometry objects returned by
+                      the ArcGIS REST API.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ----------------  -------------------------------------------------------------------------------
+    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    ================  ===============================================================================
+
+    :returns:
+        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects
     """
     if gis is None:
         gis = arcgis.env.active_gis
