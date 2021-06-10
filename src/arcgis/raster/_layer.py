@@ -1779,27 +1779,29 @@ class ImageryLayer(Layer):
             )
 
         elif f == "numpy_array":
-            params['f'] = 'image'
-            params['format'] = 'lerc'
-            params['lercVersion'] = 2
-            res = self._con.post(url, params,
-                                      try_json=False, force_bytes=True,
-                                     token=self._token)
+            params["f"] = "image"
+            params["format"] = "lerc"
+            params["lercVersion"] = 2
+            res = self._con.post(
+                url, params, try_json=False, force_bytes=True, token=self._token
+            )
 
             try:
                 import lerc
             except ImportError:
-                raise ImportError('lerc not found. Install lerc to export image service as numpy array')
+                raise ImportError(
+                    "lerc not found. Install lerc to export image service as numpy array"
+                )
 
             if not isinstance(res, bytes):
                 raise RuntimeError(res)
             result, data, valid_mask = lerc.decode(res)
             if result != 0:
-                raise RuntimeError('decoding bytes from imagery service failed.')
+                raise RuntimeError("decoding bytes from imagery service failed.")
 
             # transpose
             if "hasMultidimensions" in self.properties:
-                is_multidimensional  = self.properties.hasMultidimensions
+                is_multidimensional = self.properties.hasMultidimensions
             if is_multidimensional:
                 if len(data) == 2:
                     data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
@@ -1809,7 +1811,7 @@ class ImageryLayer(Layer):
                     else:
                         data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
                 else:
-                    assert (len(data.shape) == 4)
+                    assert len(data.shape) == 4
                     data = np.transpose(data, [3, 1, 2, 0])
             else:
                 if len(data) == 2:
