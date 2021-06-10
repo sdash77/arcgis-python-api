@@ -665,11 +665,13 @@ class Connection(object):
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        timeout                       optional Integer. Timeout in seconds
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
         """
-
+        timeout = kwargs.pop("timeout", 600)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -760,17 +762,38 @@ class Connection(object):
             params.update(fields)
             mp_encoder = MultipartEncoder(fields=params)
             if post_json:  # edge case workflow
-                resp = self._session.post(
-                    url=url, json=params, cert=cert, files=files, timeout=10
-                )
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files
+                    )
             else:
                 # data=mp_encoder
-                self._session.headers.update({"Content-Type": mp_encoder.content_type})
-                resp = self._session.post(
-                    url=url, data=mp_encoder, cert=cert, files=files, timeout=10
-                )
-                self._session.headers.pop("Content-Type")
-                print(resp)
+                if timeout:
+
+                    self._session.headers.update(
+                        {"Content-Type": mp_encoder.content_type}
+                    )
+                    resp = self._session.post(
+                        url=url,
+                        data=mp_encoder,
+                        cert=cert,
+                        files=files,
+                        timeout=timeout,
+                    )
+                    self._session.headers.pop("Content-Type")
+                else:
+                    self._session.headers.update(
+                        {"Content-Type": mp_encoder.content_type}
+                    )
+                    resp = self._session.post(
+                        url=url, data=mp_encoder, cert=cert, files=files
+                    )
+                    self._session.headers.pop("Content-Type")
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -868,11 +891,14 @@ class Connection(object):
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        timeout = kwargs.pop("timeout", 600)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -960,13 +986,25 @@ class Connection(object):
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             if post_json:  # edge case workflow
-                resp = self._session.post(
-                    url=url, json=params, cert=cert, files=files, timeout=10
-                )
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files
+                    )
             else:
-                resp = self._session.post(
-                    url=url, data=params, cert=cert, files=files, timeout=10
-                )
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, data=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, data=params, cert=cert, files=files
+                    )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err

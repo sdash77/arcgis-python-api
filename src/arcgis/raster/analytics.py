@@ -1292,7 +1292,7 @@ def copy_raster(
 
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     Multiple images are mosaicked into a single dataset to create one layer.
-    For this functionality to work in ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ================================     ====================================================================
@@ -1341,6 +1341,28 @@ def copy_raster(
                                             Example: 
                                                 {"outSR": {spatial reference}}
 
+                                         | - Upload Properties (upload_properties): ``upload_properties`` key can be used to control specific \
+                                             upload parameters when trying to create hosted imagery layers in ArcGIS Online \
+                                             from local raster datasets.
+                                            
+                                            Available options:
+
+                                                    - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
+                                                        to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                                        This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                                        (The default is 6)
+                                                    - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
+                                                        when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                                        (The default is None)
+                                                    - "displayProgress": Optional boolean. If set to True, a progress bar will be \
+                                                        displayed for tracking the progress of the uploads to user's rasterstore. \
+                                                        (The default is False)
+
+                                                    Example:
+                                                        | {"upload_properties":{"maxUploadConcurrency":8,
+                                                        |                       "maxWorkerThreads":20,
+                                                        |                       "displayProgress":True}
+                                                        | }
 
                                          | The context parameter can also be used to specify whether to
                                          | build footprints, pixel value that represents the NoData,
@@ -1358,8 +1380,8 @@ def copy_raster(
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
     --------------------------------     --------------------------------------------------------------------
-    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
-                                         the mosaic dataset.
+    raster_type_name                     | Optional string. The name of the raster type to use for adding data to
+                                           the mosaic dataset.
 
 
                                          Choice list: [
@@ -2960,7 +2982,7 @@ def create_image_collection(
 
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     A collection can be created from multiple input rasters.
-    For this functionality to work on ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ==================                   ====================================================================
@@ -3057,7 +3079,7 @@ def create_image_collection(
     
                                          | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                         
-                                         | use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | Use ``image_collection_properties`` key to set value for imageCollectionType.
 
                                          .. note::
 
@@ -3068,6 +3090,28 @@ def create_image_collection(
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
                                          | If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+
+                                         | ``upload_properties`` key can be used to control specific upload parameters when trying to \
+                                             create hosted imagery layers in ArcGIS Online from local raster datasets.
+
+                                         Available options:
+
+                                                - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
+                                                    to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                                    This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                                    (The default is 6)
+                                                - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
+                                                    when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                                    (The default is None)
+                                                - "displayProgress": Optional boolean. If set to True, a progress bar will be \
+                                                    displayed for tracking the progress of the uploads to user's rasterstore. \
+                                                    (The default is False)
+
+                                                Example:
+                                                    | {"upload_properties":{"maxUploadConcurrency":8,
+                                                    |                       "maxWorkerThreads":20,
+                                                    |                       "displayProgress":True}
+                                                    | }
 
                                          | The context parameter can also be used to specify whether to build overviews, \
                                          build footprints, to specify pixel value that represents the NoData etc.
@@ -3095,12 +3139,6 @@ def create_image_collection(
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
-    ------------------                   --------------------------------------------------------------------
-    tiles_only                           Keyword only parameter. Optional boolean. 
-                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
-                                         
-                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -3547,8 +3585,7 @@ def create_image_collection(
         img_coll_result = create_image_collection(image_collection="imageCollection",
                                                   input_rasters=r"C:\data",
                                                   raster_type_name="Raster Dataset",
-                                                  gis=gis,
-                                                  tiles_only=False)
+                                                  gis=gis)
 
         
         # Usage Example 3: This example creates an image layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
@@ -3655,7 +3692,7 @@ def add_image(
                                          The image collection must be an existing image collection.
                                          This is the output image collection (mosaic dataset) item or url or uri.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Optional string. The name of the raster type to use for adding data to 
                                          the image collection.
 
                                          Choice list: [
