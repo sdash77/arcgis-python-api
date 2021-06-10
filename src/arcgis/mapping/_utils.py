@@ -23,7 +23,9 @@ def _get_list_value(index, array):
     return array[index % len(array)]
 
 
-def export_map(web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None):
+def export_map(
+    web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None
+):
     """
     This function takes the state of the web map (for example, included services, layer visibility
     settings, client-side graphics, and so forth) and returns either (a) a page layout or
@@ -68,8 +70,6 @@ def export_map(web_map_as_json=None, format="""PDF""", layout_template="""MAP_ON
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool
 
-
-
     param_db = {
         "web_map_as_json": (str, "Web_Map_as_JSON"),
         "format": (str, "Format"),
@@ -83,42 +83,45 @@ def export_map(web_map_as_json=None, format="""PDF""", layout_template="""MAP_ON
     if gis is None:
         gis = arcgis.env.active_gis
     kwargs = {
-        "web_map_as_json" : web_map_as_json,
-        "format"  : format,
-        "layout_template" : layout_template,
-        "gis" : gis
+        "web_map_as_json": web_map_as_json,
+        "format": format,
+        "layout_template": layout_template,
+        "gis": gis,
     }
-    url = gis.properties.helperServices.printTask.url[:-len('/Export%20Web%20Map%20Task')]
+    url = gis.properties.helperServices.printTask.url[
+        : -len("/Export%20Web%20Map%20Task")
+    ]
 
-    return _execute_gp_tool(gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(
+        gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url
+    )
+
 
 export_map.__annotations__ = {
-               'web_map_as_json': str,
-               'format': str,
-               'layout_template': str
-            }
+    "web_map_as_json": str,
+    "format": str,
+    "layout_template": str,
+}
 
 
 def get_layout_templates(gis=None):
     """
 
 
-This function returns the content of the GIS's layout templates formatted as dict.
+    This function returns the content of the GIS's layout templates formatted as dict.
 
-Parameters:
+    Parameters:
 
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-Returns:
-   output_json - layout templates as Python dict
+    Returns:
+       output_json - layout templates as Python dict
 
-See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
+    See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/GetLayoutTemplatesInfo.htm for additional help.
     """
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool
-
-
 
     param_db = {
         "output_json": (str, "Output JSON"),
@@ -130,10 +133,19 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
     if gis is None:
         gis = arcgis.env.active_gis
 
-    url = gis.properties.helperServices.printTask.url[:-len('/Export%20Web%20Map%20Task')]
-    kwargs = {
-        "gis" : gis
-    }
-    return _execute_gp_tool(gis, "Get Layout Templates Info Task", kwargs, param_db, return_values, _use_async, url)
+    url = gis.properties.helperServices.printTask.url[
+        : -len("/Export%20Web%20Map%20Task")
+    ]
+    kwargs = {"gis": gis}
+    return _execute_gp_tool(
+        gis,
+        "Get Layout Templates Info Task",
+        kwargs,
+        param_db,
+        return_values,
+        _use_async,
+        url,
+    )
 
-get_layout_templates.__annotations__ = {'return': str}
+
+get_layout_templates.__annotations__ = {"return": str}

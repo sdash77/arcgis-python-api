@@ -1,5 +1,6 @@
 from arcgis.geometry._types import Geometry
 
+
 def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     """
     Joins two spatailly enabled dataframes based on spatial location based
@@ -20,6 +21,7 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
     import numpy as np
     import pandas as pd
     from arcgis.features import SpatialDataFrame
+
     if not isinstance(df1, SpatialDataFrame):
         raise ValueError("df1 must be a spatial dataframe")
     if not isinstance(df2, SpatialDataFrame):
@@ -39,7 +41,12 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
         if isinstance(geom.extent, tuple):
             ext = (geom.extent[0], geom.extent[1], geom.extent[2], geom.extent[3])
         else:
-            ext = (geom.extent.XMin, geom.exten.YMin, geom.extent.XMax, geom.extent.YMax)
+            ext = (
+                geom.extent.XMin,
+                geom.exten.YMin,
+                geom.extent.XMax,
+                geom.extent.YMax,
+            )
         select_idx = right_index.intersect(ext)
         if len(select_idx) > 0:
             sub = df2.loc[select_idx]
@@ -51,29 +58,31 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
             elif len(res) == 0 and keep_all:
                 join_idx.append([idx, None])
             del sub, res
-        elif len(select_idx) == 0 and \
-             keep_all:
+        elif len(select_idx) == 0 and keep_all:
             join_idx.append([idx, None])
         del geom
         del ext
         del select_idx
         del idx
-    join_field_names = ["TARGET_OID",
-                        "JOIN_OID"]
+    join_field_names = ["TARGET_OID", "JOIN_OID"]
     df2 = df2.copy()
     del df2[df2.geometry.name]
     join_df = pd.DataFrame(data=join_idx, columns=join_field_names)
-    join_df = join_df.merge(df1,
-                            left_on=join_field_names[0],
-                            right_index=True,
-                            how='left',
-                            suffixes=(left_tag,
-                                      right_tag))
-    join_df = join_df.merge(df2,
-                            left_on=join_field_names[1],
-                            right_index=True, how='left',
-                            suffixes=(left_tag, right_tag),
-                            copy=True)
+    join_df = join_df.merge(
+        df1,
+        left_on=join_field_names[0],
+        right_index=True,
+        how="left",
+        suffixes=(left_tag, right_tag),
+    )
+    join_df = join_df.merge(
+        df2,
+        left_on=join_field_names[1],
+        right_index=True,
+        how="left",
+        suffixes=(left_tag, right_tag),
+        copy=True,
+    )
     join_df = SpatialDataFrame(join_df)
     join_df.geometry = join_df[df1.geometry.name]
     del join_idx

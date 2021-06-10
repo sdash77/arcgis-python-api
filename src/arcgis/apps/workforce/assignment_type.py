@@ -23,7 +23,7 @@ class AssignmentType(FeatureModel):
     ------------------     --------------------------------------------------------------------
     name                   Optional :class:`String`. The name of the assignment type.
     ==================     ====================================================================
-    
+
     .. code-block:: python
 
         # Get an assignment type, update it, delete it
@@ -41,7 +41,11 @@ class AssignmentType(FeatureModel):
 
     def __init__(self, project, feature=None, coded_value=None, name=None):
         if project._is_v2_project:
-            super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
+            super().__init__(
+                project=project,
+                feature_layer=project.assignment_types_table,
+                feature=feature,
+            )
             self._schema = AssignmentTypeSchema(project.assignment_types_table)
             self._coded_value = None
             if not feature:
@@ -51,7 +55,7 @@ class AssignmentType(FeatureModel):
             if coded_value:
                 self._coded_value = coded_value
             else:
-                self._coded_value = {'code': None, 'name': name}
+                self._coded_value = {"code": None, "name": name}
         self.project = project
 
     def __str__(self):
@@ -62,14 +66,14 @@ class AssignmentType(FeatureModel):
 
     def update(self, name=None):
         """
-            Updates the assignment type on the server
+        Updates the assignment type on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            name                   Optional :class:`String`.
-                                   The name of the assignment type
-            ==================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Optional :class:`String`.
+                               The name of the assignment type
+        ==================     ====================================================================
         """
         if self.project._is_v2_project:
             update_assignment_type_v2(self.project, self, name)
@@ -92,7 +96,7 @@ class AssignmentType(FeatureModel):
     def code(self):
         """Gets the internal code that uniquely identifies the assignment type"""
         if not self.project._is_v2_project:
-            return self._coded_value['code']
+            return self._coded_value["code"]
         elif self._feature.attributes.get(self._schema.global_id):
             return self._feature.attributes.get(self._schema.global_id).upper()
         else:
@@ -102,14 +106,14 @@ class AssignmentType(FeatureModel):
     def name(self):
         """Gets/Sets The name of the assignment type"""
         if not self.project._is_v2_project:
-            return self._coded_value['name']
+            return self._coded_value["name"]
         else:
             return self._feature.attributes.get(self._schema.description)
 
     @name.setter
     def name(self, value):
         if not self.project._is_v2_project:
-            self._coded_value['name'] = value
+            self._coded_value["name"] = value
         else:
             self._feature.attributes[self._schema.description] = value
 
@@ -132,29 +136,37 @@ class AssignmentType(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         if not self.project._is_v2_project:
-            assignments = kwargs['assignments']
+            assignments = kwargs["assignments"]
             errors = super()._validate_for_remove(**kwargs) + self._validate_code()
             if assignments is None:
                 schema = self.project._assignment_schema
                 where = "{}={}".format(schema.assignment_type, self.code)
                 assignments = self.project.assignments.search(where=where)
             else:
-                assignments = [a for a in assignments if a.assignment_type.code == self.code]
+                assignments = [
+                    a for a in assignments if a.assignment_type.code == self.code
+                ]
         else:
-            assignments = self.project.assignments.search(where='1=1')
+            assignments = self.project.assignments.search(where="1=1")
             errors = super()._validate_for_remove(**kwargs)
-            assignments = [a for a in assignments if a.assignment_type.code == self.code]
+            assignments = [
+                a for a in assignments if a.assignment_type.code == self.code
+            ]
 
         if assignments:
-            errors.append(ValidationError("Cannot remove an in-use AssignmentType", self))
+            errors.append(
+                ValidationError("Cannot remove an in-use AssignmentType", self)
+            )
         return errors
 
     def _validate_name(self):
         errors = []
         if self.name is None or self.name.isspace():
             errors.append(ValidationError("AssignmentType must have a name", self))
-        elif '>' in self.name or '<' in self.name or '%' in self.name:
-            errors.append(ValidationError("AssignmentType name contains invalid characters", self))
+        elif ">" in self.name or "<" in self.name or "%" in self.name:
+            errors.append(
+                ValidationError("AssignmentType name contains invalid characters", self)
+            )
         return errors
 
     def _validate_name_uniqueness(self, assignment_types=None):
@@ -163,8 +175,14 @@ class AssignmentType(FeatureModel):
             assignment_types = self.project.assignment_types.search()
         for assignment_type in assignment_types:
             # note that code is AT guid for v2 projects
-            if (self.name and assignment_type.name.lower() == self.name.lower() and assignment_type.code != self.code):
-                errors.append(ValidationError("AssignmentType name must be unique", self))
+            if (
+                self.name
+                and assignment_type.name.lower() == self.name.lower()
+                and assignment_type.code != self.code
+            ):
+                errors.append(
+                    ValidationError("AssignmentType name must be unique", self)
+                )
         return errors
 
     def _validate_code(self):
@@ -172,4 +190,3 @@ class AssignmentType(FeatureModel):
         if not isinstance(self.code, int):
             errors.append(ValidationError("Code must be a unique integer", self))
         return errors
-

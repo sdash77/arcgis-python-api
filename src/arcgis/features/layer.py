@@ -16,7 +16,12 @@ from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFi
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
 
-from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
+from .managers import (
+    AttachmentManager,
+    SyncManager,
+    FeatureLayerCollectionManager,
+    FeatureLayerManager,
+)
 from .feature import Feature, FeatureSet
 from arcgis.geometry import SpatialReference
 from arcgis.gis import Layer, _GISResource
@@ -34,8 +39,10 @@ class FeatureLayer(Layer):
     Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
+
     _metadatamanager = None
     _renderer = None
+
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -46,6 +53,7 @@ class FeatureLayer(Layer):
         """
         if gis is None:
             import arcgis
+
             gis = arcgis.env.active_gis
         if str(url).lower().endswith("/"):
             url = url[:-1]
@@ -92,9 +100,10 @@ class FeatureLayer(Layer):
         :returns: String of datetime values as milliseconds from epoch
         """
         import datetime as _dt
+
         v = []
         if isinstance(value, _dt.datetime):
-            self._time_filter = f"{int(value.timestamp() * 1000)}" # means single time
+            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
         elif isinstance(value, (tuple, list)):
             for idx, d in enumerate(value):
                 if idx > 1:
@@ -122,6 +131,7 @@ class FeatureLayer(Layer):
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
+
         if self._renderer is None and "drawingInfo" in self.properties:
             self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
         return self._renderer
@@ -135,6 +145,7 @@ class FeatureLayer(Layer):
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
+
         if isinstance(value, (dict, PropertyMap)):
             self._renderer = InsensitiveDict(dict(value))
         elif value is None:
@@ -161,8 +172,8 @@ class FeatureLayer(Layer):
         url = self._url
         res = search("/rest/", url).span()
         add_text = "admin/"
-        part1 = url[:res[1]]
-        part2 = url[res[1]:]
+        part1 = url[: res[1]]
+        part2 = url[res[1] :]
         admin_url = "%s%s%s" % (part1, add_text, part2)
 
         res = FeatureLayerManager(admin_url, self._gis)
@@ -184,13 +195,14 @@ class FeatureLayer(Layer):
         :returns: String (GET)
 
         """
-        if 'hasMetadata' in self.properties:
+        if "hasMetadata" in self.properties:
             try:
                 return self._download_metadata()
             except:
                 return None
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _download_metadata(self, save_folder=None):
         """
         Downloads the metadata.xml to local disk
@@ -204,17 +216,17 @@ class FeatureLayer(Layer):
         :returns: String
         """
         import tempfile
+
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         url = "%s%s" % (self.url, "/metadata")
-        params = {'f' : 'json',
-                  'format' : 'default'
-                  }
+        params = {"f": "json", "format": "default"}
 
-        return self._con.get(url, params,
-                                    out_folder=save_folder,
-                                    file_name='metadata.xml')
-    #----------------------------------------------------------------------
+        return self._con.get(
+            url, params, out_folder=save_folder, file_name="metadata.xml"
+        )
+
+    # ----------------------------------------------------------------------
     def update_metadata(self, file_path):
         """
         Updates a Layer's metadata from an xml file.
@@ -227,40 +239,43 @@ class FeatureLayer(Layer):
 
         :returns: boolean
         """
-        if 'hasMetadata' not in self.properties:
+        if "hasMetadata" not in self.properties:
             return None
 
-        if os.path.isfile(file_path) == False or \
-           os.path.splitext(file_path)[1].lower() != '.xml':
+        if (
+            os.path.isfile(file_path) == False
+            or os.path.splitext(file_path)[1].lower() != ".xml"
+        ):
             raise ValueError("file_path must be a XML file.")
 
         url = "%s%s" % (self.url, "/metadata/update")
-        with open(file_path, 'r') as reader:
+        with open(file_path, "r") as reader:
             text = reader.read()
 
             params = {
-                'f' : 'json',
-                'metadata' : text,
+                "f": "json",
+                "metadata": text,
                 "metadataUploadId": "",
                 "metadataItemId": "",
-                "metadataUploadFormat": "xml"
+                "metadataUploadFormat": "xml",
             }
             res = self._con.post(url, params)
-            if 'statusUrl' in res:
-                return self._status_metadata(res['statusUrl'])
+            if "statusUrl" in res:
+                return self._status_metadata(res["statusUrl"])
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _status_metadata(self, url):
         """checks the update status"""
-        res = self._con.get(url, {'f':'json'})
-        if res['status'].lower() == 'completed':
+        res = self._con.get(url, {"f": "json"})
+        if res["status"].lower() == "completed":
             return True
-        while res['status'].lower() != 'completed':
+        while res["status"].lower() != "completed":
             time.sleep(1)
-            res = self._con.get(url, {'f':'json'})
-            if res['status'].lower() == 'completed':
+            res = self._con.get(url, {"f": "json"})
+            if res["status"].lower() == "completed":
                 return True
-            elif res['status'].lower() == 'failed':
+            elif res["status"].lower() == "failed":
                 return False
         return False
 
@@ -296,7 +311,7 @@ class FeatureLayer(Layer):
         import urllib
         import hashlib
 
-        if not self.properties['hasAttachments']:
+        if not self.properties["hasAttachments"]:
             raise Exception("Feature Layer doesn't have any attachments.")
 
         if not os.path.exists(output_folder):
@@ -304,22 +319,22 @@ class FeatureLayer(Layer):
 
         object_attachments_mapping = {}
 
-        object_id_field = self.properties['objectIdField']
+        object_id_field = self.properties["objectIdField"]
 
         dataframe_merged = pandas.merge(
             self.query().sdf,
             self.attachments.search(as_df=True),
             left_on=object_id_field,
-            right_on='PARENTOBJECTID'
+            right_on="PARENTOBJECTID",
         )
 
         token = self._con.token
 
-        internal_folder = os.path.join(output_folder, 'images')
+        internal_folder = os.path.join(output_folder, "images")
         if not os.path.exists(internal_folder):
             os.mkdir(internal_folder)
 
-        folder = 'images'
+        folder = "images"
         for row in dataframe_merged.iterrows():
 
             if label_field is not None:
@@ -331,10 +346,13 @@ class FeatureLayer(Layer):
                 os.mkdir(path)
 
             if token is not None:
-                url = '{}/{}/attachments/{}?token={}'.format(self.url, row[1][object_id_field], row[1]["ID"],
-                                                             self._con.token)
+                url = "{}/{}/attachments/{}?token={}".format(
+                    self.url, row[1][object_id_field], row[1]["ID"], self._con.token
+                )
             else:
-                url = '{}/{}/attachments/{}'.format(self.url, row[1][object_id_field], row[1]["ID"])
+                url = "{}/{}/attachments/{}".format(
+                    self.url, row[1][object_id_field], row[1]["ID"]
+                )
 
             if not object_attachments_mapping.get(row[1][object_id_field]):
                 object_attachments_mapping[row[1][object_id_field]] = []
@@ -342,22 +360,24 @@ class FeatureLayer(Layer):
             content = urllib.request.urlopen(url).read()
 
             md5_hash = hashlib.md5(content).hexdigest()
-            attachment_path = os.path.join(path, f'{md5_hash}.jpg')
+            attachment_path = os.path.join(path, f"{md5_hash}.jpg")
 
-            object_attachments_mapping[row[1][object_id_field]].append(os.path.join('images', os.path.join(folder, f'{md5_hash}.jpg')))
+            object_attachments_mapping[row[1][object_id_field]].append(
+                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
+            )
 
             if os.path.exists(attachment_path):
                 continue
-            file = open(attachment_path, 'wb')
+            file = open(attachment_path, "wb")
             file.write(content)
             file.close()
 
-        mapping_path = os.path.join(output_folder, 'mapping.txt')
-        file = open(mapping_path, 'w')
+        mapping_path = os.path.join(output_folder, "mapping.txt")
+        file = open(mapping_path, "w")
         file.write(json.dumps(object_attachments_mapping))
         file.close()
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):
         """
         This operation groups data using the supplied definition
@@ -383,16 +403,14 @@ class FeatureLayer(Layer):
 
         """
         if self._dynamic_layer:
-            url = "%s/generateRenderer" % self._url.split('?')[0]
+            url = "%s/generateRenderer" % self._url.split("?")[0]
         else:
             url = "%s/generateRenderer" % self._url
-        params = {'f' : 'json',
-                  'classificationDef' : definition
-                  }
+        params = {"f": "json", "classificationDef": definition}
         if where:
-            params['where'] = where
+            params["where"] = where
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
     def _add_attachment(self, oid, file_path, keywords=None):
@@ -411,36 +429,34 @@ class FeatureLayer(Layer):
 
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
-            params = {'f': 'json'}
-            if self._gis.version > [7,3] and keywords:
-                params['keywords'] = keywords
+            params = {"f": "json"}
+            if self._gis.version > [7, 3] and keywords:
+                params["keywords"] = keywords
             if self._dynamic_layer:
-                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-                params['layer'] = self._dynamic_layer
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
-            files = {'attachment': file_path}
-            res = self._con.post(path=attach_url,
-                                 postdata=params,
-                                 files=files)
+            files = {"attachment": file_path}
+            res = self._con.post(path=attach_url, postdata=params, files=files)
             return res
         else:
-            params = {'f': 'json'}
-            if self._gis.version > [7,3] and keywords:
-                params['keywords'] = keywords
+            params = {"f": "json"}
+            if self._gis.version > [7, 3] and keywords:
+                params["keywords"] = keywords
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
-                attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
-                params['layer'] = self._dynamic_layer
+                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
-            params['uploadId'] = itemid
-            res = self._con.post(attach_url,
-                                 params)
-            if res['addAttachmentResult']['success'] == True:
+            params["uploadId"] = itemid
+            res = self._con.post(attach_url, params)
+            if res["addAttachmentResult"]["success"] == True:
                 container._delete_upload(itemid)
             return res
+
     # ----------------------------------------------------------------------
     def _delete_attachment(self, oid, attachment_id):
         """
@@ -456,13 +472,10 @@ class FeatureLayer(Layer):
 
         :returns: dictionary
         """
-        params = {
-            "f": "json",
-            "attachmentIds": "%s" % attachment_id
-        }
+        params = {"f": "json", "attachmentIds": "%s" % attachment_id}
         if self._dynamic_layer:
-            url = self._url.split('?')[0] + "/%s/deleteAttachments" % oid
-            params['layer'] = self._dynamic_layer
+            url = self._url.split("?")[0] + "/%s/deleteAttachments" % oid
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
         return self._con.post(url, params)
@@ -485,37 +498,30 @@ class FeatureLayer(Layer):
         :returns: dictionary
 
         """
-        params = {
-            "f": "json",
-            "attachmentId": "%s" % attachment_id
-        }
-        files = {'attachment': file_path}
+        params = {"f": "json", "attachmentId": "%s" % attachment_id}
+        files = {"attachment": file_path}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + f"/{oid}/updateAttachment"
-            params['layer'] = self._dynamic_layer
+            url = self.url.split("?")[0] + f"/{oid}/updateAttachment"
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url,
-                             postdata=params,
-                             files=files)
+        res = self._con.post(path=url, postdata=params, files=files)
         return res
 
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
-        """ list attachments for a given OBJECT ID """
+        """list attachments for a given OBJECT ID"""
 
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + "/%s/attachments" % oid
-            params['layer'] = self._dynamic_layer
+            url = self.url.split("?")[0] + "/%s/attachments" % oid
+            params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/attachments" % oid
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_unique_values(self, attribute, query_string='1=1'):
+    def get_unique_values(self, attribute, query_string="1=1"):
         """Return a list of unique values for a given attribute
 
         ===============================     ====================================================================
@@ -529,29 +535,37 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
         """
 
-        result = self.query(query_string, return_geometry=False, out_fields=attribute,return_distinct_values=True)
+        result = self.query(
+            query_string,
+            return_geometry=False,
+            out_fields=attribute,
+            return_distinct_values=True,
+        )
         return [feature.attributes[attribute] for feature in result.features]
-    #----------------------------------------------------------------------
-    def query_top_features(self,
-                           top_filter=None,
-                           where=None,
-                           objectids=None,
-                           start_time=None,
-                           end_time=None,
-                           geometry_filter=None,
-                           out_fields="*",
-                           return_geometry=True,
-                           return_centroid=False,
-                           max_allowable_offset=None,
-                           out_sr=None,
-                           geometry_precision=None,
-                           return_ids_only=False,
-                           return_extents_only=False,
-                           order_by_field=None,
-                           return_z=False,
-                           return_m=False,
-                           result_type=None,
-                           as_df=True):
+
+    # ----------------------------------------------------------------------
+    def query_top_features(
+        self,
+        top_filter=None,
+        where=None,
+        objectids=None,
+        start_time=None,
+        end_time=None,
+        geometry_filter=None,
+        out_fields="*",
+        return_geometry=True,
+        return_centroid=False,
+        max_allowable_offset=None,
+        out_sr=None,
+        geometry_precision=None,
+        return_ids_only=False,
+        return_extents_only=False,
+        order_by_field=None,
+        return_z=False,
+        return_m=False,
+        result_type=None,
+        as_df=True,
+    ):
         """
         The `query_top_features` is performed on a feature layer. This operation returns a feature set or
         spatially enabled dataframe based on the top features by order within a group. For example, when
@@ -661,77 +675,72 @@ class FeatureLayer(Layer):
 
         """
         import datetime as _datetime
+
         return_count_only = False
         params = {
-            'f' : "json",
+            "f": "json",
         }
-        params['returnCentroid'] = return_centroid
+        params["returnCentroid"] = return_centroid
         if where:
-            params['where'] = where
+            params["where"] = where
         else:
-            params['where'] = "1=1"
+            params["where"] = "1=1"
         if objectids and isinstance(objectids, (list, tuple)):
-            params['objectIds'] = ",".join([str(obj) for obj in objectids])
+            params["objectIds"] = ",".join([str(obj) for obj in objectids])
         elif objectids and isinstance(objectids, str):
-            params['objectIds'] = objectids
+            params["objectIds"] = objectids
         if start_time and isinstance(start_time, _datetime.datetime):
             start_time = str(int(start_time.timestamp() * 1000))
         if end_time and isinstance(start_time, _datetime.datetime):
             end_time = str(int(start_time.timestamp() * 1000))
         if start_time and not end_time:
-            params['time'] = "%s, null" % start_time
+            params["time"] = "%s, null" % start_time
         elif end_time and not start_time:
-            params['time'] = "null, %s" % end_time
+            params["time"] = "null, %s" % end_time
         elif start_time and end_time:
-            params['time'] = "%s, %s" % (start_time, end_time)
-        if geometry_filter and \
-               isinstance(geometry_filter, GeometryFilter):
+            params["time"] = "%s, %s" % (start_time, end_time)
+        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter and \
-                 isinstance(geometry_filter, dict):
+        elif geometry_filter and isinstance(geometry_filter, dict):
             for key, val in geometry_filter.items():
                 params[key] = val
         if top_filter:
-            params['topFilter'] = top_filter
+            params["topFilter"] = top_filter
         if out_fields and isinstance(out_fields, (list, tuple)):
-            params['outFields'] = ",".join(out_fields)
+            params["outFields"] = ",".join(out_fields)
         elif out_fields and isinstance(out_fields, str):
-            params['outFields'] = out_fields
+            params["outFields"] = out_fields
         else:
-            params['outFields'] = "*"
+            params["outFields"] = "*"
         if return_geometry == False:
-            params['returnGeometry'] = False
+            params["returnGeometry"] = False
         elif return_geometry == True:
-            params['returnGeometry'] = True
+            params["returnGeometry"] = True
         if max_allowable_offset:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if geometry_precision:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         if out_sr:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if return_ids_only:
-            params['returnIdsOnly'] = return_ids_only
+            params["returnIdsOnly"] = return_ids_only
         if return_count_only:
-            params['returnCountOnly'] = return_count_only
+            params["returnCountOnly"] = return_count_only
         if return_z:
-            params['returnZ'] = return_z
+            params["returnZ"] = return_z
         if return_m:
-            params['returnM'] = return_m
+            params["returnM"] = return_m
         if result_type:
-            params['resultType'] = result_type
+            params["resultType"] = result_type
         else:
-            params['resultType'] = "none"
+            params["resultType"] = "none"
         if order_by_field:
-            params['orderByFields'] = order_by_field
+            params["orderByFields"] = order_by_field
         url = self._url + "/queryTopFeatures"
-        if as_df and \
-           return_count_only == False and \
-           return_ids_only == False:
+        if as_df and return_count_only == False and return_ids_only == False:
             return self._query_df(url, params)
-        elif as_df == False and\
-             return_count_only == False and \
-             return_ids_only == False:
+        elif as_df == False and return_count_only == False and return_ids_only == False:
             res = self._con.post(url, params)
             return FeatureSet.from_dict(res)
         elif return_count_only:
@@ -746,8 +755,8 @@ class FeatureLayer(Layer):
         """Processes the job, gets the status and returns the results"""
 
         count = self.query(where=params.get("where", "1=1"), return_count_only=True)
-        if 'maxRecordCount' in self.properties:
-            max_records = self.properties['maxRecordCount']
+        if "maxRecordCount" in self.properties:
+            max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
 
@@ -758,25 +767,30 @@ class FeatureLayer(Layer):
         parts = []
         df = None
         if count > max_records:
-            oid_info = self.query(where=params.get("where", "1=1"),
-                              geometry_filter=params.get("geometry_filter", None),
-                              time_filter=params.get("time_filter", None),
-                              return_ids_only=True)
-            for ids in chunks(oid_info['objectIds'], max_records):
+            oid_info = self.query(
+                where=params.get("where", "1=1"),
+                geometry_filter=params.get("geometry_filter", None),
+                time_filter=params.get("time_filter", None),
+                return_ids_only=True,
+            )
+            for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
-                params['where'] = sql
+                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                params["where"] = sql
                 jobs[sql] = self._con.post(url, params)
             for where, submit_job in jobs.items():
-                if 'statusUrl' in submit_job:
-                    jobs[where] = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+                if "statusUrl" in submit_job:
+                    jobs[where] = self._status_via_url(
+                        self._con, submit_job["statusUrl"], {"f": "json"}
+                    )
             for where, download_json in jobs.items():
-                if 'resultUrl' in download_json:
-                    jobs[where] = self._con.get(download_json['resultUrl'], {'f' : 'json'})
+                if "resultUrl" in download_json:
+                    jobs[where] = self._con.get(
+                        download_json["resultUrl"], {"f": "json"}
+                    )
             for where, json_file in jobs.items():
-                if isinstance(json_file, str) and \
-                   os.path.isfile(json_file):
-                    with open(json_file, 'r') as reader:
+                if isinstance(json_file, str) and os.path.isfile(json_file):
+                    with open(json_file, "r") as reader:
                         feature_dict = json.loads(reader.read())
                         parts.append(feature_dict)
                     os.remove(json_file)
@@ -788,19 +802,20 @@ class FeatureLayer(Layer):
                     parts.append(feature_dict)
                 del where, json_file
 
-
         else:
             submit_job = self._con.post(url, params)
-            if 'statusUrl' in submit_job:
-                status_job = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+            if "statusUrl" in submit_job:
+                status_job = self._status_via_url(
+                    self._con, submit_job["statusUrl"], {"f": "json"}
+                )
             else:
                 raise Exception(f"Job Failed: {submit_job}")
-            if 'resultUrl' in status_job:
-                download_json = self._con.get(status_job['resultUrl'], {'f' : 'json'})
+            if "resultUrl" in status_job:
+                download_json = self._con.get(status_job["resultUrl"], {"f": "json"})
             else:
                 raise Exception(f"Job Failed: {result_json}")
             if isinstance(download_json, str) and os.path.isfile(download_json):
-                with open(download_json, 'r') as reader:
+                with open(download_json, "r") as reader:
                     feature_dict = json.loads(reader.read())
                     parts.append(feature_dict)
                 os.remove(download_json)
@@ -813,78 +828,82 @@ class FeatureLayer(Layer):
         # process the parts into a Spatially Enabled DataFrame
         #
         import pandas as pd
+
         def _process_result(featureset_dict):
             """converts the Dictionary to an SeDF"""
             import pandas as pd
             import arcgis
             import numpy as np
             from datetime import datetime as _datetime
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : _datetime,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": _datetime,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
+
             def feature_to_row(feature, sr):
                 """:return: a feature from a dict"""
                 from arcgis.geometry import Geometry
-                geom = feature['geometry'] if 'geometry' in feature else None
-                attribs = feature['attributes'] if 'attributes' in feature else {}
-                if 'centroid' in feature:
+
+                geom = feature["geometry"] if "geometry" in feature else None
+                attribs = feature["attributes"] if "attributes" in feature else {}
+                if "centroid" in feature:
                     if attribs is None:
-                        attribs = {'centroid' : feature['centroid']}
-                    elif 'centroid' in attribs:
+                        attribs = {"centroid": feature["centroid"]}
+                    elif "centroid" in attribs:
                         import uuid
+
                         fld = "centroid_" + uuid.uuid4().hex[:2]
-                        attribs[fld] = feature['centroid']
+                        attribs[fld] = feature["centroid"]
                     else:
-                        attribs['centroid'] = feature['centroid']
+                        attribs["centroid"] = feature["centroid"]
                 if geom:
                     if "spatialReference" not in geom:
                         geom["spatialReference"] = sr
-                    attribs['SHAPE'] = Geometry(geom)
+                    attribs["SHAPE"] = Geometry(geom)
                 return attribs
 
-            if len(featureset_dict['features']) == 0:
+            if len(featureset_dict["features"]) == 0:
                 return pd.DataFrame([])
             sr = None
-            if 'spatialReference' in featureset_dict:
-                sr = featureset_dict['spatialReference']
+            if "spatialReference" in featureset_dict:
+                sr = featureset_dict["spatialReference"]
 
             df = None
             dtypes = None
             geom = None
             names = None
             dfields = []
-            rows = [feature_to_row(row, sr) \
-                    for row in featureset_dict['features']]
+            rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
             if len(rows) == 0:
                 return None
             df = pd.DataFrame.from_records(data=rows)
-            if 'fields' in featureset_dict:
+            if "fields" in featureset_dict:
                 dtypes = {}
                 names = []
-                fields = featureset_dict['fields']
+                fields = featureset_dict["fields"]
                 for fld in fields:
-                    if fld['type'] != "esriFieldTypeGeometry":
-                        dtypes[fld['name']] = _fld_lu[fld['type']]
-                        names.append(fld['name'])
-                    if fld['type'] == 'esriFieldTypeDate':
-                        dfields.append(fld['name'])
-            if 'SHAPE' in df:
-                df.spatial.set_geometry('SHAPE')
+                    if fld["type"] != "esriFieldTypeGeometry":
+                        dtypes[fld["name"]] = _fld_lu[fld["type"]]
+                        names.append(fld["name"])
+                    if fld["type"] == "esriFieldTypeDate":
+                        dfields.append(fld["name"])
+            if "SHAPE" in df:
+                df.spatial.set_geometry("SHAPE")
             if len(dfields) > 0:
-                df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+                df[dfields] = df[dfields].apply(pd.to_datetime, unit="ms")
             return df
 
         if len(parts) == 1:
@@ -892,26 +911,31 @@ class FeatureLayer(Layer):
         elif len(parts) == 0:
             return pd.DataFrame([])
         else:
-            results = pd.concat([_process_result(df) for df in parts]).reset_index(drop=True)
+            results = pd.concat([_process_result(df) for df in parts]).reset_index(
+                drop=True
+            )
             return results
+
     # ----------------------------------------------------------------------
-    def query_analytics(self,
-                        out_analytics, #
-                        where="1=1", #
-                        out_fields="*", #
-                        analytic_where=None, #
-                        geometry_filter=None, #
-                        out_sr=None, #
-                        return_geometry=True,
-                        order_by=None,
-                        result_type=None,
-                        cache_hint=None,
-                        result_offset=None,
-                        result_record_count=None,
-                        quantization_param=None,
-                        sql_format=None,
-                        future=True,
-                        **kwargs):
+    def query_analytics(
+        self,
+        out_analytics,  #
+        where="1=1",  #
+        out_fields="*",  #
+        analytic_where=None,  #
+        geometry_filter=None,  #
+        out_sr=None,  #
+        return_geometry=True,
+        order_by=None,
+        result_type=None,
+        cache_hint=None,
+        result_offset=None,
+        result_record_count=None,
+        quantization_param=None,
+        sql_format=None,
+        future=True,
+        **kwargs,
+    ):
         """
         `query_analytics` exposes the standard SQL windows functions that compute
         aggregate and ranking values based on a group of rows called window
@@ -1117,53 +1141,50 @@ class FeatureLayer(Layer):
         """
 
         if self._gis._portal.is_arcgisonline == False:
-            raise Exception("`query_analytics` is only supported on ArcGIS Online Hosted Feature Layers.")
+            raise Exception(
+                "`query_analytics` is only supported on ArcGIS Online Hosted Feature Layers."
+            )
 
         url = self._url + "/queryAnalytic"
-        params = {
-            "f": "json",
-            'dataFormat' : 'json'
-        }
+        params = {"f": "json", "dataFormat": "json"}
         if where:
-            params['where'] = where
+            params["where"] = where
         if analytic_where:
-            params['analyticWhere'] = analytic_where
-        if geometry_filter and \
-                isinstance(geometry_filter, GeometryFilter):
+            params["analyticWhere"] = analytic_where
+        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter and \
-                isinstance(geometry_filter, dict):
+        elif geometry_filter and isinstance(geometry_filter, dict):
             for key, val in geometry_filter.items():
                 params[key] = val
         if out_sr:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if out_fields:
-            params['outFields'] = out_fields
+            params["outFields"] = out_fields
         if out_analytics:
-            params['outAnalytics'] = out_analytics
+            params["outAnalytics"] = out_analytics
         if order_by:
-            params['orderByFields'] = order_by
+            params["orderByFields"] = order_by
         if result_type:
-            params['resultType'] = result_type
+            params["resultType"] = result_type
         if not cache_hint is None:
-            params['cacheHint'] = cache_hint
+            params["cacheHint"] = cache_hint
         if result_offset:
-            params['resultOffset'] = result_offset
+            params["resultOffset"] = result_offset
         if result_record_count:
-            params['resultRecordCount'] = result_record_count
+            params["resultRecordCount"] = result_record_count
         if quantization_param:
-            params['quantizationParameters'] = quantization_param
+            params["quantizationParameters"] = quantization_param
         if future:
-            params['async'] = future
+            params["async"] = future
         if sql_format:
-            params['sql_format'] = sql_format
+            params["sql_format"] = sql_format
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-        params['async'] = True
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        future_job = executor.submit(self._qa_worker, **{"url" : url, "params" : params})
+        params["async"] = True
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        future_job = executor.submit(self._qa_worker, **{"url": url, "params": params})
         executor.shutdown(False)
 
         if future == False:
@@ -1171,44 +1192,47 @@ class FeatureLayer(Layer):
             del executor
             return res
         return future_job
+
     # ----------------------------------------------------------------------
-    def query(self,
-              where="1=1",
-              out_fields="*",
-              time_filter=None,
-              geometry_filter=None,
-              return_geometry=True,
-              return_count_only=False,
-              return_ids_only=False,
-              return_distinct_values=False,
-              return_extent_only=False,
-              group_by_fields_for_statistics=None,
-              statistic_filter=None,
-              result_offset=None,
-              result_record_count=None,
-              object_ids=None,
-              distance=None,
-              units=None,
-              max_allowable_offset=None,
-              out_sr=None,
-              geometry_precision=None,
-              gdb_version=None,
-              order_by_fields=None,
-              out_statistics=None,
-              return_z=False,
-              return_m=False,
-              multipatch_option=None,
-              quantization_parameters=None,
-              return_centroid=False,
-              return_all_records=True,
-              result_type=None,
-              historic_moment=None,
-              sql_format=None,
-              return_true_curves=False,
-              return_exceeded_limit_features=None,
-              as_df=False,
-              datum_transformation=None,
-              **kwargs):
+    def query(
+        self,
+        where="1=1",
+        out_fields="*",
+        time_filter=None,
+        geometry_filter=None,
+        return_geometry=True,
+        return_count_only=False,
+        return_ids_only=False,
+        return_distinct_values=False,
+        return_extent_only=False,
+        group_by_fields_for_statistics=None,
+        statistic_filter=None,
+        result_offset=None,
+        result_record_count=None,
+        object_ids=None,
+        distance=None,
+        units=None,
+        max_allowable_offset=None,
+        out_sr=None,
+        geometry_precision=None,
+        gdb_version=None,
+        order_by_fields=None,
+        out_statistics=None,
+        return_z=False,
+        return_m=False,
+        multipatch_option=None,
+        quantization_parameters=None,
+        return_centroid=False,
+        return_all_records=True,
+        result_type=None,
+        historic_moment=None,
+        sql_format=None,
+        return_true_curves=False,
+        return_exceeded_limit_features=None,
+        as_df=False,
+        datum_transformation=None,
+        **kwargs,
+    ):
         """
         Queries a feature layer based on a sql statement
 
@@ -1428,109 +1452,113 @@ class FeatureLayer(Layer):
         if self._dynamic_layer is None:
             url = self._url + "/query"
         else:
-            url = "%s/query" % self._url.split('?')[0]
+            url = "%s/query" % self._url.split("?")[0]
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if result_type is not None:
-            params['resultType'] = result_type
+            params["resultType"] = result_type
         if historic_moment is not None:
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if sql_format is not None:
-            params['sqlFormat'] = sql_format
+            params["sqlFormat"] = sql_format
         if return_true_curves is not None:
-            params['returnTrueCurves'] = return_true_curves
+            params["returnTrueCurves"] = return_true_curves
         if return_exceeded_limit_features is not None:
-            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
-        params['where'] = where
-        params['returnGeometry'] = return_geometry
-        params['returnDistinctValues'] = return_distinct_values
-        params['returnCentroid'] = return_centroid
-        params['returnCountOnly'] = return_count_only
-        params['returnExtentOnly'] = return_extent_only
-        params['returnIdsOnly'] = return_ids_only
-        params['returnZ'] = return_z
-        params['returnM'] = return_m
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+        params["where"] = where
+        params["returnGeometry"] = return_geometry
+        params["returnDistinctValues"] = return_distinct_values
+        params["returnCentroid"] = return_centroid
+        params["returnCountOnly"] = return_count_only
+        params["returnExtentOnly"] = return_extent_only
+        params["returnIdsOnly"] = return_ids_only
+        params["returnZ"] = return_z
+        params["returnM"] = return_m
         if not datum_transformation is None:
-            params['datumTransformation'] = datum_transformation
+            params["datumTransformation"] = datum_transformation
 
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
-            out_fields = ','.join(out_fields)
+            out_fields = ",".join(out_fields)
 
-        if out_fields != '*' and not return_distinct_values:
+        if out_fields != "*" and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
-                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
-                if object_id_field not in out_fields.split(','):
+                object_id_field = [
+                    x.name
+                    for x in self.properties.fields
+                    if x.type == "esriFieldTypeOID"
+                ][0]
+                if object_id_field not in out_fields.split(","):
                     out_fields = object_id_field + "," + out_fields
             except (IndexError, AttributeError):
                 pass
-        params['outFields'] = out_fields
+        params["outFields"] = out_fields
         if return_count_only or return_extent_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
-            params['resultRecordCount'] = result_record_count
+            params["resultRecordCount"] = result_record_count
         if result_offset and not return_all_records:
-            params['resultOffset'] = result_offset
+            params["resultOffset"] = result_offset
         if quantization_parameters:
-            params['quantizationParameters'] = quantization_parameters
+            params["quantizationParameters"] = quantization_parameters
         if multipatch_option:
-            params['multipatchOption'] = multipatch_option
+            params["multipatchOption"] = multipatch_option
         if order_by_fields:
-            params['orderByFields'] = order_by_fields
+            params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
-        if statistic_filter and \
-                isinstance(statistic_filter, StatisticFilter):
-            params['outStatistics'] = statistic_filter.filter
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params["outStatistics"] = statistic_filter.filter
         if out_statistics:
-            params['outStatistics'] = out_statistics
+            params["outStatistics"] = out_statistics
         if out_sr:
-            params['outSR'] = out_sr
+            params["outSR"] = out_sr
         if max_allowable_offset:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if gdb_version:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if geometry_precision:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         if object_ids:
-            params['objectIds'] = object_ids
+            params["objectIds"] = object_ids
         if distance:
-            params['distance'] = distance
+            params["distance"] = distance
         if units:
-            params['units'] = units
+            params["units"] = units
 
         if time_filter is None and self.time_filter:
-            params['time'] = self.time_filter
+            params["time"] = self.time_filter
         elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
                 if starttime is None:
-                    starttime = 'null'
+                    starttime = "null"
                 if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
             elif isinstance(time_filter, dict):
                 for key, val in time_filter.items():
                     params[key] = val
             else:
-                params['time'] = _date_handler(time_filter)
+                params["time"] = _date_handler(time_filter)
 
-        if geometry_filter and \
-                isinstance(geometry_filter, GeometryFilter):
+        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter and \
-                isinstance(geometry_filter, dict):
+        elif geometry_filter and isinstance(geometry_filter, dict):
             for key, val in geometry_filter.items():
                 params[key] = val
         if len(kwargs) > 0:
             for key, val in kwargs.items():
-                if key in ('returnCountOnly','returnExtentOnly','returnIdsOnly') and val:
+                if (
+                    key in ("returnCountOnly", "returnExtentOnly", "returnIdsOnly")
+                    and val
+                ):
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
                     return_all_records = False
                 params[key] = val
@@ -1541,80 +1569,91 @@ class FeatureLayer(Layer):
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
-        params['returnCountOnly'] = True
+        params["returnCountOnly"] = True
         record_count = self._query(url, params, raw=as_raw)
-        if 'maxRecordCount' in self.properties:
-            max_records = self.properties['maxRecordCount']
+        if "maxRecordCount" in self.properties:
+            max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
 
         supports_pagination = True
-        if ('advancedQueryCapabilities' not in self.properties or \
-                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+        if (
+            "advancedQueryCapabilities" not in self.properties
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+        ):
             supports_pagination = False
 
-        params['returnCountOnly'] = False
+        params["returnCountOnly"] = False
         if record_count == 0 and as_df:
             from arcgis.features.geo._array import GeoArray
             import numpy as np
             import pandas as pd
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : np.datetime64,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
             columns = {}
             for fld in self.properties.fields:
                 fld = dict(fld)
-                columns[fld['name']] = _fld_lu[fld['type']]
-            if "geometryType" in self.properties and \
-               not self.properties.geometryType is None:
-                columns['SHAPE'] = object
+                columns[fld["name"]] = _fld_lu[fld["type"]]
+            if (
+                "geometryType" in self.properties
+                and not self.properties.geometryType is None
+            ):
+                columns["SHAPE"] = object
             if return_geometry == False:
                 columns.pop("SHAPE", None)
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
             if out_fields != "*":
-                df = df[out_fields.split(',')].copy()
+                df = df[out_fields.split(",")].copy()
 
-            if 'SHAPE' in df.columns:
-                df['SHAPE'] = GeoArray([])
+            if "SHAPE" in df.columns:
+                df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params['resultRecordCount'] = record_count
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
+
                 df = self._query_df(url, params)
-                dt_fields = [fld['name'] for fld in self.properties.fields \
-                             if fld['type'] == 'esriFieldTypeDate']
-                if 'SHAPE' in df.columns:
-                    df.spatial.set_geometry('SHAPE')
+                dt_fields = [
+                    fld["name"]
+                    for fld in self.properties.fields
+                    if fld["type"] == "esriFieldTypeDate"
+                ]
+                if "SHAPE" in df.columns:
+                    df.spatial.set_geometry("SHAPE")
                     df.spatial.renderer = self.renderer
                     df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                            df[fld] = pd.to_datetime(
+                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                            df[fld] = pd.to_datetime(
+                                df[fld], infer_datetime_format=True
+                            )
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -1625,18 +1664,18 @@ class FeatureLayer(Layer):
         df = None
         dfs = []
         if not supports_pagination:
-            params['returnIdsOnly'] = True
+            params["returnIdsOnly"] = True
             oid_info = self._query(url, params, raw=as_raw)
-            params['returnIdsOnly'] = False
-            for ids in chunks(oid_info['objectIds'], max_records):
+            params["returnIdsOnly"] = False
+            for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
-                params['where'] = sql
+                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -1646,14 +1685,14 @@ class FeatureLayer(Layer):
                     dfs.append(df)
         else:
             while True:
-                params['resultRecordCount'] = max_records
-                params['resultOffset'] = max_records * i
+                params["resultRecordCount"] = max_records
+                params["resultOffset"] = max_records * i
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -1671,27 +1710,34 @@ class FeatureLayer(Layer):
                 i += 1
         if as_df:
             import pandas as pd
-            dt_fields = [fld['name'] for fld in self.properties.fields \
-                         if fld['type'] == 'esriFieldTypeDate']
+
+            dt_fields = [
+                fld["name"]
+                for fld in self.properties.fields
+                if fld["type"] == "esriFieldTypeDate"
+            ]
             if len(dfs) == 1:
                 df = dfs[0]
             else:
                 df = pd.concat(dfs, sort=True)
                 df.reset_index(drop=True, inplace=True)
-            if 'SHAPE' in df.columns:
-                df.spatial.set_geometry('SHAPE')
+            if "SHAPE" in df.columns:
+                df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 if fld in df.columns:
                     try:
-                        df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                        df[fld] = pd.to_datetime(
+                            df[fld] / 1000, infer_datetime_format=True, unit="s"
+                        )
                     except:
-                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
+                        df[fld] = pd.to_datetime(
+                            df[fld], infer_datetime_format=True, errors="coerce"
+                        )
             return df
         return result
+
     # ----------------------------------------------------------------------
     def validate_sql(self, sql, sql_type="where"):
         """
@@ -1730,37 +1776,41 @@ class FeatureLayer(Layer):
 
         :returns: dict
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if not isinstance(sql, str):
             raise ValueError("sql must be a string")
         else:
-            params['sql'] = sql
-        if sql_type.lower() not in ['where', 'expression', 'statement']:
-            raise ValueError("sql_type must have value of: where, expression or statement")
+            params["sql"] = sql
+        if sql_type.lower() not in ["where", "expression", "statement"]:
+            raise ValueError(
+                "sql_type must have value of: where, expression or statement"
+            )
         else:
-            params['sqlType'] = sql_type
+            params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url,
-                              postdata=params,
-                              )
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
+
     # ----------------------------------------------------------------------
-    def query_related_records(self,
-                              object_ids,
-                              relationship_id,
-                              out_fields="*",
-                              definition_expression=None,
-                              return_geometry=True,
-                              max_allowable_offset=None,
-                              geometry_precision=None,
-                              out_wkid=None,
-                              gdb_version=None,
-                              return_z=False,
-                              return_m=False,
-                              historic_moment=None,
-                              return_true_curve=False):
+    def query_related_records(
+        self,
+        object_ids,
+        relationship_id,
+        out_fields="*",
+        definition_expression=None,
+        return_geometry=True,
+        max_allowable_offset=None,
+        geometry_precision=None,
+        out_wkid=None,
+        gdb_version=None,
+        return_z=False,
+        return_m=False,
+        historic_moment=None,
+        return_true_curve=False,
+    ):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -1843,34 +1893,32 @@ class FeatureLayer(Layer):
             "outFields": out_fields,
             "returnGeometry": return_geometry,
             "returnM": return_m,
-            "returnZ": return_z
+            "returnZ": return_z,
         }
         if historic_moment:
             if hasattr(historic_moment, "timestamp"):
                 historic_moment = int(historic_moment.timestamp() * 1000)
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if return_true_curve:
-            params['returnTrueCurves'] = return_true_curve
+            params["returnTrueCurves"] = return_true_curve
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if gdb_version is not None:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if definition_expression is not None:
-            params['definitionExpression'] = definition_expression
-        if out_wkid is not None and \
-                isinstance(out_wkid, SpatialReference):
-            params['outSR'] = out_wkid
-        elif out_wkid is not None and \
-                isinstance(out_wkid, dict):
-            params['outSR'] = out_wkid
+            params["definitionExpression"] = definition_expression
+        if out_wkid is not None and isinstance(out_wkid, SpatialReference):
+            params["outSR"] = out_wkid
+        elif out_wkid is not None and isinstance(out_wkid, dict):
+            params["outSR"] = out_wkid
         if max_allowable_offset is not None:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if geometry_precision is not None:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         if self._dynamic_layer is None:
             qrr_url = self._url + "/queryRelatedRecords"
         else:
-            qrr_url = "%s/queryRelatedRecords" % self._url.split('?')[0]
+            qrr_url = "%s/queryRelatedRecords" % self._url.split("?")[0]
 
         return self._con.post(path=qrr_url, postdata=params)
 
@@ -1892,52 +1940,67 @@ class FeatureLayer(Layer):
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
             pop_url = self._url + "/%s/htmlPopup" % oid
-            params = {
-                'f': "json"
-            }
+            params = {"f": "json"}
 
             return self._con.get(path=pop_url, params=params)
         return ""
+
     # ----------------------------------------------------------------------
-    def append(self,
-               item_id=None,
-               upload_format="featureCollection",
-               source_table_name=None,
-               field_mappings=None,
-               edits=None,
-               source_info=None,
-               upsert=True,
-               skip_updates=False,
-               use_globalids=False,
-               update_geometry=True,
-               append_fields=None,
-               rollback=False,
-               skip_inserts=None,
-               upsert_matching_field=None,
-               upload_id=None
-               ):
+    def append(
+        self,
+        item_id=None,
+        upload_format="featureCollection",
+        source_table_name=None,
+        field_mappings=None,
+        edits=None,
+        source_info=None,
+        upsert=True,
+        skip_updates=False,
+        use_globalids=False,
+        update_geometry=True,
+        append_fields=None,
+        rollback=False,
+        skip_inserts=None,
+        upsert_matching_field=None,
+        upload_id=None,
+        *,
+        return_messages=None,
+        future=False,
+    ):
         """
         Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
-        details: https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm
+        details: `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
 
         ========================   ====================================================================
         **Argument**               **Description**
-        ------------------------   --------------------------------------------------------------------
-        source_table_name          optional string. Required only when the source data contains more
-                                   than one tables, e.g., for file geodatabase.
-                                   Example: source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
         item_id                    optional string. The ID for the Portal item that contains the source
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
+        upload_format              required string. The source append data format. The default is
+                                   featureCollection.
+                                   Values: sqlite | shapefile | filegdb | featureCollection |
+                                   geojson | csv | excel
+        ------------------------   --------------------------------------------------------------------
+        source_table_name          required string. Required even when the source data contains only
+                                   one table, e.g., for file geodatabase.
+
+                                   .. code-block:: python
+
+                                       # Example usage:
+                                       source_table_name=  "Building"
+        ------------------------   --------------------------------------------------------------------
         field_mappings             optional list. Used to map source data to a destination layer.
-                                   Syntax: fieldMappings=[{"name" : <"targerName">,
+                                   Syntax: fieldMappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
-                                   Examples: fieldMappings=[{"name" : "CountyID",
-                                                             "sourceName" : "GEOID10"}]
+                                   .. code-block:: python
+
+                                       # Example usage:
+                                       fieldMappings=[{"name" : "CountyID",
+                                                       "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
         edits                      optional string. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
@@ -1962,12 +2025,11 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         append_fields              Optional list. The list of destination fields to append to. This is
                                    supported when upsert=true or false.
-                                   Values:  ["fieldName1", "fieldName2",....]
-        ------------------------   --------------------------------------------------------------------
-        upload_format              required string. The source append data format. The default is
-                                   featureCollection format.
-                                   Values: sqlite | shapefile | filegdb | featureCollection |
-                                   geojson | csv | excel
+
+                                   .. code-block:: python
+
+                                       #Values:
+                                       ["fieldName1", "fieldName2",....]
         ------------------------   --------------------------------------------------------------------
         rollback                   Optional boolean. Optional parameter specifying whether the upsert
                                    edits needs to be rolled back in case of failure. Default is false.
@@ -1987,72 +2049,112 @@ class FeatureLayer(Layer):
                                    :func:`~FeatureLayerCollection.upload` response, corresponding with
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
+        ------------------------   --------------------------------------------------------------------
+        return_messages            Optional Boolean.  When set to `True`, the messages returned from
+                                   the append will be returned. If `False`, the response messages will
+                                   not be returned.  This alters the output to be a tuple consisting of
+                                   a (Boolean, Dictionary).
+        ------------------------   --------------------------------------------------------------------
+        future                     Optional Boolean.  When true, the response is returned as a
+                                   `concurrent.futures.Future` object.
         ========================   ====================================================================
 
 
-        :return: boolean
+        :return: boolean (True when successful, False when failed). When `return_messages` is True, the
+                 response messages will be return in addition to the boolean as a `tuple`.
+                 If future=True, then the result is a `Future` object. Call `result()` to get the response.
 
         """
         import copy
-        if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
-           (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
+
+        if (
+            hasattr(self._gis, "_portal") and self._gis._portal.is_logged_in == False
+        ) or (hasattr(self._gis, "is_logged_in") and self._gis.is_logged_in == False):
             raise Exception("Authentication required to perform append.")
         if self._gis._portal.is_arcgisonline == False:
             raise Exception("Append only available on ArcGIS Online.")
         if self.properties.supportsAppend == False:
-            raise Exception("Append is not supported on this layer, please " +\
-                            "update service definition capabilities.")
+            raise Exception(
+                "Append is not supported on this layer, please "
+                + "update service definition capabilities."
+            )
         params = {
-            'f' : 'json',
-            'sourceTableName' : source_table_name,
-            'fieldMappings' : field_mappings,
-            'edits' : edits,
-            'appendSourceInfo' : source_info,
-            'upsert' : upsert,
-            'skipUpdates' : skip_updates,
-            'useGlobalIds' : use_globalids,
-            'updateGeometry' : update_geometry,
-            'appendFields' : append_fields,
-            'appendUploadId' : upload_id,
-            'appendItemId' : item_id,
-            'appendUploadFormat' : upload_format,
-            'rollbackOnFailure' : rollback
+            "f": "json",
+            "sourceTableName": source_table_name,
+            "fieldMappings": field_mappings,
+            "edits": edits,
+            "appendSourceInfo": source_info,
+            "upsert": upsert,
+            "skipUpdates": skip_updates,
+            "useGlobalIds": use_globalids,
+            "updateGeometry": update_geometry,
+            "appendFields": append_fields,
+            "appendUploadId": upload_id,
+            "appendItemId": item_id,
+            "appendUploadFormat": upload_format,
+            "rollbackOnFailure": rollback,
         }
         if not upsert_matching_field is None:
-            params['upsertMatchingField'] =  upsert_matching_field
+            params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
-            params['skipInserts'] =  skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(',')
+            params["skipInserts"] = skip_inserts
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
+        )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
         cparams = copy.copy(params)
-        for k,v in cparams.items():
+        for k, v in cparams.items():
             if v is None:
                 params.pop(k)
             del k, v
         url = self._url + "/append"
         del cparams
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'statusUrl' in res:
-            time.sleep(1)
-            surl = res['statusUrl']
-            sres = self._con.get(path=surl, params={'f' : 'json'})
-            while sres['status'].lower() != "completed":
-                sres = self._con.get(path=surl, params={'f' : 'json'})
-                if sres['status'].lower() in "failed":
-                    break
-            return True
-        return res
+        res = self._con.post(path=url, postdata=params)
+        if future:
+            executor = concurrent.futures.ThreadPoolExecutor(1)
+            future = executor.submit(self._check_append_status, *(res, return_messages))
+            executor.shutdown(False)
+            return future
+        return self._check_append_status(res, return_messages)
+
     # ----------------------------------------------------------------------
-    def delete_features(self,
-                        deletes=None,
-                        where=None,
-                        geometry_filter=None,
-                        gdb_version=None,
-                        rollback_on_failure=True,
-                        return_delete_results=True,
-                        future=False):
+    def _check_append_status(self, res, return_messages):
+        """checks the append status"""
+        n = 1
+        if "statusUrl" in res:
+            time.sleep(1)
+            surl = res["statusUrl"]
+            sres = self._con.get(path=surl, params={"f": "json"})
+            while sres["status"].lower() != "completed":
+                sres = self._con.get(path=surl, params={"f": "json"})
+                if sres["status"].lower() in "failed":
+                    if return_messages:
+                        return (False, sres)
+                    return False
+                if n >= 40:
+                    n = 40
+                time.sleep(0.5 * n)
+                n += 1
+            if return_messages:
+                return (True, sres)
+            else:
+                return True
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_features(
+        self,
+        deletes=None,
+        where=None,
+        geometry_filter=None,
+        gdb_version=None,
+        rollback_on_failure=True,
+        return_delete_results=True,
+        future=False,
+    ):
         """
         This operation deletes features in a feature layer or table
 
@@ -2096,84 +2198,112 @@ class FeatureLayer(Layer):
         params = {
             "f": "json",
             "rollbackOnFailure": rollback_on_failure,
-            "returnDeleteResults": return_delete_results
+            "returnDeleteResults": return_delete_results,
         }
         if gdb_version is not None:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
 
-        if deletes is not None and \
-                isinstance(deletes, str):
-            params['objectIds'] = deletes
-        elif deletes is not None and \
-                isinstance(deletes, PropertyMap):
-            print('pass in delete, unable to convert PropertyMap to string list of OIDs')
+        if deletes is not None and isinstance(deletes, str):
+            params["objectIds"] = deletes
+        elif deletes is not None and isinstance(deletes, PropertyMap):
+            print(
+                "pass in delete, unable to convert PropertyMap to string list of OIDs"
+            )
 
-        elif deletes is not None and \
-                isinstance(deletes, FeatureSet):
-            params['objectIds'] = ",".join(
-                [str(feat.get_value(field_name=deletes.object_id_field_name)) for feat in deletes.features])
+        elif deletes is not None and isinstance(deletes, FeatureSet):
+            params["objectIds"] = ",".join(
+                [
+                    str(feat.get_value(field_name=deletes.object_id_field_name))
+                    for feat in deletes.features
+                ]
+            )
 
         if where is not None:
-            params['where'] = where
+            params["where"] = where
 
-        if geometry_filter is not None and \
-                isinstance(geometry_filter, GeometryFilter):
+        if geometry_filter is not None and isinstance(geometry_filter, GeometryFilter):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter is not None and \
-                isinstance(geometry_filter, dict):
+        elif geometry_filter is not None and isinstance(geometry_filter, dict):
             for key, val in geometry_filter.items():
                 params[key] = val
 
-        if 'objectIds' not in params and 'where' not in params and 'geometry' not in params:
+        if (
+            "objectIds" not in params
+            and "where" not in params
+            and "geometry" not in params
+        ):
             print("Parameters not valid for delete_features")
             return None
         if future is False:
             return self._con.post(path=delete_url, postdata=params)
         else:
-            params['async'] = True
+            params["async"] = True
             import concurrent.futures
-            executor =  concurrent.futures.ThreadPoolExecutor(1)
+
+            executor = concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=delete_url, postdata=params)
-            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            future = executor.submit(
+                self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+            )
             executor.shutdown(False)
             return future
+
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
-                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
-                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
-                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status_allowed = [
+            v.lower()
+            for v in [
+                "Executing",
+                "Pending",
+                "InProgress",
+                "Completed",
+                "Failed ImportChanges",
+                "ExportChanges",
+                "ExportingData",
+                "ExportingSnapshot",
+                "ExportAttachments",
+                "ImportAttachments",
+                "ProvisioningReplica",
+                "UnRegisteringReplica",
+                "CompletedWithErrors",
+            ]
+        ]
         status = con.get(url, params)
-        while status['status'] in status_allowed and \
-              status['status'] != 'Completed':
-            if status['status'] == 'Completed':
+        while (
+            status["status"].lower() in status_allowed
+            and status["status"].lower() != "completed"
+        ):
+            if status["status"].lower() == "completed":
                 return status
-            elif status['status'] == 'CompletedWithErrors':
+            elif status["status"].lower() == "completedwitherrors":
                 break
-            elif 'fail' in status['status'].lower():
+            elif "fail" in status["status"].lower():
                 break
-            elif 'error' in status['status'].lower():
+            elif "error" in status["status"].lower():
                 break
             status = con.get(url, params)
         return status
+
     # ----------------------------------------------------------------------
-    def edit_features(self,
-                      adds=None,
-                      updates=None,
-                      deletes=None,
-                      gdb_version=None,
-                      use_global_ids=False,
-                      rollback_on_failure=True,
-                      return_edit_moment=False,
-                      attachments=None,
-                      true_curve_client=False,
-                      session_id=None,
-                      use_previous_moment=False,
-                      datum_transformation=None):
+    def edit_features(
+        self,
+        adds=None,
+        updates=None,
+        deletes=None,
+        gdb_version=None,
+        use_global_ids=False,
+        rollback_on_failure=True,
+        return_edit_moment=False,
+        attachments=None,
+        true_curve_client=False,
+        session_id=None,
+        use_previous_moment=False,
+        datum_transformation=None,
+    ):
         """
         This operation adds, updates, and deletes features to the
         associated feature layer or table in a single call.
@@ -2289,6 +2419,7 @@ class FeatureLayer(Layer):
         try:
             import pandas as pd
             from arcgis.features.geo import _is_geoenabled
+
             HAS_PANDAS = True
         except:
             HAS_PANDAS = False
@@ -2301,83 +2432,103 @@ class FeatureLayer(Layer):
         params = {
             "f": "json",
             "useGlobalIds": use_global_ids,
-            "rollbackOnFailure": rollback_on_failure
+            "rollbackOnFailure": rollback_on_failure,
         }
         if gdb_version is not None:
-            params['gdbVersion'] = gdb_version
-        if HAS_PANDAS and \
-           isinstance(adds, pd.DataFrame) and \
-           _is_geoenabled(adds):
-            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
-            params['adds'] = json.dumps(adds[cols].spatial.__feature_set__['features'],
-                                        default=_date_handler)
-        elif HAS_PANDAS and \
-           isinstance(adds, pd.DataFrame) and \
-           _is_geoenabled(adds) == False:
+            params["gdbVersion"] = gdb_version
+        if HAS_PANDAS and isinstance(adds, pd.DataFrame) and _is_geoenabled(adds):
+            cols = [
+                c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
+            ]
+            params["adds"] = json.dumps(
+                adds[cols].spatial.__feature_set__["features"], default=_date_handler
+            )
+        elif (
+            HAS_PANDAS
+            and isinstance(adds, pd.DataFrame)
+            and _is_geoenabled(adds) == False
+        ):
             # we have a regular panadas dataframe
-            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
-            params['adds'] = json.dumps([{"attributes" : row } for \
-                                         row in adds[cols].to_dict(orient='record')],
-                                        default=_date_handler)
+            cols = [
+                c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
+            ]
+            params["adds"] = json.dumps(
+                [{"attributes": row} for row in adds[cols].to_dict(orient="record")],
+                default=_date_handler,
+            )
         elif isinstance(adds, FeatureSet):
-            params['adds'] = json.dumps([f.as_dict for f in adds.features],
-                                        default=_date_handler)
+            params["adds"] = json.dumps(
+                [f.as_dict for f in adds.features], default=_date_handler
+            )
 
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
-                params['adds'] = json.dumps([f for f in adds],
-                                            default=_date_handler)
+                params["adds"] = json.dumps([f for f in adds], default=_date_handler)
             elif isinstance(adds[0], PropertyMap):
-                params['adds'] = json.dumps([dict(f) for f in adds],
-                                            default=_date_handler)
+                params["adds"] = json.dumps(
+                    [dict(f) for f in adds], default=_date_handler
+                )
             elif isinstance(adds[0], Feature):
-                params['adds'] = json.dumps([f.as_dict for f in adds],
-                                               default=_date_handler)
+                params["adds"] = json.dumps(
+                    [f.as_dict for f in adds], default=_date_handler
+                )
             else:
-                print('pass in features as list of Features, dicts or PropertyMap')
+                print("pass in features as list of Features, dicts or PropertyMap")
         if isinstance(updates, FeatureSet):
-            params['updates'] = json.dumps([f.as_dict for f in updates.features],
-                                           default=_date_handler)
-        elif HAS_PANDAS and \
-               isinstance(updates, pd.DataFrame) and \
-               _is_geoenabled(updates):
-            params['updates'] = json.dumps(updates.spatial.__feature_set__['features'],
-                                           default=_date_handler)
-        elif HAS_PANDAS and \
-             isinstance(updates, pd.DataFrame) and \
-             _is_geoenabled(updates) == False:
+            params["updates"] = json.dumps(
+                [f.as_dict for f in updates.features], default=_date_handler
+            )
+        elif (
+            HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
+        ):
+            params["updates"] = json.dumps(
+                updates.spatial.__feature_set__["features"], default=_date_handler
+            )
+        elif (
+            HAS_PANDAS
+            and isinstance(updates, pd.DataFrame)
+            and _is_geoenabled(updates) == False
+        ):
             # we have a regular panadas dataframe
-            cols = [c for c in updates.columns.tolist() if c.lower() not in ['objectid', 'fid']]
-            params['updates'] = json.dumps([{"attributes" : row } for \
-                                            row in updates[cols].to_dict(orient='record')],
-                                           default=_date_handler)
+            cols = [
+                c
+                for c in updates.columns.tolist()
+                if c.lower() not in ["objectid", "fid"]
+            ]
+            params["updates"] = json.dumps(
+                [{"attributes": row} for row in updates[cols].to_dict(orient="record")],
+                default=_date_handler,
+            )
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
-                params['updates'] = json.dumps([f for f in updates],
-                                               default=_date_handler)
+                params["updates"] = json.dumps(
+                    [f for f in updates], default=_date_handler
+                )
             elif isinstance(updates[0], PropertyMap):
-                params['updates'] = json.dumps([dict(f) for f in updates],
-                                               default=_date_handler)
+                params["updates"] = json.dumps(
+                    [dict(f) for f in updates], default=_date_handler
+                )
             elif isinstance(updates[0], Feature):
-                params['updates'] = json.dumps([f.as_dict for f in updates],
-                                               default=_date_handler)
+                params["updates"] = json.dumps(
+                    [f.as_dict for f in updates], default=_date_handler
+                )
             else:
-                print('pass in features as list of Features, dicts or PropertyMap')
-        if deletes is not None and \
-           isinstance(deletes, str):
-            params['deletes'] = deletes
-        elif deletes is not None and \
-             isinstance(deletes, PropertyMap):
-            print('pass in delete, unable to convert PropertyMap to string list of OIDs')
-        elif deletes is not None and \
-             isinstance(deletes, pd.DataFrame):
-            cols = [c for c in deletes.columns.tolist() if c.lower() in ['objectid', 'fid']]
+                print("pass in features as list of Features, dicts or PropertyMap")
+        if deletes is not None and isinstance(deletes, str):
+            params["deletes"] = deletes
+        elif deletes is not None and isinstance(deletes, PropertyMap):
+            print(
+                "pass in delete, unable to convert PropertyMap to string list of OIDs"
+            )
+        elif deletes is not None and isinstance(deletes, pd.DataFrame):
+            cols = [
+                c for c in deletes.columns.tolist() if c.lower() in ["objectid", "fid"]
+            ]
             if len(cols) > 0:
-                params['deletes'] = ",".join([str(d) for d in deletes[cols[0]]])
+                params["deletes"] = ",".join([str(d) for d in deletes[cols[0]]])
             else:
                 raise Exception("Could not find ObjectId or FID field.")
-        elif deletes is not None and \
-             isinstance(deletes, FeatureSet):
+        elif deletes is not None and isinstance(deletes, FeatureSet):
 
             field_name = None
             if deletes.object_id_field_name:
@@ -2385,41 +2536,52 @@ class FeatureLayer(Layer):
             elif self.properties.objectIdField in deletes.fields:
                 field_name = self.properties.objectIdField
             else:
-                print('deletes FeatureSet must have object_id_field_name parameter set')
+                print("deletes FeatureSet must have object_id_field_name parameter set")
 
             if field_name:
-                params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
+                params["deletes"] = ",".join(
+                    [
+                        str(feat.get_value(field_name=field_name))
+                        for feat in deletes.features
+                    ]
+                )
         elif isinstance(deletes, (list, tuple)):
-            params['deletes'] = ",".join([str(d) for d in deletes])
+            params["deletes"] = ",".join([str(d) for d in deletes])
         if not return_edit_moment is None:
-            params['returnEditMoment'] = return_edit_moment
+            params["returnEditMoment"] = return_edit_moment
         if not attachments is None and isinstance(attachments, dict):
-            params['attachments'] = attachments
+            params["attachments"] = attachments
         if not true_curve_client is None:
-            params['trueCurveClient'] = true_curve_client
+            params["trueCurveClient"] = true_curve_client
         if not use_previous_moment is None:
-            params['usePreviousEditMoment'] = use_previous_moment
+            params["usePreviousEditMoment"] = use_previous_moment
         if not datum_transformation is None:
-            params['datumTransformation'] = datum_transformation
+            params["datumTransformation"] = datum_transformation
         if session_id and isinstance(session_id, str):
-            params['sessionID'] = session_id
-        if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
+            params["sessionID"] = session_id
+        if "deletes" not in params and "updates" not in params and "adds" not in params:
             print("Parameters not valid for edit_features")
             return None
         try:
-            return self._con.post(path=edit_url, postdata=params)#)
+            return self._con.post(path=edit_url, postdata=params)  # )
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
-                params.pop('token', None)
+                params.pop("token", None)
                 return self._con.post(path=edit_url, postdata=params, add_token=False)
             else:
                 raise
 
     # ----------------------------------------------------------------------
-    def calculate(self, where, calc_expression,
-                  sql_format="standard", version=None,
-                  sessionid=None, return_edit_moment=None,
-                  future=False):
+    def calculate(
+        self,
+        where,
+        calc_expression,
+        sql_format="standard",
+        version=None,
+        sessionid=None,
+        return_edit_moment=None,
+        future=False,
+    ):
         """
         The calculate operation is performed on a feature layer
         resource. It updates the values of one or more fields in an
@@ -2504,57 +2666,75 @@ class FeatureLayer(Layer):
         params = {
             "f": "json",
             "where": where,
-
         }
         if isinstance(calc_expression, dict):
-            params["calcExpression"] = json.dumps([calc_expression],
-                                                  default=_date_handler)
+            params["calcExpression"] = json.dumps(
+                [calc_expression], default=_date_handler
+            )
         elif isinstance(calc_expression, list):
-            params["calcExpression"] = json.dumps(calc_expression,
-                                                  default=_date_handler)
-        if sql_format.lower() in ['native', 'standard']:
-            params['sqlFormat'] = sql_format.lower()
+            params["calcExpression"] = json.dumps(
+                calc_expression, default=_date_handler
+            )
+        if sql_format.lower() in ["native", "standard"]:
+            params["sqlFormat"] = sql_format.lower()
         else:
-            params['sqlFormat'] = "standard"
+            params["sqlFormat"] = "standard"
         if version:
-            params['gdbVersion'] = version
+            params["gdbVersion"] = version
         if sessionid:
-            params['sessionID'] = sessionid
+            params["sessionID"] = sessionid
         if isinstance(return_edit_moment, bool):
-            params['returnEditMoment'] = return_edit_moment
-        if "supportsASyncCalculate" in self.properties and \
-           self.properties.supportsASyncCalculate and \
-           future:
-            params['async'] = True
-            executor =  concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url,
-                                 postdata=params, )
-            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            params["returnEditMoment"] = return_edit_moment
+        if (
+            "supportsASyncCalculate" in self.properties
+            and self.properties.supportsASyncCalculate
+            and future
+        ):
+            params["async"] = True
+            executor = concurrent.futures.ThreadPoolExecutor(1)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
+            future = executor.submit(
+                self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+            )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url,
-                              postdata=params, )
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
-        """ returns results of query """
+        """returns results of query"""
         try:
-            if 'add_token' in kwargs:
-                result = self._con.post(path=url,
-                                    postdata=params,
-                                    add_token=kwargs.get('add_token', True))
+            if "add_token" in kwargs:
+                result = self._con.post(
+                    path=url, postdata=params, add_token=kwargs.get("add_token", True)
+                )
             else:
-                result = self._con.post(path=url,
-                                    postdata=params, )
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                )
         except Exception as queryException:
-            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            error_list = [
+                "Error performing query operation",
+                "HTTP Error 504: GATEWAY_TIMEOUT",
+            ]
             if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop('token', None)
+                params.pop("token", None)
                 return self._query(url, params, raw=False, add_token=False)
             elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
-                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
-                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                max_record = (
+                    int(params["resultRecordCount"])
+                    if "resultRecordCount" in params
+                    else 1000
+                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -2564,13 +2744,17 @@ class FeatureLayer(Layer):
                     i = 0
                     result = None
                     while max_rec * i < max_record:
-                        params['resultRecordCount'] = max_rec if max_rec*(i+1) <= max_record else (max_record - max_rec*i)
-                        params['resultOffset'] = offset + max_rec * i
+                        params["resultRecordCount"] = (
+                            max_rec
+                            if max_rec * (i + 1) <= max_record
+                            else (max_record - max_rec * i)
+                        )
+                        params["resultOffset"] = offset + max_rec * i
                         try:
                             records = self._query(url, params, raw=True)
                             if result:
-                                for feature in records['features']:
-                                    result['features'].append(feature)
+                                for feature in records["features"]:
+                                    result["features"].append(feature)
                             else:
                                 result = records
                             i += 1
@@ -2583,18 +2767,18 @@ class FeatureLayer(Layer):
         def is_true(x):
             if isinstance(x, bool) and x:
                 return True
-            elif isinstance(x, str) and x.lower() == 'true':
+            elif isinstance(x, str) and x.lower() == "true":
                 return True
             else:
                 return False
 
-        if 'error' in result:
+        if "error" in result:
             raise ValueError(result)
-        if 'returnCountOnly' in params and is_true(params['returnCountOnly']):
-            return result['count']
-        elif 'returnIdsOnly' in params and is_true(params['returnIdsOnly']):
+        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
+            return result["count"]
+        elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
             return result
-        elif 'extent' in result:
+        elif "extent" in result:
             return result
         elif is_true(raw):
             return result
@@ -2603,86 +2787,95 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _query_df(self, url, params, **kwargs):
-        """ returns results of a query as a pd.DataFrame"""
+        """returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np
-        if [float(i) for i in pd.__version__.split('.')] < [1,0,0]:
+
+        if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : pd.datetime,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": pd.datetime,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
         else:
             from datetime import datetime as _datetime
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : _datetime,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": _datetime,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
+
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
             from arcgis.geometry import Geometry
-            geom = feature['geometry'] if 'geometry' in feature else None
-            attribs = feature['attributes'] if 'attributes' in feature else {}
-            if 'centroid' in feature:
+
+            geom = feature["geometry"] if "geometry" in feature else None
+            attribs = feature["attributes"] if "attributes" in feature else {}
+            if "centroid" in feature:
                 if attribs is None:
-                    attribs = {'centroid' : feature['centroid']}
-                elif 'centroid' in attribs:
+                    attribs = {"centroid": feature["centroid"]}
+                elif "centroid" in attribs:
                     import uuid
+
                     fld = "centroid_" + uuid.uuid4().hex[:2]
-                    attribs[fld] = feature['centroid']
+                    attribs[fld] = feature["centroid"]
                 else:
-                    attribs['centroid'] = feature['centroid']
+                    attribs["centroid"] = feature["centroid"]
             if geom:
                 if "spatialReference" not in geom:
                     geom["spatialReference"] = sr
-                attribs['SHAPE'] = Geometry(geom)
+                attribs["SHAPE"] = Geometry(geom)
             return attribs
-        #------------------------------------------------------------------
+
+        # ------------------------------------------------------------------
         try:
-            if 'add_token' in kwargs:
+            if "add_token" in kwargs:
 
                 featureset_dict = self._con.post(
-                    url,
-                    params,
-                    add_token=kwargs.get('add_token', True)
+                    url, params, add_token=kwargs.get("add_token", True)
                 )
             else:
-                featureset_dict = self._con.post(
-                    url,
-                    params)
+                featureset_dict = self._con.post(url, params)
         except Exception as queryException:
-            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            error_list = [
+                "Error performing query operation",
+                "HTTP Error 504: GATEWAY_TIMEOUT",
+            ]
             if queryException.args[0].lower().find("invalid token") > -1:
-                params.pop('token', None)
+                params.pop("token", None)
                 return self._query_df(url, params, raw=False, add_token=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
-                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
-                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                max_record = (
+                    int(params["resultRecordCount"])
+                    if "resultRecordCount" in params
+                    else 1000
+                )
+                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -2692,14 +2885,17 @@ class FeatureLayer(Layer):
                     i = 0
                     featureset_dict = None
                     while max_rec * i < max_record:
-                        params['resultRecordCount'] = max_rec if max_rec * (i + 1) <= max_record else (
-                                    max_record - max_rec * i)
-                        params['resultOffset'] = offset + max_rec * i
+                        params["resultRecordCount"] = (
+                            max_rec
+                            if max_rec * (i + 1) <= max_record
+                            else (max_record - max_rec * i)
+                        )
+                        params["resultOffset"] = offset + max_rec * i
                         try:
                             records = self._query(url, params, raw=True)
                             if featureset_dict is not None:
-                                for feature in records['features']:
-                                    featureset_dict['features'].append(feature)
+                                for feature in records["features"]:
+                                    featureset_dict["features"].append(feature)
                             else:
                                 featureset_dict = records
                             i += 1
@@ -2709,46 +2905,50 @@ class FeatureLayer(Layer):
             else:
                 raise queryException
 
-        if len(featureset_dict['features']) == 0:
+        if len(featureset_dict["features"]) == 0:
             return pd.DataFrame([])
         sr = None
-        if 'spatialReference' in featureset_dict:
-            sr = featureset_dict['spatialReference']
+        if "spatialReference" in featureset_dict:
+            sr = featureset_dict["spatialReference"]
 
         df = None
         dtypes = None
         geom = None
         names = None
         dfields = []
-        rows = [feature_to_row(row, sr) \
-                for row in featureset_dict['features']]
+        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
-        if 'fields' in featureset_dict:
+        if "SHAPE" in df.columns:
+            df.loc[df.SHAPE.isna(), "SHAPE"] = None
+        if "fields" in featureset_dict:
             dtypes = {}
             names = []
-            fields = featureset_dict['fields']
+            fields = featureset_dict["fields"]
             for fld in fields:
-                if fld['type'] != "esriFieldTypeGeometry":
-                    dtypes[fld['name']] = _fld_lu[fld['type']]
-                    names.append(fld['name'])
-                if fld['type'] == 'esriFieldTypeDate':
-                    dfields.append(fld['name'])
-        if 'SHAPE' in featureset_dict:
-            df.spatial.set_geometry('SHAPE')
+                if fld["type"] != "esriFieldTypeGeometry":
+                    dtypes[fld["name"]] = _fld_lu[fld["type"]]
+                    names.append(fld["name"])
+                if fld["type"] == "esriFieldTypeDate":
+                    dfields.append(fld["name"])
+        if "SHAPE" in featureset_dict:
+            df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
 
             for fld in [fld for fld in dfields if fld in df.columns]:
                 try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             errors='coerce',
-                                             unit='s')
+                    df[fld] = pd.to_datetime(
+                        df[fld] / 1000,
+                        infer_datetime_format=True,
+                        errors="coerce",
+                        unit="s",
+                    )
                 except:
 
-                    df[fld] = pd.to_datetime(df[fld], errors='coerce',
-                                             infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld], errors="coerce", infer_datetime_format=True
+                    )
         return df
 
 
@@ -2760,6 +2960,7 @@ class Table(FeatureLayer):
     Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
     have a geometry, and tables ignore any geometry related operation.
     """
+
     @classmethod
     def fromitem(cls, item, table_id=0):
         """
@@ -2769,27 +2970,30 @@ class Table(FeatureLayer):
         """
         return item.tables[table_id]
 
-    def query(self, where="1=1",
-              out_fields="*",
-              time_filter=None,
-              return_count_only=False,
-              return_ids_only=False,
-              return_distinct_values=False,
-              group_by_fields_for_statistics=None,
-              statistic_filter=None,
-              result_offset=None,
-              result_record_count=None,
-              object_ids=None,
-              gdb_version=None,
-              order_by_fields=None,
-              out_statistics=None,
-              return_all_records=True,
-              historic_moment=None,
-              sql_format=None,
-              return_exceeded_limit_features=None,
-              as_df=False,
-              having=None,
-              **kwargs):
+    def query(
+        self,
+        where="1=1",
+        out_fields="*",
+        time_filter=None,
+        return_count_only=False,
+        return_ids_only=False,
+        return_distinct_values=False,
+        group_by_fields_for_statistics=None,
+        statistic_filter=None,
+        result_offset=None,
+        result_record_count=None,
+        object_ids=None,
+        gdb_version=None,
+        order_by_fields=None,
+        out_statistics=None,
+        return_all_records=True,
+        historic_moment=None,
+        sql_format=None,
+        return_exceeded_limit_features=None,
+        as_df=False,
+        having=None,
+        **kwargs,
+    ):
         """
         Queries a Table Layer based on a set of criteria.
 
@@ -2919,76 +3123,79 @@ class Table(FeatureLayer):
         if self._dynamic_layer is None:
             url = self._url + "/query"
         else:
-            url = "%s/query" % self._url.split('?')[0]
+            url = "%s/query" % self._url.split("?")[0]
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
-            params['layer'] = self._dynamic_layer
+            params["layer"] = self._dynamic_layer
         if historic_moment is not None:
-            params['historicMoment'] = historic_moment
+            params["historicMoment"] = historic_moment
         if sql_format is not None:
-            params['sqlFormat'] = sql_format
+            params["sqlFormat"] = sql_format
         if return_exceeded_limit_features is not None:
-            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
-        params['where'] = where
-        params['returnDistinctValues'] = return_distinct_values
-        params['returnCountOnly'] = return_count_only
-        params['returnIdsOnly'] = return_ids_only
+            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+        params["where"] = where
+        params["returnDistinctValues"] = return_distinct_values
+        params["returnCountOnly"] = return_count_only
+        params["returnIdsOnly"] = return_ids_only
 
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
-            out_fields = ','.join(out_fields)
+            out_fields = ",".join(out_fields)
 
-        if out_fields != '*' and not return_distinct_values:
+        if out_fields != "*" and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.
                 # If it isn't, add it
-                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
-                if object_id_field not in out_fields.split(','):
+                object_id_field = [
+                    x.name
+                    for x in self.properties.fields
+                    if x.type == "esriFieldTypeOID"
+                ][0]
+                if object_id_field not in out_fields.split(","):
                     out_fields = object_id_field + "," + out_fields
             except (IndexError, AttributeError):
                 pass
-        params['outFields'] = out_fields
+        params["outFields"] = out_fields
         if return_count_only or return_ids_only:
             return_all_records = False
         if result_record_count and not return_all_records:
-            params['resultRecordCount'] = result_record_count
+            params["resultRecordCount"] = result_record_count
         if result_offset and not return_all_records:
-            params['resultOffset'] = result_offset
+            params["resultOffset"] = result_offset
         if order_by_fields:
-            params['orderByFields'] = order_by_fields
+            params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
-        if statistic_filter and \
-                isinstance(statistic_filter, StatisticFilter):
-            params['outStatistics'] = statistic_filter.filter
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params["outStatistics"] = statistic_filter.filter
         if out_statistics:
-            params['outStatistics'] = out_statistics
+            params["outStatistics"] = out_statistics
         if gdb_version:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if object_ids:
-            params['objectIds'] = object_ids
+            params["objectIds"] = object_ids
 
         if time_filter is None and self.time_filter:
-            params['time'] = self.time_filter
+            params["time"] = self.time_filter
         elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
                 if starttime is None:
-                    starttime = 'null'
+                    starttime = "null"
                 if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
             elif isinstance(time_filter, dict):
                 for key, val in time_filter.items():
                     params[key] = val
             else:
-                params['time'] = _date_handler(time_filter)
+                params["time"] = _date_handler(time_filter)
 
         if len(kwargs) > 0:
             for key, val in kwargs.items():
-                if key in ('returnCountOnly', 'returnIdsOnly') and val:
+                if key in ("returnCountOnly", "returnIdsOnly") and val:
                     # If these keys are passed in as kwargs instead of parameters, set return_all_records
                     return_all_records = False
                 params[key] = val
@@ -2999,75 +3206,86 @@ class Table(FeatureLayer):
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
-        params['returnCountOnly'] = True
+        params["returnCountOnly"] = True
         record_count = self._query(url, params, raw=as_raw)
-        if 'maxRecordCount' in self.properties:
-            max_records = self.properties['maxRecordCount']
+        if "maxRecordCount" in self.properties:
+            max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
 
         supports_pagination = True
-        if ('advancedQueryCapabilities' not in self.properties or \
-                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+        if (
+            "advancedQueryCapabilities" not in self.properties
+            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+        ):
             supports_pagination = False
 
-        params['returnCountOnly'] = False
+        params["returnCountOnly"] = False
         if record_count == 0 and as_df:
             from arcgis.features.geo._array import GeoArray
             import numpy as np
             import pandas as pd
+
             _fld_lu = {
-                "esriFieldTypeSmallInteger" : np.int32,
-                "esriFieldTypeInteger" : np.int64,
-                "esriFieldTypeSingle" : np.int32,
-                "esriFieldTypeDouble" : float,
-                "esriFieldTypeFloat" : float,
-                "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : np.datetime64,
-                "esriFieldTypeOID" : np.int64,
-                "esriFieldTypeGeometry" : object,
-                "esriFieldTypeBlob" : object,
-                "esriFieldTypeRaster" : object,
-                "esriFieldTypeGUID" : str,
-                "esriFieldTypeGlobalID" : str,
-                "esriFieldTypeXML" : object
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeDouble": float,
+                "esriFieldTypeFloat": float,
+                "esriFieldTypeString": str,
+                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeGeometry": object,
+                "esriFieldTypeBlob": object,
+                "esriFieldTypeRaster": object,
+                "esriFieldTypeGUID": str,
+                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeXML": object,
             }
             columns = {}
             for fld in self.properties.fields:
                 fld = dict(fld)
-                columns[fld['name']] = _fld_lu[fld['type']]
-            if "geometryType" in self.properties and \
-               not self.properties.geometryType is None:
-                columns['SHAPE'] = object
+                columns[fld["name"]] = _fld_lu[fld["type"]]
+            if (
+                "geometryType" in self.properties
+                and not self.properties.geometryType is None
+            ):
+                columns["SHAPE"] = object
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if 'SHAPE' in df.columns:
-                df['SHAPE'] = GeoArray([])
+            if "SHAPE" in df.columns:
+                df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params['resultRecordCount'] = record_count
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
+
                 df = self._query_df(url, params)
-                dt_fields = [fld['name'] for fld in self.properties.fields \
-                             if fld['type'] == 'esriFieldTypeDate']
-                if 'SHAPE' in df.columns:
-                    df.spatial.set_geometry('SHAPE')
+                dt_fields = [
+                    fld["name"]
+                    for fld in self.properties.fields
+                    if fld["type"] == "esriFieldTypeDate"
+                ]
+                if "SHAPE" in df.columns:
+                    df.spatial.set_geometry("SHAPE")
                     df.spatial.renderer = self.renderer
                     df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld]/1000,
-                                                 infer_datetime_format=True,
-                                                 unit='s')
+                            df[fld] = pd.to_datetime(
+                                df[fld] / 1000, infer_datetime_format=True, unit="s"
+                            )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                            df[fld] = pd.to_datetime(
+                                df[fld], infer_datetime_format=True
+                            )
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -3078,18 +3296,18 @@ class Table(FeatureLayer):
         df = None
         dfs = []
         if not supports_pagination:
-            params['returnIdsOnly'] = True
+            params["returnIdsOnly"] = True
             oid_info = self._query(url, params, raw=as_raw)
-            params['returnIdsOnly'] = False
-            for ids in chunks(oid_info['objectIds'], max_records):
+            params["returnIdsOnly"] = False
+            for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
-                params['where'] = sql
+                sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
+                params["where"] = sql
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -3099,14 +3317,14 @@ class Table(FeatureLayer):
                     dfs.append(df)
         else:
             while True:
-                params['resultRecordCount'] = max_records
-                params['resultOffset'] = max_records * i
+                params["resultRecordCount"] = max_records
+                params["resultOffset"] = max_records * i
                 if not as_df:
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
-                        if 'features' in result:
-                            result['features'].append(records['features'])
+                        if "features" in result:
+                            result["features"].append(records["features"])
                         else:
                             result.features.extend(records.features)
                     else:
@@ -3124,22 +3342,26 @@ class Table(FeatureLayer):
                 i += 1
         if as_df:
             import pandas as pd
-            dt_fields = [fld['name'] for fld in self.properties.fields \
-                         if fld['type'] == 'esriFieldTypeDate']
+
+            dt_fields = [
+                fld["name"]
+                for fld in self.properties.fields
+                if fld["type"] == "esriFieldTypeDate"
+            ]
             if len(dfs) == 1:
                 df = dfs[0]
             else:
                 df = pd.concat(dfs, sort=True)
                 df.reset_index(drop=True, inplace=True)
-            if 'SHAPE' in df.columns:
-                df.spatial.set_geometry('SHAPE')
+            if "SHAPE" in df.columns:
+                df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
+                    df[fld] = pd.to_datetime(
+                        df[fld] / 1000, infer_datetime_format=True, unit="s"
+                    )
                 except:
                     df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
             return df
@@ -3164,6 +3386,7 @@ class FeatureLayerCollection(_GISResource):
     Note: You can use the `layers` and `tables` property to get to the individual layers and tables in this
     feature layer collection.
     """
+
     _vermgr = None
 
     def __init__(self, url, gis=None):
@@ -3179,8 +3402,10 @@ class FeatureLayerCollection(_GISResource):
         self._admin = None
         try:
             from arcgis.gis.server._service._adminfactory import AdminServiceGen
+
             self.service = AdminServiceGen(service=self, gis=gis)
-        except: pass
+        except:
+            pass
 
     def _populate_layers(self):
         """
@@ -3190,11 +3415,11 @@ class FeatureLayerCollection(_GISResource):
         tables = []
 
         for lyr in self.properties.layers:
-            lyr = FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
+            lyr = FeatureLayer(self.url + "/" + str(lyr.id), self._gis, self)
             layers.append(lyr)
 
         for lyr in self.properties.tables:
-            lyr = Table(self.url + '/' + str(lyr.id), self._gis, self)
+            lyr = Table(self.url + "/" + str(lyr.id), self._gis, self)
             tables.append(lyr)
 
         # fsurl = self.url + '/layers'
@@ -3212,13 +3437,13 @@ class FeatureLayerCollection(_GISResource):
 
     @property
     def manager(self):
-        """ helper object to manage the feature layer collection, update it's definition, etc """
+        """helper object to manage the feature layer collection, update it's definition, etc"""
         if self._admin is None:
             url = self._url
             res = search("/rest/", url).span()
             add_text = "admin/"
-            part1 = url[:res[1]]
-            part2 = url[res[1]:]
+            part1 = url[: res[1]]
+            part2 = url[res[1] :]
             admin_url = "%s%s%s" % (part1, add_text, part2)
 
             self._admin = FeatureLayerCollectionManager(admin_url, self._gis, self)
@@ -3242,13 +3467,15 @@ class FeatureLayerCollection(_GISResource):
         :returns: List of Dictionaries
 
         """
-        if "supportsRelationshipsResource" in self.properties and \
-           self.properties["supportsRelationshipsResource"]:
+        if (
+            "supportsRelationshipsResource" in self.properties
+            and self.properties["supportsRelationshipsResource"]
+        ):
             url = self._url + "/relationships"
-            params = {'f' : 'json'}
+            params = {"f": "json"}
             res = self._con.get(url, params)
-            if 'relationships' in res:
-                return res['relationships']
+            if "relationships" in res:
+                return res["relationships"]
             return res
         return []
 
@@ -3258,15 +3485,19 @@ class FeatureLayerCollection(_GISResource):
         Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
         If versioning is not enabled on the service, None is returned.
         """
-        if "hasVersionedData" in self.properties and \
-           self.properties.hasVersionedData == True:
+        if (
+            "hasVersionedData" in self.properties
+            and self.properties.hasVersionedData == True
+        ):
             if self._vermgr is None:
                 from ._version import VersionManager
                 import os
+
                 url = os.path.dirname(self.url) + "/VersionManagementServer"
                 self._vermgr = VersionManager(url=url, gis=self._gis)
             return self._vermgr
         return None
+
     # ----------------------------------------------------------------------
     def query_domains(self, layers):
         """
@@ -3289,31 +3520,34 @@ class FeatureLayerCollection(_GISResource):
         if not isinstance(layers, (tuple, list)):
             raise ValueError("The layer variable must be a list.")
         url = "{base}/queryDomains".format(base=self._url)
-        params = {'f':'json'}
-        params['layers'] = layers
+        params = {"f": "json"}
+        params["layers"] = layers
         res = self._con.post(url, params)
-        if 'domains' in res:
-            return res['domains']
+        if "domains" in res:
+            return res["domains"]
         return res
+
     # ----------------------------------------------------------------------
-    def extract_changes(self,
-                        layers,
-                        servergen,
-                        queries=None,
-                        geometry=None,
-                        geometry_type=None,
-                        in_sr=None,
-                        version=None,
-                        return_inserts=False,
-                        return_updates=False,
-                        return_deletes=False,
-                        return_ids_only=False,
-                        return_extent_only=False,
-                        return_attachments=False,
-                        attachments_by_url=False,
-                        data_format="json",
-                        change_extent_grid_cell=None,
-                        return_geometry_updates=None):
+    def extract_changes(
+        self,
+        layers,
+        servergen,
+        queries=None,
+        geometry=None,
+        geometry_type=None,
+        in_sr=None,
+        version=None,
+        return_inserts=False,
+        return_updates=False,
+        return_deletes=False,
+        return_ids_only=False,
+        return_extent_only=False,
+        return_attachments=False,
+        attachments_by_url=False,
+        data_format="json",
+        change_extent_grid_cell=None,
+        return_geometry_updates=None,
+    ):
         """
         Feature service change tracking is an efficient change tracking
         mechanism for applications. Applications can use change tracking to
@@ -3499,90 +3733,87 @@ class FeatureLayerCollection(_GISResource):
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
-        url = "%s/extractChanges"  % self._url
+        url = "%s/extractChanges" % self._url
         params = {
-            "f" : "json",
-            "layerQueries" : queries,
-            "layers" : layers,
-            "geometry" : geometry,
-            "geometryType" : geometry_type,
-            "inSR" : in_sr,
-            "gdbVersion" : version,
-            "returnInserts" : return_inserts,
-            "returnUpdates" : return_updates,
-            "returnDeletes" : return_deletes,
-            "returnIdsOnly" : return_ids_only,
-            "returnExtentOnly" : return_extent_only,
-            "returnAttachments" : return_attachments,
-            "returnAttachmentsDatabyURL" : attachments_by_url,
-            "dataFormat" : data_format,
-            "layerServerGens" : servergen,
-            "changesExtentGridCell" : change_extent_grid_cell
+            "f": "json",
+            "layerQueries": queries,
+            "layers": layers,
+            "geometry": geometry,
+            "geometryType": geometry_type,
+            "inSR": in_sr,
+            "gdbVersion": version,
+            "returnInserts": return_inserts,
+            "returnUpdates": return_updates,
+            "returnDeletes": return_deletes,
+            "returnIdsOnly": return_ids_only,
+            "returnExtentOnly": return_extent_only,
+            "returnAttachments": return_attachments,
+            "returnAttachmentsDatabyURL": attachments_by_url,
+            "dataFormat": data_format,
+            "layerServerGens": servergen,
+            "changesExtentGridCell": change_extent_grid_cell,
         }
         if not return_geometry_updates is None:
-            params['returnHasGeometryUpdates'] = return_geometry_updates
+            params["returnHasGeometryUpdates"] = return_geometry_updates
         res = self._con.post(url, params)
-        if 'statusUrl' in res:
-            surl = res['statusUrl']
-            params = {'f' : 'json'}
+        if "statusUrl" in res:
+            surl = res["statusUrl"]
+            params = {"f": "json"}
             res = self._con.get(surl, params)
-            while res['status'].lower() != "completed":
+            while res["status"].lower() != "completed":
                 res = self._con.get(surl, params)
-                status = res['status']
-                if status.lower() == 'completed':
-                    return self._con.get(res['resultUrl'])
-                elif  status.lower() == 'failed':
+                status = res["status"]
+                if status.lower() == "completed":
+                    return self._con.get(res["resultUrl"])
+                elif status.lower() == "failed":
                     return None
                 else:
-                    time.sleep(.5)
+                    time.sleep(0.5)
         return res
 
-    def query(self,
-              layer_defs_filter=None,
-              geometry_filter=None,
-              time_filter=None,
-              return_geometry=True,
-              return_ids_only=False,
-              return_count_only=False,
-              return_z=False,
-              return_m=False,
-              out_sr=None):
+    def query(
+        self,
+        layer_defs_filter=None,
+        geometry_filter=None,
+        time_filter=None,
+        return_geometry=True,
+        return_ids_only=False,
+        return_count_only=False,
+        return_z=False,
+        return_m=False,
+        out_sr=None,
+    ):
         """
-           queries the feature layer collection
+        queries the feature layer collection
         """
         qurl = self._url + "/query"
-        params = {"f": "json",
-                  "returnGeometry": return_geometry,
-                  "returnIdsOnly": return_ids_only,
-                  "returnCountOnly": return_count_only,
-                  "returnZ": return_z,
-                  "returnM": return_m}
-        if layer_defs_filter is not None and \
-                isinstance(layer_defs_filter, dict):
-            params['layerDefs'] = layer_defs_filter
-        elif layer_defs_filter is not None and \
-                isinstance(layer_defs_filter, dict):
+        params = {
+            "f": "json",
+            "returnGeometry": return_geometry,
+            "returnIdsOnly": return_ids_only,
+            "returnCountOnly": return_count_only,
+            "returnZ": return_z,
+            "returnM": return_m,
+        }
+        if layer_defs_filter is not None and isinstance(layer_defs_filter, dict):
+            params["layerDefs"] = layer_defs_filter
+        elif layer_defs_filter is not None and isinstance(layer_defs_filter, dict):
             pass
-        if geometry_filter is not None and \
-                isinstance(geometry_filter, dict):
-            params['geometryType'] = geometry_filter['geometryType']
-            params['spatialRel'] = geometry_filter['spatialRel']
-            params['geometry'] = geometry_filter['geometry']
-            if 'inSR' in geometry_filter:
-                params['inSR'] = geometry_filter['inSR']
+        if geometry_filter is not None and isinstance(geometry_filter, dict):
+            params["geometryType"] = geometry_filter["geometryType"]
+            params["spatialRel"] = geometry_filter["spatialRel"]
+            params["geometry"] = geometry_filter["geometry"]
+            if "inSR" in geometry_filter:
+                params["inSR"] = geometry_filter["inSR"]
 
-        if out_sr is not None and \
-                isinstance(out_sr, SpatialReference):
-            params['outSR'] = out_sr
-        elif out_sr is not None and \
-                isinstance(out_sr, dict):
-            params['outSR'] = out_sr
-        if time_filter is not None and \
-                isinstance(time_filter, dict):
-            params['time'] = time_filter
-        results = self._con.get(path=qurl,
-                                params=params)
-        if 'error' in results:
+        if out_sr is not None and isinstance(out_sr, SpatialReference):
+            params["outSR"] = out_sr
+        elif out_sr is not None and isinstance(out_sr, dict):
+            params["outSR"] = out_sr
+        if time_filter is not None and isinstance(time_filter, dict):
+            params["time"] = time_filter
+        results = self._con.get(path=qurl, params=params)
+        if "error" in results:
             raise ValueError(results)
         if not return_count_only and not return_ids_only:
             return results
@@ -3601,18 +3832,20 @@ class FeatureLayerCollection(_GISResource):
             return FeatureSet.from_dict(results)
 
     # ----------------------------------------------------------------------
-    def query_related_records(self,
-                              object_ids,
-                              relationship_id,
-                              out_fields="*",
-                              definition_expression=None,
-                              return_geometry=True,
-                              max_allowable_offset=None,
-                              geometry_precision=None,
-                              out_wkid=None,
-                              gdb_version=None,
-                              return_z=False,
-                              return_m=False):
+    def query_related_records(
+        self,
+        object_ids,
+        relationship_id,
+        out_fields="*",
+        definition_expression=None,
+        return_geometry=True,
+        max_allowable_offset=None,
+        geometry_precision=None,
+        out_wkid=None,
+        gdb_version=None,
+        return_z=False,
+        return_m=False,
+    ):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -3679,22 +3912,20 @@ class FeatureLayerCollection(_GISResource):
             "outFields": out_fields,
             "returnGeometry": return_geometry,
             "returnM": return_m,
-            "returnZ": return_z
+            "returnZ": return_z,
         }
         if gdb_version is not None:
-            params['gdbVersion'] = gdb_version
+            params["gdbVersion"] = gdb_version
         if definition_expression is not None:
-            params['definitionExpression'] = definition_expression
-        if out_wkid is not None and \
-                isinstance(out_wkid, SpatialReference):
-            params['outSR'] = out_wkid
-        elif out_wkid is not None and \
-                isinstance(out_wkid, dict):
-            params['outSR'] = out_wkid
+            params["definitionExpression"] = definition_expression
+        if out_wkid is not None and isinstance(out_wkid, SpatialReference):
+            params["outSR"] = out_wkid
+        elif out_wkid is not None and isinstance(out_wkid, dict):
+            params["outSR"] = out_wkid
         if max_allowable_offset is not None:
-            params['maxAllowableOffset'] = max_allowable_offset
+            params["maxAllowableOffset"] = max_allowable_offset
         if geometry_precision is not None:
-            params['geometryPrecision'] = geometry_precision
+            params["geometryPrecision"] = geometry_precision
         qrr_url = self._url + "/queryRelatedRecords"
         res = self._con.get(path=qrr_url, params=params)
         return res
@@ -3702,10 +3933,9 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     @property
     def _replicas(self):
-        """ returns all the replicas for a feature service """
+        """returns all the replicas for a feature service"""
         params = {
             "f": "json",
-
         }
         url = self._url + "/replicas"
         return self._con.get(path=url, params=params)
@@ -3726,10 +3956,7 @@ class FeatureLayerCollection(_GISResource):
         :return: boolean
 
         """
-        params = {
-            "f": "json",
-            "replicaID": replica_id
-        }
+        params = {"f": "json", "replicaID": replica_id}
         url = self._url + "/unRegisterReplica"
         return self._con.post(path=url, postdata=params)
 
@@ -3749,32 +3976,32 @@ class FeatureLayerCollection(_GISResource):
         :returns: dict
 
         """
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         url = self._url + "/replicas/" + replica_id
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def _create_replica(self,
-                        replica_name,
-                        layers,
-                        layer_queries=None,
-                        geometry_filter=None,
-                        replica_sr=None,
-                        transport_type="esriTransportTypeUrl",
-                        return_attachments=False,
-                        return_attachments_data_by_url=False,
-                        asynchronous=False,
-                        sync_direction=None,
-                        target_type="client",
-                        attachments_sync_direction="none",
-                        sync_model="none",
-                        data_format="json",
-                        replica_options=None,
-                        wait=False,
-                        out_path=None,
-                        transformations=None):
+    def _create_replica(
+        self,
+        replica_name,
+        layers,
+        layer_queries=None,
+        geometry_filter=None,
+        replica_sr=None,
+        transport_type="esriTransportTypeUrl",
+        return_attachments=False,
+        return_attachments_data_by_url=False,
+        asynchronous=False,
+        sync_direction=None,
+        target_type="client",
+        attachments_sync_direction="none",
+        sync_model="none",
+        data_format="json",
+        replica_options=None,
+        wait=False,
+        out_path=None,
+        transformations=None,
+    ):
         """
         The createReplica operation is performed on a feature service
         resource. This operation creates the replica between the feature
@@ -3884,7 +4111,10 @@ class FeatureLayerCollection(_GISResource):
                              transformation on each layer when the spatial reference used in
                              geometry is different than the layer's spatial reference.
         """
-        if not self.properties.syncEnabled and "Extract" not in self.properties.capabilities:
+        if (
+            not self.properties.syncEnabled
+            and "Extract" not in self.properties.capabilities
+        ):
             return None
         url = self._url + "/createReplica"
         dataformat = ["filegdb", "json", "sqlite", "shapefile"]
@@ -3896,44 +4126,42 @@ class FeatureLayerCollection(_GISResource):
             "async": json.dumps(asynchronous),
             "syncModel": sync_model,
             "layers": layers,
-            "targetType" : target_type,
-
+            "targetType": target_type,
         }
         if transformations:
-            params['datumTransformations'] = transformations
+            params["datumTransformations"] = transformations
         if attachments_sync_direction:
             params["attachmentsSyncDirection"] = attachments_sync_direction
         if sync_direction:
-            params['syncDirection'] = sync_direction
+            params["syncDirection"] = sync_direction
         if data_format.lower() in dataformat:
-            params['dataFormat'] = data_format.lower()
+            params["dataFormat"] = data_format.lower()
         else:
             raise Exception("Invalid dataFormat")
         if layer_queries is not None:
-            params['layerQueries'] = layer_queries
-        if geometry_filter is not None and \
-                isinstance(geometry_filter, dict):
-            params['geometry'] = geometry_filter['geometry']
-            params['geometryType'] = geometry_filter['geometryType']
-            if 'inSR' in geometry_filter:
-                params['inSR'] = geometry_filter['inSR']
+            params["layerQueries"] = layer_queries
+        if geometry_filter is not None and isinstance(geometry_filter, dict):
+            params["geometry"] = geometry_filter["geometry"]
+            params["geometryType"] = geometry_filter["geometryType"]
+            if "inSR" in geometry_filter:
+                params["inSR"] = geometry_filter["inSR"]
         if replica_sr is not None:
-            params['replicaSR'] = replica_sr
+            params["replicaSR"] = replica_sr
         if replica_options is not None:
-            params['replicaOptions'] = replica_options
+            params["replicaOptions"] = replica_options
         if transport_type is not None:
-            params['transportType'] = transport_type
+            params["transportType"] = transport_type
 
         if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
-                status = self._replica_status(url=export_job['statusUrl'])
-                while status['status'] not in ("Completed", "CompletedWithErrors"):
-                    if status['status'] == "Failed":
+                status = self._replica_status(url=export_job["statusUrl"])
+                while status["status"] not in ("Completed", "CompletedWithErrors"):
+                    if status["status"] == "Failed":
                         return status
                     # wait before checking again
                     time.sleep(2)
-                    status = self._replica_status(url=export_job['statusUrl'])
+                    status = self._replica_status(url=export_job["statusUrl"])
 
                 res = status
 
@@ -3942,33 +4170,39 @@ class FeatureLayerCollection(_GISResource):
         else:
             res = self._con.post(path=url, postdata=params)
 
-        if out_path is not None and \
-                os.path.isdir(out_path):
+        if out_path is not None and os.path.isdir(out_path):
             dl_url = None
-            if 'resultUrl' in res:
+            if "resultUrl" in res:
 
                 dl_url = res["resultUrl"]
-            elif 'responseUrl' in res:
+            elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
 
             if dl_url is not None:
 
-                return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
-                                     out_folder=out_path, try_json=False)
+                return self._con.get(
+                    path=dl_url,
+                    file_name=dl_url.split("/")[-1],
+                    out_folder=out_path,
+                    try_json=False,
+                )
 
             else:
                 return res
         elif res is not None:
             return res
         return None
+
     # ----------------------------------------------------------------------
-    def _cleanup_change_tracking(self,
-                                 layers,
-                                 retention_period,
-                                 period_unit='days',
-                                 min_server_gen=None,
-                                 replica_id=None,
-                                 future=False):
+    def _cleanup_change_tracking(
+        self,
+        layers,
+        retention_period,
+        period_unit="days",
+        min_server_gen=None,
+        replica_id=None,
+        future=False,
+    ):
         """
 
 
@@ -3979,69 +4213,86 @@ class FeatureLayerCollection(_GISResource):
         url = "{url}/cleanupChangeTracking".format(url=self._url)
         params = {
             "f": "json",
-            'layers' : layers,
-            'retentionPeriod' : retention_period,
-            'retentionPeriodUnits' : period_unit
+            "layers": layers,
+            "retentionPeriod": retention_period,
+            "retentionPeriodUnits": period_unit,
         }
         if min_server_gen:
-            params['minServerGen'] = min_server_gen
+            params["minServerGen"] = min_server_gen
         if replica_id:
-            params['replicaId'] = replica_id
+            params["replicaId"] = replica_id
         if future:
-            params['async'] = future
+            params["async"] = future
             res = self._con.post(url, params)
             if "statusUrl" in res:
                 import concurrent.futures
-                executor =  concurrent.futures.ThreadPoolExecutor(1)
+
+                executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post(path=url, postdata=params)
-                future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+                future = executor.submit(
+                    self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
+                )
                 executor.shutdown(False)
                 return future
             return res
         else:
             res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
+
     # ----------------------------------------------------------------------
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
-                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
-                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
-                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status_allowed = [
+            "Pending",
+            "InProgress",
+            "Completed",
+            "Failed ImportChanges",
+            "ExportChanges",
+            "ExportingData",
+            "ExportingSnapshot",
+            "ExportAttachments",
+            "ImportAttachments",
+            "ProvisioningReplica",
+            "UnRegisteringReplica",
+            "CompletedWithErrors",
+        ]
         status = con.get(url, params)
-        while not status['status'] in status_allowed:
-            if status['status'] == 'Completed':
+        while not status["status"] in status_allowed:
+            if status["status"] == "Completed":
                 return status
-            elif status['status'] == 'CompletedWithErrors':
+            elif status["status"] == "CompletedWithErrors":
                 break
-            elif 'fail' in status['status'].lower():
+            elif "fail" in status["status"].lower():
                 break
-            elif 'error' in status['status'].lower():
+            elif "error" in status["status"].lower():
                 break
             status = con.get(url, params)
         return status
+
     # ----------------------------------------------------------------------
-    def _synchronize_replica(self,
-                             replica_id,
-                             transport_type="esriTransportTypeUrl",
-                             replica_server_gen=None,
-                             replica_servers_sib_gen=None,
-                             return_ids_for_adds=False,
-                             edits=None,
-                             return_attachment_databy_url=False,
-                             asynchronous=False,
-                             sync_direction=None,
-                             sync_layers="perReplica",
-                             edits_upload_id=None,
-                             edits_upload_format=None,
-                             data_format="json",
-                             rollback_on_failure=True,
-                             close_replica=False,
-                             out_path=None):
+    def _synchronize_replica(
+        self,
+        replica_id,
+        transport_type="esriTransportTypeUrl",
+        replica_server_gen=None,
+        replica_servers_sib_gen=None,
+        return_ids_for_adds=False,
+        edits=None,
+        return_attachment_databy_url=False,
+        asynchronous=False,
+        sync_direction=None,
+        sync_layers="perReplica",
+        edits_upload_id=None,
+        edits_upload_format=None,
+        data_format="json",
+        rollback_on_failure=True,
+        close_replica=False,
+        out_path=None,
+    ):
         """
         The synchronizeReplica operation is performed on a feature service resource. This operation
         synchronizes changes between the feature service and a client based on the replicaID
@@ -4185,49 +4436,51 @@ class FeatureLayerCollection(_GISResource):
         }
 
         if transport_type is not None:
-            params['transportType'] = transport_type
+            params["transportType"] = transport_type
         if edits is not None:
-            params['edits'] = edits
+            params["edits"] = edits
         if replica_server_gen is not None:
-            params['replicaServerGen'] = replica_server_gen
+            params["replicaServerGen"] = replica_server_gen
         if return_ids_for_adds is not None:
-            params['returnIdsForAdds'] = return_ids_for_adds
+            params["returnIdsForAdds"] = return_ids_for_adds
         if return_attachment_databy_url is not None:
-            params['returnAttachmentDatabyURL'] = return_attachment_databy_url
+            params["returnAttachmentDatabyURL"] = return_attachment_databy_url
         if asynchronous is not None:
-            params['async'] = asynchronous
+            params["async"] = asynchronous
         if sync_direction is not None:
-            params['syncDirection'] = sync_direction
+            params["syncDirection"] = sync_direction
         if sync_layers is not None:
-            params['syncLayers'] = sync_layers
+            params["syncLayers"] = sync_layers
         if edits_upload_format is not None:
-            params['editsUploadFormat'] = edits_upload_format
+            params["editsUploadFormat"] = edits_upload_format
         if edits_upload_id is not None:
-            params['editsUploadID'] = edits_upload_id
+            params["editsUploadID"] = edits_upload_id
         if data_format is not None:
-            params['dataFormat'] = data_format
-        #if edits_upload_id:
+            params["dataFormat"] = data_format
+        # if edits_upload_id:
         #    params['dataFormat'] = edits_upload_id
         if rollback_on_failure is not None:
-            params['rollbackOnFailure'] = rollback_on_failure
+            params["rollbackOnFailure"] = rollback_on_failure
         if close_replica:
-            params['closeReplica'] = close_replica
+            params["closeReplica"] = close_replica
         if replica_servers_sib_gen:
-            params['replicaServerSibGen'] = replica_servers_sib_gen
+            params["replicaServerSibGen"] = replica_servers_sib_gen
         res = self._con.post(path=url, postdata=params)
-        if out_path is not None and \
-               os.path.isdir(out_path):
+        if out_path is not None and os.path.isdir(out_path):
             dl_url = None
-            if 'resultUrl' in res:
+            if "resultUrl" in res:
                 dl_url = res["resultUrl"]
-            elif 'responseUrl' in res:
+            elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
-            elif 'URL' in res:
-                dl_url = res['URL']
+            elif "URL" in res:
+                dl_url = res["URL"]
             if dl_url is not None:
-                return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
-                                     out_folder=out_path, try_json=False,
-                                     )
+                return self._con.get(
+                    path=dl_url,
+                    file_name=dl_url.split("/")[-1],
+                    out_folder=out_path,
+                    try_json=False,
+                )
             else:
                 return res
         return res
@@ -4237,10 +4490,9 @@ class FeatureLayerCollection(_GISResource):
         """gets the replica status when exported async set to True"""
         params = {"f": "json"}
         url += "/status"
-        return self._con.get(path=url,
-                             params=params)
+        return self._con.get(path=url, params=params)
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
@@ -4261,54 +4513,48 @@ class FeatureLayerCollection(_GISResource):
         if (os.path.getsize(path) >> 20) <= 9:
             url = self._url + "/uploads/upload"
             params = {
-                "f" : "json",
-                'filename' : os.path.basename(path),
-                'overwrite' : True
+                "f": "json",
+                "filename": os.path.basename(path),
+                "overwrite": True,
             }
             files = {}
-            files['file'] = path
+            files["file"] = path
             if description:
-                params['description'] = description
-            res = self._con.post(path=url,
-                                 postdata=params,
-                                 files=files)
-            if 'status' in res and \
-               res['status'] == 'success':
+                params["description"] = description
+            res = self._con.post(path=url, postdata=params, files=files)
+            if "status" in res and res["status"] == "success":
                 return True, res
-            elif 'success' in res:
-                return res['success'], res
+            elif "success" in res:
+                return res["success"], res
             return False, res
         else:
             file_path = path
             item_id = self._register_upload(file_path)
             self._upload_by_parts(item_id, file_path)
             return self._commit_upload(item_id)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _register_upload(self, file_path):
         """returns the itemid for the upload by parts logic"""
         r_url = "%s/uploads/register" % self._url
-        params = {'f' : 'json',
-                  'itemName' : os.path.basename(file_path).replace('.', '')
-                  }
+        params = {"f": "json", "itemName": os.path.basename(file_path).replace(".", "")}
         reg_res = self._con.post(r_url, params)
-        if 'item' in reg_res and \
-           'itemID' in reg_res['item']:
-            return reg_res['item']['itemID']
+        if "item" in reg_res and "itemID" in reg_res["item"]:
+            return reg_res["item"]["itemID"]
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _upload_by_parts(self, item_id, file_path):
         """loads a file for attachmens by parts"""
         import mmap, tempfile
 
         b_url = "%s/uploads/%s" % (self._url, item_id)
         upload_part_url = "%s/uploadPart" % b_url
-        params = {
-            "f" : "json"
-        }
-        with open(file_path, 'rb') as f:
+        params = {"f": "json"}
+        with open(file_path, "rb") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             size = 1000000
-            steps =  int(os.fstat(f.fileno()).st_size / size)
+            steps = int(os.fstat(f.fileno()).st_size / size)
             if os.fstat(f.fileno()).st_size % size > 0:
                 steps += 1
             for i in range(steps):
@@ -4316,52 +4562,48 @@ class FeatureLayerCollection(_GISResource):
                 tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
                 if os.path.isfile(tempFile):
                     os.remove(tempFile)
-                with open(tempFile, 'wb') as writer:
+                with open(tempFile, "wb") as writer:
                     writer.write(mm.read(size))
                     writer.flush()
                     writer.close()
                 del writer
-                files['file'] = tempFile
-                params['partId'] = i + 1
-                res = self._con.post(upload_part_url,
-                                     postdata=params,
-                                     files=files)
-                if 'error' in res:
+                files["file"] = tempFile
+                params["partId"] = i + 1
+                res = self._con.post(upload_part_url, postdata=params, files=files)
+                if "error" in res:
                     raise Exception(res)
                 os.remove(tempFile)
                 del files
             del mm
         return True
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _commit_upload(self, item_id):
         """commits an upload by parts upload"""
         b_url = "%s/uploads/%s" % (self._url, item_id)
         commit_part_url = "%s/commit" % b_url
-        params = {
-                'f':'json',
-                'parts' : self._uploaded_parts(itemid=item_id)
-        }
-        res = self._con.post(commit_part_url,
-                              params)
-        if 'error' in res:
+        params = {"f": "json", "parts": self._uploaded_parts(itemid=item_id)}
+        res = self._con.post(commit_part_url, params)
+        if "error" in res:
             raise Exception(res)
         else:
-            return res['item']['itemID']
-    #----------------------------------------------------------------------
+            return res["item"]["itemID"]
+
+    # ----------------------------------------------------------------------
     def _delete_upload(self, item_id):
         """commits an upload by parts upload"""
         b_url = "%s/uploads/%s" % (self._url, item_id)
         delete_part_url = "%s/delete" % b_url
         params = {
-                'f':'json',
+            "f": "json",
         }
-        res = self._con.post(delete_part_url,
-                              params)
-        if 'error' in res:
+        res = self._con.post(delete_part_url, params)
+        if "error" in res:
             raise Exception(res)
         else:
             return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _uploaded_parts(self, itemid):
         """
         returns the parts uploaded for a given item
@@ -4374,8 +4616,6 @@ class FeatureLayerCollection(_GISResource):
 
         """
         url = self._url + "/uploads/%s/parts" % itemid
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         res = self._con.get(url, params)
-        return ",".join(res['parts'])
+        return ",".join(res["parts"])

@@ -54,9 +54,8 @@ class TextTranslator(InferenceOnlyModel):
     :returns: `TextTranslator` Object
     """
 
-    #: supported transformer backbones
-    supported_backbones = ("Supported backbones for `translation` task can be found at - "
-                           "https://huggingface.co/models?pipeline_tag=translation&search=Helsinki ")
+    #: supported transformer architectures
+    supported_backbones = ["MarianMT"]
 
     def __init__(self, source_language="es", target_language="en", **kwargs):
         self._source_lang = source_language

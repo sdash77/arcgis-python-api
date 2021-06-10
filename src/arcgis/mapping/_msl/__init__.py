@@ -1,4 +1,1 @@
-from .layer import (MapServiceLayer,
-                    MapFeatureLayer,
-                    MapTable,
-                    MapRasterLayer)
+from .layer import MapServiceLayer, MapFeatureLayer, MapTable, MapRasterLayer

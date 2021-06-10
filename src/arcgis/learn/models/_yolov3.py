@@ -25,7 +25,7 @@ try:
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.utils import extract_zipfile
-    from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP
+    from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP, AveragePrecision
     from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess, coco_config, coco_class_mapping
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
@@ -117,6 +117,7 @@ class YOLOv3(ArcGISModel):
 
         self._loss_f = YOLOv3_Loss()
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
+        self.learn.metrics = [AveragePrecision(self, data.c-1)]
         self.learn.split([self._model.module_list[11]]) #Splitting the model at Darknet53 backbone
         self.learn.freeze()
 
@@ -290,31 +291,39 @@ class YOLOv3(ArcGISModel):
         if len(chips) == 1:
             include_pad_detections = True
 
-        for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            self.learn.predicting = True
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
-            if bbox:
-                scores = bbox.scores
-                bboxes, lbls = bbox._compute_boxes()
-                bboxes.add_(1).mul_(
-                    torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
-                for index, bbox in enumerate(bboxes):
-                    if lbls is not None:
-                        label = lbls[index]
-                    else:
-                        label = 'Default'
+        from .._utils.pascal_voc_rectangles import modified_getitem
+        from fastai.data_block import LabelList
+        orig_getitem = LabelList.__getitem__
+        LabelList.__getitem__ = modified_getitem
 
-                    data = bb2hw(bbox)
-                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
-                        chip['predictions'].append({
-                            'xmin': data[0],
-                            'ymin': data[1],
-                            'width': data[2],
-                            'height': data[3],
-                            'score': float(scores[index]),
-                            'label': label
-                        })
+        try:
+            for chip in chips:
+                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+                self.learn.predicting = True
+                bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
+                if bbox:
+                    scores = bbox.scores
+                    bboxes, lbls = bbox._compute_boxes()
+                    bboxes.add_(1).mul_(
+                        torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                    for index, bbox in enumerate(bboxes):
+                        if lbls is not None:
+                            label = lbls[index]
+                        else:
+                            label = 'Default'
+
+                        data = bb2hw(bbox)
+                        if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                            chip['predictions'].append({
+                                'xmin': data[0],
+                                'ymin': data[1],
+                                'width': data[2],
+                                'height': data[3],
+                                'score': float(scores[index]),
+                                'label': label
+                            })
+        finally:
+            LabelList.__getitem__ = orig_getitem
 
         self._data.valid_ds.tfms = valid_tfms
 

@@ -9,7 +9,9 @@ import re
 
 import collections
 
-BufferStudyArea = collections.namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
+BufferStudyArea = collections.namedtuple(
+    "BufferStudyArea", "area radii units overlap travel_mode"
+)
 BufferStudyArea.__new__.__defaults__ = (None, None, None, True, None)
 BufferStudyArea.__doc__ = """BufferStudyArea allows you to buffer point and street address study areas.
 
@@ -24,15 +26,15 @@ travel_mode: None or string, one of the supported travel modes when using networ
 
 def _pep8ify(name):
     """PEP8ify name"""
-    if '.' in name:
-        name = name[name.rfind('.') + 1:]
+    if "." in name:
+        name = name[name.rfind(".") + 1 :]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
-    if '_' in name:
+    if "_" in name:
         return name.lower()
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
 class NamedArea(object):
@@ -49,7 +51,8 @@ class NamedArea(object):
         usa.subgeographies.states['California'].counties['San_Bernardino_County']
 
     """
-    def __init__(self, country, name=None, level=None, areaid='01', geometry=None):
+
+    def __init__(self, country, name=None, level=None, areaid="01", geometry=None):
         self._gis = country._gis
         self._country = country
         self._currlvl = level
@@ -66,28 +69,49 @@ class NamedArea(object):
 
     @property
     def __studyarea__(self):
-        return {"sourceCountry": self._country.properties.id, "layer": self._currlvl,"ids":[self._areaid]}
+        return {
+            "sourceCountry": self._country.properties.id,
+            "layer": self._currlvl,
+            "ids": [self._areaid],
+        }
 
     def __str__(self):
-        return '<%s name:"%s" area_id="%s", level="%s", country="%s">' % (type(self).__name__, self._name, self._areaid,\
-                                                                         self._currlvl, self._country.properties.name)
+        return '<%s name:"%s" area_id="%s", level="%s", country="%s">' % (
+            type(self).__name__,
+            self._name,
+            self._areaid,
+            self._currlvl,
+            self._country.properties.name,
+        )
+
     def __repr__(self):
-        return '<%s name:"%s" area_id="%s", level="%s", country="%s">' % (type(self).__name__, self._name, self._areaid,\
-                                                                         self._currlvl, self._country.properties.name)
+        return '<%s name:"%s" area_id="%s", level="%s", country="%s">' % (
+            type(self).__name__,
+            self._name,
+            self._areaid,
+            self._currlvl,
+            self._country.properties.name,
+        )
 
     @property
     def _childlevels(self):
-        dset = [dset for dset in self._country._geog_levels if dset['datasetID'] == self._country.dataset][0]
-        whole_country_levelid = [lvl['id'] for lvl in dset['levels'] if lvl['isWholeCountry']][0]
+        dset = [
+            dset
+            for dset in self._country._geog_levels
+            if dset["datasetID"] == self._country.dataset
+        ][0]
+        whole_country_levelid = [
+            lvl["id"] for lvl in dset["levels"] if lvl["isWholeCountry"]
+        ][0]
         if self._currlvl is None:
             self._currlvl = whole_country_levelid
 
         is_whole_country = self._currlvl == whole_country_levelid
 
         childlevels = set()
-        for branch in dset['branches']:
+        for branch in dset["branches"]:
 
-            levels = branch['levels']
+            levels = branch["levels"]
             if is_whole_country and self._currlvl not in levels:
                 level_attr = _pep8ify(levels[0])
                 childlevels.add(level_attr)
@@ -105,7 +129,7 @@ class NamedArea(object):
         return childlevels
 
     def __getattribute__(self, name):
-        if not name.startswith('_') and not name in ['geometry']:
+        if not name.startswith("_") and not name in ["geometry"]:
             val = object.__getattribute__(self, name)
             if val is None:
                 # print('Fetching {}'.format(name))
@@ -115,33 +139,42 @@ class NamedArea(object):
         else:
             return object.__getattribute__(self, name)
 
-
     def _fetch_subgeographies(self, name):
-        df = standard_geography_query(source_country=self._country.properties.id,
-                                      layers=[self._currlvl],
-                                      ids=[self._areaid],
-                                      return_sub_geography=True,
-                                      sub_geography_layer=self._level_mappings[name],
-                                      return_geometry=True,
-                                      as_featureset=False)
+        df = standard_geography_query(
+            source_country=self._country.properties.id,
+            layers=[self._currlvl],
+            ids=[self._areaid],
+            return_sub_geography=True,
+            sub_geography_layer=self._level_mappings[name],
+            return_geometry=True,
+            as_featureset=False,
+        )
 
         places = {}
         for index, row in df.iterrows():
             #     print(dict(row))
             plc = dict(row)
-            place = NamedArea(country=self._country, name=plc['AreaName'], level=plc['DataLayerID'],
-                              areaid=plc['AreaID'], geometry=Geometry(plc['SHAPE']))
-            place_name = plc['AreaName'].replace(' ', '_')
-            if self._level_mappings[name] == 'US.ZIP5':
-                place_name = plc['AreaID']
+            place = NamedArea(
+                country=self._country,
+                name=plc["AreaName"],
+                level=plc["DataLayerID"],
+                areaid=plc["AreaID"],
+                geometry=Geometry(plc["SHAPE"]),
+            )
+            place_name = plc["AreaName"].replace(" ", "_")
+            if self._level_mappings[name] == "US.ZIP5":
+                place_name = plc["AreaID"]
             places[place_name] = place
         setattr(self, name, places)
-#----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
 class Country(object):
     """
     A country for which geoenrichment data is available. The Country class can be used
     to discover the data collections, sub-geographies and available reports for a country.
     """
+
     @classmethod
     def get(cls, name):
         """
@@ -166,34 +199,39 @@ class Country(object):
             if len(cnames) == 1:
                 return cnames[0]
             else:
-                altnames = [c for c in cs if c.properties.altName.upper() == name.upper()]
+                altnames = [
+                    c for c in cs if c.properties.altName.upper() == name.upper()
+                ]
                 if len(altnames) == 1:
                     return altnames[0]
                 else:
-                    raise ValueError('Unable to find country with the specified name, id, ISO 3 country code')
+                    raise ValueError(
+                        "Unable to find country with the specified name, id, ISO 3 country code"
+                    )
 
     # noinspection PyMissingConstructor
     def __init__(self, dictdata, gis, purl=None):
         self._gis = gis
         if self._gis._is_hosted_nb_home == False:
-            hs = dict(self._gis.properties['helperServices'])
-            if 'geoenrichment' in hs:
-                self._base_url = hs['geoenrichment']['url']
+            hs = dict(self._gis.properties["helperServices"])
+            if "geoenrichment" in hs:
+                self._base_url = hs["geoenrichment"]["url"]
             else:
-                self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+                self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
         elif self._gis._is_hosted_nb_home and purl:
             self._base_url = purl
         else:
-            hs = dict(self._gis.properties['helperServices'])
-            if 'geoenrichment' in hs:
-                self._base_url = hs['geoenrichment']['url']
+            hs = dict(self._gis.properties["helperServices"])
+            if "geoenrichment" in hs:
+                self._base_url = hs["geoenrichment"]["url"]
             else:
-                self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+                self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
             if self._gis._is_hosted_nb_home:
                 self._base_url = self._validate_url(self._base_url)
         self.properties = PropertyMap(dictdata)
         self._dataset_id = self.properties.defaultDatasetID
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _validate_url(self, url):
         res = self._gis._private_service_url(url)
         if "privateServiceUrl" in res:
@@ -201,43 +239,46 @@ class Country(object):
         else:
             return res["serviceUrl"]
         return url
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
-        return '<%s name:%s>' % (type(self).__name__, self.properties.name)
+        return "<%s name:%s>" % (type(self).__name__, self.properties.name)
 
     def __repr__(self):
-        return '<%s name:%s>' % (type(self).__name__, self.properties.name)
+        return "<%s name:%s>" % (type(self).__name__, self.properties.name)
 
     @_lazy_property
     def geometry(self):
-        lvlid = [lvl['id'] for lvl in self.levels if lvl['isWholeCountry']][0]
-        df= standard_geography_query(source_country=self.properties.id,
-                                        layers=[lvlid],
-                                        ids=['01'],
-                                        return_sub_geography=False,
-                                        return_geometry=True,
-                                        as_featureset=False)
-        return Geometry(df.iloc[0]['SHAPE'])
-
-
+        lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
+        df = standard_geography_query(
+            source_country=self.properties.id,
+            layers=[lvlid],
+            ids=["01"],
+            return_sub_geography=False,
+            return_geometry=True,
+            as_featureset=False,
+        )
+        return Geometry(df.iloc[0]["SHAPE"])
 
     @_lazy_property
     def _geog_levels(self):
         """
         Returns levels of geography in this country, including branches for all datasets
         """
-        params = {'f': 'json'}
-        url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (self.properties.id)
+        params = {"f": "json"}
+        url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (
+            self.properties.id
+        )
         res = self._gis._con.post(url, params)
-        return res['geographyLevels'][0]['datasets']
+        return res["geographyLevels"][0]["datasets"]
 
     @property
     def levels(self):
         """
         Returns levels of geography in this country, for the current dataset
         """
-        dset = [d for d in self._geog_levels if d['datasetID'] == self._dataset_id][0]
-        return dset['levels']
+        dset = [d for d in self._geog_levels if d["datasetID"] == self._dataset_id][0]
+        return dset["levels"]
 
     @property
     def dataset(self):
@@ -251,12 +292,15 @@ class Country(object):
         if value in self.properties.datasets:
             self._dataset_id = value
             try:
-                delattr(self, '_lazy_subgeographies')
-                delattr(self, '_lazy__geog_levels')
+                delattr(self, "_lazy_subgeographies")
+                delattr(self, "_lazy__geog_levels")
             except:
                 pass
         else:
-            raise ValueError('The specified dataset is not available in this country. Choose one of '+ str(self.properties.datasets))
+            raise ValueError(
+                "The specified dataset is not available in this country. Choose one of "
+                + str(self.properties.datasets)
+            )
 
     @_lazy_property
     def data_collections(self):
@@ -267,38 +311,61 @@ class Country(object):
         analysis variables(analysisVariable)
         """
         import pandas as pd
-        df = pd.json_normalize((_data_collections(country=self.properties.id,
-                out_fields=['id', 'dataCollectionID', 'alias', 'fieldCategory', 'vintage']))['DataCollections'], 'data', 'dataCollectionID')
-        df['analysisVariable'] = df['dataCollectionID'] + '.' + df['id']
-        df = df[['dataCollectionID', 'analysisVariable', 'alias', 'fieldCategory', 'vintage']]
-        df.set_index('dataCollectionID', inplace=True)
+
+        df = pd.json_normalize(
+            (
+                _data_collections(
+                    country=self.properties.id,
+                    out_fields=[
+                        "id",
+                        "dataCollectionID",
+                        "alias",
+                        "fieldCategory",
+                        "vintage",
+                    ],
+                )
+            )["DataCollections"],
+            "data",
+            "dataCollectionID",
+        )
+        df["analysisVariable"] = df["dataCollectionID"] + "." + df["id"]
+        df = df[
+            [
+                "dataCollectionID",
+                "analysisVariable",
+                "alias",
+                "fieldCategory",
+                "vintage",
+            ]
+        ]
+        df.set_index("dataCollectionID", inplace=True)
         return df
 
     @_lazy_property
     def subgeographies(self):
         """
-        Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
-        supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
-        places within that level of geography. This allows for interactive selection of places using intellisense and a
-        notation such as the following:
+            Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
+            supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
+            places within that level of geography. This allows for interactive selection of places using intellisense and a
+            notation such as the following:
+
+            .. code-block:: python
+
+                # Usage Example 1
+
+                usa = Country.get('USA')
+                usa.subgeographies.states['California'].counties['San_Bernardino_County']
 
         .. code-block:: python
 
-            # Usage Example 1
+                # Usage Example 2
 
-            usa = Country.get('USA')
-            usa.subgeographies.states['California'].counties['San_Bernardino_County']
-
-    .. code-block:: python
-
-            # Usage Example 2
-
-            india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
+                india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
 
         """
         return NamedArea(self)
 
-    def search(self, query, layers=['*']):
+    def search(self, query, layers=["*"]):
         """
         Searches this country for places that have the specified query string in their name.
 
@@ -317,16 +384,24 @@ class Country(object):
         :return:
             A list of named areas that match the query string
         """
-        df = standard_geography_query(source_country=self.properties.id, geoquery=query,
-                                      layers=layers,
-                                      return_geometry=True,
-                                      as_featureset=False)
+        df = standard_geography_query(
+            source_country=self.properties.id,
+            geoquery=query,
+            layers=layers,
+            return_geometry=True,
+            as_featureset=False,
+        )
 
         places = []
         for index, row in df.iterrows():
             plc = dict(row)
-            place = NamedArea(country=self, name=plc['AreaName'], level=plc['DataLayerID'],
-                              areaid=plc['AreaID'], geometry=plc['SHAPE'])
+            place = NamedArea(
+                country=self,
+                name=plc["AreaName"],
+                level=plc["DataLayerID"],
+                areaid=plc["AreaID"],
+                geometry=plc["SHAPE"],
+            )
             places.append(place)
 
         return places
@@ -335,12 +410,19 @@ class Country(object):
     def reports(self):
         """Returns the available reports for this country as a Pandas dataframe"""
         import pandas as pd
+
         rdf = _find_report(self.properties.id)
         df = pd.json_normalize(rdf)
-        df = df[['reportID', 'metadata.title', 'metadata.categories', 'formats']].rename(
-            columns={'reportID': 'id', 'metadata.title': 'title', 'metadata.categories': 'categories'})
+        df = df[
+            ["reportID", "metadata.title", "metadata.categories", "formats"]
+        ].rename(
+            columns={
+                "reportID": "id",
+                "metadata.title": "title",
+                "metadata.categories": "categories",
+            }
+        )
         return df
-
 
 
 def get_countries(gis=None):
@@ -353,17 +435,20 @@ def get_countries(gis=None):
     else:
         return [Country(c, gis, purl=None) for c in ge.countries(as_df=False)]
 
-def create_report(study_areas,
-                  report=None,
-                  export_format='pdf',
-                  report_fields=None,
-                  options=None,
-                  return_type=None,
-                  use_data=None,
-                  in_sr=4326,
-                  out_name=None,
-                  out_folder=None,
-                  gis=None):
+
+def create_report(
+    study_areas,
+    report=None,
+    export_format="pdf",
+    report_fields=None,
+    options=None,
+    return_type=None,
+    use_data=None,
+    in_sr=4326,
+    out_name=None,
+    out_folder=None,
+    gis=None,
+):
     """
     The Create Report method allows you to create many types of high quality reports for a
     variety of use cases describing the input area. If a point is used as a study area, the
@@ -459,24 +544,28 @@ def create_report(study_areas,
     areas = []
     for area in study_areas:
         area_dict = area
-        if isinstance(area, str):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
-            area_dict = {'address': {'text': area}}
+        if isinstance(
+            area, str
+        ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
+            area_dict = {"address": {"text": area}}
         elif isinstance(area, dict):  # pass through - user knows what they're sending
             pass
         elif isinstance(area, Geometry):  # geometry, polygons, points
-            area_dict = {'geometry': dict(area)}
+            area_dict = {"geometry": dict(area)}
         elif isinstance(area, BufferStudyArea):
 
             # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
             g = area.area
             if isinstance(g, str):
-                area_dict = {'address': {'text': g}}
+                area_dict = {"address": {"text": g}}
             elif isinstance(g, dict):
                 area_dict = g
             elif isinstance(g, Geometry):  # geometry, polygons, points
-                area_dict = {'geometry': dict(g)}
+                area_dict = {"geometry": dict(g)}
             else:
-                raise ValueError('BufferStudyArea is only supported for Point geometry and addresses')
+                raise ValueError(
+                    "BufferStudyArea is only supported for Point geometry and addresses"
+                )
 
             area_type = "RingBuffer"
             if area.travel_mode is None:
@@ -485,11 +574,11 @@ def create_report(study_areas,
             else:
                 area_type = "NetworkServiceArea"
 
-            area_dict['areaType'] = area_type
-            area_dict['bufferUnits'] = area.units
-            area_dict['bufferRadii'] = area.radii
+            area_dict["areaType"] = area_type
+            area_dict["bufferUnits"] = area.units
+            area_dict["bufferRadii"] = area.radii
             if area.travel_mode is not None:
-                area_dict['travel_mode'] = area.travel_mode
+                area_dict["travel_mode"] = area.travel_mode
 
         elif isinstance(area, NamedArea):  # named area
             area_dict = area.__studyarea__
@@ -499,36 +588,52 @@ def create_report(study_areas,
             if isinstance(first_area, NamedArea):
                 for namedarea in area:
                     a = namedarea.__studyarea__
-                    if a['layer'] != first_area['layer'] or a['sourceCountry'] != first_area['sourceCountry']:
-                        raise ValueError('All NamedAreas in the list must have the same source country and level')
-                    ids.append(a['ids'])
-                area_dict = {"sourceCountry": first_area['sourceCountry'], "layer": first_area['layer'],
-                             "ids": [ids.join(",")]}
+                    if (
+                        a["layer"] != first_area["layer"]
+                        or a["sourceCountry"] != first_area["sourceCountry"]
+                    ):
+                        raise ValueError(
+                            "All NamedAreas in the list must have the same source country and level"
+                        )
+                    ids.append(a["ids"])
+                area_dict = {
+                    "sourceCountry": first_area["sourceCountry"],
+                    "layer": first_area["layer"],
+                    "ids": [ids.join(",")],
+                }
             else:
-                raise ValueError('Lists members must be NamedArea instances')
+                raise ValueError("Lists members must be NamedArea instances")
         else:
-            raise ValueError("Don't know how to handle study areas of type " + str(type(area)))
+            raise ValueError(
+                "Don't know how to handle study areas of type " + str(type(area))
+            )
 
         areas.append(area_dict)
     ge = _GeoEnrichment(gis=gis)
-    return ge.create_report(study_areas=areas,
-                             report=report,
-                             export_format=export_format,
-                            report_fields=report_fields,
-                            options=options,
-                            return_type=return_type,
-                            use_data=use_data,
-                            in_sr=in_sr,
-                            out_folder=out_folder,
-                            out_name=out_name)
-#----------------------------------------------------------------------
-def _data_collections(country=None,
-                     collection_name=None,
-                     variables=None,
-                     out_fields="*",
-                     hide_nulls=True,
-                     gis=None,
-                     as_dict=True):
+    return ge.create_report(
+        study_areas=areas,
+        report=report,
+        export_format=export_format,
+        report_fields=report_fields,
+        options=options,
+        return_type=return_type,
+        use_data=use_data,
+        in_sr=in_sr,
+        out_folder=out_folder,
+        out_name=out_name,
+    )
+
+
+# ----------------------------------------------------------------------
+def _data_collections(
+    country=None,
+    collection_name=None,
+    variables=None,
+    out_fields="*",
+    hide_nulls=True,
+    gis=None,
+    as_dict=True,
+):
     """
     The GeoEnrichment class uses the concept of a data collection to define the data
     attributes returned by the enrichment service. Each data collection has a unique name
@@ -576,32 +681,40 @@ def _data_collections(country=None,
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
 
-    return ge.data_collections(country=country,
-                                collection_name=collection_name,
-                                variables=variables,
-                                out_fields=out_fields,
-                                hide_nulls=hide_nulls,
-                                as_dict=as_dict)
-#----------------------------------------------------------------------
+    return ge.data_collections(
+        country=country,
+        collection_name=collection_name,
+        variables=variables,
+        out_fields=out_fields,
+        hide_nulls=hide_nulls,
+        as_dict=as_dict,
+    )
+
+
+# ----------------------------------------------------------------------
 def service_limits(gis=None):
     """
     Returns a Pandas' DataFrame that describes the service's limitations for each input parameter.
-    
-    :returns: Pandas' DataFrame 
+
+    :returns: Pandas' DataFrame
     """
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
     return ge.limits
-#----------------------------------------------------------------------
-def enrich(study_areas,
-           data_collections=None,
-           analysis_variables=None,
-           comparison_levels=None,
-           add_derivative_variables=None,
-           intersecting_geographies=None,
-           return_geometry=True,
-           gis=None):
+
+
+# ----------------------------------------------------------------------
+def enrich(
+    study_areas,
+    data_collections=None,
+    analysis_variables=None,
+    comparison_levels=None,
+    add_derivative_variables=None,
+    intersecting_geographies=None,
+    return_geometry=True,
+    gis=None,
+):
     """
     Returns demographic and other requested information for the specified study areas.
     Study areas define the location of the point or area that you want to enrich
@@ -687,12 +800,17 @@ def enrich(study_areas,
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
     import pandas as pd
-    from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
+    from arcgis.features import (
+        SpatialDataFrame,
+        FeatureSet,
+        GeoAccessor,
+        GeoSeriesAccessor,
+    )
 
     def _chunks(l, n):
         """yield successive n-sized chunks from l."""
         for i in range(0, len(l), n):
-            yield l[i:i + n]
+            yield l[i : i + n]
 
     if gis is None:
         gis = env.active_gis
@@ -701,7 +819,9 @@ def enrich(study_areas,
     areas = study_areas
     if isinstance(study_areas, FeatureSet):
         areas = FeatureSet.sdf
-    elif isinstance(study_areas, dict): # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
+    elif isinstance(
+        study_areas, dict
+    ):  # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
         areas = list(study_areas.values())
         study_areas = areas
 
@@ -712,21 +832,25 @@ def enrich(study_areas,
         areas = []
         for area in study_areas:
             area_dict = area
-            if isinstance(area, str): # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
-                area_dict = {'address': {'text': area}}
-            elif isinstance(area, Geometry): # geometry, polygons, points
-                area_dict = {'geometry': dict(area)}
+            if isinstance(
+                area, str
+            ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
+                area_dict = {"address": {"text": area}}
+            elif isinstance(area, Geometry):  # geometry, polygons, points
+                area_dict = {"geometry": dict(area)}
             elif isinstance(area, BufferStudyArea):
                 # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
                 g = area.area
                 if isinstance(g, str):
-                    area_dict = {'address': {'text': g}}
+                    area_dict = {"address": {"text": g}}
                 elif isinstance(g, Geometry):  # geometry, polygons, points
-                    area_dict = {'geometry': dict(g)}
+                    area_dict = {"geometry": dict(g)}
                 elif isinstance(g, dict):
                     area_dict = g
                 else:
-                    raise ValueError('BufferStudyArea is only supported for Point geometry and addresses')
+                    raise ValueError(
+                        "BufferStudyArea is only supported for Point geometry and addresses"
+                    )
 
                 area_type = "RingBuffer"
                 if area.travel_mode is None:
@@ -735,96 +859,130 @@ def enrich(study_areas,
                 else:
                     area_type = "NetworkServiceArea"
 
-                area_dict['areaType'] = area_type
-                area_dict['bufferUnits'] = area.units
-                area_dict['bufferRadii'] = area.radii
+                area_dict["areaType"] = area_type
+                area_dict["bufferUnits"] = area.units
+                area_dict["bufferRadii"] = area.radii
                 if area.travel_mode is not None:
-                    area_dict['travel_mode'] = area.travel_mode
+                    area_dict["travel_mode"] = area.travel_mode
 
-            elif isinstance(area, NamedArea): # named area
+            elif isinstance(area, NamedArea):  # named area
                 area_dict = area.__studyarea__
 
-            elif isinstance(area, dict):  # pass through - user knows what they're sending
+            elif isinstance(
+                area, dict
+            ):  # pass through - user knows what they're sending
                 pass
-            elif isinstance(area, list): # list of named areas, (union)
+            elif isinstance(area, list):  # list of named areas, (union)
                 first_area = area[0]
                 ids = []
                 if isinstance(first_area, NamedArea):
                     for namedarea in area:
                         a = namedarea.__studyarea__
-                        if a['layer'] != first_area['layer'] or a['sourceCountry'] != first_area['sourceCountry']:
-                            raise ValueError('All NamedAreas in the list must have the same source country and level')
-                        ids.append(a['ids'])
-                    area_dict = {"sourceCountry": first_area['sourceCountry'], "layer": first_area['layer'], "ids":[ids.join(",")]}
+                        if (
+                            a["layer"] != first_area["layer"]
+                            or a["sourceCountry"] != first_area["sourceCountry"]
+                        ):
+                            raise ValueError(
+                                "All NamedAreas in the list must have the same source country and level"
+                            )
+                        ids.append(a["ids"])
+                    area_dict = {
+                        "sourceCountry": first_area["sourceCountry"],
+                        "layer": first_area["layer"],
+                        "ids": [ids.join(",")],
+                    }
                 else:
-                    raise ValueError('Lists members must be NamedArea instances')
+                    raise ValueError("Lists members must be NamedArea instances")
             else:
-                raise ValueError("Don't know how to handle study areas of type " + str(type(area)))
+                raise ValueError(
+                    "Don't know how to handle study areas of type " + str(type(area))
+                )
 
             if comparison_levels is not None:
                 # add "comparisonLevels":[{"layer": "Admin2"}, {"layer": "Admin3"}]}]
                 layers = []
                 for level in comparison_levels:
-                    layers.append({'layer': level})
+                    layers.append({"layer": level})
 
-                area_dict['comparisonLevels'] = layers
+                area_dict["comparisonLevels"] = layers
 
             areas.append(area_dict)
 
     # chunking if len > 100
     if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
         import concurrent.futures
+
         parts = []
-        concurrent_parts = {}#[]
+        concurrent_parts = {}  # []
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             for idx, chunk in enumerate(_chunks(l=areas, n=100)):
-                f = executor.submit(fn=ge.enrich, **{"study_areas": chunk.copy(),
-                                                     "data_collections": data_collections,
-                                                     "analysis_variables" : analysis_variables,
-                                                     "add_derivative_variables" : add_derivative_variables,
-                                                     "intersecting_geographies" : intersecting_geographies,
-                                                     "return_geometry" : return_geometry,
-                                                     "out_sr" : env.out_spatial_reference,
-                                                     "as_featureset" : False})
-                
-                concurrent_parts[idx] = f#.append(f)
+                f = executor.submit(
+                    fn=ge.enrich,
+                    **{
+                        "study_areas": chunk.copy(),
+                        "data_collections": data_collections,
+                        "analysis_variables": analysis_variables,
+                        "add_derivative_variables": add_derivative_variables,
+                        "intersecting_geographies": intersecting_geographies,
+                        "return_geometry": return_geometry,
+                        "out_sr": env.out_spatial_reference,
+                        "as_featureset": False,
+                    }
+                )
+
+                concurrent_parts[idx] = f  # .append(f)
                 del chunk
         futures = concurrent.futures.wait(list(concurrent_parts.values()))
         exceptions = [f.exception() is None for f in futures.done]
         results = [result.result() for result in concurrent_parts.values()]
         if all(exceptions) == False:
             import json
-            exceptions = [f.exception() for f in futures.done if not f.exception() is None]
+
+            exceptions = [
+                f.exception() for f in futures.done if not f.exception() is None
+            ]
             raise Exception(json.dumps(exceptions))
         if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
             df = pd.concat(results)
             if len(df) != len(study_areas):
                 if "OBJECTID" in df.columns:
-                    missing_q = study_areas.OBJECTID.isin(list(set(study_areas.OBJECTID) - set(df.OBJECTID)))
-                    
-                    df = (pd.concat([df, study_areas[missing_q]]) 
-                          .set_index(keys=areas.index, drop=True, 
-                                 append=False, inplace=False, 
-                                 verify_integrity=False))
-                    
+                    missing_q = study_areas.OBJECTID.isin(
+                        list(set(study_areas.OBJECTID) - set(df.OBJECTID))
+                    )
+
+                    df = pd.concat([df, study_areas[missing_q]]).set_index(
+                        keys=areas.index,
+                        drop=True,
+                        append=False,
+                        inplace=False,
+                        verify_integrity=False,
+                    )
+
             elif len(df) == len(study_areas):
-                df = (df
-                      .set_index(keys=areas.index, drop=True, 
-                                 append=False, inplace=False, 
-                                 verify_integrity=False))
-            
+                df = df.set_index(
+                    keys=areas.index,
+                    drop=True,
+                    append=False,
+                    inplace=False,
+                    verify_integrity=False,
+                )
+
         else:
             df = pd.concat(results)
         return df
     # no chunking, len < 100, or FeatureSet
-    return ge.enrich(study_areas=areas,
-                      data_collections=data_collections,
-                     analysis_variables=analysis_variables,
-                     add_derivative_variables=add_derivative_variables,
-                     intersecting_geographies=intersecting_geographies,
-                     return_geometry=return_geometry,
-                     out_sr=env.out_spatial_reference)
-#----------------------------------------------------------------------
+    return ge.enrich(
+        study_areas=areas,
+        data_collections=data_collections,
+        analysis_variables=analysis_variables,
+        add_derivative_variables=add_derivative_variables,
+        intersecting_geographies=intersecting_geographies,
+        return_geometry=return_geometry,
+        out_sr=env.out_spatial_reference,
+    )
+
+
+# ----------------------------------------------------------------------
 def _find_report(country, gis=None):
     """
     Returns a list of reports by a country code
@@ -848,7 +1006,9 @@ def _find_report(country, gis=None):
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
     return ge.find_report(country=country)
-#----------------------------------------------------------------------
+
+
+# ----------------------------------------------------------------------
 # def get_variables(country,
 #                   dataset=None,
 #                   text=None,
@@ -904,7 +1064,7 @@ def _find_report(country, gis=None):
 #     return ge.get_variables(country=country,
 #                              dataset=dataset,
 #                              text=text)
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # def report_metadata(country, gis=None):
 #     """
 #     This method returns information about a given country's available reports and provides
@@ -928,29 +1088,33 @@ def _find_report(country, gis=None):
 #     ==================     ====================================================================
 #
 #:return: Pandas' DataFrame """ if gis is None: gis = env.active_gis ge =\
-#_GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
-#----------------------------------------------------------------------
-@deprecated(deprecated_in="1.4.1",
-            removed_in="1.5.0",
-            current_version=__version__,
-            details="Method was removed due to changes in the GeoEnrichment API")
-def find_businesses(type_filters=None,
-                      feature_limit=1000,
-                      feature_offset=0,
-                      exact_match=False,
-                      search_string=None,
-                      spatial_filter=None,
-                      simple_search=False,
-                      dataset_id=None,
-                      full_error_message=False,
-                      out_sr=4326,
-                      return_geometry=False,
-                      as_featureset=False,
-                      gis=None):
+# _GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
+# ----------------------------------------------------------------------
+@deprecated(
+    deprecated_in="1.4.1",
+    removed_in="1.5.0",
+    current_version=__version__,
+    details="Method was removed due to changes in the GeoEnrichment API",
+)
+def find_businesses(
+    type_filters=None,
+    feature_limit=1000,
+    feature_offset=0,
+    exact_match=False,
+    search_string=None,
+    spatial_filter=None,
+    simple_search=False,
+    dataset_id=None,
+    full_error_message=False,
+    out_sr=4326,
+    return_geometry=False,
+    as_featureset=False,
+    gis=None,
+):
     """
-    
-    
-    
+
+
+
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
     string, spatial filter and business type. A business point will be selected if it matches
@@ -1003,23 +1167,27 @@ def find_businesses(type_filters=None,
     returns: DataFrame (Spatial or Pandas), FeatureSet, or dictionary on error.
     """
     raise Exception("This method is deprecated.")
-#----------------------------------------------------------------------
-def standard_geography_query(source_country=None,
-                             country_dataset=None,
-                             layers=None,
-                             ids=None,
-                             geoquery=None,
-                             return_sub_geography=False,
-                             sub_geography_layer=None,
-                             sub_geography_query=None,
-                             out_sr=4326,
-                             return_geometry=False,
-                             return_centroids=False,
-                             generalization_level=0,
-                             use_fuzzy_search=False,
-                             feature_limit=1000,
-                             as_featureset=False,
-                             gis=None):
+
+
+# ----------------------------------------------------------------------
+def standard_geography_query(
+    source_country=None,
+    country_dataset=None,
+    layers=None,
+    ids=None,
+    geoquery=None,
+    return_sub_geography=False,
+    sub_geography_layer=None,
+    sub_geography_query=None,
+    out_sr=4326,
+    return_geometry=False,
+    return_centroids=False,
+    generalization_level=0,
+    use_fuzzy_search=False,
+    feature_limit=1000,
+    as_featureset=False,
+    gis=None,
+):
     """
     This method allows you to search and query standard geography areas so that they can be used to
     obtain facts about the location using the enrich() method or create reports about.
@@ -1141,18 +1309,20 @@ def standard_geography_query(source_country=None,
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
 
-    return ge.standard_geography_query(source_country=source_country,
-                                       country_dataset=country_dataset,
-                                       layers=layers,
-                                       ids=ids,
-                                       geoquery=geoquery,
-                                       return_sub_geography=return_sub_geography,
-                                       sub_geography_layer=sub_geography_layer,
-                                       sub_geography_query=sub_geography_query,
-                                       out_sr=out_sr,
-                                       return_geometry=return_geometry,
-                                       return_centroids=return_centroids,
-                                       generalization_level=generalization_level,
-                                       use_fuzzy_search=use_fuzzy_search,
-                                       feature_limit=feature_limit,
-                                       as_featureset=as_featureset)
+    return ge.standard_geography_query(
+        source_country=source_country,
+        country_dataset=country_dataset,
+        layers=layers,
+        ids=ids,
+        geoquery=geoquery,
+        return_sub_geography=return_sub_geography,
+        sub_geography_layer=sub_geography_layer,
+        sub_geography_query=sub_geography_query,
+        out_sr=out_sr,
+        return_geometry=return_geometry,
+        return_centroids=return_centroids,
+        generalization_level=generalization_level,
+        use_fuzzy_search=use_fuzzy_search,
+        feature_limit=feature_limit,
+        as_featureset=as_featureset,
+    )

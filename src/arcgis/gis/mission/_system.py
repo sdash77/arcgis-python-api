@@ -11,13 +11,14 @@ class SystemManager(object):
     Adaptors, containers, server properties, directories, Jobs, and the
     configuration store.
     """
+
     _url = None
     _con = None
     _gis = None
     _dir = None
     _wam = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -26,23 +27,27 @@ class SystemManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
             url = self._url + "/properties"
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._con.get(url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<SystemManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<SystemManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -56,7 +61,8 @@ class SystemManager(object):
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
         """
@@ -73,22 +79,22 @@ class SystemManager(object):
             "uploadFileExtensionWhitelist": "soe,sd,sde,csv,txt,kmz,geodatabase",
             "featureServiceXSSFilter": "inputOutput",
             "percentageMaxAllowedComputeCores": 50,
-            "percentageMaxAllowedComputeMemory": 50            
+            "percentageMaxAllowedComputeMemory": 50,
         }
         props = {}
         url = self._url + "/properties/update"
-        params = {'f' : 'json',
-                  'properties' : {}}
+        params = {"f": "json", "properties": {}}
         current = dict(self.properties)
         for k in current.keys():
             if k in value:
-                params['properties'][k] = value[k]
+                params["properties"][k] = value[k]
             else:
-                params['properties'][k] = current[k]
+                params["properties"][k] = current[k]
         res = self._con.post(url, params)
-        if not 'status' in res:
+        if not "status" in res:
             raise Exception(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def licenses(self):
         """
@@ -98,12 +104,10 @@ class SystemManager(object):
         about license levels or expiration properties.
         """
         url = self._url + "/licenses"
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(url,
-                             params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def web_adaptors(self):
         """
@@ -115,7 +119,8 @@ class SystemManager(object):
             url = self._url + "/webadaptors"
             self._wam = WebAdaptorManager(url=url, gis=self._gis)
         return self._wam
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def directories(self):
         """Provides access to registering directories"""
@@ -123,7 +128,8 @@ class SystemManager(object):
             url = self._url + "/directories"
             self._dir = DirectoryManager(url=url, gis=self._gis)
         return self._dir
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def config_store(self):
         """
@@ -147,19 +153,21 @@ class SystemManager(object):
 
         """
         url = self._url + "/configStore"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
+
 
 ########################################################################
 class DirectoryManager(object):
     """
     A manages and maintains a collection of all server directories.
     """
+
     _url = None
     _con = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -168,30 +176,35 @@ class DirectoryManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
             url = self._url
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<DirectoryManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<DirectoryManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         returns the current registered directories
@@ -201,8 +214,9 @@ class DirectoryManager(object):
         """
         self._properties = None
         val = dict(self.properties)
-        return val['directories']
-    #----------------------------------------------------------------------
+        return val["directories"]
+
+    # ----------------------------------------------------------------------
     def register(self, name, path, directory_type):
         """
         This operation registers a new data directory from your local
@@ -223,18 +237,14 @@ class DirectoryManager(object):
         :returns: boolean
 
         """
-        params = {
-            'f' : 'json',
-            'name' : name,
-            'path' : path,
-            'type' : directory_type
-        }
+        params = {"f": "json", "name": name, "path": path, "type": directory_type}
         url = self._url + "/register"
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unregister(self, directory_id):
         """
         This operation unregisters an existing directory from the ArcGIS
@@ -249,22 +259,25 @@ class DirectoryManager(object):
         :returns: boolean
 
         """
-        params = {'f' : 'json'}
-        url = self._url + "/{uid}/unregister" .format(uid=directory_id)
+        params = {"f": "json"}
+        url = self._url + "/{uid}/unregister".format(uid=directory_id)
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
+
+
 ########################################################################
 class WebAdaptorManager(object):
     """
     Manages and configures web adaptors for the ArcGIS Mission Server.
     """
+
     _url = None
     _con = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -273,36 +286,35 @@ class WebAdaptorManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<WebAdapterManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<WebAdapterManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
-    def register(self,
-                 name,
-                 ip,
-                 webadapter_url,
-                 http_port,
-                 https_port,
-                 description=""):
+
+    # ----------------------------------------------------------------------
+    def register(self, name, ip, webadapter_url, http_port, https_port, description=""):
         """
         Registers a new web adapter.
 
@@ -326,20 +338,21 @@ class WebAdaptorManager(object):
 
         """
         params = {
-            "f" : "json",
-            "machineName" : name,
-            "machineIP" : ip,
-            "webAdaptorURL" : webadaptor_url,
-            "description" : description,
-            "httpPort" : http_port,
-            "httpsPort" : https_port
+            "f": "json",
+            "machineName": name,
+            "machineIP": ip,
+            "webAdaptorURL": webadaptor_url,
+            "description": description,
+            "httpPort": http_port,
+            "httpsPort": https_port,
         }
         url = self._url + "/register"
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def config(self):
         """
@@ -350,12 +363,10 @@ class WebAdaptorManager(object):
         incoming requests to the server.
         """
         url = self._url + "/config"
-        params = {
-            "f" : "json"
-        }
-        return self._con.get(url,
-                             params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @config.setter
     def config(self, config):
         """
@@ -377,16 +388,13 @@ class WebAdaptorManager(object):
 
         """
         url = self._url + "/config/update"
-        params = {
-            "f" : "json",
-            "webAdaptorConfig" : config
-        }
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "webAdaptorConfig": config}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         Returns all registered Web Adapters
@@ -394,12 +402,16 @@ class WebAdaptorManager(object):
         :return: List
         """
         url = self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.get(url, params)
         if "webAdaptors" in res:
-            return [WebAdaptor(self._url + "/{wa}".format(wa=wa['id']),
-                               gis=self._gis) for wa in res["webAdaptors"]]
+            return [
+                WebAdaptor(self._url + "/{wa}".format(wa=wa["id"]), gis=self._gis)
+                for wa in res["webAdaptors"]
+            ]
         return res
+
+
 ########################################################################
 class WebAdaptor(object):
     """
@@ -428,11 +440,12 @@ class WebAdaptor(object):
     update the maximum size of the file sent using WebSocket by updating your
     site's webSocketMaxHeapSize property.
     """
+
     _url = None
     _con = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -441,33 +454,34 @@ class WebAdaptor(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<WebAdapter @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<WebAdapter @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unregister(self):
         """
         Unregisters a WebAdapter for the Mission Server
         :returns: boolean
         """
         url = self._url + "/unregister"
-        params = {'f':'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-
-
-

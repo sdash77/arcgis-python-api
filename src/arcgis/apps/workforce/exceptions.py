@@ -23,6 +23,7 @@ class WorkforceWarning(Warning):
     """
     Abstract base class for warnings thrown by the workforce module
     """
+
     def __init__(self, message):
         """
         :param message: A human readable message describing the error.
@@ -41,9 +42,8 @@ class ServerError(WorkforceError):
     """
 
     def __init__(self, errors):
-        """ :param errors: An array of error objects returned by the server.
-        """
-        err_lines = ["\n\t{}".format(error['description']) for error in errors]
+        """:param errors: An array of error objects returned by the server."""
+        err_lines = ["\n\t{}".format(error["description"]) for error in errors]
         message = "Server operation failed with errors:{}".format(err_lines)
         super().__init__(message)
         self.errors = errors
@@ -58,8 +58,8 @@ class ValidationError(WorkforceError):
     """
 
     def __init__(self, message, subject):
-        """ :param message: A human-readable description of the validation failure.
-            :param subject: The model that failed validation.
+        """:param message: A human-readable description of the validation failure.
+        :param subject: The model that failed validation.
         """
         super().__init__(message)
         self.subject = subject

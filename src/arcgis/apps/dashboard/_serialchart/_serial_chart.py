@@ -29,8 +29,17 @@ class SerialChart(_BaseWidget):
     description                 Optional string. Description for the widget.
     =========================   ===========================================
     """
-    def __init__(self, item, name='SerialChart', layer=0, categories_from="groupByValues", title='', description=''):
-        if item.type not in ['Feature Service', 'mapWidget']:
+
+    def __init__(
+        self,
+        item,
+        name="SerialChart",
+        layer=0,
+        categories_from="groupByValues",
+        title="",
+        description="",
+    ):
+        if item.type not in ["Feature Service", "mapWidget"]:
             raise Exception("Please specify an item")
 
         super().__init__(name, title, description)
@@ -39,18 +48,20 @@ class SerialChart(_BaseWidget):
         self.layer = layer
         self.type = "serialChartWidget"
 
-        self._data = SerialChartData._create_serial_chart_data(categories_from, data_item=item)
+        self._data = SerialChartData._create_serial_chart_data(
+            categories_from, data_item=item
+        )
         self._category_axis_properties = _CategoryAxisProperties._create_category_axis()
         self._scroll = False
         self._value_axis_properties = _ValueAxisProperties._create_value_axis()
         self._legend = Legend._create_legend()
         self._color = "#474747"
         self._font_size = 11
-        self._orientation = 'vertical'
+        self._orientation = "vertical"
         self._last_update = True
         self._no_data = NoDataProperties._nodata_init()
         self._events = Events._create_events()
-    
+
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
@@ -63,7 +74,7 @@ class SerialChart(_BaseWidget):
         schart = SerialChart(item, name, 0, categories_from, title, description)
         schart.data.category_field = widget_json["category"]["fieldName"]
         schart.legend.visibility = widget_json["legend"]["enabled"]
-        schart.legend.placement = widget_json["legend"]["position"]        
+        schart.legend.placement = widget_json["legend"]["position"]
         return schart
 
     @property
@@ -153,65 +164,80 @@ class SerialChart(_BaseWidget):
 
     def _convert_to_json(self):
 
-        common_graph_properties = {"lineColorField": "_lineColor_", "fillColorsField": "_fillColor_",
-                                      "type": "column", "fillAlphas": 1, "lineAlpha": 1, "lineThickness": 1,
-                                      "bullet": "none", "bulletAlpha": 1, "bulletBorderAlpha": 0,
-                                      "bulletBorderThickness": 2, "showBalloon": self.data._show_baloon, "bulletSize": 8}
+        common_graph_properties = {
+            "lineColorField": "_lineColor_",
+            "fillColorsField": "_fillColor_",
+            "type": "column",
+            "fillAlphas": 1,
+            "lineAlpha": 1,
+            "lineThickness": 1,
+            "bullet": "none",
+            "bulletAlpha": 1,
+            "bulletBorderAlpha": 0,
+            "bulletBorderThickness": 2,
+            "showBalloon": self.data._show_baloon,
+            "bulletSize": 8,
+        }
 
         if self._data._labels:
-            common_graph_properties['labelText'] = "[[value]]"
+            common_graph_properties["labelText"] = "[[value]]"
 
         json_data = {
             "type": "serialChartWidget",
             "category": {
                 "labelOverrides": [],
                 "byCategoryColors": False,
-                "labelsPlacement": "default", #default, staggered, wrapped, rotated
+                "labelsPlacement": "default",  # default, staggered, wrapped, rotated
                 "labelRotation": 0,
                 "fieldName": self.data.category_field,
                 "nullLabel": "Null",
                 "blankLabel": "Blank",
                 "defaultColor": "#d6d6d6",
                 "nullColor": "#d6d6d6",
-                "blankColor": "#d6d6d6"
+                "blankColor": "#d6d6d6",
             },
             "valueFormat": {
                 "name": "value",
                 "type": "decimal",
                 "prefix": True,
-                "pattern": "#,###.#"
+                "pattern": "#,###.#",
             },
             "labelFormat": {
                 "name": "label",
                 "type": "decimal",
                 "prefix": True,
-                "pattern": "#,###.#"
+                "pattern": "#,###.#",
             },
             "dateParsingPattern": self._data.parsing_pattern,
-            "datePeriodPatterns": [{"period": "ss", "pattern": "HH:mm:ss"}, {"period": "mm", "pattern": "HH:mm"},
-                                   {"period": "hh", "pattern": "HH:mm"}, {"period": "DD", "pattern": "MMM d"},
-                                   {"period": "MM", "pattern": "MMM"}, {"period": "YYYY", "pattern": "yyyy"}],
+            "datePeriodPatterns": [
+                {"period": "ss", "pattern": "HH:mm:ss"},
+                {"period": "mm", "pattern": "HH:mm"},
+                {"period": "hh", "pattern": "HH:mm"},
+                {"period": "DD", "pattern": "MMM d"},
+                {"period": "MM", "pattern": "MMM"},
+                {"period": "YYYY", "pattern": "yyyy"},
+            ],
             "chartScrollbar": {
                 "enabled": self._scroll,
                 "dragIcon": "dragIconRoundSmall",
                 "dragIconHeight": 20,
                 "dragIconWidth": 20,
-                "scrollbarHeight": 15
+                "scrollbarHeight": 15,
             },
             "categoryAxis": self._category_axis_properties._convert_to_json(),
             "valueAxis": self._value_axis_properties._convert_to_json(),
             "legend": {
                 "enabled": self._legend.visibility,
-                "position": "right" if self._legend.placement == "side" else self._legend.placement,
+                "position": "right"
+                if self._legend.placement == "side"
+                else self._legend.placement,
                 "markerSize": 15,
                 "markerType": "circle",
                 "align": "center",
                 "labelWidth": 100,
-                "valueWidth": 0
+                "valueWidth": 0,
             },
-            "graphs": [
-                series for series in self.data._series
-            ],
+            "graphs": [series for series in self.data._series],
             "guides": [],
             "splitBy": {"defaultColor": "#d6d6d6", "seriesProperties": []},
             "rotate": False if self._orientation == "vertical" else True,
@@ -227,26 +253,29 @@ class SerialChart(_BaseWidget):
             "showLastUpdate": self._last_update,
             "noDataVerticalAlignment": self._no_data._alignment,
             "showCaptionWhenNoData": self._no_data._show_title,
-            "showDescriptionWhenNoData": self._no_data._show_description
+            "showDescriptionWhenNoData": self._no_data._show_description,
         }
 
         # json_data['categoryAxis']['parseDates'] = self._data.parse_dates
         if self._no_data._text:
-            json_data['noDataText'] = self._no_data._text
-        
-        if self.item.type == 'mapWidget':
+            json_data["noDataText"] = self._no_data._text
+
+        if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
             widget_id = self.item._id
             layer_id = wlayer["id"]
-            self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._datasource = {"id": str(widget_id) + "#" + str(layer_id)}
         else:
             self._datasource = {
-                        "type": "featureServiceDataSource",
-                        "itemId": self.item.itemid,
-                        "layerId": 0,
-                        "table": True
-                    }
-        if self.data.orderby_field == "" and self._data._categories_from != "groupByValues":
+                "type": "featureServiceDataSource",
+                "itemId": self.item.itemid,
+                "layerId": 0,
+                "table": True,
+            }
+        if (
+            self.data.orderby_field == ""
+            and self._data._categories_from != "groupByValues"
+        ):
             self._orderby_field = self.data.category_field
         else:
             self._orderby_field = self.data.orderby_field
@@ -256,47 +285,62 @@ class SerialChart(_BaseWidget):
             "dataSource": self._datasource,
             "outFields": ["*"],
             "groupByFields": [],
-            "orderByFields": [self._orderby_field + " asc"] if self._orderby_field else [],
+            "orderByFields": [self._orderby_field + " asc"]
+            if self._orderby_field
+            else [],
             "statisticDefinitions": [],
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
-            "clientSideStatistics": False,#False if self._data._categories_from == "groupByValues" else True,
-            "name": "main"
+            "clientSideStatistics": False,  # False if self._data._categories_from == "groupByValues" else True,
+            "name": "main",
         }
 
         if self._data.max_features:
-            dataset['maxFeatures'] = self._data.max_features
+            dataset["maxFeatures"] = self._data.max_features
 
         if self._color:
-            json_data['color'] = self._color
+            json_data["color"] = self._color
 
         if self._font_size:
-            json_data['fontSize'] = self._font_size
+            json_data["fontSize"] = self._font_size
 
         if self._data._categories_from == "groupByValues":
-            json_data['categoryAxis']['parseDates'] = self._data._parse_dates
+            json_data["categoryAxis"]["parseDates"] = self._data._parse_dates
             if self._data._category_field:
-                dataset['groupByFields'].append(self._data._category_field)
+                dataset["groupByFields"].append(self._data._category_field)
             if self._data._split_by_field:
-                json_data['splitBy']['fieldName'] = self._split_by_field
-                dataset['groupByFields'].append(self._data._split_by_field)
+                json_data["splitBy"]["fieldName"] = self._split_by_field
+                dataset["groupByFields"].append(self._data._split_by_field)
 
-            dataset['statisticDefinitions'].append({"onStatisticField": self._data.statistics_field, "outStatisticFieldName": "value", "statisticType": self._data.statistic})
+            dataset["statisticDefinitions"].append(
+                {
+                    "onStatisticField": self._data.statistics_field,
+                    "outStatisticFieldName": "value",
+                    "statisticType": self._data.statistic,
+                }
+            )
         elif self._data._categories_from == "fields":
             for category in self._category_fields:
-                dataset['statisticDefinitions'].append({"onStatisticField": category, "outStatisticFieldName": category, "statisticType": self._data.statistic})
+                dataset["statisticDefinitions"].append(
+                    {
+                        "onStatisticField": category,
+                        "outStatisticFieldName": category,
+                        "statisticType": self._data.statistic,
+                    }
+                )
 
-        json_data['datasets'] = [dataset]
+        json_data["datasets"] = [dataset]
 
         if self.events.enable:
-            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["events"].append(
+                {"type": self.events.type, "actions": self.events.synced_widgets}
+            )
             json_data["selectionMode"] = self.events.selection_mode
 
         return json_data
 
 
 class _CategoryAxisProperties(object):
-
     @classmethod
     def _create_category_axis(cls):
         category_axis = cls()
@@ -316,31 +360,39 @@ class _CategoryAxisProperties(object):
         category_axis._minimum_period = "DD"
         category_axis._grid_position = "start"
 
-        category_axis._date_dict = {"days": "DD", "hours": "hh", "seconds": "ss", "minutes":"mm", "months":"MM", "years":"YYYY"}
+        category_axis._date_dict = {
+            "days": "DD",
+            "hours": "hh",
+            "seconds": "ss",
+            "minutes": "mm",
+            "months": "MM",
+            "years": "YYYY",
+        }
 
         category_axis._requirements = {
-            'title': [str],
-            'gridThickness': [int, 1, 10],
-            'gridAlpha': [(int, float), 0, 1],
-            'axisThickness': [int, 1, 10],
-            'axisAlpha': [(int, float), 0, 1],
-            'labelsEnabled': [bool],
-            'parseDates': [bool],
-            'titleFontSize': [int, 0, 1000],
-            'fontSize': [int, 0, 1000],
-            'gridColor': [str],
-            'axisColor': [str]
-
+            "title": [str],
+            "gridThickness": [int, 1, 10],
+            "gridAlpha": [(int, float), 0, 1],
+            "axisThickness": [int, 1, 10],
+            "axisAlpha": [(int, float), 0, 1],
+            "labelsEnabled": [bool],
+            "parseDates": [bool],
+            "titleFontSize": [int, 0, 1000],
+            "fontSize": [int, 0, 1000],
+            "gridColor": [str],
+            "axisColor": [str],
         }
 
         category_axis._translations = {
-            'axisAlpha': 'axisOpacity',
-            'gridAlpha': 'gridOpacity'
+            "axisAlpha": "axisOpacity",
+            "gridAlpha": "gridOpacity",
         }
 
-        category_axis._translations_inverse = {value: key for key, value in category_axis._translations.items()}
+        category_axis._translations_inverse = {
+            value: key for key, value in category_axis._translations.items()
+        }
 
-        category_axis._hidden = ['minPeriod', 'titleRotation', 'gridPosition']
+        category_axis._hidden = ["minPeriod", "titleRotation", "gridPosition"]
 
         return category_axis
 
@@ -431,7 +483,7 @@ class _CategoryAxisProperties(object):
         """
         Set Category axis title size.
         """
-        if self._validation('titleFontSize', value):
+        if self._validation("titleFontSize", value):
             self._title_size = value
 
     @property
@@ -503,14 +555,21 @@ class _CategoryAxisProperties(object):
         Set Minimum period when dates are parsed.
         Allowed values 'seconds', 'minutes', 'hours', 'days', 'months', 'years'
         """
-        if isinstance(value, str) and value.lower() in ["seconds", "minutes", "hours", "days", "months", "years"]:
+        if isinstance(value, str) and value.lower() in [
+            "seconds",
+            "minutes",
+            "hours",
+            "days",
+            "months",
+            "years",
+        ]:
             self._minimum_period = self._date_dict[value.lower()]
         else:
             raise Exception("Please select correct value")
-    
+
     def __init__(self):
         self._item = {
-            "title": '',
+            "title": "",
             "titleFontSize": 12,
             "fontSize": 12,
             "gridColor": "#ffffff",
@@ -523,7 +582,7 @@ class _CategoryAxisProperties(object):
             "axisAlpha": 0.5,
             "labelsEnabled": False,
             "parseDates": True,
-            "minPeriod": "DD"
+            "minPeriod": "DD",
         }
 
     def _validation(self, key, value):
@@ -536,7 +595,12 @@ class _CategoryAxisProperties(object):
 
         if len(requirements) == 1 and isinstance(value, requirements[0]):
             pass
-        elif len(requirements) == 3 and isinstance(value, requirements[0]) and value >= requirements[1] and value <= requirements[2]:
+        elif (
+            len(requirements) == 3
+            and isinstance(value, requirements[0])
+            and value >= requirements[1]
+            and value <= requirements[2]
+        ):
             pass
         else:
             return False
@@ -547,7 +611,7 @@ class _CategoryAxisProperties(object):
         return {
             "title": self._title,
             "titleRotation": 0,
-            'titleFontSize': self._title_size,
+            "titleFontSize": self._title_size,
             "fontSize": self._font_size,
             "gridThickness": self._grid_thickness,
             "gridAlpha": self._grid_opacity,
@@ -558,12 +622,11 @@ class _CategoryAxisProperties(object):
             "labelsEnabled": self._labels,
             "gridPosition": "start",
             "parseDates": True,
-            "minPeriod": self._minimum_period
+            "minPeriod": self._minimum_period,
         }
 
 
 class _ValueAxisProperties(object):
-
     @classmethod
     def _create_value_axis(cls):
         value_axis = cls()
@@ -588,28 +651,29 @@ class _ValueAxisProperties(object):
         value_axis._logarithmic = False
 
         value_axis._requirements = {
-            'title': [str],
-            'gridThickness': [int, 1, 10],
-            'gridAlpha': [(int, float), 0, 1],
-            'axisThickness': [int, 1, 10],
-            'axisAlpha': [(int, float), 0, 1],
-            'labelsEnabled': [bool],
-            'parseDates': [bool],
-            'titleFontSize': [int, 0, 1000],
-            'fontSize': [int, 0, 1000],
-            'gridColor': [str],
-            'axisColor': [str]
-
+            "title": [str],
+            "gridThickness": [int, 1, 10],
+            "gridAlpha": [(int, float), 0, 1],
+            "axisThickness": [int, 1, 10],
+            "axisAlpha": [(int, float), 0, 1],
+            "labelsEnabled": [bool],
+            "parseDates": [bool],
+            "titleFontSize": [int, 0, 1000],
+            "fontSize": [int, 0, 1000],
+            "gridColor": [str],
+            "axisColor": [str],
         }
 
         value_axis._translations = {
-            'axisAlpha': 'axisOpacity',
-            'gridAlpha': 'gridOpacity'
+            "axisAlpha": "axisOpacity",
+            "gridAlpha": "gridOpacity",
         }
 
-        value_axis._translations_inverse = {value: key for key, value in value_axis._translations.items()}
+        value_axis._translations_inverse = {
+            value: key for key, value in value_axis._translations.items()
+        }
 
-        value_axis._hidden = ['stackType', 'titleRotation']
+        value_axis._hidden = ["stackType", "titleRotation"]
 
         return value_axis
 
@@ -714,7 +778,7 @@ class _ValueAxisProperties(object):
         """
         Set value axis title size.
         """
-        if self._validation('titleFontSize', value):
+        if self._validation("titleFontSize", value):
             self._title_size = value
 
     @property
@@ -811,7 +875,12 @@ class _ValueAxisProperties(object):
 
         if len(requirements) == 1 and isinstance(value, requirements[0]):
             pass
-        elif len(requirements) == 3 and isinstance(value, requirements[0]) and value >= requirements[1] and value <= requirements[2]:
+        elif (
+            len(requirements) == 3
+            and isinstance(value, requirements[0])
+            and value >= requirements[1]
+            and value <= requirements[2]
+        ):
             pass
         else:
             return False
@@ -832,12 +901,11 @@ class _ValueAxisProperties(object):
             "labelsEnabled": self._labels,
             "stackType": "none",
             "integersOnly": self._integers_only,
-            "logarithmic": self._logarithmic
+            "logarithmic": self._logarithmic,
         }
 
 
 class SerialChartData(object):
-
     @classmethod
     def _create_serial_chart_data(cls, categories_from, data_item=None):
         schart_data = SerialChartData()
@@ -846,7 +914,9 @@ class SerialChartData(object):
         if categories_from in ["groupByValues", "features", "fields"]:
             schart_data._categories_from = categories_from
         else:
-            raise Exception('Invalid option, choose from "groupByValues", "features", "fields"')
+            raise Exception(
+                'Invalid option, choose from "groupByValues", "features", "fields"'
+            )
 
         if categories_from == "features":
             schart_data._series = []
@@ -881,7 +951,7 @@ class SerialChartData(object):
         :return: Categories from groupByValues, features or fields.
         """
         return self._categories_from
-    
+
     @property
     def max_features(self):
         """
@@ -911,9 +981,11 @@ class SerialChartData(object):
         if self._categories_from == "fields":
             raise Exception("Can't set this attribute for 'fields' categories.")
 
-        if self._categories_from == 'groupByValues':
-            raise Exception('Set the field using add_value_field() for "groupByValues" categories')
-        if self._field_type(value) == '<M8[ns]':
+        if self._categories_from == "groupByValues":
+            raise Exception(
+                'Set the field using add_value_field() for "groupByValues" categories'
+            )
+        if self._field_type(value) == "<M8[ns]":
             self.parse_dates = True
 
         self._category_field = value
@@ -932,7 +1004,7 @@ class SerialChartData(object):
         """
 
         self._orderby = value
-    
+
     @property
     def objectid_field(self):
         """
@@ -942,7 +1014,7 @@ class SerialChartData(object):
             return self._item.tables[0].properties["objectIdField"]
         except:
             return "OBJECTID"
-    
+
     @property
     def statistics_field(self):
         """
@@ -993,7 +1065,7 @@ class SerialChartData(object):
         """
         Set statistic to 'count', 'avg', 'min', 'max', 'stddev', 'sum'
         """
-        if value in ['count', 'avg', 'min', 'max', 'stddev', 'sum']:
+        if value in ["count", "avg", "min", "max", "stddev", "sum"]:
             self._statistic = value
 
     @property
@@ -1009,14 +1081,14 @@ class SerialChartData(object):
         Set field name from the dataset to split data by, for groupByValues.
         """
         self._split_by_field = value
-    
+
     @property
     def filters(self):
         """
         :return: filters associated with widget
         """
         return self._filters
-    
+
     def add_filter(self, field, join, condition, **kwargs):
         """
         Add filters associated with widget.
@@ -1026,39 +1098,72 @@ class SerialChartData(object):
             self._filter_join = join
         else:
             raise Exception("Please select from 'AND', 'OR'")
-        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+        if condition in [
+            "between",
+            "not between",
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+            "is null",
+            "is not null",
+        ]:
             self._filter_condition = condition
         else:
             raise Exception("Please select the right condition")
 
         if condition in ["between", "not between"]:
-            self._val1 = kwargs.get('start')
-            self._val2 = kwargs.get('end')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+            self._val1 = kwargs.get("start")
+            self._val2 = kwargs.get("end")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "start": self._val1,
+                    "end": self._val2,
+                }
+            )
         else:
             raise Exception("Please provide 'start' and 'end' values as parameters")
 
-        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
-            self._val = kwargs.get('value')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        if condition in [
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+        ]:
+            self._val = kwargs.get("value")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "value": self._val,
+                }
+            )
         else:
             raise Exception("Please provide a 'value' parameter for comparison")
-    
+
     def _field_type(self, field_name):
         f_type = self._item.tables[0].query().sdf[field_name].dtype
         return f_type
 
     def add_value_field(
-            self,
-            value_field,
-            label=None,
-            graph_type='line',
-            show_data_points = False,
-            point_size = 8,
-            line_thickness=1,
-            line_color="#ffaa00",
-            fill_opacity=0,
-            line_opacity=1,
+        self,
+        value_field,
+        label=None,
+        graph_type="line",
+        show_data_points=False,
+        point_size=8,
+        line_thickness=1,
+        line_color="#ffaa00",
+        fill_opacity=0,
+        line_opacity=1,
     ):
         """
          Add value field to serial chart.
@@ -1092,8 +1197,14 @@ class SerialChartData(object):
         """
 
         data = {
-            "valueField": value_field[0] if isinstance(value_field, list) else value_field,
-            "title": label if label else value_field[0] if isinstance(value_field, list) else value_field,
+            "valueField": value_field[0]
+            if isinstance(value_field, list)
+            else value_field,
+            "title": label
+            if label
+            else value_field[0]
+            if isinstance(value_field, list)
+            else value_field,
             "lineColor": line_color,
             "lineColorField": "_lineColor_",
             "fillColorsField": "_fillColor_",
@@ -1106,21 +1217,23 @@ class SerialChartData(object):
             "bulletBorderAlpha": 0,
             "bulletBorderThickness": 2,
             "showBalloon": show_data_points,
-            "bulletSize": point_size
+            "bulletSize": point_size,
         }
         if self._categories_from == "features":
             if not isinstance(self._series, list):
                 self._series = []
-            if not data['title']:
-                data['title'] = value_field
+            if not data["title"]:
+                data["title"] = value_field
             self._series.append(data)
         elif self._categories_from == "groupByValues":
             self._series = []
-            data['valueField'] = "value"
-            data['type'] = 'column'
+            data["valueField"] = "value"
+            data["type"] = "column"
             self._series.append(data)
-            self._category_field = value_field[0] if isinstance(value_field, list) else value_field
-            if self._field_type(self._category_field) == '<M8[ns]':
+            self._category_field = (
+                value_field[0] if isinstance(value_field, list) else value_field
+            )
+            if self._field_type(self._category_field) == "<M8[ns]":
                 self.parse_dates = True
         elif self._categories_from == "fields":
             if isinstance(value_field, list):
@@ -1128,7 +1241,7 @@ class SerialChartData(object):
             else:
                 self._category_fields = [value_field]
 
-            data['valueField'] = "value"
+            data["valueField"] = "value"
             self._series = data
 
     @property
@@ -1180,8 +1293,8 @@ class SerialChartData(object):
         """
         self._labels = bool(value)
 
-class Events(object):
 
+class Events(object):
     @classmethod
     def _create_events(cls, enable=False):
         events = Events()
@@ -1212,7 +1325,7 @@ class Events(object):
             self._selection_mode = value
         else:
             raise Exception("Please specify selection_mode from 'single' and 'multi'")
-    
+
     @property
     def enable(self):
         """
@@ -1248,7 +1361,7 @@ class Events(object):
         =========================   ===========================================
         **Argument**                **Description**
         -------------------------   -------------------------------------------
-        action_type                 Required string. Actions can be one of 
+        action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
         -------------------------   -------------------------------------------
         widget                      Required MapWidget item. Name of the map
@@ -1263,14 +1376,23 @@ class Events(object):
                     self._actions.append({"type": action_type, "targetId": widget._id})
                 elif action_type == "filter":
                     if self._targetid is not None:
-                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":self._targetid})
+                        self._actions.append(
+                            {
+                                "type": action_type,
+                                "by": "whereClause",
+                                "targetId": self._targetid,
+                            }
+                        )
                     else:
-                        raise Exception("This operation is not suitable for given dataSource.")
+                        raise Exception(
+                            "This operation is not suitable for given dataSource."
+                        )
                 else:
-                    raise Exception("Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'")
+                    raise Exception(
+                        "Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'"
+                    )
             else:
                 raise Exception("Please select a map widget")
-
 
     def sync_widget(self, widgets):
         """
@@ -1290,15 +1412,31 @@ class Events(object):
             if isinstance(widgets, list):
                 for widget in widgets:
                     if widget.type == "mapWidget":
-                        raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                        raise Exception(
+                            "Use sync_map method to add actions for map widgets"
+                        )  ##duplicate or erase
                     else:
                         action_type = "filter"
-                        widget_id = str(widget._id)+'#main'
-                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+                        widget_id = str(widget._id) + "#main"
+                        self._actions.append(
+                            {
+                                "type": action_type,
+                                "by": "whereClause",
+                                "targetId": widget_id,
+                            }
+                        )
             else:
                 if widgets.type == "mapWidget":
-                    raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                    raise Exception(
+                        "Use sync_map method to add actions for map widgets"
+                    )  ##duplicate or erase
                 else:
                     action_type = "filter"
-                    widget_id = str(widgets._id)+'#main'
-                    self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+                    widget_id = str(widgets._id) + "#main"
+                    self._actions.append(
+                        {
+                            "type": action_type,
+                            "by": "whereClause",
+                            "targetId": widget_id,
+                        }
+                    )

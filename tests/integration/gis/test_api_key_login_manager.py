@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._apikeys import APIKeyManager, APIKey
 
-gis = GIS("https://devext.arcgis.com", "andrew_token", "#2020EsriConference", verify_cert=False)
+gis = GIS("https://devext.arcgis.com", "andrew_token", "#2020EsriConference", verify_cert=False, trust_env=True)
 USERNAME = gis.users.me.username is None
 
 
@@ -22,25 +22,25 @@ class TestLoginWithAPIKey(unittest.TestCase):
         assert api_key_gis.properties.appInfo.appOwner == 'andrew_token'
     def test_login_api_key_environment_variable(self):
         """tests logging in with API Key in environmental os variable"""
-        
+
         for k in gis.api_keys.keys:
             if k._item.title.lower().find('first') > -1:
-                break        
+                break
         import os
         with unittest.mock.patch.dict('os.environ', {'ESRI_API_KEY': k.properties.apikey}, clear=True):
-            
-            with unittest.mock.patch.object(os, "getenv", return_value=k.properties.apikey):        
+
+            with unittest.mock.patch.object(os, "getenv", return_value=k.properties.apikey):
                 api_key_gis = GIS(url="https://devext.arcgis.com", api_key=k.properties.apikey, verify_cert=False, set_active=False)
-                assert api_key_gis.properties.appInfo.appOwner == 'andrew_token'      
+                assert api_key_gis.properties.appInfo.appOwner == 'andrew_token'
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
 class TestAPIKeyManager(unittest.TestCase):
     """Tests the Manager Operations"""
     def test_access(self):
-        assert isinstance(gis.api_keys, APIKeyManager) 
+        assert isinstance(gis.api_keys, APIKeyManager)
     def test_keys(self):
         """Tests listing all the keys"""
-        assert isinstance(gis.api_keys.keys, tuple) 
+        assert isinstance(gis.api_keys.keys, tuple)
     def test_get(self):
         """tests the retrieve function in the API"""
         akm = gis.api_keys
@@ -52,7 +52,7 @@ class TestAPIKeyManager(unittest.TestCase):
         akm = gis.api_keys
         api_item = akm.create(title="delete_me", tags="geocoding fun, the other stuff", description="description")
         assert akm.validate(api_item)
-        api_item.delete()        
+        api_item.delete()
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
 class TestAPIKey(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestAPIKey(unittest.TestCase):
         akm = gis.api_keys
         api_item = akm.create(title="delete_me", tags="geocoding fun, the other stuff", description="description")
         assert api_item.properties
-        api_item.delete() 
+        api_item.delete()
     def test_reset(self):
         """tests the reset function in the API"""
         akm = gis.api_keys
@@ -70,7 +70,7 @@ class TestAPIKey(unittest.TestCase):
         old_api_key = api_item.properties.apikey
         api_item.reset()
         assert api_item.properties.apikey != old_api_key
-        api_item.delete()     
+        api_item.delete()
     def test_update(self):
         """tests the update function in the API"""
         akm = gis.api_keys
@@ -78,7 +78,7 @@ class TestAPIKey(unittest.TestCase):
         orig_ref = api_item.properties.httpReferrers
         assert api_item.update(http_referers=['https://arcgis.com'])
         assert orig_ref != api_item.properties.httpReferrers
-        api_item.delete()     
+        api_item.delete()
 if __name__ == "__main__":
     unittest.main()
-    
+

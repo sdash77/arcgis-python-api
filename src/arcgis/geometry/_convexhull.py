@@ -5,25 +5,31 @@ https://en.wikipedia.org/wiki/Chan%27s_algorithm
 from functools import reduce
 import sys
 from scipy.spatial import distance
+
 if sys.version_info.major == 3:
     xrange = range
 
 TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)
 import math
+
+
 def cmp_to_symbol(val, other_val):
-    '''returns the symbol representing the relationship between two values'''
-    return '=><'[(val > other_val) - (val < other_val)]
+    """returns the symbol representing the relationship between two values"""
+    return "=><"[(val > other_val) - (val < other_val)]
+
 
 def turn(p, q, r):
     """Returns -1, 0, 1 if p,q,r forms a right, straight, or left turn."""
-    a = (q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1])
+    a = (q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1])
     b = 0
-    return (a>b) - (a<b)
+    return (a > b) - (a < b)
+
 
 def _keep_left(hull, r):
     while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:
         hull.pop()
     return (not len(hull) or hull[-1] != r) and hull.append(r) or hull
+
 
 def _graham_scan(points):
     """Returns points on convex hull of an array of points in CCW order."""
@@ -31,6 +37,7 @@ def _graham_scan(points):
     lh = reduce(_keep_left, points, [])
     uh = reduce(_keep_left, reversed(points), [])
     return lh.extend(uh[i] for i in xrange(1, len(uh) - 1)) or lh
+
 
 def _rtangent(hull, p):
     """Return the index of the point in hull that the right tangent line from p
@@ -46,15 +53,19 @@ def _rtangent(hull, p):
         c_side = turn(p, hull[l], hull[c])
         if c_prev != TURN_RIGHT and c_next != TURN_RIGHT:
             return c
-        elif c_side == TURN_LEFT and (l_next == TURN_RIGHT or
-                                      l_prev == l_next) or \
-             c_side == TURN_RIGHT and c_prev == TURN_RIGHT:
-            r = c               # Tangent touches left chain
+        elif (
+            c_side == TURN_LEFT
+            and (l_next == TURN_RIGHT or l_prev == l_next)
+            or c_side == TURN_RIGHT
+            and c_prev == TURN_RIGHT
+        ):
+            r = c  # Tangent touches left chain
         else:
-            l = c + 1           # Tangent touches right chain
-            l_prev = -c_next    # Switch sides
+            l = c + 1  # Tangent touches right chain
+            l_prev = -c_next  # Switch sides
             l_next = turn(p, hull[l], hull[(l + 1) % len(hull)])
     return l
+
 
 def _min_hull_pt_pair(hulls):
     """Returns the hull, point index pair that is minimal."""
@@ -64,6 +75,7 @@ def _min_hull_pt_pair(hulls):
         if hulls[i][j] < hulls[h][p]:
             h, p = i, j
     return (h, p)
+
 
 def _next_hull_pt_pair(hulls, pair):
     """
@@ -76,20 +88,23 @@ def _next_hull_pt_pair(hulls, pair):
         s = _rtangent(hulls[h], p)
         q, r = hulls[next[0]][next[1]], hulls[h][s]
         t = turn(p, q, r)
-        if t == TURN_RIGHT or \
-           t == TURN_NONE and \
-           distance.euclidean(p,r) > distance.euclidean(p,q):
+        if (
+            t == TURN_RIGHT
+            or t == TURN_NONE
+            and distance.euclidean(p, r) > distance.euclidean(p, q)
+        ):
             next = (h, s)
     return next
 
-#def _dist(a,b):
-    #"""calculates the euclidean distance"""
+
+# def _dist(a,b):
+# """calculates the euclidean distance"""
 
 
 def convex_hull(pts):
     """Returns the points on the convex hull of pts in CCW order."""
     for m in (1 << (1 << t) for t in xrange(len(pts))):
-        hulls = [_graham_scan(pts[i:i + m]) for i in xrange(0, len(pts), m)]
+        hulls = [_graham_scan(pts[i : i + m]) for i in xrange(0, len(pts), m)]
         hull = [_min_hull_pt_pair(hulls)]
         for throw_away in xrange(m):
             p = _next_hull_pt_pair(hulls, hull[-1])
@@ -98,17 +113,18 @@ def convex_hull(pts):
             hull.append(p)
     return hull
 
+
 def convex_hull_GS(points):
-    '''
+    """
     Returns points on convex hull in CCW order according to Graham's scan algorithm.
-    '''
+    """
     TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)
 
     def cmp(a, b):
         return (a > b) - (a < b)
 
     def turn(p, q, r):
-        return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)
+        return cmp((q[0] - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (q[1] - p[1]), 0)
 
     def _keep_left(hull, r):
         while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:
@@ -121,6 +137,6 @@ def convex_hull_GS(points):
     l = reduce(_keep_left, points, [])
     u = reduce(_keep_left, reversed(points), [])
     hull = l.extend(u[i] for i in range(1, len(u) - 1)) or l
-    if len(hull) > 2: # Need to close the CH
+    if len(hull) > 2:  # Need to close the CH
         hull.append(hull[0])
     return hull

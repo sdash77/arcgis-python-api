@@ -3,8 +3,19 @@ import arcgis
 import json
 
 
-def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None,
-                        portal=None, action=None, geometry=None, callback=None, callback_prompt=None, feature_id=None):
+def build_collector_url(
+    webmap=None,
+    center=None,
+    feature_layer=None,
+    fields=None,
+    search=None,
+    portal=None,
+    action=None,
+    geometry=None,
+    callback=None,
+    callback_prompt=None,
+    feature_id=None,
+):
     """
     Creates a url that can be used to open ArcGIS Collector
 
@@ -63,8 +74,10 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
             params.append("portalURL=" + portal)
 
         if action:
-            if action not in ['addFeature', 'center', 'open', 'search']:
-                raise ValueError("Invalid reference context. addFeature, center, open, and search are supported")
+            if action not in ["addFeature", "center", "open", "search"]:
+                raise ValueError(
+                    "Invalid reference context. addFeature, center, open, and search are supported"
+                )
             params.append("referenceContext=" + action)
             if not webmap:
                 raise ValueError("Invalid parameters -- Must specify a webmap")
@@ -76,13 +89,18 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                     item_id = item_id.id
                 params.append("itemID=" + item_id)
 
-            actions = {'open': lambda: _build_url_for_open_action(params),
-                       'center': lambda: _build_url_for_center_action(params, center=center),
-                       'search': lambda: _build_url_for_search_action(params, search=search),
-                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer=feature_layer,
-                                                                               geometry=geometry,
-                                                                               callback=callback,
-                                                                               callback_prompt=callback_prompt)}
+            actions = {
+                "open": lambda: _build_url_for_open_action(params),
+                "center": lambda: _build_url_for_center_action(params, center=center),
+                "search": lambda: _build_url_for_search_action(params, search=search),
+                "addFeature": lambda: _build_url_for_add_feature_action(
+                    params,
+                    feature_layer=feature_layer,
+                    geometry=geometry,
+                    callback=callback,
+                    callback_prompt=callback_prompt,
+                ),
+            }
 
             params = actions.get(action)()
 
@@ -99,8 +117,8 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                 item_id = webmap.id
             params.append("itemID=" + item_id)
         if center:
-            if isinstance(center,(list, tuple)):
-                center = '{},{}'.format(center[0],center[1])
+            if isinstance(center, (list, tuple)):
+                center = "{},{}".format(center[0], center[1])
             params.append("center=" + center)
         if feature_layer:
             feature_source_url = feature_layer
@@ -133,31 +151,46 @@ def _build_url_for_center_action(params, center, scale=None, wkid=None):
         if wkid:
             params.append("wkid=" + str(wkid))
         if isinstance(center, (list, tuple)):
-            center = '{},{}'.format(center[0], center[1])
+            center = "{},{}".format(center[0], center[1])
         if isinstance(center, str):
             center = center.replace(" ", "+")
         params.append("center=" + center)
         return params
     else:
-        raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
+        raise ValueError(
+            "Invalid parameters -- Must specify a center parameter if action = center"
+        )
 
 
 def _build_url_for_search_action(params, search):
     if search:
-        params.append("search=" + str(search).replace(" ","+"))
+        params.append("search=" + str(search).replace(" ", "+"))
         return params
     else:
-        raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
+        raise ValueError(
+            "Invalid parameters -- Must specify a search parameter if action = search"
+        )
 
 
-def _build_url_for_add_feature_action(params, feature_layer, geometry, use_antenna_height=None, use_loc_profile=None, fields=None, callback=None, callback_prompt=None):
+def _build_url_for_add_feature_action(
+    params,
+    feature_layer,
+    geometry,
+    use_antenna_height=None,
+    use_loc_profile=None,
+    fields=None,
+    callback=None,
+    callback_prompt=None,
+):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
             feature_source_url = feature_layer.url
         params.append("featureSourceURL=" + feature_source_url)
     else:
-        raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = addFeature")
+        raise ValueError(
+            "Invalid parameters -- Must specify a feature_layer parameter if action = addFeature"
+        )
     if geometry:
         if isinstance(geometry, dict):
             geometry = json.dumps(geometry)
@@ -169,7 +202,11 @@ def _build_url_for_add_feature_action(params, feature_layer, geometry, use_anten
         if use_loc_profile:
             params.append("useLocationProfile=true")
     if fields:
-        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
+        params.append(
+            "featureAttributes=%7B"
+            + urllib.parse.quote(json.dumps(fields), safe="${},:")
+            + "%7D"
+        )
     if callback:
         params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
@@ -178,44 +215,75 @@ def _build_url_for_add_feature_action(params, feature_layer, geometry, use_anten
     return params
 
 
-def _build_url_for_update_feature_action(params, feature_layer, feature_id, fields, callback, callback_prompt):
+def _build_url_for_update_feature_action(
+    params, feature_layer, feature_id, fields, callback, callback_prompt
+):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
             feature_source_url = feature_layer.url
         params.append("featureSourceURL=" + feature_source_url)
     else:
-        raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = updateFeature")
+        raise ValueError(
+            "Invalid parameters -- Must specify a feature_layer parameter if action = updateFeature"
+        )
     if feature_id:
         params.append("featureID=" + feature_id)
     if fields:
-        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
+        params.append(
+            "featureAttributes=%7B"
+            + urllib.parse.quote(json.dumps(fields), safe="${},:")
+            + "%7D"
+        )
     if callback:
         params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
-            
+
     return params
 
 
 def _validate_collector_url(webmap, center, feature_layer, fields):
-    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
+    if webmap is not None and not any(
+        [
+            isinstance(webmap, str),
+            isinstance(webmap, arcgis.gis.Item),
+            isinstance(webmap, arcgis.mapping.WebMap),
+        ]
+    ):
         raise ValueError("Invalid type for webmap parameter")
     if center:
         if webmap is None:
-            raise ValueError("Invalid parameters -- Must specify a webmap if setting center")
+            raise ValueError(
+                "Invalid parameters -- Must specify a webmap if setting center"
+            )
     if feature_layer:
         if webmap is None:
-            raise ValueError("Invalid parameters -- Must specify a webmap if setting feature layer")
+            raise ValueError(
+                "Invalid parameters -- Must specify a webmap if setting feature layer"
+            )
     if fields:
         if webmap is None:
-            raise ValueError("Invalid parameters -- Must specify a webmap if setting feature attributes")
+            raise ValueError(
+                "Invalid parameters -- Must specify a webmap if setting feature attributes"
+            )
         if not feature_layer:
-            raise ValueError("Invalid parameters -- Must specify a webmap if setting feature layer")
+            raise ValueError(
+                "Invalid parameters -- Must specify a webmap if setting feature layer"
+            )
 
 
-def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, scale=None, wkid=None, rotation=None,
-                       markup=None, url_type="Web"):
+def build_explorer_url(
+    webmap=None,
+    search=None,
+    bookmark=None,
+    center=None,
+    scale=None,
+    wkid=None,
+    rotation=None,
+    markup=None,
+    url_type="Web",
+):
     """
     Creates a url that can be used to open ArcGIS Explorer
 
@@ -246,7 +314,9 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
 
     :return: :class:`String`
     """
-    _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type)
+    _validate_explorer_url(
+        webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type
+    )
     if url_type == "Web":
         url = "https://explorer.arcgis.app"
     else:
@@ -265,7 +335,7 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
         params.append("bookmark=" + _encode_string(bookmark))
     if center:
         if isinstance(center, (list, tuple)):
-            center = '{},{}'.format(center[0], center[1])
+            center = "{},{}".format(center[0], center[1])
         params.append("center=" + _encode_string(center))
     if scale:
         params.append("scale=" + str(scale))
@@ -280,10 +350,18 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     return url
 
 
-def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type):
-    if url_type not in {'Web', 'App'}:
+def _validate_explorer_url(
+    webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type
+):
+    if url_type not in {"Web", "App"}:
         raise ValueError("Invalid type -- url_type must be 'Web' or 'App'")
-    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
+    if webmap is not None and not any(
+        [
+            isinstance(webmap, str),
+            isinstance(webmap, arcgis.gis.Item),
+            isinstance(webmap, arcgis.mapping.WebMap),
+        ]
+    ):
         raise ValueError("Invalid type for webmap parameter")
     if search and webmap is None:
         raise ValueError("Invalid parameters -- search requires a webmap")
@@ -295,18 +373,33 @@ def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotati
         raise ValueError("Invalid parameters -- URL is missing scale")
     if scale and not center:
         raise ValueError("Invalid parameters -- URL is missing center")
-    if ((search and bookmark) or
-            (search and center) or
-            (bookmark and center)):
+    if (search and bookmark) or (search and center) or (bookmark and center):
         raise ValueError("Invalid parameters -- URL contains conflicting parameters")
     if (wkid or rotation or markup) and not (center and scale):
-        raise ValueError("Invalid parameters -- wkid, rotation, or markup requires center and scale")
+        raise ValueError(
+            "Invalid parameters -- wkid, rotation, or markup requires center and scale"
+        )
 
 
-def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
-                         center=None, search=None, feature_layer=None, fields=None, geometry=None,
-                         use_antenna_height=None, use_loc_profile=None, feature_id=None, callback=None,
-                         callback_prompt=None, anonymous=None):
+def build_field_maps_url(
+    portal=None,
+    action=None,
+    webmap=None,
+    scale=None,
+    bookmark=None,
+    wkid=None,
+    center=None,
+    search=None,
+    feature_layer=None,
+    fields=None,
+    geometry=None,
+    use_antenna_height=None,
+    use_loc_profile=None,
+    feature_id=None,
+    callback=None,
+    callback_prompt=None,
+    anonymous=None,
+):
     """
     Creates a url that can be used to open ArcGIS Field Maps
 
@@ -383,9 +476,24 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     :return: :class:`String`
     """
-    _validate_field_maps_url(action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
-                             geometry, use_antenna_height, use_loc_profile, feature_id, callback,
-                             callback_prompt, anonymous)
+    _validate_field_maps_url(
+        action,
+        webmap,
+        scale,
+        bookmark,
+        wkid,
+        center,
+        search,
+        feature_layer,
+        fields,
+        geometry,
+        use_antenna_height,
+        use_loc_profile,
+        feature_id,
+        callback,
+        callback_prompt,
+        anonymous,
+    )
 
     params = []
     url = "https://fieldmaps.arcgis.app"
@@ -403,36 +511,71 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
         elif isinstance(item_id, arcgis.gis.Item):
             item_id = item_id.id
         params.append("itemID=" + item_id)
-    
-        actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
-                   'center': lambda: _build_url_for_center_action(params, center, scale, wkid),
-                   'search': lambda: _build_url_for_search_action(params, search),
-                   'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
-                                                                          use_antenna_height,
-                                                                          use_loc_profile,
-                                                                          fields, callback,
-                                                                          callback_prompt),
-                   'updateFeature': lambda: _build_url_for_update_feature_action(params, feature_layer, feature_id,
-                                                                                fields, callback,
-                                                                                callback_prompt)}
-    
+
+        actions = {
+            "open": lambda: _build_url_for_open_action(params, bookmark),
+            "center": lambda: _build_url_for_center_action(params, center, scale, wkid),
+            "search": lambda: _build_url_for_search_action(params, search),
+            "addFeature": lambda: _build_url_for_add_feature_action(
+                params,
+                feature_layer,
+                geometry,
+                use_antenna_height,
+                use_loc_profile,
+                fields,
+                callback,
+                callback_prompt,
+            ),
+            "updateFeature": lambda: _build_url_for_update_feature_action(
+                params, feature_layer, feature_id, fields, callback, callback_prompt
+            ),
+        }
+
         params = actions.get(action)()
-        
+
     if anonymous:
         params.append("anonymousAccess=true")
     url += "?" + "&".join(params)
     return url
-    
-    
-def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None, wkid=None,
-                         center=None, search=None, feature_layer=None, fields=None, geometry=None,
-                         use_antenna_height=None, use_location_profile=None, feature_id=None, callback=None,
-                         callback_prompt=None, anonymous=None):
-    if action and action not in ['addFeature', 'center', 'open', 'search', 'updateFeature']:
-        raise ValueError("Invalid reference context. addFeature, center, open, search, and updateFeature are supported")
+
+
+def _validate_field_maps_url(
+    action=None,
+    webmap=None,
+    scale=None,
+    bookmark=None,
+    wkid=None,
+    center=None,
+    search=None,
+    feature_layer=None,
+    fields=None,
+    geometry=None,
+    use_antenna_height=None,
+    use_location_profile=None,
+    feature_id=None,
+    callback=None,
+    callback_prompt=None,
+    anonymous=None,
+):
+    if action and action not in [
+        "addFeature",
+        "center",
+        "open",
+        "search",
+        "updateFeature",
+    ]:
+        raise ValueError(
+            "Invalid reference context. addFeature, center, open, search, and updateFeature are supported"
+        )
     if webmap and not action:
         raise ValueError("Cannot provide webmap without action")
-    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
+    if webmap is not None and not any(
+        [
+            isinstance(webmap, str),
+            isinstance(webmap, arcgis.gis.Item),
+            isinstance(webmap, arcgis.mapping.WebMap),
+        ]
+    ):
         raise ValueError("Invalid type for webmap parameter")
     if search and webmap is None:
         raise ValueError("Invalid parameters -- search requires a webmap")
@@ -450,34 +593,62 @@ def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None
         raise ValueError("Cannot provide WKID without center and scale")
     if wkid and not isinstance(wkid, int):
         raise ValueError("WKID must be an int")
-    if ((search and bookmark) or
-            (search and center) or
-            (bookmark and center)):
+    if (search and bookmark) or (search and center) or (bookmark and center):
         raise ValueError("Invalid parameters -- URL contains conflicting parameters")
-    if (feature_layer or fields) and (action not in ['addFeature', 'updateFeature'] or webmap is None):
-        raise ValueError("Feature layer param must be used with addFeature or updateFeature and have a webmap param")
+    if (feature_layer or fields) and (
+        action not in ["addFeature", "updateFeature"] or webmap is None
+    ):
+        raise ValueError(
+            "Feature layer param must be used with addFeature or updateFeature and have a webmap param"
+        )
     if fields and not feature_layer:
         raise ValueError("Fields cannot be provided without feature layer")
     if fields and not isinstance(fields, dict):
         raise ValueError("Fields must be provided as a dict")
     if geometry and (action != "addFeature" or not feature_layer):
-        raise ValueError("Geometry requires addFeature as the action and a feature layer param provided")
-    if use_antenna_height and (action !="addFeature" or not feature_layer or not geometry):
-        raise ValueError("Use antenna height requires addFeature action, a feature layer param, and the geometry param")
-    if use_location_profile and (action != "addFeature" or not feature_layer or not geometry):
-        raise ValueError("Use antenna height requires addFeature action, a feature layer param, and the geometry param")
+        raise ValueError(
+            "Geometry requires addFeature as the action and a feature layer param provided"
+        )
+    if use_antenna_height and (
+        action != "addFeature" or not feature_layer or not geometry
+    ):
+        raise ValueError(
+            "Use antenna height requires addFeature action, a feature layer param, and the geometry param"
+        )
+    if use_location_profile and (
+        action != "addFeature" or not feature_layer or not geometry
+    ):
+        raise ValueError(
+            "Use antenna height requires addFeature action, a feature layer param, and the geometry param"
+        )
     if feature_id and (action != "updateFeature" or not feature_layer):
         raise ValueError("Feature id param requires action to be updateFeature")
-    if callback and (webmap is None or action not in ['addFeature', 'updateFeature'] or not feature_layer):
-        raise ValueError("Callback requires webmap, an action of addFeature or updateFeature, and a feature layer param")
+    if callback and (
+        webmap is None
+        or action not in ["addFeature", "updateFeature"]
+        or not feature_layer
+    ):
+        raise ValueError(
+            "Callback requires webmap, an action of addFeature or updateFeature, and a feature layer param"
+        )
     if callback_prompt and not callback:
         raise ValueError("Callback prompt requires callback")
     if anonymous and webmap is None:
         raise ValueError("Anonymous param requires a webmap")
-        
 
-def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
-                        travel_mode=None, callback=None, callback_prompt=None, url_type="Web", webmap=None, route_item=None):
+
+def build_navigator_url(
+    start=None,
+    stops=None,
+    optimize=None,
+    navigate=None,
+    travel_mode=None,
+    callback=None,
+    callback_prompt=None,
+    url_type="Web",
+    webmap=None,
+    route_item=None,
+):
     """
     Creates a url that can be used to open ArcGIS Navigator
 
@@ -517,7 +688,18 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
 
     :return: :class:`String`
     """
-    _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt, url_type, webmap, route_item)
+    _validate_navigator_url(
+        start,
+        stops,
+        optimize,
+        navigate,
+        travel_mode,
+        callback,
+        callback_prompt,
+        url_type,
+        webmap,
+        route_item,
+    )
     if url_type == "Web":
         url = "https://navigator.arcgis.app"
     else:
@@ -555,14 +737,38 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
     return url
 
 
-def _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt, url_type, webmap, route_item):
-    if url_type not in {'Web', 'App'}:
+def _validate_navigator_url(
+    start,
+    stops,
+    optimize,
+    navigate,
+    travel_mode,
+    callback,
+    callback_prompt,
+    url_type,
+    webmap,
+    route_item,
+):
+    if url_type not in {"Web", "App"}:
         raise ValueError("Invalid type -- url_type must be 'Web' or 'App'")
-    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item)]):
+    if webmap is not None and not any(
+        [isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item)]
+    ):
         raise ValueError("Invalid type for webmap parameter")
     if stops:
-        if len([stop for stop in stops if not isinstance(stop, tuple) and not isinstance(stop, str)]) > 0:
-            raise ValueError("Invalid parameters -- stops must be a single string or tuple containing strings")
+        if (
+            len(
+                [
+                    stop
+                    for stop in stops
+                    if not isinstance(stop, tuple) and not isinstance(stop, str)
+                ]
+            )
+            > 0
+        ):
+            raise ValueError(
+                "Invalid parameters -- stops must be a single string or tuple containing strings"
+            )
     if navigate and not stops:
         raise ValueError("Invalid parameters -- navigate param requires stops")
     if optimize and not stops:
@@ -570,7 +776,9 @@ def _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callb
     if travel_mode and not stops:
         raise ValueError("Invalid parameters --- travel mode param requires stops")
     if route_item and any([start, stops, optimize, travel_mode]):
-        raise ValueError("Invalid parameters -- cannot provide route_item and stop list params")
+        raise ValueError(
+            "Invalid parameters -- cannot provide route_item and stop list params"
+        )
     if callback and not stops:
         raise ValueError("Invalid parameters -- callback param requires stops")
 
@@ -582,14 +790,23 @@ def _encode_navigator_stops(stops):
     params = []
     for stop in stops:
         # handle empty second parameter in tuple
-        has_name = (isinstance(stop, list) or isinstance(stop, tuple)) and len(stop) > 1 and bool(stop[1])
+        has_name = (
+            (isinstance(stop, list) or isinstance(stop, tuple))
+            and len(stop) > 1
+            and bool(stop[1])
+        )
         if has_name:
-            params.extend(["stop="+_encode_string(stop[0]), "stopname="+_encode_string(stop[1])])
+            params.extend(
+                [
+                    "stop=" + _encode_string(stop[0]),
+                    "stopname=" + _encode_string(stop[1]),
+                ]
+            )
         else:
             # handle empty second parameter in tuple
             if isinstance(stop, list) or isinstance(stop, tuple):
                 stop = stop[0]
-            params.append("stop="+_encode_string(stop))
+            params.append("stop=" + _encode_string(stop))
     return params
 
 
@@ -599,14 +816,23 @@ def _encode_navigator_start(start):
     """
     params = []
     # handle empty second parameter in tuple
-    has_name = (isinstance(start, list) or isinstance(start, tuple)) and len(start) > 1 and bool(start[1])
+    has_name = (
+        (isinstance(start, list) or isinstance(start, tuple))
+        and len(start) > 1
+        and bool(start[1])
+    )
     if has_name:
-        params.extend(["start="+_encode_string(start[0]), "startname="+_encode_string(start[1])])
+        params.extend(
+            [
+                "start=" + _encode_string(start[0]),
+                "startname=" + _encode_string(start[1]),
+            ]
+        )
     else:
         # handle empty second parameter in tuple
         if isinstance(start, list) or isinstance(start, tuple):
             start = start[0]
-        params.append("start="+_encode_string(start))
+        params.append("start=" + _encode_string(start))
     return params
 
 
@@ -642,37 +868,43 @@ def build_survey123_url(survey=None, center=None, fields=None):
         params.append("center=" + center)
     if fields:
         for k, v in fields.items():
-            params.append('field:{}={}'.format(_encode_string(k), _encode_string(v)))
+            params.append("field:{}={}".format(_encode_string(k), _encode_string(v)))
     if params:
         url += "?" + "&".join(params)
     return url
 
 
 def _validate_survey123_url(survey, center, fields):
-    if survey is not None and not any([isinstance(survey, str), isinstance(survey, arcgis.gis.Item)]):
+    if survey is not None and not any(
+        [isinstance(survey, str), isinstance(survey, arcgis.gis.Item)]
+    ):
         raise ValueError("Invalid type for survey parameter")
     if center:
         if not survey:
-            raise ValueError("Invalid parameters -- Must specify a survey if setting center")
+            raise ValueError(
+                "Invalid parameters -- Must specify a survey if setting center"
+            )
     if fields:
         if not survey:
-            raise ValueError("Invalid parameters -- Must specify a survey if setting fields")
+            raise ValueError(
+                "Invalid parameters -- Must specify a survey if setting fields"
+            )
 
 
 def build_tracker_url(portal_url=None, url_type="Web"):
     """
-        Creates a url that can be used to open ArcGIS Tracker
+    Creates a url that can be used to open ArcGIS Tracker
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when tracker
-                               is launched via the url scheme.
-        ------------------     --------------------------------------------------------------------
-        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal_url             Optional :class:`String` The portal that should be used when tracker
+                           is launched via the url scheme.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+    ==================     ====================================================================
 
-        :return: :class:`String`
+    :return: :class:`String`
     """
     url = "https://tracker.arcgis.app"
     if url_type == "App":
@@ -682,35 +914,41 @@ def build_tracker_url(portal_url=None, url_type="Web"):
     return url
 
 
-def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment=None, assignment_status=None):
+def build_workforce_url(
+    portal_url=None,
+    url_type="Web",
+    webmap=None,
+    assignment=None,
+    assignment_status=None,
+):
     """
-        Creates a url that can be used to open ArcGIS Workforce
+    Creates a url that can be used to open ArcGIS Workforce
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when Workforce
-                               is launched via the url scheme.
-        ------------------     --------------------------------------------------------------------
-        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
-        ------------------     --------------------------------------------------------------------
-        webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
-                               The item id, webmap, or item representing the map to open in Workforce.
-                               Item can be of type Web Map. This can be referenced
-                               at the project level using project.worker_webmap
-        ------------------     --------------------------------------------------------------------
-        assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
-                               The assignment or assignment global id that should be opened in Workforce.
-                               Note that webmap must be provided for this parameter to be added to the URL.
-        ------------------     --------------------------------------------------------------------
-        assignment_status      Optional :class:`Integer`
-                               The status given to an assignment opened in Workforce. Statuses 1-5
-                               are supported (Assigned, In Progress, Completed, Declined, Paused).
-                               Note that webmap and assignment must be provided for this parameter to be
-                               added to the URL.
-        ==================     ====================================================================
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal_url             Optional :class:`String` The portal that should be used when Workforce
+                           is launched via the url scheme.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+    ------------------     --------------------------------------------------------------------
+    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                           The item id, webmap, or item representing the map to open in Workforce.
+                           Item can be of type Web Map. This can be referenced
+                           at the project level using project.worker_webmap
+    ------------------     --------------------------------------------------------------------
+    assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
+                           The assignment or assignment global id that should be opened in Workforce.
+                           Note that webmap must be provided for this parameter to be added to the URL.
+    ------------------     --------------------------------------------------------------------
+    assignment_status      Optional :class:`Integer`
+                           The status given to an assignment opened in Workforce. Statuses 1-5
+                           are supported (Assigned, In Progress, Completed, Declined, Paused).
+                           Note that webmap and assignment must be provided for this parameter to be
+                           added to the URL.
+    ==================     ====================================================================
 
-        :return: :class:`String`
+    :return: :class:`String`
     """
     url = "https://workforce.arcgis.app"
     if url_type == "App":
@@ -718,7 +956,9 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
     if portal_url is not None:
         url += "?portalURL={}".format(portal_url)
     if webmap is None and (assignment is not None or assignment_status is not None):
-        raise ValueError("Assignment or assignment status provided without webmap parameter")
+        raise ValueError(
+            "Assignment or assignment status provided without webmap parameter"
+        )
     if assignment is None and assignment_status is not None:
         raise ValueError("Assignment status provided without assignment parameter")
     if webmap is not None:
@@ -729,7 +969,9 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
         elif isinstance(webmap, str):
             item_id = webmap
         else:
-            raise ValueError("Please provide either a WebMap, Item, or str to the webmap param")
+            raise ValueError(
+                "Please provide either a WebMap, Item, or str to the webmap param"
+            )
         url = url + "&mapID=" + item_id
         # assignment id can only be set is map id is set
         if assignment is not None:
@@ -738,16 +980,22 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
             elif isinstance(assignment, str):
                 assignment_id = assignment
             else:
-                raise ValueError("Please provide either a workforce.Assignment or str object to the assignment param")
+                raise ValueError(
+                    "Please provide either a workforce.Assignment or str object to the assignment param"
+                )
             url = url + "&assignmentID=" + assignment_id
             # status can only be set if assignment id is set
             if assignment_status is not None:
                 if not isinstance(assignment_status, int):
-                    raise ValueError("Please enter an integer for your assignment status")
+                    raise ValueError(
+                        "Please enter an integer for your assignment status"
+                    )
                 if assignment_status > 0 and assignment_status < 6:
                     url = url + "&assignmentStatus=" + str(assignment_status)
                 else:
-                    raise ValueError("Please provide an int between 1 and 5 for your assignment status")
+                    raise ValueError(
+                        "Please provide an int between 1 and 5 for your assignment status"
+                    )
     return url
 
 

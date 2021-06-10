@@ -8,39 +8,43 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
-from arcgis.geoanalytics._util import (_id_generator,
-                                       _feature_input,
-                                       _set_context,
-                                       _create_output_service,
-                                       GAJob,
-                                       _prevent_bds_item)
+from arcgis.geoanalytics._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
 
-def calculate_motion_statistics(input_layer,
-                                track_fields,
-                                motion_statistics="All",
-                                track_history_window=3,
-                                idle_tol_dist=None,
-                                idle_tol_unit=None,
-                                idle_time_tol=None,
-                                idle_time_tol_unit=None,
-                                time_boundary_split=None,
-                                split_unit=None,
-                                time_bound_ref=None,
-                                dist_method="Geodesic",
-                                distance_unit="Meters",
-                                duration_unit="Seconds",
-                                speed_unit="MetersPerSecond",
-                                accel_unit="MetersPerSecondSquared",
-                                elev_unit="meters",
-                                output_name=None,
-                                gis=None,
-                                context=None,
-                                future=False):
+def calculate_motion_statistics(
+    input_layer,
+    track_fields,
+    motion_statistics="All",
+    track_history_window=3,
+    idle_tol_dist=None,
+    idle_tol_unit=None,
+    idle_time_tol=None,
+    idle_time_tol_unit=None,
+    time_boundary_split=None,
+    split_unit=None,
+    time_bound_ref=None,
+    dist_method="Geodesic",
+    distance_unit="Meters",
+    duration_unit="Seconds",
+    speed_unit="MetersPerSecond",
+    accel_unit="MetersPerSecondSquared",
+    elev_unit="meters",
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     The Calculate Motion Statistics task calculates motion statistics and
     descriptors for time-enabled points that represent one or more moving
@@ -167,44 +171,55 @@ def calculate_motion_statistics(input_layer,
     params = {
         "input_layer": input_layer,
         "track_fields": track_fields,
-        "track_history_window" : track_history_window,
-        "motion_statistics" : motion_statistics,
-        "idle_distance_tolerance" : idle_tol_dist,
-        "idle_distance_tolerance_unit" : idle_tol_unit,
-        "idle_time_tolerance" : idle_time_tol,
-        "idle_time_tolerance_unit" : idle_time_tol_unit,
-        "time_boundary_split" : time_boundary_split,
+        "track_history_window": track_history_window,
+        "motion_statistics": motion_statistics,
+        "idle_distance_tolerance": idle_tol_dist,
+        "idle_distance_tolerance_unit": idle_tol_unit,
+        "idle_time_tolerance": idle_time_tol,
+        "idle_time_tolerance_unit": idle_time_tol_unit,
+        "time_boundary_split": time_boundary_split,
         "time_boundary_split_unit": split_unit,
-        "time_boundary_reference" : time_bound_ref,
-        "distance_method" : dist_method,
-        "distance_unit" : distance_unit,
-        "duration_unit" : duration_unit,
-        "speed_unit" : speed_unit,
-        "acceleration_unit" : accel_unit,
-        "elevation_unit" : elev_unit,
+        "time_boundary_reference": time_bound_ref,
+        "distance_method": dist_method,
+        "distance_unit": distance_unit,
+        "duration_unit": duration_unit,
+        "speed_unit": speed_unit,
+        "acceleration_unit": accel_unit,
+        "elevation_unit": elev_unit,
         "output_name": output_name,
         "context": context,
-        'future' : future
+        "future": future,
     }
 
-
     if output_name is None:
-        output_service_name = 'Calculate_Motion_Stats_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Calculate_Motion_Stats_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Motion Statistics', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Calculate Motion Statistics",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -212,12 +227,11 @@ def calculate_motion_statistics(input_layer,
     else:
         _set_context(params)
 
-
     for key in list(params.keys()):
         if params[key] is None:
             del params[key]
     param_db = inspect_function_inputs(tbx.calculate_motion_statistics, **params)
-    param_db['future'] = True
+    param_db["future"] = True
     try:
         gpjob = tbx.calculate_motion_statistics(**params)
         if future:
@@ -229,14 +243,15 @@ def calculate_motion_statistics(input_layer,
         raise
 
 
-
-def enrich_from_grid(input_layer,
-                     grid_layer,
-                     enrichment_attributes=None,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False):
+def enrich_from_grid(
+    input_layer,
+    grid_layer,
+    enrichment_attributes=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images/enrich_from_grid/enrich_from_grid.png
 
@@ -304,47 +319,59 @@ def enrich_from_grid(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
 
-
     params = {
         "input_features": input_layer,
-        "grid_layer" : grid_layer,
-        "enrich_attributes" : enrichment_attributes,
+        "grid_layer": grid_layer,
+        "enrich_attributes": enrichment_attributes,
         "output_name": output_name,
         "context": context,
-        "future" : future,
-        "gis" : gis
+        "future": future,
+        "gis": gis,
     }
     for key in list(params.keys()):
         if params[key] is None:
             del params[key]
-    if isinstance(params['grid_layer'], _arcgis.gis.Item) and \
-       'layers' in params['grid_layer'] and \
-       len(params['grid_layer'].layers) > 0:
-        params['grid_layer'] = params['grid_layer'].layers[0]._lyr_dict
-    elif isinstance(params['grid_layer'], _arcgis.gis.Layer):
-        params['grid_layer'] = params['grid_layer']._lyr_dict
+    if (
+        isinstance(params["grid_layer"], _arcgis.gis.Item)
+        and "layers" in params["grid_layer"]
+        and len(params["grid_layer"].layers) > 0
+    ):
+        params["grid_layer"] = params["grid_layer"].layers[0]._lyr_dict
+    elif isinstance(params["grid_layer"], _arcgis.gis.Layer):
+        params["grid_layer"] = params["grid_layer"]._lyr_dict
 
     params = inspect_function_inputs(tbx.enrich_from_multi_variable_grid, **params)
-    params['future'] = True
-
+    params["future"] = True
 
     if output_name is None:
-        output_service_name = 'Enrich_Grid_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Enrich_Grid_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Enrich Grid Layers', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Enrich Grid Layers",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -361,4 +388,3 @@ def enrich_from_grid(input_layer,
     except:
         output_service.delete()
         raise
-

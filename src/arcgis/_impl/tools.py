@@ -37,12 +37,24 @@ _log = logging.getLogger(__name__)
 
 try:
     import pandas as pd
-    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection, pd.DataFrame)
-except ImportError:
-    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection)
 
-__all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_GeometryService', '_RasterAnalysisTools']
-#--------------------------------------------------------------------------
+    _FEATURE_INPUTS = (
+        Feature,
+        FeatureSet,
+        FeatureLayer,
+        FeatureCollection,
+        pd.DataFrame,
+    )
+except ImportError:
+    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer, FeatureCollection)
+
+__all__ = [
+    "_GeoanalyticsTools",
+    "_FeatureAnalysisTools",
+    "_GeometryService",
+    "_RasterAnalysisTools",
+]
+# --------------------------------------------------------------------------
 def _inspect_function_inputs(fn, **params):
     """
     Given any function and a set of key/value pairs, where the ```params``` is a dictionary,
@@ -63,6 +75,7 @@ def _inspect_function_inputs(fn, **params):
 
     """
     import inspect
+
     try:
         args = list(inspect.signature(fn).parameters.keys())
     except ValueError:
@@ -72,209 +85,220 @@ def _inspect_function_inputs(fn, **params):
         if key in args:
             valid[key] = params[key]
     return valid
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-#--------------------------------------------------------------------------
+    return "".join(random.choice(chars) for _ in range(size))
+
+
+# --------------------------------------------------------------------------
 @contextmanager
 def _tempinput(data):
     temp = tempfile.NamedTemporaryFile(delete=False)
-    temp.write((bytes(data, 'UTF-8')))
+    temp.write((bytes(data, "UTF-8")))
     temp.close()
     yield temp.name
     os.unlink(temp.name)
+
+
 ###########################################################################
 class BaseAnalytics(object):
     def _feature_input(self, input_layer):
         from arcgis.features.geo._accessor import _is_geoenabled
+
         point_fs = {
-            "layerDefinition":{
-                "currentVersion":10.11,
-                "copyrightText":"",
-               "defaultVisibility":True,
-              "relationships":[
-
-                  ],
-              "isDataVersioned":False,
-              "supportsRollbackOnFailureParameter":True,
-              "supportsStatistics":True,
-              "supportsAdvancedQueries":True,
-              "geometryType":"esriGeometryPoint",
-              "minScale":0,
-              "maxScale":0,
-              "objectIdField":"OBJECTID",
-              "templates":[
-
-                  ],
-              "type":"Feature Layer",
-              "displayField":"TITLE",
-              "visibilityField":"VISIBLE",
-              "name":"startDrawPoint",
-              "hasAttachments":False,
-              "typeIdField":"TYPEID",
-              "capabilities":"Query",
-              "allowGeometryUpdates":True,
-              "htmlPopupType":"",
-              "hasM":False,
-              "hasZ":False,
-              "globalIdField":"",
-              "supportedQueryFormats":"JSON",
-              "hasStaticData":False,
-              "maxRecordCount":-1,
-              "indexes":[
-
-                  ],
-              "types":[
-
-                  ],
-              "fields":[
-                  {
-                      "alias":"OBJECTID",
-                      "name":"OBJECTID",
-                     "type":"esriFieldTypeOID",
-                    "editable":False
+            "layerDefinition": {
+                "currentVersion": 10.11,
+                "copyrightText": "",
+                "defaultVisibility": True,
+                "relationships": [],
+                "isDataVersioned": False,
+                "supportsRollbackOnFailureParameter": True,
+                "supportsStatistics": True,
+                "supportsAdvancedQueries": True,
+                "geometryType": "esriGeometryPoint",
+                "minScale": 0,
+                "maxScale": 0,
+                "objectIdField": "OBJECTID",
+                "templates": [],
+                "type": "Feature Layer",
+                "displayField": "TITLE",
+                "visibilityField": "VISIBLE",
+                "name": "startDrawPoint",
+                "hasAttachments": False,
+                "typeIdField": "TYPEID",
+                "capabilities": "Query",
+                "allowGeometryUpdates": True,
+                "htmlPopupType": "",
+                "hasM": False,
+                "hasZ": False,
+                "globalIdField": "",
+                "supportedQueryFormats": "JSON",
+                "hasStaticData": False,
+                "maxRecordCount": -1,
+                "indexes": [],
+                "types": [],
+                "fields": [
+                    {
+                        "alias": "OBJECTID",
+                        "name": "OBJECTID",
+                        "type": "esriFieldTypeOID",
+                        "editable": False,
                     },
-                  {
-                      "alias":"Title",
-                     "name":"TITLE",
-                     "length":50,
-                    "type":"esriFieldTypeString",
-                    "editable":True
+                    {
+                        "alias": "Title",
+                        "name": "TITLE",
+                        "length": 50,
+                        "type": "esriFieldTypeString",
+                        "editable": True,
                     },
-                  {
-                     "alias":"Visible",
-                     "name":"VISIBLE",
-                     "type":"esriFieldTypeInteger",
-                    "editable":True
+                    {
+                        "alias": "Visible",
+                        "name": "VISIBLE",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True,
                     },
-                 {
-                     "alias":"Description",
-                     "name":"DESCRIPTION",
-                     "length":1073741822,
-                    "type":"esriFieldTypeString",
-                    "editable":True
+                    {
+                        "alias": "Description",
+                        "name": "DESCRIPTION",
+                        "length": 1073741822,
+                        "type": "esriFieldTypeString",
+                        "editable": True,
                     },
-                 {
-                     "alias":"Type ID",
-                     "name":"TYPEID",
-                     "type":"esriFieldTypeInteger",
-                    "editable":True
-                 }
-              ]
-              },
-            "featureSet":{
-                "features":[
-                   {
-                       "geometry":{
-                          "x":80.27032792000051,
-                         "y":13.085227147000467,
-                        "spatialReference":{
-                           "wkid": 4326,
-                           "latestWkid":4326
-                       }
-                       },
-                      "attributes":{
-                         "description":"blayer desc",
-                        "title":"blayer",
-                      "OBJECTID":0,
-                       "VISIBLE":1
-                       },
-                     "symbol":{
-                        "angle":0,
-                      "xoffset":0,
-                        "yoffset":8.15625,
-                       "type":"esriPMS",
-                       "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
-                       "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
-                       "contentType":"image/png",
-                       "width":15.75,
-                       "height":21.75
+                    {
+                        "alias": "Type ID",
+                        "name": "TYPEID",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True,
+                    },
+                ],
+            },
+            "featureSet": {
+                "features": [
+                    {
+                        "geometry": {
+                            "x": 80.27032792000051,
+                            "y": 13.085227147000467,
+                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                        },
+                        "attributes": {
+                            "description": "blayer desc",
+                            "title": "blayer",
+                            "OBJECTID": 0,
+                            "VISIBLE": 1,
+                        },
+                        "symbol": {
+                            "angle": 0,
+                            "xoffset": 0,
+                            "yoffset": 8.15625,
+                            "type": "esriPMS",
+                            "url": "https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
+                            "imageData": "iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
+                            "contentType": "image/png",
+                            "width": 15.75,
+                            "height": 21.75,
+                        },
                     }
-                   }
-                   ],
-               "geometryType":"esriGeometryPoint"
-               },
-            "nextObjectId":1
+                ],
+                "geometryType": "esriGeometryPoint",
+            },
+            "nextObjectId": 1,
         }
 
         input_layer_url = ""
         if isinstance(input_layer, arcgis.gis.Item):
-            if input_layer.type.lower() == 'feature service':
+            if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
-            elif input_layer.type.lower() == 'feature collection':
+            elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
-                fc = arcgis.features.FeatureCollection(fcdict['layers'][0])
-                input_param =  fc.layer
+                fc = arcgis.features.FeatureCollection(fcdict["layers"][0])
+                input_param = fc.layer
             else:
-                raise TypeError("item type must be feature service or feature collection")
+                raise TypeError(
+                    "item type must be feature service or feature collection"
+                )
 
         elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
             input_param = input_layer.layers[0]._lyr_dict
 
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
-            if 'layers' in input_layer.properties:
+            if "layers" in input_layer.properties:
                 input_param = input_layer.properties["layers"][0]
-            elif hasattr(input_layer, '_lyr_dict'):
+            elif hasattr(input_layer, "_lyr_dict"):
                 input_param = input_layer._lyr_dict
-            elif hasattr(input_layer, 'layer'):
+            elif hasattr(input_layer, "layer"):
                 input_param = input_layer.layer
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
 
-        elif isinstance(input_layer, tuple): # geocoding location, convert to point featureset
+        elif isinstance(
+            input_layer, tuple
+        ):  # geocoding location, convert to point featureset
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
 
-        elif isinstance(input_layer, dict): # could add support for geometry one day using geometry -> featureset
-            if 'location' in input_layer: # geocoder result
-                geom = arcgis.geometry.Geometry(input_layer['location'])
+        elif isinstance(
+            input_layer, dict
+        ):  # could add support for geometry one day using geometry -> featureset
+            if "location" in input_layer:  # geocoder result
+                geom = arcgis.geometry.Geometry(input_layer["location"])
                 fset = FeatureSet([Feature(geom)])
-                featcoll = {'layerDefinition': {
-                    "geometryType": "esriGeometryPoint",
-                    "objectIdField": "OBJECTID",
-                    "fields": [
+                featcoll = {
+                    "layerDefinition": {
+                        "geometryType": "esriGeometryPoint",
+                        "objectIdField": "OBJECTID",
+                        "fields": [
                             {
                                 "alias": "OBJECTID",
                                 "name": "OBJECTID",
                                 "type": "esriFieldTypeOID",
-                                "editable": False
+                                "editable": False,
                             }
-                        ]
-                        }, 'featureSet': fset.to_dict()}
+                        ],
+                    },
+                    "featureSet": fset.to_dict(),
+                }
                 input_param = featcoll
             else:
-                input_param =  input_layer
+                input_param = input_layer
         elif isinstance(input_layer, str):
             input_layer_url = input_layer
             if input_layer_url.endswith("/"):
                 input_layer_url = input_layer_url[:-1]
-            input_param =  {"url": input_layer_url }
+            input_param = {"url": input_layer_url}
         elif isinstance(input_layer, pd.DataFrame) and _is_geoenabled(input_layer):
             return self._feature_input(input_layer.spatial.to_feature_collection())
         else:
-            raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+            raise Exception(
+                "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported"
+            )
 
         return input_param
 
     def _raster_input(self, input_raster):
         if isinstance(input_raster, arcgis.gis.Item):
-            if input_raster.type.lower() == 'image service':
-                input_param =  {"itemId": input_raster.itemid }
+            if input_raster.type.lower() == "image service":
+                input_param = {"itemId": input_raster.itemid}
             else:
                 raise TypeError("item type must be image service")
         elif isinstance(input_raster, str):
-            input_param =  {"url": input_raster }
+            input_param = {"url": input_raster}
         elif isinstance(input_raster, dict):
-            input_param =  input_raster
+            input_param = input_raster
         else:
-            raise Exception("Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported")
+            raise Exception(
+                "Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported"
+            )
 
         return input_param
+
+
 ###########################################################################
 class _GISService(object):
-    """ a GIS service
-    """
+    """a GIS service"""
+
     def __init__(self, url, gis=None):
         self._token = None
 
@@ -288,7 +312,7 @@ class _GISService(object):
             self._gis = gis
             self._con = gis._con
             self._token = None
-        elif hasattr(gis, 'token'): # means it is a connection object
+        elif hasattr(gis, "token"):  # means it is a connection object
             self._gis = None
             self._con = gis
         else:
@@ -298,18 +322,35 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if isinstance(self._con, arcgis.gis._impl._con.Connection) and self._con._auth.lower() != 'anon':
+                if (
+                    isinstance(self._con, arcgis.gis._impl._con.Connection)
+                    and self._con._auth.lower() != "anon"
+                ):
                     try:
                         self._token = self._con.generate_portal_server_token(url)
-                    except Exception as e: # GUESSED Auth Wrong, try anonymously
-                        if str(e).find("'code': 201, 'message': 'Exception in generating token'") > -1:
+                    except Exception as e:  # GUESSED Auth Wrong, try anonymously
+                        if (
+                            str(e).find(
+                                "'code': 201, 'message': 'Exception in generating token'"
+                            )
+                            > -1
+                        ):
                             self._con._auth = "ANON"
-                        elif str(e).lower().find("unable to generate token for this server") > -1:
+                        elif (
+                            str(e)
+                            .lower()
+                            .find("unable to generate token for this server")
+                            > -1
+                        ):
                             raise RuntimeError(str(e))
-                        elif str(e).lower().find("exception in generating token") > -1 and self._con._auth == 'IWA':
+                        elif (
+                            str(e).lower().find("exception in generating token") > -1
+                            and self._con._auth == "IWA"
+                        ):
                             self._con._auth = "ANON"
                         else:
                             from requests.exceptions import RequestException
+
                             raise RequestException(str(e))
                 else:
                     self._token = self._con.token
@@ -323,13 +364,15 @@ class _GISService(object):
                     _log.error(httperror)
                     err = httperror
                 except RuntimeError as e:
-                    if 'Token Required' in e.args[0]:
+                    if "Token Required" in e.args[0]:
                         # try token in the provided gis
                         self._token = self._con.token
                         self._refresh()
 
         if err is not None:
-            raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
+            raise RuntimeError(
+                "HTTPError: this service url encountered an HTTP Error: " + self.url
+            )
 
     def _refresh(self):
         params = {"f": "json"}
@@ -345,33 +388,34 @@ class _GISService(object):
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._token)
+
+
 ###########################################################################
 class _AsyncService(_GISService):
-
     def __init__(self, url, gis):
         super(_AsyncService, self).__init__(url, gis)
 
     def _refresh(self):
-        params = {"f" : "json"}
+        params = {"f": "json"}
         dictdata = self._con.get(path=self.url, params=params, token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):
-        """ Submits an Analysis job and returns the job URL for monitoring the job
-            status in addition to the json response data for the submitted job."""
+        """Submits an Analysis job and returns the job URL for monitoring the job
+        status in addition to the json response data for the submitted job."""
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
         # HTTP POST request. Headers are also added as a dictionary to be included
         # with the POST.
         #
-        #print("Submitting analysis job...")
+        # print("Submitting analysis job...")
 
         task_url = "{}/{}".format(self.url, task)
         submit_url = "{}/submitJob".format(task_url)
@@ -379,18 +423,18 @@ class _AsyncService(_GISService):
         params["f"] = "json"
 
         resp = self._con.post(submit_url, params, token=self._token)
-        #print(resp)
-        return task_url, resp, resp['jobId']
+        # print(resp)
+        return task_url, resp, resp["jobId"]
 
     def _analysis_job_status(self, task_url, job_info):
-        """ Tracks the status of the submitted Analysis job."""
+        """Tracks the status of the submitted Analysis job."""
 
         if "jobId" in job_info:
             # Get the id of the Analysis job to track the status.
             #
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
-            params = { "f" : "json" }
+            params = {"f": "json"}
             job_response = self._con.post(job_url, params, token=self._token)
 
             # Query and report the Analysis job status.
@@ -402,23 +446,25 @@ class _AsyncService(_GISService):
                     time.sleep(5)
 
                     job_response = self._con.post(job_url, params, token=self._token)
-                    #print(job_response)
-                    messages = job_response['messages'] if 'messages' in job_response else []
+                    # print(job_response)
+                    messages = (
+                        job_response["messages"] if "messages" in job_response else []
+                    )
                     num = len(messages)
                     if num > num_messages:
                         for index in range(num_messages, num):
                             msg = messages[index]
                             if arcgis.env.verbose:
-                                print(msg['description'])
-                            if msg['type'] == 'esriJobMessageTypeInformative':
-                                _log.info(msg['description'])
-                            elif msg['type'] == 'esriJobMessageTypeWarning':
-                                _log.warning(msg['description'])
-                            elif msg['type'] == 'esriJobMessageTypeError':
-                                _log.error(msg['description'])
+                                print(msg["description"])
+                            if msg["type"] == "esriJobMessageTypeInformative":
+                                _log.info(msg["description"])
+                            elif msg["type"] == "esriJobMessageTypeWarning":
+                                _log.warning(msg["description"])
+                            elif msg["type"] == "esriJobMessageTypeError":
+                                _log.error(msg["description"])
                                 # print(msg['description'], file=sys.stderr)
                             else:
-                                _log.warning(msg['description'])
+                                _log.warning(msg["description"])
                         num_messages = num
 
                     if job_response.get("jobStatus") == "esriJobFailed":
@@ -436,8 +482,8 @@ class _AsyncService(_GISService):
             raise Exception("No job url.")
 
     def _analysis_job_results(self, task_url, job_info, job_id=None):
-        """ Use the job result json to get information about the feature service
-            created from the Analysis job."""
+        """Use the job result json to get information about the feature service
+        created from the Analysis job."""
 
         # Get the paramUrl to get information about the Analysis job results.
         #
@@ -451,11 +497,9 @@ class _AsyncService(_GISService):
                 param_value = results[key]
                 if "paramUrl" in param_value:
                     param_url = param_value.get("paramUrl")
-                    result_url = "{}/jobs/{}/{}".format(task_url,
-                                                        job_id,
-                                                        param_url)
+                    result_url = "{}/jobs/{}/{}".format(task_url, job_id, param_url)
 
-                    params = { "f" : "json" }
+                    params = {"f": "json"}
                     param_result = self._con.post(result_url, params, token=self._token)
 
                     job_value = param_result.get("value")
@@ -464,194 +508,197 @@ class _AsyncService(_GISService):
         else:
             raise Exception("Unable to get analysis job results.")
 
-
     def _feature_input(self, input_layer):
 
         point_fs = {
-            "layerDefinition":{
-                "currentVersion":10.11,
-                "copyrightText":"",
-               "defaultVisibility":True,
-              "relationships":[
-
-                  ],
-              "isDataVersioned":False,
-              "supportsRollbackOnFailureParameter":True,
-              "supportsStatistics":True,
-              "supportsAdvancedQueries":True,
-              "geometryType":"esriGeometryPoint",
-              "minScale":0,
-              "maxScale":0,
-              "objectIdField":"OBJECTID",
-              "templates":[
-
-                  ],
-              "type":"Feature Layer",
-              "displayField":"TITLE",
-              "visibilityField":"VISIBLE",
-              "name":"startDrawPoint",
-              "hasAttachments":False,
-              "typeIdField":"TYPEID",
-              "capabilities":"Query",
-              "allowGeometryUpdates":True,
-              "htmlPopupType":"",
-              "hasM":False,
-              "hasZ":False,
-              "globalIdField":"",
-              "supportedQueryFormats":"JSON",
-              "hasStaticData":False,
-              "maxRecordCount":-1,
-              "indexes":[
-
-                  ],
-              "types":[
-
-                  ],
-              "fields":[
-                  {
-                      "alias":"OBJECTID",
-                      "name":"OBJECTID",
-                     "type":"esriFieldTypeOID",
-                    "editable":False
+            "layerDefinition": {
+                "currentVersion": 10.11,
+                "copyrightText": "",
+                "defaultVisibility": True,
+                "relationships": [],
+                "isDataVersioned": False,
+                "supportsRollbackOnFailureParameter": True,
+                "supportsStatistics": True,
+                "supportsAdvancedQueries": True,
+                "geometryType": "esriGeometryPoint",
+                "minScale": 0,
+                "maxScale": 0,
+                "objectIdField": "OBJECTID",
+                "templates": [],
+                "type": "Feature Layer",
+                "displayField": "TITLE",
+                "visibilityField": "VISIBLE",
+                "name": "startDrawPoint",
+                "hasAttachments": False,
+                "typeIdField": "TYPEID",
+                "capabilities": "Query",
+                "allowGeometryUpdates": True,
+                "htmlPopupType": "",
+                "hasM": False,
+                "hasZ": False,
+                "globalIdField": "",
+                "supportedQueryFormats": "JSON",
+                "hasStaticData": False,
+                "maxRecordCount": -1,
+                "indexes": [],
+                "types": [],
+                "fields": [
+                    {
+                        "alias": "OBJECTID",
+                        "name": "OBJECTID",
+                        "type": "esriFieldTypeOID",
+                        "editable": False,
                     },
-                  {
-                      "alias":"Title",
-                     "name":"TITLE",
-                     "length":50,
-                    "type":"esriFieldTypeString",
-                    "editable":True
+                    {
+                        "alias": "Title",
+                        "name": "TITLE",
+                        "length": 50,
+                        "type": "esriFieldTypeString",
+                        "editable": True,
                     },
-                  {
-                     "alias":"Visible",
-                     "name":"VISIBLE",
-                     "type":"esriFieldTypeInteger",
-                    "editable":True
+                    {
+                        "alias": "Visible",
+                        "name": "VISIBLE",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True,
                     },
-                 {
-                     "alias":"Description",
-                     "name":"DESCRIPTION",
-                     "length":1073741822,
-                    "type":"esriFieldTypeString",
-                    "editable":True
+                    {
+                        "alias": "Description",
+                        "name": "DESCRIPTION",
+                        "length": 1073741822,
+                        "type": "esriFieldTypeString",
+                        "editable": True,
                     },
-                 {
-                     "alias":"Type ID",
-                     "name":"TYPEID",
-                     "type":"esriFieldTypeInteger",
-                    "editable":True
-                 }
-              ]
-              },
-            "featureSet":{
-                "features":[
-                   {
-                       "geometry":{
-                          "x":80.27032792000051,
-                         "y":13.085227147000467,
-                        "spatialReference":{
-                           "wkid": 4326,
-                           "latestWkid":4326
-                       }
-                       },
-                      "attributes":{
-                         "description":"blayer desc",
-                        "title":"blayer",
-                      "OBJECTID":0,
-                       "VISIBLE":1
-                       },
-                     "symbol":{
-                        "angle":0,
-                      "xoffset":0,
-                        "yoffset":8.15625,
-                       "type":"esriPMS",
-                       "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
-                       "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
-                       "contentType":"image/png",
-                       "width":15.75,
-                       "height":21.75
+                    {
+                        "alias": "Type ID",
+                        "name": "TYPEID",
+                        "type": "esriFieldTypeInteger",
+                        "editable": True,
+                    },
+                ],
+            },
+            "featureSet": {
+                "features": [
+                    {
+                        "geometry": {
+                            "x": 80.27032792000051,
+                            "y": 13.085227147000467,
+                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                        },
+                        "attributes": {
+                            "description": "blayer desc",
+                            "title": "blayer",
+                            "OBJECTID": 0,
+                            "VISIBLE": 1,
+                        },
+                        "symbol": {
+                            "angle": 0,
+                            "xoffset": 0,
+                            "yoffset": 8.15625,
+                            "type": "esriPMS",
+                            "url": "https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
+                            "imageData": "iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
+                            "contentType": "image/png",
+                            "width": 15.75,
+                            "height": 21.75,
+                        },
                     }
-                   }
-                   ],
-               "geometryType":"esriGeometryPoint"
-               },
-            "nextObjectId":1
+                ],
+                "geometryType": "esriGeometryPoint",
+            },
+            "nextObjectId": 1,
         }
 
         input_layer_url = ""
         if isinstance(input_layer, arcgis.gis.Item):
-            if input_layer.type.lower() == 'feature service':
+            if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
-            elif input_layer.type.lower() == 'feature collection':
+            elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
-                fc = arcgis.features.FeatureCollection(fcdict['layers'][0])
-                input_param =  fc.layer
+                fc = arcgis.features.FeatureCollection(fcdict["layers"][0])
+                input_param = fc.layer
             else:
-                raise TypeError("item type must be feature service or feature collection")
+                raise TypeError(
+                    "item type must be feature service or feature collection"
+                )
 
         elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
             input_param = input_layer.layers[0]._lyr_dict
 
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
-            input_param =  input_layer.properties
+            input_param = input_layer.properties
 
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
 
-        elif isinstance(input_layer, tuple): # geocoding location, convert to point featureset
+        elif isinstance(
+            input_layer, tuple
+        ):  # geocoding location, convert to point featureset
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
 
-        elif isinstance(input_layer, dict): # could add support for geometry one day using geometry -> featureset
-            if 'location' in input_layer: # geocoder result
-                geom = arcgis.geometry.Geometry(input_layer['location'])
+        elif isinstance(
+            input_layer, dict
+        ):  # could add support for geometry one day using geometry -> featureset
+            if "location" in input_layer:  # geocoder result
+                geom = arcgis.geometry.Geometry(input_layer["location"])
                 fset = FeatureSet([Feature(geom)])
-                featcoll = {'layerDefinition': {
-                    "geometryType": "esriGeometryPoint",
-                    "objectIdField": "OBJECTID",
-                    "fields": [
+                featcoll = {
+                    "layerDefinition": {
+                        "geometryType": "esriGeometryPoint",
+                        "objectIdField": "OBJECTID",
+                        "fields": [
                             {
                                 "alias": "OBJECTID",
                                 "name": "OBJECTID",
                                 "type": "esriFieldTypeOID",
-                                "editable": False
+                                "editable": False,
                             }
-                        ]
-                        }, 'featureSet': fset.to_dict()}
+                        ],
+                    },
+                    "featureSet": fset.to_dict(),
+                }
                 input_param = featcoll
             else:
-                input_param =  input_layer
+                input_param = input_layer
         elif isinstance(input_layer, str):
             input_layer_url = input_layer
-            input_param =  {"url": input_layer_url }
+            input_param = {"url": input_layer_url}
         else:
-            raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+            raise Exception(
+                "Invalid format of input layer. url string, feature service Item, feature service instance or dict supported"
+            )
 
         return input_param
 
     def _raster_input(self, input_raster):
         if isinstance(input_raster, arcgis.gis.Item):
-            if input_raster.type.lower() == 'image service':
-                input_param =  {"itemId": input_raster.itemid }
+            if input_raster.type.lower() == "image service":
+                input_param = {"itemId": input_raster.itemid}
             else:
                 raise TypeError("item type must be image service")
         elif isinstance(input_raster, str):
-            input_param =  {"url": input_raster }
+            input_param = {"url": input_raster}
         elif isinstance(input_raster, dict):
-            input_param =  input_raster
+            input_param = input_raster
         else:
-            raise Exception("Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported")
+            raise Exception(
+                "Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported"
+            )
 
         return input_param
+
 
 ###########################################################################
 class _FeatureAnalysisTools(BaseAnalytics):
     """FA Tools"""
+
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         self._url = url
@@ -659,7 +706,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         self._con = gis._con
         self._verbose = verbose
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _refresh(self):
         params = {"f": "json"}
         try:
@@ -667,56 +714,67 @@ class _FeatureAnalysisTools(BaseAnalytics):
         except:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the services properties"""
         if self._properties is None:
             self._refresh()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tbx(self):
         """gets the toolbox"""
         if self._gptbx is None:
-            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx = import_toolbox(
+                url_or_item=self._url, gis=self._gis, verbose=self._verbose
+            )
             self._gptbx._is_fa = True
         return self._gptbx
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._con.token)
+
     @property
     def _tools(self):
         return self.properties.tasks
-    #----------------------------------------------------------------------
-    def aggregate_points(self,
-                         point_layer,
-                         polygon_layer=None,
-                         keep_boundaries_with_no_points=True,
-                         summary_fields=None,
-                         group_by_field=None,
-                         minority_majority=False,
-                         percent_points=False,
-                         output_name=None,
-                         context=None,
-                         estimate=False,
-                         bin_type="SQUARE",
-                         bin_size=None,
-                         bin_size_unit=None,
-                         future=False):
+
+    # ----------------------------------------------------------------------
+    def aggregate_points(
+        self,
+        point_layer,
+        polygon_layer=None,
+        keep_boundaries_with_no_points=True,
+        summary_fields=None,
+        group_by_field=None,
+        minority_majority=False,
+        percent_points=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        bin_type="SQUARE",
+        bin_size=None,
+        bin_size_unit=None,
+        future=False,
+    ):
         """
         Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
 
@@ -753,12 +811,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "group_summary" : layer (FeatureCollection)
         """
 
-        task ="AggregatePoints"
+        task = "AggregatePoints"
 
-        if polygon_layer is None and \
-           bin_size is None and \
-           bin_size_unit is None:
-            raise Exception("User must provide either the `polygon_layer` or binning information to use this tool.")
+        if polygon_layer is None and bin_size is None and bin_size_unit is None:
+            raise Exception(
+                "User must provide either the `polygon_layer` or binning information to use this tool."
+            )
 
         if summary_fields is None:
             summary_fields = []
@@ -766,18 +824,18 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
@@ -786,11 +844,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["pointLayer"] = point_layer
             params["polygonLayer"] = polygon_layer
             if bin_type is not None:
-                params['binType'] = bin_type
+                params["binType"] = bin_type
             if bin_size is not None:
-                params['binSize'] = bin_size
+                params["binSize"] = bin_size
             if bin_size_unit is not None:
-                params['binSizeUnit'] = bin_size_unit
+                params["binSizeUnit"] = bin_size_unit
             if keep_boundaries_with_no_points is not None:
                 params["keepBoundariesWithNoPoints"] = keep_boundaries_with_no_points
             if summary_fields is not None:
@@ -807,81 +865,92 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["context"] = context
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.aggregate_points(point_layer=point_layer,
-                                            polygon_layer=polygon_layer,
-                                            keep_boundaries_with_no_points=keep_boundaries_with_no_points,
-                                            summary_fields=summary_fields,
-                                            group_by_field=group_by_field,
-                                            minority_majority=minority_majority,
-                                            percent_points=percent_points,
-                                            output_name=output_name,
-                                            context=context,
-                                            bin_type=bin_type,
-                                            bin_size=bin_size,
-                                            bin_size_unit=bin_size_unit,
-                                            gis=self._gis,
-                                            future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.aggregate_points(
+            point_layer=point_layer,
+            polygon_layer=polygon_layer,
+            keep_boundaries_with_no_points=keep_boundaries_with_no_points,
+            summary_fields=summary_fields,
+            group_by_field=group_by_field,
+            minority_majority=minority_majority,
+            percent_points=percent_points,
+            output_name=output_name,
+            context=context,
+            bin_type=bin_type,
+            bin_size=bin_size,
+            bin_size_unit=bin_size_unit,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
         if isinstance(ret, FeatureCollection):
             return ret
-        elif 'aggregatedLayer' in ret and output_name:
-            return ret['aggregatedLayer']
+        elif "aggregatedLayer" in ret and output_name:
+            return ret["aggregatedLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def choose_best_facilities(self,
-                               goal='Allocate',
-                               demand_locations_layer=None,
-                               demand=1,
-                               demand_field=None,
-                               max_travel_range=2147483647,
-                               max_travel_range_field=None,
-                               max_travel_range_units='Minutes',
-                               travel_mode='Driving Time',
-                               time_of_day=None,
-                               time_zone_for_time_of_day='GeoLocal',
-                               travel_direction='FacilityToDemand',
-                               required_facilities_layer=None,
-                               required_facilities_capacity=2147483647,
-                               required_facilities_capacity_field=None,
-                               candidate_facilities_layer=None,
-                               candidate_count=1,
-                               candidate_facilities_capacity=2147483647,
-                               candidate_facilities_capacity_field=None,
-                               percent_demand_coverage=100,
-                               output_name=None,
-                               context=None,
-                               estimate=False,
-                               point_barrier_layer=None,
-                               line_barrier_layer=None,
-                               polygon_barrier_layer=None,
-                               future=False):
-        task ="ChooseBestFacilities"
+
+    # ----------------------------------------------------------------------
+    def choose_best_facilities(
+        self,
+        goal="Allocate",
+        demand_locations_layer=None,
+        demand=1,
+        demand_field=None,
+        max_travel_range=2147483647,
+        max_travel_range_field=None,
+        max_travel_range_units="Minutes",
+        travel_mode="Driving Time",
+        time_of_day=None,
+        time_zone_for_time_of_day="GeoLocal",
+        travel_direction="FacilityToDemand",
+        required_facilities_layer=None,
+        required_facilities_capacity=2147483647,
+        required_facilities_capacity_field=None,
+        candidate_facilities_layer=None,
+        candidate_count=1,
+        candidate_facilities_capacity=2147483647,
+        candidate_facilities_capacity_field=None,
+        percent_demand_coverage=100,
+        output_name=None,
+        context=None,
+        estimate=False,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None,
+        future=False,
+    ):
+        task = "ChooseBestFacilities"
         if isinstance(travel_mode, str):
-            route_service = arcgis.network.RouteLayer(self._gis.properties.helperServices.route.url, gis=self._gis)
-            travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+            route_service = arcgis.network.RouteLayer(
+                self._gis.properties.helperServices.route.url, gis=self._gis
+            )
+            travel_mode = [
+                i
+                for i in route_service.retrieve_travel_modes()["supportedTravelModes"]
+                if i["name"] == travel_mode
+            ][0]
         demand_locations_layer = self._feature_input(demand_locations_layer)
         if required_facilities_layer:
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
         if point_barrier_layer:
@@ -890,7 +959,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-
 
         if estimate:
             params = {}
@@ -920,7 +988,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if required_facilities_capacity is not None:
                 params["requiredFacilitiesCapacity"] = required_facilities_capacity
             if required_facilities_capacity_field is not None:
-                params["requiredFacilitiesCapacityField"] = required_facilities_capacity_field
+                params[
+                    "requiredFacilitiesCapacityField"
+                ] = required_facilities_capacity_field
             if candidate_facilities_layer is not None:
                 params["candidateFacilitiesLayer"] = candidate_facilities_layer
             if candidate_count is not None:
@@ -928,7 +998,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if candidate_facilities_capacity is not None:
                 params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
             if candidate_facilities_capacity_field is not None:
-                params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field
+                params[
+                    "candidateFacilitiesCapacityField"
+                ] = candidate_facilities_capacity_field
             if percent_demand_coverage is not None:
                 params["percentDemandCoverage"] = percent_demand_coverage
             if output_name is not None:
@@ -942,61 +1014,65 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if polygon_barrier_layer is not None:
                 params["polygonBarrierLayer"] = polygon_barrier_layer
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
 
+            return _estimate_credits(task=task, parameters=params)
 
-        gpjob = self._tbx.choose_best_facilities(goal=goal,
-                                         demand_locations_layer=demand_locations_layer,
-                                         demand=demand,
-                                         demand_field=demand_field,
-                                         max_travel_range=max_travel_range,
-                                         max_travel_range_field=max_travel_range_field,
-                                         max_travel_range_units=max_travel_range_units,
-                                         travel_mode=travel_mode,
-                                         time_of_day=time_of_day,
-                                         time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                         travel_direction=travel_direction,
-                                         required_facilities_layer=required_facilities_layer,
-                                         required_facilities_capacity=required_facilities_capacity,
-                                         required_facilities_capacity_field=required_facilities_capacity_field,
-                                         candidate_facilities_layer=candidate_facilities_layer,
-                                         candidate_count=candidate_count,
-                                         candidate_facilities_capacity=candidate_facilities_capacity,
-                                         candidate_facilities_capacity_field=candidate_facilities_capacity_field,
-                                         percent_demand_coverage=percent_demand_coverage,
-                                         output_name=output_name,
-                                         context=context,
-                                         point_barrier_layer=point_barrier_layer,
-                                         line_barrier_layer=line_barrier_layer,
-                                         polygon_barrier_layer=polygon_barrier_layer,
-                                         gis=self._gis,
-                                         future=True)
+        gpjob = self._tbx.choose_best_facilities(
+            goal=goal,
+            demand_locations_layer=demand_locations_layer,
+            demand=demand,
+            demand_field=demand_field,
+            max_travel_range=max_travel_range,
+            max_travel_range_field=max_travel_range_field,
+            max_travel_range_units=max_travel_range_units,
+            travel_mode=travel_mode,
+            time_of_day=time_of_day,
+            time_zone_for_time_of_day=time_zone_for_time_of_day,
+            travel_direction=travel_direction,
+            required_facilities_layer=required_facilities_layer,
+            required_facilities_capacity=required_facilities_capacity,
+            required_facilities_capacity_field=required_facilities_capacity_field,
+            candidate_facilities_layer=candidate_facilities_layer,
+            candidate_count=candidate_count,
+            candidate_facilities_capacity=candidate_facilities_capacity,
+            candidate_facilities_capacity_field=candidate_facilities_capacity_field,
+            percent_demand_coverage=percent_demand_coverage,
+            output_name=output_name,
+            context=context,
+            point_barrier_layer=point_barrier_layer,
+            line_barrier_layer=line_barrier_layer,
+            polygon_barrier_layer=polygon_barrier_layer,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and 'allocatedDemandLocationsLayer' in ret:
-            return ret['allocatedDemandLocationsLayer']
+        if output_name is not None and "allocatedDemandLocationsLayer" in ret:
+            return ret["allocatedDemandLocationsLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def connect_origins_to_destinations(self,
-                                        origins_layer,
-                                        destinations_layer,
-                                        measurement_type="DrivingTime",
-                                        origins_layer_route_id_field=None,
-                                        destinations_layer_route_id_field=None,
-                                        time_of_day=None,
-                                        time_zone_for_time_of_day="GeoLocal",
-                                        output_name=None,
-                                        context=None,
-                                        estimate=False,
-                                        point_barrier_layer=None,
-                                        line_barrier_layer=None,
-                                        polygon_barrier_layer=None,
-                                        include_route_layers=False,
-                                        route_shape=None,
-                                        future=False):
+
+    # ----------------------------------------------------------------------
+    def connect_origins_to_destinations(
+        self,
+        origins_layer,
+        destinations_layer,
+        measurement_type="DrivingTime",
+        origins_layer_route_id_field=None,
+        destinations_layer_route_id_field=None,
+        time_of_day=None,
+        time_zone_for_time_of_day="GeoLocal",
+        output_name=None,
+        context=None,
+        estimate=False,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None,
+        include_route_layers=False,
+        route_shape=None,
+        future=False,
+    ):
         """
         Calculates routes between pairs of points.
 
@@ -1028,22 +1104,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "unassigned_origins_layer" : layer (FeatureCollection)
            "unassigned_destinations_layer" : layer (FeatureCollection)
         """
-        task ="ConnectOriginsToDestinations"
+        task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
         if point_barrier_layer:
@@ -1059,11 +1135,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["destinationsLayer"] = destinations_layer
             params["measurementType"] = measurement_type
             if route_shape is not None:
-                params['routeShape'] = route_shape
+                params["routeShape"] = route_shape
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
-                params["destinationsLayerRouteIDField"] = destinations_layer_route_id_field
+                params[
+                    "destinationsLayerRouteIDField"
+                ] = destinations_layer_route_id_field
             if time_of_day is not None:
                 params["timeOfDay"] = time_of_day
             if time_zone_for_time_of_day is not None:
@@ -1080,50 +1158,55 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["polygonBarrierLayer"] = polygon_barrier_layer
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                         parameters=params)
-        gpjob = self._tbx.connect_origins_to_destinations(origins_layer=origins_layer,
-                                                          destinations_layer=destinations_layer,
-                                                          measurement_type=measurement_type,
-                                                          origins_layer_route_id_field=origins_layer_route_id_field,
-                                                          destinations_layer_route_id_field=destinations_layer_route_id_field,
-                                                          time_of_day=time_of_day,
-                                                          time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                                          output_name=output_name,
-                                                          context=context,
-                                                          include_route_layers=include_route_layers,
-                                                          point_barrier_layer=point_barrier_layer,
-                                                          line_barrier_layer=line_barrier_layer,
-                                                          polygon_barrier_layer=polygon_barrier_layer,
-                                                          route_shape=route_shape,
-                                                          gis=self._gis,
-                                                          future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.connect_origins_to_destinations(
+            origins_layer=origins_layer,
+            destinations_layer=destinations_layer,
+            measurement_type=measurement_type,
+            origins_layer_route_id_field=origins_layer_route_id_field,
+            destinations_layer_route_id_field=destinations_layer_route_id_field,
+            time_of_day=time_of_day,
+            time_zone_for_time_of_day=time_zone_for_time_of_day,
+            output_name=output_name,
+            context=context,
+            include_route_layers=include_route_layers,
+            point_barrier_layer=point_barrier_layer,
+            line_barrier_layer=line_barrier_layer,
+            polygon_barrier_layer=polygon_barrier_layer,
+            route_shape=route_shape,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and 'routesLayer' in ret:
-            return ret['routesLayer']
+        if output_name is not None and "routesLayer" in ret:
+            return ret["routesLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def create_drive_time_areas(self,
-                                input_layer,
-                                break_values=[5, 10, 15],
-                                break_units="Minutes",
-                                travel_mode="Driving Time",
-                                overlap_policy="Overlap",
-                                time_of_day=None,
-                                time_zone_for_time_of_day="GeoLocal",
-                                output_name=None,
-                                context=None,
-                                estimate=False,
-                                point_barrier_layer=None,
-                                line_barrier_layer=None,
-                                polygon_barrier_layer=None,
-                                future=False,
-                                travel_direction=False,
-                                show_holes=False,
-                                include_reachable_streets=False):
+
+    # ----------------------------------------------------------------------
+    def create_drive_time_areas(
+        self,
+        input_layer,
+        break_values=[5, 10, 15],
+        break_units="Minutes",
+        travel_mode="Driving Time",
+        overlap_policy="Overlap",
+        time_of_day=None,
+        time_zone_for_time_of_day="GeoLocal",
+        output_name=None,
+        context=None,
+        estimate=False,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None,
+        future=False,
+        travel_direction=False,
+        show_holes=False,
+        include_reachable_streets=False,
+    ):
         """
 
 
@@ -1152,24 +1235,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------
         drive_time_areas_layer : layer (FeatureCollection)
         """
-        #kwargs = locals()
+        # kwargs = locals()
         params = {}
-        task ="CreateDriveTimeAreas"
+        task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
         if point_barrier_layer:
@@ -1203,56 +1286,57 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if polygon_barrier_layer is not None:
                 params["polygonBarrierLayer"] = polygon_barrier_layer
             if travel_direction is not None:
-                params['travelDirection'] = travel_direction
+                params["travelDirection"] = travel_direction
             if show_holes is not None:
-                params['showHoles'] = show_holes
+                params["showHoles"] = show_holes
             if include_reachable_streets is not None:
-                params['includeReachableStreets'] = include_reachable_streets
+                params["includeReachableStreets"] = include_reachable_streets
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
+
+            return _estimate_credits(task=task, parameters=params)
 
         params = {
-            "input_layer":input_layer,
-            "break_values":break_values,
-            "break_units":break_units,
-            "travel_mode":travel_mode,
-            "overlap_policy":overlap_policy,
-            "time_of_day":time_of_day,
-            "time_zone_for_time_of_day":time_zone_for_time_of_day,
-            "output_name":output_name,
-            "context":context,
-            "point_barrier_layer":point_barrier_layer or "",
-            "line_barrier_layer":line_barrier_layer or "",
-            "polygon_barrier_layer":polygon_barrier_layer or "",
-            "gis":self._gis,
-            "future":True,
-            "travel_direction":travel_direction,
-            "show_holes":show_holes,
-            "include_reachable_streets":include_reachable_streets
+            "input_layer": input_layer,
+            "break_values": break_values,
+            "break_units": break_units,
+            "travel_mode": travel_mode,
+            "overlap_policy": overlap_policy,
+            "time_of_day": time_of_day,
+            "time_zone_for_time_of_day": time_zone_for_time_of_day,
+            "output_name": output_name,
+            "context": context,
+            "point_barrier_layer": point_barrier_layer or "",
+            "line_barrier_layer": line_barrier_layer or "",
+            "polygon_barrier_layer": polygon_barrier_layer or "",
+            "gis": self._gis,
+            "future": True,
+            "travel_direction": travel_direction,
+            "show_holes": show_holes,
+            "include_reachable_streets": include_reachable_streets,
         }
-        params = inspect_function_inputs(fn=self._tbx.create_drive_time_areas,
-                                         **params)
-        params['future'] = True
-        params.pop('estimate', None)
+        params = inspect_function_inputs(fn=self._tbx.create_drive_time_areas, **params)
+        params["future"] = True
+        params.pop("estimate", None)
         gpjob = self._tbx.create_drive_time_areas(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and \
-           'driveTimeAreasLayer' in ret:
-            return ret['driveTimeAreasLayer']
+        if output_name is not None and "driveTimeAreasLayer" in ret:
+            return ret["driveTimeAreasLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def create_route_layers(self,
-                            route_data_item,
-                            delete_route_data_item=False,
-                            output_name=None,
-                            estimate=False,
-                            context=None,
-                            future=False):
+
+    # ----------------------------------------------------------------------
+    def create_route_layers(
+        self,
+        route_data_item,
+        delete_route_data_item=False,
+        output_name=None,
+        estimate=False,
+        context=None,
+        future=False,
+    ):
         """
 
 
@@ -1271,68 +1355,77 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
         if estimate:
             params = {}
             if context:
-                params['context'] = context
+                params["context"] = context
             params["routeData"] = route_data_item
             params["deleteRouteData"] = delete_route_data_item
             params["outputName"] = output_name
             from arcgis.features._credits import _estimate_credits
-            task ="CreateRouteLayers"
-            return _estimate_credits(task=task,
-                                     parameters=params)
 
-        gpjob = self._tbx.create_route_layers(route_data=route_data_item, delete_route_data=delete_route_data_item,
-                                              output_name=output_name, context=context, gis=self._gis, future=True)
+            task = "CreateRouteLayers"
+            return _estimate_credits(task=task, parameters=params)
+
+        gpjob = self._tbx.create_route_layers(
+            route_data=route_data_item,
+            delete_route_data=delete_route_data_item,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
-        #"routeLayers"
+        # "routeLayers"
         ret = gpjob.result()
         return ret
-    #----------------------------------------------------------------------
-    def create_buffers(self,
-                       input_layer,
-                       distances=[],
-                       field=None,
-                       units="Meters",
-                       dissolve_type="None",
-                       ring_type="Disks",
-                       side_type="Full",
-                       end_type="Round",
-                       output_name=None,
-                       context=None,
-                       estimate=False,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def create_buffers(
+        self,
+        input_layer,
+        distances=[],
+        field=None,
+        units="Meters",
+        dissolve_type="None",
+        ring_type="Disks",
+        side_type="Full",
+        end_type="Round",
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         Creates buffer polygon(s) around input features.
 
@@ -1364,21 +1457,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         buffer_layer : layer (FeatureCollection)
         """
 
-        task ="CreateBuffers"
+        task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
 
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
         if estimate:
@@ -1404,38 +1497,48 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.create_buffers(input_layer=input_layer,
-                                         distances=distances, field=field,
-                                         units=units, dissolve_type=dissolve_type,
-                                         ring_type=ring_type, side_type=side_type,
-                                         end_type=end_type, output_name=output_name,
-                                         context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.create_buffers(
+            input_layer=input_layer,
+            distances=distances,
+            field=field,
+            units=units,
+            dissolve_type=dissolve_type,
+            ring_type=ring_type,
+            side_type=side_type,
+            end_type=end_type,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and \
-           'bufferLayer' in ret:
-            return ret['bufferLayer']
+        if output_name is not None and "bufferLayer" in ret:
+            return ret["bufferLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def calculate_density(self,
-                          input_layer,
-                          field=None,
-                          cell_size=None,
-                          cell_size_units="Meters",
-                          radius=None,
-                          radius_units=None,
-                          bounding_polygon_layer=None,
-                          area_units=None,
-                          classification_type="EqualInterval",
-                          num_classes=10,
-                          output_name=None,
-                          context=None,
-                          estimate=False,
-                          future=False):
+
+    # ----------------------------------------------------------------------
+    def calculate_density(
+        self,
+        input_layer,
+        field=None,
+        cell_size=None,
+        cell_size_units="Meters",
+        radius=None,
+        radius_units=None,
+        bounding_polygon_layer=None,
+        area_units=None,
+        classification_type="EqualInterval",
+        num_classes=10,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Calculate Density task creates a density map from point or line features by spreading known quantities of some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas classified from least dense to most dense.
 
@@ -1473,15 +1576,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
         result_layer : layer (FeatureCollection)
         """
 
-        task ="CalculateDensity"
+        task = "CalculateDensity"
 
         params = {}
         if output_name is not None and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1508,21 +1610,30 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.calculate_density(input_layer=input_layer, field=field, cell_size=cell_size,
-                                            cell_size_units=cell_size_units, radius=radius,
-                                            radius_units=radius_units, bounding_polygon_layer=bounding_polygon_layer,
-                                            area_units=area_units, classification_type=classification_type,
-                                            num_classes=num_classes,
-                                            output_name=output_name, context=context,
-                                            gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.calculate_density(
+            input_layer=input_layer,
+            field=field,
+            cell_size=cell_size,
+            cell_size_units=cell_size_units,
+            radius=radius,
+            radius_units=radius_units,
+            bounding_polygon_layer=bounding_polygon_layer,
+            area_units=area_units,
+            classification_type=classification_type,
+            num_classes=num_classes,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and 'resultLayer' in ret:
-            return ret['resultLayer']
+        if output_name is not None and "resultLayer" in ret:
+            return ret["resultLayer"]
         elif isinstance(ret, FeatureCollection):
             return ret
         elif isinstance(ret, Item):
@@ -1533,21 +1644,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 res[fld] = getattr(ret, fld)
             return res
         return ret
-    #----------------------------------------------------------------------
-    def create_viewshed(self,
-                        input_layer,
-                        dem_resolution="Finest",
-                        maximum_distance=None,
-                        max_distance_units="Meters",
-                        observer_height=None,
-                        observer_height_units="Meters",
-                        target_height=None,
-                        target_height_units="Meters",
-                        generalize=True,
-                        output_name=None,
-                        context=None,
-                        estimate=False,
-                        future=False):
+
+    # ----------------------------------------------------------------------
+    def create_viewshed(
+        self,
+        input_layer,
+        dem_resolution="Finest",
+        maximum_distance=None,
+        max_distance_units="Meters",
+        observer_height=None,
+        observer_height_units="Meters",
+        target_height=None,
+        target_height_units="Meters",
+        generalize=True,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
 
 
@@ -1581,20 +1695,20 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------
         viewshed_layer : layer (FeatureCollection)
         """
-        task ="CreateViewshed"
+        task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
@@ -1624,41 +1738,46 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["context"] = context
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
 
-        gpjob = self._tbx.create_viewshed(input_layer=input_layer,
-                                          dem_resolution=dem_resolution,
-                                          maximum_distance=maximum_distance,
-                                          max_distance_units=max_distance_units,
-                                          observer_height=observer_height,
-                                          observer_height_units=observer_height_units,
-                                          target_height=target_height,
-                                          target_height_units=target_height_units,
-                                          generalize=generalize,
-                                          output_name=output_name,
-                                          context=context,
-                                          gis=self._gis,
-                                          future=True)
+            return _estimate_credits(task=task, parameters=params)
+
+        gpjob = self._tbx.create_viewshed(
+            input_layer=input_layer,
+            dem_resolution=dem_resolution,
+            maximum_distance=maximum_distance,
+            max_distance_units=max_distance_units,
+            observer_height=observer_height,
+            observer_height_units=observer_height_units,
+            target_height=target_height,
+            target_height_units=target_height_units,
+            generalize=generalize,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
 
         ret = gpjob.result()
-        if output_name is not None and 'viewshedLayer' in ret:
-            return ret['viewshedLayer']
+        if output_name is not None and "viewshedLayer" in ret:
+            return ret["viewshedLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def create_watersheds(self,
-                          input_layer,
-                          search_distance=None,
-                          search_units="Meters",
-                          source_database="FINEST",
-                          generalize=True,
-                          output_name=None,
-                          context=None,
-                          estimate=False,
-                          future=False):
+
+    # ----------------------------------------------------------------------
+    def create_watersheds(
+        self,
+        input_layer,
+        search_distance=None,
+        search_units="Meters",
+        source_database="FINEST",
+        generalize=True,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
 
 
@@ -1685,26 +1804,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "snap_pour_pts_layer" : layer (FeatureCollection)
            "watershed_layer" : layer (FeatureCollection)
         """
-        task ="CreateWatersheds"
+        task = "CreateWatersheds"
 
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1721,27 +1838,37 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.create_watersheds(input_layer=input_layer, search_distance=search_distance,
-                                            search_units=search_units, source_database=source_database,
-                                            generalize=generalize, output_name=output_name,
-                                            context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.create_watersheds(
+            input_layer=input_layer,
+            search_distance=search_distance,
+            search_units=search_units,
+            source_database=source_database,
+            generalize=generalize,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name is not None and 'snapPourPtsLayer' in ret:
-            return ret['snapPourPtsLayer']
+        if output_name is not None and "snapPourPtsLayer" in ret:
+            return ret["snapPourPtsLayer"]
         return ret
-    #----------------------------------------------------------------------
-    def derive_new_locations(self,
-                             input_layers=[],
-                             expressions=[],
-                             output_name=None,
-                             context=None,
-                             estimate=False,
-                             future=False):
+
+    # ----------------------------------------------------------------------
+    def derive_new_locations(
+        self,
+        input_layers=[],
+        expressions=[],
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features.In both tasks, the attribute expression  where and the spatial relationships within and contains return the same result. This is because these relationships return entire features.When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
 
@@ -1764,7 +1891,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         result_layer : layer (FeatureCollection)
         """
 
-        task ="DeriveNewLocations"
+        task = "DeriveNewLocations"
 
         params = {}
 
@@ -1772,20 +1899,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if estimate:
             params["inputLayers"] = input_layers_param
@@ -1796,25 +1922,33 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["context"] = context
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.derive_new_locations(input_layers=input_layers_param,
-                                               expressions=expressions, output_name=output_name,
-                                               context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.derive_new_locations(
+            input_layers=input_layers_param,
+            expressions=expressions,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def dissolve_boundaries(self,
-                            input_layer,
-                            dissolve_fields=[],
-                            summary_fields=[],
-                            output_name=None,
-                            context=None,
-                            estimate=False,
-                            multi_part_features=True,
-                            future=False):
+
+    # ----------------------------------------------------------------------
+    def dissolve_boundaries(
+        self,
+        input_layer,
+        dissolve_fields=[],
+        summary_fields=[],
+        output_name=None,
+        context=None,
+        estimate=False,
+        multi_part_features=True,
+        future=False,
+    ):
         """
         Dissolve features based on specified fields.
 
@@ -1837,25 +1971,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
         dissolved_layer : layer (FeatureCollection)
         """
 
-
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
         if estimate:
-            task ="DissolveBoundaries"
+            task = "DissolveBoundaries"
 
             params = {}
 
@@ -1868,37 +2001,43 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
-            if  multi_part_features:
+            if multi_part_features:
                 params["multiPartFeatures"] = multi_part_features
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.dissolve_boundaries(input_layer=input_layer,
-                                              dissolve_fields=dissolve_fields,
-                                              summary_fields=summary_fields,
-                                              multi_part_features=multi_part_features,
-                                              output_name=output_name,
-                                              context=context,
-                                              gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.dissolve_boundaries(
+            input_layer=input_layer,
+            dissolve_fields=dissolve_fields,
+            summary_fields=summary_fields,
+            multi_part_features=multi_part_features,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def enrich_layer(self,
-                     input_layer,
-                     data_collections=[],
-                     analysis_variables=[],
-                     country=None,
-                     buffer_type=None,
-                     distance=None,
-                     units=None,
-                     output_name=None,
-                     context=None,
-                     estimate=False,
-                     return_boundaries=False,
-                     future=False):
+
+    # ----------------------------------------------------------------------
+    def enrich_layer(
+        self,
+        input_layer,
+        data_collections=[],
+        analysis_variables=[],
+        country=None,
+        buffer_type=None,
+        distance=None,
+        units=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        return_boundaries=False,
+        future=False,
+    ):
         """
         The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
@@ -1930,27 +2069,25 @@ class _FeatureAnalysisTools(BaseAnalytics):
         enriched_layer : layer (FeatureCollection)
         """
 
-        task ="EnrichLayer"
+        task = "EnrichLayer"
 
         params = {}
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1974,28 +2111,39 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["returnBoundaries"] = return_boundaries
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.enrich_layer(input_layer=input_layer, data_collections=data_collections,
-                                       analysis_variables=analysis_variables,
-                                       country=country, buffer_type=buffer_type,
-                                       distance=distance, units=units, return_boundaries=return_boundaries,
-                                       output_name=output_name, context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.enrich_layer(
+            input_layer=input_layer,
+            data_collections=data_collections,
+            analysis_variables=analysis_variables,
+            country=country,
+            buffer_type=buffer_type,
+            distance=distance,
+            units=units,
+            return_boundaries=return_boundaries,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
 
-    #----------------------------------------------------------------------
-    def extract_data(self,
-                     input_layers=[],
-                     extent=None,
-                     clip=False,
-                     data_format=None,
-                     output_name=None,
-                     context=None,
-                     estimate=False,
-                     future=False):
+    # ----------------------------------------------------------------------
+    def extract_data(
+        self,
+        input_layers=[],
+        extent=None,
+        clip=False,
+        data_format=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
 
@@ -2021,7 +2169,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         an item in the GIS
         """
 
-        task ="ExtractData"
+        task = "ExtractData"
 
         params = {}
 
@@ -2038,45 +2186,60 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if data_format is not None:
             params["dataFormat"] = data_format
         if output_name is None:
-            output_name = 'Extracted_data_' + _id_generator()
+            output_name = "Extracted_data_" + _id_generator()
 
-        if data_format.upper() == 'SHAPEFILE':
+        if data_format.upper() == "SHAPEFILE":
             if isinstance(output_name, dict):
                 params["outputName"] = {"itemProperties": output_name}
             else:
-                params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
-                                                           "tags": "Analysis Results, Extract Data",
-                                                           "snippet": "Analysis file item generated from running the Extract Data tool.",
-                                                           "folderId": ""}}
-            output_name = params['outputName']
-        elif isinstance(output_name, dict) and 'title' in output_name:
+                params["outputName"] = {
+                    "itemProperties": {
+                        "title": output_name,
+                        "description": "File generated from running the Extract Data tool.",
+                        "tags": "Analysis Results, Extract Data",
+                        "snippet": "Analysis file item generated from running the Extract Data tool.",
+                        "folderId": "",
+                    }
+                }
+            output_name = params["outputName"]
+        elif isinstance(output_name, dict) and "title" in output_name:
             params["outputName"] = {"itemProperties": output_name}
-            output_name = params['outputName']
+            output_name = params["outputName"]
         else:
-            params["outputName"] = {"serviceProperties": {"name": output_name }}
-            output_name = params['outputName']
+            params["outputName"] = {"serviceProperties": {"name": output_name}}
+            output_name = params["outputName"]
         if context is not None:
             params["context"] = context
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.extract_data(input_layers=input_layers_param, extent=extent, clip=clip,
-                                       data_format=data_format,
-                                       output_name=output_name, context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.extract_data(
+            input_layers=input_layers_param,
+            extent=extent,
+            clip=clip,
+            data_format=data_format,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def field_calculator(self,
-                         input_layer,
-                         expressions,
-                         output_name=None,
-                         context=None,
-                         estimate=False,
-                         future=True):
+
+    # ----------------------------------------------------------------------
+    def field_calculator(
+        self,
+        input_layer,
+        expressions,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=True,
+    ):
         """
         Calculates existing fields or creates and calculates new fields.
 
@@ -2097,26 +2260,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
         result_layer : layer (FeatureCollection)
         """
 
-        task ="FieldCalculator"
+        task = "FieldCalculator"
 
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -2126,25 +2287,31 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.field_calculator(input_layer=input_layer,
-                                           expressions=expressions,
-                                           output_name=output_name,
-                                           context=context,
-                                           gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.field_calculator(
+            input_layer=input_layer,
+            expressions=expressions,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def find_centroids(self,
-                       input_layer,
-                       point_location=False,
-                       output_name=None,
-                       context=None,
-                       estimate=False,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def find_centroids(
+        self,
+        input_layer,
+        point_location=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
 
@@ -2178,52 +2345,62 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
-
-
         if estimate:
             params["inputLayer"] = input_layer
-            params['pointLocation'] = point_location
+            params["pointLocation"] = point_location
             if output_name is not None:
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
+
+            return _estimate_credits(task=task, parameters=params)
         if context is None:
-            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
-                                             output_name=output_name, gis=self._gis, future=True)
+            gpjob = self._tbx.find_centroids(
+                input_layer=input_layer,
+                point_location=point_location,
+                output_name=output_name,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
-                                             output_name=output_name, context=context, gis=self._gis,
-                                             future=True)
+            gpjob = self._tbx.find_centroids(
+                input_layer=input_layer,
+                point_location=point_location,
+                output_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
 
-    #----------------------------------------------------------------------
-    def find_existing_locations(self,
-                                input_layers=None,
-                                expressions=None,
-                                output_name=None,
-                                context=None,
-                                estimate=False,
-                                future=False):
+    # ----------------------------------------------------------------------
+    def find_existing_locations(
+        self,
+        input_layers=None,
+        expressions=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Find Existing Locations task selects features in the input layer that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
@@ -2249,30 +2426,28 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if expressions is None:
             expressions = []
 
-
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
-
-
         if estimate:
             from arcgis.features._credits import _estimate_credits
-            task ="FindExistingLocations"
+
+            task = "FindExistingLocations"
             params = {}
             params["inputLayers"] = input_layers_param
             params["expressions"] = expressions
@@ -2280,31 +2455,38 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_existing_locations(input_layers=input_layers_param, expressions=expressions,
-                                                  output_name=output_name, context=context,
-                                                  gis=self._gis, future=True)
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_existing_locations(
+            input_layers=input_layers_param,
+            expressions=expressions,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def find_hot_spots(self,
-                       analysis_layer,
-                       analysis_field=None,
-                       divided_by_field=None,
-                       bounding_polygon_layer=None,
-                       aggregation_polygon_layer=None,
-                       output_name=None,
-                       context=None,
-                       estimate=False,
-                       shape_type=None,
-                       cell_size=None,
-                       cell_size_unit=None,
-                       distance_band=None,
-                       distance_band_units=None,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def find_hot_spots(
+        self,
+        analysis_layer,
+        analysis_field=None,
+        divided_by_field=None,
+        bounding_polygon_layer=None,
+        aggregation_polygon_layer=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        shape_type=None,
+        cell_size=None,
+        cell_size_unit=None,
+        distance_band=None,
+        distance_band_units=None,
+        future=False,
+    ):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -2344,24 +2526,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
-        task ="FindHotSpots"
-
-
-
+        task = "FindHotSpots"
 
         if estimate:
             params = {}
@@ -2390,42 +2569,52 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if distance_band_units is not None:
                 params["distanceBandUnits"] = distance_band_units
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_hot_spots(analysis_layer=analysis_layer, analysis_field=analysis_field,
-                                         divided_by_field=divided_by_field,
-                                         bounding_polygon_layer=bounding_polygon_layer,
-                                         aggregation_polygon_layer=aggregation_polygon_layer,
-                                         shape_type=shape_type,
-                                         cell_size=cell_size, cell_size_units=cell_size_unit,
-                                         distance_band=distance_band, distance_band_units=distance_band_units,
-                                         output_name=output_name, context=context,
-                                         gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_hot_spots(
+            analysis_layer=analysis_layer,
+            analysis_field=analysis_field,
+            divided_by_field=divided_by_field,
+            bounding_polygon_layer=bounding_polygon_layer,
+            aggregation_polygon_layer=aggregation_polygon_layer,
+            shape_type=shape_type,
+            cell_size=cell_size,
+            cell_size_units=cell_size_unit,
+            distance_band=distance_band,
+            distance_band_units=distance_band_units,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         result = gpjob.result()
-        if 'hot_spots_result_layer' in result and output_name:
-            return result['hot_spots_result_layer']
+        if "hot_spots_result_layer" in result and output_name:
+            return result["hot_spots_result_layer"]
         return result
-    #----------------------------------------------------------------------
-    def find_nearest(self,
-                     analysis_layer,
-                     near_layer,
-                     measurement_type="StraightLine",
-                     max_count=100,
-                     search_cutoff=2147483647,
-                     search_cutoff_units=None,
-                     time_of_day=None,
-                     time_zone_for_time_of_day="GeoLocal",
-                     output_name=None,
-                     context=None,
-                     estimate=False,
-                     include_route_layers=None,
-                     point_barrier_layer=None,
-                     line_barrier_layer=None,
-                     polygon_barrier_layer=None,
-                     future=False):
+
+    # ----------------------------------------------------------------------
+    def find_nearest(
+        self,
+        analysis_layer,
+        near_layer,
+        measurement_type="StraightLine",
+        max_count=100,
+        search_cutoff=2147483647,
+        search_cutoff_units=None,
+        time_of_day=None,
+        time_zone_for_time_of_day="GeoLocal",
+        output_name=None,
+        context=None,
+        estimate=False,
+        include_route_layers=None,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None,
+        future=False,
+    ):
         """
         Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
 
@@ -2459,13 +2648,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "connecting_lines_layer" : layer (FeatureCollection)
         """
 
-        task ="FindNearest"
+        task = "FindNearest"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         near_layer = self._feature_input(near_layer)
-        params["analysisLayer"] = analysis_layer#self._feature_input(analysis_layer)
-        params["nearLayer"] = near_layer#self._feature_input(near_layer)
+        params["analysisLayer"] = analysis_layer  # self._feature_input(analysis_layer)
+        params["nearLayer"] = near_layer  # self._feature_input(near_layer)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -2473,21 +2662,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["measurementType"] = measurement_type
@@ -2514,39 +2701,50 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if polygon_barrier_layer is not None:
                 params["polygonBarrierLayer"] = polygon_barrier_layer
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_nearest(analysis_layer=analysis_layer, near_layer=near_layer,
-                                       measurement_type=measurement_type, max_count=max_count,
-                                       search_cutoff=search_cutoff, search_cutoff_units=search_cutoff_units,
-                                       time_of_day=time_of_day, time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                       output_name=output_name, context=context,
-                                       include_route_layers=include_route_layers,
-                                       point_barrier_layer=point_barrier_layer,
-                                       line_barrier_layer=line_barrier_layer,
-                                       polygon_barrier_layer=polygon_barrier_layer,
-                                       gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_nearest(
+            analysis_layer=analysis_layer,
+            near_layer=near_layer,
+            measurement_type=measurement_type,
+            max_count=max_count,
+            search_cutoff=search_cutoff,
+            search_cutoff_units=search_cutoff_units,
+            time_of_day=time_of_day,
+            time_zone_for_time_of_day=time_zone_for_time_of_day,
+            output_name=output_name,
+            context=context,
+            include_route_layers=include_route_layers,
+            point_barrier_layer=point_barrier_layer,
+            line_barrier_layer=line_barrier_layer,
+            polygon_barrier_layer=polygon_barrier_layer,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def find_outliers(self,
-                      analysis_layer,
-                      analysis_field=None,
-                      divided_by_field=None,
-                      bounding_polygon_layer=None,
-                      aggregation_polygon_layer=None,
-                      permutations=None,
-                      shape_type=None,
-                      cell_size=None,
-                      cell_units=None,
-                      distance_band=None,
-                      distance_band_units=None,
-                      output_name=None,
-                      context=None,
-                      estimate=False,
-                      future=False):
+
+    # ----------------------------------------------------------------------
+    def find_outliers(
+        self,
+        analysis_layer,
+        analysis_field=None,
+        divided_by_field=None,
+        bounding_polygon_layer=None,
+        aggregation_polygon_layer=None,
+        permutations=None,
+        shape_type=None,
+        cell_size=None,
+        cell_units=None,
+        distance_band=None,
+        distance_band_units=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
 
@@ -2593,7 +2791,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         """
 
-        task ="FindOutliers"
+        task = "FindOutliers"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
@@ -2602,21 +2800,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -2631,43 +2827,56 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if output_name is not None:
                 params["outputName"] = output_name
             if permutations is not None:
-                params['permutations'] = permutations
+                params["permutations"] = permutations
             if shape_type:
-                params['shapeType'] = shape_type
+                params["shapeType"] = shape_type
             if cell_size:
-                params['cellSize'] = cell_size
+                params["cellSize"] = cell_size
             if cell_units:
-                params['cellSizeUnits'] = cell_units
+                params["cellSizeUnits"] = cell_units
             if distance_band:
-                params['distanceBand'] = distance_band
+                params["distanceBand"] = distance_band
             if distance_band_units:
-                params['distanceBandUnits'] = distance_band_units
+                params["distanceBandUnits"] = distance_band_units
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_outliers(analysis_layer=analysis_layer, analysis_field=analysis_field,
-                                        divided_by_field=divided_by_field, bounding_polygon_layer=bounding_polygon_layer,
-                                        aggregation_polygon_layer=aggregation_polygon_layer, permutations=permutations,
-                                        shape_type=shape_type, cell_size=cell_size, cell_size_units=cell_units,
-                                        distance_band=distance_band, distance_band_units=distance_band_units,
-                                        output_name=output_name, context=context, gis=self._gis,
-                                        future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_outliers(
+            analysis_layer=analysis_layer,
+            analysis_field=analysis_field,
+            divided_by_field=divided_by_field,
+            bounding_polygon_layer=bounding_polygon_layer,
+            aggregation_polygon_layer=aggregation_polygon_layer,
+            permutations=permutations,
+            shape_type=shape_type,
+            cell_size=cell_size,
+            cell_size_units=cell_units,
+            distance_band=distance_band,
+            distance_band_units=distance_band_units,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def find_point_clusters(self,
-                            analysis_layer,
-                            min_features_cluster,
-                            search_distance=None,
-                            search_distance_unit=None,
-                            output_name=None,
-                            context=None,
-                            estimate=False,
-                            future=False):
+
+    # ----------------------------------------------------------------------
+    def find_point_clusters(
+        self,
+        analysis_layer,
+        min_features_cluster,
+        search_distance=None,
+        search_distance_unit=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Find Point Clusters task finds clusters of point features in surrounding
         noise based on their spatial distribution. Output is a layer containing records
@@ -2709,25 +2918,24 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "process_info" : list of messages
         """
 
-        task ="FindPointClusters"
+        task = "FindPointClusters"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -2741,30 +2949,36 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_point_clusters(analysis_layer=analysis_layer,
-                                              min_features_cluster=min_features_cluster,
-                                              search_distance=search_distance,
-                                              search_distance_unit=search_distance_unit,
-                                              output_name=output_name,
-                                              context=context, gis=self._gis,
-                                              future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_point_clusters(
+            analysis_layer=analysis_layer,
+            min_features_cluster=min_features_cluster,
+            search_distance=search_distance,
+            search_distance_unit=search_distance_unit,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def find_similar_locations(self,
-                               input_layer,
-                               search_layer,
-                               analysis_fields=[],
-                               input_query=None,
-                               number_of_results=0,
-                               output_name=None,
-                               context=None,
-                               estimate=False,
-                               future=False):
+
+    # ----------------------------------------------------------------------
+    def find_similar_locations(
+        self,
+        input_layer,
+        search_layer,
+        analysis_fields=[],
+        input_query=None,
+        number_of_results=0,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
 
 
@@ -2792,21 +3006,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "process_info" : layer (FeatureCollection)
         """
 
-        task ="FindSimilarLocations"
+        task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
@@ -2824,28 +3038,37 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.find_similar_locations(input_layer=input_layer, search_layer=search_layer,
-                                                 analysis_fields=analysis_fields, input_query=input_query,
-                                                 number_of_results=number_of_results,
-                                                 output_name=output_name,
-                                                 context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.find_similar_locations(
+            input_layer=input_layer,
+            search_layer=search_layer,
+            analysis_fields=analysis_fields,
+            input_query=input_query,
+            number_of_results=number_of_results,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def generate_tesselation(self,
-                             extent_layer,
-                             bin_size,
-                             bin_size_unit="SquareKilimeters",
-                             bin_type="SQUARE",
-                             intersect_study_area=False,
-                             output_name=None,
-                             context=None,
-                             estimate=False,
-                             future=False):
+
+    # ----------------------------------------------------------------------
+    def generate_tesselation(
+        self,
+        extent_layer,
+        bin_size,
+        bin_size_unit="SquareKilimeters",
+        bin_type="SQUARE",
+        intersect_study_area=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         Generates a tessellated grid of regular polygons.
 
@@ -2880,27 +3103,27 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
         if estimate:
-            task ="GenerateTessellations"
+            task = "GenerateTessellations"
             params = {}
             if bin_type:
                 params["binType"] = bin_type
             if bin_size:
-                params['binSize'] = bin_size
+                params["binSize"] = bin_size
             if bin_size_unit:
                 params["binSizeUnit"] = bin_size_unit
             if extent_layer:
@@ -2911,34 +3134,41 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.generate_tessellations(bin_type=bin_type,
-                                                 bin_size=bin_size,
-                                                 bin_size_unit=bin_size_unit,
-                                                 extent_layer=extent_layer,
-                                                 intersect_study_area=intersect_study_area,
-                                                 output_name=output_name,
-                                                 context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.generate_tessellations(
+            bin_type=bin_type,
+            bin_size=bin_size,
+            bin_size_unit=bin_size_unit,
+            extent_layer=extent_layer,
+            intersect_study_area=intersect_study_area,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def interpolate_points(self,
-                           input_layer,
-                           field,
-                           interpolate_option="5",
-                           output_prediction_error=False,
-                           classification_type="GeometricInterval",
-                           num_classes=10,
-                           class_breaks=[],
-                           bounding_polygon_layer=None,
-                           predict_at_point_layer=None,
-                           output_name=None,
-                           context=None,
-                           estimate=False,
-                           future=False):
+
+    # ----------------------------------------------------------------------
+    def interpolate_points(
+        self,
+        input_layer,
+        field,
+        interpolate_option="5",
+        output_prediction_error=False,
+        classification_type="GeometricInterval",
+        num_classes=10,
+        class_breaks=[],
+        bounding_polygon_layer=None,
+        predict_at_point_layer=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
 
@@ -2977,7 +3207,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "predicted_point_layer" : layer (FeatureCollection)
         """
 
-        task ="InterpolatePoints"
+        task = "InterpolatePoints"
 
         params = {}
         input_layer = self._feature_input(input_layer)
@@ -2986,21 +3216,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -3024,60 +3252,67 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.interpolate_points(input_layer=input_layer, field=field,
-                                             interpolate_option=interpolate_option,
-                                             output_prediction_error=output_prediction_error,
-                                             classification_type=classification_type,
-                                             num_classes=num_classes,
-                                             class_breaks=class_breaks,
-                                             bounding_polygon_layer=bounding_polygon_layer,
-                                             predict_at_point_layer=predict_at_point_layer,
-                                             output_name=output_name,
-                                             context=context, gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.interpolate_points(
+            input_layer=input_layer,
+            field=field,
+            interpolate_option=interpolate_option,
+            output_prediction_error=output_prediction_error,
+            classification_type=classification_type,
+            num_classes=num_classes,
+            class_breaks=class_breaks,
+            bounding_polygon_layer=bounding_polygon_layer,
+            predict_at_point_layer=predict_at_point_layer,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def join_features(self,
-                      target_layer,
-                      join_layer,
-                      spatial_relationship=None,
-                      spatial_relationship_distance=None,
-                      spatial_relationship_distance_units=None,
-                      attribute_relationship=None,
-                      join_operation="JoinOneToOne",
-                      summary_fields=None,
-                      output_name=None,
-                      context=None,
-                      estimate=False,
-                      records_to_match=None,
-                      future=False,
-                      join_type=None):
+
+    # ----------------------------------------------------------------------
+    def join_features(
+        self,
+        target_layer,
+        join_layer,
+        spatial_relationship=None,
+        spatial_relationship_distance=None,
+        spatial_relationship_distance_units=None,
+        attribute_relationship=None,
+        join_operation="JoinOneToOne",
+        summary_fields=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        records_to_match=None,
+        future=False,
+        join_type=None,
+    ):
         """
         Join Features Tool
         """
-        task ="JoinFeatures"
+        task = "JoinFeatures"
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if estimate:
             params["targetLayer"] = target_layer
@@ -3087,7 +3322,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if spatial_relationship_distance is not None:
                 params["spatialRelationshipDistance"] = spatial_relationship_distance
             if spatial_relationship_distance_units is not None:
-                params["spatialRelationshipDistanceUnits"] = spatial_relationship_distance_units
+                params[
+                    "spatialRelationshipDistanceUnits"
+                ] = spatial_relationship_distance_units
             if attribute_relationship is not None:
                 params["attributeRelationship"] = attribute_relationship
             if summary_fields is not None:
@@ -3099,41 +3336,44 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             if join_type:
-                params['join_type'] = join_type
+                params["join_type"] = join_type
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
+
+            return _estimate_credits(task=task, parameters=params)
         params = {
-            "target_layer" : target_layer,
-            "join_layer" : join_layer,
-            "spatial_relationship" : spatial_relationship,
-            "spatial_relationship_distance" : spatial_relationship_distance,
-            "spatial_relationship_distance_units" : spatial_relationship_distance_units,
-            "attribute_relationship" : attribute_relationship,
-            "join_operation" : join_operation,
-            "summary_fields" : summary_fields,
-            "output_name" : output_name,
-            "context" : context,
-            "records_to_match" : records_to_match,
-            "future" : future,
-            "join_type" : join_type
+            "target_layer": target_layer,
+            "join_layer": join_layer,
+            "spatial_relationship": spatial_relationship,
+            "spatial_relationship_distance": spatial_relationship_distance,
+            "spatial_relationship_distance_units": spatial_relationship_distance_units,
+            "attribute_relationship": attribute_relationship,
+            "join_operation": join_operation,
+            "summary_fields": summary_fields,
+            "output_name": output_name,
+            "context": context,
+            "records_to_match": records_to_match,
+            "future": future,
+            "join_type": join_type,
         }
         params = _inspect_function_inputs(self._tbx.join_features, **params)
-        params['future'] = True
+        params["future"] = True
         gpjob = self._tbx.join_features(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def merge_layers(self,
-                     input_layer,
-                     merge_layer,
-                     merging_attributes=[],
-                     output_name=None,
-                     context=None,
-                     estimate=False,
-                     future=False):
+
+    # ----------------------------------------------------------------------
+    def merge_layers(
+        self,
+        input_layer,
+        merge_layer,
+        merging_attributes=[],
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         Combines two inputs of the same feature data type into a new output.
 
@@ -3157,27 +3397,25 @@ class _FeatureAnalysisTools(BaseAnalytics):
         merged_layer : layer (FeatureCollection)
         """
 
-        task ="MergeLayers"
-
+        task = "MergeLayers"
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if estimate:
             params = {}
@@ -3191,28 +3429,36 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["context"] = context
 
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.merge_layers(input_layer=input_layer, merge_layer=merge_layer,
-                                       merging_attributes=merging_attributes,
-                                       output_name=output_name, context=context,
-                                       gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.merge_layers(
+            input_layer=input_layer,
+            merge_layer=merge_layer,
+            merging_attributes=merging_attributes,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def overlay_layers(self,
-                       input_layer,
-                       overlay_layer,
-                       overlay_type="Intersect",
-                       snap_to_input=False,
-                       output_type="Input",
-                       tolerance=None,
-                       output_name=None,
-                       context=None,
-                       estimate=False,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def overlay_layers(
+        self,
+        input_layer,
+        overlay_layer,
+        overlay_type="Intersect",
+        snap_to_input=False,
+        output_type="Input",
+        tolerance=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
 
@@ -3240,23 +3486,23 @@ class _FeatureAnalysisTools(BaseAnalytics):
         output_layer : layer (FeatureCollection)
         """
 
-        task ="OverlayLayers"
+        task = "OverlayLayers"
 
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
@@ -3276,39 +3522,49 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.overlay_layers(input_layer=input_layer, overlay_layer=overlay_layer,
-                                         overlay_type=overlay_type, snap_to_input=snap_to_input,
-                                         output_type=output_type, tolerance=tolerance,
-                                         output_name=output_name, context=context,
-                                         gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.overlay_layers(
+            input_layer=input_layer,
+            overlay_layer=overlay_layer,
+            overlay_type=overlay_type,
+            snap_to_input=snap_to_input,
+            output_type=output_type,
+            tolerance=tolerance,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def plan_routes(self,
-                    stops_layer,
-                    route_count,
-                    max_stops_per_route,
-                    route_start_time,
-                    start_layer,
-                    start_layer_route_id_field=None,
-                    return_to_start=True,
-                    end_layer=None,
-                    end_layer_route_id_field=None,
-                    travel_mode="Driving Time",
-                    stop_service_time=0,
-                    max_route_time=525600,
-                    include_route_layers=False,
-                    output_name=None,
-                    context=None,
-                    estimate=False,
-                    point_barrier_layer=None,
-                    line_barrier_layer=None,
-                    polygon_barrier_layer=None,
-                    future=False):
+
+    # ----------------------------------------------------------------------
+    def plan_routes(
+        self,
+        stops_layer,
+        route_count,
+        max_stops_per_route,
+        route_start_time,
+        start_layer,
+        start_layer_route_id_field=None,
+        return_to_start=True,
+        end_layer=None,
+        end_layer_route_id_field=None,
+        travel_mode="Driving Time",
+        stop_service_time=0,
+        max_route_time=525600,
+        include_route_layers=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None,
+        future=False,
+    ):
         """
 
 
@@ -3358,7 +3614,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "unassigned_stops_layer" : layer (FeatureCollection)
         """
 
-        task ="PlanRoutes"
+        task = "PlanRoutes"
 
         params = {}
         stops_layer = self._feature_input(stops_layer)
@@ -3367,20 +3623,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if end_layer:
             end_layer = self._feature_input(end_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -3417,45 +3672,52 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if point_barrier_layer:
                 params["pointBarrierLayer"] = point_barrier_layer
             if line_barrier_layer:
-                params['lineBarrierLayer'] = line_barrier_layer
+                params["lineBarrierLayer"] = line_barrier_layer
             if polygon_barrier_layer:
-                params['polygonBarrierLayer'] = polygon_barrier_layer
+                params["polygonBarrierLayer"] = polygon_barrier_layer
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.plan_routes(stops_layer=stops_layer,
-                                      route_count=route_count,
-                                      max_stops_per_route=max_stops_per_route,
-                                      route_start_time=route_start_time,
-                                      start_layer=start_layer,
-                                      start_layer_route_id_field=start_layer_route_id_field,
-                                      return_to_start=return_to_start,
-                                      end_layer=end_layer,
-                                      end_layer_route_id_field=end_layer_route_id_field,
-                                      travel_mode=travel_mode,
-                                      stop_service_time=stop_service_time,
-                                      max_route_time=max_route_time,
-                                      output_name=output_name, context=context,
-                                      include_route_layers=include_route_layers,
-                                      point_barrier_layer=point_barrier_layer,
-                                      line_barrier_layer=line_barrier_layer,
-                                      polygon_barrier_layer=polygon_barrier_layer,
-                                      gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.plan_routes(
+            stops_layer=stops_layer,
+            route_count=route_count,
+            max_stops_per_route=max_stops_per_route,
+            route_start_time=route_start_time,
+            start_layer=start_layer,
+            start_layer_route_id_field=start_layer_route_id_field,
+            return_to_start=return_to_start,
+            end_layer=end_layer,
+            end_layer_route_id_field=end_layer_route_id_field,
+            travel_mode=travel_mode,
+            stop_service_time=stop_service_time,
+            max_route_time=max_route_time,
+            output_name=output_name,
+            context=context,
+            include_route_layers=include_route_layers,
+            point_barrier_layer=point_barrier_layer,
+            line_barrier_layer=line_barrier_layer,
+            polygon_barrier_layer=polygon_barrier_layer,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def summarize_center_and_dispersion(self,
-                                        analysis_layer,
-                                        summarize_type=["CentralFeature"],
-                                        ellipse_size=None,
-                                        weight_field=None,
-                                        group_field=None,
-                                        output_name=None,
-                                        context=None,
-                                        estimate=False,
-                                        future=False):
+
+    # ----------------------------------------------------------------------
+    def summarize_center_and_dispersion(
+        self,
+        analysis_layer,
+        summarize_type=["CentralFeature"],
+        ellipse_size=None,
+        weight_field=None,
+        group_field=None,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The Summarize Center and Dispersion task finds central features and directional distributions.
 
@@ -3512,22 +3774,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
           "process_info" : list of messages
         """
 
-        task ="SummarizeCenterAndDispersion"
+        task = "SummarizeCenterAndDispersion"
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
 
@@ -3539,44 +3801,50 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["ellipseSize"] = ellipse_size
             if weight_field is not None:
                 params["weightField"] = weight_field
-            if group_field  is not None:
+            if group_field is not None:
                 params["groupField"] = group_field
             if output_name is not None:
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.summarize_center_and_dispersion(analysis_layer=analysis_layer,
-                                                          summarize_type=summarize_type,
-                                                          ellipse_size=ellipse_size,
-                                                          weight_field=weight_field,
-                                                          group_field=group_field,
-                                                          output_name=output_name,
-                                                          context=context,
-                                                          gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.summarize_center_and_dispersion(
+            analysis_layer=analysis_layer,
+            summarize_type=summarize_type,
+            ellipse_size=ellipse_size,
+            weight_field=weight_field,
+            group_field=group_field,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def summarize_within(self,
-                         sum_within_layer,
-                         summary_layer,
-                         sum_shape=True,
-                         shape_units=None,
-                         summary_fields=[],
-                         group_by_field=None,
-                         minority_majority=False,
-                         percent_shape=False,
-                         output_name=None,
-                         context=None,
-                         estimate=False,
-                         bin_size=None,
-                         bin_type="SQUARE",
-                         bin_size_unit=None,
-                         future=False):
+
+    # ----------------------------------------------------------------------
+    def summarize_within(
+        self,
+        sum_within_layer,
+        summary_layer,
+        sum_shape=True,
+        shape_units=None,
+        summary_fields=[],
+        group_by_field=None,
+        minority_majority=False,
+        percent_shape=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        bin_size=None,
+        bin_type="SQUARE",
+        bin_size_unit=None,
+        future=False,
+    ):
         """
         The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
 
@@ -3612,26 +3880,25 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "group_by_summary" : layer (FeatureCollection)
         """
 
-        task ="SummarizeWithin"
+        task = "SummarizeWithin"
 
         params = {}
         sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
 
         if estimate:
             params["sumWithinLayer"] = sum_within_layer
@@ -3653,45 +3920,52 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             if bin_size:
-                params['binSize'] = bin_size
+                params["binSize"] = bin_size
             if bin_size_unit:
-                params['binSizeUnit'] = bin_size_unit
+                params["binSizeUnit"] = bin_size_unit
             if bin_type:
-                params['binType'] = bin_type
+                params["binType"] = bin_type
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.summarize_within(sum_within_layer=sum_within_layer,
-                                           summary_layer=summary_layer,
-                                           sum_shape=sum_shape,
-                                           shape_units=shape_units,
-                                           summary_fields=summary_fields,
-                                           group_by_field=group_by_field,
-                                           minority_majority=minority_majority,
-                                           percent_shape=percent_shape,
-                                           output_name=output_name,
-                                           context=context,
-                                           bin_type=bin_type, bin_size=bin_size,
-                                           bin_size_unit=bin_size_unit,
-                                           gis=self._gis, future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.summarize_within(
+            sum_within_layer=sum_within_layer,
+            summary_layer=summary_layer,
+            sum_shape=sum_shape,
+            shape_units=shape_units,
+            summary_fields=summary_fields,
+            group_by_field=group_by_field,
+            minority_majority=minority_majority,
+            percent_shape=percent_shape,
+            output_name=output_name,
+            context=context,
+            bin_type=bin_type,
+            bin_size=bin_size,
+            bin_size_unit=bin_size_unit,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def trace_downstream(self,
-                         input_layer,
-                         split_distance=None,
-                         split_units="Kilometers",
-                         max_distance=None,
-                         max_distance_units="Kilometers",
-                         bounding_polygon_layer=None,
-                         source_database=None,
-                         generalize=True,
-                         output_name=None,
-                         context=None,
-                         estimate=False,
-                         future=False):
+
+    # ----------------------------------------------------------------------
+    def trace_downstream(
+        self,
+        input_layer,
+        split_distance=None,
+        split_units="Kilometers",
+        max_distance=None,
+        max_distance_units="Kilometers",
+        bounding_polygon_layer=None,
+        source_database=None,
+        generalize=True,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
 
 
@@ -3723,28 +3997,26 @@ class _FeatureAnalysisTools(BaseAnalytics):
         trace_layer : layer (FeatureCollection)
         """
 
-        task ="TraceDownstream"
+        task = "TraceDownstream"
 
         params = {}
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -3767,44 +4039,49 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
-        gpjob = self._tbx.trace_downstream(input_layer=input_layer,
-                                           split_distance=split_distance,
-                                           split_units=split_units,
-                                           max_distance=max_distance,
-                                           max_distance_units=max_distance_units,
-                                           bounding_polygon_layer=bounding_polygon_layer,
-                                           source_database=source_database,
-                                           generalize=generalize,
-                                           output_name=output_name,
-                                           context=context,
-                                           gis=self._gis,
-                                           future=True)
+
+            return _estimate_credits(task=task, parameters=params)
+        gpjob = self._tbx.trace_downstream(
+            input_layer=input_layer,
+            split_distance=split_distance,
+            split_units=split_units,
+            max_distance=max_distance,
+            max_distance_units=max_distance_units,
+            bounding_polygon_layer=bounding_polygon_layer,
+            source_database=source_database,
+            generalize=generalize,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def summarize_nearby(self,
-                         sum_nearby_layer,
-                         summary_layer,
-                         near_type="StraightLine",
-                         distances=[],
-                         units="Meters",
-                         time_of_day=None,
-                         time_zone_for_time_of_day="GeoLocal",
-                         return_boundaries=True,
-                         sum_shape=True,
-                         shape_units=None,
-                         summary_fields=[],
-                         group_by_field=None,
-                         minority_majority=False,
-                         percent_shape=False,
-                         output_name=None,
-                         context=None,
-                         estimate=False,
-                         future=False):
+
+    # ----------------------------------------------------------------------
+    def summarize_nearby(
+        self,
+        sum_nearby_layer,
+        summary_layer,
+        near_type="StraightLine",
+        distances=[],
+        units="Meters",
+        time_of_day=None,
+        time_zone_for_time_of_day="GeoLocal",
+        return_boundaries=True,
+        sum_shape=True,
+        shape_units=None,
+        summary_fields=[],
+        group_by_field=None,
+        minority_majority=False,
+        percent_shape=False,
+        output_name=None,
+        context=None,
+        estimate=False,
+        future=False,
+    ):
         """
         The SummarizeNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate the total population within five minutes of driving time of a proposed new store location.Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of store accessibility.
 
@@ -3852,28 +4129,25 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "group_by_summary" : layer (FeatureCollection)
         """
 
-        task ="SummarizeNearby"
-
+        task = "SummarizeNearby"
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name }}
+            output_name = {"serviceProperties": {"name": output_name}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
-                "serviceProperties" : {
-                    "name" : output_name.properties.name,
-                    "serviceUrl" : output_name.container.url
+                "serviceProperties": {
+                    "name": output_name.properties.name,
+                    "serviceUrl": output_name.container.url,
                 }
             }
             if "serviceItemId" in output_name.properties:
                 _lyr_dict["itemProperties"] = {
-                    "itemId" : output_name.properties.serviceItemId,
+                    "itemId": output_name.properties.serviceItemId,
                 }
             output_name = _lyr_dict
-
-
 
         if estimate:
             params = {}
@@ -3909,51 +4183,56 @@ class _FeatureAnalysisTools(BaseAnalytics):
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
-            return _estimate_credits(task=task,
-                                     parameters=params)
 
+            return _estimate_credits(task=task, parameters=params)
 
-        gpjob = self._tbx.summarize_nearby(sum_nearby_layer=sum_nearby_layer,
-                                           summary_layer=summary_layer,
-                                           near_type=near_type,
-                                           distances=distances,
-                                           units=units,
-                                           time_of_day=time_of_day,
-                                           time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                           return_boundaries=return_boundaries,
-                                           sum_shape=sum_shape,
-                                           shape_units=shape_units,
-                                           summary_fields=summary_fields,
-                                           group_by_field=group_by_field,
-                                           minority_majority=minority_majority,
-                                           percent_shape=percent_shape,
-                                           output_name=output_name,
-                                           context=context,
-                                           gis=self._gis,
-                                           future=True)
+        gpjob = self._tbx.summarize_nearby(
+            sum_nearby_layer=sum_nearby_layer,
+            summary_layer=summary_layer,
+            near_type=near_type,
+            distances=distances,
+            units=units,
+            time_of_day=time_of_day,
+            time_zone_for_time_of_day=time_zone_for_time_of_day,
+            return_boundaries=return_boundaries,
+            sum_shape=sum_shape,
+            shape_units=shape_units,
+            summary_fields=summary_fields,
+            group_by_field=group_by_field,
+            minority_majority=minority_majority,
+            percent_shape=percent_shape,
+            output_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_fa = True
         if future:
             return gpjob
         return gpjob.result()
+
+
 ###########################################################################
 class _PackagingTools(object):
     """Exposes the Publishing Geoprocessing tools"""
+
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
         if url is None:
-            url = gis.properties['helperServices']['packaging']['url']
+            url = gis.properties["helperServices"]["packaging"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _refresh(self):
         params = {"f": "json"}
         try:
@@ -3961,52 +4240,61 @@ class _PackagingTools(object):
         except:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the services properties"""
         if self._properties is None:
             self._refresh()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tbx(self):
         """gets the toolbox"""
         if self._gptbx is None:
-            self._gptbx = import_toolbox(url_or_item=self._url,
-                                         gis=self._gis,
-                                         verbose=self._verbose)
+            self._gptbx = import_toolbox(
+                url_or_item=self._url, gis=self._gis, verbose=self._verbose
+            )
         return self._gptbx
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._con.token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tools(self):
         return self.properties.tasks
-    #----------------------------------------------------------------------
-    def create_map_area(self,
-                        map_item_id,
-                        bookmark=None,
-                        extent=None,
-                        area_type='BOOKMARK',
-                        area=None,
-                        output_name=None,
-                        gis=None,
-                        future=False):
+
+    # ----------------------------------------------------------------------
+    def create_map_area(
+        self,
+        map_item_id,
+        bookmark=None,
+        extent=None,
+        area_type="BOOKMARK",
+        area=None,
+        output_name=None,
+        gis=None,
+        future=False,
+    ):
         """
         The Create Map Area task is used to create a map area item from a
         web map with a given extent in ArcGIS Online or ArcGIS Enterprise.
@@ -4101,9 +4389,10 @@ class _PackagingTools(object):
 
         """
         import uuid
+
         if output_name is None:
             output_name = {}
-            output_name['title'] = uuid.uuid4().hex
+            output_name["title"] = uuid.uuid4().hex
         if gis is None:
             gis = arcgis.env.active_gis
         if isinstance(map_item_id, arcgis.gis.Item):
@@ -4114,13 +4403,14 @@ class _PackagingTools(object):
             if key in inputs:
                 function_args[key] = inputs[key]
             del key
-        function_args['future'] = True
-        function_args['gis'] = gis
+        function_args["future"] = True
+        function_args["gis"] = gis
         res = self._tbx.create_map_area(**function_args)
         if future:
             return res
         return res.result()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def refresh_map_area_package(self, packages, gis=None, future=False):
         """
         The Refresh Map Area Package task refreshes existing map area packages to update them with changes made on the source data since the last time those packages were created or refreshed.
@@ -4150,14 +4440,17 @@ class _PackagingTools(object):
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def setup_map_area(self,
-                       map_area_item_id,
-                       map_layers_to_ignore=None,
-                       tile_services=None,
-                       feature_services=None,
-                       gis=None,
-                       future=False):
+
+    # ----------------------------------------------------------------------
+    def setup_map_area(
+        self,
+        map_area_item_id,
+        map_layers_to_ignore=None,
+        tile_services=None,
+        feature_services=None,
+        gis=None,
+        future=False,
+    ):
         """
         The Setup Map Area task creates packages for each service in the web map within the map area extent. The tool generates tile packages (.tpk or .vtpk) for exportTilesAllowed tiled services (i.e. basemap layer) and SQLite Geodatabase format replica packages for sync enabled feature services (i.e. operational layers). It adds an Area2Package relationship between the map area item and created package items.
 
@@ -4218,34 +4511,36 @@ class _PackagingTools(object):
             if key in inputs:
                 function_args[key] = inputs[key]
             del key
-        function_args['future'] = True
-        function_args['gis'] = gis
+        function_args["future"] = True
+        function_args["gis"] = gis
         job = self._tbx.setup_map_area(**function_args)
         if future:
             return job
         return job.result()
 
+
 ###########################################################################
-class _HydrologyTool():
+class _HydrologyTool:
     """Exposes the Orthmapping Geoprocessing tools"""
+
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
     _return_item = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
         if url is None:
-            url = gis.properties.helperServices['hydrology']['url']
+            url = gis.properties.helperServices["hydrology"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _refresh(self):
         params = {"f": "json"}
         try:
@@ -4253,42 +4548,51 @@ class _HydrologyTool():
         except:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the services properties"""
         if self._properties is None:
             self._refresh()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tbx(self):
         """gets the toolbox"""
         if self._gptbx is None:
-            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx = import_toolbox(
+                url_or_item=self._url, gis=self._gis, verbose=self._verbose
+            )
             self._gptbx._is_ra = True
         return self._gptbx
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._con.token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tools(self):
         return self.properties.tasks
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _evaluate_spatial_input(self, input_points):
         """
         Helper function to determine if the input is either a FeatureSet or Spatially Enabled DataFrame, and
@@ -4307,21 +4611,31 @@ class _HydrologyTool():
             return input_points.spatial.to_featureset()
 
         elif isinstance(input_points, DataFrame) and not _is_geoenabled(input_points):
-            raise Exception(('input_points is a DataFrame, but does not appear to be spatially enabled. '
-                             'Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-p'
-                             'ython-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)'))
+            raise Exception(
+                (
+                    "input_points is a DataFrame, but does not appear to be spatially enabled. "
+                    "Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-p"
+                    "ython-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)"
+                )
+            )
 
         else:
-            raise Exception('input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}'.format(type(input_points)))
+            raise Exception(
+                "input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}".format(
+                    type(input_points)
+                )
+            )
 
-    #----------------------------------------------------------------------
-    def trace_downstream(self,
-                         input_points,
-                         point_id_field=None,
-                         data_source_resolution=None,
-                         generalize=False,
-                         gis=None,
-                         future=False):
+    # ----------------------------------------------------------------------
+    def trace_downstream(
+        self,
+        input_points,
+        point_id_field=None,
+        data_source_resolution=None,
+        generalize=False,
+        gis=None,
+        future=False,
+    ):
         """
 
         =========================================================================   ===========================================================================
@@ -4364,35 +4678,39 @@ class _HydrologyTool():
 
         """
         tool = self._tbx.trace_downstream
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
         if point_id_field is None:
-            point_id_field = defaults['point_id_field']
+            point_id_field = defaults["point_id_field"]
         if data_source_resolution is None:
-            data_source_resolution = defaults['data_source_resolution']
+            data_source_resolution = defaults["data_source_resolution"]
         if generalize is None:
-            generalize = defaults['generalize']
+            generalize = defaults["generalize"]
         input_points = self._evaluate_spatial_input(input_points=input_points)
-        job = tool(input_points=input_points,
-                   point_id_field=point_id_field,
-                   data_source_resolution=data_source_resolution,
-                   generalize=generalize,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            input_points=input_points,
+            point_id_field=point_id_field,
+            data_source_resolution=data_source_resolution,
+            generalize=generalize,
+            gis=gis,
+            future=True,
+        )
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def watershed(self,
-                  input_points,
-                  point_id_field=None,
-                  snap_distance=None,
-                  snap_distance_units=None,
-                  data_source_resolution=None,
-                  generalize=False,
-                  return_snapped_points=True,
-                  gis=None,
-                  future=False):
+
+    # ----------------------------------------------------------------------
+    def watershed(
+        self,
+        input_points,
+        point_id_field=None,
+        snap_distance=None,
+        snap_distance_units=None,
+        data_source_resolution=None,
+        generalize=False,
+        return_snapped_points=True,
+        gis=None,
+        future=False,
+    ):
         """
         The 'watershed' task is used to identify catchment areas based on a particular
         location you provide and ArcGIS Online Elevation data.
@@ -4450,46 +4768,50 @@ class _HydrologyTool():
 
         """
         tool = self._tbx.watershed
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
         if data_source_resolution is None:
-            data_source_resolution = defaults['data_source_resolution']
+            data_source_resolution = defaults["data_source_resolution"]
         if snap_distance_units is None:
-            snap_distance_units = defaults['snap_distance_units']
+            snap_distance_units = defaults["snap_distance_units"]
         input_points = self._evaluate_spatial_input(input_points=input_points)
-        job = tool(input_points=input_points,
-                   point_id_field=point_id_field,
-                   snap_distance=snap_distance,
-                   snap_distance_units=snap_distance_units,
-                   data_source_resolution=data_source_resolution,
-                   generalize=generalize,
-                   return_snapped_points=return_snapped_points,
-                   gis=self._gis,
-                   future=True)
+        job = tool(
+            input_points=input_points,
+            point_id_field=point_id_field,
+            snap_distance=snap_distance,
+            snap_distance_units=snap_distance_units,
+            data_source_resolution=data_source_resolution,
+            generalize=generalize,
+            return_snapped_points=return_snapped_points,
+            gis=self._gis,
+            future=True,
+        )
         if future:
             return job
         return job.result()
+
+
 ###########################################################################
-class _OrthoMappingTools():
+class _OrthoMappingTools:
     """Exposes the Orthmapping Geoprocessing tools"""
+
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
     _return_item = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
         if url is None:
-            url = gis.properties.helperServices['orthoMapping']['url']
+            url = gis.properties.helperServices["orthoMapping"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _refresh(self):
         params = {"f": "json"}
         try:
@@ -4497,57 +4819,66 @@ class _OrthoMappingTools():
         except:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the services properties"""
         if self._properties is None:
             self._refresh()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tbx(self):
         """gets the toolbox"""
         if self._gptbx is None:
-            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx = import_toolbox(
+                url_or_item=self._url, gis=self._gis, verbose=self._verbose
+            )
             self._gptbx._is_ra = True
         return self._gptbx
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._con.token)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tools(self):
         return self.properties.tasks
-    #----------------------------------------------------------------------
-    def _create_output_image_service(self, output_name, task, folder=None, output_properties=None):
+
+    # ----------------------------------------------------------------------
+    def _create_output_image_service(
+        self, output_name, task, folder=None, output_properties=None
+    ):
         gis = self._gis
         ok = gis.content.is_service_name_available(output_name, "Image Service")
         if not ok:
-            raise RuntimeError("An Image Service by this name already exists: " + output_name)
+            raise RuntimeError(
+                "An Image Service by this name already exists: " + output_name
+            )
 
         create_parameters = {
             "name": output_name,
             "description": "",
             "capabilities": "Image, Metadata",
-            "properties": {
-                "path": "@",
-                "description": "",
-                "copyright": ""
-            }
+            "properties": {"path": "@", "description": "", "copyright": ""},
         }
 
         tiles_only = None
@@ -4565,37 +4896,46 @@ class _OrthoMappingTools():
                     if tiles_only == True:
                         create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
 
-        output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                          service_type="imageService", folder=folder)
+        output_service = gis.content.create_service(
+            output_name,
+            create_params=create_parameters,
+            service_type="imageService",
+            folder=folder,
+        )
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
             "description": description,
             "tags": "Analysis Result, " + task,
-            "snippet": "Analysis Image Service generated from " + task
+            "snippet": "Analysis Image Service generated from " + task,
         }
         output_service.update(item_properties)
         return output_service
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _set_image_collection_param(self, image_collection, param_name=None):
         if isinstance(image_collection, str):
-            #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
-            #if doesnotexist:
-                #raise RuntimeError("The input image collection does not exist")
-            if 'http:' in image_collection or 'https:' in image_collection:
-                return  json.dumps({ 'url' : image_collection })
+            # doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+            # if doesnotexist:
+            # raise RuntimeError("The input image collection does not exist")
+            if "http:" in image_collection or "https:" in image_collection:
+                return json.dumps({"url": image_collection})
             else:
-                return  json.dumps({ 'uri' : image_collection })
+                return json.dumps({"uri": image_collection})
         elif isinstance(image_collection, Item):
-            return json.dumps({ "itemId" : image_collection.itemid })
+            return json.dumps({"itemId": image_collection.itemid})
         else:
             if param_name is not None:
-                raise TypeError(str(param_name)+" should be a string (url or uri) or Item")
+                raise TypeError(
+                    str(param_name) + " should be a string (url or uri) or Item"
+                )
             else:
-                raise TypeError("image_collection should be a string (url or uri) or Item")
+                raise TypeError(
+                    "image_collection should be a string (url or uri) or Item"
+                )
 
         return image_collection
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _set_output_raster(self, output_name, task, output_properties=None):
         gis = self._gis
         output_service = None
@@ -4614,7 +4954,7 @@ class _OrthoMappingTools():
             if isinstance(folder, dict):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
-                    folder=folder["title"]
+                    folder = folder["title"]
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -4623,30 +4963,44 @@ class _OrthoMappingTools():
                 folderId = folder_dict["id"]
 
         if output_name is None:
-            output_name = str(task_name) + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
-            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+            output_name = str(task_name) + "_" + _id_generator()
+            output_service = self._create_output_image_service(
+                output_name, task, folder=folder, output_properties=output_properties
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         elif isinstance(output_name, str):
-            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
-            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+            output_service = self._create_output_image_service(
+                output_name, task, folder=folder, output_properties=output_properties
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         elif isinstance(output_name, arcgis.gis.Item):
             output_service = output_name
-            output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+            output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
         if folderId is not None:
-            output_raster["itemProperties"].update({"folderId":folderId})
+            output_raster["itemProperties"].update({"folderId": folderId})
         output_raster = json.dumps(output_raster)
         return output_raster, output_service
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
 
-    def alter_processing_states(self,
-                                image_collection,
-                                new_states=None,
-                                gis=None,
-                                future=False,**kwargs):
+    def alter_processing_states(
+        self, image_collection, new_states=None, gis=None, future=False, **kwargs
+    ):
         """
         The `alter_processing_states` operation is a service tool that sets the processing states of
         a mosaic dataset. The states are stored as the Ortho Mapping key property. The state's
@@ -4665,32 +5019,51 @@ class _OrthoMappingTools():
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
         """
-        gis= self._gis
-        image_collection = self._set_image_collection_param(image_collection=image_collection)
+        gis = self._gis
+        image_collection = self._set_image_collection_param(
+            image_collection=image_collection
+        )
 
-        new_states_allowed_values = ['blockadjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection', 'adjust_index', 'imagetype']
+        new_states_allowed_values = [
+            "blockadjustment",
+            "dem",
+            "gcp",
+            "seamlines",
+            "colorcorrection",
+            "adjust_index",
+            "imagetype",
+        ]
 
         for key in new_states:
             if not key in new_states_allowed_values:
-                raise RuntimeError('new_states can only be one of the following: ' + str(new_states_allowed_values))
+                raise RuntimeError(
+                    "new_states can only be one of the following: "
+                    + str(new_states_allowed_values)
+                )
 
-        job = self._tbx.alter_processing_states(image_collection=image_collection,
-                                                new_states=new_states,
-                                                gis=gis,
-                                                future=True)
+        job = self._tbx.alter_processing_states(
+            image_collection=image_collection,
+            new_states=new_states,
+            gis=gis,
+            future=True,
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def compute_color_correction(self,
-                                 image_collection,
-                                 color_correction_method=None,
-                                 dodging_surface=None,
-                                 target_image=None,
-                                 context=None,
-                                 gis=None,
-                                 future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def compute_color_correction(
+        self,
+        image_collection,
+        color_correction_method=None,
+        dodging_surface=None,
+        target_image=None,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
 
         The `compute_color_correction` operation is a service tool that computes color corrections
@@ -4730,59 +5103,86 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.compute_color_correction
 
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if color_correction_method is None:
-            color_correction_method = defaults['color_correction_method']
+            color_correction_method = defaults["color_correction_method"]
         else:
-            color_correction_allowed_values = self._tbx.choice_list.compute_color_correction["color_correction_method"]
-            if [element.lower() for element in color_correction_allowed_values].count(color_correction_method.lower()) <= 0 :
-                raise RuntimeError('color_correction_method can only be one of the following: '+str(color_correction_allowed_values))
+            color_correction_allowed_values = (
+                self._tbx.choice_list.compute_color_correction[
+                    "color_correction_method"
+                ]
+            )
+            if [element.lower() for element in color_correction_allowed_values].count(
+                color_correction_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "color_correction_method can only be one of the following: "
+                    + str(color_correction_allowed_values)
+                )
             for element in color_correction_allowed_values:
                 if color_correction_method.lower() == element.lower():
                     color_correction_method = element
 
         if dodging_surface is None:
-            dodging_surface = defaults['dodging_surface']
+            dodging_surface = defaults["dodging_surface"]
         else:
-            dodging_surface_type_allowed_values = self._tbx.choice_list.compute_color_correction["dodging_surface"]
-            if [element.lower() for element in dodging_surface_type_allowed_values].count(dodging_surface.lower()) <= 0 :
-                raise RuntimeError('dodging_surface_type can only be one of the following:  '+str(dodging_surface_type_allowed_values))
+            dodging_surface_type_allowed_values = (
+                self._tbx.choice_list.compute_color_correction["dodging_surface"]
+            )
+            if [
+                element.lower() for element in dodging_surface_type_allowed_values
+            ].count(dodging_surface.lower()) <= 0:
+                raise RuntimeError(
+                    "dodging_surface_type can only be one of the following:  "
+                    + str(dodging_surface_type_allowed_values)
+                )
             for element in dodging_surface_type_allowed_values:
                 if dodging_surface.lower() == element.lower():
                     dodging_surface = element
 
-
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
         if target_image:
-            target_image = self._set_image_collection_param(image_collection=target_image, param_name="target_image")
+            target_image = self._set_image_collection_param(
+                image_collection=target_image, param_name="target_image"
+            )
 
-        job = tool(image_collection=image_collection,
-                   color_correction_method=color_correction_method,
-                   dodging_surface=dodging_surface,
-                   target_image=target_image,
-                   context=context,
-                   gis=gis, future=True)
+        job = tool(
+            image_collection=image_collection,
+            color_correction_method=color_correction_method,
+            dodging_surface=dodging_surface,
+            target_image=target_image,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def compute_control_points(self, image_collection,
-                               reference_image=None,
-                               image_location_accuracy=None,
-                               context=None, gis=None, future=False,
-                               **kwargs):
+
+    # ----------------------------------------------------------------------
+    def compute_control_points(
+        self,
+        image_collection,
+        reference_image=None,
+        image_location_accuracy=None,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
         The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
 
@@ -4815,51 +5215,66 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.compute_control_points
 
-        defaults = dict(zip(tool.__annotations__.keys(),
-                                tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
-        if image_location_accuracy  is None:
-            image_location_accuracy  = defaults['image_location_accuracy']
+        if image_location_accuracy is None:
+            image_location_accuracy = defaults["image_location_accuracy"]
         else:
-            image_location_accuracy_allowed_values = self._tbx.choice_list.compute_control_points["image_location_accuracy"]
-            if [element.lower() for element in image_location_accuracy_allowed_values].count(image_location_accuracy.lower()) <= 0 :
-                raise RuntimeError('location_accuracy can only be one of the following:' +str(image_location_accuracy_allowed_values))
+            image_location_accuracy_allowed_values = (
+                self._tbx.choice_list.compute_control_points["image_location_accuracy"]
+            )
+            if [
+                element.lower() for element in image_location_accuracy_allowed_values
+            ].count(image_location_accuracy.lower()) <= 0:
+                raise RuntimeError(
+                    "location_accuracy can only be one of the following:"
+                    + str(image_location_accuracy_allowed_values)
+                )
             for element in image_location_accuracy_allowed_values:
                 if image_location_accuracy.lower() == element.lower():
-                    image_location_accuracy=element
+                    image_location_accuracy = element
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
         if reference_image is not None:
-            reference_image = self._set_image_collection_param(image_collection=reference_image, param_name="reference_image")
+            reference_image = self._set_image_collection_param(
+                image_collection=reference_image, param_name="reference_image"
+            )
 
-        job = tool(image_collection=image_collection,
-                   reference_image=reference_image,
-                   image_location_accuracy=image_location_accuracy,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            reference_image=reference_image,
+            image_location_accuracy=image_location_accuracy,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def compute_seamlines(self,
-                          image_collection,
-                          seamlines_method,
-                          context=None,
-                          gis=None,
-                          future=False,
-                          **kwargs):
+
+    # ----------------------------------------------------------------------
+    def compute_seamlines(
+        self,
+        image_collection,
+        seamlines_method,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
 
         The `compute_seamlines` operation can be used to compute seamlines between overlapping
@@ -4903,38 +5318,58 @@ class _OrthoMappingTools():
         :returns: Dictionary
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.compute_seamlines
-        defaults = dict(zip(tool.__annotations__.keys(),
-                                tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
-        seamlines_method_allowed_values = self._tbx.choice_list.compute_seamlines["seamlines_method"]
-        if [element.lower() for element in seamlines_method_allowed_values].count(seamlines_method.lower()) <= 0 :
-            raise RuntimeError('seamlines_method can only be one of the following: '+str(seamlines_method_allowed_values))
+        seamlines_method_allowed_values = self._tbx.choice_list.compute_seamlines[
+            "seamlines_method"
+        ]
+        if [element.lower() for element in seamlines_method_allowed_values].count(
+            seamlines_method.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "seamlines_method can only be one of the following: "
+                + str(seamlines_method_allowed_values)
+            )
         for element in seamlines_method_allowed_values:
             if seamlines_method.lower() == element.lower():
-                seamlines_method=element
+                seamlines_method = element
 
-        job = tool(image_collection=image_collection,
-                   seamlines_method=seamlines_method,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            seamlines_method=seamlines_method,
+            context=context,
+            gis=gis,
+            future=True,
+        )
 
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def compute_sensor_model(self, image_collection, mode='Quick', location_accuracy='High', context=None, gis=None, future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    def compute_sensor_model(
+        self,
+        image_collection,
+        mode="Quick",
+        location_accuracy="High",
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
         The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
 
@@ -4966,50 +5401,69 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.compute_sensor_model
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
         mode_allowed_values = self._tbx.choice_list.compute_sensor_model["mode"]
-        if [element.lower() for element in mode_allowed_values].count(mode.lower()) <= 0 :
-            raise RuntimeError("mode can only be one of the following: "+ str(mode_allowed_values))
+        if [element.lower() for element in mode_allowed_values].count(
+            mode.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "mode can only be one of the following: " + str(mode_allowed_values)
+            )
         for element in mode_allowed_values:
             if mode.lower() == element.lower():
                 mode = element
 
-        location_accuracy_allowed_values = self._tbx.choice_list.compute_sensor_model["location_accuracy"]
-        if [element.lower() for element in location_accuracy_allowed_values].count(location_accuracy.lower()) <= 0 :
-            raise RuntimeError('location_accuracy can only be one of the following: '+ str(location_accuracy_allowed_values))
+        location_accuracy_allowed_values = self._tbx.choice_list.compute_sensor_model[
+            "location_accuracy"
+        ]
+        if [element.lower() for element in location_accuracy_allowed_values].count(
+            location_accuracy.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "location_accuracy can only be one of the following: "
+                + str(location_accuracy_allowed_values)
+            )
         for element in location_accuracy_allowed_values:
             if location_accuracy.lower() == element.lower():
                 location_accuracy = element
 
-        job = tool(image_collection=image_collection,
-                   mode=mode,
-                   location_accuracy=location_accuracy,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            mode=mode,
+            location_accuracy=location_accuracy,
+            context=context,
+            gis=gis,
+            future=True,
+        )
 
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def edit_control_points(self, image_collection,
-                            input_control_points,
-                            context=None, gis=None,
-                            future=False,
-                            **kwargs):
+
+    # ----------------------------------------------------------------------
+    def edit_control_points(
+        self,
+        image_collection,
+        input_control_points,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
 
         The `edit_control_points` is a service tool that is used to append additional
@@ -5044,37 +5498,48 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.edit_control_points
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
-        input_control_points=json.dumps(input_control_points)
+        input_control_points = json.dumps(input_control_points)
 
-        job = tool(image_collection=image_collection,
-                   input_control_points=input_control_points,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            input_control_points=input_control_points,
+            context=context,
+            gis=gis,
+            future=True,
+        )
 
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def generate_dem(self, image_collection,
-                     cell_size, output_dem=None,
-                     surface_type=None, matching_method='SGM',
-                     context=None, gis=None, future=False,
-                     **kwargs):
+
+    # ----------------------------------------------------------------------
+    def generate_dem(
+        self,
+        image_collection,
+        cell_size,
+        output_dem=None,
+        surface_type=None,
+        matching_method="SGM",
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
 
         The `generate_dem` operation is a service tool that allows you to generate
@@ -5119,88 +5584,108 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         task = "GenerateDEM"
-        from arcgis.raster._util import  _id_generator
+        from arcgis.raster._util import _id_generator
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.generate_dem
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
         if surface_type is None:
-            surface_type = defaults['surface_type']
+            surface_type = defaults["surface_type"]
         else:
-            surface_type_allowed_values = self._tbx.choice_list.generate_dem["surface_type"]
-            if [element.lower() for element in surface_type_allowed_values].count(surface_type.lower()) <= 0 :
-                raise RuntimeError('surface_type can only be one of the following: '+str(surface_type_allowed_values))
+            surface_type_allowed_values = self._tbx.choice_list.generate_dem[
+                "surface_type"
+            ]
+            if [element.lower() for element in surface_type_allowed_values].count(
+                surface_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "surface_type can only be one of the following: "
+                    + str(surface_type_allowed_values)
+                )
             for element in surface_type_allowed_values:
                 if surface_type.lower() == element.lower():
-                    surface_type=element
-
+                    surface_type = element
 
         if matching_method is None:
-            matching_method = defaults['matching_method']
+            matching_method = defaults["matching_method"]
         else:
-            matching_method_allowed_values = self._tbx.choice_list.generate_dem["matching_method"]
-            if [element.lower() for element in matching_method_allowed_values].count(matching_method.lower()) <= 0 :
-                raise RuntimeError('matching_method can only be one of the following: '+str(matching_method_allowed_values))
+            matching_method_allowed_values = self._tbx.choice_list.generate_dem[
+                "matching_method"
+            ]
+            if [element.lower() for element in matching_method_allowed_values].count(
+                matching_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "matching_method can only be one of the following: "
+                    + str(matching_method_allowed_values)
+                )
             for element in matching_method_allowed_values:
                 if matching_method.lower() == element.lower():
-                    matching_method=element
-
+                    matching_method = element
 
         if isinstance(output_dem, Item):
             output_dem = json.dumps({"itemId": output_dem.itemid})
         elif isinstance(output_dem, str):
             if ("/") in output_dem or ("\\") in output_dem:
-                if 'http:' in output_dem or 'https:' in output_dem:
-                    output_dem = json.dumps({ 'url' : output_dem })
+                if "http:" in output_dem or "https:" in output_dem:
+                    output_dem = json.dumps({"url": output_dem})
                 else:
-                    output_dem = json.dumps({ 'uri' : output_dem })
+                    output_dem = json.dumps({"uri": output_dem})
             else:
-                result = gis.content.search("title:"+str(output_dem), item_type = "Imagery Layer")
+                result = gis.content.search(
+                    "title:" + str(output_dem), item_type="Imagery Layer"
+                )
                 output_dem_result = None
                 for element in result:
                     if str(output_dem) == element.title:
                         output_dem_result = element
                 if output_dem_result is not None:
-                    output_dem= json.dumps({"itemId": output_dem_result.itemid})
+                    output_dem = json.dumps({"itemId": output_dem_result.itemid})
                 else:
-                    output_dem, output_service = self._set_output_raster(output_name=output_dem, task=task, output_properties=kwargs)
+                    output_dem, output_service = self._set_output_raster(
+                        output_name=output_dem, task=task, output_properties=kwargs
+                    )
 
-
-
-        job = tool(image_collection=image_collection,
-                   cell_size=cell_size,
-                   output_dem=output_dem,
-                   surface_type=surface_type,
-                   matching_method=matching_method,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            cell_size=cell_size,
+            output_dem=output_dem,
+            surface_type=surface_type,
+            matching_method=matching_method,
+            context=context,
+            gis=gis,
+            future=True,
+        )
 
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def generate_orthomosaic(self,
-                             image_collection,
-                             output_ortho_image=None,
-                             regen_seamlines=None,
-                             recompute_color_correction=None,
-                             context=None,
-                             gis=None,
-                             future=False,
-                             **kwargs):
+
+    # ----------------------------------------------------------------------
+    def generate_orthomosaic(
+        self,
+        image_collection,
+        output_ortho_image=None,
+        regen_seamlines=None,
+        recompute_color_correction=None,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
         The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
 
@@ -5232,68 +5717,83 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         task = "GenerateOrthoMosaic"
 
-        from arcgis.raster._util import  _id_generator
+        from arcgis.raster._util import _id_generator
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.generate_orthomosaic
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if regen_seamlines is None:
-            regen_seamlines = defaults['regen_seamlines']
+            regen_seamlines = defaults["regen_seamlines"]
         else:
             if not isinstance(regen_seamlines, bool):
                 raise TypeError("The 'regen_seamlines' parameter must be a boolean")
 
         if recompute_color_correction is None:
-            recompute_color_correction = defaults['recompute_color_correction']
+            recompute_color_correction = defaults["recompute_color_correction"]
         else:
             if not isinstance(recompute_color_correction, bool):
-                raise TypeError("The 'recompute_color_correction' parameter must be a boolean")
-
+                raise TypeError(
+                    "The 'recompute_color_correction' parameter must be a boolean"
+                )
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
         if isinstance(output_ortho_image, Item):
             output_ortho_image = json.dumps({"itemId": output_ortho_image.itemid})
         elif isinstance(output_ortho_image, str):
             if ("/") in output_ortho_image or ("\\") in output_ortho_image:
-                if 'http:' in output_ortho_image or 'https:' in output_ortho_image:
-                    output_ortho_image = json.dumps({ 'url' : output_ortho_image })
+                if "http:" in output_ortho_image or "https:" in output_ortho_image:
+                    output_ortho_image = json.dumps({"url": output_ortho_image})
                 else:
-                    output_ortho_image = json.dumps({ 'uri' : output_ortho_image })
+                    output_ortho_image = json.dumps({"uri": output_ortho_image})
             else:
-                result = gis.content.search("title:"+str(output_ortho_image), item_type = "Imagery Layer")
+                result = gis.content.search(
+                    "title:" + str(output_ortho_image), item_type="Imagery Layer"
+                )
                 output_ortho_image_result = None
                 for element in result:
                     if str(output_ortho_image) == element.title:
                         output_ortho_image_result = element
                 if output_ortho_image_result is not None:
-                    output_ortho_image= json.dumps({"itemId": output_ortho_image_result.itemid})
+                    output_ortho_image = json.dumps(
+                        {"itemId": output_ortho_image_result.itemid}
+                    )
                 else:
-                    output_ortho_image, output_service = self._set_output_raster(output_name=output_ortho_image, task=task, output_properties=kwargs)
+                    output_ortho_image, output_service = self._set_output_raster(
+                        output_name=output_ortho_image,
+                        task=task,
+                        output_properties=kwargs,
+                    )
 
-        job = tool(image_collection=image_collection,
-                   output_ortho_image=output_ortho_image,
-                   regen_seamlines=regen_seamlines,
-                   recompute_color_correction=recompute_color_correction,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            output_ortho_image=output_ortho_image,
+            regen_seamlines=regen_seamlines,
+            recompute_color_correction=recompute_color_correction,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def generate_report(self, image_collection, report_format=None, gis=None, future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def generate_report(
+        self, image_collection, report_format=None, gis=None, future=False, **kwargs
+    ):
         """
 
         The `generate_report` is a tool that generates an Ortho Mapping report with an image
@@ -5316,33 +5816,44 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         tool = self._tbx.generate_report
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
 
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
         if report_format is None:
-            report_format = defaults['report_format']
+            report_format = defaults["report_format"]
         else:
-            report_format_allowed_values = self._tbx.choice_list.generate_report["report_format"]
-            if [element.lower() for element in report_format_allowed_values].count(report_format.lower()) <= 0 :
-                raise RuntimeError('report_format can only be one of the following: '+ str(report_format_allowed_values))
+            report_format_allowed_values = self._tbx.choice_list.generate_report[
+                "report_format"
+            ]
+            if [element.lower() for element in report_format_allowed_values].count(
+                report_format.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "report_format can only be one of the following: "
+                    + str(report_format_allowed_values)
+                )
             for element in report_format_allowed_values:
                 if report_format.lower() == element.lower():
-                    report_format=element
+                    report_format = element
 
-        job = tool(image_collection=image_collection,
-                   report_format=report_format,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            report_format=report_format,
+            gis=gis,
+            future=True,
+        )
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def get_processing_states(self, image_collection, gis=None, future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
         """
         The `get_processing_states` obtains the processing states of the image
         collection (mosaic dataset) in JSON.
@@ -5362,25 +5873,29 @@ class _OrthoMappingTools():
 
 
         """
-        gis= self._gis
+        gis = self._gis
         tool = self._tbx.get_processing_states
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
-        job = tool(image_collection=image_collection,
-                   gis=gis,
-                   future=True)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
+        job = tool(image_collection=image_collection, gis=gis, future=True)
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def match_control_points(self,
-                             image_collection,
-                             control_points,
-                             similarity=None,
-                             context=None,
-                             gis=None,
-                             future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def match_control_points(
+        self,
+        image_collection,
+        control_points,
+        similarity=None,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
         """
         The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
 
@@ -5405,42 +5920,52 @@ class _OrthoMappingTools():
 
 
         """
-        gis= self._gis
+        gis = self._gis
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         tool = self._tbx.match_control_points
-        defaults = dict(zip(tool.__annotations__.keys(),
-                            tool.__defaults__))
+        defaults = dict(zip(tool.__annotations__.keys(), tool.__defaults__))
         if image_collection:
-            image_collection = self._set_image_collection_param(image_collection=image_collection)
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection
+            )
 
-        control_points=json.dumps(control_points)
+        control_points = json.dumps(control_points)
         if similarity is None:
-            similarity = defaults['similarity']
+            similarity = defaults["similarity"]
         else:
-            similarity_allowed_values = self._tbx.choice_list.match_control_points["similarity"]
-            if [element.lower() for element in similarity_allowed_values].count(similarity.lower()) <= 0 :
-                raise RuntimeError('similarity can only be one of the following: '+str(similarity_allowed_values))
+            similarity_allowed_values = self._tbx.choice_list.match_control_points[
+                "similarity"
+            ]
+            if [element.lower() for element in similarity_allowed_values].count(
+                similarity.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "similarity can only be one of the following: "
+                    + str(similarity_allowed_values)
+                )
             for element in similarity_allowed_values:
                 if similarity.lower() == element.lower():
                     similarity = element
 
-
-        job = tool(image_collection=image_collection,
-                   input_control_points=control_points,
-                   similarity=similarity,
-                   context=context,
-                   gis=gis,
-                   future=True)
+        job = tool(
+            image_collection=image_collection,
+            input_control_points=control_points,
+            similarity=similarity,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def query_camera_info(self, camera_query=None, gis=None, future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def query_camera_info(self, camera_query=None, gis=None, future=False, **kwargs):
         """
         The `query_camera_info` queries specific records or the entire digital camera database.
         The digital camera database contains the specifications of digital camera sensors
@@ -5459,20 +5984,21 @@ class _OrthoMappingTools():
         :returns: GPJob or Pandas' DataFrame
 
         """
-        gis= self._gis
+        gis = self._gis
         if camera_query is not None:
             if not isinstance(camera_query, str):
                 raise TypeError("The 'camera_query' parameter must be of type string")
 
-        job = self._tbx.query_camera_info(query=camera_query,
-                                          gis=gis,
-                                          future=True)
+        job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def query_control_points(self, image_collection, where, gis=None, future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def query_control_points(
+        self, image_collection, where, gis=None, future=False, **kwargs
+    ):
         """
         The `query_control_points` allows users to use a SQL query to query certain control
         points from the image collection's control point table.
@@ -5492,21 +6018,25 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
+        gis = self._gis
         if not isinstance(where, str):
             raise TypeError("The 'query' parameter must be of type string")
 
-        image_collection = self._set_image_collection_param(image_collection=image_collection)
-        job = self._tbx.query_control_points(image_collection=image_collection,
-                                             where=where,
-                                             gis=gis,
-                                             future=True)
+        image_collection = self._set_image_collection_param(
+            image_collection=image_collection
+        )
+        job = self._tbx.query_control_points(
+            image_collection=image_collection, where=where, gis=gis, future=True
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
-    #----------------------------------------------------------------------
-    def reset_image_collection(self, image_collection, gis=None, future=False,**kwargs):
+
+    # ----------------------------------------------------------------------
+    def reset_image_collection(
+        self, image_collection, gis=None, future=False, **kwargs
+    ):
         """
         The `reset_image_collection` resets the image collection to its original state.
         Resetting the image collection includes removing the block adjustment that's
@@ -5528,24 +6058,29 @@ class _OrthoMappingTools():
         :returns: Named Tuple
 
         """
-        gis= self._gis
-        image_collection = self._set_image_collection_param(image_collection=image_collection)
-        job = self._tbx.reset_image_collection(image_collection=image_collection,
-                                             gis=gis,
-                                             future=True)
+        gis = self._gis
+        image_collection = self._set_image_collection_param(
+            image_collection=image_collection
+        )
+        job = self._tbx.reset_image_collection(
+            image_collection=image_collection, gis=gis, future=True
+        )
         job._is_ortho = True
         if future:
             return job
         return job.result()
+
+
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
     """FA Tools"""
+
     _gptbx = None
     _url = None
     _gis = None
     _properties = None
     _return_item = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         self._url = url
@@ -5553,7 +6088,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         self._con = gis._con
         self._verbose = verbose
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _refresh(self):
         params = {"f": "json"}
         try:
@@ -5561,107 +6096,130 @@ class _RasterAnalysisTools(BaseAnalytics):
         except:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the services properties"""
         if self._properties is None:
             self._refresh()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _tbx(self):
         """gets the toolbox"""
         if self._gptbx is None:
-            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx = import_toolbox(
+                url_or_item=self._url, gis=self._gis, verbose=self._verbose
+            )
             self._gptbx._is_ra = True
         return self._gptbx
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _current_version(self):
-        if ('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()):
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
             return self._gis._tools.rasteranalysis.properties["currentVersion"]
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def invoke(self, method, **kwargs):
         """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
         url = self._url + "/" + method
-        params = { "f" : "json"}
+        params = {"f": "json"}
         if len(kwargs) > 0:
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 params[k] = v
-                del k,v
+                del k, v
         return self._con.post(path=url, postdata=params, token=self._con.token)
+
     @property
     def _tools(self):
         return self.properties.tasks
-    #--Helper Method --------------------------------------------------------------------
-    def _create_output_feature_service(self, output_name, output_service_name='Analysis feature service', task='RasterAnalytics', folder=None):
+
+    # --Helper Method --------------------------------------------------------------------
+    def _create_output_feature_service(
+        self,
+        output_name,
+        output_service_name="Analysis feature service",
+        task="RasterAnalytics",
+        folder=None,
+    ):
         gis = self._gis
-        ok = gis.content.is_service_name_available(output_name, 'Feature Service')
+        ok = gis.content.is_service_name_available(output_name, "Feature Service")
         if not ok:
-            raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+            raise RuntimeError(
+                "A Feature Service by this name already exists: " + output_name
+            )
 
         createParameters = {
-                "currentVersion": 10.2,
-                "serviceDescription": "",
-                "hasVersionedData": False,
-                "supportsDisconnectedEditing": False,
-                "hasStaticData": True,
-                "maxRecordCount": 2000,
-                "supportedQueryFormats": "JSON",
-                "capabilities": "Query",
-                "description": "",
-                "copyrightText": "",
-                "allowGeometryUpdates": False,
-                "syncEnabled": False,
-                "editorTrackingInfo": {
-                    "enableEditorTracking": False,
-                    "enableOwnershipAccessControl": False,
-                    "allowOthersToUpdate": True,
-                    "allowOthersToDelete": True
-                },
-                "xssPreventionInfo": {
-                    "xssPreventionEnabled": True,
-                    "xssPreventionRule": "InputOnly",
-                    "xssInputRule": "rejectInvalid"
-                },
-                "tables": [],
-                "name": output_service_name.replace(' ', '_')
-            }
+            "currentVersion": 10.2,
+            "serviceDescription": "",
+            "hasVersionedData": False,
+            "supportsDisconnectedEditing": False,
+            "hasStaticData": True,
+            "maxRecordCount": 2000,
+            "supportedQueryFormats": "JSON",
+            "capabilities": "Query",
+            "description": "",
+            "copyrightText": "",
+            "allowGeometryUpdates": False,
+            "syncEnabled": False,
+            "editorTrackingInfo": {
+                "enableEditorTracking": False,
+                "enableOwnershipAccessControl": False,
+                "allowOthersToUpdate": True,
+                "allowOthersToDelete": True,
+            },
+            "xssPreventionInfo": {
+                "xssPreventionEnabled": True,
+                "xssPreventionRule": "InputOnly",
+                "xssInputRule": "rejectInvalid",
+            },
+            "tables": [],
+            "name": output_service_name.replace(" ", "_"),
+        }
 
-        output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder=folder)
+        output_service = gis.content.create_service(
+            output_name,
+            create_params=createParameters,
+            service_type="featureService",
+            folder=folder,
+        )
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
-                "description" : description,
-                "tags" : "Analysis Result, " + task,
-                "snippet": output_service_name
-                }
+            "description": description,
+            "tags": "Analysis Result, " + task,
+            "snippet": output_service_name,
+        }
         output_service.update(item_properties)
         return output_service
 
-
     def _layer_input(self, input_layer):
-        #Will be used exclusively by RA tools
+        # Will be used exclusively by RA tools
         input_param = input_layer
 
         url = ""
         from arcgis.raster import Raster
+
         if isinstance(input_layer, Raster):
-            if hasattr(input_layer,"_engine_obj"):
-                input_layer=input_layer._engine_obj
+            if hasattr(input_layer, "_engine_obj"):
+                input_layer = input_layer._engine_obj
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
             else:
-                if 'layers' in input_layer:
+                if "layers" in input_layer:
                     input_param = input_layer.layers[0]._lyr_dict
                 else:
                     raise TypeError("No layers in input layer Item")
@@ -5676,30 +6234,34 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_param = input_layer._lyr_dict
             from arcgis.raster import ImageryLayer
             import json
-            if isinstance(input_layer, ImageryLayer) or isinstance(input_layer, Raster):
-                if 'options' in input_layer._lyr_json:
-                    if isinstance(input_layer._lyr_json['options'], str): #sometimes the rendering info is a string
-                        #load json
-                        layer_options = json.loads(input_layer._lyr_json['options'])
-                    else:
-                        layer_options = input_layer._lyr_json['options']
 
-                    if 'imageServiceParameters' in layer_options:
-                        #get renderingRule and mosaicRule
-                        input_param.update(layer_options['imageServiceParameters'])
+            if isinstance(input_layer, ImageryLayer) or isinstance(input_layer, Raster):
+                if "options" in input_layer._lyr_json:
+                    if isinstance(
+                        input_layer._lyr_json["options"], str
+                    ):  # sometimes the rendering info is a string
+                        # load json
+                        layer_options = json.loads(input_layer._lyr_json["options"])
+                    else:
+                        layer_options = input_layer._lyr_json["options"]
+
+                    if "imageServiceParameters" in layer_options:
+                        # get renderingRule and mosaicRule
+                        input_param.update(layer_options["imageServiceParameters"])
 
         elif isinstance(input_layer, dict):
             input_param = input_layer
 
         elif isinstance(input_layer, str):
-            if 'http:' in input_layer or 'https:' in input_layer:
+            if "http:" in input_layer or "https:" in input_layer:
                 input_param = {"url": input_layer}
             else:
                 input_param = {"uri": input_layer}
 
         else:
-            raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
-
+            raise Exception(
+                "Invalid format of input layer. url string, layer Item, layer instance or dict supported"
+            )
 
         if "url" in input_param:
             url = input_param["url"]
@@ -5708,7 +6270,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if "renderingRule" in input_param.keys():
                     input_param.update({"function": input_param["renderingRule"]})
                     input_param.pop("renderingRule", None)
-                input_param.update({"uri":url})
+                input_param.update({"uri": url})
                 input_param.pop("url", None)
                 input_param.pop("type", None)
                 input_param.pop("uses_gbl", None)
@@ -5717,10 +6279,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if "ImageServer" in url or "MapServer" in url:
             if "serviceToken" in input_param:
-                url = url+"?token="+ input_param["serviceToken"]
-                input_param.update({"url":url})
+                url = url + "?token=" + input_param["serviceToken"]
+                input_param.update({"url": url})
 
         return input_param
+
     def _set_output_raster(self, output_name, task, output_properties=None):
         gis = self._gis
         output_service = None
@@ -5742,7 +6305,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(folder, dict):
                 if "id" in folder and "title" in folder:
                     folderId = folder["id"]
-                    folder=folder["title"]
+                    folder = folder["title"]
             else:
                 folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
@@ -5751,53 +6314,70 @@ class _RasterAnalysisTools(BaseAnalytics):
                 folderId = folder_dict["id"]
 
         if output_name is None:
-            output_name = str(task_name) + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
-            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+            output_name = str(task_name) + "_" + _id_generator()
+            output_service = self._create_output_image_service(
+                output_name, task, folder=folder, output_properties=output_properties
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         elif isinstance(output_name, str):
-            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
-            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+            output_service = self._create_output_image_service(
+                output_name, task, folder=folder, output_properties=output_properties
+            )
+            output_raster = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = None #output_name
-            output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+            output_service = None  # output_name
+            output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
 
         if folderId is not None:
-            output_raster["itemProperties"].update({"folderId":folderId})
+            output_raster["itemProperties"].update({"folderId": folderId})
         output_raster = json.dumps(output_raster)
         return output_raster, output_service
 
     def _set_image_collection_param(self, image_collection):
         if isinstance(image_collection, str):
-            #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
-            #if doesnotexist:
-                #raise RuntimeError("The input image collection does not exist")
-            if 'http:' in image_collection or 'https:' in image_collection:
-                return  json.dumps({ 'url' : image_collection })
+            # doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+            # if doesnotexist:
+            # raise RuntimeError("The input image collection does not exist")
+            if "http:" in image_collection or "https:" in image_collection:
+                return json.dumps({"url": image_collection})
             else:
-                return  json.dumps({ 'uri' : image_collection })
+                return json.dumps({"uri": image_collection})
         elif isinstance(image_collection, Item):
-            return json.dumps({ "itemId" : image_collection.itemid })
+            return json.dumps({"itemId": image_collection.itemid})
         else:
             raise TypeError("image_collection should be a string (url or uri) or Item")
 
         return image_collection
-    def _create_output_image_service(self, output_name, task, folder=None, output_properties=None):
+
+    def _create_output_image_service(
+        self, output_name, task, folder=None, output_properties=None
+    ):
         gis = self._gis
         ok = gis.content.is_service_name_available(output_name, "Image Service")
         if not ok:
-            raise RuntimeError("An Image Service by this name already exists: " + output_name)
+            raise RuntimeError(
+                "An Image Service by this name already exists: " + output_name
+            )
 
         create_parameters = {
             "name": output_name,
             "description": "",
             "capabilities": "Image, Metadata",
-            "properties": {
-                "path": "@",
-                "description": "",
-                "copyright": ""
-            }
+            "properties": {"path": "@", "description": "", "copyright": ""},
         }
 
         tiles_only = None
@@ -5815,28 +6395,50 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if tiles_only == True:
                         create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
 
-        output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                          service_type="imageService", folder=folder)
+        output_service = gis.content.create_service(
+            output_name,
+            create_params=create_parameters,
+            service_type="imageService",
+            folder=folder,
+        )
         if output_service is None:
             raise RuntimeError("Unable to create service")
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
             "description": description,
             "tags": "Analysis Result, " + task,
-            "snippet": "Analysis Image Service generated from " + task
+            "snippet": "Analysis Image Service generated from " + task,
         }
         output_service.update(item_properties)
         return output_service
 
-
-    def _build_param_dictionary(self, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
+    def _build_param_dictionary(
+        self,
+        input_rasters,
+        raster_type_name,
+        raster_type_params=None,
+        image_collection_properties=None,
+        use_input_rasters_by_ref=False,
+        upload_properties=None,
+    ):
         gis = self._gis
         input_raster_specified = False
-        input_rasters_dict={}
-        raster_type_dict={}
+        input_rasters_dict = {}
+        raster_type_dict = {}
         upload_rasters_list = []
-        items_on_server=False
+        items_on_server = False
         # input rasters
+
+        # parse input and convert to url if it is imagery layer
+        from arcgis.raster import ImageryLayer
+
+        if isinstance(input_rasters, ImageryLayer):
+            input_rasters = input_rasters.url
+        elif isinstance(input_rasters, list):
+            for pos, raster in enumerate(input_rasters):
+                if isinstance(raster, ImageryLayer):
+                    input_rasters[pos] = raster.url
+
         if isinstance(input_rasters, str):
             if os.path.exists(input_rasters):
                 input_rasters = [input_rasters]
@@ -5850,49 +6452,74 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if isinstance(item, Item):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
-                    if 'http:' in item or 'https:' in item:
-                        url_list.append(item)
-                    elif (os.path.exists(item)):
+                    if "http:" in item or "https:" in item:
+                        if "blob.core" in item:
+                            uri_list.append(item)
+                        else:
+                            url_list.append(item)
+                    elif os.path.exists(item):
                         upload_rasters_list.append(item)
                     else:
                         uri_list.append(item)
             if upload_rasters_list != []:
-                from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
+                from arcgis.raster._util import (
+                    _upload_imagery_agol,
+                    _upload_imagery_enterprise,
+                )
+
                 if gis._con._product == "AGOL":
-                    url_list = _upload_imagery_agol(upload_rasters_list, gis, raster_type_name=raster_type_name)
+                    uri_list = _upload_imagery_agol(
+                        upload_rasters_list,
+                        gis,
+                        upload_properties=upload_properties,
+                    )
                 else:
-                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
+                    item_id_list = _upload_imagery_enterprise(
+                        upload_rasters_list, raster_type_name, gis
+                    )
                     items_on_server = True
 
             if len(item_id_list) > 0:
-                input_rasters_dict = {"itemIds" : item_id_list }
+                input_rasters_dict = {"itemIds": item_id_list}
                 if items_on_server:
-                    input_rasters_dict.update({"itemsOnServer":True})
+                    input_rasters_dict.update({"itemsOnServer": True})
                 input_raster_specified = True
             elif len(url_list) > 0:
-                input_rasters_dict = {"urls" : url_list}
+                if raster_type_name.lower() == "tiled imagery layer":
+                    input_rasters_dict = {"tiled_urls": url_list}
+                    raster_type_name = "Raster Dataset"
+                else:
+                    input_rasters_dict = {"urls": url_list}
                 input_raster_specified = True
             elif len(uri_list) > 0:
-                input_rasters_dict = {"uris" : uri_list}
+                input_rasters_dict = {"uris": uri_list}
                 input_raster_specified = True
         elif isinstance(input_rasters, str):
             # the input_rasters is a folder name; try and extract the folderID
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
-                if 'http:' in input_rasters or 'https:' in input_rasters:
-                    input_rasters_dict = {"url" : input_rasters}
+                if "http:" in input_rasters or "https:" in input_rasters:
+                    if "blob.core" in input_rasters:
+                        input_rasters_dict = {"uri": input_rasters}
+                    elif raster_type_name.lower() == "tiled imagery layer":
+                        input_rasters_dict = {"tiled_url": input_rasters}
+                        raster_type_name = "Raster Dataset"
+                    else:
+                        input_rasters_dict = {"url": input_rasters}
                 else:
-                    input_rasters_dict = {"uri" : input_rasters}
+                    input_rasters_dict = {"uri": input_rasters}
             else:
-                input_rasters_dict = {"folderId" : folderId}
+                input_rasters_dict = {"folderId": folderId}
             input_raster_specified = True
 
         if input_raster_specified is False:
-            raise RuntimeError("Input raster list to be added to the collection must be specified")
+            raise RuntimeError(
+                "Input raster list to be added to the collection must be specified"
+            )
         else:
             if use_input_rasters_by_ref:
-                input_rasters_dict.update({"byref":True})
+                input_rasters_dict.update({"byref": True})
 
         # raster_type
         if raster_type_name is not None:
@@ -5902,35 +6529,51 @@ class _RasterAnalysisTools(BaseAnalytics):
         elevation_set = 0
         if raster_type_params is not None:
             for element in raster_type_params.keys():
-                if(element.lower() == "constantz"):
+                if element.lower() == "constantz":
                     value = raster_type_params[element]
                     del raster_type_params[element]
-                    raster_type_params.update({"ConstantZ":value})
+                    raster_type_params.update({"ConstantZ": value})
 
                     elevation_set = 1
                     break
-                elif(element.lower() == "averagezdem"):
+                elif element.lower() == "averagezdem":
                     value = raster_type_params[element]
                     del raster_type_params[element]
-                    raster_type_params.update({"averagezdem":value})
+                    raster_type_params.update({"averagezdem": value})
                     elevation_set = 1
                     break
 
-            if(elevation_set == 0):
+            if elevation_set == 0:
                 if "orthomappingElevation" in gis.properties.helperServices.keys():
-                    raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
+                    raster_type_params["averagezdem"] = gis.properties.helperServices[
+                        "orthomappingElevation"
+                    ]
                 else:
-                    raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
+                    raster_type_params["averagezdem"] = {
+                        "url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+                    }
         else:
             if "orthomappingElevation" in gis.properties.helperServices.keys():
-                raster_type_params = {"averagezdem" : gis.properties.helperServices["orthomappingElevation"]}
+                raster_type_params = {
+                    "averagezdem": gis.properties.helperServices[
+                        "orthomappingElevation"
+                    ]
+                }
             else:
-                raster_type_params = {"averagezdem": {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+                raster_type_params = {
+                    "averagezdem": {
+                        "url": "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+                    }
+                }
 
-
-        raster_type_dict = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
+        raster_type_dict = {
+            "rasterTypeName": raster_type_name,
+            "rasterTypeParameters": raster_type_params,
+        }
         if image_collection_properties is not None:
-            raster_type_dict.update({"imageCollectionProps":image_collection_properties})
+            raster_type_dict.update(
+                {"imageCollectionProps": image_collection_properties}
+            )
 
         raster_type_dict = json.dumps(raster_type_dict)
         return input_rasters_dict, raster_type_dict
@@ -5939,27 +6582,28 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
         param_value = None
         if isinstance(input_param, str):
-            if 'http:' in input_param or 'https:' in input_param:
-                param_value = json.dumps({ 'url' : input_param })
+            if "http:" in input_param or "https:" in input_param:
+                param_value = json.dumps({"url": input_param})
             else:
-                param_value = json.dumps({ 'uri' : input_param })
+                param_value = json.dumps({"uri": input_param})
 
         elif isinstance(input_param, arcgis.gis.Item):
-            param_value = json.dumps({ "itemId" : input_param.itemid })
+            param_value = json.dumps({"itemId": input_param.itemid})
 
         elif isinstance(input_param, dict):
-            param_value =  input_param
+            param_value = input_param
         elif isinstance(input_param, arcgis.learn.Model):
             param_value = input_param._model
         else:
-            raise TypeError(input_param+" should be a string (service url) or Item")
+            raise TypeError(input_param + " should be a string (service url) or Item")
 
         return param_value
 
     def _set_multiple_raster_inputs(self, input_rasters):
         from arcgis.raster import ImageryLayer
+
         gis = self._gis
-        input_rasters_dict={}
+        input_rasters_dict = {}
         # input rasters
         if isinstance(input_rasters, list):
             # extract the IDs of all the input items
@@ -5971,7 +6615,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if isinstance(item, Item):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
-                    if 'http:' in item or 'https:' in item:
+                    if "http:" in item or "https:" in item:
                         url_list.append(item)
                     else:
                         uri_list.append(item)
@@ -5979,38 +6623,40 @@ class _RasterAnalysisTools(BaseAnalytics):
                     url_list.append(item.url)
 
             if len(item_id_list) > 0:
-                input_rasters_dict = {"itemIds" : item_id_list }
+                input_rasters_dict = {"itemIds": item_id_list}
                 input_raster_specified = True
             elif len(url_list) > 0:
-                input_rasters_dict = {"urls" : url_list}
+                input_rasters_dict = {"urls": url_list}
                 input_raster_specified = True
             elif len(uri_list) > 0:
-                input_rasters_dict = {"uris" : uri_list}
+                input_rasters_dict = {"uris": uri_list}
                 input_raster_specified = True
         elif isinstance(input_rasters, str):
             # the input_rasters is a folder name; try and extract the folderID
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
-                if 'http:' in input_rasters or 'https:' in input_rasters:
-                    input_rasters_dict = {"url" : input_rasters}
+                if "http:" in input_rasters or "https:" in input_rasters:
+                    input_rasters_dict = {"url": input_rasters}
                 else:
-                    input_rasters_dict = {"uri" : input_rasters}
+                    input_rasters_dict = {"uri": input_rasters}
             else:
-                input_rasters_dict = {"folderId" : folderId}
+                input_rasters_dict = {"folderId": folderId}
             input_raster_specified = True
 
         return input_rasters_dict
 
-    #----------------------------------------------------------------------
-    def add_image(self,
-                  image_collection,
-                  input_rasters,
-                  raster_type_name=None,
-                  raster_type_params=None,
-                  context=None,
-                  future=False,
-                  **kwargs):
+    # ----------------------------------------------------------------------
+    def add_image(
+        self,
+        image_collection,
+        input_rasters,
+        raster_type_name=None,
+        raster_type_params=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference
@@ -6067,14 +6713,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         """
         task = "AddImage"
-        gis = self._gis
 
         image_collection = self._set_image_collection_param(image_collection)
         image_collection_properties = None
         use_input_rasters_by_ref = None
-
-        folderId = None
-        folder = None
+        upload_properties = None
 
         if context is not None:
             if "image_collection_properties" in context:
@@ -6083,37 +6726,47 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_rasters, raster_type = self._build_param_dictionary(input_rasters=input_rasters,
-                                                                  raster_type_name=raster_type_name,
-                                                                  raster_type_params=raster_type_params,
-                                                                  image_collection_properties=image_collection_properties,
-                                                                  use_input_rasters_by_ref=use_input_rasters_by_ref)
+        input_rasters, raster_type = self._build_param_dictionary(
+            input_rasters=input_rasters,
+            raster_type_name=raster_type_name,
+            raster_type_params=raster_type_params,
+            image_collection_properties=image_collection_properties,
+            use_input_rasters_by_ref=use_input_rasters_by_ref,
+            upload_properties=upload_properties,
+        )
 
-
-        gpjob = self._tbx.add_image(input_rasters=input_rasters,
-                                    image_collection=image_collection,
-                                    raster_type=raster_type,
-                                    context=context,
-                                    gis=self._gis,
-                                    future=True)
+        gpjob = self._tbx.add_image(
+            input_rasters=input_rasters,
+            image_collection=image_collection,
+            raster_type=raster_type,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def build_footprints(self,
-                         image_collection=None,
-                         computation_method="RADIOMETRY",
-                         value_range=None,
-                         context=None,
-                         future=False,
-                         **kwargs):
+
+    # ----------------------------------------------------------------------
+    def build_footprints(
+        self,
+        image_collection=None,
+        computation_method="RADIOMETRY",
+        value_range=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Computes the extent of every raster in a mosaic dataset.
 
@@ -6146,31 +6799,33 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         image_collection = self._set_image_collection_param(image_collection)
 
-        computation_method_values = ["RADIOMETRY","GEOMETRY"]
+        computation_method_values = ["RADIOMETRY", "GEOMETRY"]
         if not computation_method.upper() in computation_method_values:
-            raise RuntimeError("computation_method can only be one of the following: RADIOMETRY, GEOMETRY")
+            raise RuntimeError(
+                "computation_method can only be one of the following: RADIOMETRY, GEOMETRY"
+            )
 
-        gpjob = self._tbx.build_footprints(image_collection=image_collection,
-                                           computation_method=computation_method,
-                                           value_range=value_range,
-                                           context=context,
-                                           gis=self._gis,
-                                           future=True)
+        gpjob = self._tbx.build_footprints(
+            image_collection=image_collection,
+            computation_method=computation_method,
+            value_range=value_range,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def build_overview(self,
-                       image_collection,
-                       cell_size=None,
-                       context=None,
-                       future=False,
-                       **kwargs):
+
+    # ----------------------------------------------------------------------
+    def build_overview(
+        self, image_collection, cell_size=None, context=None, future=False, **kwargs
+    ):
         """
 
         Parameters
@@ -6195,31 +6850,36 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         image_collection = self._set_image_collection_param(image_collection)
 
-        gpjob = self._tbx.build_overview(image_collection=image_collection,
-                                         cell_size=cell_size,
-                                         context=context,
-                                         gis=self._gis,
-                                         future=True)
+        gpjob = self._tbx.build_overview(
+            image_collection=image_collection,
+            cell_size=cell_size,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return gpjob.result()
-    #----------------------------------------------------------------------
-    def calculate_density(self,
-                          input_point_or_line_features,
-                          output_name=None,
-                          count_field=None,
-                          search_distance=None,
-                          output_area_units="SquareMiles",
-                          output_cell_size=None,
-                          context=None,
-                          input_barriers=None,
-                          future=False,
-                          **kwargs):
+
+    # ----------------------------------------------------------------------
+    def calculate_density(
+        self,
+        input_point_or_line_features,
+        output_name=None,
+        count_field=None,
+        search_distance=None,
+        output_area_units="SquareMiles",
+        output_cell_size=None,
+        context=None,
+        input_barriers=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         input_point_or_line_features: inputPointOrLineFeatures (FeatureSet). Required parameter.
@@ -6236,176 +6896,210 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         context: context (str). Optional parameter.
 
-	gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-	future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
         task = "CalculateDensity"
         gis = self._gis
 
-
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_point_or_line_features = self._feature_input(input_point_or_line_features)
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if input_barriers is not None:
             input_barriers = self._feature_input(input_barriers)
 
         if self._current_version is not None:
             current_version = self._current_version
-            if((current_version is not None) and current_version<10.9):
-                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                                    output_name=output_raster,
-                                                    count_field=count_field,
-                                                    search_distance=search_distance,
-                                                    output_area_units=output_area_units,
-                                                    output_cell_size=output_cell_size,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
-            elif((current_version is not None) and current_version>=10.9):
-                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                                    output_name=output_raster,
-                                                    count_field=count_field,
-                                                    search_distance=search_distance,
-                                                    output_area_units=output_area_units,
-                                                    output_cell_size=output_cell_size,
-                                                    context=context,
-                                                    in_barriers=input_barriers,
-                                                    gis=self._gis,
-                                                    future=True)
+            if (current_version is not None) and current_version < 10.9:
+                gpjob = self._tbx.calculate_density(
+                    input_point_or_line_features=input_point_or_line_features,
+                    output_name=output_raster,
+                    count_field=count_field,
+                    search_distance=search_distance,
+                    output_area_units=output_area_units,
+                    output_cell_size=output_cell_size,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.9:
+                gpjob = self._tbx.calculate_density(
+                    input_point_or_line_features=input_point_or_line_features,
+                    output_name=output_raster,
+                    count_field=count_field,
+                    search_distance=search_distance,
+                    output_area_units=output_area_units,
+                    output_cell_size=output_cell_size,
+                    context=context,
+                    in_barriers=input_barriers,
+                    gis=self._gis,
+                    future=True,
+                )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    def calculate_distance(self,
-                           input_source_raster_or_features, #
-                           output_distance_name=None,
-                           maximum_distance=None,
-                           output_cell_size=None,
-                           output_direction_name=None,
-                           output_allocation_name=None,
-                           allocation_field=None,
-                           distance_method='PLANAR',
-                           input_barrier_raster_or_features=None,
-                           output_back_direction_name=None,
-                           context=None,
-                           future=False,
-                           **kwargs):
+
+    # ----------------------------------------------------------------------
+    def calculate_distance(
+        self,
+        input_source_raster_or_features,  #
+        output_distance_name=None,
+        maximum_distance=None,
+        output_cell_size=None,
+        output_direction_name=None,
+        output_allocation_name=None,
+        allocation_field=None,
+        distance_method="PLANAR",
+        input_barrier_raster_or_features=None,
+        output_back_direction_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
-            input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
+           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
 
-            output_name: outputDistanceName (str). Required parameter.
+           output_name: outputDistanceName (str). Required parameter.
 
-            maximum_distance: maximumDistance (LinearUnit). Optional parameter.
+           maximum_distance: maximumDistance (LinearUnit). Optional parameter.
 
-            output_cell_size: outputCellSize (LinearUnit). Optional parameter.
+           output_cell_size: outputCellSize (LinearUnit). Optional parameter.
 
-            output_direction_name: outputDirectionName (str). Optional parameter.
+           output_direction_name: outputDirectionName (str). Optional parameter.
 
-            output_allocation_name: outputAllocationName (str). Optional parameter.
+           output_allocation_name: outputAllocationName (str). Optional parameter.
 
-            allocation_field: allocationField (str). Optional parameter.
+           allocation_field: allocationField (str). Optional parameter.
 
-            context: context (str). Optional parameter.
+           context: context (str). Optional parameter.
 
-            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-            future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-         Returns the following as a named tuple:
-            output_distance_raster - outputDistanceRaster as a str
-            output_direction_raster - outputDirectionRaster as a str
-            output_allocation_raster - outputAllocationRaster as a str
+           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns the following as a named tuple:
+           output_distance_raster - outputDistanceRaster as a str
+           output_direction_raster - outputDirectionRaster as a str
+           output_allocation_raster - outputAllocationRaster as a str
         """
         task = "CalculateDistance"
         gis = self._gis
 
-
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(
+                input_source_raster_or_features
+            )
         elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+            input_source_raster_or_features = {
+                "itemId": input_source_raster_or_features.itemid
+            }
         else:
-            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._layer_input(
+                input_source_raster_or_features
+            )
 
         if input_barrier_raster_or_features:
             if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._feature_input(
+                    input_barrier_raster_or_features
+                )
             elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+                input_barrier_raster_or_features = {
+                    "itemId": input_source_raster_or_features.itemid
+                }
             else:
-                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._layer_input(
+                    input_barrier_raster_or_features
+                )
 
-
-        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_distance_name, task=task, output_properties=kwargs)
-        output_direction_raster=None
+        output_distance_raster, output_distance_service = self._set_output_raster(
+            output_name=output_distance_name, task=task, output_properties=kwargs
+        )
+        output_direction_raster = None
         if output_direction_name is not None:
-            output_direction_raster, output_direction_service = self._set_output_raster(output_name=output_direction_name, task=task, output_properties=kwargs)
+            output_direction_raster, output_direction_service = self._set_output_raster(
+                output_name=output_direction_name, task=task, output_properties=kwargs
+            )
 
-        output_allocation_raster=None
+        output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(output_name=output_allocation_name, task=task,  output_properties=kwargs)
+            output_allocation_raster, out_allocation_service = self._set_output_raster(
+                output_name=output_allocation_name, task=task, output_properties=kwargs
+            )
 
-        output_back_direction_raster=None
+        output_back_direction_raster = None
         if output_back_direction_name is not None:
-            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_name, task=task,  output_properties=kwargs)
+            (
+                output_back_direction_raster,
+                out_back_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_back_direction_name,
+                task=task,
+                output_properties=kwargs,
+            )
 
-
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
-            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
-                                                 output_distance_name=output_distance_raster,
-                                                 maximum_distance=maximum_distance,
-                                                 output_cell_size=output_cell_size,
-                                                 output_direction_name=output_direction_raster,
-                                                 output_allocation_name=output_allocation_raster,
-                                                 allocation_field=allocation_field,
-                                                 distance_method=distance_method,
-                                                 input_barrier_raster_or_features=input_barrier_raster_or_features,
-                                                 output_back_direction_name=output_back_direction_raster,
-                                                 context=context,
-                                                 gis=self._gis,
-                                                 future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
+            gpjob = self._tbx.calculate_distance(
+                input_source_raster_or_features=input_source_raster_or_features,
+                output_distance_name=output_distance_raster,
+                maximum_distance=maximum_distance,
+                output_cell_size=output_cell_size,
+                output_direction_name=output_direction_raster,
+                output_allocation_name=output_allocation_raster,
+                allocation_field=allocation_field,
+                distance_method=distance_method,
+                input_barrier_raster_or_features=input_barrier_raster_or_features,
+                output_back_direction_name=output_back_direction_raster,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
-                                        output_distance_name=output_distance_raster,
-                                        maximum_distance=maximum_distance,
-                                        output_cell_size=output_cell_size,
-                                        output_direction_name=output_direction_raster,
-                                        output_allocation_name=output_allocation_raster,
-                                        allocation_field=allocation_field,
-                                        context=context,
-                                        gis=self._gis,
-                                        future=True)
+            gpjob = self._tbx.calculate_distance(
+                input_source_raster_or_features=input_source_raster_or_features,
+                output_distance_name=output_distance_raster,
+                maximum_distance=maximum_distance,
+                output_cell_size=output_cell_size,
+                output_direction_name=output_direction_raster,
+                output_allocation_name=output_allocation_raster,
+                allocation_field=allocation_field,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def calculate_statistics(self,
-                             image_collection,
-                             skip_factors=None,
-                             context=None,
-                             future=False,
-                             **kwargs):
+
+    # ----------------------------------------------------------------------
+    def calculate_statistics(
+        self, image_collection, skip_factors=None, context=None, future=False, **kwargs
+    ):
 
         """
         image_collection: imageCollection (str). Required parameter.
@@ -6429,105 +7123,125 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         image_collection = self._set_image_collection_param(image_collection)
-        gpjob = self._tbx.calculate_statistics(image_collection=image_collection,
-                                               skipfactors=skip_factors,
-                                               context=context,
-                                               gis=self._gis,
-                                               future=True)
+        gpjob = self._tbx.calculate_statistics(
+            image_collection=image_collection,
+            skipfactors=skip_factors,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs
-    def calculate_travel_cost(self,
-                              input_source_raster_or_features,
-                              output_name=None,
-                              input_cost_raster=None,
-                              input_surface_raster=None,
-                              maximum_distance=None,
-                              input_horizontal_raster=None,
-                              horizontal_factor=None,
-                              input_vertical_raster=None,
-                              vertical_factor=None,
-                              source_cost_multiplier=None,
-                              source_start_cost=None,
-                              source_resistance_rate=None,
-                              source_capacity=None,
-                              source_travel_direction=None,
-                              output_backlink_name=None,
-                              output_allocation_name=None,
-                              allocation_field=None,
-                              context=None,
-                              future=False,
-                              **kwargs):
 
-        """
-        """
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs
+    def calculate_travel_cost(
+        self,
+        input_source_raster_or_features,
+        output_name=None,
+        input_cost_raster=None,
+        input_surface_raster=None,
+        maximum_distance=None,
+        input_horizontal_raster=None,
+        horizontal_factor=None,
+        input_vertical_raster=None,
+        vertical_factor=None,
+        source_cost_multiplier=None,
+        source_start_cost=None,
+        source_resistance_rate=None,
+        source_capacity=None,
+        source_travel_direction=None,
+        output_backlink_name=None,
+        output_allocation_name=None,
+        allocation_field=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+
+        """ """
         task = "CalculateTravelCost"
         gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
+        output_distance_raster, output_distance_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(
+                input_source_raster_or_features
+            )
         elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+            input_source_raster_or_features = {
+                "itemId": input_source_raster_or_features.itemid
+            }
         else:
-            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._layer_input(
+                input_source_raster_or_features
+            )
 
-        output_backlink_raster=None
+        output_backlink_raster = None
         if output_backlink_name is not None:
-            output_backlink_raster, output_backlink_service = self._set_output_raster(output_name=output_backlink_name, task=task, output_properties=kwargs)
+            output_backlink_raster, output_backlink_service = self._set_output_raster(
+                output_name=output_backlink_name, task=task, output_properties=kwargs
+            )
 
-        output_allocation_raster=None
+        output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(output_name=output_allocation_name, task=task, output_properties=kwargs)
+            output_allocation_raster, out_allocation_service = self._set_output_raster(
+                output_name=output_allocation_name, task=task, output_properties=kwargs
+            )
 
-        gpjob = self._tbx.calculate_travel_cost(input_source_raster_or_features=input_source_raster_or_features,
-                                                output_distance_name=output_distance_raster,
-                                                input_cost_raster=input_cost_raster,
-                                                input_surface_raster=input_surface_raster,
-                                                maximum_distance=maximum_distance,
-                                                input_horizontal_raster=input_horizontal_raster,
-                                                horizontal_factor=horizontal_factor,
-                                                input_vertical_raster=input_vertical_raster,
-                                                vertical_factor=vertical_factor,
-                                                source_cost_multiplier=source_cost_multiplier,
-                                                source_start_cost=source_start_cost,
-                                                source_resistance_rate=source_resistance_rate,
-                                                source_capacity=source_capacity,
-                                                source_travel_direction=source_travel_direction,
-                                                output_backlink_name=output_backlink_raster,
-                                                output_allocation_name=output_allocation_raster,
-                                                allocation_field=allocation_field,
-                                                context=context,
-                                                gis=self._gis,
-                                                future=True)
+        gpjob = self._tbx.calculate_travel_cost(
+            input_source_raster_or_features=input_source_raster_or_features,
+            output_distance_name=output_distance_raster,
+            input_cost_raster=input_cost_raster,
+            input_surface_raster=input_surface_raster,
+            maximum_distance=maximum_distance,
+            input_horizontal_raster=input_horizontal_raster,
+            horizontal_factor=horizontal_factor,
+            input_vertical_raster=input_vertical_raster,
+            vertical_factor=vertical_factor,
+            source_cost_multiplier=source_cost_multiplier,
+            source_start_cost=source_start_cost,
+            source_resistance_rate=source_resistance_rate,
+            source_capacity=source_capacity,
+            source_travel_direction=source_travel_direction,
+            output_backlink_name=output_backlink_raster,
+            output_allocation_name=output_allocation_raster,
+            allocation_field=allocation_field,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs
-    def classify(self,
-                 input_raster,
-                 input_classifier_definition,
-                 output_name=None,
-                 additional_input_raster=None,
-                 context=None,
-                 future=False,
-                 **kwargs):
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs
+    def classify(
+        self,
+        input_raster,
+        input_classifier_definition,
+        output_name=None,
+        additional_input_raster=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         ----------
@@ -6556,36 +7270,45 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_layer=input_raster)
         if additional_input_raster is not None:
-            additional_input_raster = self._layer_input(input_layer=additional_input_raster)
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+            additional_input_raster = self._layer_input(
+                input_layer=additional_input_raster
+            )
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.classify(input_raster=input_raster,
-                                   input_classifier_definition=input_classifier_definition,
-                                   output_name=output_raster,
-                                   additional_input_raster=additional_input_raster,
-                                   context=context,
-                                   gis=self._gis,
-                                   future=True)
+        gpjob = self._tbx.classify(
+            input_raster=input_raster,
+            input_classifier_definition=input_classifier_definition,
+            output_name=output_raster,
+            additional_input_raster=additional_input_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs
-    def classify_pixels_using_deep_learning(self,
-                                            input_raster,
-                                            model,
-                                            model_arguments=None,
-                                            output_classified_raster=None,
-                                            process_all_raster_items=False,
-                                            context=None,
-                                            future=False,
-                                            **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs
+    def classify_pixels_using_deep_learning(
+        self,
+        input_raster,
+        model,
+        model_arguments=None,
+        output_classified_raster=None,
+        process_all_raster_items=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Function to classify input imagery data using a deep learning model.
@@ -6649,61 +7372,72 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "ClassifyPixelsUsingDeepLearning"
         gis = self._gis
 
-
         input_raster = self._layer_input(input_layer=input_raster)
 
         if model is None:
-            raise RuntimeError('model cannot be None')
+            raise RuntimeError("model cannot be None")
         else:
             model_value = self._set_param(model)
 
         model_arguments_value = None
         if model_arguments:
             try:
-                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+                model_arguments_value = dict(
+                    (str(k), str(v)) for k, v in model_arguments.items()
+                )
             except:
                 model_arguments_value = model_arguments
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        output_raster, output_service = self._set_output_raster(output_name=output_classified_raster, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_classified_raster, task=task, output_properties=kwargs
+        )
 
-
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
-            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
-                                                                  output_classified_raster=output_raster,
-                                                                  model=model_value,
-                                                                  model_arguments=model_arguments_value,
-                                                                  process_all_raster_items=process_all_raster_items,
-                                                                  context=context,
-                                                                  gis=self._gis,
-                                                                  future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
+            gpjob = self._tbx.classify_pixels_using_deep_learning(
+                input_raster=input_raster,
+                output_classified_raster=output_raster,
+                model=model_value,
+                model_arguments=model_arguments_value,
+                process_all_raster_items=process_all_raster_items,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
-                                                                  output_classified_raster=output_raster,
-                                                                  model=model_value,
-                                                                  model_arguments=model_arguments_value,
-                                                                  context=context,
-                                                                  gis=self._gis,
-                                                                  future=True)
+            gpjob = self._tbx.classify_pixels_using_deep_learning(
+                input_raster=input_raster,
+                output_classified_raster=output_raster,
+                model=model_value,
+                model_arguments=model_arguments_value,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    def convert_feature_to_raster(self,
-                                  input_feature,
-                                  output_cell_size,
-                                  output_name=None,
-                                  value_field=None,
-                                  context=None,
-                                  future=False,
-                                  **kwargs):
+
+    # ----------------------------------------------------------------------
+    def convert_feature_to_raster(
+        self,
+        input_feature,
+        output_cell_size,
+        output_name=None,
+        value_field=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Parameters:
@@ -6734,20 +7468,24 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        #output_raster = {"itemProperties":{ "itemId": output_service.itemid}}
+        # output_raster = {"itemProperties":{ "itemId": output_service.itemid}}
         input_feature = self._feature_input(input_layer=input_feature)
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.convert_feature_to_raster(input_feature=input_feature,
-                                                    output_name=output_raster,
-                                                    output_cell_size=output_cell_size,
-                                                    value_field=value_field,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
+        gpjob = self._tbx.convert_feature_to_raster(
+            input_feature=input_feature,
+            output_name=output_raster,
+            output_cell_size=output_cell_size,
+            value_field=value_field,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -6756,18 +7494,21 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob, item)
         return RAJob(gpjob, item).result()
-    #----------------------------------------------------------------------
-    def convert_raster_to_feature(self,
-                                  input_raster,
-                                  output_name=None,
-                                  field="Value",
-                                  output_type="Point",
-                                  simplify_lines_or_polygons=True,
-                                  context=None,
-                                  create_multipart_features=False,
-                                  max_vertices_per_feature=None,
-                                  future=False,
-                                  **kwargs):
+
+    # ----------------------------------------------------------------------
+    def convert_raster_to_feature(
+        self,
+        input_raster,
+        output_name=None,
+        field="Value",
+        output_type="Point",
+        simplify_lines_or_polygons=True,
+        context=None,
+        create_multipart_features=False,
+        max_vertices_per_feature=None,
+        future=False,
+        **kwargs
+    ):
         """
         This service tool converts imagery data to feature class vector data.
 
@@ -6807,25 +7548,25 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_raster)
 
         if output_name is None:
-            output_service_name = 'RasterToFeature_' + _id_generator()
-            output_name = output_service_name.replace(' ', '_')
+            output_service_name = "RasterToFeature_" + _id_generator()
+            output_name = output_service_name.replace(" ", "_")
         else:
-            output_service_name = output_name.replace(' ', '_')
+            output_service_name = output_name.replace(" ", "_")
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -6833,38 +7574,61 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder_dict = gis.content.create_folder(folder, owner)
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
-        output_service = self._create_output_feature_service(output_name=output_name,
-                                                             output_service_name=output_name,
-                                                             task=task,
-                                                             folder=folder)
+        output_service = self._create_output_feature_service(
+            output_name=output_name,
+            output_service_name=output_name,
+            task=task,
+            folder=folder,
+        )
         if folderId is not None:
-            output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+            output_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}})
+            output_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                }
+            )
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
-            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
-                                                        output_name=output_name,
-                                                        field=field,
-                                                        output_type=output_type,
-                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
-                                                        context=context,
-                                                        gis=self._gis,
-                                                        future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] <= 10.8:
+            gpjob = self._tbx.convert_raster_to_feature(
+                input_raster=input_raster,
+                output_name=output_name,
+                field=field,
+                output_type=output_type,
+                simplify_lines_or_polygons=simplify_lines_or_polygons,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         else:
-            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
-                                                        output_name=output_name,
-                                                        field=field,
-                                                        output_type=output_type,
-                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
-                                                        create_multipart_features=create_multipart_features,
-                                                        max_vertices_per_feature=max_vertices_per_feature,
-                                                        context=context,
-                                                        gis=self._gis,
-                                                        future=True)
+            gpjob = self._tbx.convert_raster_to_feature(
+                input_raster=input_raster,
+                output_name=output_name,
+                field=field,
+                output_type=output_type,
+                simplify_lines_or_polygons=simplify_lines_or_polygons,
+                create_multipart_features=create_multipart_features,
+                max_vertices_per_feature=max_vertices_per_feature,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_ra = True
         gpjob._return_item = output_service
         gpjob._item_properties = True
@@ -6872,17 +7636,20 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs
-    def create_image_collection(self,
-                                image_collection,
-                                input_rasters,
-                                raster_type_name,
-                                raster_type_params = None,
-                                out_sr = None,
-                                context=None,
-                                future=False,
-                                **kwargs):
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs
+    def create_image_collection(
+        self,
+        image_collection,
+        input_rasters,
+        raster_type_name,
+        raster_type_params=None,
+        out_sr=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Create a collection of images that will participate in the ortho-mapping project.
@@ -6951,11 +7718,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             The imagery layer item
 
         """
+        kwargs.update({"tiles_only": False})
         task = "CreateImageCollection"
         gis = self._gis
         output_service = None
         image_collection_properties = None
         use_input_rasters_by_ref = None
+        upload_properties = None
 
         if context is not None:
             if "image_collection_properties" in context:
@@ -6964,89 +7733,106 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
-
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         if isinstance(image_collection, Item):
             image_collection = json.dumps({"itemId": image_collection.itemid})
         elif isinstance(image_collection, str):
             if ("/") in image_collection or ("\\") in image_collection:
-                if 'http:' in image_collection or 'https:' in image_collection:
-                    image_collection= json.dumps({ 'url' : image_collection })
+                if "http:" in image_collection or "https:" in image_collection:
+                    image_collection = json.dumps({"url": image_collection})
                 else:
-                    image_collection = json.dumps({ 'uri' : image_collection })
+                    image_collection = json.dumps({"uri": image_collection})
             else:
-                result = gis.content.search("title:"+str(image_collection), item_type = "Imagery Layer")
+                result = gis.content.search(
+                    "title:" + str(image_collection), item_type="Imagery Layer"
+                )
                 image_collection_result = None
                 for element in result:
                     if str(image_collection) == element.title:
                         image_collection_result = element
                 if image_collection_result is not None:
-                    image_collection = json.dumps({"itemId": image_collection_result.itemid})
+                    image_collection = json.dumps(
+                        {"itemId": image_collection_result.itemid}
+                    )
                 else:
-                    image_collection, output_service = self._set_output_raster(output_name=image_collection, task=task, output_properties=kwargs)
+                    image_collection, output_service = self._set_output_raster(
+                        output_name=image_collection,
+                        task=task,
+                        output_properties=kwargs,
+                    )
 
         if out_sr is not None:
             if isinstance(out_sr, int):
                 if context is not None:
-                    context.update({'outSR':{'wkid': out_sr}})
+                    context.update({"outSR": {"wkid": out_sr}})
                 else:
                     context = {}
-                    context["outSR"]={'wkid': out_sr}
+                    context["outSR"] = {"wkid": out_sr}
             else:
                 if context is not None:
-                    context.update({'outSR':out_sr})
+                    context.update({"outSR": out_sr})
                 else:
                     context = {}
-                    context["outSR"]=out_sr
+                    context["outSR"] = out_sr
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_rasters, raster_type = self._build_param_dictionary(input_rasters=input_rasters,
-                                                                raster_type_name=raster_type_name,
-                                                                raster_type_params=raster_type_params,
-                                                                image_collection_properties=image_collection_properties,
-                                                                use_input_rasters_by_ref=use_input_rasters_by_ref)
+        input_rasters, raster_type = self._build_param_dictionary(
+            input_rasters=input_rasters,
+            raster_type_name=raster_type_name,
+            raster_type_params=raster_type_params,
+            image_collection_properties=image_collection_properties,
+            use_input_rasters_by_ref=use_input_rasters_by_ref,
+            upload_properties=upload_properties,
+        )
 
-        gpjob = self._tbx.create_image_collection(input_rasters=input_rasters,
-                                                  image_collection=image_collection,
-                                                  raster_type=raster_type,
-                                                  context=context,
-                                                  gis=self._gis,
-                                                  future=True)
+        gpjob = self._tbx.create_image_collection(
+            input_rasters=input_rasters,
+            image_collection=image_collection,
+            raster_type=raster_type,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
 
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs
-    def create_viewshed(self,
-                        input_elevation_surface,
-                        input_observer_features,
-                        output_name=None,
-                        optimize_for=None,
-                        maximum_viewing_distance=None,
-                        maximum_viewing_distance_field=None,
-                        minimum_viewing_distance=None,
-                        minimum_viewing_distance_field=None,
-                        viewing_distance_is3D=None,
-                        observers_elevation=None,
-                        observers_elevation_field=None,
-                        observers_height=None,
-                        observers_height_field=None,
-                        target_height=None,
-                        target_height_field=None,
-                        above_ground_level_output_name=None,
-                        context=None,
-                        future=False,
-                        **kwargs):
 
-        """
-        """
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs
+    def create_viewshed(
+        self,
+        input_elevation_surface,
+        input_observer_features,
+        output_name=None,
+        optimize_for=None,
+        maximum_viewing_distance=None,
+        maximum_viewing_distance_field=None,
+        minimum_viewing_distance=None,
+        minimum_viewing_distance_field=None,
+        viewing_distance_is3D=None,
+        observers_elevation=None,
+        observers_elevation_field=None,
+        observers_height=None,
+        observers_height_field=None,
+        target_height=None,
+        target_height_field=None,
+        above_ground_level_output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+
+        """ """
         task = "CreateViewshed"
 
         gis = self._gis
@@ -7054,48 +7840,56 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_elevation_surface = self._layer_input(input_elevation_surface)
         input_observer_features = self._layer_input(input_observer_features)
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
         output_layers = [output_service]
-        above_ground_level_raster=None
+        above_ground_level_raster = None
         if above_ground_level_output_name is not None:
-            above_ground_level_raster, above_ground_level_service = self._set_output_raster(output_name=above_ground_level_output_name, task=task, output_properties=kwargs)
+            (
+                above_ground_level_raster,
+                above_ground_level_service,
+            ) = self._set_output_raster(
+                output_name=above_ground_level_output_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(above_ground_level_service)
 
-        gpjob = self._tbx.create_viewshed(input_elevation_surface=input_elevation_surface,
-                                          input_observer_features=input_observer_features,
-                                          output_name=output_raster,
-                                          optimize_for=optimize_for,
-                                          maximum_viewing_distance=maximum_viewing_distance,
-                                          maximum_viewing_distance_field=maximum_viewing_distance_field,
-                                          minimum_viewing_distance=minimum_viewing_distance,
-                                          minimum_viewing_distance_field=minimum_viewing_distance_field,
-                                          viewing_distance_is3_d=viewing_distance_is3D,
-                                          observers_elevation=observers_elevation,
-                                          observers_elevation_field=observers_elevation_field,
-                                          observers_height=observers_height,
-                                          observers_height_field=observers_height_field,
-                                          target_height=target_height,
-                                          target_height_field=target_height_field,
-                                          above_ground_level_output_name=above_ground_level_raster,
-                                          context=context,
-                                          gis=self._gis,
-                                          future=True)
+        gpjob = self._tbx.create_viewshed(
+            input_elevation_surface=input_elevation_surface,
+            input_observer_features=input_observer_features,
+            output_name=output_raster,
+            optimize_for=optimize_for,
+            maximum_viewing_distance=maximum_viewing_distance,
+            maximum_viewing_distance_field=maximum_viewing_distance_field,
+            minimum_viewing_distance=minimum_viewing_distance,
+            minimum_viewing_distance_field=minimum_viewing_distance_field,
+            viewing_distance_is3_d=viewing_distance_is3D,
+            observers_elevation=observers_elevation,
+            observers_elevation_field=observers_elevation_field,
+            observers_height=observers_height,
+            observers_height_field=observers_height_field,
+            target_height=target_height,
+            target_height_field=target_height_field,
+            above_ground_level_output_name=above_ground_level_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob, output_layers)
         return RAJob(gpjob, output_layers).result()
-    #----------------------------------------------------------------------
-    def delete_image(self,
-                     image_collection,
-                     where,
-                     future=False,
-                     **kwargs):
+
+    # ----------------------------------------------------------------------
+    def delete_image(self, image_collection, where, future=False, **kwargs):
         """
         delete_image allows users to remove existing images from the image collection (mosaic dataset).
         The function will only delete the raster item in the mosaic dataset and will not remove the
@@ -7121,20 +7915,19 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "DeleteImage"
         gis = self._gis
 
-
-        image_collection  = self._set_image_collection_param(image_collection)
-        gpjob = self._tbx.delete_image(image_collection=image_collection,
-                                       where=where,
-                                       gis=self._gis,
-                                       future=True)
+        image_collection = self._set_image_collection_param(image_collection)
+        gpjob = self._tbx.delete_image(
+            image_collection=image_collection, where=where, gis=self._gis, future=True
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs, doc
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs, doc
     def delete_image_collection(self, image_collection, future=False, **kwargs):
-        '''
+        """
         Delete the image collection. This service tool will delete the image collection
         image service, that is, the portal-hosted image layer item. It will not delete
         the source images that the image collection references.
@@ -7154,23 +7947,37 @@ class _RasterAnalysisTools(BaseAnalytics):
         :return:
             Boolean value indicating whether the deletion was successful or not
 
-        '''
+        """
         task = "DeleteImageCollection"
 
         gis = self._gis
-        image_collection  = self._set_image_collection_param(image_collection)
-        gpjob = self._tbx.delete_image_collection(image_collection=image_collection,
-                                                  gis=self._gis, future=True)
+        image_collection = self._set_image_collection_param(image_collection)
+        gpjob = self._tbx.delete_image_collection(
+            image_collection=image_collection, gis=self._gis, future=True
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs, doc
-    def detect_objects_using_deep_learning(self, input_raster, model, output_objects=None, model_arguments=None,
-                                           run_nms=False, confidence_score_field=None, class_value_field=None,
-                                           max_overlap_ratio=None, process_all_raster_items=False, context=None, future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs, doc
+    def detect_objects_using_deep_learning(
+        self,
+        input_raster,
+        model,
+        output_objects=None,
+        model_arguments=None,
+        run_nms=False,
+        confidence_score_field=None,
+        class_value_field=None,
+        max_overlap_ratio=None,
+        process_all_raster_items=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Function can be used to generate feature service that contains polygons on detected objects
         found in the imagery data using the designated deep learning model. Note that the deep learning
@@ -7243,14 +8050,16 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster = self._layer_input(input_layer=input_raster)
 
         if model is None:
-            raise RuntimeError('model cannot be None')
+            raise RuntimeError("model cannot be None")
         else:
             model_value = self._set_param(model)
 
         model_arguments_value = None
         if model_arguments:
             try:
-                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+                model_arguments_value = dict(
+                    (str(k), str(v)) for k, v in model_arguments.items()
+                )
             except:
                 model_arguments_value = model_arguments
 
@@ -7265,24 +8074,24 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if output_objects is None:
-            output_service_name = 'DetectObjectsUsingDeepLearning_' + _id_generator()
-            output_objects = output_service_name.replace(' ', '_')
+            output_service_name = "DetectObjectsUsingDeepLearning_" + _id_generator()
+            output_objects = output_service_name.replace(" ", "_")
         else:
-            output_service_name = output_objects.replace(' ', '_')
+            output_service_name = output_objects.replace(" ", "_")
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -7290,56 +8099,84 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder_dict = gis.content.create_folder(folder, owner)
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
-        output_service = self._create_output_feature_service(output_name=output_objects,
-                                                             output_service_name=output_service_name,
-                                                             task='Detect Objects',
-                                                             folder=folder)
+        output_service = self._create_output_feature_service(
+            output_name=output_objects,
+            output_service_name=output_service_name,
+            task="Detect Objects",
+            folder=folder,
+        )
         if folderId is not None:
-            output_objects = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+            output_objects = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_objects= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}})
+            output_objects = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                }
+            )
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
-            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
-                                                                 output_objects=output_objects,
-                                                                 model=model_value,
-                                                                 model_arguments=model_arguments_value,
-                                                                 run_nms=run_nms,
-                                                                 confidence_score_field=confidence_score_field,
-                                                                 class_value_field=class_value_field,
-                                                                 max_overlap_ratio=max_overlap_ratio,
-                                                                 process_all_raster_items=process_all_raster_items,
-                                                                 context=context,
-                                                                 gis=self._gis,
-                                                                 future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
+            gpjob = self._tbx.detect_objects_using_deep_learning(
+                input_raster=input_raster,
+                output_objects=output_objects,
+                model=model_value,
+                model_arguments=model_arguments_value,
+                run_nms=run_nms,
+                confidence_score_field=confidence_score_field,
+                class_value_field=class_value_field,
+                max_overlap_ratio=max_overlap_ratio,
+                process_all_raster_items=process_all_raster_items,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
-                                                            output_objects=output_objects,
-                                                            model=model_value,
-                                                            model_arguments=model_arguments_value,
-                                                            run_nms=run_nms,
-                                                            confidence_score_field=confidence_score_field,
-                                                            class_value_field=class_value_field,
-                                                            max_overlap_ratio=max_overlap_ratio,
-                                                            context=context, gis=self._gis,
-                                                            future=True)
+            gpjob = self._tbx.detect_objects_using_deep_learning(
+                input_raster=input_raster,
+                output_objects=output_objects,
+                model=model_value,
+                model_arguments=model_arguments_value,
+                run_nms=run_nms,
+                confidence_score_field=confidence_score_field,
+                class_value_field=class_value_field,
+                max_overlap_ratio=max_overlap_ratio,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_ra = True
         gpjob._item_properties = True
         gpjob._return_item = output_service
         if future:
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def determine_optimum_travel_cost_network(self, input_regions_raster_or_features,
-                                              input_cost_raster=None,
-                                              output_optimum_network_name=None,
-                                              output_neighbor_network_name=None,
-                                              context=None,
-                                              future=False,
-                                              **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def determine_optimum_travel_cost_network(
+        self,
+        input_regions_raster_or_features,
+        input_cost_raster=None,
+        output_optimum_network_name=None,
+        output_neighbor_network_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         calculates the optimum cost network from a set of input regions.
 
@@ -7366,34 +8203,42 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_raster : Image layer item
         """
         task = "DetermineOptimumTravelCostNetwork"
-        gis =  self._gis
+        gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_regions_raster_or_features = self._layer_input(input_regions_raster_or_features)
+        input_regions_raster_or_features = self._layer_input(
+            input_regions_raster_or_features
+        )
 
         if input_cost_raster is not None:
             input_cost_raster = self._layer_input(input_cost_raster)
 
         if output_optimum_network_name is None:
-            output_optimum_network_service_name = 'Optimum Network Raster_' + _id_generator()
-            output_optimum_network_name = output_optimum_network_service_name.replace(' ', '_')
+            output_optimum_network_service_name = (
+                "Optimum Network Raster_" + _id_generator()
+            )
+            output_optimum_network_name = output_optimum_network_service_name.replace(
+                " ", "_"
+            )
         else:
-            output_optimum_network_service_name = output_optimum_network_name.replace(' ', '_')
+            output_optimum_network_service_name = output_optimum_network_name.replace(
+                " ", "_"
+            )
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -7402,80 +8247,145 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
-        output_optimum_network_service = self._create_output_feature_service(output_name=output_optimum_network_name,
-                                                             output_service_name=output_optimum_network_service_name,
-                                                             task='DetermineOptimumTravelCostNetwork',
-                                                             folder=folder)
+        output_optimum_network_service = self._create_output_feature_service(
+            output_name=output_optimum_network_name,
+            output_service_name=output_optimum_network_service_name,
+            task="DetermineOptimumTravelCostNetwork",
+            folder=folder,
+        )
         if folderId is not None:
-            output_optimum_network_name = json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
-                                           "itemProperties": {"itemId": output_optimum_network_service.itemid}, "folderId":folderId})
+            output_optimum_network_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_optimum_network_service_name,
+                        "serviceUrl": output_optimum_network_service.url,
+                    },
+                    "itemProperties": {"itemId": output_optimum_network_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_optimum_network_name = json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
-                                           "itemProperties": {"itemId": output_optimum_network_service.itemid}})
-
+            output_optimum_network_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_optimum_network_service_name,
+                        "serviceUrl": output_optimum_network_service.url,
+                    },
+                    "itemProperties": {"itemId": output_optimum_network_service.itemid},
+                }
+            )
 
         if output_neighbor_network_name is None:
-            output_neighbor_network_service_name = 'Neighbor Network Raster_' + _id_generator()
-            output_neighbor_network_name = output_neighbor_network_service_name.replace(' ', '_')
+            output_neighbor_network_service_name = (
+                "Neighbor Network Raster_" + _id_generator()
+            )
+            output_neighbor_network_name = output_neighbor_network_service_name.replace(
+                " ", "_"
+            )
         else:
-            output_neighbor_network_service_name = output_neighbor_network_name.replace(' ', '_')
+            output_neighbor_network_service_name = output_neighbor_network_name.replace(
+                " ", "_"
+            )
 
-
-        output_neighbor_network_service = self._create_output_feature_service(output_name=output_neighbor_network_name,
-                                                             output_service_name=output_neighbor_network_service_name,
-                                                             task='DetermineOptimumTravelCostNetwork',
-                                                             folder=folder)
+        output_neighbor_network_service = self._create_output_feature_service(
+            output_name=output_neighbor_network_name,
+            output_service_name=output_neighbor_network_service_name,
+            task="DetermineOptimumTravelCostNetwork",
+            folder=folder,
+        )
         if folderId is not None:
-            output_neighbor_network_name = json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, "serviceUrl": output_neighbor_network_service.url},
-                                           "itemProperties": {"itemId": output_neighbor_network_service.itemid}, "folderId":folderId})
+            output_neighbor_network_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_neighbor_network_service_name,
+                        "serviceUrl": output_neighbor_network_service.url,
+                    },
+                    "itemProperties": {
+                        "itemId": output_neighbor_network_service.itemid
+                    },
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_neighbor_network_name = json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, "serviceUrl": output_neighbor_network_service.url},
-                                           "itemProperties": {"itemId": output_neighbor_network_service.itemid}})
+            output_neighbor_network_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_neighbor_network_service_name,
+                        "serviceUrl": output_neighbor_network_service.url,
+                    },
+                    "itemProperties": {
+                        "itemId": output_neighbor_network_service.itemid
+                    },
+                }
+            )
 
-        gpjob = self._tbx.determine_optimum_travel_cost_network(input_regions_raster_or_features=input_regions_raster_or_features,
-                                                                input_cost_raster=input_cost_raster,
-                                                                output_optimum_network_name=output_optimum_network_name,
-                                                                output_neighbor_network_name=output_neighbor_network_name,
-                                                                context=context, gis=self._gis, future=True)
+        gpjob = self._tbx.determine_optimum_travel_cost_network(
+            input_regions_raster_or_features=input_regions_raster_or_features,
+            input_cost_raster=input_cost_raster,
+            output_optimum_network_name=output_optimum_network_name,
+            output_neighbor_network_name=output_neighbor_network_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def determine_travel_cost_paths_to_destinations(self, input_destination_raster_or_features,
-                                                    input_cost_distance_raster=None,
-                                                    input_cost_backlink_raster=None,
-                                                    output_name=None,
-                                                    destination_field=None,
-                                                    path_type=None,
-                                                    context=None,
-                                                    future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def determine_travel_cost_paths_to_destinations(
+        self,
+        input_destination_raster_or_features,
+        input_cost_distance_raster=None,
+        input_cost_backlink_raster=None,
+        output_name=None,
+        destination_field=None,
+        path_type=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """DetermineTravelCostPathsToDestinations GPtool"""
         task = "DetermineTravelCostPathsToDestinations"
         gis = self._gis
         if context is None:
             context = {}
             _set_raster_context(params=context)
-        gpjob = self._tbx.determine_travel_cost_paths_to_destinations(input_destination_raster_or_features=input_destination_raster_or_features,
-                                                                      input_cost_distance_raster=input_cost_distance_raster,
-                                                                      input_cost_backlink_raster=input_cost_backlink_raster,
-                                                                      output_name=output_name,
-                                                                      destination_field=destination_field,
-                                                                      path_type=path_type,
-                                                                      context=context, gis=self._gis, future=True)
+        gpjob = self._tbx.determine_travel_cost_paths_to_destinations(
+            input_destination_raster_or_features=input_destination_raster_or_features,
+            input_cost_distance_raster=input_cost_distance_raster,
+            input_cost_backlink_raster=input_cost_backlink_raster,
+            output_name=output_name,
+            destination_field=destination_field,
+            path_type=path_type,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def determine_travel_costpath_as_polyline(self, input_source_raster_or_features, input_cost_raster,
-                                               input_destination_raster_or_features=None, output_polyline_name=None,
-                                               path_type=None, destination_field=None, context=None, future=False, **kwargs):
-        '''
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def determine_travel_costpath_as_polyline(
+        self,
+        input_source_raster_or_features,
+        input_cost_raster,
+        input_destination_raster_or_features=None,
+        output_polyline_name=None,
+        path_type=None,
+        destination_field=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
+        """
         Calculates the least cost polyline path between sources and known destinations.
 
         ====================================     ====================================================================
@@ -7537,47 +8447,59 @@ class _RasterAnalysisTools(BaseAnalytics):
         :return:
             The imagery layer url
 
-        '''
+        """
         task = "DetermineTravelCostPathAsPolyline"
         gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(
+                input_source_raster_or_features
+            )
         elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+            input_source_raster_or_features = {
+                "itemId": input_source_raster_or_features.itemid
+            }
         else:
-            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._layer_input(
+                input_source_raster_or_features
+            )
 
         input_cost_raster = self._layer_input(input_cost_raster)
 
         if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
-            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._feature_input(
+                input_destination_raster_or_features
+            )
         elif isinstance(input_destination_raster_or_features, Item):
-            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+            input_destination_raster_or_features = {
+                "itemId": input_destination_raster_or_features.itemid
+            }
         else:
-            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._layer_input(
+                input_destination_raster_or_features
+            )
 
         if output_polyline_name is None:
-            output_polyline_service_name = 'Output Polyline_' + _id_generator()
-            output_polyline_name = output_polyline_service_name.replace(' ', '_')
+            output_polyline_service_name = "Output Polyline_" + _id_generator()
+            output_polyline_name = output_polyline_service_name.replace(" ", "_")
         else:
-            output_polyline_service_name = output_polyline_name.replace(' ', '_')
+            output_polyline_service_name = output_polyline_name.replace(" ", "_")
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -7586,48 +8508,88 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
-        output_polyline_service = self._create_output_feature_service(output_name=output_polyline_name,
-                                                             output_service_name=output_polyline_service_name,
-                                                             task='DetermineTravelCostPathAsPolyline',
-                                                             folder=folder)
+        output_polyline_service = self._create_output_feature_service(
+            output_name=output_polyline_name,
+            output_service_name=output_polyline_service_name,
+            task="DetermineTravelCostPathAsPolyline",
+            folder=folder,
+        )
         if folderId is not None:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                }
+            )
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
-            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
-                                                                     input_cost_raster=input_cost_raster,
-                                                                     input_destination_raster_or_features=input_destination_raster_or_features,
-                                                                     output_polyline_name=output_polyline_name,
-                                                                     path_type=path_type, destination_field=destination_field,
-                                                                     context=context,
-                                                                     gis=self._gis, future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(
+                input_source_raster_or_features=input_source_raster_or_features,
+                input_cost_raster=input_cost_raster,
+                input_destination_raster_or_features=input_destination_raster_or_features,
+                output_polyline_name=output_polyline_name,
+                path_type=path_type,
+                destination_field=destination_field,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
-                                                            input_cost_raster=input_cost_raster,
-                                                            input_destination_raster_or_features=input_destination_raster_or_features,
-                                                            output_polyline_name=output_polyline_name,
-                                                            path_type=path_type,
-                                                            context=context,
-                                                            gis=self._gis, future=True)
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(
+                input_source_raster_or_features=input_source_raster_or_features,
+                input_cost_raster=input_cost_raster,
+                input_destination_raster_or_features=input_destination_raster_or_features,
+                output_polyline_name=output_polyline_name,
+                path_type=path_type,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs, doc
-    def export_training_data_for_deep_learning(self, input_raster, output_location,
-                                              input_class_data=None, chip_format='TIFF',
-                                              tile_size=None, stride_size=None,
-                                              metadata_format='KITTI_rectangles', class_value_field=None,
-                                              buffer_radius=0, input_mask_polygons=None,
-                                              rotation_angle=0, reference_system="MAP_SPACE",
-                                              process_all_raster_items=False, blacken_around_feature= False,
-                                              fix_chip_size=True, context=None, future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs, doc
+    def export_training_data_for_deep_learning(
+        self,
+        input_raster,
+        output_location,
+        input_class_data=None,
+        chip_format="TIFF",
+        tile_size=None,
+        stride_size=None,
+        metadata_format="KITTI_rectangles",
+        class_value_field=None,
+        buffer_radius=0,
+        input_mask_polygons=None,
+        rotation_angle=0,
+        reference_system="MAP_SPACE",
+        process_all_raster_items=False,
+        blacken_around_feature=False,
+        fix_chip_size=True,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
@@ -7792,7 +8754,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_layer=input_raster)
 
@@ -7800,111 +8762,160 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_class_data = self._layer_input(input_layer=input_class_data)
 
         if chip_format is not None:
-            chipFormatAllowedValues = ['TIFF', 'PNG', 'JPEG','MRF']
+            chipFormatAllowedValues = ["TIFF", "PNG", "JPEG", "MRF"]
             if not chip_format in chipFormatAllowedValues:
-                raise RuntimeError('chip_format can only be one of the following: '+ str(chipFormatAllowedValues))
+                raise RuntimeError(
+                    "chip_format can only be one of the following: "
+                    + str(chipFormatAllowedValues)
+                )
 
         if metadata_format is not None:
-            metadataFormatAllowedValues = ['KITTI_rectangles', 'PASCAL_VOC_rectangles', 'Classified_Tiles', 'RCNN_Masks', 'Labeled_Tiles']
+            metadataFormatAllowedValues = [
+                "KITTI_rectangles",
+                "PASCAL_VOC_rectangles",
+                "Classified_Tiles",
+                "RCNN_Masks",
+                "Labeled_Tiles",
+            ]
             if not metadata_format in metadataFormatAllowedValues:
-                raise RuntimeError('metadata_format can only be one of the following: '+ str(metadataFormatAllowedValues))
+                raise RuntimeError(
+                    "metadata_format can only be one of the following: "
+                    + str(metadataFormatAllowedValues)
+                )
 
         if reference_system is not None:
-            reference_system_allowed_values = ['MAP_SPACE', 'IMAGE_SPACE', 'PIXEL_SPACE']
+            reference_system_allowed_values = [
+                "MAP_SPACE",
+                "IMAGE_SPACE",
+                "PIXEL_SPACE",
+            ]
             if not reference_system in reference_system_allowed_values:
-                raise RuntimeError('reference_system can only be one of the following: '+ str(reference_system_allowed_values))
+                raise RuntimeError(
+                    "reference_system can only be one of the following: "
+                    + str(reference_system_allowed_values)
+                )
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
-            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
-                                                                output_location=output_location,
-                                                                input_class_data=input_class_data,
-                                                                chip_format=chip_format,
-                                                                tile_size=tile_size,
-                                                                stride_size=stride_size,
-                                                                metadata_format=metadata_format,
-                                                                class_value_field=class_value_field,
-                                                                buffer_radius=buffer_radius,
-                                                                input_mask_polygons=input_mask_polygons,
-                                                                rotation_angle=rotation_angle,
-                                                                reference_system=reference_system,
-                                                                process_all_raster_items=process_all_raster_items,
-                                                                blacken_around_feature=blacken_around_feature,
-                                                                fix_chip_size=fix_chip_size,
-                                                                context=context,
-                                                                gis=self._gis, future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
+            gpjob = self._tbx.export_training_datafor_deep_learning(
+                input_raster=input_raster,
+                output_location=output_location,
+                input_class_data=input_class_data,
+                chip_format=chip_format,
+                tile_size=tile_size,
+                stride_size=stride_size,
+                metadata_format=metadata_format,
+                class_value_field=class_value_field,
+                buffer_radius=buffer_radius,
+                input_mask_polygons=input_mask_polygons,
+                rotation_angle=rotation_angle,
+                reference_system=reference_system,
+                process_all_raster_items=process_all_raster_items,
+                blacken_around_feature=blacken_around_feature,
+                fix_chip_size=fix_chip_size,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         else:
-            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
-                                                        output_location=output_location,
-                                                        input_class_data=input_class_data,
-                                                        chip_format=chip_format,
-                                                        tile_size=tile_size,
-                                                        stride_size=stride_size,
-                                                        metadata_format=metadata_format,
-                                                        class_value_field=class_value_field,
-                                                        buffer_radius=buffer_radius,
-                                                        context=context,
-                                                        gis=self._gis, future=True)
+            gpjob = self._tbx.export_training_datafor_deep_learning(
+                input_raster=input_raster,
+                output_location=output_location,
+                input_class_data=input_class_data,
+                chip_format=chip_format,
+                tile_size=tile_size,
+                stride_size=stride_size,
+                metadata_format=metadata_format,
+                class_value_field=class_value_field,
+                buffer_radius=buffer_radius,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def fill(self, input_surface_raster, output_name=None,
-             z_limit=None , context=None,
-             gis=None, future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def fill(
+        self,
+        input_surface_raster,
+        output_name=None,
+        z_limit=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """Fill GPtool"""
         task = "Fill"
         if context is None:
             context = {}
             _set_raster_context(params=context)
-        gpjob = self._tbx.fill(input_surface_raster=input_surface_raster,
-                               output_name=output_name,
-                               z_limit=z_limit,
-                               context=context,
-                               gis=self._gis, future=True)
+        gpjob = self._tbx.fill(
+            input_surface_raster=input_surface_raster,
+            output_name=output_name,
+            z_limit=z_limit,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def flow_accumulation(self, input_flow_direction_raster,
-                          output_name=None,
-                          input_weight_raster=None,
-                          data_type='float',
-                          flow_direction_type='D8',
-                          context=None,
-                          gis=None, future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def flow_accumulation(
+        self,
+        input_flow_direction_raster,
+        output_name=None,
+        input_weight_raster=None,
+        data_type="float",
+        flow_direction_type="D8",
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """flow accumulation GPtool"""
         task = "FlowAccumulation"
         if context is None:
             context = {}
             _set_raster_context(params=context)
-        gpjob = self._tbx.flow_accumulation(input_flow_direction_raster=input_flow_direction_raster,
-                                            output_name=output_name,
-                                            input_weight_raster=input_weight_raster,
-                                            data_type=data_type,
-                                            flow_direction_type=flow_direction_type,
-                                            context=context,
-                                            gis=self._gis, future=True)
+        gpjob = self._tbx.flow_accumulation(
+            input_flow_direction_raster=input_flow_direction_raster,
+            output_name=output_name,
+            input_weight_raster=input_weight_raster,
+            data_type=data_type,
+            flow_direction_type=flow_direction_type,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def flow_direction(self, input_surface_raster,
-                       output_flow_direction_name=None,
-                       force_flow=False,
-                       flow_direction_type='D8',
-                       output_drop_name=None,
-                       context=None,
-                       future=False,
-                       **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def flow_direction(
+        self,
+        input_surface_raster,
+        output_flow_direction_name=None,
+        force_flow=False,
+        flow_direction_type="D8",
+        output_drop_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Replaces cells of a raster corresponding to a mask
         with the values of the nearest neighbors.
@@ -7916,13 +8927,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         force_flow  : Boolean, Specifies if edge cells will always flow outward or follow normal flow rules.
 
         flow_direction_type : Specifies which flow direction type to use.
-						      D8 - Use the D8 method. This is the default.
-						      MFD - Use the Multi Flow Direction (MFD) method.
-						      DINF - Use the D-Infinity method.
+                                                      D8 - Use the D8 method. This is the default.
+                                                      MFD - Use the Multi Flow Direction (MFD) method.
+                                                      DINF - Use the D-Infinity method.
 
         output_drop_name : An optional output drop raster .
-					       The drop raster returns the ratio of the maximum change in elevation from each cell
-					       along the direction of flow to the path length between centers of cells, expressed in percentages.
+                                               The drop raster returns the ratio of the maximum change in elevation from each cell
+                                               along the direction of flow to the path length between centers of cells, expressed in percentages.
 
         output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
             You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -7941,7 +8952,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_surface_raster = self._layer_input(input_layer=input_surface_raster)
 
@@ -7954,60 +8965,101 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif force_flow == "FORCE":
                     force_flow = True
 
-        flow_direction_type_AllowedValues= {"D8", "MFD", "DINF"}
+        flow_direction_type_AllowedValues = {"D8", "MFD", "DINF"}
 
         if not flow_direction_type in flow_direction_type_AllowedValues:
-                raise RuntimeError('flow_direction_type can only be one of the following: '.join(flow_direction_type_AllowedValues))
+            raise RuntimeError(
+                "flow_direction_type can only be one of the following: ".join(
+                    flow_direction_type_AllowedValues
+                )
+            )
 
-        output_flow_direction_raster, output_flow_direction_service = self._set_output_raster(output_name=output_flow_direction_name, task=task, output_properties=kwargs)
+        (
+            output_flow_direction_raster,
+            output_flow_direction_service,
+        ) = self._set_output_raster(
+            output_name=output_flow_direction_name, task=task, output_properties=kwargs
+        )
 
-        output_drop_raster=None
+        output_drop_raster = None
         if output_drop_name is not None:
-            output_drop_raster, output_drop_service = self._set_output_raster(output_name=output_drop_name, task=task, output_properties=kwargs)
+            output_drop_raster, output_drop_service = self._set_output_raster(
+                output_name=output_drop_name, task=task, output_properties=kwargs
+            )
 
-        gpjob = self._tbx.flow_direction(input_surface_raster=input_surface_raster,
-                                            output_flow_direction_name=output_flow_direction_raster, force_flow=force_flow,
-                                            flow_direction_type=flow_direction_type, output_drop_name=output_drop_raster,
-                                            context=context,
-                                            gis=self._gis, future=True)
+        gpjob = self._tbx.flow_direction(
+            input_surface_raster=input_surface_raster,
+            output_flow_direction_name=output_flow_direction_raster,
+            force_flow=force_flow,
+            flow_direction_type=flow_direction_type,
+            output_drop_name=output_drop_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             if output_drop_raster:
-                return RAJob(gpjob, [output_flow_direction_service, output_drop_service])
+                return RAJob(
+                    gpjob, [output_flow_direction_service, output_drop_service]
+                )
             return RAJob(gpjob, output_flow_direction_service)
         if output_drop_raster:
-            return RAJob(gpjob, [output_flow_direction_service, output_drop_service]).result()
+            return RAJob(
+                gpjob, [output_flow_direction_service, output_drop_service]
+            ).result()
         return RAJob(gpjob, output_flow_direction_service).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def flow_distance(self, input_stream_raster, input_surface_raster, output_name=None,
-                      input_flow_direction_raster=None, distance_type='VERTICAL',
-                      flow_direction_type='D8', statistics_type='MINIMUM',
-                      context=None, gis=None, future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def flow_distance(
+        self,
+        input_stream_raster,
+        input_surface_raster,
+        output_name=None,
+        input_flow_direction_raster=None,
+        distance_type="VERTICAL",
+        flow_direction_type="D8",
+        statistics_type="MINIMUM",
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """flow distance GPtool"""
         task = "FlowDistance"
         if context is None:
             context = {}
             _set_raster_context(params=context)
-        gpjob = self._tbx.flow_distance(input_stream_raster, input_surface_raster, output_name=output_name,
-                                        input_flow_direction_raster=input_flow_direction_raster, distance_type=distance_type,
-                                        flow_direction_type=flow_direction_type, statistics_type=statistics_type,
-                                        context=context, gis=self._gis, future=True)
+        gpjob = self._tbx.flow_distance(
+            input_stream_raster,
+            input_surface_raster,
+            output_name=output_name,
+            input_flow_direction_raster=input_flow_direction_raster,
+            distance_type=distance_type,
+            flow_direction_type=flow_direction_type,
+            statistics_type=statistics_type,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def generate_raster(self,
-                        raster_function,
-                        function_arguments=None,
-                        output_raster_properties=None,
-                        output_name=None,
-                        context=None,
-                        future=False,
-                        **kwargs):
+
+    # ----------------------------------------------------------------------
+    def generate_raster(
+        self,
+        raster_function,
+        function_arguments=None,
+        output_raster_properties=None,
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
 
         Parameters
@@ -8035,27 +9087,35 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         """
         task = "GenerateRaster"
-        gis= self._gis
-
+        gis = self._gis
 
         if isinstance(function_arguments, arcgis.gis.Item):
-            if function_arguments.type.lower() == 'image service':
+            if function_arguments.type.lower() == "image service":
                 function_arguments = {"Raster": {"itemId": function_arguments.itemid}}
             else:
-                raise TypeError("The item type of function_arguments must be an image service")
+                raise TypeError(
+                    "The item type of function_arguments must be an image service"
+                )
         function_arguments = json.dumps(function_arguments)
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.generate_raster(raster_function=raster_function, output_name=output_raster,
-                                          function_arguments=function_arguments,
-                                          output_raster_properties=output_raster_properties,
-                                          context=context, gis=self._gis, future=True)
+        gpjob = self._tbx.generate_raster(
+            raster_function=raster_function,
+            output_name=output_raster,
+            function_arguments=function_arguments,
+            output_raster_properties=output_raster_properties,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -8065,51 +9125,76 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, item=item)
 
         return RAJob(gpjob, item=item).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def generate_raster_collection(self, output_collection_name,
-                                   collection_builder=None, collection_builder_arguments=None,
-                                   raster_function=None, raster_function_arguments=None,
-                                   collection_properties=None,
-                                   generate_rasters='True', output_basename=None,
-                                   gis=None, future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def generate_raster_collection(
+        self,
+        output_collection_name,
+        collection_builder=None,
+        collection_builder_arguments=None,
+        raster_function=None,
+        raster_function_arguments=None,
+        collection_properties=None,
+        generate_rasters="True",
+        output_basename=None,
+        gis=None,
+        future=False,
+    ):
         """Generate Raster Collection GPtool"""
         task = "GenerateRasterCollection"
-        gpjob = self._tbx.generate_raster_collection(output_collection_name=output_collection_name,
-                                                     collection_builder=collection_builder,
-                                                     collection_builder_arguments=collection_builder_arguments,
-                                                     raster_function=raster_function,
-                                                     raster_function_arguments=raster_function_arguments,
-                                                     collection_properties=collection_properties,
-                                                     generate_rasters=generate_rasters,
-                                                     output_basename=output_basename,
-                                                     gis=self._gis, future=True)
+        gpjob = self._tbx.generate_raster_collection(
+            output_collection_name=output_collection_name,
+            collection_builder=collection_builder,
+            collection_builder_arguments=collection_builder_arguments,
+            raster_function=raster_function,
+            raster_function_arguments=raster_function_arguments,
+            collection_properties=collection_properties,
+            generate_rasters=generate_rasters,
+            output_basename=output_basename,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def generate_table(self, raster_function, output_table_name=None,
-                       function_arguments=None, context=None, gis=None, future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def generate_table(
+        self,
+        raster_function,
+        output_table_name=None,
+        function_arguments=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """Generate Raster Collection GPtool"""
         task = "GenerateTable"
         if context is None:
             context = {}
-            params = {'context' : context}
+            params = {"context": context}
             _set_raster_context(params)
-            context.update(params['context'])
-        gpjob = self._tbx.generate_table(raster_function=raster_function, output_table_name=output_table_name,
-                                         function_arguments=function_arguments,
-                                         context=context, gis=gis or self._gis, future=True)
+            context.update(params["context"])
+        gpjob = self._tbx.generate_table(
+            raster_function=raster_function,
+            output_table_name=output_table_name,
+            function_arguments=function_arguments,
+            context=context,
+            gis=gis or self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
     def install_deep_learning_model(self, model_package, future=False, **kwargs):
         """
         Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
@@ -8130,97 +9215,108 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         task = "InstallDeepLearningModel"
         gis = self._gis
-        gpjob = self._tbx.install_deep_learning_model(model_package=model_package,
-                                                      gis=gis, future=True)
+        gpjob = self._tbx.install_deep_learning_model(
+            model_package=model_package, gis=gis, future=True
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def interpolate_points(self, input_point_features,
-                           interpolate_field=None, output_name=None,
-                           optimize_for='BALANCE', transform_data=False,
-                           size_of_local_models=None, number_of_neighbors=None,
-                           output_cell_size=None, output_prediction_error=False,
-                           context=None, future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def interpolate_points(
+        self,
+        input_point_features,
+        interpolate_field=None,
+        output_name=None,
+        optimize_for="BALANCE",
+        transform_data=False,
+        size_of_local_models=None,
+        number_of_neighbors=None,
+        output_cell_size=None,
+        output_prediction_error=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-            This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
-            takes point data with values at each point and returns a raster of predicted values:
+        This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
+        takes point data with values at each point and returns a raster of predicted values:
 
-            * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
-                predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
-                schools or hospitals, for example.
-            * Predict heavy metal concentrations in crops based on samples taken from individual plants.
-            * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
-                conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
-                for each location in the field.
-            * Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid
-                rain).
+        * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
+            predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
+            schools or hospitals, for example.
+        * Predict heavy metal concentrations in crops based on samples taken from individual plants.
+        * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
+            conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
+            for each location in the field.
+        * Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid
+            rain).
 
-            Parameters
-            ----------
-            input_point_features : Required point layer containing locations with known values
-                The point layer that contains the points where the values have been measured.
+        Parameters
+        ----------
+        input_point_features : Required point layer containing locations with known values
+            The point layer that contains the points where the values have been measured.
 
-            interpolate_field : Required string -  field to interpolate
-                Choose the field whose values you wish to interpolate. The field must be numeric.
+        interpolate_field : Required string -  field to interpolate
+            Choose the field whose values you wish to interpolate. The field must be numeric.
 
-            optimize_for : Optional string - Choose your preference for speed versus accuracy.
-                More accurate predictions take longer to calculate. This parameter alters the default values of several other
-                parameters of Interpolate Points in order to optimize speed of calculation, accuracy of results, or a balance of
-                the two. By default, the tool will optimize for balance.
-                One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
+        optimize_for : Optional string - Choose your preference for speed versus accuracy.
+            More accurate predictions take longer to calculate. This parameter alters the default values of several other
+            parameters of Interpolate Points in order to optimize speed of calculation, accuracy of results, or a balance of
+            the two. By default, the tool will optimize for balance.
+            One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
 
-            transform_data : Optional bool - Choose whether to transform your data to the normal distribution.
-                Interpolation is most accurate for data that follows a normal (bell-shaped) distribution. If your data does not
-                appear to be normally distributed, you should perform a transformation.
+        transform_data : Optional bool - Choose whether to transform your data to the normal distribution.
+            Interpolation is most accurate for data that follows a normal (bell-shaped) distribution. If your data does not
+            appear to be normally distributed, you should perform a transformation.
 
-            size_of_local_models : Optional int - Size of local models
-                Interpolate Points works by building local interpolation models that are mixed together to create the final
-                prediction map. This parameter controls how many points will be contained in each local model. Smaller values
-                will make results more local and can reveal small-scale effects, but it may introduce some instability in the
-                calculations. Larger values will be more stable, but some local effects may be missed.
-                The value can range from 30 to 500, but typical values are between 50 and 200.
+        size_of_local_models : Optional int - Size of local models
+            Interpolate Points works by building local interpolation models that are mixed together to create the final
+            prediction map. This parameter controls how many points will be contained in each local model. Smaller values
+            will make results more local and can reveal small-scale effects, but it may introduce some instability in the
+            calculations. Larger values will be more stable, but some local effects may be missed.
+            The value can range from 30 to 500, but typical values are between 50 and 200.
 
-            number_of_neighbors : Optional int - Number of Neighbors
-                Predictions are calculated based on neighboring points. This parameter controls how many points will be used in
-                the calculation. Using a larger number of neighbors will generally produce more accurate results, but the
-                results take longer to calculate.
-                This value can range from 1 to 64, but typical values are between 5 and 15.
+        number_of_neighbors : Optional int - Number of Neighbors
+            Predictions are calculated based on neighboring points. This parameter controls how many points will be used in
+            the calculation. Using a larger number of neighbors will generally produce more accurate results, but the
+            results take longer to calculate.
+            This value can range from 1 to 64, but typical values are between 5 and 15.
 
-            output_cell_size : Optional LinearUnit - Output cell size
-                Enter the cell size and unit for the output rasters.
-                The available units are Feet, Miles, Meters, and Kilometers.
+        output_cell_size : Optional LinearUnit - Output cell size
+            Enter the cell size and unit for the output rasters.
+            The available units are Feet, Miles, Meters, and Kilometers.
 
-            output_prediction_error : Optional bool - Output prediction error
-                Choose whether you want to create a raster of standard errors for the predicted values.
-                Standard errors are useful because they provide information about the reliability of the predicted values.
-                A simple rule of thumb is that the true value will fall within two standard errors of the predicted value 95
-                percent of the time. For example, suppose a new location gets a predicted value of 50 with a standard error of
-                5. This means that this tool's best guess is that the true value at that location is 50, but it reasonably could
-                be as low as 40 or as high as 60. To calculate this range of reasonable values, multiply the standard error by
-                2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
-                value to get the lower end of the range.
+        output_prediction_error : Optional bool - Output prediction error
+            Choose whether you want to create a raster of standard errors for the predicted values.
+            Standard errors are useful because they provide information about the reliability of the predicted values.
+            A simple rule of thumb is that the true value will fall within two standard errors of the predicted value 95
+            percent of the time. For example, suppose a new location gets a predicted value of 50 with a standard error of
+            5. This means that this tool's best guess is that the true value at that location is 50, but it reasonably could
+            be as low as 40 or as high as 60. To calculate this range of reasonable values, multiply the standard error by
+            2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
+            value to get the lower end of the range.
 
-            output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-                You can pass in an existing Image Service Item from your GIS to use that instead.
-                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-                A RuntimeError is raised if a service by that name already exists
+        output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
 
-            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-            Returns
-            -------
-            named tuple with name values being :
+        Returns
+        -------
+        named tuple with name values being :
 
-             - output_raster (the output_raster item description is updated with the process_info),
+         - output_raster (the output_raster item description is updated with the process_info),
 
-             - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and
+         - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and
 
-             - output_error_raster (if output_prediction_error is set to True).
+         - output_error_raster (if output_prediction_error is set to True).
 
         """
         task = "InterpolatePoints"
@@ -8229,24 +9325,28 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_point_features = self._layer_input(input_point_features)
 
-        output_raster, output_service = self._set_output_raster(output_name, task, kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name, task, kwargs
+        )
 
-
-        gpjob = self._tbx.interpolate_points(input_point_features=input_point_features,
-                                             interpolate_field=interpolate_field,
-                                             output_name=output_raster,
-                                             optimize_for=optimize_for,
-                                             transform_data=transform_data,
-                                             size_of_local_models=size_of_local_models,
-                                             number_of_neighbors=number_of_neighbors,
-                                             output_cell_size=output_cell_size,
-                                             output_prediction_error=output_prediction_error,
-                                             context=context,
-                                             gis=gis, future=True)
+        gpjob = self._tbx.interpolate_points(
+            input_point_features=input_point_features,
+            interpolate_field=interpolate_field,
+            output_name=output_raster,
+            optimize_for=optimize_for,
+            transform_data=transform_data,
+            size_of_local_models=size_of_local_models,
+            number_of_neighbors=number_of_neighbors,
+            output_cell_size=output_cell_size,
+            output_prediction_error=output_prediction_error,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -8257,10 +9357,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-    def list_datastore_content(self, data_store_name=None,
-                               filter=None,
-                               future=False,
-                               **kwargs):
+    def list_datastore_content(
+        self, data_store_name=None, filter=None, future=False, **kwargs
+    ):
         """
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
 
@@ -8292,19 +9391,21 @@ class _RasterAnalysisTools(BaseAnalytics):
         if isinstance(data_store_name, arcgis.gis.Datastore):
             data_store_name = data_store_name.datapath
 
-        elif isinstance(data_store_name,list):
-            for i,datastore_item in enumerate(data_store_name):
-                if isinstance(datastore_item,arcgis.gis.Datastore):
+        elif isinstance(data_store_name, list):
+            for i, datastore_item in enumerate(data_store_name):
+                if isinstance(datastore_item, arcgis.gis.Datastore):
                     data_store_name[i] = datastore_item.datapath
 
-        gpjob = self._tbx.list_datastore_content(data_store_name=data_store_name, filter=filter,
-                                                 gis=gis, future=True)
+        gpjob = self._tbx.list_datastore_content(
+            data_store_name=data_store_name, filter=filter, gis=gis, future=True
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return gpjob
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list_deep_learning_models(self, future=False, **kwargs):
         """
         Lists the deep learning models registered with the site
@@ -8321,37 +9422,48 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def nibble(self, input_raster, input_mask_raster,
-               output_name=None, nibble_values=None,
-               nibble_nodata=None, input_zone_raster=None,
-               context=None, gis=None, future=False):
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def nibble(
+        self,
+        input_raster,
+        input_mask_raster,
+        output_name=None,
+        nibble_values=None,
+        nibble_nodata=None,
+        input_zone_raster=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """Nibble GP Tool"""
         task = "Nibble"
         gis = gis or self._gis
         if context is None:
             context = {}
-            params = {'context' : context}
+            params = {"context": context}
             _set_raster_context(params)
-            context.update(params['context'])
-        gpjob = self._tbx.nibble(input_raster=input_raster,
-                                 input_mask_raster=input_mask_raster,
-                                 output_name=output_name,
-                                 nibble_values=nibble_values,
-                                 nibble_nodata=nibble_nodata,
-                                 input_zone_raster=input_zone_raster,
-                                 context=context,
-                                 gis=gis, future=True)
+            context.update(params["context"])
+        gpjob = self._tbx.nibble(
+            input_raster=input_raster,
+            input_mask_raster=input_mask_raster,
+            output_name=output_name,
+            nibble_values=nibble_values,
+            nibble_nodata=nibble_nodata,
+            input_zone_raster=input_zone_raster,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def query_deep_learning_model_info(self, model,
-                                       future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def query_deep_learning_model_info(self, model, future=False, **kwargs):
         """
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
 
@@ -8370,20 +9482,30 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         task = "QueryDeepLearningModelInfo"
         gis = self._gis
-        gpjob = self._tbx.query_deep_learning_model_info(model=model, gis=gis, future=True)
+        gpjob = self._tbx.query_deep_learning_model_info(
+            model=model, gis=gis, future=True
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #Done: Format Inputs/ Outputs, doc
-    def segment(self, input_raster,
-                output_name=None, spectral_detail='15.5',
-                spatial_detail='15', minimum_segment_size_in_pixels='20',
-                band_indexes='0,1,2',
-                remove_tiling_artifacts=False, context=None,
-                future=False, **kwargs):
+
+    # ----------------------------------------------------------------------
+    # Done: Format Inputs/ Outputs, doc
+    def segment(
+        self,
+        input_raster,
+        output_name=None,
+        spectral_detail="15.5",
+        spatial_detail="15",
+        minimum_segment_size_in_pixels="20",
+        band_indexes="0,1,2",
+        remove_tiling_artifacts=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Groups together adjacent pixels having similar spectral and spatial characteristics into
         segments, known as objects.
@@ -8449,35 +9571,41 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_raster=self._layer_input(input_raster)
+        input_raster = self._layer_input(input_raster)
 
         if isinstance(spectral_detail, (float, int)):
             spectral_detail = str(spectral_detail)
 
-        if isinstance(spatial_detail, (float,int)):
+        if isinstance(spatial_detail, (float, int)):
             spatial_detail = str(spatial_detail)
 
         if isinstance(minimum_segment_size_in_pixels, (float, int)):
             minimum_segment_size_in_pixels = str(minimum_segment_size_in_pixels)
 
         if isinstance(band_indexes, (list, tuple)):
-            band_indexes = ','.join(str(e) for e in band_indexes)
+            band_indexes = ",".join(str(e) for e in band_indexes)
 
         if isinstance(remove_tiling_artifacts, bool):
             remove_tiling_artifacts = str(remove_tiling_artifacts).lower()
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.segment(input_raster=input_raster,
-                                  output_name=output_raster,
-                                  spectral_detail=spectral_detail,
-                                  spatial_detail=spatial_detail,
-                                  minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
-                                  band_indexes=band_indexes,
-                                  remove_tiling_artifacts=remove_tiling_artifacts,
-                                  context=context, gis=gis, future=True)
+        gpjob = self._tbx.segment(
+            input_raster=input_raster,
+            output_name=output_raster,
+            spectral_detail=spectral_detail,
+            spatial_detail=spatial_detail,
+            minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
+            band_indexes=band_indexes,
+            remove_tiling_artifacts=remove_tiling_artifacts,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -8488,46 +9616,55 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def stream_link(self, input_stream_raster,
-                    input_flow_direction_raster,
-                    output_name=None,
-                    context=None,
-                    gis=None,
-                    future=False):
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def stream_link(
+        self,
+        input_stream_raster,
+        input_flow_direction_raster,
+        output_name=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """Stream Link GP Tool"""
         task = "StreamLink"
         gis = gis or self._gis
         if context is None:
             context = {}
-            params = {'context' : context}
+            params = {"context": context}
             _set_raster_context(params)
-            context.update(params['context'])
-        gpjob = self._tbx.stream_link(input_stream_raster=input_stream_raster,
-                                      input_flow_direction_raster=input_flow_direction_raster,
-                                      output_name=output_name,
-                                      context=context,
-                                      gis=gis, future=True)
+            context.update(params["context"])
+        gpjob = self._tbx.stream_link(
+            input_stream_raster=input_stream_raster,
+            input_flow_direction_raster=input_flow_direction_raster,
+            output_name=output_name,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def summarize_raster_within(self,
-                                input_zone_layer,
-                                input_raster_layer_to_summarize,
-                                zone_field='Value',
-                                output_name=None,
-                                statistic_type='Mean',
-                                ignore_missing_values=True,
-                                context=None,
-                                future=False,
-                                process_as_multidimensional=False,
-                                percentile_value=90,
-                                percentile_interpolation_type='AUTO_DETECT',
-                                **kwargs):
+
+    # ----------------------------------------------------------------------
+    def summarize_raster_within(
+        self,
+        input_zone_layer,
+        input_raster_layer_to_summarize,
+        zone_field="Value",
+        output_name=None,
+        statistic_type="Mean",
+        ignore_missing_values=True,
+        context=None,
+        future=False,
+        process_as_multidimensional=False,
+        percentile_value=90,
+        percentile_interpolation_type="AUTO_DETECT",
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -8587,58 +9724,88 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
-
+            context = context_param["context"]
 
         input_zone_layer = self._layer_input(input_zone_layer)
-        input_raster_layer_to_summarize = self._layer_input(input_raster_layer_to_summarize)
+        input_raster_layer_to_summarize = self._layer_input(
+            input_raster_layer_to_summarize
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if percentile_interpolation_type is not None:
-            if "percentile_interpolation_type" in self._tbx.choice_list.summarize_raster_within.keys():
-                percentile_interpolation_type_allowed_values = self._tbx.choice_list.summarize_raster_within["percentile_interpolation_type"]
-                if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
-                    raise RuntimeError('percentile_interpolation_type can only be one of the following:  '+str(percentile_interpolation_type_allowed_values))
+            if (
+                "percentile_interpolation_type"
+                in self._tbx.choice_list.summarize_raster_within.keys()
+            ):
+                percentile_interpolation_type_allowed_values = (
+                    self._tbx.choice_list.summarize_raster_within[
+                        "percentile_interpolation_type"
+                    ]
+                )
+                if [
+                    element.lower()
+                    for element in percentile_interpolation_type_allowed_values
+                ].count(percentile_interpolation_type.lower()) <= 0:
+                    raise RuntimeError(
+                        "percentile_interpolation_type can only be one of the following:  "
+                        + str(percentile_interpolation_type_allowed_values)
+                    )
                 for element in percentile_interpolation_type_allowed_values:
                     if percentile_interpolation_type.lower() == element.lower():
                         percentile_interpolation_type = element
 
         current_version = None
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
-            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
 
-        if((current_version is not None) and current_version<=10.8):
-            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
-                                                      zone_field=zone_field,
-                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
-                                                      output_name=output_raster,
-                                                      statistic_type=statistic_type,
-                                                      ignore_missing_values=ignore_missing_values,
-                                                      context=context, gis=gis, future=True)
-        elif(current_version is not None) and (current_version>10.8 and current_version<10.9):
-            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
-                                                      zone_field=zone_field,
-                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
-                                                      output_name=output_raster,
-                                                      statistic_type=statistic_type,
-                                                      ignore_missing_values=ignore_missing_values,
-                                                      context=context,
-                                                      process_as_multidimensional=process_as_multidimensional,
-                                                      percentile_value=percentile_value,
-                                                      gis=gis, future=True)
-        elif((current_version is not None) and current_version>=10.9):
-            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
-                                                      zone_field=zone_field,
-                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
-                                                      output_name=output_raster,
-                                                      statistic_type=statistic_type,
-                                                      ignore_missing_values=ignore_missing_values,
-                                                      context=context,
-                                                      process_as_multidimensional=process_as_multidimensional,
-                                                      percentile_value=percentile_value,
-                                                      percentile_interpolation_type=percentile_interpolation_type,
-                                                      gis=gis, future=True)
+        if (current_version is not None) and current_version <= 10.8:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and (
+            current_version > 10.8 and current_version < 10.9
+        ):
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 10.9:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+                gis=gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -8650,17 +9817,19 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def train_classifier(self,
-                         input_raster,
-                         input_training_sample_json,
-                         classifier_parameters,
-                         segmented_raster=None,
-                         segment_attributes='COLOR;MEAN',
-                         dimension_value_field=None,
-                         future=False,
-                         **kwargs):
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def train_classifier(
+        self,
+        input_raster,
+        input_training_sample_json,
+        classifier_parameters,
+        segmented_raster=None,
+        segment_attributes="COLOR;MEAN",
+        dimension_value_field=None,
+        future=False,
+        **kwargs
+    ):
         """
 
 
@@ -8686,7 +9855,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "TrainClassifier"
         gis = self._gis
 
-
         input_raster = self._layer_input(input_raster)
 
         if segmented_raster is not None:
@@ -8694,34 +9862,45 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if self._current_version is not None:
             current_version = self._current_version
-            if((current_version is not None) and current_version<10.9):
-                gpjob = self._tbx.train_classifier(input_raster=input_raster,
-                                                   input_training_sample_json=input_training_sample_json,
-                                                   classifier_parameters=classifier_parameters,
-                                                   segmented_raster=segmented_raster,
-                                                   segment_attributes=segment_attributes, gis=gis, future=True)
-            elif((current_version is not None) and current_version>=10.9):
-                gpjob = self._tbx.train_classifier(input_raster=input_raster,
-                                                   input_training_sample_json=input_training_sample_json,
-                                                   classifier_parameters=classifier_parameters,
-                                                   segmented_raster=segmented_raster,
-                                                   segment_attributes=segment_attributes, dimension_value_field=dimension_value_field,
-                                                   gis=gis, future=True)
+            if (current_version is not None) and current_version < 10.9:
+                gpjob = self._tbx.train_classifier(
+                    input_raster=input_raster,
+                    input_training_sample_json=input_training_sample_json,
+                    classifier_parameters=classifier_parameters,
+                    segmented_raster=segmented_raster,
+                    segment_attributes=segment_attributes,
+                    gis=gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.9:
+                gpjob = self._tbx.train_classifier(
+                    input_raster=input_raster,
+                    input_training_sample_json=input_training_sample_json,
+                    classifier_parameters=classifier_parameters,
+                    segmented_raster=segmented_raster,
+                    segment_attributes=segment_attributes,
+                    dimension_value_field=dimension_value_field,
+                    gis=gis,
+                    future=True,
+                )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
 
-    def transfer_files(self,
-                       input_files,
-                       output_datastore=None,
-                       tf_filter=None,
-                       return_first_file=False,
-                       context=None,
-                       future=False,
-                       **kwargs):
+    # ----------------------------------------------------------------------
+
+    def transfer_files(
+        self,
+        input_files,
+        output_datastore=None,
+        tf_filter=None,
+        return_first_file=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Transfer Files GP Tool
@@ -8746,27 +9925,30 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if context is None:
             context = {}
-            params = {'context' : context}
+            params = {"context": context}
             _set_raster_context(params)
-            context.update(params['context'])
+            context.update(params["context"])
 
-        if isinstance(input_files,str):
-            input_files={"uri":input_files}
+        if isinstance(input_files, str):
+            input_files = {"uri": input_files}
 
-        gpjob = self._tbx.transfer_files(input_files=input_files,
-                                         output_datastore=output_datastore,
-                                         filter=tf_filter,
-                                         return_first_file=return_first_file,
-                                         context=context,
-                                         gis=gis,
-                                         future=True)
+        gpjob = self._tbx.transfer_files(
+            input_files=input_files,
+            output_datastore=output_datastore,
+            filter=tf_filter,
+            return_first_file=return_first_file,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
     def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
 
         """
@@ -8787,118 +9969,143 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         task = "UninstallDeepLearningModel"
         gis = self._gis
-        gpjob = self._tbx.uninstall_deep_learning_model(model_item_id=model_item_id, gis=gis, future=True)
+        gpjob = self._tbx.uninstall_deep_learning_model(
+            model_item_id=model_item_id, gis=gis, future=True
+        )
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
-    def watershed(self,
-                  input_flow_direction_raster,
-                  in_pour_point_raster_or_features,
-                  output_name=None,
-                  pour_point_field=None,
-                  context=None,
-                  gis=None,
-                  future=False):
+
+    # ----------------------------------------------------------------------
+    # TODO: Format Inputs/ Outputs, doc
+    def watershed(
+        self,
+        input_flow_direction_raster,
+        in_pour_point_raster_or_features,
+        output_name=None,
+        pour_point_field=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
         """Watershed GP Tool"""
         task = "Watershed"
         gis = gis or self._gis
         if context is None:
             context = {}
-            params = {'context' : context}
+            params = {"context": context}
             _set_raster_context(params)
-            context.update(params['context'])
-        gpjob = self._tbx.watershed(input_flow_direction_raster=input_flow_direction_raster,
-                                    in_pour_point_raster_or_features=in_pour_point_raster_or_features,
-                                    output_name=output_name,
-                                    pour_point_field=pour_point_field,
-                                    context=context, gis=gis, future=True)
+            context.update(params["context"])
+        gpjob = self._tbx.watershed(
+            input_flow_direction_raster=input_flow_direction_raster,
+            in_pour_point_raster_or_features=in_pour_point_raster_or_features,
+            output_name=output_name,
+            pour_point_field=pour_point_field,
+            context=context,
+            gis=gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
-    #----------------------------------------------------------------------
-    def copy_raster(self,
-                    input_raster=None,
-                    output_cellsize=None,
-                    resampling_method='NEAREST',
-                    clip_setting=None,
-                    output_name=None,
-                    context=None,
-                    future=False,
-                    raster_type_name=None,
-                    raster_type_params = None,
-                    **kwargs):
+
+    # ----------------------------------------------------------------------
+    def copy_raster(
+        self,
+        input_raster=None,
+        output_cellsize=None,
+        resampling_method="NEAREST",
+        clip_setting=None,
+        output_name=None,
+        context=None,
+        future=False,
+        raster_type_name=None,
+        raster_type_params=None,
+        **kwargs
+    ):
         """
-        input_raster: inputRaster (str). Required parameter.
+         input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       output_cellsize: outputCellsize (str). Optional parameter.
+        output_cellsize: outputCellsize (str). Optional parameter.
 
-       resampling_method: resamplingMethod (str). Optional parameter.  Choice list:['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
+        resampling_method: resamplingMethod (str). Optional parameter.  Choice list:['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
 
-       clip_setting: clipSetting (str). Optional parameter.
+        clip_setting: clipSetting (str). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       Returns:
-           output_raster - outputRaster as a str
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns:
+            output_raster - outputRaster as a str
 
         """
 
         task = "CopyRaster"
 
-        gis = self._gis
-
+        upload_properties = None
         use_input_rasters_by_ref = None
         if context is not None:
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+        if (
+            not isinstance(input_raster, str)
+            and not isinstance(input_raster, list)
+            and not raster_type_name
+        ):
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:
-            input_raster, raster_type = self._build_param_dictionary(input_rasters=input_raster,
-                                                                      raster_type_name=raster_type_name,
-                                                                      raster_type_params=raster_type_params,
-                                                                      image_collection_properties=None,
-                                                                      use_input_rasters_by_ref=use_input_rasters_by_ref)
+            input_raster, raster_type = self._build_param_dictionary(
+                input_rasters=input_raster,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=None,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+            )
             if isinstance(raster_type, str):
                 try:
                     raster_type = json.loads(raster_type)
                 except:
                     pass
-            if isinstance (input_raster,dict) and isinstance(raster_type, dict):
-                input_raster.update({"rasterType":raster_type})
+            if isinstance(input_raster, dict) and isinstance(raster_type, dict):
+                input_raster.update({"rasterType": raster_type})
 
-        gpjob = self._tbx.copy_raster(input_raster=input_raster,
-                                      output_name=output_raster,
-                                      output_cellsize=output_cellsize,
-                                      resampling_method=resampling_method,
-                                      clip_setting=clip_setting,
-                                      context=context,
-                                      gis=self._gis,
-                                      future=True)
+        gpjob = self._tbx.copy_raster(
+            input_raster=input_raster,
+            output_name=output_raster,
+            output_cellsize=output_cellsize,
+            resampling_method=resampling_method,
+            clip_setting=clip_setting,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -8909,23 +10116,27 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def aggregate_multidimensional_raster(self,
-                                        input_multidimensional_raster=None,
-                                        output_name=None,
-                                        dimension=None,
-                                        aggregation_method='MEAN',
-                                        variables=None,
-                                        aggregation_definition='ALL',
-                                        interval_keyword=None,
-                                        interval_value=None,
-                                        interval_unit=None,
-                                        interval_ranges=None,
-                                        aggregation_function=None,
-                                        ignore_nodata=True,
-                                        context=None,
-                                        future=False,
-                                        **kwargs):
+    def aggregate_multidimensional_raster(
+        self,
+        input_multidimensional_raster=None,
+        output_name=None,
+        dimension=None,
+        aggregation_method="MEAN",
+        variables=None,
+        aggregation_definition="ALL",
+        interval_keyword=None,
+        interval_value=None,
+        interval_unit=None,
+        interval_ranges=None,
+        aggregation_function=None,
+        ignore_nodata=True,
+        context=None,
+        future=False,
+        dimensionless=False,
+        percentile_value=90,
+        percentile_interpolation_type="NEAREST",
+        **kwargs
+    ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
@@ -8971,62 +10182,151 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         aggregation_method_val = aggregation_method
         if aggregation_method is not None:
-            aggregation_method_allowed_values = ['MEAN', 'MAXIMUM', 'MAJORITY', 'MINIMUM', 'MINORITY', 'MEDIAN', 'RANGE', 'STD', 'SUM', 'VARIETY', 'CUSTOM']
-            if [element.lower() for element in aggregation_method_allowed_values].count(aggregation_method.lower()) <= 0 :
-                raise RuntimeError('aggregation_method can only be one of the following: '+str(aggregation_method_allowed_values))
+            aggregation_method_allowed_values = [
+                "MEAN",
+                "MAXIMUM",
+                "MAJORITY",
+                "MINIMUM",
+                "MINORITY",
+                "MEDIAN",
+                "RANGE",
+                "STD",
+                "SUM",
+                "VARIETY",
+                "CUSTOM",
+                "PERCENTILE",
+            ]
+            if [element.lower() for element in aggregation_method_allowed_values].count(
+                aggregation_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "aggregation_method can only be one of the following: "
+                    + str(aggregation_method_allowed_values)
+                )
             for element in aggregation_method_allowed_values:
                 if aggregation_method.upper() == element:
                     aggregation_method_val = element
 
-        aggregation_definition_val=aggregation_definition
+        aggregation_definition_val = aggregation_definition
         if aggregation_definition is not None:
-            aggregation_def_allowed_values = ['INTERVAL_KEYWORD', 'INTERVAL_VALUE', 'INTERVAL_RANGES', 'ALL']
+            aggregation_def_allowed_values = [
+                "INTERVAL_KEYWORD",
+                "INTERVAL_VALUE",
+                "INTERVAL_RANGES",
+                "ALL",
+            ]
 
-            if [element.lower() for element in aggregation_def_allowed_values].count(aggregation_definition.lower()) <= 0 :
-                raise RuntimeError('aggregation_definition can only be one of the following: '+str(aggregation_def_allowed_values))
+            if [element.lower() for element in aggregation_def_allowed_values].count(
+                aggregation_definition.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "aggregation_definition can only be one of the following: "
+                    + str(aggregation_def_allowed_values)
+                )
             for element in aggregation_def_allowed_values:
                 if aggregation_definition.upper() == element:
                     aggregation_definition_val = element
 
-        interval_keyword_val=interval_keyword
+        interval_keyword_val = interval_keyword
         if interval_keyword is not None:
-            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
-                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
-            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
-                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
-            interval_keyword_val=interval_keyword
+            interval_keyword_allowed_values = [
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY",
+                "QUARTERLY",
+                "YEARLY",
+                "RECURRING_DAILY",
+                "RECURRING_WEEKLY",
+                "RECURRING_MONTHLY",
+                "RECURRING_QUARTERLY",
+                "PENTADLY",
+                "DEKADLY",
+            ]
+            if [element.lower() for element in interval_keyword_allowed_values].count(
+                interval_keyword.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "interval_keyword can only be one of the following: "
+                    + str(interval_keyword_allowed_values)
+                )
+            interval_keyword_val = interval_keyword
             for element in interval_keyword_allowed_values:
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
-
+        percentile_interpolation_type_val = percentile_interpolation_type
+        if percentile_interpolation_type is not None:
+            percentile_interpolation_type_allowed_values = ["NEAREST", "LINEAR"]
+            if [
+                element.lower()
+                for element in percentile_interpolation_type_allowed_values
+            ].count(percentile_interpolation_type.lower()) <= 0:
+                raise RuntimeError(
+                    "percentile_interpolation_type can only be one of the following: "
+                    + str(percentile_interpolation_type_allowed_values)
+                )
+            percentile_interpolation_type_val = percentile_interpolation_type
+            for element in percentile_interpolation_type_allowed_values:
+                if percentile_interpolation_type.upper() == element:
+                    percentile_interpolation_type_val = element
 
         if isinstance(aggregation_function, Item):
-            aggregation_function = {"itemId":aggregation_function.itemid}
+            aggregation_function = {"itemId": aggregation_function.itemid}
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                                            output_name=output_raster,
-                                                            dimension=dimension,
-                                                            aggregation_method=aggregation_method_val,
-                                                            variables=variables,
-                                                            aggregation_definition=aggregation_definition_val,
-                                                            interval_keyword=interval_keyword_val,
-                                                            interval_value=interval_value,
-                                                            interval_unit=interval_unit,
-                                                            interval_ranges=interval_ranges,
-                                                            aggregation_function=aggregation_function,
-                                                            ignore_nodata=ignore_nodata,
-                                                            context=context,
-                                                            gis=self._gis,
-                                                            future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version < 10.91:
+                gpjob = self._tbx.aggregate_multidimensional_raster(
+                    input_multidimensional_raster=input_multidimensional_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    aggregation_method=aggregation_method_val,
+                    variables=variables,
+                    aggregation_definition=aggregation_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    interval_value=interval_value,
+                    interval_unit=interval_unit,
+                    interval_ranges=interval_ranges,
+                    aggregation_function=aggregation_function,
+                    ignore_nodata=ignore_nodata,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.91:
+                gpjob = self._tbx.aggregate_multidimensional_raster(
+                    input_multidimensional_raster=input_multidimensional_raster,
+                    output_name=output_raster,
+                    dimension=dimension,
+                    aggregation_method=aggregation_method_val,
+                    variables=variables,
+                    aggregation_definition=aggregation_definition_val,
+                    interval_keyword=interval_keyword_val,
+                    interval_value=interval_value,
+                    interval_unit=interval_unit,
+                    interval_ranges=interval_ranges,
+                    aggregation_function=aggregation_function,
+                    ignore_nodata=ignore_nodata,
+                    dimensionless=dimensionless,
+                    percentile_value=percentile_value,
+                    percentile_interpolation_type=percentile_interpolation_type,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -9037,39 +10337,40 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def generate_multidimensional_anomaly(self,
-                                          input_multidimensional_raster=None,
-                                          output_name=None,
-                                          variables=None,
-                                          method=None,
-                                          calculation_interval=None,
-                                          ignore_nodata=True,
-                                          context=None,
-                                          reference_mean_raster=None,
-                                          future=False,
-                                          **kwargs):
+    def generate_multidimensional_anomaly(
+        self,
+        input_multidimensional_raster=None,
+        output_name=None,
+        variables=None,
+        method=None,
+        calculation_interval=None,
+        ignore_nodata=True,
+        context=None,
+        reference_mean_raster=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       method: method (str). Optional parameter.
-          Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
+        method: method (str). Optional parameter.
+           Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
 
-       temporal_interval: temporalInterval (str). Optional parameter.
-          Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
+        temporal_interval: temporalInterval (str). Optional parameter.
+           Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
 
-       ignore_nodata: ignoreNodata (bool). Optional parameter.
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9080,15 +10381,30 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         method_val = method
         if method is not None:
-            method_allowed_values = ['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
-            if [element.lower() for element in method_allowed_values].count(method.lower()) <= 0 :
-                raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
+            method_allowed_values = [
+                "DIFFERENCE_FROM_MEAN",
+                "PERCENT_DIFFERENCE_FROM_MEAN",
+                "PERCENT_OF_MEAN",
+                "Z_SCORE",
+                "DIFFERENCE_FROM_MEDIAN",
+                "PERCENT_DIFFERENCE_FROM_MEDIAN",
+                "PERCENT_OF_MEDIAN",
+            ]
+            if [element.lower() for element in method_allowed_values].count(
+                method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "method can only be one of the following: "
+                    + str(method_allowed_values)
+                )
 
             for element in method_allowed_values:
                 if method.upper() == element:
@@ -9096,42 +10412,62 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         calculation_interval_val = calculation_interval
         if calculation_interval is not None:
-            interval_keyword_allowed_values = ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY', 'EXTERNAL_RASTER']
-            if [element.lower() for element in interval_keyword_allowed_values].count(calculation_interval.lower()) <= 0 :
-                raise RuntimeError('calculation_interval can only be one of the following: '+str(interval_keyword_allowed_values))
+            interval_keyword_allowed_values = [
+                "ALL",
+                "HOURLY",
+                "RECURRING_DAILY",
+                "RECURRING_WEEKLY",
+                "RECURRING_MONTHLY",
+                "YEARLY",
+                "EXTERNAL_RASTER",
+            ]
+            if [element.lower() for element in interval_keyword_allowed_values].count(
+                calculation_interval.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "calculation_interval can only be one of the following: "
+                    + str(interval_keyword_allowed_values)
+                )
 
             for element in interval_keyword_allowed_values:
                 if calculation_interval.upper() == element:
                     calculation_interval_val = element
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if reference_mean_raster is not None:
             reference_mean_raster = self._layer_input(input_layer=reference_mean_raster)
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
-            gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
-                                                                output_name=output_raster,
-                                                                variables=variables,
-                                                                method=method_val,
-                                                                calculation_interval=calculation_interval_val,
-                                                                ignore_nodata=ignore_nodata,
-                                                                context=context,
-                                                                gis=self._gis,
-                                                                future=True)
+        if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] <= 10.8:
+            gpjob = self._tbx.generate_multidimensional_anomaly(
+                input_multidimensional_raster=input_multidimensional_raster,
+                output_name=output_raster,
+                variables=variables,
+                method=method_val,
+                calculation_interval=calculation_interval_val,
+                ignore_nodata=ignore_nodata,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         else:
-            gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
-                                                                        output_name=output_raster,
-                                                                        variables=variables,
-                                                                        method=method_val,
-                                                                        calculation_interval=calculation_interval_val,
-                                                                        ignore_nodata=ignore_nodata,
-                                                                        reference_mean_raster=reference_mean_raster,
-                                                                        context=context,
-                                                                        gis=self._gis,
-                                                                        future=True)
-
+            gpjob = self._tbx.generate_multidimensional_anomaly(
+                input_multidimensional_raster=input_multidimensional_raster,
+                output_name=output_raster,
+                variables=variables,
+                method=method_val,
+                calculation_interval=calculation_interval_val,
+                ignore_nodata=ignore_nodata,
+                reference_mean_raster=reference_mean_raster,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -9142,22 +10478,23 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, item=item)
         return RAJob(gpjob, item=item).result()
 
-
-    def build_multidimensional_transpose(self,
-                                          input_multidimensional_raster=None,
-                                          context=None,
-                                          future=False,
-                                          delete_transpose=False,
-                                          **kwargs):
+    def build_multidimensional_transpose(
+        self,
+        input_multidimensional_raster=None,
+        context=None,
+        future=False,
+        delete_transpose=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9168,51 +10505,60 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
-
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         current_version = None
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
-            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
 
-        if((current_version is not None) and current_version<=10.81):
-            gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
-                                                               context=context,
-                                                               gis=self._gis,
-                                                               future=True)
-        elif((current_version is not None) and current_version>=10.9):
+        if (current_version is not None) and current_version <= 10.81:
+            gpjob = self._tbx.build_multidimensional_transpose(
+                input_multidimensional_raster=input_multidimensional_raster,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 10.9:
             if not isinstance(delete_transpose, bool):
-                raise RuntimeError('delete_transpose must be an instance of boolean')
-            gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
-                                                               context=context,
-                                                               delete_transpose=delete_transpose,
-                                                               gis=self._gis,
-                                                               future=True)
+                raise RuntimeError("delete_transpose must be an instance of boolean")
+            gpjob = self._tbx.build_multidimensional_transpose(
+                input_multidimensional_raster=input_multidimensional_raster,
+                context=context,
+                delete_transpose=delete_transpose,
+                gis=self._gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    def generate_trend_raster(self,
-                              input_multidimensional_raster=None,
-                              output_name=None,
-                              dimension=None,
-                              variables=None,
-                              trend_line_type='LINEAR',
-                              frequency=None,
-                              ignore_nodata=True,
-                              context=None,
-                              cycle_length=None,
-                              cycle_unit='YEARS',
-                              rmse=True,
-                              r2=False,
-                              slope_p_value=False,
-                              seasonal_period="DAYS",
-                              future=False,
-                              **kwargs):
+    def generate_trend_raster(
+        self,
+        input_multidimensional_raster=None,
+        output_name=None,
+        dimension=None,
+        variables=None,
+        trend_line_type="LINEAR",
+        frequency=None,
+        ignore_nodata=True,
+        context=None,
+        cycle_length=None,
+        cycle_unit="YEARS",
+        rmse=True,
+        r2=False,
+        slope_p_value=False,
+        seasonal_period="DAYS",
+        future=False,
+        **kwargs
+    ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
@@ -9245,90 +10591,127 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         trend_line_type_val = trend_line_type
         if trend_line_type is not None:
-            trend_line_type_allowed_values = ['LINEAR', 'HARMONIC', 'POLYNOMIAL', 'MANN-KENDALL', 'SEASONAL-KENDALL']
-            if [element.lower() for element in trend_line_type_allowed_values].count(trend_line_type.lower()) <= 0 :
-                raise RuntimeError('trend_line_type can only be one of the following: '+str(trend_line_type_allowed_values))
+            trend_line_type_allowed_values = [
+                "LINEAR",
+                "HARMONIC",
+                "POLYNOMIAL",
+                "MANN-KENDALL",
+                "SEASONAL-KENDALL",
+            ]
+            if [element.lower() for element in trend_line_type_allowed_values].count(
+                trend_line_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "trend_line_type can only be one of the following: "
+                    + str(trend_line_type_allowed_values)
+                )
 
             for element in trend_line_type_allowed_values:
                 if trend_line_type.upper() == element:
                     trend_line_type_val = element
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if cycle_unit is not None:
             if "cycle_unit" in self._tbx.choice_list.generate_trend_raster.keys():
-                cycle_unit_allowed_values = self._tbx.choice_list.generate_trend_raster["cycle_unit"]
-                if [element.lower() for element in cycle_unit_allowed_values].count(cycle_unit.lower()) <= 0 :
-                    raise RuntimeError('cycle_unit can only be one of the following:  '+str(cycle_unit_allowed_values))
+                cycle_unit_allowed_values = self._tbx.choice_list.generate_trend_raster[
+                    "cycle_unit"
+                ]
+                if [element.lower() for element in cycle_unit_allowed_values].count(
+                    cycle_unit.lower()
+                ) <= 0:
+                    raise RuntimeError(
+                        "cycle_unit can only be one of the following:  "
+                        + str(cycle_unit_allowed_values)
+                    )
                 for element in cycle_unit_allowed_values:
                     if cycle_unit.lower() == element.lower():
                         cycle_unit = element
 
         if seasonal_period is not None:
             if "seasonal_period" in self._tbx.choice_list.generate_trend_raster.keys():
-                seasonal_period_allowed_values = self._tbx.choice_list.generate_trend_raster["seasonal_period"]
-                if [element.lower() for element in seasonal_period_allowed_values].count(seasonal_period.lower()) <= 0 :
-                    raise RuntimeError('seasonal_period can only be one of the following:  '+str(seasonal_period_allowed_values))
+                seasonal_period_allowed_values = (
+                    self._tbx.choice_list.generate_trend_raster["seasonal_period"]
+                )
+                if [
+                    element.lower() for element in seasonal_period_allowed_values
+                ].count(seasonal_period.lower()) <= 0:
+                    raise RuntimeError(
+                        "seasonal_period can only be one of the following:  "
+                        + str(seasonal_period_allowed_values)
+                    )
                 for element in seasonal_period_allowed_values:
                     if seasonal_period.lower() == element.lower():
                         seasonal_period = element
 
         current_version = None
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
-            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
 
-        if((current_version is not None) and current_version<=10.8):
-            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                                    output_name=output_raster,
-                                                    dimension=dimension,
-                                                    variables=variables,
-                                                    trend_line_type=trend_line_type_val,
-                                                    frequency=frequency,
-                                                    ignore_nodata=ignore_nodata,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
-        elif(current_version is not None) and (current_version>10.8 and current_version<10.9):
-            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                        output_name=output_raster,
-                                        dimension=dimension,
-                                        variables=variables,
-                                        trend_line_type=trend_line_type_val,
-                                        frequency=frequency,
-                                        ignore_nodata=ignore_nodata,
-                                        cycle_length=cycle_length,
-                                        cycle_unit=cycle_unit,
-                                        rmse=rmse,
-                                        r2=r2,
-                                        slope_p_value=slope_p_value,
-                                        context=context,
-                                        gis=self._gis,
-                                        future=True)
-        elif((current_version is not None) and current_version>=10.9):
-            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                        output_name=output_raster,
-                                        dimension=dimension,
-                                        variables=variables,
-                                        trend_line_type=trend_line_type_val,
-                                        frequency=frequency,
-                                        ignore_nodata=ignore_nodata,
-                                        cycle_length=cycle_length,
-                                        cycle_unit=cycle_unit,
-                                        rmse=rmse,
-                                        r2=r2,
-                                        slope_p_value=slope_p_value,
-                                        seasonal_period=seasonal_period,
-                                        context=context,
-                                        gis=self._gis,
-                                        future=True)
+        if (current_version is not None) and current_version <= 10.8:
+            gpjob = self._tbx.generate_trend_raster(
+                input_multidimensional_raster=input_multidimensional_raster,
+                output_name=output_raster,
+                dimension=dimension,
+                variables=variables,
+                trend_line_type=trend_line_type_val,
+                frequency=frequency,
+                ignore_nodata=ignore_nodata,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and (
+            current_version > 10.8 and current_version < 10.9
+        ):
+            gpjob = self._tbx.generate_trend_raster(
+                input_multidimensional_raster=input_multidimensional_raster,
+                output_name=output_raster,
+                dimension=dimension,
+                variables=variables,
+                trend_line_type=trend_line_type_val,
+                frequency=frequency,
+                ignore_nodata=ignore_nodata,
+                cycle_length=cycle_length,
+                cycle_unit=cycle_unit,
+                rmse=rmse,
+                r2=r2,
+                slope_p_value=slope_p_value,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 10.9:
+            gpjob = self._tbx.generate_trend_raster(
+                input_multidimensional_raster=input_multidimensional_raster,
+                output_name=output_raster,
+                dimension=dimension,
+                variables=variables,
+                trend_line_type=trend_line_type_val,
+                frequency=frequency,
+                ignore_nodata=ignore_nodata,
+                cycle_length=cycle_length,
+                cycle_unit=cycle_unit,
+                rmse=rmse,
+                r2=r2,
+                slope_p_value=slope_p_value,
+                seasonal_period=seasonal_period,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -9341,47 +10724,48 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, item=item)
         return RAJob(gpjob, item=item).result()
 
-
-    def predict_using_trend_raster(self,
-                                   input_multidimensional_raster=None,
-                                   output_name=None,
-                                   variables=None,
-                                   dimension_definition='BY_VALUE',
-                                   dimension_values=None,
-                                   start=None,
-                                   end=None,
-                                   interval_value=1,
-                                   interval_unit=None,
-                                   context=None,
-                                   future=False,
-                                   **kwargs):
+    def predict_using_trend_raster(
+        self,
+        input_multidimensional_raster=None,
+        output_name=None,
+        variables=None,
+        dimension_definition="BY_VALUE",
+        dimension_values=None,
+        start=None,
+        end=None,
+        interval_value=1,
+        interval_unit=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['BY_VALUE', 'BY_INTERVAL']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['BY_VALUE', 'BY_INTERVAL']
 
-       dimension_values: dimensionValues (str). Optional parameter.
+        dimension_values: dimensionValues (str). Optional parameter.
 
-       start: start (str). Optional parameter.
+        start: start (str). Optional parameter.
 
-       end: end (str). Optional parameter.
+        end: end (str). Optional parameter.
 
-       interval_value: intervalValue (float). Optional parameter.
+        interval_value: intervalValue (float). Optional parameter.
 
-       interval_unit: intervalUnit (str). Optional parameter.
-          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+        interval_unit: intervalUnit (str). Optional parameter.
+           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9392,16 +10776,22 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
-
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         dimension_definition_val = dimension_definition
         if dimension_definition is not None:
-            dimension_definition_allowed_values = ['BY_VALUE', 'BY_INTERVAL']
-            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
-                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+            dimension_definition_allowed_values = ["BY_VALUE", "BY_INTERVAL"]
+            if [
+                element.lower() for element in dimension_definition_allowed_values
+            ].count(dimension_definition.lower()) <= 0:
+                raise RuntimeError(
+                    "dimension_definition can only be one of the following: "
+                    + str(dimension_definition_allowed_values)
+                )
 
             for element in dimension_definition_allowed_values:
                 if dimension_definition.upper() == element:
@@ -9409,34 +10799,49 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         interval_unit_val = interval_unit
         if interval_unit is not None:
-            interval_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
-            if [element.lower() for element in interval_unit_allowed_values].count(interval_unit.lower()) <= 0 :
-                raise RuntimeError('interval_unit can only be one of the following: '+str(interval_unit_allowed_values))
+            interval_unit_allowed_values = [
+                "HOURS",
+                "DAYS",
+                "DAILY",
+                "WEEKS",
+                "MONTHS",
+                "YEARS",
+            ]
+            if [element.lower() for element in interval_unit_allowed_values].count(
+                interval_unit.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "interval_unit can only be one of the following: "
+                    + str(interval_unit_allowed_values)
+                )
 
             for element in interval_unit_allowed_values:
                 if interval_unit.upper() == element:
                     interval_unit_val = element
 
-        values=None
+        values = None
         if dimension_values is not None:
             if isinstance(dimension_values, list):
                 values = ";".join(dimension_values)
 
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-        gpjob = self._tbx.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                                     output_name=output_raster,
-                                                     variables=variables,
-                                                     dimension_definition=dimension_definition_val,
-                                                     dimension_values=values,
-                                                     start=start,
-                                                     end=end,
-                                                     interval_value=interval_value,
-                                                     interval_unit=interval_unit_val,
-                                                     context=context,
-                                                     gis=self._gis,
-                                                     future=True)
+        gpjob = self._tbx.predict_using_trend_raster(
+            input_multidimensional_raster=input_multidimensional_raster,
+            output_name=output_raster,
+            variables=variables,
+            dimension_definition=dimension_definition_val,
+            dimension_values=values,
+            start=start,
+            end=end,
+            interval_value=interval_value,
+            interval_unit=interval_unit_val,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -9449,55 +10854,56 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def find_argument_statistics(self,
-                                 input_raster=None,
-                                 output_name=None,
-                                 dimension=None,
-                                 dimension_definition='ALL',
-                                 interval_keyword=None,
-                                 variables=None,
-                                 statistics_type='ARGUMENT_MIN',
-                                 min_value=None,
-                                 max_value=None,
-                                 multiple_occurrence_value=None,
-                                 ignore_nodata=True,
-                                 context=None,
-                                 future=False,
-                                 **kwargs):
+    def find_argument_statistics(
+        self,
+        input_raster=None,
+        output_name=None,
+        dimension=None,
+        dimension_definition="ALL",
+        interval_keyword=None,
+        variables=None,
+        statistics_type="ARGUMENT_MIN",
+        min_value=None,
+        max_value=None,
+        multiple_occurrence_value=None,
+        ignore_nodata=True,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_raster: inputRaster (str). Required parameter.
+        input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       dimension: dimension (str). Optional parameter.
+        dimension: dimension (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['ALL', 'INTERVAL_KEYWORD']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['ALL', 'INTERVAL_KEYWORD']
 
-       interval_keyword: intervalKeyword (str). Optional parameter.
-          Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY',
-          'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
+        interval_keyword: intervalKeyword (str). Optional parameter.
+           Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY',
+           'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       statistics_type: statisticsType (str). Optional parameter.
-          Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+        statistics_type: statisticsType (str). Optional parameter.
+           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
 
-       min_value: minValue (float). Optional parameter.
+        min_value: minValue (float). Optional parameter.
 
-       max_value: maxValue (float). Optional parameter.
+        max_value: maxValue (float). Optional parameter.
 
-       multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
+        multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
 
-       ignore_nodata: ignoreNodata (bool). Optional parameter.
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9508,61 +10914,93 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_layer=input_raster)
 
-        dimension_definition_val=dimension_definition
+        dimension_definition_val = dimension_definition
         if dimension_definition is not None:
-            dimension_definition_allowed_values = ['ALL', 'INTERVAL_KEYWORD']
+            dimension_definition_allowed_values = ["ALL", "INTERVAL_KEYWORD"]
 
-            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
-                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+            if [
+                element.lower() for element in dimension_definition_allowed_values
+            ].count(dimension_definition.lower()) <= 0:
+                raise RuntimeError(
+                    "dimension_definition can only be one of the following: "
+                    + str(dimension_definition_allowed_values)
+                )
 
             for element in dimension_definition_allowed_values:
                 if dimension_definition.upper() == element:
                     dimension_definition_val = element
 
-        interval_keyword_val=interval_keyword
+        interval_keyword_val = interval_keyword
         if interval_keyword is not None:
-            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY',
-                                               'QUARTERLY', 'YEARLY', 'RECURRING_DAILY',
-                                               'RECURRING_WEEKLY', 'RECURRING_MONTHLY',
-                                               'RECURRING_QUARTERLY']
+            interval_keyword_allowed_values = [
+                "HOURLY",
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY",
+                "QUARTERLY",
+                "YEARLY",
+                "RECURRING_DAILY",
+                "RECURRING_WEEKLY",
+                "RECURRING_MONTHLY",
+                "RECURRING_QUARTERLY",
+            ]
 
-            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
-                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+            if [element.lower() for element in interval_keyword_allowed_values].count(
+                interval_keyword.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "interval_keyword can only be one of the following: "
+                    + str(interval_keyword_allowed_values)
+                )
 
             for element in interval_keyword_allowed_values:
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
-        statistics_type_val=statistics_type
+        statistics_type_val = statistics_type
         if statistics_type is not None:
-            statistics_type_allowed_values = ['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
-            if [element.lower() for element in statistics_type_allowed_values].count(statistics_type.lower()) <= 0 :
-                raise RuntimeError('statistics_type can only be one of the following: '+str(statistics_type_allowed_values))
+            statistics_type_allowed_values = [
+                "ARGUMENT_MIN",
+                "ARGUMENT_MAX",
+                "ARGUMENT_MEDIAN",
+                "DURATION",
+            ]
+            if [element.lower() for element in statistics_type_allowed_values].count(
+                statistics_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "statistics_type can only be one of the following: "
+                    + str(statistics_type_allowed_values)
+                )
 
             for element in statistics_type_allowed_values:
                 if statistics_type.upper() == element:
                     statistics_type_val = element
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.find_argument_statistics(input_raster=input_raster,
-                                                   output_name=output_raster,
-                                                   dimension=dimension,
-                                                   dimension_definition=dimension_definition_val,
-                                                   interval_keyword=interval_keyword_val,
-                                                   variables=variables,
-                                                   statistics_type=statistics_type_val,
-                                                   min_value=min_value,
-                                                   max_value=max_value,
-                                                   multiple_occurrence_value=multiple_occurrence_value,
-                                                   ignore_nodata=ignore_nodata,
-                                                   context=context,
-                                                   gis=self._gis,
-                                                   future=True)
+        gpjob = self._tbx.find_argument_statistics(
+            input_raster=input_raster,
+            output_name=output_raster,
+            dimension=dimension,
+            dimension_definition=dimension_definition_val,
+            interval_keyword=interval_keyword_val,
+            variables=variables,
+            statistics_type=statistics_type_val,
+            min_value=min_value,
+            max_value=max_value,
+            multiple_occurrence_value=multiple_occurrence_value,
+            ignore_nodata=ignore_nodata,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -9574,31 +11012,32 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def linear_spectral_unmixing(self,
-                                 input_raster=None,
-                                 output_name=None,
-                                 input_spectral_profile=None,
-                                 value_option=[],
-                                 context=None,
-                                 future=False,
-                                  **kwargs):
+    def linear_spectral_unmixing(
+        self,
+        input_raster=None,
+        output_name=None,
+        input_spectral_profile=None,
+        value_option=[],
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_raster: inputRaster (str). Required parameter.
+        input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       input_spectral_profile: inputSpectralProfile (str). Optional parameter.
+        input_spectral_profile: inputSpectralProfile (str). Optional parameter.
 
-       value_option: valueOption (str). Optional parameter.
-          Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
+        value_option: valueOption (str). Optional parameter.
+           Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
 
-        context: context (str). Optional parameter.
+         context: context (str). Optional parameter.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9609,30 +11048,34 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_layer=input_raster)
 
         return_list = []
-        value_option_allowed_values = ['SUM_TO_ONE', 'NON_NEGATIVE']
+        value_option_allowed_values = ["SUM_TO_ONE", "NON_NEGATIVE"]
         for element in value_option_allowed_values:
             for ele in value_option:
                 if ele.upper() == element:
                     return_list.append(element)
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if input_spectral_profile is not None:
             if isinstance(input_spectral_profile, str):
-                input_spectral_profile = {"uri":input_spectral_profile}
+                input_spectral_profile = {"uri": input_spectral_profile}
 
-        gpjob = self._tbx.linear_spectral_unmixing(input_raster=input_raster,
-                                                   output_name=output_raster,
-                                                   input_spectral_profile=input_spectral_profile,
-                                                   value_option=return_list,
-                                                   context=context,
-                                                   gis=self._gis,
-                                                   future=True)
+        gpjob = self._tbx.linear_spectral_unmixing(
+            input_raster=input_raster,
+            output_name=output_raster,
+            input_spectral_profile=input_spectral_profile,
+            value_option=return_list,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -9643,53 +11086,54 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def subset_multidimensional_raster(self,
-                                       input_multidimensional_raster=None,
-                                       output_name=None,
-                                       variables=None,
-                                       dimension_definition='BY_VALUE',
-                                       dimension_ranges=None,
-                                       dimension_values=None,
-                                       dimension=None,
-                                       start_of_first_iteration=None,
-                                       end_of_first_iteration=None,
-                                       iteration_step=None,
-                                       iteration_unit=None,
-                                       context=None,
-                                       future=False,
-                                       **kwargs):
+    def subset_multidimensional_raster(
+        self,
+        input_multidimensional_raster=None,
+        output_name=None,
+        variables=None,
+        dimension_definition="BY_VALUE",
+        dimension_ranges=None,
+        dimension_values=None,
+        dimension=None,
+        start_of_first_iteration=None,
+        end_of_first_iteration=None,
+        iteration_step=None,
+        iteration_unit=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.
+        variables: variables (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.
-          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
+        dimension_definition: dimensionDefinition (str). Optional parameter.
+           Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
 
-       dimension_ranges: dimensionRanges (str). Optional parameter.
+        dimension_ranges: dimensionRanges (str). Optional parameter.
 
-       dimension_values: dimensionValues (str). Optional parameter.
+        dimension_values: dimensionValues (str). Optional parameter.
 
-       dimension: dimension (str). Optional parameter.
+        dimension: dimension (str). Optional parameter.
 
-       start_of_first_iteration: recurrenceFrom (str). Optional parameter.
+        start_of_first_iteration: recurrenceFrom (str). Optional parameter.
 
-       end_of_first_iteration: recurrenceTo (str). Optional parameter.
+        end_of_first_iteration: recurrenceTo (str). Optional parameter.
 
-       iteration_step: recurrenceInterval (float). Optional parameter.
+        iteration_step: recurrenceInterval (float). Optional parameter.
 
-       iteration_unit: recurrenceUnit (str). Optional parameter.
-          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+        iteration_unit: recurrenceUnit (str). Optional parameter.
+           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -9700,16 +11144,27 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
-
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
         dimension_definition_val = dimension_definition
         if dimension_definition is not None:
-            dimension_definition_allowed_values = ['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
-            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
-                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+            dimension_definition_allowed_values = [
+                "ALL",
+                "BY_VALUE",
+                "BY_RANGES",
+                "BY_ITERATION",
+            ]
+            if [
+                element.lower() for element in dimension_definition_allowed_values
+            ].count(dimension_definition.lower()) <= 0:
+                raise RuntimeError(
+                    "dimension_definition can only be one of the following: "
+                    + str(dimension_definition_allowed_values)
+                )
 
             for element in dimension_definition_allowed_values:
                 if dimension_definition.upper() == element:
@@ -9717,30 +11172,46 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         iteration_unit_val = iteration_unit
         if iteration_unit is not None:
-            iteration_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
-            if [element.lower() for element in iteration_unit_allowed_values].count(iteration_unit.lower()) <= 0 :
-                raise RuntimeError('iteration_unit can only be one of the following: '+str(iteration_unit_allowed_values))
+            iteration_unit_allowed_values = [
+                "HOURS",
+                "DAYS",
+                "DAILY",
+                "WEEKS",
+                "MONTHS",
+                "YEARS",
+            ]
+            if [element.lower() for element in iteration_unit_allowed_values].count(
+                iteration_unit.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "iteration_unit can only be one of the following: "
+                    + str(iteration_unit_allowed_values)
+                )
 
             for element in iteration_unit_allowed_values:
                 if iteration_unit.upper() == element:
                     iteration_unit_val = element
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        gpjob = self._tbx.subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                                         output_name=output_raster,
-                                                         variables=variables,
-                                                         dimension_definition=dimension_definition_val,
-                                                         dimension_ranges=dimension_ranges,
-                                                         dimension_values=dimension_values,
-                                                         dimension=dimension,
-                                                         start_of_first_iteration=start_of_first_iteration,
-                                                         end_of_first_iteration=end_of_first_iteration,
-                                                         iteration_step=iteration_step,
-                                                         iteration_unit=iteration_unit_val,
-                                                         context=context,
-                                                         gis=self._gis,
-                                                         future=True)
+        gpjob = self._tbx.subset_multidimensional_raster(
+            input_multidimensional_raster=input_multidimensional_raster,
+            output_name=output_raster,
+            variables=variables,
+            dimension_definition=dimension_definition_val,
+            dimension_ranges=dimension_ranges,
+            dimension_values=dimension_values,
+            dimension=dimension,
+            start_of_first_iteration=start_of_first_iteration,
+            end_of_first_iteration=end_of_first_iteration,
+            iteration_step=iteration_step,
+            iteration_unit=iteration_unit_val,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -9751,87 +11222,101 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-
-    def cost_path_as_polyline(self,
-                              input_destination_raster_or_features=None,
-                              input_cost_distance_raster=None,
-                              input_cost_backlink_raster=None,
-                              output_polyline_name=None,
-                              path_type=None,
-                              destination_field=None,
-                              context=None,
-                              future=False,
-                              **kwargs):
+    def cost_path_as_polyline(
+        self,
+        input_destination_raster_or_features=None,
+        input_cost_distance_raster=None,
+        input_cost_backlink_raster=None,
+        output_polyline_name=None,
+        path_type=None,
+        destination_field=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
 
-        Parameters
+         Parameters
 
-       input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
+        input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
 
-       input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
+        input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
 
-       input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
+        input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
 
-       output_polyline_name: outputPolylineName (str). Required parameter.
+        output_polyline_name: outputPolylineName (str). Required parameter.
 
-       path_type: pathType (str). Optional parameter.
+        path_type: pathType (str). Optional parameter.
 
-       destination_field: destinationField (str). Optional parameter.
+        destination_field: destinationField (str). Optional parameter.
 
-        context: Context contains additional settings that affect task execution.
+         context: Context contains additional settings that affect task execution.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-        Returns
-        -------
-        output_raster : Image layer item
+         Returns
+         -------
+         output_raster : Image layer item
         """
         task = "CostPathAsPolyline"
-        gis =  self._gis
+        gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
-            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._feature_input(
+                input_destination_raster_or_features
+            )
         elif isinstance(input_destination_raster_or_features, Item):
-            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+            input_destination_raster_or_features = {
+                "itemId": input_destination_raster_or_features.itemid
+            }
         else:
-            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._layer_input(
+                input_destination_raster_or_features
+            )
 
-        input_cost_distance_raster = self._layer_input(input_layer=input_cost_distance_raster)
+        input_cost_distance_raster = self._layer_input(
+            input_layer=input_cost_distance_raster
+        )
 
-        input_cost_backlink_raster = self._layer_input(input_layer=input_cost_backlink_raster)
+        input_cost_backlink_raster = self._layer_input(
+            input_layer=input_cost_backlink_raster
+        )
 
-        path_type_allowed_values = ["BEST_SINGLE","EACH_CELL","EACH_ZONE"]
+        path_type_allowed_values = ["BEST_SINGLE", "EACH_CELL", "EACH_ZONE"]
         path_type_val = path_type
         if path_type is not None:
-            if [element.lower() for element in path_type_allowed_values].count(path_type.lower()) <= 0 :
-                raise RuntimeError("path_type can only be one of the following: "+ str(path_type_allowed_values))
+            if [element.lower() for element in path_type_allowed_values].count(
+                path_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "path_type can only be one of the following: "
+                    + str(path_type_allowed_values)
+                )
             for element in path_type_allowed_values:
                 if path_type.lower() == element.lower():
                     path_type_val = element
 
-
         if output_polyline_name is None:
-            output_polyline_service_name  = 'Output Polyline_' + _id_generator()
-            output_polyline_name = output_polyline_service_name .replace(' ', '_')
+            output_polyline_service_name = "Output Polyline_" + _id_generator()
+            output_polyline_name = output_polyline_service_name.replace(" ", "_")
         else:
-            output_polyline_service_name  = output_polyline_name.replace(' ', '_')
+            output_polyline_service_name = output_polyline_name.replace(" ", "_")
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -9840,45 +11325,64 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
-        output_polyline_service  = self._create_output_feature_service(output_name=output_polyline_name,
-                                                             output_service_name=output_polyline_service_name ,
-                                                             task='CostPathAsPolyline',
-                                                             folder=folder)
+        output_polyline_service = self._create_output_feature_service(
+            output_name=output_polyline_name,
+            output_service_name=output_polyline_service_name,
+            task="CostPathAsPolyline",
+            folder=folder,
+        )
         if folderId is not None:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                }
+            )
 
-
-        gpjob = self._tbx.cost_path_as_polyline(input_destination_raster_or_features=input_destination_raster_or_features,
-                                                input_cost_distance_raster=input_cost_distance_raster,
-                                                input_cost_backlink_raster=input_cost_backlink_raster,
-                                                output_polyline_name=output_polyline_name,
-                                                path_type=path_type_val,
-                                                destination_field=destination_field,
-                                                context=context,
-                                                gis=self._gis,
-                                                future=True)
+        gpjob = self._tbx.cost_path_as_polyline(
+            input_destination_raster_or_features=input_destination_raster_or_features,
+            input_cost_distance_raster=input_cost_distance_raster,
+            input_cost_backlink_raster=input_cost_backlink_raster,
+            output_polyline_name=output_polyline_name,
+            path_type=path_type_val,
+            destination_field=destination_field,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-
-    def classify_objects_using_deep_learning(self,
-                                             input_raster,
-                                             model,
-                                             model_arguments=None,
-                                             input_features=None,
-                                             class_label_field=None,
-                                             process_all_raster_items=None,
-                                             output_feature_class=None,
-                                             context=None,
-                                             future=False,
-                                             **kwargs):
+    def classify_objects_using_deep_learning(
+        self,
+        input_raster,
+        model,
+        model_arguments=None,
+        input_features=None,
+        class_label_field=None,
+        process_all_raster_items=None,
+        output_feature_class=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Function can be used to output feature service with assigned class label for each feature based on
         information from overlapped imagery data using the designated deep learning model.
@@ -9952,41 +11456,45 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_features = self._layer_input(input_layer=input_features)
 
         if model is None:
-            raise RuntimeError('model cannot be None')
+            raise RuntimeError("model cannot be None")
         else:
             model_value = self._set_param(model)
 
         model_arguments_value = None
         if model_arguments:
             try:
-                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+                model_arguments_value = dict(
+                    (str(k), str(v)) for k, v in model_arguments.items()
+                )
             except:
                 model_arguments_value = model_arguments
 
         if not isinstance(process_all_raster_items, bool):
-            raise RuntimeError("process_all_raster_items value should be an instance of bool")
+            raise RuntimeError(
+                "process_all_raster_items value should be an instance of bool"
+            )
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if output_feature_class is None:
-            output_service_name = 'ClassifyObjectsUsingDeepLearning_' + _id_generator()
-            output_feature_class = output_service_name.replace(' ', '_')
+            output_service_name = "ClassifyObjectsUsingDeepLearning_" + _id_generator()
+            output_feature_class = output_service_name.replace(" ", "_")
         else:
-            output_service_name = output_feature_class.replace(' ', '_')
+            output_service_name = output_feature_class.replace(" ", "_")
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -9994,26 +11502,46 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder_dict = gis.content.create_folder(folder, owner)
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
-        output_service = self._create_output_feature_service(output_name=output_feature_class,
-                                                             output_service_name=output_service_name,
-                                                             task='Classify Objects',
-                                                             folder=folder)
+        output_service = self._create_output_feature_service(
+            output_name=output_feature_class,
+            output_service_name=output_service_name,
+            task="Classify Objects",
+            folder=folder,
+        )
         if folderId is not None:
-            output_feature_class = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+            output_feature_class = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_feature_class= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}})
+            output_feature_class = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_service_name,
+                        "serviceUrl": output_service.url,
+                    },
+                    "itemProperties": {"itemId": output_service.itemid},
+                }
+            )
 
-        gpjob = self._tbx.classify_objects_using_deep_learning(input_raster=input_raster,
-                                                               input_features=input_features,
-                                                               output_feature_class=output_feature_class,
-                                                               model=model_value,
-                                                               model_arguments=model_arguments_value,
-                                                               class_label_field=class_label_field,
-                                                               process_all_raster_items=process_all_raster_items,
-                                                               context=context, gis=self._gis,
-                                                               future=True)
+        gpjob = self._tbx.classify_objects_using_deep_learning(
+            input_raster=input_raster,
+            input_features=input_features,
+            output_feature_class=output_feature_class,
+            model=model_value,
+            model_arguments=model_arguments_value,
+            class_label_field=class_label_field,
+            process_all_raster_items=process_all_raster_items,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         gpjob._return_item = output_service
@@ -10021,14 +11549,16 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
 
-    def define_nodata(self,
-                      input_raster,
-                      nodata,
-                      query_filter=None,
-                      num_of_bands=None,
-                      composite_value=None,
-                      future=False,
-                      **kwargs):
+    def define_nodata(
+        self,
+        input_raster,
+        nodata,
+        query_filter=None,
+        num_of_bands=None,
+        composite_value=None,
+        future=False,
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -10048,40 +11578,43 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
 
         context_param = {}
-        context=None
+        context = None
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_raster = self._layer_input(input_raster)
 
         if not isinstance(composite_value, bool):
-            raise RuntimeError('composite_value must be an instance of boolean')
+            raise RuntimeError("composite_value must be an instance of boolean")
 
-
-        gpjob = self._tbx.define_nodata(input_raster=input_raster,
-                                        nodata=nodata,
-                                        query_filter=query_filter,
-                                        num_of_bands=num_of_bands,
-                                        composite_value=composite_value,
-                                        gis=self._gis,
-                                        future=True)
+        gpjob = self._tbx.define_nodata(
+            input_raster=input_raster,
+            nodata=nodata,
+            query_filter=query_filter,
+            num_of_bands=num_of_bands,
+            composite_value=composite_value,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    def optimal_path_as_line(self,
-                             input_destination_raster_or_features,
-                             input_distance_accumulation_raster,
-                             input_back_direction_raster,
-                             output_polyline_name,
-                             destination_field=None,
-                             path_type=None,
-                             context=None,
-                             future=False,
-                             create_network_paths="DESTINATIONS_TO_SOURCES",
-                             **kwargs):
+    def optimal_path_as_line(
+        self,
+        input_destination_raster_or_features,
+        input_distance_accumulation_raster,
+        input_back_direction_raster,
+        output_polyline_name,
+        destination_field=None,
+        path_type=None,
+        context=None,
+        future=False,
+        create_network_paths="DESTINATIONS_TO_SOURCES",
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -10107,50 +11640,64 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_raster : Image layer item
         """
         task = "OptimalPathAsLine"
-        gis =  self._gis
+        gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
-            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._feature_input(
+                input_destination_raster_or_features
+            )
         elif isinstance(input_destination_raster_or_features, Item):
-            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+            input_destination_raster_or_features = {
+                "itemId": input_destination_raster_or_features.itemid
+            }
         else:
-            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+            input_destination_raster_or_features = self._layer_input(
+                input_destination_raster_or_features
+            )
 
-        input_distance_accumulation_raster = self._layer_input(input_layer=input_distance_accumulation_raster)
+        input_distance_accumulation_raster = self._layer_input(
+            input_layer=input_distance_accumulation_raster
+        )
 
-        input_back_direction_raster = self._layer_input(input_layer=input_back_direction_raster)
+        input_back_direction_raster = self._layer_input(
+            input_layer=input_back_direction_raster
+        )
 
-        path_type_allowed_values = ["BEST_SINGLE","EACH_CELL","EACH_ZONE"]
+        path_type_allowed_values = ["BEST_SINGLE", "EACH_CELL", "EACH_ZONE"]
         path_type_val = path_type
         if path_type is not None:
-            if [element.lower() for element in path_type_allowed_values].count(path_type.lower()) <= 0 :
-                raise RuntimeError("path_type can only be one of the following: "+ str(path_type_allowed_values))
+            if [element.lower() for element in path_type_allowed_values].count(
+                path_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "path_type can only be one of the following: "
+                    + str(path_type_allowed_values)
+                )
             for element in path_type_allowed_values:
                 if path_type.lower() == element.lower():
                     path_type_val = element
 
-
         if output_polyline_name is None:
-            output_polyline_service_name  = 'Output Polyline_' + _id_generator()
-            output_polyline_name = output_polyline_service_name .replace(' ', '_')
+            output_polyline_service_name = "Output Polyline_" + _id_generator()
+            output_polyline_name = output_polyline_service_name.replace(" ", "_")
         else:
-            output_polyline_service_name  = output_polyline_name.replace(' ', '_')
+            output_polyline_service_name = output_polyline_name.replace(" ", "_")
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -10159,16 +11706,33 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
-        output_polyline_service  = self._create_output_feature_service(output_name=output_polyline_name,
-                                                             output_service_name=output_polyline_service_name ,
-                                                             task='OptimalPathAsLine',
-                                                             folder=folder)
+        output_polyline_service = self._create_output_feature_service(
+            output_name=output_polyline_name,
+            output_service_name=output_polyline_service_name,
+            task="OptimalPathAsLine",
+            folder=folder,
+        )
         if folderId is not None:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
-                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+            output_polyline_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_polyline_service_name,
+                        "serviceUrl": output_polyline_service.url,
+                    },
+                    "itemProperties": {"itemId": output_polyline_service.itemid},
+                }
+            )
 
         if create_network_paths is not None:
             if isinstance(create_network_paths, str):
@@ -10177,31 +11741,37 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif create_network_paths.upper() == "DESTINATIONS_TO_SOURCES":
                     create_network_paths = False
             if not isinstance(create_network_paths, bool):
-                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool.')
+                raise RuntimeError(
+                    "create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool."
+                )
 
         if self._current_version is not None:
             current_version = self._current_version
-            if((current_version is not None) and current_version<10.9):
-                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
-                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
-                                                       input_back_direction_raster=input_back_direction_raster,
-                                                       output_polyline_name=output_polyline_name,
-                                                       path_type=path_type_val,
-                                                       destination_field=destination_field,
-                                                       context=context,
-                                                       gis=self._gis,
-                                                       future=True)
-            elif((current_version is not None) and current_version>=10.9):
-                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
-                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
-                                                       input_back_direction_raster=input_back_direction_raster,
-                                                       output_polyline_name=output_polyline_name,
-                                                       path_type=path_type_val,
-                                                       destination_field=destination_field,
-                                                       create_network_paths=create_network_paths,
-                                                       context=context,
-                                                       gis=self._gis,
-                                                       future=True)
+            if (current_version is not None) and current_version < 10.9:
+                gpjob = self._tbx.optimal_path_as_line(
+                    input_destination_raster_or_features=input_destination_raster_or_features,
+                    input_distance_accumulation_raster=input_distance_accumulation_raster,
+                    input_back_direction_raster=input_back_direction_raster,
+                    output_polyline_name=output_polyline_name,
+                    path_type=path_type_val,
+                    destination_field=destination_field,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.9:
+                gpjob = self._tbx.optimal_path_as_line(
+                    input_destination_raster_or_features=input_destination_raster_or_features,
+                    input_distance_accumulation_raster=input_distance_accumulation_raster,
+                    input_back_direction_raster=input_back_direction_raster,
+                    output_polyline_name=output_polyline_name,
+                    path_type=path_type_val,
+                    destination_field=destination_field,
+                    create_network_paths=create_network_paths,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10209,17 +11779,19 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, output_polyline_service)
         return RAJob(gpjob, output_polyline_service).result()
 
-    def optimal_region_connections(self,
-                                   input_region_raster_or_features,
-                                   input_barrier_raster_or_features=None,
-                                   input_cost_raster=None,
-                                   distance_method="PLANAR",
-                                   connections_within_regions="GENERATE_CONNECTIONS",
-                                   output_optimal_lines_name=None,
-                                   output_neighbor_connections_name=None,
-                                   context=None,
-                                   future=False,
-                                   **kwargs):
+    def optimal_region_connections(
+        self,
+        input_region_raster_or_features,
+        input_barrier_raster_or_features=None,
+        input_cost_raster=None,
+        distance_method="PLANAR",
+        connections_within_regions="GENERATE_CONNECTIONS",
+        output_optimal_lines_name=None,
+        output_neighbor_connections_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Parameters
         ----------
@@ -10248,72 +11820,106 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_raster : Image layer item
         """
         task = "OptimalRegionConnections"
-        gis =  self._gis
+        gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_region_raster_or_features, _FEATURE_INPUTS):
-            input_region_raster_or_features = self._feature_input(input_region_raster_or_features)
+            input_region_raster_or_features = self._feature_input(
+                input_region_raster_or_features
+            )
         elif isinstance(input_region_raster_or_features, Item):
-            input_region_raster_or_features = {"itemId": input_region_raster_or_features.itemid }
+            input_region_raster_or_features = {
+                "itemId": input_region_raster_or_features.itemid
+            }
         else:
-            input_region_raster_or_features = self._layer_input(input_region_raster_or_features)
+            input_region_raster_or_features = self._layer_input(
+                input_region_raster_or_features
+            )
 
         if input_barrier_raster_or_features is not None:
             if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._feature_input(
+                    input_barrier_raster_or_features
+                )
             elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {"itemId": input_barrier_raster_or_features.itemid }
+                input_barrier_raster_or_features = {
+                    "itemId": input_barrier_raster_or_features.itemid
+                }
             else:
-                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._layer_input(
+                    input_barrier_raster_or_features
+                )
 
         if input_cost_raster is not None:
             input_cost_raster = self._layer_input(input_layer=input_cost_raster)
 
-        distance_method_allowed_values = ["PLANAR","GEODESIC"]
+        distance_method_allowed_values = ["PLANAR", "GEODESIC"]
         distance_method_val = distance_method
         if distance_method is not None:
-            if [element.lower() for element in distance_method_allowed_values].count(distance_method.lower()) <= 0 :
-                raise RuntimeError("distance_method can only be one of the following: "+ str(distance_method_allowed_values))
+            if [element.lower() for element in distance_method_allowed_values].count(
+                distance_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "distance_method can only be one of the following: "
+                    + str(distance_method_allowed_values)
+                )
             for element in distance_method_allowed_values:
                 if distance_method.lower() == element.lower():
                     distance_method_val = element
 
-        connections_within_regions_allowed_values = ["GENERATE_CONNECTIONS","NO_CONNECTIONS"]
+        connections_within_regions_allowed_values = [
+            "GENERATE_CONNECTIONS",
+            "NO_CONNECTIONS",
+        ]
         connections_within_regions_val = connections_within_regions
         if connections_within_regions is not None:
-            if [element.lower() for element in connections_within_regions_allowed_values].count(connections_within_regions.lower()) <= 0 :
-                raise RuntimeError("connections_within_regions can only be one of the following: "+ str(connections_within_regions_allowed_values))
+            if [
+                element.lower() for element in connections_within_regions_allowed_values
+            ].count(connections_within_regions.lower()) <= 0:
+                raise RuntimeError(
+                    "connections_within_regions can only be one of the following: "
+                    + str(connections_within_regions_allowed_values)
+                )
             for element in connections_within_regions_allowed_values:
                 if connections_within_regions.lower() == element.lower():
                     connections_within_regions_val = element
 
-
         if output_optimal_lines_name is None:
-            output_optimal_lines_service_name  = 'Output Optimal Lines' + _id_generator()
-            output_optimal_lines_name = output_optimal_lines_service_name .replace(' ', '_')
+            output_optimal_lines_service_name = "Output Optimal Lines" + _id_generator()
+            output_optimal_lines_name = output_optimal_lines_service_name.replace(
+                " ", "_"
+            )
         else:
-            output_optimal_lines_service_name  = output_optimal_lines_name.replace(' ', '_')
+            output_optimal_lines_service_name = output_optimal_lines_name.replace(
+                " ", "_"
+            )
 
         if output_neighbor_connections_name is None:
-            output_neighbor_connections_service_name  = 'Output Neighbor Connections' + _id_generator()
-            output_neighbor_connections_name = output_neighbor_connections_service_name .replace(' ', '_')
+            output_neighbor_connections_service_name = (
+                "Output Neighbor Connections" + _id_generator()
+            )
+            output_neighbor_connections_name = (
+                output_neighbor_connections_service_name.replace(" ", "_")
+            )
         else:
-            output_neighbor_connections_service_name  = output_neighbor_connections_name.replace(' ', '_')
+            output_neighbor_connections_service_name = (
+                output_neighbor_connections_name.replace(" ", "_")
+            )
 
         folderId = None
         folder = None
         if kwargs is not None:
             if "folder" in kwargs:
-                    folder = kwargs["folder"]
+                folder = kwargs["folder"]
             if folder is not None:
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -10322,65 +11928,112 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folder = folder_dict["title"]
                     folderId = folder_dict["id"]
 
-        output_optimal_lines_service  = self._create_output_feature_service(output_name=output_optimal_lines_name,
-                                                             output_service_name=output_optimal_lines_service_name ,
-                                                             task='OptimalRegionConnections',
-                                                             folder=folder)
+        output_optimal_lines_service = self._create_output_feature_service(
+            output_name=output_optimal_lines_name,
+            output_service_name=output_optimal_lines_service_name,
+            task="OptimalRegionConnections",
+            folder=folder,
+        )
         if folderId is not None:
-            output_optimal_lines_name = json.dumps({"serviceProperties": {"name": output_optimal_lines_service_name , "serviceUrl": output_optimal_lines_service.url},
-                                           "itemProperties": {"itemId": output_optimal_lines_service.itemid}, "folderId":folderId})
+            output_optimal_lines_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_optimal_lines_service_name,
+                        "serviceUrl": output_optimal_lines_service.url,
+                    },
+                    "itemProperties": {"itemId": output_optimal_lines_service.itemid},
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_optimal_lines_name = json.dumps({"serviceProperties": {"name": output_optimal_lines_service_name , "serviceUrl": output_optimal_lines_service.url},
-                                           "itemProperties": {"itemId": output_optimal_lines_service.itemid}})
+            output_optimal_lines_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_optimal_lines_service_name,
+                        "serviceUrl": output_optimal_lines_service.url,
+                    },
+                    "itemProperties": {"itemId": output_optimal_lines_service.itemid},
+                }
+            )
 
-        output_neighbor_connections_service  = self._create_output_feature_service(output_name=output_neighbor_connections_name,
-                                                             output_service_name=output_neighbor_connections_service_name ,
-                                                             task='OptimalRegionConnections',
-                                                             folder=folder)
+        output_neighbor_connections_service = self._create_output_feature_service(
+            output_name=output_neighbor_connections_name,
+            output_service_name=output_neighbor_connections_service_name,
+            task="OptimalRegionConnections",
+            folder=folder,
+        )
         if folderId is not None:
-            output_neighbor_connections_name = json.dumps({"serviceProperties": {"name": output_neighbor_connections_service_name , "serviceUrl": output_neighbor_connections_service.url},
-                                           "itemProperties": {"itemId": output_neighbor_connections_service.itemid}, "folderId":folderId})
+            output_neighbor_connections_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_neighbor_connections_service_name,
+                        "serviceUrl": output_neighbor_connections_service.url,
+                    },
+                    "itemProperties": {
+                        "itemId": output_neighbor_connections_service.itemid
+                    },
+                    "folderId": folderId,
+                }
+            )
         else:
-            output_neighbor_connections_name = json.dumps({"serviceProperties": {"name": output_neighbor_connections_service_name , "serviceUrl": output_neighbor_connections_service.url},
-                                           "itemProperties": {"itemId": output_neighbor_connections_service.itemid}})
+            output_neighbor_connections_name = json.dumps(
+                {
+                    "serviceProperties": {
+                        "name": output_neighbor_connections_service_name,
+                        "serviceUrl": output_neighbor_connections_service.url,
+                    },
+                    "itemProperties": {
+                        "itemId": output_neighbor_connections_service.itemid
+                    },
+                }
+            )
 
-        gpjob = self._tbx.optimal_region_connections(input_region_raster_or_features=input_region_raster_or_features,
-                                                     input_barrier_raster_or_features=input_barrier_raster_or_features,
-                                                     input_cost_raster=input_cost_raster,
-                                                     distance_method=distance_method_val,
-                                                     connections_within_regions=connections_within_regions_val,
-                                                     output_optimal_lines_name=output_optimal_lines_name,
-                                                     output_neighbor_connections_name=output_neighbor_connections_name,
-                                                     context=context,
-                                                     gis=self._gis,
-                                                     future=True)
+        gpjob = self._tbx.optimal_region_connections(
+            input_region_raster_or_features=input_region_raster_or_features,
+            input_barrier_raster_or_features=input_barrier_raster_or_features,
+            input_cost_raster=input_cost_raster,
+            distance_method=distance_method_val,
+            connections_within_regions=connections_within_regions_val,
+            output_optimal_lines_name=output_optimal_lines_name,
+            output_neighbor_connections_name=output_neighbor_connections_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service])
-        return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service]).result()
+            return RAJob(
+                gpjob,
+                [output_optimal_lines_service, output_neighbor_connections_service],
+            )
+        return RAJob(
+            gpjob, [output_optimal_lines_service, output_neighbor_connections_service]
+        ).result()
 
-    def distance_accumulation(self,
-                               input_source_raster_or_features,
-                               output_distance_accumulation_raster_name=None,
-                               input_barrier_raster_or_features=None,
-                               input_surface_raster=None,
-                               input_cost_raster=None,
-                               input_vertical_raster=None,
-                               vertical_factor='BINARY 1 -30 30',
-                               input_horizontal_raster=None,
-                               horizontal_factor='BINARY 1 45',
-                               source_initial_accumulation=None,
-                               source_maximum_accumulation=None,
-                               source_cost_multiplier=None,
-                               source_direction=None,
-                               distance_method='PLANAR',
-                               output_back_direction_raster_name=None,
-                               output_source_direction_raster_name=None,
-                               output_source_location_raster_name=None,
-                               context=None,
-                               future=False,
-                               **kwargs):
+    def distance_accumulation(
+        self,
+        input_source_raster_or_features,
+        output_distance_accumulation_raster_name=None,
+        input_barrier_raster_or_features=None,
+        input_surface_raster=None,
+        input_cost_raster=None,
+        input_vertical_raster=None,
+        vertical_factor="BINARY 1 -30 30",
+        input_horizontal_raster=None,
+        horizontal_factor="BINARY 1 45",
+        source_initial_accumulation=None,
+        source_maximum_accumulation=None,
+        source_cost_multiplier=None,
+        source_direction=None,
+        distance_method="PLANAR",
+        output_back_direction_raster_name=None,
+        output_source_direction_raster_name=None,
+        output_source_location_raster_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Parameters
@@ -10432,26 +12085,37 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "DistanceAccumulation"
         gis = self._gis
 
-
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(
+                input_source_raster_or_features
+            )
         elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+            input_source_raster_or_features = {
+                "itemId": input_source_raster_or_features.itemid
+            }
         else:
-            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._layer_input(
+                input_source_raster_or_features
+            )
 
         if input_barrier_raster_or_features:
             if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._feature_input(
+                    input_barrier_raster_or_features
+                )
             elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+                input_barrier_raster_or_features = {
+                    "itemId": input_source_raster_or_features.itemid
+                }
             else:
-                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._layer_input(
+                    input_barrier_raster_or_features
+                )
 
         if input_surface_raster is not None:
             input_surface_raster = self._layer_input(input_layer=input_surface_raster)
@@ -10463,45 +12127,75 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_vertical_raster = self._layer_input(input_layer=input_vertical_raster)
 
         if input_horizontal_raster is not None:
-            input_horizontal_raster = self._layer_input(input_layer=input_horizontal_raster)
+            input_horizontal_raster = self._layer_input(
+                input_layer=input_horizontal_raster
+            )
 
-
-        output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+        (
+            output_distance_accumulation_raster,
+            output_distance_accumulation_service,
+        ) = self._set_output_raster(
+            output_name=output_distance_accumulation_raster_name,
+            task=task,
+            output_properties=kwargs,
+        )
         output_layers = [output_distance_accumulation_service]
-        output_source_direction_raster=None
+        output_source_direction_raster = None
         if output_source_direction_raster_name is not None:
-            output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+            (
+                output_source_direction_raster,
+                output_source_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_source_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(output_source_direction_service)
-        output_source_location_raster=None
+        output_source_location_raster = None
         if output_source_location_raster_name is not None:
-            output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
+            (
+                output_source_location_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_source_location_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(out_allocation_service)
-        output_back_direction_raster=None
+        output_back_direction_raster = None
         if output_back_direction_raster_name is not None:
-            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            (
+                output_back_direction_raster,
+                out_back_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_back_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(out_back_direction_service)
 
-
-        gpjob = self._tbx.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,
-                                                 output_distance_accumulation_raster_name=output_distance_accumulation_raster,
-                                                 input_barrier_raster_or_features=input_barrier_raster_or_features,
-                                                 input_surface_raster=input_surface_raster,
-                                                 input_cost_raster=input_cost_raster,
-                                                 input_vertical_raster=input_vertical_raster,
-                                                 vertical_factor=vertical_factor,
-                                                 input_horizontal_raster=input_horizontal_raster,
-                                                 horizontal_factor=horizontal_factor,
-                                                 source_initial_accumulation=source_initial_accumulation,
-                                                 source_maximum_accumulation=source_maximum_accumulation,
-                                                 source_cost_multiplier=source_cost_multiplier,
-                                                 source_direction=source_direction,
-                                                 distance_method=distance_method,
-                                                 output_back_direction_raster_name=output_back_direction_raster,
-                                                 output_source_direction_raster_name=output_source_direction_raster,
-                                                 output_source_location_raster_name=output_source_location_raster,
-                                                 context=context,
-                                                 gis=self._gis,
-                                                 future=True)
+        gpjob = self._tbx.distance_accumulation(
+            input_source_raster_or_features=input_source_raster_or_features,
+            output_distance_accumulation_raster_name=output_distance_accumulation_raster,
+            input_barrier_raster_or_features=input_barrier_raster_or_features,
+            input_surface_raster=input_surface_raster,
+            input_cost_raster=input_cost_raster,
+            input_vertical_raster=input_vertical_raster,
+            vertical_factor=vertical_factor,
+            input_horizontal_raster=input_horizontal_raster,
+            horizontal_factor=horizontal_factor,
+            source_initial_accumulation=source_initial_accumulation,
+            source_maximum_accumulation=source_maximum_accumulation,
+            source_cost_multiplier=source_cost_multiplier,
+            source_direction=source_direction,
+            distance_method=distance_method,
+            output_back_direction_raster_name=output_back_direction_raster,
+            output_source_direction_raster_name=output_source_direction_raster,
+            output_source_location_raster_name=output_source_location_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -10509,29 +12203,30 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, output_layers).result()
 
-
-    def distance_allocation(self,
-                               input_source_raster_or_features,
-                               output_distance_allocation_raster_name=None,
-                               input_barrier_raster_or_features=None,
-                               input_surface_raster=None,
-                               input_cost_raster=None,
-                               input_vertical_raster=None,
-                               vertical_factor='BINARY 1 -30 30',
-                               input_horizontal_raster=None,
-                               horizontal_factor='BINARY 1 45',
-                               source_initial_accumulation=None,
-                               source_maximum_accumulation=None,
-                               source_cost_multiplier=None,
-                               source_direction=None,
-                               distance_method='PLANAR',
-                               output_distance_accumulation_raster_name=None,
-                               output_back_direction_raster_name=None,
-                               output_source_direction_raster_name=None,
-                               output_source_location_raster_name=None,
-                               context=None,
-                               future=False,
-                               **kwargs):
+    def distance_allocation(
+        self,
+        input_source_raster_or_features,
+        output_distance_allocation_raster_name=None,
+        input_barrier_raster_or_features=None,
+        input_surface_raster=None,
+        input_cost_raster=None,
+        input_vertical_raster=None,
+        vertical_factor="BINARY 1 -30 30",
+        input_horizontal_raster=None,
+        horizontal_factor="BINARY 1 45",
+        source_initial_accumulation=None,
+        source_maximum_accumulation=None,
+        source_cost_multiplier=None,
+        source_direction=None,
+        distance_method="PLANAR",
+        output_distance_accumulation_raster_name=None,
+        output_back_direction_raster_name=None,
+        output_source_direction_raster_name=None,
+        output_source_location_raster_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
 
         """
         Parameters
@@ -10583,26 +12278,37 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "DistanceAllocation"
         gis = self._gis
 
-
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(
+                input_source_raster_or_features
+            )
         elif isinstance(input_source_raster_or_features, Item):
-            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+            input_source_raster_or_features = {
+                "itemId": input_source_raster_or_features.itemid
+            }
         else:
-            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._layer_input(
+                input_source_raster_or_features
+            )
 
         if input_barrier_raster_or_features:
             if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._feature_input(
+                    input_barrier_raster_or_features
+                )
             elif isinstance(input_barrier_raster_or_features, Item):
-                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+                input_barrier_raster_or_features = {
+                    "itemId": input_source_raster_or_features.itemid
+                }
             else:
-                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._layer_input(
+                    input_barrier_raster_or_features
+                )
 
         if input_surface_raster is not None:
             input_surface_raster = self._layer_input(input_layer=input_surface_raster)
@@ -10614,53 +12320,89 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_vertical_raster = self._layer_input(input_layer=input_vertical_raster)
 
         if input_horizontal_raster is not None:
-            input_horizontal_raster = self._layer_input(input_layer=input_horizontal_raster)
+            input_horizontal_raster = self._layer_input(
+                input_layer=input_horizontal_raster
+            )
 
-
-        output_distance_allocation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_allocation_raster_name, task=task, output_properties=kwargs)
+        (
+            output_distance_allocation_raster,
+            output_distance_accumulation_service,
+        ) = self._set_output_raster(
+            output_name=output_distance_allocation_raster_name,
+            task=task,
+            output_properties=kwargs,
+        )
         output_layers = [output_distance_accumulation_service]
-        output_distance_accumulation_raster=None
+        output_distance_accumulation_raster = None
         if output_distance_accumulation_raster_name is not None:
-            output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+            (
+                output_distance_accumulation_raster,
+                output_distance_accumulation_service,
+            ) = self._set_output_raster(
+                output_name=output_distance_accumulation_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(output_distance_accumulation_service)
 
-        output_source_direction_raster=None
+        output_source_direction_raster = None
         if output_source_direction_raster_name is not None:
-            output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+            (
+                output_source_direction_raster,
+                output_source_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_source_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(output_source_direction_service)
 
-        output_source_location_raster=None
+        output_source_location_raster = None
         if output_source_location_raster_name is not None:
-            output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
+            (
+                output_source_location_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_source_location_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(out_allocation_service)
-        output_back_direction_raster=None
+        output_back_direction_raster = None
         if output_back_direction_raster_name is not None:
-            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            (
+                output_back_direction_raster,
+                out_back_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_back_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
             output_layers.append(out_back_direction_service)
 
-
-
-        gpjob = self._tbx.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,
-                                             output_distance_allocation_raster_name=output_distance_allocation_raster,
-                                             input_barrier_raster_or_features=input_barrier_raster_or_features,
-                                             input_surface_raster=input_surface_raster,
-                                             input_cost_raster=input_cost_raster,
-                                             input_vertical_raster=input_vertical_raster,
-                                             vertical_factor=vertical_factor,
-                                             input_horizontal_raster=input_horizontal_raster,
-                                             horizontal_factor=horizontal_factor,
-                                             source_initial_accumulation=source_initial_accumulation,
-                                             source_maximum_accumulation=source_maximum_accumulation,
-                                             source_cost_multiplier=source_cost_multiplier,
-                                             source_direction=source_direction,
-                                             distance_method=distance_method,
-                                             output_distance_accumulation_raster_name=output_distance_accumulation_raster,
-                                             output_back_direction_raster_name=output_back_direction_raster,
-                                             output_source_direction_raster_name=output_source_direction_raster,
-                                             output_source_location_raster_name=output_source_location_raster,
-                                             context=context,
-                                             gis=self._gis,
-                                             future=True)
+        gpjob = self._tbx.distance_allocation(
+            input_source_raster_or_features=input_source_raster_or_features,
+            output_distance_allocation_raster_name=output_distance_allocation_raster,
+            input_barrier_raster_or_features=input_barrier_raster_or_features,
+            input_surface_raster=input_surface_raster,
+            input_cost_raster=input_cost_raster,
+            input_vertical_raster=input_vertical_raster,
+            vertical_factor=vertical_factor,
+            input_horizontal_raster=input_horizontal_raster,
+            horizontal_factor=horizontal_factor,
+            source_initial_accumulation=source_initial_accumulation,
+            source_maximum_accumulation=source_maximum_accumulation,
+            source_cost_multiplier=source_cost_multiplier,
+            source_direction=source_direction,
+            distance_method=distance_method,
+            output_distance_accumulation_raster_name=output_distance_accumulation_raster,
+            output_back_direction_raster_name=output_back_direction_raster,
+            output_source_direction_raster_name=output_source_direction_raster,
+            output_source_location_raster_name=output_source_location_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
 
@@ -10668,39 +12410,40 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob, output_layers)
         return RAJob(gpjob, output_layers).result()
 
-
-    def analyze_changes_using_ccdc(self,
-                                   input_multidimensional_raster,
-                                   bands_for_detecting_change=[],
-                                   bands_for_temporal_masking=[],
-                                   chi_squared_threshold=0.99,
-                                   min_anomaly_observations=6,
-                                   update_frequency=1,
-                                   output_name=None,
-                                   context=None,
-                                   future=False,
-                                   **kwargs):
+    def analyze_changes_using_ccdc(
+        self,
+        input_multidimensional_raster,
+        bands_for_detecting_change=[],
+        bands_for_temporal_masking=[],
+        chi_squared_threshold=0.99,
+        min_anomaly_observations=6,
+        update_frequency=1,
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       bands_for_detecting_change: bandsForDetectingChange (str). Optional parameter.
+        bands_for_detecting_change: bandsForDetectingChange (str). Optional parameter.
 
-       bands_for_temporal_masking: bandsForTemporalMasking (str). Optional parameter.
+        bands_for_temporal_masking: bandsForTemporalMasking (str). Optional parameter.
 
-       chi_squared_threshold: chiSquaredThreshold (float). Optional parameter.
+        chi_squared_threshold: chiSquaredThreshold (float). Optional parameter.
 
-       min_anomaly_observations: minAnomalyObservations (int). Optional parameter.
+        min_anomaly_observations: minAnomalyObservations (int). Optional parameter.
 
-       update_frequency: updateFrequency (float). Optional parameter.
+        update_frequency: updateFrequency (float). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10711,23 +12454,28 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-        gpjob = self._tbx.analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster,
-                                                     bands_for_detecting_change=bands_for_detecting_change,
-                                                     bands_for_temporal_masking=bands_for_temporal_masking,
-                                                     chi_squared_threshold=chi_squared_threshold,
-                                                     min_anomaly_observations=min_anomaly_observations,
-                                                     update_frequency=update_frequency,
-                                                     output_name=output_raster,
-                                                     context=context,
-                                                     gis=self._gis,
-                                                     future=True)
+        gpjob = self._tbx.analyze_changes_using_ccdc(
+            input_multidimensional_raster=input_multidimensional_raster,
+            bands_for_detecting_change=bands_for_detecting_change,
+            bands_for_temporal_masking=bands_for_temporal_masking,
+            chi_squared_threshold=chi_squared_threshold,
+            min_anomaly_observations=min_anomaly_observations,
+            update_frequency=update_frequency,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -10738,72 +12486,73 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def detect_change_using_change_analysis_raster(self,
-                                                  input_change_analysis_raster,
-                                                  change_type="TIME_OF_LATEST_CHANGES",
-                                                  max_number_of_changes=1,
-                                                  segment_date='BEGINNING_OF_SEGMENT',
-                                                  change_direction='ALL',
-                                                  filter_by_year=False,
-                                                  min_year=None,
-                                                  max_year=None,
-                                                  filter_by_duration=False,
-                                                  min_duration=None,
-                                                  max_duration=None,
-                                                  filter_by_magnitude=False,
-                                                  min_magnitude=None,
-                                                  max_magnitude=None,
-                                                  filter_by_start_value=False,
-                                                  min_start_value=None,
-                                                  max_start_value=None,
-                                                  filter_by_end_value=False,
-                                                  min_end_value=None,
-                                                  max_end_value=None,
-                                                  output_name=None,
-                                                  context=None,
-                                                  future=False,
-                                                  **kwargs):
+    def detect_change_using_change_analysis_raster(
+        self,
+        input_change_analysis_raster,
+        change_type="TIME_OF_LATEST_CHANGES",
+        max_number_of_changes=1,
+        segment_date="BEGINNING_OF_SEGMENT",
+        change_direction="ALL",
+        filter_by_year=False,
+        min_year=None,
+        max_year=None,
+        filter_by_duration=False,
+        min_duration=None,
+        max_duration=None,
+        filter_by_magnitude=False,
+        min_magnitude=None,
+        max_magnitude=None,
+        filter_by_start_value=False,
+        min_start_value=None,
+        max_start_value=None,
+        filter_by_end_value=False,
+        min_end_value=None,
+        max_end_value=None,
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
+        input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
 
-       output_name: outputName (str). Optional parameter.
+        output_name: outputName (str). Optional parameter.
 
-       change_type: changeType (str). Optional parameter.
-          Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
+        change_type: changeType (str). Optional parameter.
+           Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
 
-       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.
+        max_number_of_changes: maxNumberOfChanges (int). Optional parameter.
 
-       segment_date: segmentDate (str). Optional parameter.
-          Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
+        segment_date: segmentDate (str). Optional parameter.
+           Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
 
-       change_direction: changeDirection (str). Optional parameter.
-          Choice list:ALL,INCREASE,DECREASE
+        change_direction: changeDirection (str). Optional parameter.
+           Choice list:ALL,INCREASE,DECREASE
 
-       filter_by_year: filterByYear (bool). Optional parameter.
+        filter_by_year: filterByYear (bool). Optional parameter.
 
-       min_year: minYear (int). Optional parameter.
+        min_year: minYear (int). Optional parameter.
 
-       max_year: maxYear (int). Optional parameter.
+        max_year: maxYear (int). Optional parameter.
 
-       filter_by_duration: filterByDuration (bool). Optional parameter.
+        filter_by_duration: filterByDuration (bool). Optional parameter.
 
-       min_duration: minDuration (float). Optional parameter.
+        min_duration: minDuration (float). Optional parameter.
 
-       max_duration: maxDuration (float). Optional parameter.
+        max_duration: maxDuration (float). Optional parameter.
 
-       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.
+        filter_by_magnitude: filterByMagnitude (bool). Optional parameter.
 
-       min_magnitude: minMagnitude (float). Optional parameter.
+        min_magnitude: minMagnitude (float). Optional parameter.
 
-       max_magnitude: maxMagnitude (float). Optional parameter.
+        max_magnitude: maxMagnitude (float). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -10814,74 +12563,114 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_change_analysis_raster = self._layer_input(input_layer=input_change_analysis_raster)
+        input_change_analysis_raster = self._layer_input(
+            input_layer=input_change_analysis_raster
+        )
 
         if change_type is not None:
-            change_type_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["change_type"]
-            if [element.lower() for element in change_type_allowed_values].count(change_type.lower()) <= 0 :
-                raise RuntimeError('change_type can only be one of the following: '+str(change_type_allowed_values))
+            change_type_allowed_values = (
+                self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                    "change_type"
+                ]
+            )
+            if [element.lower() for element in change_type_allowed_values].count(
+                change_type.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "change_type can only be one of the following: "
+                    + str(change_type_allowed_values)
+                )
             for element in change_type_allowed_values:
                 if change_type.lower() == element.lower():
                     change_type = element
 
         if segment_date is not None:
-            if "segment_date" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
-                segment_date_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["segment_date"]
-                if [element.lower() for element in segment_date_allowed_values].count(segment_date.lower()) <= 0 :
-                    raise RuntimeError('segment_date can only be one of the following:  '+str(segment_date_allowed_values))
+            if (
+                "segment_date"
+                in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
+            ):
+                segment_date_allowed_values = (
+                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                        "segment_date"
+                    ]
+                )
+                if [element.lower() for element in segment_date_allowed_values].count(
+                    segment_date.lower()
+                ) <= 0:
+                    raise RuntimeError(
+                        "segment_date can only be one of the following:  "
+                        + str(segment_date_allowed_values)
+                    )
                 for element in segment_date_allowed_values:
                     if segment_date.lower() == element.lower():
                         segment_date = element
 
         if change_direction is not None:
-            if "change_direction" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
-                change_direction_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["change_direction"]
-                if [element.lower() for element in change_direction_allowed_values].count(change_direction.lower()) <= 0 :
-                    raise RuntimeError('change_direction can only be one of the following:  '+str(change_direction_allowed_values))
+            if (
+                "change_direction"
+                in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys()
+            ):
+                change_direction_allowed_values = (
+                    self._tbx.choice_list.detect_change_using_change_analysis_raster[
+                        "change_direction"
+                    ]
+                )
+                if [
+                    element.lower() for element in change_direction_allowed_values
+                ].count(change_direction.lower()) <= 0:
+                    raise RuntimeError(
+                        "change_direction can only be one of the following:  "
+                        + str(change_direction_allowed_values)
+                    )
                 for element in change_direction_allowed_values:
                     if change_direction.lower() == element.lower():
                         change_direction = element
 
-
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
         if self._current_version is not None:
             current_version = self._current_version
-            if((current_version is not None) and current_version<10.9):
-                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                            change_type=change_type,
-                                                                            max_number_of_changes=max_number_of_changes,
-                                                                            output_name=output_raster,
-                                                                            context=context,
-                                                                            gis=self._gis,
-                                                                            future=True)
-            elif((current_version is not None) and current_version>=10.9):
-                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                            change_type=change_type,
-                                                                            max_number_of_changes=max_number_of_changes,
-                                                                            segment_date=segment_date,
-                                                                            change_direction=change_direction,
-                                                                            filter_by_year=filter_by_year,
-                                                                            min_year=min_year,
-                                                                            max_year=max_year,
-                                                                            filter_by_duration=filter_by_duration,
-                                                                            min_duration=min_duration,
-                                                                            max_duration=max_duration,
-                                                                            filter_by_magnitude=filter_by_magnitude,
-                                                                            min_magnitude=min_magnitude,
-                                                                            max_magnitude=max_magnitude,
-                                                                            filter_by_start_value=filter_by_start_value,
-                                                                            min_start_value=min_start_value,
-                                                                            max_start_value=max_start_value,
-                                                                            filter_by_end_value=filter_by_end_value,
-                                                                            min_end_value=min_end_value,
-                                                                            max_end_value=max_end_value,
-                                                                            output_name=output_raster,
-                                                                            context=context,
-                                                                            gis=self._gis,
-                                                                            future=True)
+            if (current_version is not None) and current_version < 10.9:
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(
+                    input_change_analysis_raster=input_change_analysis_raster,
+                    change_type=change_type,
+                    max_number_of_changes=max_number_of_changes,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version >= 10.9:
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(
+                    input_change_analysis_raster=input_change_analysis_raster,
+                    change_type=change_type,
+                    max_number_of_changes=max_number_of_changes,
+                    segment_date=segment_date,
+                    change_direction=change_direction,
+                    filter_by_year=filter_by_year,
+                    min_year=min_year,
+                    max_year=max_year,
+                    filter_by_duration=filter_by_duration,
+                    min_duration=min_duration,
+                    max_duration=max_duration,
+                    filter_by_magnitude=filter_by_magnitude,
+                    min_magnitude=min_magnitude,
+                    max_magnitude=max_magnitude,
+                    filter_by_start_value=filter_by_start_value,
+                    min_start_value=min_start_value,
+                    max_start_value=max_start_value,
+                    filter_by_end_value=filter_by_end_value,
+                    min_end_value=min_end_value,
+                    max_end_value=max_end_value,
+                    output_name=output_raster,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10893,19 +12682,19 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-
-    def manage_multidimensional_raster(self,
-                                        target_multidimensional_raster,
-                                        manage_mode='APPEND_SLICES',
-                                        variables=None,
-                                        input_multidimensional_rasters=None,
-                                        dimension_name=None,
-                                        dimension_value=None,
-                                        dimension_description=None,
-                                        dimension_unit=None,
-                                        future=False,
-                                        **kwargs):
+    def manage_multidimensional_raster(
+        self,
+        target_multidimensional_raster,
+        manage_mode="APPEND_SLICES",
+        variables=None,
+        input_multidimensional_rasters=None,
+        dimension_name=None,
+        dimension_value=None,
+        dimension_description=None,
+        dimension_unit=None,
+        future=False,
+        **kwargs
+    ):
         """
         target_multidimensional_raster: targetMultidimensionalRaster (str). Required parameter.
 
@@ -10935,67 +12724,81 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
-        target_multidimensional_raster = self._layer_input(input_layer=target_multidimensional_raster)
+        target_multidimensional_raster = self._layer_input(
+            input_layer=target_multidimensional_raster
+        )
 
         if input_multidimensional_rasters is not None:
-            input_multidimensional_rasters = _set_multiple_raster_inputs(input_multidimensional_rasters)
+            input_multidimensional_rasters = _set_multiple_raster_inputs(
+                input_multidimensional_rasters
+            )
 
-        manage_mode_allowed_values = self._tbx.choice_list.manage_multidimensional_raster["manage_mode"]
-        if [element.lower() for element in manage_mode_allowed_values].count(manage_mode.lower()) <= 0 :
-            raise RuntimeError('manage_mode can only be one of the following: '+str(manage_mode_allowed_values))
+        manage_mode_allowed_values = (
+            self._tbx.choice_list.manage_multidimensional_raster["manage_mode"]
+        )
+        if [element.lower() for element in manage_mode_allowed_values].count(
+            manage_mode.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "manage_mode can only be one of the following: "
+                + str(manage_mode_allowed_values)
+            )
         for element in manage_mode_allowed_values:
             if manage_mode.lower() == element.lower():
                 manage_mode = element
 
-
-        gpjob = self._tbx.manage_multidimensional_raster(target_multidimensional_raster=target_multidimensional_raster,
-                                                         manage_mode=manage_mode,
-                                                         variables=variables,
-                                                         input_multidimensional_rasters=input_multidimensional_rasters,
-                                                         dimension_name=dimension_name,
-                                                         dimension_value=dimension_value,
-                                                         dimension_description=dimension_description,
-                                                         dimension_unit=dimension_unit,
-                                                         gis=self._gis,
-                                                         future=True)
+        gpjob = self._tbx.manage_multidimensional_raster(
+            target_multidimensional_raster=target_multidimensional_raster,
+            manage_mode=manage_mode,
+            variables=variables,
+            input_multidimensional_rasters=input_multidimensional_rasters,
+            dimension_name=dimension_name,
+            dimension_value=dimension_value,
+            dimension_description=dimension_description,
+            dimension_unit=dimension_unit,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    def sample(self,
-               in_rasters,
-               in_location_data,
-               output_name=None,
-               resampling_type="NEAREST",
-               unique_id_field=None,
-               acquisition_definition=None,
-               statistics_type="MEAN",
-               percentile_value=None,
-               buffer_distance=None,
-               layout="ROW_WISE",
-               generate_feature_class=None,
-               context=None,
-               future=False,
-               **kwargs):
+    def sample(
+        self,
+        in_rasters,
+        in_location_data,
+        output_name=None,
+        resampling_type="NEAREST",
+        unique_id_field=None,
+        acquisition_definition=None,
+        statistics_type="MEAN",
+        percentile_value=None,
+        buffer_distance=None,
+        layout="ROW_WISE",
+        generate_feature_class=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       in_rasters: inRasters (str). Required parameter.
-       in_location_data: inLocationData (str). Required parameter.
-       output_name: outputTableName (str). Required parameter.
-       resampling_type: resamplingType (str). Optional parameter.
-          Choice list:NEAREST,BILINEAR,CUBIC
-       unique_id_field: uniqueIdField (str). Optional parameter.
-       acquisition_definition: acquisitionDefinition (str). Optional parameter.
-       statistics_type: statisticsType (str). Optional parameter.
-          Choice list:MINIMUM,MAXIMUM,MEDIAN,MEAN,SUM,MAJORITY,MINORITY,STD,PERCENTILE
-       percentile_value: percentileValue (str). Optional parameter.
-       buffer_distance: bufferDistance (str). Optional parameter.
-       layout: layout (str). Optional parameter.
-          Choice list:ROW_WISE,COLUMN_WISE
-       generate_feature_class: generateFeatureClass (bool). Required parameter.
-       context: context (str). Optional parameter.
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        in_rasters: inRasters (str). Required parameter.
+        in_location_data: inLocationData (str). Required parameter.
+        output_name: outputTableName (str). Required parameter.
+        resampling_type: resamplingType (str). Optional parameter.
+           Choice list:NEAREST,BILINEAR,CUBIC
+        unique_id_field: uniqueIdField (str). Optional parameter.
+        acquisition_definition: acquisitionDefinition (str). Optional parameter.
+        statistics_type: statisticsType (str). Optional parameter.
+           Choice list:MINIMUM,MAXIMUM,MEDIAN,MEAN,SUM,MAJORITY,MINORITY,STD,PERCENTILE
+        percentile_value: percentileValue (str). Optional parameter.
+        buffer_distance: bufferDistance (str). Optional parameter.
+        layout: layout (str). Optional parameter.
+           Choice list:ROW_WISE,COLUMN_WISE
+        generate_feature_class: generateFeatureClass (bool). Required parameter.
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
         """
 
         task = "Sample"
@@ -11005,27 +12808,41 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         in_rasters = self._set_multiple_raster_inputs(in_rasters)
 
         statistics_type_allowed_values = self._tbx.choice_list.sample["statistics_type"]
-        if [element.lower() for element in statistics_type_allowed_values].count(statistics_type.lower()) <= 0 :
-            raise RuntimeError('statistics_type can only be one of the following: '+str(statistics_type_allowed_values))
+        if [element.lower() for element in statistics_type_allowed_values].count(
+            statistics_type.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "statistics_type can only be one of the following: "
+                + str(statistics_type_allowed_values)
+            )
         for element in statistics_type_allowed_values:
             if statistics_type.lower() == element.lower():
                 statistics_type = element
 
         resampling_type_allowed_values = self._tbx.choice_list.sample["resampling_type"]
-        if [element.lower() for element in resampling_type_allowed_values].count(resampling_type.lower()) <= 0 :
-            raise RuntimeError('resampling_type can only be one of the following: '+str(resampling_type_allowed_values))
+        if [element.lower() for element in resampling_type_allowed_values].count(
+            resampling_type.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "resampling_type can only be one of the following: "
+                + str(resampling_type_allowed_values)
+            )
         for element in resampling_type_allowed_values:
             if resampling_type.lower() == element.lower():
                 resampling_type = element
 
         layout_allowed_values = self._tbx.choice_list.sample["layout"]
-        if [element.lower() for element in layout_allowed_values].count(layout.lower()) <= 0 :
-            raise RuntimeError('layout can only be one of the following: '+str(layout_allowed_values))
+        if [element.lower() for element in layout_allowed_values].count(
+            layout.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "layout can only be one of the following: " + str(layout_allowed_values)
+            )
         for element in layout_allowed_values:
             if layout.lower() == element.lower():
                 layout = element
@@ -11041,7 +12858,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         folderId = None
 
         if output_name is None:
-            output_name = str(task) + '_' + _id_generator()
+            output_name = str(task) + "_" + _id_generator()
 
         if kwargs is not None:
             if "folder" in kwargs:
@@ -11050,7 +12867,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(folder, dict):
                 if "id" in folder:
                     folderId = folder["id"]
-                    folder=folder["title"]
+                    folder = folder["title"]
             else:
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
@@ -11058,24 +12875,31 @@ class _RasterAnalysisTools(BaseAnalytics):
                 folder_dict = gis.content.create_folder(folder, owner)
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
-            output_name =  json.dumps({"serviceProperties": {"name" : output_name}, "itemProperties": {"folderId" : folderId}})
+            output_name = json.dumps(
+                {
+                    "serviceProperties": {"name": output_name},
+                    "itemProperties": {"folderId": folderId},
+                }
+            )
         else:
-            output_name = json.dumps({"serviceProperties": {"name" : output_name}})
+            output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.sample(in_rasters=in_rasters,
-                                in_location_data= in_location_data,
-                                output_name=output_name,
-                                resampling_type=resampling_type,
-                                unique_id_field=unique_id_field,
-                                acquisition_definition=acquisition_definition,
-                                statistics_type=statistics_type,
-                                percentile_value=percentile_value,
-                                buffer_distance=buffer_distance,
-                                layout=layout,
-                                generate_feature_class=generate_feature_class,
-                                context=context,
-                                gis=self._gis,
-                                future=True)
+        gpjob = self._tbx.sample(
+            in_rasters=in_rasters,
+            in_location_data=in_location_data,
+            output_name=output_name,
+            resampling_type=resampling_type,
+            unique_id_field=unique_id_field,
+            acquisition_definition=acquisition_definition,
+            statistics_type=statistics_type,
+            percentile_value=percentile_value,
+            buffer_distance=buffer_distance,
+            layout=layout,
+            generate_feature_class=generate_feature_class,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11083,18 +12907,20 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    def compute_accuracyfor_object_detection(self,
-                                             detected_features,
-                                             ground_truth_features,
-                                             out_accuracy_table_name=None,
-                                             out_accuracy_report_name=None,
-                                             detected_class_value_field=None,
-                                             ground_truth_class_value_field=None,
-                                             min_iou=None,
-                                             mask_features=None,
-                                             context=None,
-                                             future=False,
-                                             **kwargs):
+    def compute_accuracyfor_object_detection(
+        self,
+        detected_features,
+        ground_truth_features,
+        out_accuracy_table_name=None,
+        out_accuracy_report_name=None,
+        detected_class_value_field=None,
+        ground_truth_class_value_field=None,
+        min_iou=None,
+        mask_features=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         detected_features: detectedFeatures (str). Required parameter.
 
@@ -11124,7 +12950,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         detected_features = self._feature_input(input_layer=detected_features)
 
@@ -11137,7 +12963,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         folderId = None
 
         if out_accuracy_table_name is None:
-            out_accuracy_table_name = str(task) + '_' + _id_generator()
+            out_accuracy_table_name = str(task) + "_" + _id_generator()
 
         if kwargs is not None:
             if "folder" in kwargs:
@@ -11146,7 +12972,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(folder, dict):
                 if "id" in folder:
                     folderId = folder["id"]
-                    folder=folder["title"]
+                    folder = folder["title"]
             else:
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
@@ -11154,29 +12980,44 @@ class _RasterAnalysisTools(BaseAnalytics):
                 folder_dict = gis.content.create_folder(folder, owner)
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
-            out_accuracy_table_name =  json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}, "itemProperties": {"folderId" : folderId}})
+            out_accuracy_table_name = json.dumps(
+                {
+                    "serviceProperties": {"name": out_accuracy_table_name},
+                    "itemProperties": {"folderId": folderId},
+                }
+            )
         else:
-            out_accuracy_table_name = json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}})
+            out_accuracy_table_name = json.dumps(
+                {"serviceProperties": {"name": out_accuracy_table_name}}
+            )
 
         if out_accuracy_report_name is not None:
             if isinstance(out_accuracy_report_name, str):
-                if '/fileShares/' in out_accuracy_report_name or '/rasterStores/' in out_accuracy_report_name:
-                    out_accuracy_report_name = {"uri":out_accuracy_report_name}
+                if (
+                    "/fileShares/" in out_accuracy_report_name
+                    or "/rasterStores/" in out_accuracy_report_name
+                ):
+                    out_accuracy_report_name = {"uri": out_accuracy_report_name}
                 else:
-                    out_accuracy_report_name = {"name":out_accuracy_report_name}
+                    out_accuracy_report_name = {"name": out_accuracy_report_name}
             elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
-                out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
-        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features,
-                                                               ground_truth_features=ground_truth_features,
-                                                               out_accuracy_table_name=out_accuracy_table_name,
-                                                               out_accuracy_report_name=out_accuracy_report_name,
-                                                               detected_class_value_field=detected_class_value_field,
-                                                               ground_truth_class_value_field=ground_truth_class_value_field,
-                                                               min_io_u=min_iou,
-                                                               mask_features=mask_features,
-                                                               context=context,
-                                                               gis=self._gis,
-                                                               future=True)
+                out_accuracy_report_name = {
+                    "itemId": out_accuracy_report_name.itemid,
+                    "name": out_accuracy_report_name.name,
+                }
+        gpjob = self._tbx.compute_accuracyfor_object_detection(
+            detected_features=detected_features,
+            ground_truth_features=ground_truth_features,
+            out_accuracy_table_name=out_accuracy_table_name,
+            out_accuracy_report_name=out_accuracy_report_name,
+            detected_class_value_field=detected_class_value_field,
+            ground_truth_class_value_field=ground_truth_class_value_field,
+            min_io_u=min_iou,
+            mask_features=mask_features,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11184,23 +13025,25 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-    def merge_multidimensional_rasters(self,
-                                       input_multidimensional_rasters,
-                                       resolve_overlap_method='FIRST',
-                                       output_name=None,
-                                       context=None,
-                                       future=False,
-                                       **kwargs):
+    def merge_multidimensional_rasters(
+        self,
+        input_multidimensional_rasters,
+        resolve_overlap_method="FIRST",
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
+        input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
-          Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
-       context: context (str). Optional parameter.
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
+           Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
         """
 
         task = "MergeMultidimensionalRasters"
@@ -11210,25 +13053,39 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_rasters = self._set_multiple_raster_inputs(input_multidimensional_rasters)
-        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters["resolve_overlap_method"]
-        if [element.lower() for element in resolve_overlap_method_allowed_values].count(resolve_overlap_method.lower()) <= 0 :
-            raise RuntimeError('resolve_overlap_method can only be one of the following: '+str(resolve_overlap_method_allowed_values))
+        input_multidimensional_rasters = self._set_multiple_raster_inputs(
+            input_multidimensional_rasters
+        )
+        resolve_overlap_method_allowed_values = (
+            self._tbx.choice_list.merge_multidimensional_rasters[
+                "resolve_overlap_method"
+            ]
+        )
+        if [element.lower() for element in resolve_overlap_method_allowed_values].count(
+            resolve_overlap_method.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "resolve_overlap_method can only be one of the following: "
+                + str(resolve_overlap_method_allowed_values)
+            )
         for element in resolve_overlap_method_allowed_values:
             if resolve_overlap_method.lower() == element.lower():
                 resolve_overlap_method = element
 
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
-                                                        resolve_overlap_method=resolve_overlap_method,
-                                                        output_name=output_raster,
-                                                        context=context,
-                                                        gis=self._gis,
-                                                        future=True)
+        gpjob = self._tbx.merge_multidimensional_rasters(
+            input_multidimensional_rasters=input_multidimensional_rasters,
+            resolve_overlap_method=resolve_overlap_method,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -11239,61 +13096,61 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-
-    def analyze_changes_using_landtrendr(self,
-                                          input_multidimensional_raster,
-                                          processing_band=None,
-                                          snapping_date='06-30',
-                                          max_num_segments=5,
-                                          vertex_count_overshoot=2,
-                                          spike_threshold=0.9,
-                                          recovery_threshold=0.25,
-                                          prevent_one_year_recovery=True,
-                                          increasing_recovery_trend=True,
-                                          min_num_observations=6,
-                                          best_model_proportion=1.25,
-                                          pvalue_threshold=0.01,
-                                          output_other_bands=False,
-                                          output_name=None,
-                                          context=None,
-                                          future=False,
-                                          **kwargs):
+    def analyze_changes_using_landtrendr(
+        self,
+        input_multidimensional_raster,
+        processing_band=None,
+        snapping_date="06-30",
+        max_num_segments=5,
+        vertex_count_overshoot=2,
+        spike_threshold=0.9,
+        recovery_threshold=0.25,
+        prevent_one_year_recovery=True,
+        increasing_recovery_trend=True,
+        min_num_observations=6,
+        best_model_proportion=1.25,
+        pvalue_threshold=0.01,
+        output_other_bands=False,
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.
+        output_name: outputName (str). Required parameter.
 
-       processing_band: processingBand (str). Optional parameter.
+        processing_band: processingBand (str). Optional parameter.
 
-       snapping_date: snappingDate (str). Optional parameter.
+        snapping_date: snappingDate (str). Optional parameter.
 
-       max_num_segments: maxNumSegments (int). Optional parameter.
+        max_num_segments: maxNumSegments (int). Optional parameter.
 
-       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.
+        vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.
 
-       spike_threshold: spikeThreshold (float). Optional parameter.
+        spike_threshold: spikeThreshold (float). Optional parameter.
 
-       recovery_threshold: recoveryThreshold (float). Optional parameter.
+        recovery_threshold: recoveryThreshold (float). Optional parameter.
 
-       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.
+        prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.
 
-       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.
+        increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.
 
-       min_num_observations: minNumObservations (int). Optional parameter.
+        min_num_observations: minNumObservations (int). Optional parameter.
 
-       best_model_proportion: bestModelProportion (float). Optional parameter.
+        best_model_proportion: bestModelProportion (float). Optional parameter.
 
-       pvalue_threshold: pvalueThreshold (float). Optional parameter.
+        pvalue_threshold: pvalueThreshold (float). Optional parameter.
 
-       output_other_bands: outputOtherBands (bool). Optional parameter.
+        output_other_bands: outputOtherBands (bool). Optional parameter.
 
-       context: context (str). Optional parameter.
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -11304,30 +13161,35 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
-        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
 
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-        gpjob = self._tbx.analyze_changes_using_land_trendr(input_multidimensional_raster=input_multidimensional_raster,
-                                                             processing_band=processing_band,
-                                                             snapping_date=snapping_date,
-                                                             max_num_segments=max_num_segments,
-                                                             vertex_count_overshoot=vertex_count_overshoot,
-                                                             spike_threshold=spike_threshold,
-                                                             recovery_threshold=recovery_threshold,
-                                                             prevent_one_year_recovery=prevent_one_year_recovery,
-                                                             increasing_recovery_trend=increasing_recovery_trend,
-                                                             min_num_observations=min_num_observations,
-                                                             best_model_proportion=best_model_proportion,
-                                                             pvalue_threshold=pvalue_threshold,
-                                                             output_other_bands=output_other_bands,
-                                                             output_name=output_raster,
-                                                             context=context,
-                                                             gis=self._gis,
-                                                             future=True)
+        gpjob = self._tbx.analyze_changes_using_land_trendr(
+            input_multidimensional_raster=input_multidimensional_raster,
+            processing_band=processing_band,
+            snapping_date=snapping_date,
+            max_num_segments=max_num_segments,
+            vertex_count_overshoot=vertex_count_overshoot,
+            spike_threshold=spike_threshold,
+            recovery_threshold=recovery_threshold,
+            prevent_one_year_recovery=prevent_one_year_recovery,
+            increasing_recovery_trend=increasing_recovery_trend,
+            min_num_observations=min_num_observations,
+            best_model_proportion=best_model_proportion,
+            pvalue_threshold=pvalue_threshold,
+            output_other_bands=output_other_bands,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -11338,20 +13200,21 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob, item=item).result()
 
-
-    def zonal_statistics_as_table(self,
-                                  input_zone_raster_or_features=None,
-                                  input_value_raster=None,
-                                  zone_field=None,
-                                  ignore_nodata=True,
-                                  statistic_type='ALL',
-                                  percentile_values=[90],
-                                  process_as_multidimensional=False,
-                                  percentile_interpolation_type="AUTO_DETECT",
-                                  output_name=None,
-                                  context=None,
-                                  future=False,
-                                  **kwargs):
+    def zonal_statistics_as_table(
+        self,
+        input_zone_raster_or_features=None,
+        input_value_raster=None,
+        zone_field=None,
+        ignore_nodata=True,
+        statistic_type="ALL",
+        percentile_values=[90],
+        process_as_multidimensional=False,
+        percentile_interpolation_type="AUTO_DETECT",
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
         Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
 
@@ -11491,27 +13354,49 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
-            input_zone_raster_or_features = self._feature_input(input_zone_raster_or_features)
+            input_zone_raster_or_features = self._feature_input(
+                input_zone_raster_or_features
+            )
         elif isinstance(input_zone_raster_or_features, Item):
-            input_zone_raster_or_features = {"itemId": input_zone_raster_or_features.itemid }
+            input_zone_raster_or_features = {
+                "itemId": input_zone_raster_or_features.itemid
+            }
         else:
-            input_zone_raster_or_features = self._layer_input(input_zone_raster_or_features)
+            input_zone_raster_or_features = self._layer_input(
+                input_zone_raster_or_features
+            )
 
         input_value_raster = self._layer_input(input_layer=input_value_raster)
 
-        statistic_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table["statistic_type"]
-        if [element.lower() for element in statistic_type_allowed_values].count(statistic_type.lower()) <= 0 :
-            raise RuntimeError('statistic_type can only be one of the following: '+str(statistic_type_allowed_values))
+        statistic_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table[
+            "statistic_type"
+        ]
+        if [element.lower() for element in statistic_type_allowed_values].count(
+            statistic_type.lower()
+        ) <= 0:
+            raise RuntimeError(
+                "statistic_type can only be one of the following: "
+                + str(statistic_type_allowed_values)
+            )
         for element in statistic_type_allowed_values:
             if statistic_type.lower() == element.lower():
                 statistic_type = element
 
-        percentile_interpolation_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table["percentile_interpolation_type"]
-        if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
-            raise RuntimeError('percentile_interpolation_type can only be one of the following: '+str(percentile_interpolation_type_allowed_values))
+        percentile_interpolation_type_allowed_values = (
+            self._tbx.choice_list.zonal_statistics_as_table[
+                "percentile_interpolation_type"
+            ]
+        )
+        if [
+            element.lower() for element in percentile_interpolation_type_allowed_values
+        ].count(percentile_interpolation_type.lower()) <= 0:
+            raise RuntimeError(
+                "percentile_interpolation_type can only be one of the following: "
+                + str(percentile_interpolation_type_allowed_values)
+            )
         for element in percentile_interpolation_type_allowed_values:
             if percentile_interpolation_type.lower() == element.lower():
                 percentile_interpolation_type = element
@@ -11520,7 +13405,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         folderId = None
 
         if output_name is None:
-            output_name = str(task) + '_' + _id_generator()
+            output_name = str(task) + "_" + _id_generator()
 
         if kwargs is not None:
             if "folder" in kwargs:
@@ -11529,7 +13414,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(folder, dict):
                 if "id" in folder:
                     folderId = folder["id"]
-                    folder=folder["title"]
+                    folder = folder["title"]
             else:
                 owner = gis.properties.user.username
                 folderId = gis._portal.get_folder_id(owner, folder)
@@ -11537,22 +13422,29 @@ class _RasterAnalysisTools(BaseAnalytics):
                 folder_dict = gis.content.create_folder(folder, owner)
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
-            output_name =  json.dumps({"serviceProperties": {"name" : output_name}, "itemProperties": {"folderId" : folderId}})
+            output_name = json.dumps(
+                {
+                    "serviceProperties": {"name": output_name},
+                    "itemProperties": {"folderId": folderId},
+                }
+            )
         else:
-            output_name = json.dumps({"serviceProperties": {"name" : output_name}})
+            output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features,
-                                                    input_value_raster=input_value_raster,
-                                                    zone_field=zone_field,
-                                                    ignore_nodata=ignore_nodata,
-                                                    statistic_type=statistic_type,
-                                                    percentile_values=percentile_values,
-                                                    process_as_multidimensional=process_as_multidimensional,
-                                                    percentile_interpolation_type=percentile_interpolation_type,
-                                                    output_table_name=output_name,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
+        gpjob = self._tbx.zonal_statistics_as_table(
+            input_zone_raster_or_features=input_zone_raster_or_features,
+            input_value_raster=input_value_raster,
+            zone_field=zone_field,
+            ignore_nodata=ignore_nodata,
+            statistic_type=statistic_type,
+            percentile_values=percentile_values,
+            process_as_multidimensional=process_as_multidimensional,
+            percentile_interpolation_type=percentile_interpolation_type,
+            output_table_name=output_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11560,45 +13452,46 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
         return RAJob(gpjob).result()
 
-
-    def compute_change_raster(self,
-                              input_from_raster,
-                              input_to_raster,
-                              compute_change_method='DIFFERENCE',
-                              from_classes=None,
-                              to_classes=None,
-                              filter_method='CHANGED_PIXELS_ONLY',
-                              transition_class_colors='AVERAGE',
-                              output_name=None,
-                              context=None,
-                              future=False,
-                              **kwargs):
+    def compute_change_raster(
+        self,
+        input_from_raster,
+        input_to_raster,
+        compute_change_method="DIFFERENCE",
+        from_classes=None,
+        to_classes=None,
+        filter_method="CHANGED_PIXELS_ONLY",
+        transition_class_colors="AVERAGE",
+        output_name=None,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-       input_from_raster: inputFromRaster (str). Required parameter.  
+        input_from_raster: inputFromRaster (str). Required parameter.
 
-       input_to_raster: inputToRaster (str). Required parameter.  
+        input_to_raster: inputToRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+        output_name: outputName (str). Required parameter.
 
-       compute_change_method: computeChangeMethod (str). Optional parameter.  
-          Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+        compute_change_method: computeChangeMethod (str). Optional parameter.
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
 
-       from_classes: fromClasses (str). Optional parameter.  
+        from_classes: fromClasses (str). Optional parameter.
 
-       to_classes: toClasses (str). Optional parameter.  
+        to_classes: toClasses (str). Optional parameter.
 
-       filter_method: filterMethod (str). Optional parameter.  
-          Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
+        filter_method: filterMethod (str). Optional parameter.
+           Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
 
-       transition_class_colors: transitionClassColors (str). Optional parameter.  
-          Choice list:AVERAGE,FROM_COLOR,TO_COLOR
+        transition_class_colors: transitionClassColors (str). Optional parameter.
+           Choice list:AVERAGE,FROM_COLOR,TO_COLOR
 
-       context: context (str). Optional parameter.  
+        context: context (str). Optional parameter.
 
-       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
-       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
 
@@ -11609,161 +13502,186 @@ class _RasterAnalysisTools(BaseAnalytics):
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
-            context = context_param['context']
+            context = context_param["context"]
 
         input_from_raster = self._layer_input(input_layer=input_from_raster)
         input_to_raster = self._layer_input(input_layer=input_to_raster)
 
         if compute_change_method is not None:
-            compute_change_method_allowed_values = self._tbx.choice_list.compute_change_raster["compute_change_method"]
-            if [element.lower() for element in compute_change_method_allowed_values].count(compute_change_method.lower()) <= 0 :
-                raise RuntimeError('compute_change_method can only be one of the following: '+str(compute_change_method_allowed_values))
+            compute_change_method_allowed_values = (
+                self._tbx.choice_list.compute_change_raster["compute_change_method"]
+            )
+            if [
+                element.lower() for element in compute_change_method_allowed_values
+            ].count(compute_change_method.lower()) <= 0:
+                raise RuntimeError(
+                    "compute_change_method can only be one of the following: "
+                    + str(compute_change_method_allowed_values)
+                )
             for element in compute_change_method_allowed_values:
                 if compute_change_method.lower() == element.lower():
                     compute_change_method = element
 
         if filter_method is not None:
-            filter_method_allowed_values = self._tbx.choice_list.compute_change_raster["filter_method"]
-            if [element.lower() for element in filter_method_allowed_values].count(filter_method.lower()) <= 0 :
-                raise RuntimeError('filter_method can only be one of the following: '+str(filter_method_allowed_values))
+            filter_method_allowed_values = self._tbx.choice_list.compute_change_raster[
+                "filter_method"
+            ]
+            if [element.lower() for element in filter_method_allowed_values].count(
+                filter_method.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "filter_method can only be one of the following: "
+                    + str(filter_method_allowed_values)
+                )
             for element in filter_method_allowed_values:
                 if filter_method.lower() == element.lower():
                     filter_method = element
 
         if transition_class_colors is not None:
-            transition_class_colors_allowed_values = self._tbx.choice_list.compute_change_raster["transition_class_colors"]
-            if [element.lower() for element in transition_class_colors_allowed_values].count(transition_class_colors.lower()) <= 0 :
-                raise RuntimeError('transition_class_colors can only be one of the following: '+str(transition_class_colors_allowed_values))
+            transition_class_colors_allowed_values = (
+                self._tbx.choice_list.compute_change_raster["transition_class_colors"]
+            )
+            if [
+                element.lower() for element in transition_class_colors_allowed_values
+            ].count(transition_class_colors.lower()) <= 0:
+                raise RuntimeError(
+                    "transition_class_colors can only be one of the following: "
+                    + str(transition_class_colors_allowed_values)
+                )
             for element in transition_class_colors_allowed_values:
                 if transition_class_colors.lower() == element.lower():
                     transition_class_colors = element
 
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_name, task=task, output_properties=kwargs
+        )
 
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
-        gpjob = self._tbx.compute_change_raster(input_from_raster=input_from_raster,
-                                                input_to_raster=input_to_raster,
-                                                compute_change_method=compute_change_method,
-                                                from_classes=from_classes,
-                                                to_classes=to_classes,
-                                                filter_method=filter_method,
-                                                transition_class_colors=transition_class_colors,
-                                                output_name=output_raster,
-                                                context=context,
-                                                gis=self._gis,
-                                                future=True)
+        gpjob = self._tbx.compute_change_raster(
+            input_from_raster=input_from_raster,
+            input_to_raster=input_to_raster,
+            compute_change_method=compute_change_method,
+            from_classes=from_classes,
+            to_classes=to_classes,
+            filter_method=filter_method,
+            transition_class_colors=transition_class_colors,
+            output_name=output_raster,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return gpjob
         return gpjob.result()
 
-
-    def train_deep_learning_model(self,
-                                  in_folder=None,
-                                  output_name=None, 
-                                  model_type=None, 
-                                  arguments=None, 
-                                  batch_size=2, 
-                                  max_epochs=None, 
-                                  learning_rate=None, 
-                                  backbone_model=None, 
-                                  validation_percent=None, 
-                                  pretrained_model=None, 
-                                  stop_training=True,
-                                  freeze_model=True,
-                                  overwrite_model=False,
-                                  context=None, 
-                                  future=False, 
-                                  **kwargs):
+    def train_deep_learning_model(
+        self,
+        in_folder=None,
+        output_name=None,
+        model_type=None,
+        arguments=None,
+        batch_size=2,
+        max_epochs=None,
+        learning_rate=None,
+        backbone_model=None,
+        validation_percent=None,
+        pretrained_model=None,
+        stop_training=True,
+        freeze_model=True,
+        overwrite_model=False,
+        context=None,
+        future=False,
+        **kwargs
+    ):
         """
-        Function can be used to train a deep learning model using the output from the 
-        export_training_data function. 
+        Function can be used to train a deep learning model using the output from the
+        export_training_data function.
         It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
         train_model function performs the training using the Raster Analytics server.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_folder                             Required string. This is the input location for the training sample data. 
-                                                 It can be the path of output location on the file share raster data store or a 
-                                                 shared file system path.  
-                                                 The training sample data folder needs to be the output of export_training_data function, 
-                                                 containing "images" and "labels" folder, 
-                                                 as well as the JSON model definition file written out together by the tool.  
-                                                 File share raster store path examples: 
-                                                   -  /rasterStores/yourRasterStoreFolderName/trainingSampleData 
-                                                   - /fileShares/yourFileShareFolderName/trainingSampleData  
-                                                File share path example: 
-                                                   - \\serverName\deepLearning\trainingSampleData 
+        input_folder                             Required string. This is the input location for the training sample data.
+                                                 It can be the path of output location on the file share raster data store or a
+                                                 shared file system path.
+                                                 The training sample data folder needs to be the output of export_training_data function,
+                                                 containing "images" and "labels" folder,
+                                                 as well as the JSON model definition file written out together by the tool.
+                                                 File share raster store path examples:
+                                                   -  /rasterStores/yourRasterStoreFolderName/trainingSampleData
+                                                   - /fileShares/yourFileShareFolderName/trainingSampleData
+                                                File share path example:
+                                                   - \\serverName\deepLearning\trainingSampleData
         ------------------------------------     --------------------------------------------------------------------
-        model_type                               Required string. The model type to use for training the deep learning model.  
-                                                 Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN 
-                                                  - SSD - The Single Shot Detector (SSD) is used for object detection.  
-                                                  - UNET - U-Net is used for pixel classification.   
-                                                  - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification. 
-                                                  - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.                                              
-                                                  - RETINANET - The RetinaNet is used for object detection.   
+        model_type                               Required string. The model type to use for training the deep learning model.
+                                                 Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                                  - SSD - The Single Shot Detector (SSD) is used for object detection.
+                                                  - UNET - U-Net is used for pixel classification.
+                                                  - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
+                                                  - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.
+                                                  - RETINANET - The RetinaNet is used for object detection.
                                                   - MASKRCNN - The MarkRCNN is used for object detection
         ------------------------------------     --------------------------------------------------------------------
         model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
+
                                                  eg: {"name1":"value1", "name2": "value2"}
         ------------------------------------     --------------------------------------------------------------------
         batch_size                               Optional int.
-                                                 The number of training samples to be processed for training at one time.  
-                                                 If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.   
+                                                 The number of training samples to be processed for training at one time.
+                                                 If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.
                                                  Example:
                                                     4
         ------------------------------------     --------------------------------------------------------------------
-        max_epochs                               Optional int. The maximum number of epochs that the model should be trained. 
-                                                 One epoch means the whole training dataset will be passed forward and backward 
-                                                 through the deep neural network one time. 
-                                             
+        max_epochs                               Optional int. The maximum number of epochs that the model should be trained.
+                                                 One epoch means the whole training dataset will be passed forward and backward
+                                                 through the deep neural network one time.
+
                                                  Example:
                                                     20
         ------------------------------------     --------------------------------------------------------------------
-        learning_rate                            Optional float. 
-                                                 The rate at which the weights are updated during the training. 
-                                                 It is a small positive value in the range between 0.0 and 1.0.  
-                                                 If learning rate is set to 0, it will extract the optimal learning rate 
-                                                 from the learning curve during the training process.   
+        learning_rate                            Optional float.
+                                                 The rate at which the weights are updated during the training.
+                                                 It is a small positive value in the range between 0.0 and 1.0.
+                                                 If learning rate is set to 0, it will extract the optimal learning rate
+                                                 from the learning curve during the training process.
                                                  Example:
                                                     0.0
         ------------------------------------     --------------------------------------------------------------------
-        backbone_model                           Optional string. 
-                                                 Specifies the preconfigured neural network to be used as an architecture for training the new model.  
-                                                 Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN , 
-                                                                  RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 , 
+        backbone_model                           Optional string.
+                                                 Specifies the preconfigured neural network to be used as an architecture for training the new model.
+                                                 Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN ,
+                                                                  RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
                                                                   VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
-                                                 Example: 
-                                                    RESNET34 
+                                                 Example:
+                                                    RESNET34
         ------------------------------------     --------------------------------------------------------------------
-        validation_percent                       Optional float. 
-                                                 The percentage (in %) of training sample data that will be used for validating the model.  
+        validation_percent                       Optional float.
+                                                 The percentage (in %) of training sample data that will be used for validating the model.
                                                  Example:
                                                     10
         ------------------------------------     --------------------------------------------------------------------
-        pretrained_model                         Optional dlpk portal item. 
-                                             
-                                                 The pretrained model to be used for fine tuning the new model. 
-                                                 It is a deep learning model package (dlpk) portal item.  
+        pretrained_model                         Optional dlpk portal item.
+
+                                                 The pretrained model to be used for fine tuning the new model.
+                                                 It is a deep learning model package (dlpk) portal item.
         ------------------------------------     --------------------------------------------------------------------
-        stop_training                            Optional bool. 
+        stop_training                            Optional bool.
                                                  Specifies whether early stopping will be implemented.
 
-                                                 True - The model training will stop when the model is no longer improving, 
+                                                 True - The model training will stop when the model is no longer improving,
                                                         regardless of the maximum epochs specified. This is the default.
                                                  False - The model training will continue until the maximum epochs is reached.
         ------------------------------------     --------------------------------------------------------------------
         freeze_model                             Optional bool.
-                                                 Specifies whether to freeze the backbone layers in the pretrained model, 
-                                                 so that the weights and biases in the backbone layers remain unchanged. 
+                                                 Specifies whether to freeze the backbone layers in the pretrained model,
+                                                 so that the weights and biases in the backbone layers remain unchanged.
 
-                                                 True - The predefined weights and biases will not be altered in the backboneModel. 
-                                                        This is the default. 
-                                                 False - The weights and biases of the backboneModel may be altered to better 
-                                                         fit your training samples. This may take more time to process but 
+                                                 True - The predefined weights and biases will not be altered in the backboneModel.
+                                                        This is the default.
+                                                 False - The weights and biases of the backboneModel may be altered to better
+                                                         fit your training samples. This may take more time to process but
                                                          usually could get better results.
         ------------------------------------     --------------------------------------------------------------------
         overwrite_model                          Optional bool.
@@ -11774,18 +13692,18 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                  True - The portal .dlpk item will be overwritten.
                                                  False - The portal .dlpk item will not be overwritten. This is the default.
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              Optional. trained deep learning model package can either be added as an item 
+        output_name                              Optional. trained deep learning model package can either be added as an item
                                                  to the portal or can be written to a datastore.
 
-                                                 To add as an item, specify the name of the output deep learning model package (item) 
+                                                 To add as an item, specify the name of the output deep learning model package (item)
                                                  to be created.
-                                                 Example: 
+                                                 Example:
 
                                                     "trainedModel"
 
                                                  In order to write the dlpk to fileshare datastore, specify the datastore path.
-                                             
-                                                 Example - 
+
+                                                 Example -
                                                     "/fileShares/filesharename/folder"
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -11795,14 +13713,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                  - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
                                                  - processorType - Sets the processor type. "CPU" or "GPU"
                                                  Eg: {"processorType" : "CPU"}
-                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 Setting context parameter will override the values set using arcgis.env
                                                  variable for this particular function.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
         ====================================     ====================================================================
 
         :return:
-            Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId. 
+            Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId.
         """
         task = "TrainDeepLearningModel"
         gis = self._gis
@@ -11816,11 +13734,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         model_arguments_value = None
         if arguments:
             try:
-                model_arguments_value = dict((str(k),str(v)) for k, v in arguments.items())
+                model_arguments_value = dict(
+                    (str(k), str(v)) for k, v in arguments.items()
+                )
             except:
                 model_arguments_value = arguments
 
-  
         folderId = None
         folder = None
         if kwargs is not None:
@@ -11830,7 +13749,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if isinstance(folder, dict):
                     if "id" in folder:
                         folderId = folder["id"]
-                        folder=folder["title"]
+                        folder = folder["title"]
                 else:
                     owner = gis.properties.user.username
                     folderId = gis._portal.get_folder_id(owner, folder)
@@ -11840,37 +13759,42 @@ class _RasterAnalysisTools(BaseAnalytics):
                     folderId = folder_dict["id"]
 
         if output_name is None:
-            output_item_name = 'TrainDeepLearningModel_' + _id_generator()
-            output_name = output_item_name.replace(' ', '_')
-        
-        if '/fileShares/' in output_name or '/rasterStores/' in output_name:
-            output_name = {"uri":output_name}
+            output_item_name = "TrainDeepLearningModel_" + _id_generator()
+            output_name = output_item_name.replace(" ", "_")
+
+        if "/fileShares/" in output_name or "/rasterStores/" in output_name:
+            output_name = {"uri": output_name}
         else:
             if folderId is not None:
-                output_name = {"name":output_name, "folderId":folderId}
+                output_name = {"name": output_name, "folderId": folderId}
             else:
-                output_name = {"name":output_name}
+                output_name = {"name": output_name}
 
-        gpjob = self._tbx.train_deep_learning_model(in_folder=in_folder,
-                                                    output_name=output_name, 
-                                                    model_type=model_type, 
-                                                    arguments=model_arguments_value, 
-                                                    batch_size=batch_size, 
-                                                    max_epochs=max_epochs, 
-                                                    learning_rate=learning_rate, 
-                                                    backbone_model=backbone_model, 
-                                                    validation_percent=validation_percent, 
-                                                    pretrained_model=pretrained_model, 
-                                                    stop_training=stop_training,
-                                                    freeze_model=freeze_model,
-                                                    overwrite_model=overwrite_model,
-                                                    context=context, gis=self._gis,
-                                                    future=True)
+        gpjob = self._tbx.train_deep_learning_model(
+            in_folder=in_folder,
+            output_name=output_name,
+            model_type=model_type,
+            arguments=model_arguments_value,
+            batch_size=batch_size,
+            max_epochs=max_epochs,
+            learning_rate=learning_rate,
+            backbone_model=backbone_model,
+            validation_percent=validation_percent,
+            pretrained_model=pretrained_model,
+            stop_training=stop_training,
+            freeze_model=freeze_model,
+            overwrite_model=overwrite_model,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
             return gpjob
         return gpjob.result()
+
+
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """
@@ -11888,72 +13812,74 @@ class _GeoanalyticsTools(_AsyncService):
     def _create_output_service(self, output_name, task, store=None):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
         if not ok:
-            raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+            raise RuntimeError(
+                "A Feature Service by this name already exists: " + output_name
+            )
         if store is None:
             from arcgis.env import output_datastore
+
             store = output_datastore or "spatiotemporal"
 
         createParameters = {
             "currentVersion": 10.2,
             "serviceDescription": "",
             "hasVersionedData": False,
-                "supportsDisconnectedEditing": False,
-                "hasStaticData": True,
-                "maxRecordCount": 2000,
-                "supportedQueryFormats": "JSON",
-                "capabilities": "Query",
-                "description": "",
-                "copyrightText": "",
-                "allowGeometryUpdates": False,
-                "syncEnabled": False,
-                "editorTrackingInfo": {
-                    "enableEditorTracking": False,
-                    "enableOwnershipAccessControl": False,
-                    "allowOthersToUpdate": True,
-                    "allowOthersToDelete": True
-                    },
-                "xssPreventionInfo": {
-                    "xssPreventionEnabled": True,
-                    "xssPreventionRule": "InputOnly",
-                    "xssInputRule": "rejectInvalid"
-                    },
-                "tables": [],
-                "name": output_name,
-                "options": {
-                    "dataSourceType": store
-                }
+            "supportsDisconnectedEditing": False,
+            "hasStaticData": True,
+            "maxRecordCount": 2000,
+            "supportedQueryFormats": "JSON",
+            "capabilities": "Query",
+            "description": "",
+            "copyrightText": "",
+            "allowGeometryUpdates": False,
+            "syncEnabled": False,
+            "editorTrackingInfo": {
+                "enableEditorTracking": False,
+                "enableOwnershipAccessControl": False,
+                "allowOthersToUpdate": True,
+                "allowOthersToDelete": True,
+            },
+            "xssPreventionInfo": {
+                "xssPreventionEnabled": True,
+                "xssPreventionRule": "InputOnly",
+                "xssInputRule": "rejectInvalid",
+            },
+            "tables": [],
+            "name": output_name,
+            "options": {"dataSourceType": store},
         }
 
-        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
+        output_service = self._gis.content.create_service(
+            output_name, create_params=createParameters, service_type="featureService"
+        )
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": "Analysis Feature Service generated from " + task
+            "description": description,
+            "tags": "Analysis Result, " + task,
+            "snippet": "Analysis Feature Service generated from " + task,
         }
         output_service.update(item_properties)
         return output_service
 
-
-
-
-    def aggregate_points(self,
-                         point_layer,
-                         output_name,
-                         distance_interval=None,
-                       distance_interval_unit=None,
-                       bin_type="SQUARE",
-                       polygon_layer=None,
-                       time_interval=None,
-                       time_interval_unit=None,
-                       time_repeat=None,
-                       time_repeat_unit=None,
-                       time_reference=None,
-                       summary_fields=None,
-                       out_sr=None,
-                       process_sr=None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def aggregate_points(
+        self,
+        point_layer,
+        output_name,
+        distance_interval=None,
+        distance_interval_unit=None,
+        bin_type="SQUARE",
+        polygon_layer=None,
+        time_interval=None,
+        time_interval_unit=None,
+        time_repeat=None,
+        time_repeat_unit=None,
+        time_reference=None,
+        summary_fields=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -11998,7 +13924,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="AggregatePoints"
+        task = "AggregatePoints"
 
         params = {}
         context = {}
@@ -12027,13 +13953,21 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if out_extent is not None:
-            context['extent'] = out_extent
+            context["extent"] = out_extent
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         # if datastore is not None:
         #     params["gax:env:datastore"] = datastore
         if context is not None:
@@ -12043,31 +13977,27 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def describe_dataset(self,
-                         in_dataset,
-                         out_sr=None,
-                         out_extent=None,
-                       datastore="GDB",
-                       context=None):
+    def describe_dataset(
+        self, in_dataset, out_sr=None, out_extent=None, datastore="GDB", context=None
+    ):
         """
 
 
@@ -12089,7 +14019,7 @@ class _GeoanalyticsTools(_AsyncService):
         output_json : layer (Feature Service item)
         """
 
-        task ="DescribeDataset"
+        task = "DescribeDataset"
 
         params = {}
 
@@ -12107,7 +14037,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         # if output_name is not None:
         #     #url = job_values['output']['url']
         #     #return FeatureLayer(url, self._gis) #item
@@ -12124,28 +14054,29 @@ class _GeoanalyticsTools(_AsyncService):
         # else:
         #     # Feature Collection
         #     return arcgis.features.FeatureCollection(job_values['output_json'])
-        return job_values['output_json']
+        return job_values["output_json"]
 
-
-    def join_features(self,
-                      target_layer,
-                      join_layer,
-                      output_name,
-                       join_operation="Join one to one",
-                       join_fields=None,
-                       summary_fields=None,
-                       spatial_relationship=None,
-                       spatial_near_distance=None,
-                       spatial_near_distance_unit=None,
-                       temporal_relationship=None,
-                       temporal_near_distance=None,
-                       temporal_near_distance_unit=None,
-                       attribute_relationship=None,
-                       join_condition=None,
-                       out_sr=None,
-                       process_sr = None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def join_features(
+        self,
+        target_layer,
+        join_layer,
+        output_name,
+        join_operation="Join one to one",
+        join_fields=None,
+        summary_fields=None,
+        spatial_relationship=None,
+        spatial_near_distance=None,
+        spatial_near_distance_unit=None,
+        temporal_relationship=None,
+        temporal_near_distance=None,
+        temporal_near_distance_unit=None,
+        attribute_relationship=None,
+        join_condition=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -12194,7 +14125,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="JoinFeatures"
+        task = "JoinFeatures"
 
         params = {}
         context = {}
@@ -12225,11 +14156,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
             # if datastore is not None:
@@ -12241,40 +14180,41 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def create_buffers(self,
-                       input_layer,
-                       output_name,
-                       distance=None,
-                       distance_unit=None,
-                       field=None,
-                       method="PLANAR",
-                       dissolve_option="NONE",
-                       dissolve_fields=None,
-                       summary_fields=None,
-                       multipart=False,
-                       out_sr=None,
-                       process_sr = None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def create_buffers(
+        self,
+        input_layer,
+        output_name,
+        distance=None,
+        distance_unit=None,
+        field=None,
+        method="PLANAR",
+        dissolve_option="NONE",
+        dissolve_fields=None,
+        summary_fields=None,
+        multipart=False,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -12315,7 +14255,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="CreateBuffers"
+        task = "CreateBuffers"
 
         params = {}
         context = {}
@@ -12339,11 +14279,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context["outSR"] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context["processSR"] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -12355,45 +14303,46 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def calculate_density(self,
-                          input_layer,
-                          bin_size,
-                          bin_size_unit,
-                       radius,
-                       radius_unit,
-                       output_name,
-                       fields=None,
-                       weight="UNIFORM",
-                       bin_type="SQUARE",
-                       time_interval=None,
-                       time_interval_unit=None,
-                       time_repeat=None,
-                       time_repeat_unit=None,
-                       time_reference=None,
-                       area_units=None,
-                       out_sr=None,
-                       process_sr = None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def calculate_density(
+        self,
+        input_layer,
+        bin_size,
+        bin_size_unit,
+        radius,
+        radius_unit,
+        output_name,
+        fields=None,
+        weight="UNIFORM",
+        bin_type="SQUARE",
+        time_interval=None,
+        time_interval_unit=None,
+        time_repeat=None,
+        time_repeat_unit=None,
+        time_reference=None,
+        area_units=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -12444,7 +14393,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="CalculateDensity"
+        task = "CalculateDensity"
 
         params = {}
         context = {}
@@ -12473,11 +14422,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -12489,40 +14446,41 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def reconstruct_tracks(self,
-                           input_layer,
-                           track_fields,
-                           output_name,
-                           method="PLANAR",
-                           buffer_field=None,
-                           summary_fields=None,
-                           time_split=None,
-                           time_split_unit=None,
-                           out_sr=None,
-                           process_sr=None,
-                           out_extent=None,
-                           datastore="GDB",
-                           distance_split=None,
-                           distance_split_unit=None):
+    def reconstruct_tracks(
+        self,
+        input_layer,
+        track_fields,
+        output_name,
+        method="PLANAR",
+        buffer_field=None,
+        summary_fields=None,
+        time_split=None,
+        time_split_unit=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        distance_split=None,
+        distance_split_unit=None,
+    ):
         """
 
 
@@ -12567,7 +14525,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="ReconstructTracks"
+        task = "ReconstructTracks"
 
         params = {}
         context = {}
@@ -12588,15 +14546,23 @@ class _GeoanalyticsTools(_AsyncService):
             params["distanceSplit"] = distance_split
 
         if distance_split_unit is not None:
-            params['distanceSplitUnit'] = distance_split_unit
+            params["distanceSplitUnit"] = distance_split_unit
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
             # if datastore is not None:
@@ -12608,39 +14574,40 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def create_space_time_cube(self,
-                               point_layer,
-                               distance_interval,
-                               distance_interval_unit,
-                               time_interval,
-                               time_interval_unit,
-                               output_name,
-                               time_interval_alignment=None,
-                               reference_time=None,
-                               summary_fields=None,
-                               out_sr=None,
-                               process_sr = None,
-                               out_extent=None,
-                               datastore="GDB"):
+    def create_space_time_cube(
+        self,
+        point_layer,
+        distance_interval,
+        distance_interval_unit,
+        time_interval,
+        time_interval_unit,
+        output_name,
+        time_interval_alignment=None,
+        reference_time=None,
+        summary_fields=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -12679,7 +14646,7 @@ class _GeoanalyticsTools(_AsyncService):
         output_cube : layer (Feature Service item)
         """
 
-        task ="CreateSpaceTimeCube"
+        task = "CreateSpaceTimeCube"
 
         params = {}
         context = {}
@@ -12698,11 +14665,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -12714,43 +14689,44 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['outputCube'])
+            return arcgis.features.FeatureCollection(job_values["outputCube"])
 
-
-    def create_panel_data(self,
-                          in_target_features,
-                          in_join_features,
-                          time_interval,
-                       time_interval_unit,
-                       time_repeat,
-                       time_repeat_unit,
-                       time_reference,
-                       out_features_name,
-                       in_summary_stats=None,
-                       in_spatial_relationship=None,
-                       in_spatial_distance=None,
-                       in_spatial_distance_unit=None,
-                       in_attribute_relationship=None,
-                       out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+    def create_panel_data(
+        self,
+        in_target_features,
+        in_join_features,
+        time_interval,
+        time_interval_unit,
+        time_repeat,
+        time_repeat_unit,
+        time_reference,
+        out_features_name,
+        in_summary_stats=None,
+        in_spatial_relationship=None,
+        in_spatial_distance=None,
+        in_spatial_distance_unit=None,
+        in_attribute_relationship=None,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
+    ):
         """
 
 
@@ -12796,7 +14772,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_features : layer (Feature Service item)
         """
 
-        task ="CreatePanelData"
+        task = "CreatePanelData"
 
         params = {}
 
@@ -12831,32 +14807,33 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['out_features'])
+            return arcgis.features.FeatureCollection(job_values["out_features"])
 
-
-    def generate_manifest(self,
-                          data_store_item_id,
-                          update_data_item=False,
-                          out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+    def generate_manifest(
+        self,
+        data_store_item_id,
+        update_data_item=False,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
+    ):
         """
 
 
@@ -12880,7 +14857,7 @@ class _GeoanalyticsTools(_AsyncService):
         manifest : layer (Feature Service item)
         """
 
-        task ="GenerateManifest"
+        task = "GenerateManifest"
 
         params = {}
 
@@ -12900,32 +14877,33 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['manifest'])
+            return arcgis.features.FeatureCollection(job_values["manifest"])
 
-
-    def create_sample(self,
-                      input_layer,
-                      output_layer_name,
-                      out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+    def create_sample(
+        self,
+        input_layer,
+        output_layer_name,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
+    ):
         """
 
 
@@ -12949,7 +14927,7 @@ class _GeoanalyticsTools(_AsyncService):
         output_layer : layer (Feature Service item)
         """
 
-        task ="CreateSample"
+        task = "CreateSample"
 
         params = {}
 
@@ -12968,32 +14946,33 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['outputLayer'])
+            return arcgis.features.FeatureCollection(job_values["outputLayer"])
 
-
-    def copy_to_data_store(self,
-                           input_layer,
-                           output_name,
-                           out_sr=None,
-                       out_extent=None,
-                       datastore="GDB",
-                       context=None):
+    def copy_to_data_store(
+        self,
+        input_layer,
+        output_name,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
+    ):
         """
 
 
@@ -13017,7 +14996,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="CopyToDataStore"
+        task = "CopyToDataStore"
 
         params = {}
 
@@ -13025,7 +15004,15 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
             params["gax:env:out_sr"] = out_sr
         if out_extent is not None:
@@ -13039,34 +15026,35 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def summarize_attributes(self,
-                             input_layer,
-                             fields,
-                             output_name,
-                       summary_fields=None,
-                       out_sr=None,
-                       process_sr = None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def summarize_attributes(
+        self,
+        input_layer,
+        fields,
+        output_name,
+        summary_fields=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -13095,7 +15083,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="SummarizeAttributes"
+        task = "SummarizeAttributes"
 
         params = {}
         context = {}
@@ -13107,11 +15095,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -13123,43 +15119,44 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def summarize_within(self,
-                         summary_layer,
-                         output_name,
-                         bin_size=None,
-                       bin_size_unit=None,
-                       bin_type="SQUARE",
-                       sum_within_layer=None,
-                       time_interval=None,
-                       time_interval_unit=None,
-                       time_repeat=None,
-                       time_repeat_unit=None,
-                       time_reference=None,
-                       summary_fields=None,
-                       proportional_weighting=False,
-                       out_sr=None,
-                       process_sr=None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def summarize_within(
+        self,
+        summary_layer,
+        output_name,
+        bin_size=None,
+        bin_size_unit=None,
+        bin_type="SQUARE",
+        sum_within_layer=None,
+        time_interval=None,
+        time_interval_unit=None,
+        time_repeat=None,
+        time_repeat_unit=None,
+        time_reference=None,
+        summary_fields=None,
+        proportional_weighting=False,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -13206,7 +15203,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="SummarizeWithin"
+        task = "SummarizeWithin"
 
         params = {}
         context = {}
@@ -13237,11 +15234,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -13253,40 +15258,41 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
 
-
-    def find_hot_spots(self,
-                       point_layer,
-                       bin_size,
-                       bin_size_unit,
-                       output_name,
-                       time_step_interval=None,
-                       time_step_interval_unit=None,
-                       time_step_alignment=None,
-                       referencetime=None,
-                       neighborhood_distance=None,
-                       neighborhood_distance_unit=None,
-                       out_sr=None,
-                       process_sr = None,
-                       out_extent=None,
-                       datastore="GDB"):
+    def find_hot_spots(
+        self,
+        point_layer,
+        bin_size,
+        bin_size_unit,
+        output_name,
+        time_step_interval=None,
+        time_step_interval_unit=None,
+        time_step_alignment=None,
+        referencetime=None,
+        neighborhood_distance=None,
+        neighborhood_distance_unit=None,
+        out_sr=None,
+        process_sr=None,
+        out_extent=None,
+        datastore="GDB",
+    ):
         """
 
 
@@ -13327,7 +15333,7 @@ class _GeoanalyticsTools(_AsyncService):
         output : layer (Feature Service item)
         """
 
-        task ="FindHotSpots"
+        task = "FindHotSpots"
 
         params = {}
         context = {}
@@ -13350,11 +15356,19 @@ class _GeoanalyticsTools(_AsyncService):
 
         output_service = self._create_output_service(output_name, task)
 
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+        params["outputName"] = json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
         if out_sr is not None:
-            context['outSR'] = {'wkid': int(out_sr)}
+            context["outSR"] = {"wkid": int(out_sr)}
         if process_sr is not None:
-            context['processSR'] = {'wkid': int(process_sr)}
+            context["processSR"] = {"wkid": int(process_sr)}
         if out_extent is not None:
             context["extent"] = out_extent
         # if datastore is not None:
@@ -13366,23 +15380,24 @@ class _GeoanalyticsTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
+        # print(job_values)
         if output_name is not None:
-            #url = job_values['output']['url']
-            #return FeatureLayer(url, self._gis) #item
+            # url = job_values['output']['url']
+            # return FeatureLayer(url, self._gis) #item
             item_properties = {
-                "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "properties": {
+                    "jobUrl": task_url + "/jobs/" + job_info["jobId"],
                     "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
+                    "jobId": job_info["jobId"],
+                    "jobStatus": "completed",
                 }
             }
             output_service.update(item_properties)
             return output_service
         else:
             # Feature Collection
-            return arcgis.features.FeatureCollection(job_values['output'])
+            return arcgis.features.FeatureCollection(job_values["output"])
+
 
 ###########################################################################
 class _GeometryService(_GISService):
@@ -13398,132 +15413,133 @@ class _GeometryService(_GISService):
 
     @classmethod
     def fromitem(cls, item):
-        if not item.type == 'Geometry Service':
+        if not item.type == "Geometry Service":
             raise TypeError("item must be a type of Geometry Service, not " + item.type)
         return cls(item.url, item._gis)
 
-    #----------------------------------------------------------------------
-    def areas_and_lengths(self,
-                          polygons,
-                          lengthUnit,
-                          areaUnit,
-                          calculationType,
-                          sr=4326,
-                          future=False):
+    # ----------------------------------------------------------------------
+    def areas_and_lengths(
+        self, polygons, lengthUnit, areaUnit, calculationType, sr=4326, future=False
+    ):
         """
-           The areasAndLengths operation is performed on a geometry service
-           resource. This operation calculates areas and perimeter lengths
-           for each polygon specified in the input array.
+        The areasAndLengths operation is performed on a geometry service
+        resource. This operation calculates areas and perimeter lengths
+        for each polygon specified in the input array.
 
-           Inputs:
-              polygons - The array of polygons whose areas and lengths are
-                         to be computed.
-              lengthUnit - The length unit in which the perimeters of
-                           polygons will be calculated. If calculationType
-                           is planar, then lengthUnit can be any esriUnits
-                           constant. If lengthUnit is not specified, the
-                           units are derived from sr. If calculationType is
-                           not planar, then lengthUnit must be a linear
-                           esriUnits constant, such as esriSRUnit_Meter or
-                           esriSRUnit_SurveyMile. If lengthUnit is not
-                           specified, the units are meters. For a list of
-                           valid units, see esriSRUnitType Constants and
-                           esriSRUnit2Type Constant.
-              areaUnit - The area unit in which areas of polygons will be
-                         calculated. If calculationType is planar, then
-                         areaUnit can be any esriUnits constant. If
-                         areaUnit is not specified, the units are derived
-                         from sr. If calculationType is not planar, then
-                         areaUnit must be a linear esriUnits constant such
-                         as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                         areaUnit is not specified, then the units are
-                         meters. For a list of valid units, see
-                         esriSRUnitType Constants and esriSRUnit2Type
-                         constant.
-                         The list of valid esriAreaUnits constants include,
-                         esriSquareInches | esriSquareFeet |
-                         esriSquareYards | esriAcres | esriSquareMiles |
-                         esriSquareMillimeters | esriSquareCentimeters |
-                         esriSquareDecimeters | esriSquareMeters | esriAres
-                         | esriHectares | esriSquareKilometers.
-              calculationType -  The type defined for the area and length
-                                 calculation of the input geometries. The
-                                 type can be one of the following values:
-                                 planar - Planar measurements use 2D
-                                          Euclidean distance to calculate
-                                          area and length. Th- should
-                                          only be used if the area or
-                                          length needs to be calculated in
-                                          the given spatial reference.
-                                          Otherwise, use preserveShape.
-                                 geodesic - Use this type if you want to
-                                          calculate an area or length using
-                                          only the vertices of the polygon
-                                          and define the lines between the
-                                          points as geodesic segments
-                                          independent of the actual shape
-                                          of the polygon. A geodesic
-                                          segment is the shortest path
-                                          between two points on an ellipsoid.
-                                 preserveShape - This type calculates the
-                                          area or length of the geometry on
-                                          the surface of the Earth
-                                          ellipsoid. The shape of the
-                                          geometry in its coordinate system
-                                          is preserved.
-                                 future - boolean. This operation determines if the job
-                                          is run asynchronously or not.
-           Output:
-              JSON as dictionary
+        Inputs:
+           polygons - The array of polygons whose areas and lengths are
+                      to be computed.
+           lengthUnit - The length unit in which the perimeters of
+                        polygons will be calculated. If calculationType
+                        is planar, then lengthUnit can be any esriUnits
+                        constant. If lengthUnit is not specified, the
+                        units are derived from sr. If calculationType is
+                        not planar, then lengthUnit must be a linear
+                        esriUnits constant, such as esriSRUnit_Meter or
+                        esriSRUnit_SurveyMile. If lengthUnit is not
+                        specified, the units are meters. For a list of
+                        valid units, see esriSRUnitType Constants and
+                        esriSRUnit2Type Constant.
+           areaUnit - The area unit in which areas of polygons will be
+                      calculated. If calculationType is planar, then
+                      areaUnit can be any esriUnits constant. If
+                      areaUnit is not specified, the units are derived
+                      from sr. If calculationType is not planar, then
+                      areaUnit must be a linear esriUnits constant such
+                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
+                      areaUnit is not specified, then the units are
+                      meters. For a list of valid units, see
+                      esriSRUnitType Constants and esriSRUnit2Type
+                      constant.
+                      The list of valid esriAreaUnits constants include,
+                      esriSquareInches | esriSquareFeet |
+                      esriSquareYards | esriAcres | esriSquareMiles |
+                      esriSquareMillimeters | esriSquareCentimeters |
+                      esriSquareDecimeters | esriSquareMeters | esriAres
+                      | esriHectares | esriSquareKilometers.
+           calculationType -  The type defined for the area and length
+                              calculation of the input geometries. The
+                              type can be one of the following values:
+                              planar - Planar measurements use 2D
+                                       Euclidean distance to calculate
+                                       area and length. Th- should
+                                       only be used if the area or
+                                       length needs to be calculated in
+                                       the given spatial reference.
+                                       Otherwise, use preserveShape.
+                              geodesic - Use this type if you want to
+                                       calculate an area or length using
+                                       only the vertices of the polygon
+                                       and define the lines between the
+                                       points as geodesic segments
+                                       independent of the actual shape
+                                       of the polygon. A geodesic
+                                       segment is the shortest path
+                                       between two points on an ellipsoid.
+                              preserveShape - This type calculates the
+                                       area or length of the geometry on
+                                       the surface of the Earth
+                                       ellipsoid. The shape of the
+                                       geometry in its coordinate system
+                                       is preserved.
+                              future - boolean. This operation determines if the job
+                                       is run asynchronously or not.
+        Output:
+           JSON as dictionary
         """
         url = self._url + "/areasAndLengths"
         params = {
-            "f" : "json",
-            "lengthUnit" : lengthUnit,
-            "areaUnit" :areaUnit,
-            "calculationType" : calculationType,
-            'sr' : sr
+            "f": "json",
+            "lengthUnit": lengthUnit,
+            "areaUnit": areaUnit,
+            "calculationType": calculationType,
+            "sr": sr,
         }
         if isinstance(polygons, list) and len(polygons) > 0:
             p = polygons[0]
             if isinstance(p, Polygon):
-                if hasattr(p, 'spatialReference'):
-                    params['sr'] = p.spatialReference
-                params['polygons'] = polygons
+                if hasattr(p, "spatialReference"):
+                    params["sr"] = p.spatialReference
+                params["polygons"] = polygons
             elif isinstance(p, dict):
-                params['polygons'] = polygons
+                params["polygons"] = polygons
             del p
         elif isinstance(polygons, dict):
-            params['polygons'] = [polygons]
+            params["polygons"] = [polygons]
         elif isinstance(polygons, Polygon):
-            params['polygons'] = [polygons]
+            params["polygons"] = [polygons]
         else:
             return "No polygons provided, please submit a list of polygon geometries"
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        futureobj = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        futureobj = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
         executor.shutdown(False)
-        job = GeometryJob(future=futureobj, task_name="areas_and_lengths",
-                          jobid=None,
-                          task_url=url,
-                          notify=False,
-                          gis=self._gis)
+        job = GeometryJob(
+            future=futureobj,
+            task_name="areas_and_lengths",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-            #return self._con.post(path=url, postdata=params, token=self._token)
-    #----------------------------------------------------------------------
+            # return self._con.post(path=url, postdata=params, token=self._token)
+
+    # ----------------------------------------------------------------------
     def __geometryListToGeomTemplate(self, geometries):
         """
-            converts a list of common.Geometry objects to the geometry
-            template value
-            Input:
-               geometries - list of common.Geometry objects
-            Output:
-               Dictionary in geometry service template
+        converts a list of common.Geometry objects to the geometry
+        template value
+        Input:
+           geometries - list of common.Geometry objects
+        Output:
+           Dictionary in geometry service template
         """
-        template = {"geometryType": None,
-                    "geometries" : []}
+        template = {"geometryType": None, "geometries": []}
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
 
@@ -13531,54 +15547,55 @@ class _GeometryService(_GISService):
                     g = Geometry(g)
 
                 if isinstance(g, Polyline):
-                    template['geometryType'] = "esriGeometryPolyline"
+                    template["geometryType"] = "esriGeometryPolyline"
                 elif isinstance(g, Polygon):
-                    template['geometryType'] = "esriGeometryPolygon"
+                    template["geometryType"] = "esriGeometryPolygon"
                 elif isinstance(g, Point):
-                    template['geometryType'] = "esriGeometryPoint"
+                    template["geometryType"] = "esriGeometryPoint"
                 elif isinstance(g, MultiPoint):
-                    template['geometryType'] = "esriGeometryMultipoint"
+                    template["geometryType"] = "esriGeometryMultipoint"
                 elif isinstance(g, Envelope):
-                    template['geometryType'] = "esriGeometryEnvelope"
+                    template["geometryType"] = "esriGeometryEnvelope"
                 else:
                     raise AttributeError("Invalid geometry type")
-                template['geometries'].append(g)
+                template["geometries"].append(g)
                 del g
             return template
         return template
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __geometryToGeomTemplate(self, geometry):
         """
-           Converts a single geometry object to a geometry service geometry
-           template value.
+        Converts a single geometry object to a geometry service geometry
+        template value.
 
-           Input:
-              geometry - geometry object
-           Output:
-              python dictionary of geometry template
+        Input:
+           geometry - geometry object
+        Output:
+           python dictionary of geometry template
         """
-        template = {"geometryType": None,
-                    "geometry" : None}
+        template = {"geometryType": None, "geometry": None}
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
         if isinstance(geometry, Polyline):
-            template['geometryType'] = "esriGeometryPolyline"
+            template["geometryType"] = "esriGeometryPolyline"
         elif isinstance(geometry, Polygon):
-            template['geometryType'] = "esriGeometryPolygon"
+            template["geometryType"] = "esriGeometryPolygon"
         elif isinstance(geometry, Point):
-            template['geometryType'] = "esriGeometryPoint"
+            template["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, MultiPoint):
-            template['geometryType'] = "esriGeometryMultipoint"
+            template["geometryType"] = "esriGeometryMultipoint"
         elif isinstance(geometry, Envelope):
-            template['geometryType'] = "esriGeometryEnvelope"
+            template["geometryType"] = "esriGeometryEnvelope"
         else:
             raise AttributeError("Invalid geometry type")
-        template['geometry'] = geometry
+        template["geometry"] = geometry
         return template
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __geomToStringArray(self, geometries, returnType="str"):
-        """ function to convert the geomtries to strings """
+        """function to convert the geomtries to strings"""
         listGeoms = []
         for g in geometries:
 
@@ -13589,190 +15606,214 @@ class _GeometryService(_GISService):
             elif isinstance(g, Polygon):
                 listGeoms.append(g)
             elif isinstance(g, Polyline):
-                listGeoms.append({'paths' : g['paths']})
+                listGeoms.append({"paths": g["paths"]})
         if returnType == "str":
             return json.dumps(listGeoms)
         elif returnType == "list":
             return listGeoms
         else:
             return json.dumps(listGeoms)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _process_results(self, results, out_sr=None):
         """processes the result"""
         from arcgis.geometry import SpatialReference
+
         if isinstance(results, concurrent.futures.Future):
             results = results.result()
-            if 'error' in results:
+            if "error" in results:
                 return results
         if isinstance(results, list):
             vals = []
             for result in results:
                 if isinstance(result, dict):
-                    if out_sr and not 'spatialReference' in result and isinstance(out_sr, int):
-                        result['spatialReference'] = {'wkid' : out_sr}
-                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, str):
-                        result['spatialReference'] = {'wkt' : out_sr}
-                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, (dict, SpatialReference)):
-                        result['spatialReference'] = out_sr
+                    if (
+                        out_sr
+                        and not "spatialReference" in result
+                        and isinstance(out_sr, int)
+                    ):
+                        result["spatialReference"] = {"wkid": out_sr}
+                    elif (
+                        out_sr
+                        and not "spatialReference" in result
+                        and isinstance(out_sr, str)
+                    ):
+                        result["spatialReference"] = {"wkt": out_sr}
+                    elif (
+                        out_sr
+                        and not "spatialReference" in result
+                        and isinstance(out_sr, (dict, SpatialReference))
+                    ):
+                        result["spatialReference"] = out_sr
                     vals.append(Geometry(result))
                 del result
             return vals
         elif isinstance(results, dict):
-            if 'geometries' in results:
-                return self._process_results(results['geometries'], out_sr=out_sr)
-            elif 'geometry' in results:
-                return Geometry(results['geometry'])
+            if "geometries" in results:
+                return self._process_results(results["geometries"], out_sr=out_sr)
+            elif "geometry" in results:
+                return Geometry(results["geometry"])
             else:
                 return Geometry(results)
         else:
             return results
-    #----------------------------------------------------------------------
-    def auto_complete(self,
-                      polygons=None,
-                      polylines=None,
-                      sr=None,
-                      future=False):
-        """
-           The autoComplete operation simplifies the process of
-           constructing new polygons that are adjacent to other polygons.
-           It constructs polygons that fill in the gaps between existing
-           polygons and a set of polylines.
 
-           Inputs:
-              polygons - array of Polygon objects
-              polylines - list of Polyline objects
-              sr - spatial reference of the input geometries WKID
+    # ----------------------------------------------------------------------
+    def auto_complete(self, polygons=None, polylines=None, sr=None, future=False):
+        """
+        The autoComplete operation simplifies the process of
+        constructing new polygons that are adjacent to other polygons.
+        It constructs polygons that fill in the gaps between existing
+        polygons and a set of polylines.
+
+        Inputs:
+           polygons - array of Polygon objects
+           polylines - list of Polyline objects
+           sr - spatial reference of the input geometries WKID
         """
         url = self._url + "/autoComplete"
-        params = {"f":"json"}
+        params = {"f": "json"}
         if polygons is None:
             polygons = []
         if polylines is None:
             polylines = []
         if sr is not None:
-            params['sr'] = sr
+            params["sr"] = sr
         if isinstance(polygons, list):
-            params['polygons'] = polygons
+            params["polygons"] = polygons
         elif isinstance(polygons, Polygon):
-            params['polygons'] = [polygons]
+            params["polygons"] = [polygons]
         if isinstance(polylines, Polyline):
-            params['polylines'] = [polylines]
+            params["polylines"] = [polylines]
         elif isinstance(polylines, list):
-            params['polylines'] = polylines
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+            params["polylines"] = polylines
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="auto_complete",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f2,
+            task_name="auto_complete",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def buffer(self,
-               geometries,
-               inSR,
-               distances,
-               unit,
-               outSR=None,
-               bufferSR=None,
-               unionResults=None,
-               geodesic=None,
-               future=False):
-        """
-           The buffer operation is performed on a geometry service resource
-           The result of this operation is buffered polygons at the
-           specified distances for the input geometry array. Options are
-           available to union buffers and to use geodesic distance.
 
-           Inputs:
-             geometries - The array of geometries to be buffered.
-             isSR - The well-known ID of the spatial reference or a spatial
-              reference JSON object for the input geometries.
-             distances - The distances that each of the input geometries is
-              buffered.
-             unit - The units for calculating each buffer distance. If unit
-              is not specified, the units are derived from bufferSR. If
-              bufferSR is not specified, the units are derived from inSR.
-             outSR - The well-known ID of the spatial reference or a
-              spatial reference JSON object for the input geometries.
-             bufferSR - The well-known ID of the spatial reference or a
-              spatial reference JSON object for the input geometries.
-             unionResults -  If true, all geometries buffered at a given
-              distance are unioned into a single (possibly multipart)
-              polygon, and the unioned geometry is placed in the output
-              array. The default is false
-             geodesic - Set geodesic to true to buffer the input geometries
-              using geodesic distance. Geodesic distance is the shortest
-              path between two points along the ellipsoid of the earth. If
-              geodesic is set to false, the 2D Euclidean distance is used
-              to buffer the input geometries. The default value depends on
-              the geometry type, unit and bufferSR.
+    # ----------------------------------------------------------------------
+    def buffer(
+        self,
+        geometries,
+        inSR,
+        distances,
+        unit,
+        outSR=None,
+        bufferSR=None,
+        unionResults=None,
+        geodesic=None,
+        future=False,
+    ):
+        """
+        The buffer operation is performed on a geometry service resource
+        The result of this operation is buffered polygons at the
+        specified distances for the input geometry array. Options are
+        available to union buffers and to use geodesic distance.
+
+        Inputs:
+          geometries - The array of geometries to be buffered.
+          isSR - The well-known ID of the spatial reference or a spatial
+           reference JSON object for the input geometries.
+          distances - The distances that each of the input geometries is
+           buffered.
+          unit - The units for calculating each buffer distance. If unit
+           is not specified, the units are derived from bufferSR. If
+           bufferSR is not specified, the units are derived from inSR.
+          outSR - The well-known ID of the spatial reference or a
+           spatial reference JSON object for the input geometries.
+          bufferSR - The well-known ID of the spatial reference or a
+           spatial reference JSON object for the input geometries.
+          unionResults -  If true, all geometries buffered at a given
+           distance are unioned into a single (possibly multipart)
+           polygon, and the unioned geometry is placed in the output
+           array. The default is false
+          geodesic - Set geodesic to true to buffer the input geometries
+           using geodesic distance. Geodesic distance is the shortest
+           path between two points along the ellipsoid of the earth. If
+           geodesic is set to false, the 2D Euclidean distance is used
+           to buffer the input geometries. The default value depends on
+           the geometry type, unit and bufferSR.
         """
         url = self._url + "/buffer"
-        params = {
-            "f" : "json",
-            "inSR" : inSR
-        }
+        params = {"f": "json", "inSR": inSR}
         if geodesic is not None:
-            params['geodesic'] = geodesic
+            params["geodesic"] = geodesic
         if unionResults is not None:
-            params['unionResults'] = unionResults
+            params["unionResults"] = unionResults
 
         if isinstance(geometries, list) and len(geometries) > 0:
             g = geometries[0]
             if isinstance(g, Polygon):
-                params['geometries'] = {"geometryType": "esriGeometryPolygon",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPolygon",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
             elif isinstance(g, Point):
-                params['geometries'] = {"geometryType": "esriGeometryPoint",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPoint",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
             elif isinstance(g, Polyline):
-                params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPolyline",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
             elif isinstance(g, dict):
-                params['geometries'] = geometries
+                params["geometries"] = geometries
             else:
-                print('The passed in geometries are in an unsupported format. '
-                      'List of dicts or Geometry objects are supported')
+                print(
+                    "The passed in geometries are in an unsupported format. "
+                    "List of dicts or Geometry objects are supported"
+                )
                 return None
         if isinstance(distances, list):
             distances = [str(d) for d in distances]
 
-            params['distances'] = ",".join(distances)
+            params["distances"] = ",".join(distances)
         else:
-            params['distances'] = str(distances)
-        params['unit'] = unit
+            params["distances"] = str(distances)
+        params["unit"] = unit
         if bufferSR is not None:
-            params['bufferSR'] = bufferSR
+            params["bufferSR"] = bufferSR
         if outSR is not None:
-            params['outSR'] = outSR
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
+            params["outSR"] = outSR
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="buffer",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=outSR or inSR)
+        job = GeometryJob(
+            future=f2,
+            task_name="buffer",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=outSR or inSR,
+        )
         if future:
             return job
         else:
             return job.result()
 
-    #----------------------------------------------------------------------
-    def convex_hull(self,
-                    geometries,
-                    sr=None,
-                    future=False):
+    # ----------------------------------------------------------------------
+    def convex_hull(self, geometries, sr=None, future=False):
         """
         The convexHull operation is performed on a geometry service
         resource. It returns the convex hull of the input geometry. The
@@ -13786,48 +15827,53 @@ class _GeometryService(_GISService):
                 the output geometry.
         """
         url = self._url + "/convexHull"
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if isinstance(geometries, list) and len(geometries) > 0:
             g = geometries[0]
             if sr is not None:
-                params['sr'] = sr
+                params["sr"] = sr
             else:
-                params['sr'] = g.spatialreference
+                params["sr"] = g.spatialreference
             if isinstance(g, Polygon):
-                params['geometries'] = {"geometryType": "esriGeometryPolygon",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPolygon",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
             elif isinstance(g, Point):
-                params['geometries'] = {"geometryType": "esriGeometryPoint",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPoint",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
             elif isinstance(g, Polyline):
-                params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                params["geometries"] = {
+                    "geometryType": "esriGeometryPolyline",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
         else:
             return None
 
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="convex_hull",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="convex_hull",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def cut(self,
-            cutter,
-            target,
-            sr=None,
-            future=False):
+
+    # ----------------------------------------------------------------------
+    def cut(self, cutter, target, sr=None, future=False):
         """
         The cut operation is performed on a geometry service resource. This
         operation splits the target polyline or polygon where it's crossed
@@ -13850,55 +15896,56 @@ class _GeometryService(_GISService):
             the output geometry.
         """
         url = self._url + "/cut"
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if sr is not None:
-            params['sr'] = sr
+            params["sr"] = sr
         if isinstance(cutter, (Polyline, dict)):
-            params['cutter'] = cutter
+            params["cutter"] = cutter
         else:
             raise AttributeError("Input must be type Polyline/Dictionary")
         if isinstance(target, list) and len(target) > 0:
-            template = {"geometryType": "",
-                        "geometries" : []}
+            template = {"geometryType": "", "geometries": []}
             for g in target:
                 if isinstance(g, Polygon):
-                    template['geometryType'] = "esriGeometryPolygon"
-                    template['geometries'].append(g)
+                    template["geometryType"] = "esriGeometryPolygon"
+                    template["geometries"].append(g)
                 if isinstance(g, Polyline):
-                    template['geometryType'] = "esriGeometryPolyline"
-                    template['geometries'].append(g)
+                    template["geometryType"] = "esriGeometryPolyline"
+                    template["geometries"].append(g)
                 else:
-                    AttributeError("Invalid geometry in target, entries can only be Polygon or Polyline")
+                    AttributeError(
+                        "Invalid geometry in target, entries can only be Polygon or Polyline"
+                    )
                 del g
-            params['target'] = template
+            params["target"] = template
         else:
-            AttributeError("You must provide at least 1 Polygon/Polyline geometry in a list")
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+            AttributeError(
+                "You must provide at least 1 Polygon/Polyline geometry in a list"
+            )
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="cut",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="cut",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def densify(self,
-                geometries,
-                sr,
-                maxSegmentLength,
-                lengthUnit,
-                geodesic=False,
-                future=False
-                ):
+
+    # ----------------------------------------------------------------------
+    def densify(
+        self, geometries, sr, maxSegmentLength, lengthUnit, geodesic=False, future=False
+    ):
         """
         The densify operation is performed on a geometry service resource.
         This operation densifies geometries by plotting points between
@@ -13929,14 +15976,13 @@ class _GeometryService(_GISService):
             is used to calculate maxSegmentLength. The default is false.
         """
         url = self._url + "/densify"
-        template = {"geometryType": None,
-                    "geometries" : []}
+        template = {"geometryType": None, "geometries": []}
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "maxSegmentLength" : maxSegmentLength,
-            "lengthUnit" : lengthUnit,
-            "geodesic" : geodesic
+            "f": "json",
+            "sr": sr,
+            "maxSegmentLength": maxSegmentLength,
+            "lengthUnit": lengthUnit,
+            "geodesic": geodesic,
         }
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
@@ -13944,13 +15990,13 @@ class _GeometryService(_GISService):
                 if not isinstance(g, Geometry):
                     g = Geometry(g)
                 if isinstance(g, Polyline):
-                    template['geometryType'] = "esriGeometryPolyline"
+                    template["geometryType"] = "esriGeometryPolyline"
                 elif isinstance(g, Polygon):
-                    template['geometryType'] = "esriGeometryPolygon"
+                    template["geometryType"] = "esriGeometryPolygon"
                 else:
                     raise AttributeError("Invalid geometry type")
 
-                template['geometries'].append(g)
+                template["geometries"].append(g)
 
         elif isinstance(geometries, dict):
 
@@ -13958,32 +16004,33 @@ class _GeometryService(_GISService):
                 g = Geometry(geometries)
 
             if isinstance(g, Polyline):
-                template['geometryType'] = "esriGeometryPolyline"
+                template["geometryType"] = "esriGeometryPolyline"
             elif isinstance(g, Polygon):
-                template['geometryType'] = "esriGeometryPolygon"
-            template['geometries'].append(g)
-        params['geometries'] = template
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+                template["geometryType"] = "esriGeometryPolygon"
+            template["geometries"].append(g)
+        params["geometries"] = template
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="densify",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="densify",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def difference(self,
-                   geometries,
-                   sr,
-                   geometry,
-                   future=False):
+
+    # ----------------------------------------------------------------------
+    def difference(self, geometries, sr, geometry, future=False):
         """
         The difference operation is performed on a geometry service
         resource. This operation constructs the set-theoretic difference
@@ -14006,67 +16053,60 @@ class _GeometryService(_GISService):
            reference JSON object for the input geometries.
         """
         url = self._url + "/difference"
-        params = {
-            "f" : "json",
-            "sr" : sr
-
-        }
+        params = {"f": "json", "sr": sr}
         if isinstance(geometries, list) and len(geometries) > 0:
-            template = {"geometryType": None,
-                        "geometries" : []}
+            template = {"geometryType": None, "geometries": []}
             for g in geometries:
                 if isinstance(g, Polyline):
-                    template['geometryType'] = "esriGeometryPolyline"
+                    template["geometryType"] = "esriGeometryPolyline"
                 elif isinstance(g, Polygon):
-                    template['geometryType'] = "esriGeometryPolygon"
+                    template["geometryType"] = "esriGeometryPolygon"
                 elif isinstance(g, Point):
-                    template['geometryType'] = "esriGeometryPoint"
+                    template["geometryType"] = "esriGeometryPoint"
                 elif isinstance(g, Point):
-                    template['geometryType'] = "esriGeometryMultipoint"
+                    template["geometryType"] = "esriGeometryMultipoint"
                 else:
                     raise AttributeError("Invalid geometry type")
-                template['geometries'].append(g)
+                template["geometries"].append(g)
                 del g
-            params['geometries'] = template
-        geomTemplate = {"geometryType": None,
-                        "geometries" : []
-                        }
+            params["geometries"] = template
+        geomTemplate = {"geometryType": None, "geometries": []}
         if isinstance(geometry, Polyline):
-            geomTemplate['geometryType'] = "esriGeometryPolyline"
+            geomTemplate["geometryType"] = "esriGeometryPolyline"
         elif isinstance(geometry, Polygon):
-            geomTemplate['geometryType'] = "esriGeometryPolygon"
+            geomTemplate["geometryType"] = "esriGeometryPolygon"
         elif isinstance(geometry, Point):
-            geomTemplate['geometryType'] = "esriGeometryPoint"
+            geomTemplate["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, Point):
-            geomTemplate['geometryType'] = "esriGeometryMultipoint"
+            geomTemplate["geometryType"] = "esriGeometryMultipoint"
         else:
             raise AttributeError("Invalid geometry type")
-        geomTemplate['geometry'] = geometry
-        params['geometry'] = geomTemplate
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        geomTemplate["geometry"] = geometry
+        params["geometry"] = geomTemplate
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="difference",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="difference",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def distance(self,
-                 sr,
-                 geometry1,
-                 geometry2,
-                 distanceUnit="",
-                 geodesic=False,
-                 future=False
-                 ):
+
+    # ----------------------------------------------------------------------
+    def distance(
+        self, sr, geometry1, geometry2, distanceUnit="", geodesic=False, future=False
+    ):
         """
         The distance operation is performed on a geometry service resource.
         It reports the 2D Euclidean or geodesic distance between the two
@@ -14092,30 +16132,37 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/distance"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "distanceUnit" : distanceUnit,
-            "geodesic" : geodesic
+            "f": "json",
+            "sr": sr,
+            "distanceUnit": distanceUnit,
+            "geodesic": geodesic,
         }
         geometry1 = self.__geometryToGeomTemplate(geometry=geometry1)
         geometry2 = self.__geometryToGeomTemplate(geometry=geometry2)
-        params['geometry1'] = geometry1
-        params['geometry2'] = geometry2
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        params["geometry1"] = geometry1
+        params["geometry2"] = geometry2
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="distance",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="distance",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def find_transformation(self, inSR, outSR, extentOfInterest=None, numOfResults=1, future=False):
+
+    # ----------------------------------------------------------------------
+    def find_transformation(
+        self, inSR, outSR, extentOfInterest=None, numOfResults=1, future=False
+    ):
         """
         The findTransformations operation is performed on a geometry
         service resource. This operation returns a list of applicable
@@ -14149,37 +16196,35 @@ class _GeometryService(_GISService):
              return. The default value is 1. If numOfResults has a value of
              -1, all applicable transformations are returned.
         """
-        params = {
-            "f" : "json",
-            "inSR" : inSR,
-            "outSR" : outSR
-        }
+        params = {"f": "json", "inSR": inSR, "outSR": outSR}
         url = self._url + "/findTransformations"
         if isinstance(numOfResults, int):
-            params['numOfResults'] = numOfResults
+            params["numOfResults"] = numOfResults
         if isinstance(extentOfInterest, Envelope):
-            params['extentOfInterest'] = extentOfInterest
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+            params["extentOfInterest"] = extentOfInterest
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
 
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="find_transformation",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="find_transformation",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def from_geo_coordinate_string(self,
-                                   sr,
-                                   strings,
-                                   conversionType,
-                                   conversionMode=None,
-                                   future=False):
+
+    # ----------------------------------------------------------------------
+    def from_geo_coordinate_string(
+        self, sr, strings, conversionType, conversionMode=None, future=False
+    ):
         """
         The from_geo_coordinate_string operation is performed on a geometry
         service resource. The operation converts an array of well-known
@@ -14226,33 +16271,33 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/fromGeoCoordinateString"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "strings" : strings,
-            "conversionType" : conversionType
+            "f": "json",
+            "sr": sr,
+            "strings": strings,
+            "conversionType": conversionType,
         }
         if not conversionMode is None:
-            params['conversionMode'] = conversionMode
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+            params["conversionMode"] = conversionMode
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="from_geo_coordinate_string",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="from_geo_coordinate_string",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def generalize(self,
-                   sr,
-                   geometries,
-                   maxDeviation,
-                   deviationUnit,
-                   future=False):
+
+    # ----------------------------------------------------------------------
+    def generalize(self, sr, geometries, maxDeviation, deviationUnit, future=False):
         """
         The generalize operation is performed on a geometry service
         resource. The generalize operation simplifies the input geometries
@@ -14273,34 +16318,34 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/generalize"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "deviationUnit" : deviationUnit,
-            "maxDeviation": maxDeviation
+            "f": "json",
+            "sr": sr,
+            "deviationUnit": deviationUnit,
+            "maxDeviation": maxDeviation,
         }
-        params['geometries'] = self.__geometryListToGeomTemplate(geometries=geometries)
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        params["geometries"] = self.__geometryListToGeomTemplate(geometries=geometries)
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="generalize",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="generalize",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def intersect(self,
-                  sr,
-                  geometries,
-                  geometry,
-                  future=False
-                  ):
+
+    # ----------------------------------------------------------------------
+    def intersect(self, sr, geometries, geometry, future=False):
         """
         The intersect operation is performed on a geometry service
         resource. This operation constructs the set-theoretic intersection
@@ -14321,31 +16366,33 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/intersect"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "geometries" : self.__geometryListToGeomTemplate(geometries=geometries),
-            "geometry" : self.__geometryToGeomTemplate(geometry=geometry)
+            "f": "json",
+            "sr": sr,
+            "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
+            "geometry": self.__geometryToGeomTemplate(geometry=geometry),
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="intersect",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="intersect",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def label_points(self,
-                     sr,
-                     polygons,
-                     future=False):
+
+    # ----------------------------------------------------------------------
+    def label_points(self, sr, polygons, future=False):
         """
         The label_points operation is performed on a geometry service
         resource. The labelPoints operation calculates an interior point
@@ -14361,33 +16408,33 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/labelPoints"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "polygons": self.__geomToStringArray(geometries=polygons,
-                                                 returnType="list")
+            "f": "json",
+            "sr": sr,
+            "polygons": self.__geomToStringArray(
+                geometries=polygons, returnType="list"
+            ),
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="label_points",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f1,
+            task_name="label_points",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def lengths(self,
-                sr,
-                polylines,
-                lengthUnit,
-                calculationType,
-                future=False
-                ):
+
+    # ----------------------------------------------------------------------
+    def lengths(self, sr, polylines, lengthUnit, calculationType, future=False):
         """
         The lengths operation is performed on a geometry service resource.
         This operation calculates the 2D Euclidean or geodesic lengths of
@@ -14421,42 +16468,50 @@ class _GeometryService(_GISService):
              on the surface of the earth ellipsoid. The shape of the
              geometry in its coordinate system is preserved.
         """
-        allowedCalcTypes = ['planar', 'geodesic', 'preserveShape']
+        allowedCalcTypes = ["planar", "geodesic", "preserveShape"]
         if calculationType not in allowedCalcTypes:
             raise AttributeError("Invalid calculation Type")
         url = self._url + "/lengths"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "polylines": self.__geomToStringArray(geometries=polylines,
-                                                  returnType="list"),
-            "lengthUnit" : lengthUnit,
-            "calculationType" : calculationType
+            "f": "json",
+            "sr": sr,
+            "polylines": self.__geomToStringArray(
+                geometries=polylines, returnType="list"
+            ),
+            "lengthUnit": lengthUnit,
+            "calculationType": calculationType,
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
 
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="lengths",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="lengths",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def offset(self,
-               geometries,
-               offsetDistance,
-               offsetUnit,
-               offsetHow="esriGeometryOffsetRounded",
-               bevelRatio=10,
-               simplifyResult=False,
-               sr=None,
-               future=False):
+
+    # ----------------------------------------------------------------------
+    def offset(
+        self,
+        geometries,
+        offsetDistance,
+        offsetUnit,
+        offsetHow="esriGeometryOffsetRounded",
+        bevelRatio=10,
+        simplifyResult=False,
+        sr=None,
+        future=False,
+    ):
         """
         The offset operation is performed on a geometry service resource.
         This operation constructs geometries that are offset from the
@@ -14500,45 +16555,54 @@ class _GeometryService(_GISService):
          sr - The well-known ID or a spatial reference JSON object for the
           input geometries.
         """
-        allowedHow = ["esriGeometryOffsetRounded",
-                      "esriGeometryOffsetBevelled",
-                      "esriGeometryOffsetMitered"]
+        allowedHow = [
+            "esriGeometryOffsetRounded",
+            "esriGeometryOffsetBevelled",
+            "esriGeometryOffsetMitered",
+        ]
         if offsetHow not in allowedHow:
             raise AttributeError("Invalid Offset How value")
         url = self._url + "/offset"
         params = {
-            "f" : "json",
-            "sr" : sr,
+            "f": "json",
+            "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
             "offsetDistance": offsetDistance,
-            "offsetUnit" : offsetUnit,
-            "offsetHow" : offsetHow,
-            "bevelRatio" : bevelRatio,
-            "simplifyResult" : json.dumps(simplifyResult)
+            "offsetUnit": offsetUnit,
+            "offsetHow": offsetHow,
+            "bevelRatio": bevelRatio,
+            "simplifyResult": json.dumps(simplifyResult),
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="offset",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="offset",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def project(self,
-                geometries,
-                inSR,
-                outSR,
-                transformation="",
-                transformFoward=False,
-                future=False):
+
+    # ----------------------------------------------------------------------
+    def project(
+        self,
+        geometries,
+        inSR,
+        outSR,
+        transformation="",
+        transformFoward=False,
+        future=False,
+    ):
         """
         The project operation is performed on a geometry service resource.
         This operation projects an array of input geometries from the input
@@ -14564,36 +16628,43 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/project"
         params = {
-            "f" : "json",
-            "inSR" : inSR,
+            "f": "json",
+            "inSR": inSR,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
-            "outSR" : outSR,
-            "transformation" : transformation,
-            "transformFoward": transformFoward
+            "outSR": outSR,
+            "transformation": transformation,
+            "transformFoward": transformFoward,
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="project",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=outSR)
+        job = GeometryJob(
+            future=f2,
+            task_name="project",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=outSR,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def relation(self,
-                 geometries1,
-                 geometries2,
-                 sr,
-                 relation="esriGeometryRelationIntersection",
-                 relationParam="",
-                 future=False):
+
+    # ----------------------------------------------------------------------
+    def relation(
+        self,
+        geometries1,
+        geometries2,
+        sr,
+        relation="esriGeometryRelationIntersection",
+        relationParam="",
+        future=False,
+    ):
         """
         The relation operation is performed on a geometry service resource.
         This operation determines the pairs of geometries from the input
@@ -14633,39 +16704,40 @@ class _GeometryService(_GISService):
             "esriGeometryRelationPointTouch",
             "esriGeometryRelationTouch",
             "esriGeometryRelationWithin",
-            "esriGeometryRelationRelation"
+            "esriGeometryRelationRelation",
         ]
         if relation not in relationType:
             raise AttributeError("Invalid relation type")
         url = self._url + "/relation"
         params = {
-            "f" : "json",
-            "sr" : sr,
+            "f": "json",
+            "sr": sr,
             "geometries1": self.__geometryListToGeomTemplate(geometries=geometries1),
             "geometries2": self.__geometryListToGeomTemplate(geometries=geometries2),
-            "relation" : relation,
-            "relationParam" : relationParam
+            "relation": relation,
+            "relationParam": relationParam,
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
 
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="relation",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="relation",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def reshape(self,
-                sr,
-                target,
-                reshaper,
-                future=False):
+
+    # ----------------------------------------------------------------------
+    def reshape(self, sr, target, reshaper, future=False):
         """
         The reshape operation is performed on a geometry service resource.
         It reshapes a polyline or polygon feature by constructing a
@@ -14681,36 +16753,38 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/reshape"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "target" : self.__geometryToGeomTemplate(geometry=target)
+            "f": "json",
+            "sr": sr,
+            "target": self.__geometryToGeomTemplate(geometry=target),
         }
         if isinstance(reshaper, Polyline):
             params["reshaper"] = reshaper
         elif isinstance(reshaper, dict):
-            params['reshaper'] = reshaper
+            params["reshaper"] = reshaper
         else:
             raise AttributeError("Invalid reshaper object, must be Polyline")
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                          task_name="reshape",
-                          jobid=None,
-                          task_url=url,
-                          notify=False,
-                          gis=self._gis,
-                          out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="reshape",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def simplify(self,
-                 sr,
-                 geometries,
-                 future=False):
+
+    # ----------------------------------------------------------------------
+    def simplify(self, sr, geometries, future=False):
         """
         The simplify operation is performed on a geometry service resource.
         Simplify permanently alters the input geometry so that the geometry
@@ -14724,35 +16798,42 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/simplify"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
+            "f": "json",
+            "sr": sr,
+            "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="simplify",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="simplify",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def to_geo_coordinate_string(self,
-                                 sr,
-                                 coordinates,
-                                 conversionType,
-                                 conversionMode="mgrsDefault",
-                                 numOfDigits=None,
-                                 rounding=True,
-                                 addSpaces=True,
-                                 future=False):
+
+    # ----------------------------------------------------------------------
+    def to_geo_coordinate_string(
+        self,
+        sr,
+        coordinates,
+        conversionType,
+        conversionMode="mgrsDefault",
+        numOfDigits=None,
+        rounding=True,
+        addSpaces=True,
+        future=False,
+    ):
         """
         The toGeoCoordinateString operation is performed on a geometry
         service resource. The operation converts an array of
@@ -14809,40 +16890,40 @@ class _GeometryService(_GISService):
         """
         params = {
             "f": "json",
-            "sr" : sr,
-            "coordinates" : coordinates,
-            "conversionType": conversionType
+            "sr": sr,
+            "coordinates": coordinates,
+            "conversionType": conversionType,
         }
         url = self._url + "/toGeoCoordinateString"
         if not conversionMode is None:
-            params['conversionMode'] = conversionMode
+            params["conversionMode"] = conversionMode
         if isinstance(numOfDigits, int):
-            params['numOfDigits'] = numOfDigits
+            params["numOfDigits"] = numOfDigits
         if isinstance(rounding, int):
-            params['rounding'] = rounding
+            params["rounding"] = rounding
         if isinstance(addSpaces, bool):
-            params['addSpaces'] = addSpaces
-        executor =  concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+            params["addSpaces"] = addSpaces
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
 
         executor.shutdown(False)
-        job = GeometryJob(future=f1,
-                 task_name="to_geo_coordinate_string",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis)
+        job = GeometryJob(
+            future=f1,
+            task_name="to_geo_coordinate_string",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def trim_extend(self,
-                    sr,
-                    polylines,
-                    trimExtendTo,
-                    extendHow=0,
-                    future=False):
+
+    # ----------------------------------------------------------------------
+    def trim_extend(self, sr, polylines, trimExtendTo, extendHow=0, future=False):
         """
         The trim_extend operation is performed on a geometry service
         resource. This operation trims or extends each polyline specified
@@ -14877,37 +16958,41 @@ class _GeometryService(_GISService):
           8 - Do not extend the 'from' end of any path.
           16 - Do not extend the 'to' end of any path.
         """
-        allowedHow = [0,1,2,4,8,16]
+        allowedHow = [0, 1, 2, 4, 8, 16]
         if extendHow not in allowedHow:
             raise AttributeError("Invalid extend How value.")
         url = self._url + "/trimExtend"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "polylines" : self.__geomToStringArray(geometries=polylines, returnType="list"),
+            "f": "json",
+            "sr": sr,
+            "polylines": self.__geomToStringArray(
+                geometries=polylines, returnType="list"
+            ),
             "extendHow": extendHow,
-            "trimExtendTo" : trimExtendTo
+            "trimExtendTo": trimExtendTo,
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="trim_extend",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="trim_extend",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
-    #----------------------------------------------------------------------
-    def union(self,
-              sr,
-              geometries,
-              future=False):
+
+    # ----------------------------------------------------------------------
+    def union(self, sr, geometries, future=False):
         """
         The union operation is performed on a geometry service resource.
         This operation constructs the set-theoretic union of the geometries
@@ -14920,25 +17005,31 @@ class _GeometryService(_GISService):
         """
         url = self._url + "/union"
         params = {
-            "f" : "json",
-            "sr" : sr,
-            "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
+            "f": "json",
+            "sr": sr,
+            "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor =  concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor = concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(
+            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        )
+        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
-        job = GeometryJob(future=f2,
-                 task_name="auto_complete",
-                 jobid=None,
-                 task_url=url,
-                 notify=False,
-                 gis=self._gis,
-                 out_wkid=sr)
+        job = GeometryJob(
+            future=f2,
+            task_name="auto_complete",
+            jobid=None,
+            task_url=url,
+            notify=False,
+            gis=self._gis,
+            out_wkid=sr,
+        )
         if future:
             return job
         else:
             return job.result()
+
+
 ###########################################################################
 class _Tools(object):
     """
@@ -14948,6 +17039,7 @@ class _Tools(object):
     Users access the GIS tools, such as the geocoders through
     the gis.tools object
     """
+
     # spatial analysis tools, geoanalytics, rasteranalysis tools, etc through the gis.tools object
     def __init__(self, gis):
         self._gis = gis
@@ -14966,6 +17058,7 @@ class _Tools(object):
         else:
             return res["serviceUrl"]
         return url
+
     @property
     def geocoders(self):
         """the geocoders, if available and configured"""
@@ -14973,16 +17066,18 @@ class _Tools(object):
             return self._geocoders
         self._geocoders = []
         try:
-            geocode_services = self._gis.properties['helperServices']['geocode']
+            geocode_services = self._gis.properties["helperServices"]["geocode"]
             for geocode_service in geocode_services:
                 try:
                     if self._gis._is_hosted_nb_home:
-                        url = self._validate_url(geocode_service['url'])
+                        url = self._validate_url(geocode_service["url"])
                         self._geocoders.append(Geocoder(url, self._gis))
                     else:
-                        self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                        self._geocoders.append(
+                            Geocoder(geocode_service["url"], self._gis)
+                        )
                 except RuntimeError as re:
-                    _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
+                    _log.warning("Unable to use Geocoder at " + geocode_service["url"])
                     _log.warning(str(re))
         except KeyError:
             pass
@@ -14996,9 +17091,10 @@ class _Tools(object):
         try:
             if self._gis._is_hosted_nb_home:
                 svcurl = self._validate_url(
-                    self._gis.properties['helperServices']['geometry']['url'])
+                    self._gis.properties["helperServices"]["geometry"]["url"]
+                )
             else:
-                svcurl = self._gis.properties['helperServices']['geometry']['url']
+                svcurl = self._gis.properties["helperServices"]["geometry"]["url"]
             self._geometry = _GeometryService(svcurl, self._gis)
             return self._geometry
         except KeyError:
@@ -15013,9 +17109,12 @@ class _Tools(object):
             try:
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(
-                        self._gis.properties['helperServices']['rasterAnalytics']['url'])
+                        self._gis.properties["helperServices"]["rasterAnalytics"]["url"]
+                    )
                 else:
-                    svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
+                    svcurl = self._gis.properties["helperServices"]["rasterAnalytics"][
+                        "url"
+                    ]
             except:
                 print("This GIS does not support raster analysis.")
                 return None
@@ -15032,7 +17131,7 @@ class _Tools(object):
             return self._geoanalytics
         try:
             try:
-                svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
+                svcurl = self._gis.properties["helperServices"]["geoanalytics"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:
@@ -15051,7 +17150,7 @@ class _Tools(object):
             return self._analysis
         try:
             try:
-                svcurl = self._gis.properties['helperServices']['analysis']['url']
+                svcurl = self._gis.properties["helperServices"]["analysis"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:
@@ -15073,7 +17172,7 @@ class _Tools(object):
             return self._packaging
         try:
 
-            svcurl = self._gis.properties['helperServices']['packaging']['url']
+            svcurl = self._gis.properties["helperServices"]["packaging"]["url"]
             if self._gis._is_hosted_nb_home:
                 svcurl = self._validate_url(svcurl)
             self._packaging = _PackagingTools(url=svcurl, gis=self._gis)
@@ -15094,12 +17193,14 @@ class _Tools(object):
             return self._analysis
         try:
             try:
-                svcurl = self._gis.properties.helperServices['orthoMapping']['url']
+                svcurl = self._gis.properties.helperServices["orthoMapping"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:
                 if self._gis._con.token is None:
-                    raise RuntimeError("You need to be signed in to use Ortho Mapping Tools.")
+                    raise RuntimeError(
+                        "You need to be signed in to use Ortho Mapping Tools."
+                    )
                 else:
                     raise RuntimeError("This GIS does not support Ortho Mapping Tools.")
                 return None

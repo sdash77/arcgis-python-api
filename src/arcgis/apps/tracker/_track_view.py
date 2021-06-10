@@ -27,6 +27,7 @@ class TrackView:
         mobile_users = track_view.mobile_users.list()
 
     """
+
     def __init__(self, item):
         if "Location Tracking View" not in item.typeKeywords:
             raise LocationTrackingError("Item is not a Track View")
@@ -98,6 +99,7 @@ class TrackViewerManager:
                            configure Track Viewers for.
     ==================     ====================================================================
     """
+
     def __init__(self, track_view):
         self._track_view = track_view
 
@@ -115,8 +117,12 @@ class TrackViewerManager:
         if isinstance(viewers, (str, arcgis.gis.User)):
             viewers = [viewers]
         max_add_per_call = 25
-        for i in range(0, math.ceil(len(viewers)/max_add_per_call)):
-            self._track_view.group.add_users(viewers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call])
+        for i in range(0, math.ceil(len(viewers) / max_add_per_call)):
+            self._track_view.group.add_users(
+                viewers[
+                    i * max_add_per_call : (i * max_add_per_call) + max_add_per_call
+                ]
+            )
 
     def delete(self, viewers):
         """
@@ -130,14 +136,24 @@ class TrackViewerManager:
         if isinstance(viewers, (str, arcgis.gis.User)):
             viewers = [viewers]
         if isinstance(viewers[0], str):
-            if self._track_view._item['owner'] in viewers:
-                raise LocationTrackingError("Cannot remove track view owner from being a track viewer. Please try again without the owner included")
+            if self._track_view._item["owner"] in viewers:
+                raise LocationTrackingError(
+                    "Cannot remove track view owner from being a track viewer. Please try again without the owner included"
+                )
         else:
-            if any(viewer.username == self._track_view._item['owner'] for viewer in viewers):
-                raise LocationTrackingError("Cannot remove track view owner from being a track viewer. Please try again without the owner included")
+            if any(
+                viewer.username == self._track_view._item["owner"] for viewer in viewers
+            ):
+                raise LocationTrackingError(
+                    "Cannot remove track view owner from being a track viewer. Please try again without the owner included"
+                )
         max_add_per_call = 25
-        for i in range(0, math.ceil(len(viewers)/max_add_per_call)):
-            self._track_view.group.remove_users(viewers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call])
+        for i in range(0, math.ceil(len(viewers) / max_add_per_call)):
+            self._track_view.group.remove_users(
+                viewers[
+                    i * max_add_per_call : (i * max_add_per_call) + max_add_per_call
+                ]
+            )
 
     def list(self):
         """
@@ -221,11 +237,17 @@ class MobileUserManager:
         match = pattern.match(self.view_definition_query)
         if match is None:
             raise LocationTrackingError("Unable to parse viewDefinitionQuery")
-        return [username.strip()[1:-1] for username in match[1].split(',') if username.strip()[1:-1]]
+        return [
+            username.strip()[1:-1]
+            for username in match[1].split(",")
+            if username.strip()[1:-1]
+        ]
 
     def _generate_users_where_clause(self, usernames):
         if len(usernames) > 0:
-            return "created_user in ({})".format(','.join(["'{}'".format(u) for u in usernames]))
+            return "created_user in ({})".format(
+                ",".join(["'{}'".format(u) for u in usernames])
+            )
         return self._DEFAULT_VDQ
 
     def _update_vdq(self, usernames):
@@ -239,17 +261,17 @@ class MobileUserManager:
             new_vdq = new_users_clause
         else:
             new_vdq = "{} {}".format(new_users_clause, custom_section)
-        self._track_view.tracks_layer.manager.update_definition({
-            "viewDefinitionQuery": new_vdq
-        })
-        self._track_view.last_known_locations_layer.manager.update_definition({
-            "viewDefinitionQuery": new_vdq
-        })
+        self._track_view.tracks_layer.manager.update_definition(
+            {"viewDefinitionQuery": new_vdq}
+        )
+        self._track_view.last_known_locations_layer.manager.update_definition(
+            {"viewDefinitionQuery": new_vdq}
+        )
         # Older versions of the LTS do not have this layer
         if self._track_view.track_lines_layer:
-            self._track_view.track_lines_layer.manager.update_definition({
-                "viewDefinitionQuery": new_vdq
-            })
+            self._track_view.track_lines_layer.manager.update_definition(
+                {"viewDefinitionQuery": new_vdq}
+            )
             self._track_view.track_lines_layer._hydrate()
         # update cached values
         self._track_view.tracks_layer._hydrate()

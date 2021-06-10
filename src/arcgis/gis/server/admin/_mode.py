@@ -21,6 +21,7 @@ class Mode(BaseServer):
     administrative operations such as adding and removing machines from a
     site are still available in READ_ONLY mode.
     """
+
     _url = None
     _con = None
     _json_dict = None
@@ -28,29 +29,26 @@ class Mode(BaseServer):
     _siteMode = None
     _copyConfigLocal = None
     _lastModified = None
-    #----------------------------------------------------------------------
-    def __init__(self,
-                 url,
-                 gis,
-                 initialize=False):
+    # ----------------------------------------------------------------------
+    def __init__(self, url, gis, initialize=False):
         """Constructor"""
-        super(Mode, self).__init__(gis=gis,
-                                   url=url)
-        if url.lower().endswith('/mode'):
+        super(Mode, self).__init__(gis=gis, url=url)
+        if url.lower().endswith("/mode"):
             self._url = url
         else:
             self._url = url + "/mode"
         self._con = gis
         if initialize:
             self._init(gis)
-    #----------------------------------------------------------------------
-    @deprecated(deprecated_in="1.7.1", 
-                removed_in=None,
-                current_version="1.8.0",
-                details="Use `Mode.update_mode` instead.")    
-    def update(self,
-               siteMode,
-               runAsync=False):
+
+    # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="1.7.1",
+        removed_in=None,
+        current_version="1.8.0",
+        details="Use `Mode.update_mode` instead.",
+    )
+    def update(self, siteMode, runAsync=False):
         """
         The update operation is used to move between the two types of site
         modes. Switching to READ_ONLY mode will restart all your services
@@ -70,21 +68,15 @@ class Mode(BaseServer):
         :return: boolean
 
         """
-        params = {"siteMode" : siteMode,
-                  "runAsync" : runAsync,
-                  "f" : "json"}
+        params = {"siteMode": siteMode, "runAsync": runAsync, "f": "json"}
         url = self._url + "/update"
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res
 
-    #----------------------------------------------------------------------
-    def update_mode(self,
-               site_mode,
-               run_async=False,
-               allow_editing=True):
+    # ----------------------------------------------------------------------
+    def update_mode(self, site_mode, run_async=False, allow_editing=True):
         """
         The update operation is used to move between the two types of site
         modes. Switching to READ_ONLY mode will restart all your services
@@ -99,7 +91,7 @@ class Mode(BaseServer):
         ---------------     --------------------------------------------------------------------
         run_async           Optional boolean. Determines if this operation must run asynchronously.
         ---------------     --------------------------------------------------------------------
-        allow_editing       Optional boolean. Specifies if edits to feature services are allowed 
+        allow_editing       Optional boolean. Specifies if edits to feature services are allowed
                             while a Server is in read-only mode. The default value is true.
         ===============     ====================================================================
 
@@ -107,13 +99,14 @@ class Mode(BaseServer):
         :return: boolean
 
         """
-        params = {"siteMode" : site_mode,
-                  "runAsync" : run_async,
-                  "allowEditingViaServices" : allow_editing,
-                  "f" : "json"}
+        params = {
+            "siteMode": site_mode,
+            "runAsync": run_async,
+            "allowEditingViaServices": allow_editing,
+            "f": "json",
+        }
         url = self._url + "/update"
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return res

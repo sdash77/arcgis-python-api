@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import json
 import pickle
@@ -10,21 +11,32 @@ from zipfile import ZipFile
 
 import arcgis
 from arcgis.features import FeatureLayer
+from arcgis.raster.analytics import copy_raster
 
-from .._utils.tabular_data import TabularDataObject
+from .._utils.tabular_data import TabularDataObject , explain_prediction
 
 HAS_SK_LEARN = True
+HAS_SHAP=True
 try:
     import sklearn
     from sklearn import *
 except:
     HAS_SK_LEARN = False
 
+try:
+    import shap
+except:
+    HAS_SHAP = False
+
 HAS_FAST_PROGRESS = True
 try:
     from fastprogress.fastprogress import progress_bar
 except:
     HAS_FAST_PROGRESS = False
+try:
+    import pandas as pd
+except:
+    pass
 
 _PROTOCOL_LEVEL = 2
 
@@ -149,7 +161,8 @@ class MLModel(object):
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
 
         output_labels = self._predict(validation_data_batch)
-        df = self._data._dataframe.loc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        pd.options.mode.chained_assignment = None
+        df = self._data._dataframe.iloc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + '_results'] = output_labels
@@ -215,7 +228,7 @@ class MLModel(object):
             kwargs['X'] = self._training_data
 
         if n_neighbors:
-            kwargs['n_neigbors'] = n_neighbors
+            kwargs['n_neighbors'] = n_neighbors
 
         kwargs['return_distance'] = return_distance
 
@@ -237,14 +250,22 @@ class MLModel(object):
     @property
     def feature_importances_(self):
         """
-        :returns output from scikit-learn's model.feature_importances_
+        :Returns the global feature importance summary plot from SHAP.
+        Most of the sklearn models are supported by this method.
         """
-        if not hasattr(self._model, 'feature_importances_'):
-            raise Exception("Property not implemented for this model.")
+        #if not hasattr(self._model, 'feature_importances_'):
+            #raise Exception("Property not implemented for this model.")
+        processed_dataframe= None
+        explain_index = None
+        random_index = None
+        explain_prediction(self, processed_dataframe, index=explain_index, random_index=random_index,
+                               predictor=None,
+                               global_pred=True)
+        return
 
-        return self._model.feature_importances_
+        #return self._model.feature_importances_
 
-    def save(self, name_or_path):
+    def save(self, name_or_path, publish=False, gis=None, **kwargs):
         """
         Saves the model, creates an Esri Model Definition. Uses pickle to save the model.
         Using protocol level 2. Protocol level is backward compatible.
@@ -253,6 +274,15 @@ class MLModel(object):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
+        ---------------------   -------------------------------------------
+        publish                 Optional boolean. Publishes the DLPK as an item.
+        ---------------------   -------------------------------------------
+        gis                     Optional GIS Object. Used for publishing the item.
+                                If not specified then active gis user is taken.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters:
+                                Boolean `overwrite` if True, it will overwrite
+                                the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         :returns dataframe
         """
@@ -283,8 +313,61 @@ class MLModel(object):
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
         self._write_emd(path, base_file_name)
+        zip_files = kwargs.pop('zip_files', True)
+
+        if zip_files:
+            from ._arcgis_model import _create_zip
+            _create_zip(Path(path).name, str(path))
+
+        if publish:
+            self._publish_dlpk((Path(path) / Path(path).stem).with_suffix('.dlpk'), gis=gis,
+                               overwrite=kwargs.get('overwrite', False))
 
         return Path(path)
+
+    def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
+        model_characteristics_folder = 'ModelCharacteristics'
+        gis_user = arcgis.env.active_gis if gis is None else gis
+        if not gis_user:
+            warnings.warn('No active gis user found!')
+            return
+
+        if not os.path.exists(dlpk_path):
+            warnings.warn('DLPK file not found!')
+            return
+
+        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + '.emd')
+
+        if not os.path.exists(emd_path):
+            warnings.warn('EMD File not found!')
+            return
+
+        emd_data = json.load(open(emd_path, 'r'))
+        formatted_description = f"""
+                <p><b> {emd_data.get('ModelName').replace('>', '').replace('<', '')} </b></p>
+                <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
+                <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
+        """
+
+        if emd_data.get('accuracy'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
+            """
+
+        if emd_data.get('average_precision_score'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
+            """
+
+        item = gis_user.content.add(
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem,
+             'overwrite': True if overwrite else False},
+            data=str(dlpk_path.absolute())
+        )
+
+        print(f"Published DLPK Item Id: {item.itemid}")
 
     def _write_emd(self, path, base_file_name):
         emd_file = os.path.join(path, base_file_name + '.emd')
@@ -548,11 +631,13 @@ class MLModel(object):
             explanatory_rasters=None,
             datefield=None,
             distance_features=None,
-            output_layer_name="Prediction Layer",
+            output_layer_name=None,
             gis=None,
             prediction_type='features',
             output_raster_path=None,
-            match_field_names=None):
+            match_field_names=None,
+            explain=False,
+            explain_index=None):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -603,6 +688,17 @@ class MLModel(object):
                                                     "Field_Name_1": "Field_1",
                                                     "Field_Name_2": "Field_2"
                                                 }
+        ---------------------------------   -------------------------------------------------------------------------
+        explain                             Optional Bool.
+                                            Setting this parameter to true generates prediction explaination plot.
+                                            Plot is generated using model interpretability library called SHAP.
+                                            (https://github.com/slundberg/shap)
+        ---------------------------------   -------------------------------------------------------------------------
+        explain_index                       Optional Int.
+                                            The index of the dataframe passed to the predict function for which model
+                                            interpretability is desired. If the parameter is not passed and if the
+                                            explain parameter is set to true, the SHAP plot will be generated for a
+                                            random index of the dataframe.
         =================================   =========================================================================
 
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
@@ -610,13 +706,18 @@ class MLModel(object):
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
+        if explain:
+            if not HAS_SHAP:
+                warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
+                explain = False
+                explain_index = None
         if prediction_type in ['features', 'dataframe']:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type,explain,explain_index)
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
@@ -624,7 +725,7 @@ class MLModel(object):
             if not output_raster_path:
                 raise Exception("Please specify output_raster_folder_path to save the output.")
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names)
+            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index,output_layer_name,gis)
 
     def _predict_features(
             self,
@@ -635,7 +736,9 @@ class MLModel(object):
             output_name="Prediction Layer",
             gis=None,
             match_field_names=None,
-            prediction_type="features"
+            prediction_type="features",
+            explain = False,
+            explain_index = None
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
@@ -705,7 +808,13 @@ class MLModel(object):
         processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1), fit=False)
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
-
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self,processed_dataframe,index=explain_index,random_index=random_index,predictor=None,
+                               global_pred=False)
         if prediction_type == "dataframe":
             return dataframe
 
@@ -719,7 +828,7 @@ class MLModel(object):
                 online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
+    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None,output_layer_name=None, gis=None):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -746,6 +855,9 @@ class MLModel(object):
             raise Exception("This function requires fastprogress.")
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables
+        raster_names = [r.name for r in rasters] # Removing duplicate rasters if same raster is passed twice.
+        unique_indexes = [raster_names.index(x) for x in set(raster_names)]
+        rasters = [rasters[i] for i in unique_indexes]
 
         try:
             arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
@@ -797,11 +909,13 @@ class MLModel(object):
         cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
 
         raster_data = {}
+        #fields_needed.append(raster.name)# Change
         for raster in rasters:
             field_name = raster.name
             point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
             cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
-            if field_name in fields_needed:
+            #if field_name in fields_needed:
+            if field_name == re.search("(?s:.*)_", fields_needed[-1]).group(0)[:-1]:
                 raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -812,11 +926,15 @@ class MLModel(object):
                             if index != 0:
                                 key = key + f'_{index}'
                             if not raster_data.get(key):
-                                raster_data[key] = []
+                                if key in fields_needed:
+                                    raster_data[key] = []
                             index = index + 1
-                            raster_data[key].append(value)
-            elif match_field_names and match_field_names.get(raster.name):
-                field_name = match_field_names.get(raster.name)
+                            if key in fields_needed:
+                                raster_data[key].append(value)
+            elif match_field_names:
+                field_name = list(match_field_names.values())[-1]
+                field_name = re.search("(?s:.*)_", field_name).group(0)[:-1]
+                #field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -827,9 +945,11 @@ class MLModel(object):
                             if index != 0:
                                 key = key + f'_{index}'
                             if not raster_data.get(key):
-                                raster_data[key] = []
+                                if key in fields_needed:
+                                    raster_data[key] = []
                             index = index + 1
-                            raster_data[key].append(value)
+                            if key in fields_needed:
+                                raster_data[key].append(value)
             else:
                 continue
 
@@ -850,11 +970,26 @@ class MLModel(object):
 
         processed_numpy = self._data._process_data(processed_df, fit=False)
 
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self,processed_df,index=explain_index,random_index=random_index,predictor=None,
+                               global_pred=False)
+
         predictions = self._predict(processed_numpy)
 
         predictions = np.array(predictions.reshape([max_raster_rows, max_raster_columns]), dtype='float64')
 
         processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
         processed_raster.save(output_folder_path)
-
+        if output_layer_name:
+            copy_raster_op = copy_raster(input_raster=output_folder_path,
+                                         output_name=output_layer_name.replace(" ", ""),
+                                         raster_type_name="Raster Dataset",
+                                         gis=gis,
+                                         tiles_only=True)
+            print('The Published Item ID is : ',copy_raster_op.id)
+            return
         return True

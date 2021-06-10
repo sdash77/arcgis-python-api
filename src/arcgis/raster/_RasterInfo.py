@@ -1,5 +1,6 @@
 import json
 
+
 class RasterInfo(object):
     """
     Class allows to create RasterInfo object that describes a set of raster properties to
@@ -30,6 +31,7 @@ class RasterInfo(object):
     example: As value to the raster_info parameter for arcgis.raster.functions.constant_raster() and arcgis.raster.functions.random_raster()
 
     """
+
     def __init__(self, raster_info_dict=None):
         self._band_count = None
         self._extent = None
@@ -40,15 +42,14 @@ class RasterInfo(object):
         self._block_width = None
         self._spatial_reference = None
         self._no_data_values = None
-        self._dict=raster_info_dict
-
+        self._dict = raster_info_dict
 
     def __repr__(self):
         """returns object as string"""
         return json.dumps(self.to_dict())
 
     __str__ = __repr__
-    
+
     @property
     def band_count(self):
         """
@@ -85,7 +86,7 @@ class RasterInfo(object):
     @property
     def pixel_size_x(self):
         """
-        Information about the pixel size of a raster in x direction 
+        Information about the pixel size of a raster in x direction
         """
         return self._pixel_size_x
 
@@ -96,14 +97,13 @@ class RasterInfo(object):
     @property
     def pixel_size_y(self):
         """
-        Information about the pixel size of a raster in y direction 
+        Information about the pixel size of a raster in y direction
         """
         return self._pixel_size_y
 
     @pixel_size_y.setter
     def pixel_size_y(self, value):
         self._pixel_size_y = value
-
 
     @property
     def block_height(self):
@@ -149,35 +149,33 @@ class RasterInfo(object):
     def spatial_reference(self, value):
         self._spatial_reference = value
 
-
-
     def to_dict(self):
         """
         To return Raster Info in dictionary format
         """
-        #rinfo_dict = self.__dict__
+        # rinfo_dict = self.__dict__
         new_rinfo_dict = {}
         if self._dict is None:
             if self.band_count is not None:
-                new_rinfo_dict.update({"bandCount":self.band_count})
+                new_rinfo_dict.update({"bandCount": self.band_count})
             if self.extent is not None:
-                new_rinfo_dict.update({"extent":self.extent})
+                new_rinfo_dict.update({"extent": self.extent})
             if self.pixel_size_x is not None:
-                new_rinfo_dict.update({"pixelSizeX":self.pixel_size_x})
+                new_rinfo_dict.update({"pixelSizeX": self.pixel_size_x})
             if self.pixel_size_y is not None:
-                new_rinfo_dict.update({"pixelSizeY":self.pixel_size_y})
+                new_rinfo_dict.update({"pixelSizeY": self.pixel_size_y})
             if self.pixel_type is not None:
-                new_rinfo_dict.update({"pixelType":self.pixel_type})
+                new_rinfo_dict.update({"pixelType": self.pixel_type})
             if self.block_height is not None:
-                new_rinfo_dict.update({"blockHeight":self.block_height})
+                new_rinfo_dict.update({"blockHeight": self.block_height})
             if self.block_width is not None:
-                new_rinfo_dict.update({"blockWidth":self.block_width})
+                new_rinfo_dict.update({"blockWidth": self.block_width})
             if self.spatial_reference is not None:
-                new_rinfo_dict.update({"spatialReference":self.spatial_reference})
+                new_rinfo_dict.update({"spatialReference": self.spatial_reference})
             if self.no_data_values is not None:
-                new_rinfo_dict.update({"noDataValues":self.no_data_values})
+                new_rinfo_dict.update({"noDataValues": self.no_data_values})
         else:
-            new_rinfo_dict=self._dict
+            new_rinfo_dict = self._dict
         return new_rinfo_dict
 
     def from_dict(self, raster_info_dict):
@@ -186,7 +184,7 @@ class RasterInfo(object):
 
         .. code-block:: python
 
-            # Usage Example : 
+            # Usage Example :
             rinfo = RasterInfo()
             rinfo.from_dict({'bandCount': 3,
                              'extent': {"xmin": 4488761.95,
@@ -201,9 +199,9 @@ class RasterInfo(object):
                                            PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
                                            PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
                                            PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-                                         }}, 
-                             'pixelSizeX': 0.0999999999999614, 
-                             'pixelSizeY': 0.1, 
+                                         }},
+                             'pixelSizeX': 0.0999999999999614,
+                             'pixelSizeY': 0.1,
                              'pixelType': 'U8'})
         """
         if raster_info_dict is not None and isinstance(raster_info_dict, dict):

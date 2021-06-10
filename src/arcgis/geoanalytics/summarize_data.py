@@ -18,26 +18,30 @@ from arcgis.features import Table as _Table
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import DataFile
-from ._util import (_id_generator,
-                    _feature_input,
-                    _set_context,
-                    _create_output_service,
-                    GAJob,
-                    _prevent_bds_item)
+from ._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
-#--------------------------------------------------------------------------
-def summarize_center_and_dispersion(input_layer,
-                                    summary_type,
-                                    ellipse_size=None,
-                                    weight_field=None,
-                                    group_fields=None,
-                                    output_name=None,
-                                    gis=None,
-                                    context=None,
-                                    future=False):
+# --------------------------------------------------------------------------
+def summarize_center_and_dispersion(
+    input_layer,
+    summary_type,
+    ellipse_size=None,
+    weight_field=None,
+    group_fields=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     The `summarize_center_and_dispersion` task finds central features and directional
     distributions. It can be used to answer questions such as the following:
@@ -98,34 +102,46 @@ def summarize_center_and_dispersion(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
 
     params = {
-        "input_layer" : input_layer,
-        "summary_type" : summary_type,
-        "ellipse_size" : ellipse_size,
-        "weight_field" : weight_field,
-        "group_fields" : group_fields,
-        "output_name" : group_fields,
-        "gis" : gis,
-        "context" : context,
-        "future" : future
+        "input_layer": input_layer,
+        "summary_type": summary_type,
+        "ellipse_size": ellipse_size,
+        "weight_field": weight_field,
+        "group_fields": group_fields,
+        "output_name": group_fields,
+        "gis": gis,
+        "context": context,
+        "future": future,
     }
 
     if output_name is None:
-        output_service_name = 'Sum_Cntr_and_Disp_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Sum_Cntr_and_Disp_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Center And Dispersion', output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Summarize Center And Dispersion",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_service_name
+        params["output_name"] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -133,11 +149,10 @@ def summarize_center_and_dispersion(input_layer,
     else:
         _set_context(params)
 
-
     try:
         tbx = _import_toolbox(url_or_item=url, gis=gis)
         params = inspect_function_inputs(tbx.summarize_center_and_dispersion, **params)
-        params['future'] = True
+        params["future"] = True
         gpjob = tbx.summarize_center_and_dispersion(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
@@ -146,16 +161,20 @@ def summarize_center_and_dispersion(input_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def build_multivariable_grid(input_layers,
-                             variable_calculations,
-                             bin_size,
-                             bin_unit="Meters",
-                             bin_type="Square",
-                             output_name=None,
-                             gis=None,
-                             future=False,
-                             context=None):
+
+
+# --------------------------------------------------------------------------
+def build_multivariable_grid(
+    input_layers,
+    variable_calculations,
+    bin_size,
+    bin_unit="Meters",
+    bin_type="Square",
+    output_name=None,
+    gis=None,
+    future=False,
+    context=None,
+):
     """
 
     .. image:: _static/images/Grid/Grid.png
@@ -352,46 +371,56 @@ def build_multivariable_grid(input_layers,
         else:
             flayers.append(il)
 
-
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "bin_type" : bin_type,
-        "bin_size" : bin_size,
-        "bin_size_unit" : bin_unit,
-        "input_layers" : flayers,
-        "variable_calculations" : variable_calculations,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "bin_type": bin_type,
+        "bin_size": bin_size,
+        "bin_size_unit": bin_unit,
+        "input_layers": flayers,
+        "variable_calculations": variable_calculations,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
-        if key == 'variable_calculations':
+        if key == "variable_calculations":
             params[key] = _json.dumps(value)
         elif value is None:
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Build Multi Variable Grid_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Build Multi Variable Grid_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Build Multi Variable Grid ",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_service_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_service_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
@@ -400,7 +429,7 @@ def build_multivariable_grid(input_layers,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.build_multi_variable_grid, **params)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.build_multi_variable_grid(**params)
@@ -411,22 +440,26 @@ def build_multivariable_grid(input_layers,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def aggregate_points(point_layer,
-                     bin_type=None,
-                     bin_size=None,
-                     bin_size_unit=None,
-                     polygon_layer=None,
-                     time_step_interval=None,
-                     time_step_interval_unit=None,
-                     time_step_repeat_interval=None,
-                     time_step_repeat_interval_unit=None,
-                     time_step_reference=None,
-                     summary_fields=None,
-                     output_name=None,
-                     gis=None,
-                     future=False,
-                     context=None):
+
+
+# --------------------------------------------------------------------------
+def aggregate_points(
+    point_layer,
+    bin_type=None,
+    bin_size=None,
+    bin_size_unit=None,
+    polygon_layer=None,
+    time_step_interval=None,
+    time_step_interval_unit=None,
+    time_step_repeat_interval=None,
+    time_step_repeat_interval_unit=None,
+    time_step_reference=None,
+    summary_fields=None,
+    output_name=None,
+    gis=None,
+    future=False,
+    context=None,
+):
     """
     .. image:: _static/images/aggregate_points/aggregate_points.png
 
@@ -576,21 +609,21 @@ def aggregate_points(point_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "point_layer" : point_layer,
-        "bin_type" : bin_type,
-        "bin_size" : bin_size,
-        "bin_size_unit" : bin_size_unit,
-        "polygon_layer" : polygon_layer,
-        "time_step_interval" : time_step_interval,
-        "time_step_interval_unit" : time_step_interval_unit,
-        "time_step_repeat_interval" : time_step_repeat_interval,
-        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
-        "time_step_reference" : time_step_reference,
-        "summary_fields" : summary_fields,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "point_layer": point_layer,
+        "bin_type": bin_type,
+        "bin_size": bin_size,
+        "bin_size_unit": bin_size_unit,
+        "polygon_layer": polygon_layer or "",
+        "time_step_interval": time_step_interval,
+        "time_step_interval_unit": time_step_interval_unit,
+        "time_step_repeat_interval": time_step_repeat_interval,
+        "time_step_repeat_interval_unit": time_step_repeat_interval_unit,
+        "time_step_reference": time_step_reference,
+        "summary_fields": summary_fields,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -600,28 +633,38 @@ def aggregate_points(point_layer,
     if context is not None:
         params["context"] = context
     if output_name is None:
-        output_service_name = 'Aggregate Points Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Aggregate Points_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Aggregate Points",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-
 
     if context is not None:
         params["context"] = context
@@ -629,7 +672,7 @@ def aggregate_points(point_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.aggregate_points, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.aggregate_points(**params)
         if future:
@@ -639,15 +682,19 @@ def aggregate_points(point_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def describe_dataset(input_layer,
-                     extent_output=False,
-                     sample_size=None,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False,
-                     return_tuple=False):
+
+
+# --------------------------------------------------------------------------
+def describe_dataset(
+    input_layer,
+    extent_output=False,
+    sample_size=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    return_tuple=False,
+):
     """
     .. image:: _static/images/describe_dataset/describe_dataset.png
 
@@ -730,13 +777,13 @@ def describe_dataset(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "input_layer" : input_layer,
-        "sample_size" : sample_size,
-        "extent_output" : extent_output,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "input_layer": input_layer,
+        "sample_size": sample_size,
+        "extent_output": extent_output,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -744,23 +791,34 @@ def describe_dataset(input_layer,
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Describe_Dataset_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Describe_Dataset_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Describe Dataset',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Describe Dataset",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -768,10 +826,8 @@ def describe_dataset(input_layer,
     else:
         _set_context(params)
 
-
     params = inspect_function_inputs(tbx.describe_dataset, **params)
-    params['future'] = True
-
+    params["future"] = True
 
     try:
         gpjob = tbx.describe_dataset(**params)
@@ -785,24 +841,29 @@ def describe_dataset(input_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def join_features(target_layer,
-                  join_layer,
-                  join_operation="JoinOneToOne",
-                  join_fields=None,
-                  summary_fields=None,
-                  spatial_relationship="Equals",
-                  spatial_near_distance=None,
-                  spatial_near_distance_unit=None,
-                  temporal_relationship=None,
-                  temporal_near_distance=None,
-                  temporal_near_distance_unit=None,
-                  attribute_relationship=None,
-                  join_condition=None,
-                  output_name=None,
-                  gis=None,
-                  context=None,
-                  future=False):
+
+
+# --------------------------------------------------------------------------
+def join_features(
+    target_layer,
+    join_layer,
+    join_operation="JoinOneToOne",
+    join_fields=None,
+    summary_fields=None,
+    spatial_relationship=None,
+    spatial_near_distance=None,
+    spatial_near_distance_unit=None,
+    temporal_relationship=None,
+    temporal_near_distance=None,
+    temporal_near_distance_unit=None,
+    attribute_relationship=None,
+    join_condition=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    keep_target=None,
+):
     """
     .. image:: _static/images/join_features_geo/join_features_geo.png
 
@@ -951,6 +1012,13 @@ def join_features(target_layer,
                                                                                                                 results. The GPJob can be queried on the status of the execution.
 
                                                                                                                 The default value is 'False'.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output
+                                                                                                                feature class (known as a left outer join) or only those that have the specified
+                                                                                                                relationships with the join features (inner join). This option is only available when the
+                                                                                                                `join_operation` parameter is `JoinOneToOne`. False (inner join) is the default.
+
+                                                                                                                This parameter is available at ArcGIS Enterprise **10.9+**.
     ==========================================================================================================  =============================================================================================
 
     :Returns: Output Features as Feature Layer Collection Item
@@ -977,23 +1045,24 @@ def join_features(target_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "target_layer" : target_layer,
-        "join_layer" : join_layer,
-        "join_operation" : join_operation,
-        "join_fields" : join_fields,
-        "summary_fields" : summary_fields,
-        "spatial_relationship" : spatial_relationship,
-        "spatial_near_distance" : spatial_near_distance,
-        "spatial_near_distance_unit" : spatial_near_distance_unit,
-        "temporal_relationship" : temporal_relationship,
-        "temporal_near_distance" : temporal_near_distance,
-        "temporal_near_distance_unit" : temporal_near_distance_unit,
-        "attribute_relationship" : attribute_relationship,
-        "join_condition" : join_condition,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "target_layer": target_layer,
+        "join_layer": join_layer,
+        "join_operation": join_operation,
+        "join_fields": join_fields,
+        "summary_fields": summary_fields,
+        "spatial_relationship": spatial_relationship,
+        "spatial_near_distance": spatial_near_distance,
+        "spatial_near_distance_unit": spatial_near_distance_unit,
+        "temporal_relationship": temporal_relationship,
+        "temporal_near_distance": temporal_near_distance,
+        "temporal_near_distance_unit": temporal_near_distance_unit,
+        "attribute_relationship": attribute_relationship,
+        "join_condition": join_condition,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
+        "keep_all_target_features": keep_target,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -1001,23 +1070,34 @@ def join_features(target_layer,
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Join Features Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Join_Features_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Join Features",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -1026,7 +1106,7 @@ def join_features(target_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.join_features, **params)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.join_features(**params)
@@ -1037,23 +1117,29 @@ def join_features(target_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def reconstruct_tracks(input_layer,
-                       track_fields,
-                       method="Planar",
-                       buffer_field=None,
-                       summary_fields=None,
-                       distance_split=None,
-                       distance_split_unit=None,
-                       time_boundary_split=None,
-                       time_boundary_split_unit=None,
-                       time_boundary_reference=None,
-                       output_name=None,
-                       gis=None,
-                       time_split=None,
-                       time_split_unit=None,
-                       context=None,
-                       future=False):
+
+
+# --------------------------------------------------------------------------
+def reconstruct_tracks(
+    input_layer,
+    track_fields,
+    method="Planar",
+    buffer_field=None,
+    summary_fields=None,
+    distance_split=None,
+    distance_split_unit=None,
+    time_boundary_split=None,
+    time_boundary_split_unit=None,
+    time_boundary_reference=None,
+    output_name=None,
+    gis=None,
+    time_split=None,
+    time_split_unit=None,
+    context=None,
+    future=False,
+    arcade_split=None,
+    split_boundary=None,
+):
     """
     .. image:: _static/images/reconstruct_tracks/reconstruct_tracks.png
 
@@ -1178,6 +1264,24 @@ def reconstruct_tracks(input_layer,
     future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                                                                             The default value is 'False'.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    arcade_split                                                                            Optional String.  An expression that splits tracks based on values,
+                                                                                            geometry, or time values. Expressions that validate to true will be
+                                                                                            split. This parameter is only available with ArcGIS Enterprise 10.9
+                                                                                            and later.  The default is `None`.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    split_boundary                                                                          Optional String.
+
+                                                                                            Specifies how the track segment between two features is created
+                                                                                            when a track is split. The split type is applied to split
+                                                                                            expressions, distance splits, and time splits. This parameter
+                                                                                            is only available with ArcGIS Enterprise 10.9 and later.
+
+                                                                                            - `Gap` - No segment is created between the two features. This is the default when `None` is specified.
+                                                                                            - `FinishLast` - A segment is created between the two features that ends after the split.
+                                                                                            - `StartNext` - A segment is created between the two features that ends before the split.
+
+                                                                                            The default is `None`.
     ======================================================================================  ===============================================================
 
     :returns: feature layer collection item
@@ -1203,46 +1307,59 @@ def reconstruct_tracks(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "input_layer" : input_layer,
-        "track_fields" : track_fields,
-        "method" : method,
-        "buffer_field" : buffer_field,
-        "summary_fields" : summary_fields,
-        "time_split" : time_split,
-        "time_split_unit" : time_split_unit,
-        "distance_split" : distance_split,
-        "distance_split_unit" : distance_split_unit,
-        "time_boundary_split" : time_boundary_split,
-        "time_boundary_split_unit" : time_boundary_split_unit,
-        "time_boundary_reference" : time_boundary_reference,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "input_layer": input_layer,
+        "track_fields": track_fields,
+        "method": method,
+        "buffer_field": buffer_field,
+        "summary_fields": summary_fields,
+        "time_split": time_split,
+        "time_split_unit": time_split_unit,
+        "distance_split": distance_split,
+        "distance_split_unit": distance_split_unit,
+        "time_boundary_split": time_boundary_split,
+        "time_boundary_split_unit": time_boundary_split_unit,
+        "time_boundary_reference": time_boundary_reference,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
+        "arcade_split": arcade_split,
+        "split_boundary_option": split_boundary,
     }
     for key in list(params.keys()):
-        value= params[key]
+        value = params[key]
         if value is None:
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Reconstructed Tracks_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Reconstruct_Tracks_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Reconstruct Tracks",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -1252,10 +1369,10 @@ def reconstruct_tracks(input_layer,
 
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-        params['summary_fields'] = summary_fields
+        params["summary_fields"] = summary_fields
 
     params = inspect_function_inputs(tbx.reconstruct_tracks, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.reconstruct_tracks(**params)
         if future:
@@ -1265,19 +1382,23 @@ def reconstruct_tracks(input_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def summarize_attributes(input_layer,
-                         fields=None,
-                         summary_fields=None,
-                         output_name=None,
-                         gis=None,
-                         context=None,
-                         future=False,
-                         time_step_interval=None,
-                         time_step_interval_unit=None,
-                         time_step_repeat_interval=None,
-                         time_step_repeat_interval_unit=None,
-                         time_step_reference=None):
+
+
+# --------------------------------------------------------------------------
+def summarize_attributes(
+    input_layer,
+    fields=None,
+    summary_fields=None,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+    time_step_interval=None,
+    time_step_interval_unit=None,
+    time_step_repeat_interval=None,
+    time_step_repeat_interval_unit=None,
+    time_step_reference=None,
+):
     """
     .. image:: _static/images/summarize_attributes/summarize_attributes.png
 
@@ -1373,18 +1494,18 @@ def summarize_attributes(input_layer,
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
     params = {
-        "input_layer" : input_layer,
-        "fields" : fields,
-        "summary_fields" : summary_fields,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future,
-        "time_step_interval" : time_step_interval,
-        "time_step_interval_unit" : time_step_interval_unit,
-        "time_step_repeat_interval" : time_step_repeat_interval,
-        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
-        "time_step_reference" : time_step_reference
+        "input_layer": input_layer,
+        "fields": fields,
+        "summary_fields": summary_fields,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
+        "time_step_interval": time_step_interval,
+        "time_step_interval_unit": time_step_interval_unit,
+        "time_step_repeat_interval": time_step_repeat_interval,
+        "time_step_repeat_interval_unit": time_step_repeat_interval_unit,
+        "time_step_reference": time_step_reference,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -1392,23 +1513,34 @@ def summarize_attributes(input_layer,
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Summarize Attributes_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Summarize Attributes_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Summarize Attributes",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
@@ -1418,11 +1550,10 @@ def summarize_attributes(input_layer,
 
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-        params['summary_fields'] = summary_fields
-
+        params["summary_fields"] = summary_fields
 
     params = inspect_function_inputs(tbx.summarize_attributes, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.summarize_attributes(**params)
         if future:
@@ -1432,23 +1563,27 @@ def summarize_attributes(input_layer,
     except:
         output_service.delete()
         raise
-#--------------------------------------------------------------------------
-def summarize_within(summarized_layer,
-                     summary_polygons=None,
-                     bin_type=None,
-                     bin_size=None,
-                     bin_size_unit=None,
-                     standard_summary_fields=None,
-                     weighted_summary_fields=None,
-                     sum_shape=True,
-                     shape_units=None,
-                     group_by_field=None,
-                     minority_majority=False,
-                     percent_shape=False,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False):
+
+
+# --------------------------------------------------------------------------
+def summarize_within(
+    summarized_layer,
+    summary_polygons=None,
+    bin_type=None,
+    bin_size=None,
+    bin_size_unit=None,
+    standard_summary_fields=None,
+    weighted_summary_fields=None,
+    sum_shape=True,
+    shape_units=None,
+    group_by_field=None,
+    minority_majority=False,
+    percent_shape=False,
+    output_name=None,
+    gis=None,
+    context=None,
+    future=False,
+):
     """
     .. image:: _static/images/summarize_within_geo/summarize_within_geo.png
 
@@ -1614,22 +1749,22 @@ def summarize_within(summarized_layer,
     tbx = _import_toolbox(url, gis=gis)
 
     params = {
-        "summary_polygons" : summary_polygons  or "",
-        "bin_type" : bin_type,
-        "bin_size" : bin_size,
-        "bin_size_unit" : bin_size_unit,
-        "summarized_layer" : summarized_layer,
-        "standard_summary_fields" : standard_summary_fields,
-        "weighted_summary_fields" : weighted_summary_fields,
-        "sum_shape" : sum_shape,
-        "shape_units" : shape_units,
-        "group_by_field" : group_by_field,
-        "minority_majority" : minority_majority,
-        "percent_shape" : percent_shape,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : future
+        "summary_polygons": summary_polygons or "",
+        "bin_type": bin_type,
+        "bin_size": bin_size,
+        "bin_size_unit": bin_size_unit,
+        "summarized_layer": summarized_layer,
+        "standard_summary_fields": standard_summary_fields,
+        "weighted_summary_fields": weighted_summary_fields,
+        "sum_shape": sum_shape,
+        "shape_units": shape_units,
+        "group_by_field": group_by_field,
+        "minority_majority": minority_majority,
+        "percent_shape": percent_shape,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": future,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -1637,23 +1772,34 @@ def summarize_within(summarized_layer,
             del params[key]
 
     if output_name is None:
-        output_service_name = 'Summarize Within_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Summarize Within_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Summarize Within",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     if context is not None:
         params["context"] = context
@@ -1661,7 +1807,7 @@ def summarize_within(summarized_layer,
         _set_context(params)
 
     params = inspect_function_inputs(tbx.summarize_within, **params)
-    params['future'] = True
+    params["future"] = True
     try:
         gpjob = tbx.summarize_within(**params)
         if future:
@@ -1671,4 +1817,3 @@ def summarize_within(summarized_layer,
     except:
         output_service.delete()
         raise
-

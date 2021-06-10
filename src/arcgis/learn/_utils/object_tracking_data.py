@@ -30,6 +30,7 @@ BBox = Corner
 Center = namedtuple('Center', 'x y w h')
 image_name_len = 0
 
+sep = os.sep
 
 def corner2center(corner):
     """
@@ -932,14 +933,14 @@ def crop_video(video, v, crop_path, data_path, instanc_size):
             bbox[3] += bbox[1]
             x = crop_like_SiamFCx(im, bbox, instanc_size=instanc_size, padding=avg_chans)
             cv2.imwrite(
-                join(video_crop_base_path, '{:06d}.{:02d}.x.jpg'.format(int(file_name.split('\\')[-1]), trackid)),
+                join(video_crop_base_path, '{:06d}.{:02d}.x.jpg'.format(int(file_name.split(sep)[-1]), trackid)),
                 x)
             mask = crop_like_SiamFCx((label == int(o)).astype(np.float32), bbox, instanc_size=instanc_size,
                                      padding=0)
             mask = ((mask > 0.2) * 255).astype(np.uint8)
             x[:, :, 0] = mask + (mask == 0) * x[:, :, 0]
             cv2.imwrite(
-                join(video_crop_base_path, '{:06d}.{:02d}.m.png'.format(int(file_name.split('\\')[-1]), trackid)),
+                join(video_crop_base_path, '{:06d}.{:02d}.m.png'.format(int(file_name.split(sep)[-1]), trackid)),
                 mask)
 
 
@@ -976,7 +977,7 @@ def train_val_split(dataset):
             trackid = "{:02d}".format(i)
             for frame in obj:
                 file_name = frame['file_name']
-                frame_name = '{:06d}'.format(int(file_name.split('\\')[-1]))
+                frame_name = '{:06d}'.format(int(file_name.split(sep)[-1]))
                 bbox = frame['bbox']
                 bbox[2] += bbox[0]
                 bbox[3] += bbox[1]

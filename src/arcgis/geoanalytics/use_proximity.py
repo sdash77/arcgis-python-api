@@ -9,7 +9,14 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
+from ._util import (
+    _id_generator,
+    _feature_input,
+    _set_context,
+    _create_output_service,
+    GAJob,
+    _prevent_bds_item,
+)
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox
 
@@ -17,22 +24,25 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def trace_proximity_events(input_points,
-                           spatial_search_distance,
-                           spatial_search_distance_unit,
-                           temporal_search_distance,
-                           temporal_search_distance_unit,
-                           entity_id_field=None,
-                           entities_of_interest_ids=None,
-                           entities_of_interest_layer=None,
-                           distance_method="Planar",
-                           include_tracks_layer=False,
-                           max_trace_depth=None,
-                           attribute_match_criteria=None,
-                           output_name=None,
-                           context=None,
-                           gis=None,
-                           future=False):
+
+def trace_proximity_events(
+    input_points,
+    spatial_search_distance,
+    spatial_search_distance_unit,
+    temporal_search_distance,
+    temporal_search_distance_unit,
+    entity_id_field=None,
+    entities_of_interest_ids=None,
+    entities_of_interest_layer=None,
+    distance_method="Planar",
+    include_tracks_layer=False,
+    max_trace_depth=None,
+    attribute_match_criteria=None,
+    output_name=None,
+    context=None,
+    gis=None,
+    future=False,
+):
     """
     The Trace Proximity Events task analyzes time-enabled point features representing moving entities.
     The task will follow entities of interest in space (location) and time to see which other entities
@@ -103,74 +113,93 @@ def trace_proximity_events(input_points,
     """
     input_points = _prevent_bds_item(input_points)
 
-    if isinstance(input_points, FeatureCollection) and \
-       'layers' in input_points.properties and \
-       len(input_points.properties.layers) > 0:
+    if (
+        isinstance(input_points, FeatureCollection)
+        and "layers" in input_points.properties
+        and len(input_points.properties.layers) > 0
+    ):
         input_points = _FeatureSet.from_dict(
-            featureset_dict=input_points._lazy_properties.layers[0].featureSet)
-    if isinstance(entities_of_interest_layer, FeatureCollection ) and \
-       'layers' in entities_of_interest_layer.properties and \
-       len(entities_of_interest_layer.layers) > 0:
+            featureset_dict=input_points._lazy_properties.layers[0].featureSet
+        )
+    if (
+        isinstance(entities_of_interest_layer, FeatureCollection)
+        and "layers" in entities_of_interest_layer.properties
+        and len(entities_of_interest_layer.layers) > 0
+    ):
         entities_of_interest_layer = _FeatureSet.from_dict(
-            featureset_dict=entities_of_interest_layer._lazy_properties.layers[0].featureSet)
+            featureset_dict=entities_of_interest_layer._lazy_properties.layers[
+                0
+            ].featureSet
+        )
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
     tbx = import_toolbox(url_or_item=url, gis=gis)
 
     if output_name is None:
-        output_service_name = 'TraceProximityEvents_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Trace Proximity Events_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Trace Proximity Events',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Trace Proximity Events",
+        output_datastore=output_datastore,
+    )
 
     params = {
-        "input_points" : input_points,
-        "entity_id_field" : entity_id_field,
-        "entities_of_interest_ids" : entities_of_interest_ids,
-        "entities_of_interest_layer" : entities_of_interest_layer or "",
-        'distance_method' : distance_method or "Planar",
-        "spatial_search_distance" : spatial_search_distance,
-        "spatial_search_distance_unit" : spatial_search_distance_unit,
+        "input_points": input_points,
+        "entity_id_field": entity_id_field,
+        "entities_of_interest_ids": entities_of_interest_ids,
+        "entities_of_interest_layer": entities_of_interest_layer or "",
+        "distance_method": distance_method or "Planar",
+        "spatial_search_distance": spatial_search_distance,
+        "spatial_search_distance_unit": spatial_search_distance_unit,
         "temporal_search_distance": temporal_search_distance,
-        "temporal_search_distance_unit" : temporal_search_distance_unit,
-        "include_tracks_layer" :include_tracks_layer,
-        "max_trace_depth" : max_trace_depth,
-        "attribute_match_criteria" :attribute_match_criteria,
-        "output_name" : output_name,
-        "context":context,
-        "gis" : gis,
+        "temporal_search_distance_unit": temporal_search_distance_unit,
+        "include_tracks_layer": include_tracks_layer,
+        "max_trace_depth": max_trace_depth,
+        "attribute_match_criteria": attribute_match_criteria,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
         "future": True,
     }
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
     else:
-        _set_context(params )
+        _set_context(params)
 
     kwargs = {}
     for key, value in params.items():
-        if key != 'field':
+        if key != "field":
             if value is not None:
                 kwargs[key] = value
-        elif key == 'field' and value:
+        elif key == "field" and value:
             kwargs[key] = value
     params = inspect_function_inputs(tbx.trace_proximity_events, **kwargs)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.trace_proximity_events(**params)
@@ -182,22 +211,24 @@ def trace_proximity_events(input_points,
         output_service.delete()
         raise
 
-
     return
 
-def create_buffers(input_layer,
-                   distance=1,
-                   distance_unit="Miles",
-                   field=None,
-                   method="Planar",
-                   dissolve_option="None",
-                   dissolve_fields=None,
-                   summary_fields=None,
-                   multipart=False,
-                   output_name=None,
-                   context=None,
-                   gis=None,
-                   future=False):
+
+def create_buffers(
+    input_layer,
+    distance=1,
+    distance_unit="Miles",
+    field=None,
+    method="Planar",
+    dissolve_option="None",
+    dissolve_fields=None,
+    summary_fields=None,
+    multipart=False,
+    output_name=None,
+    context=None,
+    gis=None,
+    future=False,
+):
     """
 
     .. image:: _static/images/create_buffers_geo/create_buffers_geo.png
@@ -321,65 +352,79 @@ def create_buffers(input_layer,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
-    if isinstance(input_layer, FeatureCollection) and \
-       'layers' in input_layer.properties and \
-       len(input_layer.properties.layers) > 0:
+    if (
+        isinstance(input_layer, FeatureCollection)
+        and "layers" in input_layer.properties
+        and len(input_layer.properties.layers) > 0
+    ):
         input_layer = _FeatureSet.from_dict(
-            featureset_dict=input_layer._lazy_properties.layers[0].featureSet)
+            featureset_dict=input_layer._lazy_properties.layers[0].featureSet
+        )
     kwargs = {
-        "input_layer" : input_layer,
-        "distance" : distance,
-        "distance_unit" : distance_unit,
-        "field" : field,
-        "method" : method,
-        "dissolve_option" : dissolve_option,
-        "dissolve_fields" : dissolve_fields,
-        "summary_fields" : summary_fields,
-        "multipart" : multipart,
-        "output_name" : output_name,
-        "context" : context,
-        "gis" : gis,
-        "future" : True
+        "input_layer": input_layer,
+        "distance": distance,
+        "distance_unit": distance_unit,
+        "field": field,
+        "method": method,
+        "dissolve_option": dissolve_option,
+        "dissolve_fields": dissolve_fields,
+        "summary_fields": summary_fields,
+        "multipart": multipart,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": True,
     }
     params = {}
     for key, value in kwargs.items():
-        if key != 'field':
+        if key != "field":
             if value is not None:
                 params[key] = value
-        elif key == 'field' and value:
+        elif key == "field" and value:
             params[key] = value
     if distance is None:
-        params['distance'] = None
+        params["distance"] = None
     if distance_unit is None:
-        params['distance_unit'] = None
+        params["distance_unit"] = None
     if output_name is None:
-        output_service_name = 'Create Buffers Analysis_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_service_name = _id_generator(prefix="Create Buffers_")
+        output_name = output_service_name.replace(" ", "_")
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_service_name = output_name.replace(" ", "_")
     if context is not None:
-        output_datastore = context.get('dataStore', None)
+        output_datastore = context.get("dataStore", None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Create Buffers',
-                                            output_datastore=output_datastore)
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Create Buffers",
+        output_datastore=output_datastore,
+    )
 
     if output_service:
-        params['output_name'] = _json.dumps({
-            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}})
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
     else:
-        params['output_name'] = output_name
+        params["output_name"] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
     else:
-        _set_context(params )
+        _set_context(params)
 
     tbx = import_toolbox(url_or_item=url, gis=gis)
     params = inspect_function_inputs(tbx.create_buffers, **params)
-    params['future'] = True
+    params["future"] = True
 
     try:
         gpjob = tbx.create_buffers(**params)
@@ -390,4 +435,3 @@ def create_buffers(input_layer,
     except:
         output_service.delete()
         raise
-

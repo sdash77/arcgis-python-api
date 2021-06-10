@@ -1,78 +1,82 @@
 try:
     from traitlets import Dict
 except ImportError:
+
     class Dict:
         pass
+
 
 class observablelist(list):
     """Acts just like a `list` primitive, but calls `on_change()`
     every time the list mutates."""
+
     def __setitem__(self, *args, **kwargs):
         old = list(self)
         super().__setitem__(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
-        
+
     def __delitem__(self, *args, **kwargs):
         old = list(self)
         super().__delitem__(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
 
     def append(self, *args, **kwargs):
         old = list(self)
         super().append(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
- 
+
     def extend(self, *args, **kwargs):
         old = list(self)
         super().extend(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
 
     def insert(self, *args, **kwargs):
         old = list(self)
         super().insert(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
 
     def remove(self, *args, **kwargs):
         old = list(self)
         super().remove(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
-  
+
     def pop(self, *args, **kwargs):
         old = list(self)
         super().pop(*args, **kwargs)
         new = list(self)
-  
+
         self._on_change(old, new)
-    
+
     def clear(self, *args, **kwargs):
         old = list(self)
         super().clear(*args, **kwargs)
         new = list(self)
-        
+
         self._on_change(old, new)
 
     def _on_change(self, old, new):
         """Called everytime the list is mutated (i.e. my_list.append('foo'))
         Overwrite this function with what you want your callback to be
-        
+
         Args
         ----
         old: a copy of the list object before the mutation
         new: a copy of the list object after the mutation
         """
         pass
+
 
 class observabledict(dict):
     """Acts just like a `dict` primitive, but calls `on_change()`
@@ -104,7 +108,7 @@ class observabledict(dict):
         elif isinstance(value, list):
             value = observablelist(value)
             value._on_change = self._child_on_change
-        
+
         old = dict(self)
         super().__setitem__(key, value)
         new = dict(self)
@@ -115,14 +119,14 @@ class observabledict(dict):
         old = dict(self)
         super().__delitem__(*args, **kwargs)
         new = dict(self)
-        
+
         self._on_change(old, new)
 
     def update(self, *args, **kwargs):
         old = dict(self)
         super().update(*args, **kwargs)
         new = dict(self)
-        
+
         self._on_change(old, new)
 
     def _child_on_change(self, old_child, new_child):
@@ -135,20 +139,20 @@ class observabledict(dict):
         self._recurs_replace_child_with(old, new_child, old_child)
 
         self._on_change(old, new)
- 
+
     def _recurs_replace_child_with(self, dict_, child_a, child_b):
         if isinstance(dict_, dict):
             for key in dict_:
                 value = dict_[key]
                 if value == child_a:
-                     dict_[key] = child_b
+                    dict_[key] = child_b
                 elif isinstance(value, dict):
                     self._recurs_replace_child_with(value, child_a, child_b)
-            
+
     def _on_change(self, old, new):
         """Called everytime the dict is mutated (i.e. my_dict['foo'] = 'bar')
         Overwrite this function with what you want your callback to be
-        
+
         Args
         ----
         old: a copy of the dictionary object before the mutation
@@ -156,12 +160,14 @@ class observabledict(dict):
         """
         pass
 
+
 class ObservableDict(Dict):
     """Mimics the traitlets `Dict` class, but will fire a `change` event when
     a dictionary object is updated (new value added, etc.). Can get hooked up
     with traitlets/ipywidget `observe()` func and some other thigns"""
 
     _parent = None
+
     def get(self, obj, cls):
         self._parent = obj
         orig_out = super().get(obj, cls)
@@ -171,8 +177,12 @@ class ObservableDict(Dict):
         return new_out
 
     def _on_change(self, old, new):
-        self._parent.notify_change({'name': self.name,
-                                    'old': old,
-                                    'new': new,
-                                    'owner': self._parent,
-                                    'type': 'change'})
+        self._parent.notify_change(
+            {
+                "name": self.name,
+                "old": old,
+                "new": new,
+                "owner": self._parent,
+                "type": "change",
+            }
+        )
