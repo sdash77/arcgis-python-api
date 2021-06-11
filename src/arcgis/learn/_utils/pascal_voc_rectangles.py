@@ -219,7 +219,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
     nms_overlap = kwargs.get('nms_overlap', 0.1)
 
     if getattr(self, "_is_model_extension", False):
-        transform_kwargs,kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input_multispectral)
+        transform_kwargs,kwargs = split_kwargs_by_func(kwargs, self._model_conf.transform_input_multispectral)
 
     title_font_size = 16
     _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
@@ -247,7 +247,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         
         if self._backend == 'pytorch':
             if getattr(self, "_is_model_extension", False):
-                xb = self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
+                xb = self._model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
                 try:
                     _pred_ext = self.learn.model.eval()(xb)
                 except Exception as e:

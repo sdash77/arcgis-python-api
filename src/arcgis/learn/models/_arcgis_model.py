@@ -885,10 +885,16 @@ class ArcGISModel(object):
         _emd_template["ModelName"] = type(self).__name__.replace("_", "")
         _emd_template["backend"] = self._backend
 
-        model_params = {
-            "backbone": backbone,
-            "backend": self._backend
-        }
+        if getattr(self, "_is_mmsegdet", False):
+                model_params = {
+                "model_name": self._kwargs['model'],
+                "backend": self._backend
+            }
+        else:
+            model_params = {
+                "backbone": backbone,
+                "backend": self._backend
+            }
         if _emd_template.get("ModelParameters", None) is None:
             _emd_template["ModelParameters"] = model_params
         else:
@@ -996,12 +1002,23 @@ class ArcGISModel(object):
                 <img src="{encoded_losses_img}" alt="training and validation losses">
             """
 
-        HTML_TEMPLATE = f"""        
+        if emd_template.get('ModelParameters', {}).get('model_name', False):
+
+            HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
-                <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
+                <p><b>Model Name:</b> {emd_template.get('ModelParameters', {}).get('model_name')}</p>
                 <p><b>Learning Rate:</b> {emd_template.get('LearningRate')}</p>
                 {encoded_losses}
-        """
+            """
+
+        else:
+
+            HTML_TEMPLATE = f"""        
+                    <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
+                    <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
+                    <p><b>Learning Rate:</b> {emd_template.get('LearningRate')}</p>
+                    {encoded_losses}
+            """
 
         model_analysis = None
         if confusion_matrix_img:
@@ -1258,7 +1275,7 @@ class ArcGISModel(object):
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
-                f.write(inspect.getsource(self.model_conf_class))
+                f.write(inspect.getsource(self._model_conf_class))
 
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))

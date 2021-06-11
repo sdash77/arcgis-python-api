@@ -226,9 +226,9 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         if self._arcgis_model.learn.dl(ds_type).batch_size < n_items: n_items = self._arcgis_model.learn.dl(
             ds_type).batch_size
         self._arcgis_model.learn.model.eval()
-        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model.model_conf.transform_input)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model._model_conf.transform_input)
         try:
-            preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb, transform_kwargs))
+            preds = self._arcgis_model.learn.model(self._arcgis_model._model_conf.transform_input(xb, transform_kwargs))
         except Exception as e:
 
             if getattr(self._arcgis_model, "_is_fasterrcnn", False):
