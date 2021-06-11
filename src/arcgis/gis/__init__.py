@@ -13241,10 +13241,12 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
+        is_raster = False
         if (
             type(self).__name__ == "ImageryLayer"
             or type(self).__name__ == "_ImageServerRaster"
         ):
+            is_raster = True
             if self._fn is not None:
                 params["renderingRule"] = self._fn
             if hasattr(self, "_uri"):
@@ -13257,7 +13259,12 @@ class _GISResource(object):
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
-                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                if is_raster:
+                    dictdata = self._con.post(
+                        self.url, params, token=self._lazy_token, timeout=None
+                    )
+                else:
+                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
