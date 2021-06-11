@@ -292,7 +292,7 @@ class ChildObjectDetector:
         else:
             img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        bounding_boxes, scores, classes = detect_object(self.model_extension.model_conf,
+        bounding_boxes, scores, classes = detect_object(self.model_extension._model_conf,
                                                         self.model,
                                                         img_normed,
                                                         self.device,
@@ -500,7 +500,7 @@ class ChildImageClassifier:
         else:
             img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        semantic_predictions = classify_image(self.model_extension.model_conf,
+        semantic_predictions = classify_image(self.model_extension._model_conf,
                                               self.model,
                                               img_normed,
                                               self.device,
@@ -527,7 +527,9 @@ def classify_image(model_configuration, model, images, device, predict_bg, model
 
     if thinning == None:
         preds = model_configuration.post_process(pred_batch)
-        return torch.stack(preds)
+        if isinstance(preds, (tuple,list)):
+            return torch.stack(preds)
+        return preds
     else:
         if prob_raster:
             preds = pred_batch[0].detach()

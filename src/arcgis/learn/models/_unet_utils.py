@@ -240,9 +240,9 @@ class ArcGISSegmentationLabelList(ImageList):
         if getattr(model, "_is_model_extension", False):
 
             if thinning is None:
-                pred = model.model_conf.post_process(pred, thresh)
+                pred = model._model_conf.post_process(pred, thresh)
             else:
-                pred = model.model_conf.post_process(pred, thresh, thinning)
+                pred = model._model_conf.post_process(pred, thresh, thinning)
             return pred
 
         if is_listy(pred):
