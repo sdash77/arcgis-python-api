@@ -717,6 +717,17 @@ class Geometry(BaseGeometry):
                             creates a new object
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.sacle(x_scale = 3,
+                                   y_scale = 0.5,
+                                   inplace = False)
 
         :returns:
             A :class:`~arcgis.geometry.Geometry` object
@@ -744,10 +755,21 @@ class Geometry(BaseGeometry):
         ---------------     --------------------------------------------------------------------
         y_offset            Optional Float. Translation y offset
         ---------------     --------------------------------------------------------------------
-        inplace             Optional Boolean. If False, updates the existing Geometry,else it
+        inplace             Optional Boolean. If True, updates the existing Geometry,else it
                             creates a new Geometry object
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.translate(x_offset = 40,
+                               y_offset = 50,
+                               inplace = True)
 
         :returns:
             A :class:`~arcgis.geometry.Geometry` object
@@ -1658,6 +1680,18 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.angle_distance_to(second_geometry = geom2,
+            >>>                        method="PLANAR")
+                {54.5530, 1000.1111}
+
         :returns: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1769,6 +1803,18 @@ class Geometry(BaseGeometry):
                             + CLEMENTINI - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.contains(second_geometry = geom2,
+                              relation="CLEMENTINI")
+                True
 
         :returns:
             A boolean indicating containment (True), or no containment (False)
@@ -1943,6 +1989,18 @@ class Geometry(BaseGeometry):
                             the original curve. The smaller its value, the more segments will
                             be required to approximate the curve.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.densify(method = "GEODESIC",
+                                     distance = 1244.0,
+                                     deviation = 100.0)
 
         :returns:
             A new :class:`~arcgis.geometry.Geometry` object
@@ -2228,6 +2286,18 @@ class Geometry(BaseGeometry):
 
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.intersect(second_geometry = geom2,
+                               dimension = 4)
+                True
+
         :returns:
             A boolean indicating an intersection (True), or no intersection (False)
 
@@ -2278,6 +2348,18 @@ class Geometry(BaseGeometry):
         as_percentage       Optional Boolean. If False, the measure will be returned as a
                             distance; if True, the measure will be returned as a percentage.
         ===============     ====================================================================
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.measure_on_line(second_geometry = geom2,
+                                     as_percentage = True)
+                0.33
 
         :return:
             A float
@@ -2330,7 +2412,7 @@ class Geometry(BaseGeometry):
         in degrees and meters, using the specified measurement type.
 
         .. note::
-            The ``point_from_angle_and_distance`` requires ArcPy
+            The ``point_from_angle_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2346,8 +2428,21 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> point = geom.point_from_angle_and_distance(angle=60,
+                                                           distance = 100000,
+                                                           method = "PLANAR")
+            >>> point.type
+                "POINT"
         :returns:
-            A :class:`~arcgis.geometry.Geometry` object
+            A :class:`~arcgis.geometry.Point` object
 
 
         """
@@ -2421,6 +2516,18 @@ class Geometry(BaseGeometry):
         transformation_name      Required String. The ``geotransformation`` name.
         ====================     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.project_as(spatial_reference="GCS",
+                                        transformation_name = "transformation")
+            >>> geom2.type
+                arcgis.geometry.Geometry
         :returns:
             A :class:`~arcgis.geometry.Geometry` object
         """
@@ -2576,6 +2683,20 @@ class Geometry(BaseGeometry):
                                 (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.segment_along_line(start_measure =0,
+                                        end_measure= 1000,
+                                        use_percentage = True)
+                0.56
+
+            :return: a float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2758,9 +2879,9 @@ class Geometry(BaseGeometry):
 ###########################################################################
 class MultiPoint(Geometry):
     """
-    A ``multipoint`` contains an array of points, along with a :class:`~arcgis.geometry.SpatialReference`
-    field. A ``multipoint`` can also have boolean-valued `hasZ` and `hasM` fields.
-    These fields control the interpretation of elements of the points
+    A ``multipoint`` contains an array of :class:`~arcgis.geometry.Point`, along with a
+    :class:`~arcgis.geometry.SpatialReference` field. A ``multipoint`` can also have
+    boolean-valued `hasZ` and `hasM` fields. These fields control the interpretation of elements of the points
     array.
 
     .. note::
@@ -2850,6 +2971,14 @@ class MultiPoint(Geometry):
     def coordinates(self):
         """
         The ``coordinates`` method retrieves the coordinates of the ``MultiPoint`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = multiPoint.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
         :returns:
             An np.array containing coordinate values
@@ -2959,6 +3088,14 @@ class Point(Geometry):
         """
         The ``coordinates`` method retrieves the coordinates of the ``Point`` as a np.array
 
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = point.coordinates()
+            >>> coords
+                [x1,y1,m1,z1]
+
         :returns:
             An np.array containing coordinate values
         """
@@ -2991,7 +3128,7 @@ class Polygon(Geometry):
     The ``Polygon`` contains an array of rings or curveRings and a
     :class:`~arcgis.geometry.SpatialReference`. For ``Polygons`` with curveRings, see the sections on
     JSON curve object and ``Polygon`` with curve. Each ring is represented as
-    an array of points. The first point of each ring is always the same as
+    an array of :class:`~arcgis.geometry.Point`. The first point of each ring is always the same as
     the last point. Each point in the ring is represented as an array of
     numbers. A ``Polygon`` can also have boolean-valued hasM and hasZ fields.
 
@@ -3075,6 +3212,14 @@ class Polygon(Geometry):
         """
         The ``coordinates`` method retrieves the coordinates of the ``Polygon`` as a np.array
 
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = polygon.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...,[x1,y1,m1,z1] ]
+
         :returns:
             An np.array containing coordinate values
         """
@@ -3130,12 +3275,12 @@ class Polyline(Geometry):
     The ``Polyline`` contains an array of paths or curvePaths and a
     :class:`~arcgis.geometry.SpatialReference`. For ``Polylines`` with curvePaths, see the sections on
     JSON curve object and ``Polyline`` with curve. Each path is represented as
-    an array of points, and each point in the path is represented as an
+    an array of :class:`~arcgis.geometry.Point`, and each point in the path is represented as an
     array of numbers. A ``Polyline`` can also have boolean-valued hasM and hasZ
     fields.
 
     .. note::
-        See the description of multipoints for details on how the point arrays are interpreted.
+        See the description of :class:`~arcgis.geometry.MultiPoint` for details on how the point arrays are interpreted.
 
     An empty ``PolyLine`` is represented with an empty array for the paths
     field. Nulls and/or NaNs embedded in an otherwise defined coordinate
@@ -3201,6 +3346,14 @@ class Polyline(Geometry):
     def coordinates(self):
         """
         The ``coordinates`` method retrieves the coordinates of the ``Polyline`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = polyLine.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
         :returns:
             An np.array containing coordinate values
@@ -3309,6 +3462,14 @@ class Envelope(Geometry):
     def coordinates(self):
         """
         The ``coordinates`` method retrieves the coordinates of the ``Envelope`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = envelope.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
 
         :returns:
             An np.array containing coordinate values

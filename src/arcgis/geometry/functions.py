@@ -74,6 +74,19 @@ def areas_and_lengths(
      future            A required Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.areas_and_lengths(polygons =[polygon1, polygon2,...],
+                                       length_unit = "esriMeters",
+                                       area_unit = "esriSquareMeters",
+                                       calculation_type = "planar",
+                                       future = True)
     :returns:
         JSON as dictionary
     """
@@ -147,8 +160,8 @@ def buffer(
                       buffered.
     ----------------  -------------------------------------------------------------------------------
     unit              The units for calculating each buffer distance. If unit
-                      is not specified, the units are derived from `bufferSR`. If
-                      `bufferSR` is not specified, the units are derived from `in_sr`.
+                      is not specified, the units are derived from ``bufferSR``. If
+                      ``bufferSR`` is not specified, the units are derived from ``in_sr``.
     ----------------  -------------------------------------------------------------------------------
     out_sr            The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
                       spatial reference JSON object for the output geometries.
@@ -156,7 +169,7 @@ def buffer(
     buffer_sr         The well-known ID of the :class:`~arcgis.geometry.SpatialReference` or a
                       spatial reference JSON object for the buffer geometries.
     ----------------  -------------------------------------------------------------------------------
-    union_results     If true, all geometries buffered at a given
+    union_results     A boolean. If True, all geometries buffered at a given
                       distance are unioned into a single (gis,possibly multipart)
                       :class:`~arcgis.geometry.Polygon`, and the unioned geometry is placed in the output
                       array. The default is False.
@@ -172,6 +185,25 @@ def buffer(
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
+
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> new_poly = geom.buffer(geometries =[geom1, geom2,...],
+                                       in_sr = "wkid_in",
+                                       unit = "esriMeters",
+                                       out_sr = "wkid_out",
+                                       buffer_sr = "wkid_buffer",
+                                       union_results =True,
+                                       geodesic = True,
+                                       future = True)
+            >>> new_poly.type
+                "POLYGON"
 
     :returns:
         A :class:`~arcgis.geometry.Polygon` object
@@ -316,6 +348,23 @@ def densify(
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
+
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> new_geom = geom.densify(geometries =[geom1, geom2,...],
+                                        spatial_ref = "wkid",
+                                        max_segment_length = 100.0,
+                                        length_unit = "esriMeters",
+                                        geodesic = True,
+                                        future = True)
+            >>> new_geom.type
+                "GEOMETRY"
 
     :returns:
         A :class:`~arcgis.geometry.Geometry` object
@@ -489,7 +538,8 @@ def from_geo_coordinate_string(
     service resource. The function converts an array of well-known
     strings into xy-coordinates based on the conversion type and
     :class:`~arcgis.geometry.SpatialReference` supplied by the user. An optional conversion mode
-    parameter is available for some conversion types.
+    parameter is available for some conversion types. See :attr:`~arcgis.geometry.functions.to_geo_coordinate_strings`
+    for more information on the opposite conversion.
 
 
     ================  ===============================================================================
@@ -499,7 +549,6 @@ def from_geo_coordinate_string(
     ----------------  -------------------------------------------------------------------------------
     strings           An array of strings formatted as specified by conversion_type.
                       Syntax: [<string1>,...,<stringN>]
-                      Example: ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
     ----------------  -------------------------------------------------------------------------------
     conversion-type   The conversion type of the input strings.
 
@@ -538,6 +587,21 @@ def from_geo_coordinate_string(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> coords = from_geo_coordinate_string(spatial_ref = "wkid",
+                                            strings = ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
+                                            conversion_type = "MGRS",
+                                            conversion_mode = "mgrs_default",
+                                            future = True)
+            >>> coords
+                [[x1,y1], [x2,y2], [x3,y3]]
     :returns:
         An array of (x,y) coordinates
     """
@@ -727,7 +791,7 @@ def offset(
     future=False,
 ):
     """
-    The ``offset`` function is performed on a ``geometry`` service resource.
+    The ``offset`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     This function constructs geometries that are offset from the
     given input geometries. If the offset parameter is positive, the
     constructed offset will be on the right side of the geometry. Left
@@ -783,7 +847,27 @@ def offset(
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
 
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> new_geom = offset(geometries = [geom1,geom2,...],
+                                  offset_distance = 100,
+                                  offset_unit = "esriMeters",
+                                  offset_how = "esriGeometryOffsetRounded",
+                                  bevel_ratio = 0,
+                                  simplify_result = True
+                                  spatial_ref = "wkid",
+                                  future = True)
+            >>> new_geom.type
+                arcgis.geometry.Geometry
+
     :returns:
+        A :class:`~arcgis.geometry.Geometry` object
 
     """
     if gis is None:
@@ -852,11 +936,13 @@ def project(
         #Usage Example
 
         >>> input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
-        >>> result = project(geometries = input_geom, in_sr = 3857, out_sr = 4326)
+        >>> result = project(geometries = input_geom,
+                             in_sr = 3857,
+                             out_sr = 4326)
+            [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects in the out_sr coordinate system, for instance:
-        [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
+        A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -906,6 +992,21 @@ def relation(
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
+
+    >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> new_geom = relation(geometry1 = [geom1,geom2,...],
+                                  geometry2 = [geom21,geom22,..],
+                                  relation_param = "relationParameter",
+                                  spatial_relation = "esriGeometryRelationPointTouch"
+                                  spatial_ref = "wkid",
+                                  future = True)
+            >>> new_geom
+                [[geom1,geom22], [geom2,geom21]]
 
     :returns:
         An array of paired :class:`~arcgis.geometry.Geometry` objects
@@ -996,9 +1097,10 @@ def to_geo_coordinate_string(
     service resource. The function converts an array of
     xy-coordinates into well-known strings based on the conversion type
     and :class:`~arcgis.geometry.SpatialReference` supplied by the :class:`~arcgis.gis.User`. Optional parameters are
-    available for some conversion types.
+    available for some conversion types. See :attr:`~arcgis.geometry.functions.from_geo_coordinate_strings` for more
+    information on the opposite conversion.
 
-    .. note:;
+    .. note::
         If an optional parameter is not applicable for a particular conversion type, but a
         value is supplied for that parameter, the value will be ignored.
 
@@ -1058,6 +1160,22 @@ def to_geo_coordinate_string(
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> strings = from_geo_coordinate_string(spatial_ref = "wkid",
+                                            coordinates = [[x1,y1], [x2,y2], [x3,y3]]
+                                            conversion_type = "MGRS",
+                                            conversion_mode = "mgrs_default",
+                                            future = True)
+            >>> strings
+                ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
 
     :returns:
         An array of Strings
@@ -1124,6 +1242,22 @@ def trim_extend(
     ----------------  -------------------------------------------------------------------------------
     future            An optional Boolean. This operation determines if the job is run asynchronously or not.
     ================  ===============================================================================
+
+    .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> polylines_arr = trim_extends(polylines = [polyline1,polyline2, ...],
+                                             trim_extend_to = polyline_trimmer
+                                             extend_how = 2,
+                                             spatial_ref = "wkid",
+                                             future = True)
+            >>> polyline_arr
+                [polyline1, polyline2,...]
 
     :returns:
         An array of :class:`~arcgis.geometry.Polyline` objects
