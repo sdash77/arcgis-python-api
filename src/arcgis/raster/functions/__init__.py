@@ -7926,6 +7926,8 @@ class RFT:
                     return None
             return layer
 
+        except RuntimeError as err:
+            raise err
         except:
             _LOGGER.warning(
                 "Unable to apply the current raster function template on the imagery layer. "
