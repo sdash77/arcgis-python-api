@@ -6429,15 +6429,15 @@ class _RasterAnalysisTools(BaseAnalytics):
         items_on_server = False
         # input rasters
 
-        #parse input and convert to url if it is imagery layer
+        # parse input and convert to url if it is imagery layer
         from arcgis.raster import ImageryLayer
+
         if isinstance(input_rasters, ImageryLayer):
             input_rasters = input_rasters.url
         elif isinstance(input_rasters, list):
             for pos, raster in enumerate(input_rasters):
-               if isinstance(raster, ImageryLayer):
-                   input_rasters[pos] = raster.url
-
+                if isinstance(raster, ImageryLayer):
+                    input_rasters[pos] = raster.url
 
         if isinstance(input_rasters, str):
             if os.path.exists(input_rasters):
@@ -7718,7 +7718,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             The imagery layer item
 
         """
-        kwargs.update({"tiles_only":False})
+        kwargs.update({"tiles_only": False})
         task = "CreateImageCollection"
         gis = self._gis
         output_service = None
@@ -10072,7 +10072,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        if not isinstance(input_raster, str) and not isinstance(input_raster, list) and not raster_type_name:
+        if (
+            not isinstance(input_raster, str)
+            and not isinstance(input_raster, list)
+            and not raster_type_name
+        ):
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:

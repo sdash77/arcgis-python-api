@@ -54,7 +54,7 @@ class KbertnetesPy(object):
         """The Portal constructor. Requires URL and optionally username/password."""
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
-
+        self._timeout = kwargs.pop("timeout", 600)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -130,6 +130,7 @@ class KbertnetesPy(object):
                     client_id=client_id,
                     client_secret=client_secret,
                     token=token,
+                    timeout=self._timeout,
                 )
             else:
                 self.con = Connection(
@@ -150,6 +151,7 @@ class KbertnetesPy(object):
                     trust_env=trust_env,
                     custom_auth=custom_auth,
                     token=token,
+                    timeout=self._timeout,
                 )
         # self.get_version(True)
         self.get_properties(True)
