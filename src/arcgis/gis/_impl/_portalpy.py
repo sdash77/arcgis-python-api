@@ -174,6 +174,7 @@ class Portal(object):
                     custom_auth=custom_auth,
                     token=token,
                     trust_env=trust_env,
+                    timeout=kwargs.get("timeout", 600),
                 )
             else:
                 self.con = Connection(
@@ -194,6 +195,7 @@ class Portal(object):
                     custom_auth=custom_auth,
                     token=token,
                     trust_env=trust_env,
+                    timeout=kwargs.get("timeout", 600),
                 )
         # self.get_version(True)
         self.get_properties(True)

@@ -19,6 +19,9 @@ import sys
 if sys.platform == "win32":
     try:
         import certifi_win32
+
+        certifi_win32.generate_pem()
+        certifi_win32.wincerts.where()
     except ImportError:
         pass
 
@@ -49,6 +52,7 @@ class Connection(object):
     Universal Connection Object
     """
 
+    _timeout = None
     _refresh_token = None
     _token = None
     _token_url = None
@@ -92,9 +96,13 @@ class Connection(object):
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
         trust_env = T/F if to ignore netrc files
+
+        timeout:int=600
+
         """
         from arcgis.gis import GIS
 
+        self._timeout = kwargs.get("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
@@ -671,7 +679,7 @@ class Connection(object):
 
         :returns: data returned from the URL call.
         """
-        timeout = kwargs.pop("timeout", 600)
+        timeout = kwargs.pop("timeout", self._timeout)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -898,7 +906,7 @@ class Connection(object):
         :returns: data returned from the URL call.
 
         """
-        timeout = kwargs.pop("timeout", 600)
+        timeout = kwargs.pop("timeout", self._timeout)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:

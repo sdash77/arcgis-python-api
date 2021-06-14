@@ -582,6 +582,10 @@ class ImageryLayer(Layer):
 
         options_dict = {"imageServiceParameters": {}}
 
+        if self.tiles_only:
+            lyr_dict.update({"capabilities": "tilesOnly"})
+        else:
+            lyr_dict.update({"capabilities": "dynamic"})
         if self._fn is not None or self._mosaic_rule is not None:
             if self._fn is not None:
                 options_dict["imageServiceParameters"]["renderingRule"] = self._fn

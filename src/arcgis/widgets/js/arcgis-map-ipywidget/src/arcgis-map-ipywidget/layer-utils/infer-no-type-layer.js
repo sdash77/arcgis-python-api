@@ -42,7 +42,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/support/MosaicRule',
                                 'esri/layers/PointCloudLayer',
                                 'esri/layers/IntegratedMeshLayer',
-                                'esri/layers/BuildingSceneLayer'],
+                                'esri/layers/BuildingSceneLayer',
+                                'esri/layers/ImageryTileLayer'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -60,12 +61,19 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         MosaicRule,
                         PointCloudLayer,
                         IntegratedMeshLayer,
-                        BuildingSceneLayer]) => {
+                        BuildingSceneLayer,
+                        ImageryTileLayer]) => {
             if (noTypeLayer.type === "ImageryLayer"){
-                var typedLayer = new ImageryLayer(noTypeLayer.url);
-                typedLayer.id = noTypeLayer._hashFromPython;
-                if (('options' in noTypeLayer) && 
-                    ('imageServiceParameters' in noTypeLayer.options)){
+                if (('capabilities' in noTypeLayer) &&
+                    (noTypeLayer.capabilities == "tilesOnly")){
+                        var typedLayer = new ImageryTileLayer(noTypeLayer.url);
+                        typedLayer.id = noTypeLayer._hashFromPython;
+                    }
+                else {
+                    var typedLayer = new ImageryLayer(noTypeLayer.url);
+                    typedLayer.id = noTypeLayer._hashFromPython;
+                    if (('options' in noTypeLayer) && 
+                        ('imageServiceParameters' in noTypeLayer.options)){
                         if('renderingRule' in noTypeLayer.options.imageServiceParameters){
                             console.log("Applying rendering rule to imagery layer..");
                             var renderingRuleJSON = 
@@ -89,7 +97,10 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 encodedRaster =
                                     btoa(JSON.stringify(raster));
                             }
-                            typedLayer.raster = encodedRaster;}}
+                            typedLayer.raster = encodedRaster;
+                        }
+                    }
+                }
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "KMLLayer" || noTypeLayer.type == "KML") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
