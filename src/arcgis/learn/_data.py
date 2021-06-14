@@ -1884,6 +1884,7 @@ def prepare_data(path,
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 
+    no_information_bands = []
     if _is_multispectral:
         # Normalize multispectral imagery by calculating stats
         if dataset_type == 'RCNN_Masks':
@@ -1909,11 +1910,13 @@ def prepare_data(path,
             band_max_values = []
             band_mean_values = []
             band_std_values = []
-            for band_stats in emd['AllTilesStats']:
+            for i, band_stats in enumerate(emd['AllTilesStats']):
                 band_min_values.append(band_stats['Min'])
                 band_max_values.append(band_stats['Max'])
                 band_mean_values.append(band_stats['Mean'])
                 band_std_values.append(band_stats['StdDev'])
+                if band_stats['Max'] <= band_stats['Min']:
+                    no_information_bands.append(i)
 
             data._rgb_bands = rgb_bands
             data._symbology_rgb_bands = rgb_bands
@@ -2185,18 +2188,31 @@ def prepare_data(path,
         """
         extract_bands : List containing band indices of the bands from imagery on which the model would be trained. 
                         Useful for benchmarking and applied training, for reference see examples below.
-
+`
                         4 band naip ['r, 'g', 'b', 'nir'] + extract_bands=[0, 1, 2] -> 3 band naip with bands ['r', 'g', 'b'] 
 
         """
         data._extract_bands = kwargs.get('extract_bands', None)
-        if data._extract_bands is None:
+        if data._extract_bands is None and len(no_information_bands) == 0:
             data._extract_bands = list(range(len(data._bands)))
         else:
+            _extract_bands = [i for i in range(len(data._bands)) if not i in no_information_bands]
+            if data._extract_bands is None:
+                data._extract_bands = _extract_bands
+            else:
+                data._extract_bands = [i for i in data._extract_bands if i in _extract_bands]
+            if len(data._extract_bands) == 0:
+                raise Exception(f'The input raster does not contain any information, No Channels to extract. Value received for Extract Bands: {data._extract_bands}.')
             data._extract_bands_tfm = partial(_extract_bands_tfm, band_indices=data._extract_bands)
             data.add_tfm(data._extract_bands_tfm)
 
-            # Tail Training Override
+            # Check for RGB symbology layers if not available in extract bands
+            for i in data._symbology_rgb_bands:
+                if not i in data._extract_bands:
+                    data._symbology_rgb_bands = (data._extract_bands*3)[:3]
+                    break
+
+        # Tail Training Override
         _train_tail = True
         if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
             _train_tail = False

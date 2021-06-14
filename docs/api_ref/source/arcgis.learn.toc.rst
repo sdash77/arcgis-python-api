@@ -136,6 +136,13 @@ ChangeDetector
     :inherited-members:
     :undoc-members:
 
+MMSegmentation
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMSegmentation
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Image Translation Models
 ------------------------
 CycleGAN
