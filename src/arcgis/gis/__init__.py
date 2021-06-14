@@ -275,6 +275,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
+        self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
@@ -405,6 +406,7 @@ class GIS(object):
                 custom_auth=custom_auth,  # token=self._utoken,
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
+                timeout=self._timeout,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -423,6 +425,7 @@ class GIS(object):
                     referer=self._referer,
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
+                    timeout=self._timeout,
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -490,6 +493,7 @@ class GIS(object):
                     # token=self._utoken,
                     trust_env=kwargs.get("trust_env", None),
                     client_secret=client_secret,
+                    timeout=self._timeout,
                 )
                 self._portal = pp
         except:
@@ -5348,7 +5352,6 @@ class ContentManager(object):
                 items["results"] = items["results"][:max_items]
             return items
 
-
     def _market_listings(
         self,
         query: str,
@@ -5359,52 +5362,52 @@ class ContentManager(object):
         my_listings: bool = False,
     ) -> Dict[str, Any]:
         """
-        This operation searches for marketplace listings. The searches are 
-        performed against a high performance index that indexes the most 
-        popular fields of a listing. See the Search reference page for 
+        This operation searches for marketplace listings. The searches are
+        performed against a high performance index that indexes the most
+        popular fields of a listing. See the Search reference page for
         information on the fields and the syntax of the query.
 
-        By default, this search spans all public listings in the 
+        By default, this search spans all public listings in the
         marketplace. However, if you're logged in as a vendor org admin and
-        you specify the mylistings=true parameter, it then searches all 
+        you specify the mylistings=true parameter, it then searches all
         public and private listings in your organization.
-        
+
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String.  The search query.
         ----------------    ---------------------------------------------------------------
-        sort_field          Optional String. The field to sort by. You can also sort by 
-                            multiple fields (comma separated) for listings, sort field 
+        sort_field          Optional String. The field to sort by. You can also sort by
+                            multiple fields (comma separated) for listings, sort field
                             names are case-insensitive.
 
-                            Supported sort field names are `title`, `created`, 
-                            `listingpublisheddate`, `type`, `owner`, `avgrating`, 
+                            Supported sort field names are `title`, `created`,
+                            `listingpublisheddate`, `type`, `owner`, `avgrating`,
                             `numratings`, `numcomments`, and `numviews`.
         ----------------    ---------------------------------------------------------------
-        sort_order          Optional String. Describes whether the order returns in 
+        sort_order          Optional String. Describes whether the order returns in
                             ascending or descending order. Default is ascending.
 
                             Values: `asc` or `desc`
         ----------------    ---------------------------------------------------------------
-        num                 Optional Integer. The maximum number of results to be included 
+        num                 Optional Integer. The maximum number of results to be included
                             in the result set response.
 
                             The default value is `10`, and the maximum allowed value is `100`.
         ----------------    ---------------------------------------------------------------
-        start               Optional Integer. The number of the first entry in the result 
+        start               Optional Integer. The number of the first entry in the result
                             set response. The index number is 1-based.
         ----------------    ---------------------------------------------------------------
-        my_listings         Optional Boolean.  If `True` and you're logged in as a vendor 
-                            org admin, it searches all public and private listings in your 
-                            organization. 
-                            
+        my_listings         Optional Boolean.  If `True` and you're logged in as a vendor
+                            org admin, it searches all public and private listings in your
+                            organization.
+
                             **Note** that if `my_listings=True`, the q parameter is optional.
 
                             Values: `False (default) | True`
         ================    ===============================================================
-        
-        
+
+
         :returns: Dictionary[str, Any]
         """
         params = {
@@ -5423,7 +5426,7 @@ class ContentManager(object):
         url = f"{self._gis._portal.resturl}content/listings"
         resp = self._gis._con.get(url, params)
         return resp
-       
+
     def search(
         self,
         query,
