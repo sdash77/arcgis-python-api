@@ -126,12 +126,16 @@ class GIS(object):
                         authentication. If a PFX or P12 certificate is used, a password is required.
                         If a PEM file is used, the key_file is required.
     ----------------    ---------------------------------------------------------------
-    verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
-                        being accessed via the IP or hostname instead of the name on the
-                        certificate, set this value to False.  This will ensure that all
-                        SSL certificate issues are ignored.
-                        The default is True.
-                        **Warning** Setting the value to False can be a security risk.
+    verify_cert         Optional boolean or string. If a site has an invalid SSL 
+                        certificate or is being accessed via the IP or hostname instead 
+                        of the name on the certificate, set this value to `False`.  This 
+                        will ensure that all SSL certificate issues are ignored.  When
+                        giving a string. It must be the full path to the certificate 
+                        path.
+                        
+                        The default is `True`.
+                        
+                        **Warning** Setting the value to `False` can be a security risk.
     ----------------    ---------------------------------------------------------------
     set_active          Optional boolean. The default is True.  If True, the GIS object
                         will be used as the default GIS object throughout the whole
