@@ -2280,7 +2280,7 @@ class Geometry(BaseGeometry):
         dimension           Required Integer. The topological dimension (shape type) of the
                             resulting geometry.
 
-                            + 1  -A zero-dimensional geometry (:class:`~arcgis.geometry.point` or :class:`~arcgis.geometry.MultiPoint`).
+                            + 1  -A zero-dimensional geometry (:class:`~arcgis.geometry.Point` or :class:`~arcgis.geometry.MultiPoint`).
                             + 2  -A one-dimensional geometry (:class:`~arcgis.geometry.Polyline`).
                             + 4  -A two-dimensional geometry (:class:`~arcgis.geometry.Polygon`).
 
