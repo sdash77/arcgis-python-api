@@ -6,15 +6,7 @@ import urllib.parse
 import arcgis.gis
 import re
 import ujson as _ujson
-
-
-def _camelCase_to_underscore(name):
-    """PEP8ify name"""
-    name = name.replace(" ", "_")
-    if '_' in name:
-        return name.lower()
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+from arcgis.geoprocessing._tool import _camelCase_to_underscore
 
 
 def _underscore_to_camelcase(name):
@@ -229,7 +221,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_ids             A list of job ID strings
+        job_ids             Required list of job ID strings
         ===============     ====================================================================
 
         :return: success object
@@ -249,31 +241,31 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        template            Workflow Manager Job Template ID (required)
+        template            Required object. Workflow Manager Job Template ID
         ---------------     --------------------------------------------------------------------
-        count               Number of jobs to create
+        count               Optional Integer Number of jobs to create
         ---------------     --------------------------------------------------------------------
-        name                Job Name
+        name                Optional string. Job Name
         ---------------     --------------------------------------------------------------------
-        start               Job Start Date
+        start               Optional string. Job Start Date
         ---------------     --------------------------------------------------------------------
-        end                 Job End Date
+        end                 Optional string. Job End Date
         ---------------     --------------------------------------------------------------------
-        priority            Job Priority Level
+        priority            Optional string. Job Priority Level
         ---------------     --------------------------------------------------------------------
-        description         Job Description
+        description         Optional string. Job Description
         ---------------     --------------------------------------------------------------------
-        owner               Job Owner
+        owner               Optional string. Job Owner
         ---------------     --------------------------------------------------------------------
-        group               Job Group
+        group               Optional string Job Group
         ---------------     --------------------------------------------------------------------
-        assigned            Initial Job Assignee
+        assigned            Optional string. Initial Job Assignee
         ---------------     --------------------------------------------------------------------
-        complete            Integer Percentage Complete
+        complete            Optional Integer Percentage Complete
         ---------------     --------------------------------------------------------------------
-        notes               Job Notes (string)
+        notes               Optional string. Job Notes
         ---------------     --------------------------------------------------------------------
-        parent              Parent Job (string)
+        parent              Optional string Parent Job
         ---------------     --------------------------------------------------------------------
         location            Optional Geometry. Define an area of location for your job.
         ---------------     --------------------------------------------------------------------
@@ -326,9 +318,9 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_id              Job ID (string)
+        job_id              Required string. Job ID
         ---------------     --------------------------------------------------------------------
-        attachment_id       Attachment ID (string)
+        attachment_id       Required string. Attachment ID
         ===============     ====================================================================
 
         :return: status code
@@ -349,7 +341,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job ID (string)
+        id                  Required string. Job ID
         ===============     ====================================================================
 
         :return: Workflow Manager Job Diagram Object
@@ -367,7 +359,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job ID (string)
+        id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
         get_ext_props       Optional Boolean. If set to true will show the jobs extended properties.
         ===============     ====================================================================
@@ -392,19 +384,19 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        query               SQL query to search against (e.g. "priority='High'")
+        query               Required string. SQL query to search against (e.g. "priority='High'")
         ---------------     --------------------------------------------------------------------
-        search_str          Search string to search against (e.g. "High")
+        search_str          Optional string. Search string to search against (e.g. "High")
         ---------------     --------------------------------------------------------------------
-        fields              Field list to return
+        fields              Optional string. Field list to return
         ---------------     --------------------------------------------------------------------
-        display_names       Display names for the return fields
+        display_names       Optional string. Display names for the return fields
         ---------------     --------------------------------------------------------------------
-        sort_by             Field to sort by (e.g. {'field': 'priority', 'sortOrder': 'Asc'})
+        sort_by             Optional string. Field to sort by (e.g. {'field': 'priority', 'sortOrder': 'Asc'})
         ---------------     --------------------------------------------------------------------
-        num                 Number of return results
+        num                 Optional Integer. Number of return results
         ---------------     --------------------------------------------------------------------
-        start_num           Index of first return value
+        start_num           Optional string. Index of first return value
         ===============     ====================================================================
 
         :return: List of search results
@@ -431,9 +423,9 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_id              ID for the job to update
+        job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
-        update_object       an object containing the fields and new values to add to the job
+        update_object       Required object. An object containing the fields and new values to add to the job
         ===============     ====================================================================
 
         :return: success object
@@ -492,7 +484,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_ids             A list of job ID strings
+        job_ids             Required list. A list of job ID strings
         ===============     ====================================================================
 
         :return: success object
@@ -510,9 +502,9 @@ class JobManager:
         ===============     ====================================================================
         **Arguments**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_id              ID for the job to update
+        job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
-        geometry            The ArcGIS.Geometry.Geometry that describes a Job's Location.
+        geometry            Required ArcGIS.Geometry.Geometry that describes a Job's Location.
                             Must be a Polygon, Polyline, or Multipoint geometry type
         ===============     ====================================================================
 
@@ -554,7 +546,7 @@ class JobManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        job_ids             A list of job ID strings
+        job_ids             Required list. A list of job ID strings
         ===============     ====================================================================
 
         :return: success object
@@ -576,7 +568,7 @@ class WorkflowManager:
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    item                The Workflow Manager Item
+    item                Required string. The Workflow Manager Item
     ===============     ====================================================================
 
     .. code-block:: python
@@ -785,7 +777,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        search_type         Optional. The search type for returned saved searches.
+        search_type         Optional string. The search type for returned saved searches.
                             The accepted values are Standard, Chart and All. If not defined, the Standard searches are returned.
         ===============     ====================================================================
 
@@ -843,7 +835,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        props               a list of Props objects to update 
+        props               Reuqired list. A list of Props objects to update
                             (Prop object example: {'propName': 'string', 'value': 'string'})
         ===============     ====================================================================
 
@@ -868,7 +860,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        name                Role Name
+        name                Required string. Role Name
         ===============     ====================================================================
 
         :return: Workflow Manager Role Object
@@ -888,7 +880,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job Template ID
+        id                  Required string. Job Template ID
         ===============     ====================================================================
 
         :return: Workflow Manager Job Template Object
@@ -907,7 +899,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Job Template ID
+        id                  Required string. Job Template ID
         ===============     ====================================================================
 
         :return: status code
@@ -929,7 +921,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        username            Workflow Manager Username
+        username            Required string. Workflow Manager Username
         ===============     ====================================================================
 
         :return: Workflow Manager User Object
@@ -946,7 +938,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        group_id            Workflow Manager Group ID
+        group_id            Required string. Workflow Manager Group ID
         ===============     ====================================================================
 
         :return: Workflow Manager Group Object
@@ -970,9 +962,9 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        group_id            Workflow Manager Group ID
+        group_id            Required string. Workflow Manager Group ID
         ---------------     --------------------------------------------------------------------
-        update_object       Object containing the updated actions of the information to be taken to the portal group.
+        update_object       Required object. Object containing the updated actions of the information to be taken to the portal group.
         ===============     ====================================================================
 
         :return: boolean
@@ -997,7 +989,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Diagram ID
+        id                  Required string. Diagram ID
         ===============     ====================================================================
 
         :return: Workflow Manager Job Diagram Object
@@ -1015,11 +1007,11 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        name                Role Name (required)
+        name                Required string. Role Name (required)
         ---------------     --------------------------------------------------------------------
-        description         Role Description
+        description         Required string. Role Description
         ---------------     --------------------------------------------------------------------
-        privileges          List of privileges associated with the role
+        privileges          Required list. List of privileges associated with the role
         ===============     ====================================================================
 
         :return: Workflow Manager Role Object
@@ -1048,41 +1040,41 @@ class WorkflowManager:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        name                                     Job Template Name (required)
+        name                                     Required string. Job Template Name
         ------------------------------------     --------------------------------------------------------------------
-        priority                                 Default Job Template Priority Level (required)
+        priority                                 Required string. Default Job Template Priority Level
         ------------------------------------     --------------------------------------------------------------------
-        id                                       Job Template ID
+        id                                       Optional string. Job Template ID
         ------------------------------------     --------------------------------------------------------------------
-        category                                 Job Template Category
+        category                                 Optional string. Job Template Category
         ------------------------------------     --------------------------------------------------------------------
-        job_duration                             Default Job Template Duration
+        job_duration                             Optional string. Default Job Template Duration
         ------------------------------------     --------------------------------------------------------------------
-        assigned_to                              Job Owner
+        assigned_to                              Optional string. Job Owner
         ------------------------------------     --------------------------------------------------------------------
-        default_due_date                         Due Date for Job Template
+        default_due_date                         Optional string. Due Date for Job Template
         ------------------------------------     --------------------------------------------------------------------
-        default_start_date                       Start Date for Job Template
+        default_start_date                       Optional string. Start Date for Job Template
         ------------------------------------     --------------------------------------------------------------------
-        start_date_type                          Type of Start Date (e.g. creationDate)
+        start_date_type                          Optional string. Type of Start Date (e.g. creationDate)
         ------------------------------------     --------------------------------------------------------------------
-        diagram_id                               Job Template Diagram ID
+        diagram_id                               Optional string. Job Template Diagram ID
         ------------------------------------     --------------------------------------------------------------------
-        diagram_name                             Job Template Diagram Name
+        diagram_name                             Optional string. Job Template Diagram Name
         ------------------------------------     --------------------------------------------------------------------
-        assigned_type                            Type of Job Template Assignment
+        assigned_type                            Optional string. Type of Job Template Assignment
         ------------------------------------     --------------------------------------------------------------------
-        description                              Job Template Description
+        description                              Optional string. Job Template Description
         ------------------------------------     --------------------------------------------------------------------
-        default_description                      Default Job Template Description
+        default_description                      Optional string. Default Job Template Description
         ------------------------------------     --------------------------------------------------------------------
-        state                                    Default Job Template State
+        state                                    Optional string. Default Job Template State
         ------------------------------------     --------------------------------------------------------------------
-        last_updated_by                          User Who Last Updated Job Template
+        last_updated_by                          Optional string. User Who Last Updated Job Template
         ------------------------------------     --------------------------------------------------------------------
-        last_updated_date                        Date of Last Job Template Update
+        last_updated_date                        Optional string. Date of Last Job Template Update
         ------------------------------------     --------------------------------------------------------------------
-        extended_property_table_definitions      List of Extended Properties for Job Template
+        extended_property_table_definitions      Optional list. List of Extended Properties for Job Template
         ====================================     ====================================================================
 
         :return: Workflow Manager Job Template ID
@@ -1128,7 +1120,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        body                Job Template body - existing Job Template object that inherits required/optional
+        body                Required object. Job Template body - existing Job Template object that inherits required/optional
                             fields.
         ===============     ====================================================================
 
@@ -1153,21 +1145,21 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        name                Diagram Name (required)
+        name                Required string. Diagram Name
         ---------------     --------------------------------------------------------------------
-        steps               List of Step objects associated with the Diagram (required)
+        steps               Required list. List of Step objects associated with the Diagram
         ---------------     --------------------------------------------------------------------
-        display_grid        Boolean indicating whether the grid will be displayed in the Diagram (required)
+        display_grid        Required boolean. Boolean indicating whether the grid will be displayed in the Diagram
         ---------------     --------------------------------------------------------------------
-        description         Diagram description
+        description         Optional string. Diagram description
         ---------------     --------------------------------------------------------------------
-        active              Boolean indicating whether the Diagram is active
+        active              Optional Boolean. Indicates whether the Diagram is active
         ---------------     --------------------------------------------------------------------
-        annotations         List of Annotation objects associated with the Diagram
+        annotations         Optinal list. List of Annotation objects associated with the Diagram
         ---------------     --------------------------------------------------------------------
-        data_sources        List of Data Source objects associated with the Diagram
+        data_sources        Optional list. List of Data Source objects associated with the Diagram
         ---------------     --------------------------------------------------------------------
-        diagram_id          Optional. The unique ID of the diagram to be created.
+        diagram_id          Optional string. The unique ID of the diagram to be created.
         ===============     ====================================================================
 
         :return: Workflow Manager Diagram ID
@@ -1198,10 +1190,10 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        body                Diagram body - existing Diagram object that inherits required/optional
+        body                Required object. Diagram body - existing Diagram object that inherits required/optional
                             fields.
         ---------------     --------------------------------------------------------------------
-        delete_draft        Boolean - option to delete the Diagram draft (optional)
+        delete_draft        Optional Boolean - option to delete the Diagram draft (optional)
         ===============     ====================================================================
 
         :return: success object
@@ -1234,7 +1226,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Diagram id (required)
+        id                  Required string. Diagram id
         ===============     ====================================================================
 
         :return: Workflow Manager Diagram ID
@@ -1338,19 +1330,19 @@ class SavedSearchesManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        name                Required. The display name for the saved search or chart.
+        name                Required string. The display name for the saved search or chart.
         ---------------     --------------------------------------------------------------------
-        search_type         The type for the saved search or chart. The accepted values are Standard, Chart and All.
+        search_type         Required string. The type for the saved search or chart. The accepted values are Standard, Chart and All.
         ---------------     --------------------------------------------------------------------
-        folder              Optional. The folder the saved search or chart will be categorized under.
+        folder              Optional string. The folder the saved search or chart will be categorized under.
         ---------------     --------------------------------------------------------------------
-        definition          Required if the searchType is Standard. The search definition to be saved.
+        definition          Required string. if the searchType is Standard. The search definition to be saved.
         ---------------     --------------------------------------------------------------------
-        color_ramp          Required if the searchType is Chart. The color ramp for the saved chart.
+        color_ramp          Required string. if the searchType is Chart. The color ramp for the saved chart.
         ---------------     --------------------------------------------------------------------
-        sort_index          Optional. The sorting order for the saved search or chart.
+        sort_index          Optional string. The sorting order for the saved search or chart.
         ---------------     --------------------------------------------------------------------
-        search_id           Optional. The unique ID of the search or chart to be created.
+        search_id           Optional string. The unique ID of the search or chart to be created.
         ===============     ====================================================================
 
         :return: Saved Search ID
@@ -1386,7 +1378,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Saved Search id (required)
+        id                  Required string. Saved Search id
         ===============     ====================================================================
 
         :return: boolean
@@ -1413,7 +1405,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
         **Arguments**        **Description**
         ---------------     --------------------------------------------------------------------
-        search              An object defining the properties of the search to be updated.
+        search              Required object. An object defining the properties of the search to be updated.
         ===============     ====================================================================
 
         :return: success object
@@ -1966,7 +1958,7 @@ class JobLocation(object):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    init_data           data object representing relevant parameters for GET or POST calls
+    init_data           Required object. Represents. relevant parameters for GET or POST calls
     ===============     ====================================================================
     """
     _camelCase_to_underscore = _camelCase_to_underscore
