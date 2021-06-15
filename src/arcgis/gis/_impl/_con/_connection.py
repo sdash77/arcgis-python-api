@@ -767,14 +767,10 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
-            params.update(fields)
             # When data and files are present, they need to be combined
             # https://stackoverflow.com/a/12385661
-            if files:
-                fields = {**params, **files}
-            else:
-                fields = params
-            mp_encoder = MultipartEncoder(fields=fields)
+            params.update(fields)
+            mp_encoder = MultipartEncoder(fields=params)
             if post_json:  # edge case workflow
                 if timeout:
 
