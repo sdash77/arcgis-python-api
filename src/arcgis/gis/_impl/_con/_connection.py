@@ -782,26 +782,17 @@ class Connection(object):
             else:
                 # data=mp_encoder
                 if timeout:
-
-                    self._session.headers.update(
-                        {"Content-Type": mp_encoder.content_type}
-                    )
                     resp = self._session.post(
                         url=url,
                         data=mp_encoder,
                         cert=cert,
-                        files=files,
                         timeout=timeout,
+                        headers={"Content-Type": mp_encoder.content_type}
                     )
-                    self._session.headers.pop("Content-Type")
                 else:
-                    self._session.headers.update(
-                        {"Content-Type": mp_encoder.content_type}
-                    )
                     resp = self._session.post(
-                        url=url, data=mp_encoder, cert=cert, files=files
+                        url=url, data=mp_encoder, cert=cert, headers={"Content-Type": mp_encoder.content_type}
                     )
-                    self._session.headers.pop("Content-Type")
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
