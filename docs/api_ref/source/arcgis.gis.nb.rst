@@ -37,3 +37,10 @@ SnapshotManager
     :members:
     :undoc-members:
     :show-inheritance:
+
+SnapShot
+----------------
+.. autoclass:: arcgis.gis.nb.SnapShot
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,6 +1,6 @@
 from .notebook import NotebookServer
 from ._nbm import NotebookManager, Notebook, Runtime
-from ._snapshot import SnapshotManager
+from ._snapshot import SnapshotManager, SnapShot
 
 __all__ = [
     "NotebookServer",
@@ -8,4 +8,5 @@ __all__ = [
     "Notebook",
     "Runtime",
     "SnapshotManager",
+    "SnapShot"
 ]
