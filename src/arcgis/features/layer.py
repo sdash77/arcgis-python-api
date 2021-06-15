@@ -2954,19 +2954,33 @@ class FeatureLayer(Layer):
 
 class Table(FeatureLayer):
     """
-    Tables represent entity classes with uniform properties. In addition to working with "entities with location" as
-    features, the GIS can also work with non-spatial entities as rows in tables.
+    ``Table`` objectss represent entity classes with uniform properties. In addition to working with
+    "entities with location" as :class:`~arcgis.features.Feature` objects, the :class:`~arcgis.gis.GIS` can also work
+    with non-spatial entities as rows in tables.
 
-    Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
-    have a geometry, and tables ignore any geometry related operation.
+    .. note::
+        Working with tables is similar to working with :class:`~arcgis.features.FeatureLayer`objects, except that the
+        rows (Features) in a table do not have a geometry, and tables ignore any geometry related operation.
     """
 
     @classmethod
     def fromitem(cls, item, table_id=0):
         """
-        Creates a Table from a GIS Item.
-        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
+        The ``fromitem`` method creates a :class:`~arcgis.features.Table` from a :class:`~arcgis.gis.Item` object.
         The layer_id is the id of the layer in feature layer collection (feature service).
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
+                                            ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
+        -------------------------------     --------------------------------------------------------------------
+        layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
+                                            The default for ``layer_id`` is 0.
+        ===============================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.features.Table` object
         """
         return item.tables[table_id]
 
@@ -2995,7 +3009,7 @@ class Table(FeatureLayer):
         **kwargs,
     ):
         """
-        Queries a Table Layer based on a set of criteria.
+        The ``query`` method queries a :class:`~arcgis.features.Table` Layer based on a set of criteria.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -3117,7 +3131,9 @@ class Table(FeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A FeatureSet or Panda's DataFrame containing the features matching the query unless another return type is specified, such as count
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` object or Panda's DataFrame containing the features
+            matching the query unless another return type is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
