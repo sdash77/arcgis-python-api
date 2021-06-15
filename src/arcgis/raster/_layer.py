@@ -1098,10 +1098,10 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        from_geometry         required Geomerty or dictionary. A geometry that defines the "from"
+        from_geometry         required Geometry or dictionary. A geometry that defines the "from"
                               location of the measurement.
         -----------------     --------------------------------------------------------------------
-        to_geometry           optional Geomerty. A geometry that defines the "to" location of the
+        to_geometry           optional Geometry. A geometry that defines the "to" location of the
                               measurement. The type of geometry must be the same as from_geometry.
         -----------------     --------------------------------------------------------------------
         measure_operation     optional string or dict. Specifies the type of measure being
@@ -1202,13 +1202,21 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
         from arcgis.geometry._types import Polygon, Point, Envelope
+        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(from_geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(from_geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
-        elif isinstance(from_geometry, Envelope):
+        elif isinstance(from_geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(from_geometry, dict):
+            if "x" in from_geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "xmin" in from_geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
         if to_geometry:
             params["toGeometry"] = to_geometry
         if measure_operation is not None:
