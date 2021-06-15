@@ -44,3 +44,45 @@ SnapShot
     :members:
     :undoc-members:
     :show-inheritance:
+    
+SystemManager
+----------------
+.. autoclass:: arcgis.gis.nb.SystemManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SiteManager
+----------------
+.. autoclass:: arcgis.gis.nb.SiteManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+LogManager
+----------------
+.. autoclass:: arcgis.gis.nb.LogManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+MachineManager
+----------------
+.. autoclass:: arcgis.gis.nb.MachineManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Machine
+----------------
+.. autoclass:: arcgis.gis.nb.Machine
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SecurityManager
+----------------
+.. autoclass:: arcgis.gis.nb.SecurityManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
