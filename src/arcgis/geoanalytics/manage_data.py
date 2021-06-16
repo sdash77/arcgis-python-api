@@ -173,13 +173,15 @@ def run_python_script(
 
     if inspect.isfunction(code):
         if param_as_input == True:
-            params["code"] = (
+            params["python_script"] = (
                 inspect.getsource(code) + "\n" + code.__name__ + "(**user_variables)"
             )
         else:
-            params["code"] = inspect.getsource(code) + "\n" + code.__name__ + "()"
+            params["python_script"] = (
+                inspect.getsource(code) + "\n" + code.__name__ + "()"
+            )
     elif isinstance(code, str):
-        params["code"] = code
+        params["python_script"] = code
     else:
         raise ValueError("code must be a string or Python Function.")
 
