@@ -174,6 +174,7 @@ class Portal(object):
                     custom_auth=custom_auth,
                     token=token,
                     trust_env=trust_env,
+                    timeout=kwargs.get("timeout", 600),
                 )
             else:
                 self.con = Connection(
@@ -194,6 +195,7 @@ class Portal(object):
                     custom_auth=custom_auth,
                     token=token,
                     trust_env=trust_env,
+                    timeout=kwargs.get("timeout", 600),
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -382,7 +384,11 @@ class Portal(object):
             path += "/" + folder_id
 
         path += "/addItem"
-        resp = self.con.post(path, postdata, files)
+
+        if "text" in postdata:
+            resp = self.con.post_multipart(path, postdata, files)
+        else:
+            resp = self.con.post(path, postdata, files)
         if resp and resp.get("success"):
             return resp["id"]
 
@@ -2468,7 +2474,10 @@ class Portal(object):
         if folder:
             path += "/" + folder
         path += "/items/" + itemid + "/update"
-        resp = self.con.post(path, postdata, files)
+        if "text" in postdata:
+            resp = self.con.post_multipart(path, postdata, files)
+        else:
+            resp = self.con.post(path, postdata, files)
         if resp:
             return resp.get("success")
 

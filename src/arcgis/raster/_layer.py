@@ -415,8 +415,10 @@ class _RasterRenderingService(Layer):
                         + "/rest/services/System/RasterRendering/ImageServer"
                     )
         self.url = url
-        if url is not None:
+        if url:
             self.token = gis._con.generate_portal_server_token(serverUrl=url)
+        else:
+            self.token = None
 
 
 class ImageryLayer(Layer):
@@ -483,6 +485,7 @@ class ImageryLayer(Layer):
         self._raster_info = {}
         self._tiles_only = None
         self._extent_set = False
+        self._original_info = {}
 
     @property
     def rasters(self):
@@ -582,6 +585,10 @@ class ImageryLayer(Layer):
 
         options_dict = {"imageServiceParameters": {}}
 
+        if self.tiles_only:
+            lyr_dict.update({"capabilities": "tilesOnly"})
+        else:
+            lyr_dict.update({"capabilities": "dynamic"})
         if self._fn is not None or self._mosaic_rule is not None:
             if self._fn is not None:
                 options_dict["imageServiceParameters"]["renderingRule"] = self._fn
@@ -1094,11 +1101,12 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        from_geometry         required Geomerty or dictionary. A geometry that defines the "from"
+        from_geometry         required Geometry or dictionary. A geometry that defines the "from"
                               location of the measurement.
         -----------------     --------------------------------------------------------------------
-        to_geometry           optional Geomerty. A geometry that defines the "to" location of the
-                              measurement. The type of geometry must be the same as from_geometry.
+        to_geometry           optional Geometry or dictionary. A geometry that defines the "to"
+                              location of the measurement. The type of geometry must be the same
+                              as from_geometry.
         -----------------     --------------------------------------------------------------------
         measure_operation     optional string or dict. Specifies the type of measure being
                               performed.
@@ -1198,13 +1206,21 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
         from arcgis.geometry._types import Polygon, Point, Envelope
+        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(from_geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(from_geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
-        elif isinstance(from_geometry, Envelope):
+        elif isinstance(from_geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(from_geometry, dict):
+            if "x" in from_geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "xmin" in from_geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
         if to_geometry:
             params["toGeometry"] = to_geometry
         if measure_operation is not None:
@@ -5549,41 +5565,46 @@ class ImageryLayer(Layer):
             return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
-        url = self._url
+        if self._original_info != {}:
+            return self._original_info
+        else:
+            url = self._url
 
-        params = {"f": "json"}
-        if rendering_rule is not None:
-            params["renderingRule"] = rendering_rule
+            params = {"f": "json"}
+            if rendering_rule is not None:
+                params["renderingRule"] = rendering_rule
 
-        if self._datastore_raster:
-            params["Raster"] = self._uri
-            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
-                del params["renderingRule"]
+            if self._datastore_raster:
+                params["Raster"] = self._uri
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                    del params["renderingRule"]
 
-        dictdata = {}
-        token = None
-        try:
-            dictdata = self._con.post(self.url, params)
-        except Exception as e:
+            dictdata = {}
+            token = None
             try:
-                if (
-                    (hasattr(self, "_lazy_token")) and self._lazy_token is None
-                ) or not hasattr(self, "_lazy_token"):
-                    token = self._gis._con.generate_portal_server_token(
-                        serverUrl=self._url
-                    )
+                dictdata = self._con.post(self.url, params)
             except Exception as e:
-                token = self._token
-            try:
-                dictdata = self._con.post(self.url, params, token=token)
-            except Exception as e:
-                if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params, token=token)
-                elif str(e).lower().find("token required") > -1:
-                    dictdata = self._con.get(self.url, params)
-                else:
-                    raise e
-        return dictdata
+                try:
+                    if (
+                        (hasattr(self, "_lazy_token")) and self._lazy_token is None
+                    ) or not hasattr(self, "_lazy_token"):
+                        token = self._gis._con.generate_portal_server_token(
+                            serverUrl=self._url
+                        )
+                        self._lazy_token = token
+                except Exception as e:
+                    token = self._token
+                try:
+                    dictdata = self._con.post(self.url, params, token=token)
+                except Exception as e:
+                    if hasattr(e, "msg") and e.msg == "Method Not Allowed":
+                        dictdata = self._con.get(self.url, params, token=token)
+                    elif str(e).lower().find("token required") > -1:
+                        dictdata = self._con.get(self.url, params)
+                    else:
+                        raise e
+            self._original_info = dictdata
+            return self._original_info
 
     def _repr_jpeg_(self):
         if self._uses_gbl_function:

@@ -1292,7 +1292,7 @@ def copy_raster(
 
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     Multiple images are mosaicked into a single dataset to create one layer.
-    For this functionality to work in ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ================================     ====================================================================
@@ -1341,6 +1341,28 @@ def copy_raster(
                                             Example: 
                                                 {"outSR": {spatial reference}}
 
+                                         | - Upload Properties (upload_properties): ``upload_properties`` key can be used to control specific \
+                                             upload parameters when trying to create hosted imagery layers in ArcGIS Online \
+                                             from local raster datasets.
+                                            
+                                            Available options:
+
+                                                    - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
+                                                        to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                                        This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                                        (The default is 6)
+                                                    - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
+                                                        when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                                        (The default is None)
+                                                    - "displayProgress": Optional boolean. If set to True, a progress bar will be \
+                                                        displayed for tracking the progress of the uploads to user's rasterstore. \
+                                                        (The default is False)
+
+                                                    Example:
+                                                        | {"upload_properties":{"maxUploadConcurrency":8,
+                                                        |                       "maxWorkerThreads":20,
+                                                        |                       "displayProgress":True}
+                                                        | }
 
                                          | The context parameter can also be used to specify whether to
                                          | build footprints, pixel value that represents the NoData,
@@ -1358,8 +1380,8 @@ def copy_raster(
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
     --------------------------------     --------------------------------------------------------------------
-    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
-                                         the mosaic dataset.
+    raster_type_name                     | Optional string. The name of the raster type to use for adding data to
+                                           the mosaic dataset.
 
 
                                          Choice list: [
@@ -1367,8 +1389,8 @@ def copy_raster(
                                          "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", 
                                          "Landsat 1-5 MSS","Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", 
                                          "NetCDF", "Pleiades-1", "QuickBird", "RapidEye", "Raster Dataset", 
-                                         "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", 
-                                         "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
+                                         "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer",
+                                         "UAV/UAS", "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
                                          "Aerial", "ScannedAerial","ZY3-CRESDA"]
                                          
 
@@ -1444,21 +1466,67 @@ def copy_raster(
 
         # Usage Example 1: This example creates a tiled image layer in ArcGIS Online. (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster="C:\\data\\input_raster.tif",
+        copy_raster_op = copy_raster(input_raster=r"C:\data\input_raster.tif",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
                                      tiles_only=True)
-
-    .. code-block:: python
 
         # Usage Example 2: This example creates a tiled image layer in AGOL from the datasets detected in the input folder. (To create dynamic imagery layer set the tiles_only keyword argument to False)
 
-        copy_raster_op = copy_raster(input_raster="C:\\data",
+        copy_raster_op = copy_raster(input_raster=r"C:\data",
                                      output_name="output_name",
                                      raster_type_name="Raster Dataset",
                                      gis=gis,
                                      tiles_only=True)
+        
+        # Usage Example 3: This example creates an image layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
+
+        copy_raster_op_landsat15 = copy_raster(input_raster=r"C:\data\Landsat15MSS",
+                                               output_name="landsat15_op",
+                                               raster_type_name="Landsat 1-5 MSS",
+                                               raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
+                                               gis=gis)
+
+        # Usage Example 4: This example creates an image layer using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
+
+        copy_raster_op_sentinel2 = copy_raster(input_raster=r"C:\data\Sentinel2",
+                                               output_name="sentinel2_op",
+                                               raster_type_name="Sentinel-2",
+                                               raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
+                                               gis=gis)
+
+        # Usage Example 5: This example creates an image layer using Pleiades-1 Raster Type with an Ortho product and a Pansharpen template.
+
+        copy_raster_op_pleiades1 = copy_raster(input_raster=r"C:\data\Pleiades1",
+                                               output_name="pleiades1_op",
+                                               raster_type_name="Pleiades-1",
+                                               raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
+                                               gis=gis)
+
+        # Usage Example 6: This example creates an image layer using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
+
+        copy_raster_op_spot6 = copy_raster(input_raster=r"C:\data\SPOT6",
+                                          output_name="spot6_op",
+                                          raster_type_name="SPOT 6",
+                                          raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
+                                          gis=gis)
+
+        # Usage Example 7: This example creates an image layer using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
+
+        copy_raster_op_worldview2 = copy_raster(input_raster=r"C:\data\WorldView",
+                                                output_name="worldview2_op",
+                                                raster_type_name="WorldView-2",
+                                                raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
+                                                gis=gis)    
+
+        # Usage Example 8: This example creates an image layer from Tiled Imagery Layers.
+
+        copy_raster_op_til = copy_raster(input_raster=[tile_lyr_input1, tile_lyr_input2],
+                                         output_name="til_op",
+                                         raster_type_name="Tiled Imagery Layer", 
+                                         gis = gis)
+
 
     """
 
@@ -2914,7 +2982,7 @@ def create_image_collection(
 
     The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
     A collection can be created from multiple input rasters.
-    For this functionality to work on ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.8)
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ==================                   ====================================================================
@@ -2953,7 +3021,7 @@ def create_image_collection(
                                          "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
                                          "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
                                          "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                         "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
+                                         "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
                                          "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
                                          "ZY3-CRESDA"]         
                                          
@@ -3011,7 +3079,7 @@ def create_image_collection(
     
                                          | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                         
-                                         | use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | Use ``image_collection_properties`` key to set value for imageCollectionType.
 
                                          .. note::
 
@@ -3022,6 +3090,28 @@ def create_image_collection(
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
                                          | If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+
+                                         | ``upload_properties`` key can be used to control specific upload parameters when trying to \
+                                             create hosted imagery layers in ArcGIS Online from local raster datasets.
+
+                                         Available options:
+
+                                                - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
+                                                    to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                                    This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                                    (The default is 6)
+                                                - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
+                                                    when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                                    (The default is None)
+                                                - "displayProgress": Optional boolean. If set to True, a progress bar will be \
+                                                    displayed for tracking the progress of the uploads to user's rasterstore. \
+                                                    (The default is False)
+
+                                                Example:
+                                                    | {"upload_properties":{"maxUploadConcurrency":8,
+                                                    |                       "maxWorkerThreads":20,
+                                                    |                       "displayProgress":True}
+                                                    | }
 
                                          | The context parameter can also be used to specify whether to build overviews, \
                                          build footprints, to specify pixel value that represents the NoData etc.
@@ -3049,12 +3139,6 @@ def create_image_collection(
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
-    ------------------                   --------------------------------------------------------------------
-    tiles_only                           Keyword only parameter. Optional boolean. 
-                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
-                                         
-                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -3494,15 +3578,62 @@ def create_image_collection(
                                                       raster_type_params=params,
                                                       out_sr=32632)
 
-    .. code-block:: python
+.. code-block:: python
 
         # Usage Example 2: This example creates a dynamic image layer in AGOL from the datasets detected in the input folder.
 
         img_coll_result = create_image_collection(image_collection="imageCollection",
-                                                  input_rasters="C:\\data",
+                                                  input_rasters=r"C:\data",
                                                   raster_type_name="Raster Dataset",
-                                                  gis=gis,
-                                                  tiles_only=False)
+                                                  gis=gis)
+
+        
+        # Usage Example 3: This example creates an image layer using Landsat 1-5 MSS Raster Type with a Level 1 product and a Multispectral template.
+
+        landsat15_collection = create_image_collection(image_collection="landsat15_collection",
+                                                       input_rasters=r"C:\data\Landsat15MSS",
+                                                       raster_type_name="Landsat 1-5 MSS",
+                                                       raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral"},
+                                                       gis=gis)
+
+        # Usage Example 4: This example creates an image layer using Sentinel-2 Raster Type with a Level 1 product and a Multispectral template.
+
+        sentinel2_collection = create_image_collection(image_collection="sentinel2_collection",
+                                                       input_rasters=r"C:\data\Sentinel2",
+                                                       raster_type_name="Sentinel-2",
+                                                       raster_type_params={"productType": "Level1", "processingTemplate": "Multispectral-10m"},
+                                                       gis=gis)
+
+       # Usage Example 5: This example creates an image layer using Pleiades-1 Raster Type with an Ortho product and a Pansharpened template.
+
+        pleiades1_collection = create_image_collection(image_collection="pleiades1_collection",
+                                                       input_rasters=r"C:\data\Pleiades1",
+                                                       raster_type_name="Pleiades-1",
+                                                       raster_type_params={"productType":"ORTHO","processingTemplate":"Pansharpen"},
+                                                       gis=gis)
+
+        # Usage Example 6: This example creates an image layer using SPOT 6 Raster Type with an Ortho Reflectance product and a Pansharpen Reflectance template.
+
+        spot6_collection = create_image_collection(image_collection="spot6_collection",
+                                                   input_rasters=r"C:\data\SPOT6",
+                                                   raster_type_name="SPOT 6",
+                                                   raster_type_params={"productType": "ORTHO REFLECTANCE", "processingTemplate": "Pansharpen Reflectance"},
+                                                   gis=gis)
+
+        # Usage Example 7: This example creates an image layer using WorldView-2 Raster Type with a Pansharpen and Multispectral template.
+
+        worldview2_collection = create_image_collection(image_collection="worldview2_collection",
+                                                        input_rasters=r"C:\data\WorldView",
+                                                        raster_type_name="WorldView-2",
+                                                        raster_type_params= {"productType": "Basic", "processingTemplate": "Pansharpen and Multispectral"},
+                                                        gis=gis)
+
+        # Usage Example 8: This example creates an image layer from Tiled Imagery Layers.
+
+        worldview2_collection = create_image_collection(image_collection="tiled_collection",
+                                                        input_rasters=[tile_lyr_input1, tile_lyr_input2],
+                                                        raster_type_name="Tiled Imagery Layer",
+                                                        gis=gis)
 
     """
 
@@ -3561,7 +3692,7 @@ def add_image(
                                          The image collection must be an existing image collection.
                                          This is the output image collection (mosaic dataset) item or url or uri.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Optional string. The name of the raster type to use for adding data to 
                                          the image collection.
 
                                          Choice list: [

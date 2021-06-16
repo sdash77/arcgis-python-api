@@ -189,7 +189,13 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            pred = model.learn.model(input)
+            if getattr(model, "_is_model_extension", False):
+                if model._is_multispectral:
+                    pred = model.learn.model(model._model_conf.transform_input_multispectral(input))
+                else:
+                    pred = model.learn.model(model._model_conf.transform_input(input))
+            else:
+                pred = model.learn.model(input)
             target = target.squeeze(1)
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:
