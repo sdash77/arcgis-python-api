@@ -1101,8 +1101,9 @@ class ImageryLayer(Layer):
         from_geometry         required Geometry or dictionary. A geometry that defines the "from"
                               location of the measurement.
         -----------------     --------------------------------------------------------------------
-        to_geometry           optional Geometry. A geometry that defines the "to" location of the
-                              measurement. The type of geometry must be the same as from_geometry.
+        to_geometry           optional Geometry or dictionary. A geometry that defines the "to"
+                              location of the measurement. The type of geometry must be the same as
+                              from_geometry.
         -----------------     --------------------------------------------------------------------
         measure_operation     optional string or dict. Specifies the type of measure being
                               performed.
