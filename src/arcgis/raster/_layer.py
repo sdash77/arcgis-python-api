@@ -6373,7 +6373,7 @@ class Raster:
         return self._engine_obj.raster_info
 
     @staticmethod
-    def from_stac_item(stac_item, request_params=None, *, gis=None):
+    def from_stac_item(stac_item, request_params=None, engine=None, *, gis=None):
         """
         Create a Raster object from a `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
 
@@ -6456,7 +6456,7 @@ class Raster:
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, gis=gis)
+        ras = Raster(metadata_file, engine=engine, gis=gis)
         return ras
 
     def get_raster_bands(self, band_ids_or_names=None):
@@ -9896,6 +9896,7 @@ class RasterCollection:
         attribute_dict=None,
         request_method="POST",
         request_params=None,
+        engine=None,
         *,
         gis=None,
     ):
@@ -10112,7 +10113,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:
@@ -10132,7 +10133,7 @@ class RasterCollection:
 
     @staticmethod
     def from_stac_catalog(
-        stac_catalog, attribute_dict=None, request_params=None, *, gis=None
+        stac_catalog, attribute_dict=None, request_params=None, engine=None, *, gis=None
     ):
         """
         Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
@@ -10282,7 +10283,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:
