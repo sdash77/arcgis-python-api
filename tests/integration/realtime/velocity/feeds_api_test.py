@@ -19,8 +19,8 @@ except:
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
 class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
-    feed_manager = velocity.feeds_manager
-    feed_item = feed_manager.get("334dfcf1d7184dcc8c92207643bfe65d")
+    feeds = velocity.feeds
+    feed_item = feeds.get("334dfcf1d7184dcc8c92207643bfe65d")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
@@ -28,7 +28,7 @@ class TestFeedsApiMethods(unittest.TestCase):
         print("\n ---- test_get_all_feeds ----")
 
         try:
-            items = self.feed_manager.items
+            items = self.feeds.items
             for item in items:
                 assert isinstance(item, Feed)
 
@@ -46,7 +46,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_get_feed(self):
         print("\n ---- test_get_feed ----")
         try:
-            feed = self.feed_manager.get("334dfcf1d7184dcc8c92207643bfe65d")
+            feed = self.feeds.get("334dfcf1d7184dcc8c92207643bfe65d")
             assert isinstance(feed, Feed)
 
         except AssertionError as assertErrorException:
@@ -135,7 +135,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_delete_feed(self):
         print("\n ---- test_delete_feed ----")
         try:
-            feed_to_delete = self.feed_manager.get("3a3ef00fce904fe78f014243241b0da6")
+            feed_to_delete = self.feeds.get("3a3ef00fce904fe78f014243241b0da6")
             try:
                 response = feed_to_delete.delete()
                 assert response and response.get("id")

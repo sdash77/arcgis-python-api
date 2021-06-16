@@ -19,8 +19,8 @@ except:
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
 class TestBigDataAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
-    bigdata_analytics_manager = velocity.bigdata_analytics_manager
-    bigdata_analytics_item = bigdata_analytics_manager.get(
+    bigdata_analytics = velocity.bigdata_analytics
+    bigdata_analytics_item = bigdata_analytics.get(
         "7a49c634c09f4e558f842db06c76a346"
     )
 
@@ -30,7 +30,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_all_bigdata_analytics ----")
 
         try:
-            items = self.bigdata_analytics_manager.items
+            items = self.bigdata_analytics.items
             for item in items:
                 assert isinstance(item, BigDataAnalytics)
 
@@ -49,7 +49,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_bigdata_analytics ----")
 
         try:
-            response = self.bigdata_analytics_manager.get(
+            response = self.bigdata_analytics.get(
                 "7a49c634c09f4e558f842db06c76a346"
             )
             assert isinstance(response, BigDataAnalytics)
@@ -144,7 +144,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
     def test_delete_bigdata_analytics(self):
         print("\n ---- test_delete_bigdata_analytics ----")
         try:
-            bigdata_analytics_to_delete = self.bigdata_analytics_manager.get(
+            bigdata_analytics_to_delete = self.bigdata_analytics.get(
                 "f34d3a7c899f4c178c9a0ff9dfc24bf9"
             )
             try:

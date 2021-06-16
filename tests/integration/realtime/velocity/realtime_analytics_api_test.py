@@ -19,8 +19,8 @@ except:
 @unittest.skipIf(SKIP_TESTS, reason="GIS connection failed")
 class TestRealTimeAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
-    realtime_analytics_manager = velocity.realtime_analytics_manager
-    realtime_analytics_item = realtime_analytics_manager.get(
+    realtime_analytics = velocity.realtime_analytics
+    realtime_analytics_item = realtime_analytics.get(
         "7a8f2100aedb47be85d57d4969757a16"
     )
 
@@ -30,7 +30,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_all_realtime_analytics ----")
 
         try:
-            items = self.realtime_analytics_manager.items
+            items = self.realtime_analytics.items
             for item in items:
                 assert isinstance(item, RealTimeAnalytics)
 
@@ -49,7 +49,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_realtime_analytics ----")
 
         try:
-            response = self.realtime_analytics_manager.get(
+            response = self.realtime_analytics.get(
                 "7a8f2100aedb47be85d57d4969757a16"
             )
             assert isinstance(response, RealTimeAnalytics)
@@ -142,7 +142,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_delete_realtime_analytics(self):
         print("\n ---- test_delete_realtime_analytics ----")
         try:
-            realtime_analytics_to_delete = self.realtime_analytics_manager.get(
+            realtime_analytics_to_delete = self.realtime_analytics.get(
                 "e6a8caa0e38f44fab569cebbaf5fea2a"
             )
             try:

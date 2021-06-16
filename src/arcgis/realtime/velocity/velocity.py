@@ -9,47 +9,47 @@ class Velocity:
     _subinfo = None
     _velocity = None
     # manager instances
-    _feeds_manager = None
-    _realtime_manager = None
-    _bigdata_manager = None
+    _feeds = None
+    _realtime_analytics = None
+    _bigdata_analytics = None
 
     def __init__(self, url, gis):
         self._gis = gis
         self._url = url
 
     @property
-    def feeds_manager(self):
+    def feeds(self):
         """
         Provides access to managing configured Feeds with ArcGIS Velocity
 
-        :return: FeedsManager
+        :return: feeds
         """
-        if self._feeds_manager is None:
-            self._feeds_manager = FeedsManager(url=self._url, gis=self._gis)
-        return self._feeds_manager
+        if self._feeds is None:
+            self._feeds = FeedsManager(url=self._url, gis=self._gis)
+        return self._feeds
 
     @property
-    def realtime_analytics_manager(self):
+    def realtime_analytics(self):
         """
          Provides access to managing configured Real-time analytics tasks with ArcGIS Velocity
 
-        :return: RealTimeAnalyticsManager
+        :return: realtime_analytics
         """
-        if self._realtime_manager is None:
-            self._realtime_manager = RealTimeAnalyticsManager(
+        if self._realtime_analytics is None:
+            self._realtime_analytics = RealTimeAnalyticsManager(
                 url=self._url, gis=self._gis
             )
-        return self._realtime_manager
+        return self._realtime_analytics
 
     @property
-    def bigdata_analytics_manager(self):
+    def bigdata_analytics(self):
         """
          Provides access to managing configured Big data analytics tasks with ArcGIS Velocity
 
-        :return: BigDataAnalyticsManager
+        :return: bigdata_analytics
         """
-        if self._bigdata_manager is None:
-            self._bigdata_manager = BigDataAnalyticsManager(
+        if self._bigdata_analytics is None:
+            self._bigdata_analytics = BigDataAnalyticsManager(
                 url=self._url, gis=self._gis
             )
-        return self._bigdata_manager
+        return self._bigdata_analytics
