@@ -135,20 +135,6 @@ class Mission(object):
         return res
 
     # ---------------------------------------------------------------------
-    def add_message(self, message: dict):
-        """
-        Adds a message to the current `Mission`
-
-        :return: bool
-        """
-        url = f"{self._url}/addMessages"
-        params = {"f": "json", "features": message}
-        res = self._con.post(url, params)
-        if res.get("status") or res.get("success"):
-            return res.get("status") or res.get("success")
-        return res
-
-    # ---------------------------------------------------------------------
     def add_report(
         self,
         title: str,
