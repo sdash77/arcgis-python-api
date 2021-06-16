@@ -1130,7 +1130,13 @@ class FeatureSet(object):
     @spatial_reference.setter
     def spatial_reference(self, value):
         """
-        The ``spatial_reference`` method sets the :class:`~arcgis.features.FeatureSet` object's spatial reference."""
+        The ``spatial_reference`` method sets and gets the :class:`~arcgis.features.FeatureSet` object's spatial
+        reference.
+
+        :returns:
+            A :class:`~arcgis.geometry.SpatialReference`
+
+        """
         if isinstance(value, SpatialReference):
             self._spatial_reference = value
         elif isinstance(value, int):
@@ -1143,7 +1149,12 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def has_z(self):
-        """gets/sets the Z-property"""
+        """
+        The ``has_z`` method gets and sets the Z-property of the :class:`~arcgis.features.FeatureSet` object
+
+        :returns:
+            The Z-value of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._has_z
 
     # ----------------------------------------------------------------------
@@ -1161,7 +1172,12 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def has_m(self):
-        """gets/set the M-property"""
+        """
+        The ``has_m`` method gets and sets the M-property of the :class:`~arcgis.features.FeatureSet` object
+
+        :returns:
+            The M-value of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._has_m
 
     # ----------------------------------------------------------------------
@@ -1179,7 +1195,12 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """gets/sets the geometry Type"""
+        """
+        The ``geometry_type`` method sets or gets the ``Type`` of the :class:`~arcgis.features.FeatureSet` object.
+
+        :returns:
+            A string representing the type of the :class:`~arcgis.features.FeatureSet` object
+        """
         return self._geometry_type
 
     # ----------------------------------------------------------------------
@@ -1197,31 +1218,45 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def object_id_field_name(self):
-        """gets/sets the object id field"""
+        """
+        The ``object_id_field_name`` gets and sets the object id field of the :class:`~arcgis.features.FeatureSet`
+        object
+
+        :returns:
+            A string representing the object id field name
+        """
         return self._object_id_field_name
 
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
     def object_id_field_name(self, value):
         """
-        The ``object_id_field_name`` gets and sets the object id field
+        The ``object_id_field_name`` gets and sets the object id field of the :class:`~arcgis.features.FeatureSet`
+        object
 
         :returns:
-            The object id field name
+            A string representing the object id field name
         """
         self._object_id_field_name = value
 
     # ----------------------------------------------------------------------
     @property
     def global_id_field_name(self):
-        """gets/sets the globalIdFieldName"""
+        """
+        The ``global_id_field_name`` gets and sets the ``globalIdFieldName`` for the
+        :class:`~arcgis.features.FeatureSet` object.
+
+        :returns:
+            A string
+        """
         return self._global_id_field_name
 
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
     def global_id_field_name(self, value):
         """
-        The ``global_id_field_name`` gets and sets the `globalIdFieldName`
+        The ``global_id_field_name`` gets and sets the ``globalIdFieldName`` for the
+        :class:`~arcgis.features.FeatureSet` object.
 
         :returns:
             A string
@@ -1231,7 +1266,13 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def display_field_name(self):
-        """gets/sets the displayFieldName"""
+        """
+        The ``display_field_name`` gets and sets the ``displayFieldName`` for the :class:`~arcgis.features.FeatureSet`
+        object.
+
+        :returns:
+            A String
+        """
         return self._display_field_name
 
     # ----------------------------------------------------------------------
@@ -1333,7 +1374,7 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """gets the fields in the FeatureSet"""
+        """The ``fields`` method sets and gets the fields in the FeatureSet"""
         # todo - build object id field if not found - webmaps need this
         if not self._object_id_field_name:
             obj_field = {
@@ -1365,7 +1406,13 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     @fields.setter
     def fields(self, fields):
-        """The ``fields`` method sets the fields in the FeatureSet"""
+        """
+        The ``fields`` method sets the fields in the for the
+        :class:`~arcgis.features.FeatureSet` object.
+
+        :returns:
+            A dictionary
+        """
         self._fields = fields
 
 

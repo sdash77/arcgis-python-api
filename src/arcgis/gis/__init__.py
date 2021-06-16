@@ -13257,6 +13257,21 @@ class _GISResource(object):
 
     @classmethod
     def fromitem(cls, item):
+        """
+        The ``fromitem`` method is used to create a :class:`~arcgis.features.FeatureLayerCollection` from a
+        :class:`~arcgis.gis.Item` class.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        item                       A required :class:`~arcgis.gis.Item` object. The item needed to convert to
+                                   a :class:`~arcgis.features.FeatureLayerCollection` object.
+        ======================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.features.FeatureLayerCollection` object.
+
+        """
         if not item.type.lower().endswith("service"):
             raise TypeError("item must be a type of service, not " + item.type)
         return cls(item.url, item._gis)
@@ -13292,7 +13307,9 @@ class _GISResource(object):
 
     @property
     def properties(self):
-        """The properties of this object"""
+        """
+        The ``properties`` method retrieves and set properties of this object.
+        """
         if self._hydrated:
             return self._lazy_properties
         else:
