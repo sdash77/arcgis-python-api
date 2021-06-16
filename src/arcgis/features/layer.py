@@ -29,14 +29,17 @@ from arcgis.gis import Layer, _GISResource
 
 class FeatureLayer(Layer):
     """
-    The feature layer is the primary concept for working with features in a GIS.
+    The ``FeatureLayer`` class is the primary concept for working with :class:`~arcgis.features.Feature` objects
+    in a :class:`~arcgis.gis.GIS`.
 
-    Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
+    :class:`~arcgis.gis.User` objects create, import, export, analyze, edit, and visualize features,
+    i.e. entities in space as feature layers.
 
-    Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
-    tools.
+    ``Feature layers`` can be added to and visualized using maps. They act as inputs to and outputs from feature
+    analysis tools.
 
-    Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
+    Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource
+    (:class:`~arcgis.gis.Item`) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
 
@@ -289,7 +292,7 @@ class FeatureLayer(Layer):
     @container.setter
     def container(self, value):
         """
-        The feature layer collection to which this layer belongs.
+        The ``container`` property is the :class:`~arcgis.features.FeatureLayerCollection` to which this layer belongs.
         """
         self._storage = value
 
@@ -1968,10 +1971,12 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
+        The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
+        See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
+        page in the ArcGIS REST API documentation for more informatin.
 
-        Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
-        details: `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
+        .. note::
+            The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         ========================   ====================================================================
         **Argument**               **Description**
@@ -2060,9 +2065,10 @@ class FeatureLayer(Layer):
         ========================   ====================================================================
 
 
-        :return: boolean (True when successful, False when failed). When `return_messages` is True, the
-                 response messages will be return in addition to the boolean as a `tuple`.
-                 If future=True, then the result is a `Future` object. Call `result()` to get the response.
+        :returns:
+            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
+            response messages will be return in addition to the boolean as a `tuple`.
+            If ``future``=True, then the result is a `Future` object. Call ``result()`` to get the response.
 
         """
         import copy
@@ -2583,14 +2589,13 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        The calculate operation is performed on a feature layer
-        resource. It updates the values of one or more fields in an
+        The ``calculate`` operation is performed on a :class:`~arcgis.features.FeatureLayer`
+        resource. ``calculate``updates the values of one or more fields in an
         existing feature service layer based on SQL expressions or scalar
-        values. The calculate operation can only be used if the
-        supportsCalculate property of the layer is true.
+        values. The ``calculate`` operation can only be used if the
+        ``supportsCalculate`` property of the layer is `True`.
         Neither the Shape field nor system fields can be updated using
-        calculate. System fields include ObjectId and GlobalId.
-        See Calculate a field for more information on supported expressions
+        ``calculate``. System fields include ``ObjectId`` and ``GlobalId``.
 
         =====================   ====================================================
         **Inputs**              **Description**
@@ -2660,7 +2665,12 @@ class FeatureLayer(Layer):
             print(fl.calculate(where="OBJECTID < 2001",
                                calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
 
-        Output: dictionary with format {'updatedFeatureCount': 1, 'success': True}
+        :returns:
+            A dictionary with the following format:
+             {
+             'updatedFeatureCount': 1,
+             'success': True
+             }
         """
         url = self._url + "/calculate"
         params = {
