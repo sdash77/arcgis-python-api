@@ -5,17 +5,15 @@ import concurrent.futures
 
 import pytest
 
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_fl_108_calculate\src")
+# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_fl_108_calculate\src")
 from arcgis.gis import GIS, ContentManager
 from arcgis.features import FeatureLayer
 
 
-
-profiles = ['your_online_profile']
+profiles = ["your_online_profile"]
 
 
 class TestFeatureLayerCalculate(unittest.TestCase):
-    
     def test_calculate_basic(self):
         """tests a simple calculate method"""
         fp = "./calculate_sd.zip"
@@ -31,12 +29,20 @@ class TestFeatureLayerCalculate(unittest.TestCase):
                             pass
                 cm = gis.content
                 isinstance(cm, ContentManager)
-                add_item = cm.add(item_properties={'title' : "calculate_sd", "type" : "File Geodatabase"}, data=fp)
+                add_item = cm.add(
+                    item_properties={
+                        "title": "calculate_sd",
+                        "type": "File Geodatabase",
+                    },
+                    data=fp,
+                )
                 pitem = add_item.publish()
                 fl = pitem.layers[0]
-                res = fl.calculate(where="ObjectID < 519",
-                                   calc_expression={"field": "FIPS_CNTRY", "value" : "R1"},
-                                   future=False)                
+                res = fl.calculate(
+                    where="ObjectID < 519",
+                    calc_expression={"field": "FIPS_CNTRY", "value": "R1"},
+                    future=False,
+                )
                 assert res
                 assert pitem.delete()
                 assert add_item.delete()
@@ -64,12 +70,20 @@ class TestFeatureLayerCalculate(unittest.TestCase):
                             pass
                 cm = gis.content
                 isinstance(cm, ContentManager)
-                add_item = cm.add(item_properties={'title' : "calculate_sd", "type" : "File Geodatabase"}, data=fp)
+                add_item = cm.add(
+                    item_properties={
+                        "title": "calculate_sd",
+                        "type": "File Geodatabase",
+                    },
+                    data=fp,
+                )
                 pitem = add_item.publish()
                 fl = pitem.layers[0]
-                res = fl.calculate(where="ObjectID < 519",
-                                   calc_expression={"field": "FIPS_CNTRY", "value" : "R1"},
-                                   future=True)                
+                res = fl.calculate(
+                    where="ObjectID < 519",
+                    calc_expression={"field": "FIPS_CNTRY", "value": "R1"},
+                    future=True,
+                )
                 assert res
                 assert isinstance(res, concurrent.futures.Future)
                 assert res.result()
