@@ -6,12 +6,14 @@ import pytest
 from arcgis.gis import GIS
 from arcgis.network import ODCostMatrixLayer, NAJob
 from arcgis._impl.common._isd import InsensitiveDict
-PROFILE = 'your_online_profile'
+
+PROFILE = "your_online_profile"
 gis = GIS(profile=PROFILE, verify_cert=False)
-if 'odCostMatrix' in gis.properties.helperServices:
+if "odCostMatrix" in gis.properties.helperServices:
     SKIP_TEST = False
 else:
     SKIP_TEST = True
+
 
 @unittest.skipIf(SKIP_TEST == True, "Test site does not support this operation.")
 class Test_ODCostMatricLayer(unittest.TestCase):
@@ -39,11 +41,35 @@ class Test_ODCostMatricLayer(unittest.TestCase):
         url = gis.properties.helperServices.odCostMatrix.url
         cml = ODCostMatrixLayer(url, gis)
         assert isinstance(cml, ODCostMatrixLayer)
-        assert cml.solve_od_cost_matrix(origins={"spatialReference":{"wkid":102100},"features":[{"geometry":{"x":-13042381.897669187,"y":3857625.761983883},"attributes":{"ObjectID":1,"Name":"San Diego"}},
-        {"geometry":{"x":-13163008.811087687,"y":4035986.6896486743},"attributes":{"ObjectID":2,"Name":"Los Angeles"}}]}
-        , destinations={"spatialReference":{"wkid":102100},"features":[{"geometry":{"x":-13042381.897669187,"y":3857625.761983883},"attributes":{"ObjectID":1,"Name":"San Diego"}},
-        {"geometry":{"x":-13163008.811087687,"y":4035986.6896486743},"attributes":{"ObjectID":2,"Name":"Los Angeles"}}]}
-        , future=False)
+        assert cml.solve_od_cost_matrix(
+            origins={
+                "spatialReference": {"wkid": 102100},
+                "features": [
+                    {
+                        "geometry": {"x": -13042381.897669187, "y": 3857625.761983883},
+                        "attributes": {"ObjectID": 1, "Name": "San Diego"},
+                    },
+                    {
+                        "geometry": {"x": -13163008.811087687, "y": 4035986.6896486743},
+                        "attributes": {"ObjectID": 2, "Name": "Los Angeles"},
+                    },
+                ],
+            },
+            destinations={
+                "spatialReference": {"wkid": 102100},
+                "features": [
+                    {
+                        "geometry": {"x": -13042381.897669187, "y": 3857625.761983883},
+                        "attributes": {"ObjectID": 1, "Name": "San Diego"},
+                    },
+                    {
+                        "geometry": {"x": -13163008.811087687, "y": 4035986.6896486743},
+                        "attributes": {"ObjectID": 2, "Name": "Los Angeles"},
+                    },
+                ],
+            },
+            future=False,
+        )
 
     def test_solve_od_matrix_future(self):
         """Tests the retrieve travel modes call"""
@@ -51,12 +77,38 @@ class Test_ODCostMatricLayer(unittest.TestCase):
         url = gis.properties.helperServices.odCostMatrix.url
         cml = ODCostMatrixLayer(url, gis)
         assert isinstance(cml, ODCostMatrixLayer)
-        f = cml.solve_od_cost_matrix(origins={"spatialReference":{"wkid":102100},"features":[{"geometry":{"x":-13042381.897669187,"y":3857625.761983883},"attributes":{"ObjectID":1,"Name":"San Diego"}},
-        {"geometry":{"x":-13163008.811087687,"y":4035986.6896486743},"attributes":{"ObjectID":2,"Name":"Los Angeles"}}]}
-        , destinations={"spatialReference":{"wkid":102100},"features":[{"geometry":{"x":-13042381.897669187,"y":3857625.761983883},"attributes":{"ObjectID":1,"Name":"San Diego"}},
-        {"geometry":{"x":-13163008.811087687,"y":4035986.6896486743},"attributes":{"ObjectID":2,"Name":"Los Angeles"}}]}
-        , future=True)
+        f = cml.solve_od_cost_matrix(
+            origins={
+                "spatialReference": {"wkid": 102100},
+                "features": [
+                    {
+                        "geometry": {"x": -13042381.897669187, "y": 3857625.761983883},
+                        "attributes": {"ObjectID": 1, "Name": "San Diego"},
+                    },
+                    {
+                        "geometry": {"x": -13163008.811087687, "y": 4035986.6896486743},
+                        "attributes": {"ObjectID": 2, "Name": "Los Angeles"},
+                    },
+                ],
+            },
+            destinations={
+                "spatialReference": {"wkid": 102100},
+                "features": [
+                    {
+                        "geometry": {"x": -13042381.897669187, "y": 3857625.761983883},
+                        "attributes": {"ObjectID": 1, "Name": "San Diego"},
+                    },
+                    {
+                        "geometry": {"x": -13163008.811087687, "y": 4035986.6896486743},
+                        "attributes": {"ObjectID": 2, "Name": "Los Angeles"},
+                    },
+                ],
+            },
+            future=True,
+        )
         assert isinstance(f, NAJob)
         assert f.result()
+
+
 if __name__ == "__main__":
     unittest.main()
