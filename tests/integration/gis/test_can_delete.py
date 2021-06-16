@@ -162,6 +162,26 @@ class TestCMCanDelete(unittest.TestCase):
             item.protect(False)
             assert item.delete()
 
+    def test_can_delete_item(self):
+        """
+        tests if can_delete on Item
+        """
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=False)
+            content = gis.content
+            assert isinstance(content, ContentManager)
+
+            item = create_item(gis=gis)
+            item.protect(False)
+            res = item.can_delete
+            assert res
+
+            item.protect(True)
+            res = item.can_delete
+            assert res == False
+            item.protect(False)
+            assert item.delete()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9674,7 +9674,22 @@ class Item(dict):
             if not self._hydrated and not k.startswith("_"):
                 self._hydrate()
             return dict.__getitem__(self, k)
-
+    # ----------------------------------------------------------------------
+    @property
+    def can_delete(self) -> bool:
+        """
+        Checks if the Item can be removed from the system.
+        
+        :returns: bool
+        """
+        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        params = {"f" : "json"}
+        try:
+            return self._gis._con.get(url, params).get("success", False)
+        except Exception as e:
+            _log.warning(e)
+            return False
+        
     # ----------------------------------------------------------------------
     @property
     def content_status(self):
