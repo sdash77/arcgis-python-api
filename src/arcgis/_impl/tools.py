@@ -12729,7 +12729,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         if input_multidimensional_rasters is not None:
-            input_multidimensional_rasters = _set_multiple_raster_inputs(
+            input_multidimensional_rasters = self._set_multiple_raster_inputs(
                 input_multidimensional_rasters
             )
 
