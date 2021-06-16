@@ -211,16 +211,16 @@ class WebAdaptor(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdaptor @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdaptor @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def unregister(self):
         """
-        Unregisters a WebAdapter for the Notebook Server
+        Unregisters a WebAdaptor for the Notebook Server
         :returns: boolean
         """
         url = self._url + "/unregister"
@@ -263,11 +263,11 @@ class WebAdaptorManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -282,7 +282,7 @@ class WebAdaptorManager(object):
         self,
         name: str,
         ip: str,
-        webadapter_url: str,
+        webadaptor_url: str,
         http_port: int,
         https_port: int,
         description: Optional[str] = "",
@@ -297,7 +297,7 @@ class WebAdaptorManager(object):
         ------------------     --------------------------------------------------------------------
         ip                     Required String. The IP of the web adapter.
         ------------------     --------------------------------------------------------------------
-        webadapter_url         Required String. The URI endpoint of the web adpater.
+        webadaptor_url         Required String. The URI endpoint of the web adpater.
         ------------------     --------------------------------------------------------------------
         http_port              Required Integer. The port number of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -313,7 +313,7 @@ class WebAdaptorManager(object):
             "f": "json",
             "machineName": name,
             "machineIP": ip,
-            "webAdaptorURL": webadapter_url,
+            "webAdaptorURL": webadaptor_url,
             "description": description,
             "httpPort": http_port,
             "httpsPort": https_port,
