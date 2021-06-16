@@ -5,19 +5,20 @@ import time
 import socket
 from subprocess import Popen, PIPE, STDOUT
 import logging
+
 log = logging.getLogger()
 
 from utils._common import *
 
 MAX_NUM_PORTS_TO_TRY = 5
 
+
 class JupyterClassicNotebookServer:
     def __init__(self, notebook_root_dir, port=8888):
         self.port = port
         self.notebook_root_dir = notebook_root_dir
         try:
-            self._config_file_path = os.path.join(tempfile.gettempdir(),
-                                                  "config.py")
+            self._config_file_path = os.path.join(tempfile.gettempdir(), "config.py")
             with open(self._config_file_path, "w+") as f:
                 f.write(f'c.NotebookApp.token = "" # disables auth\n')
         except Exception as e:
@@ -26,11 +27,11 @@ class JupyterClassicNotebookServer:
     def _port_in_use(self, port_num):
         output = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex(('127.0.0.1',port_num))
+        result = sock.connect_ex(("127.0.0.1", port_num))
         if result == 0:
-           output = True
+            output = True
         else:
-           output = False
+            output = False
         sock.close()
         return output
 
@@ -42,21 +43,25 @@ class JupyterClassicNotebookServer:
             if not self._port_in_use(port):
                 self.port = port
                 return
-        raise Exception(f"Ports {ports_tested} are ALL in use by other " + \
-                        f"processes, will not start Jupyter server. Check " + \
-                        f"that you're properly shutting down jupyter servers.")
+        raise Exception(
+            f"Ports {ports_tested} are ALL in use by other "
+            + f"processes, will not start Jupyter server. Check "
+            + f"that you're properly shutting down jupyter servers."
+        )
 
     def __enter__(self):
         self._resolve_port()
-        cmd = f'"{sys.executable}" -m jupyter notebook '\
-              f"--config={self._config_file_path} "\
-              f"--no-browser "\
-              f"--port={self.port} "
+        cmd = (
+            f'"{sys.executable}" -m jupyter notebook '
+            f"--config={self._config_file_path} "
+            f"--no-browser "
+            f"--port={self.port} "
+        )
         log.debug(f"calling Popen({cmd})")
-        self.process = Popen(cmd, cwd=self.notebook_root_dir,shell=True) 
+        self.process = Popen(cmd, cwd=self.notebook_root_dir, shell=True)
         #                     stdout=PIPE, stderr=STDOUT, shell=True)
         self.base_url = f"http://localhost:{self.port}/notebooks/"
-        time.sleep(10) # Just incase
+        time.sleep(10)  # Just incase
         return self
 
     def __exit__(self, type, value, traceback):
@@ -74,5 +79,7 @@ class JupyterClassicNotebookServer:
                 pid = out.split("\n")[0].lower().split("listening")[1].strip()
                 run_shell_command(f"taskkill /pid {pid} /f")
         except Exception as e:
-            log.warn(f"Could not kill jupyter process running on {self.port}."\
-                     f" Beware of a leak of unkilled server instances...")
+            log.warn(
+                f"Could not kill jupyter process running on {self.port}."
+                f" Beware of a leak of unkilled server instances..."
+            )

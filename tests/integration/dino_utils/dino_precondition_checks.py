@@ -1,13 +1,14 @@
 # -------------------------------------------------------------------------------
 # Name:        dino_precondition_checks.py
 # Purpose:     This file checks if pre conditions are met before running the Python tests
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import sys
 import os
 import configparser
 import json
 
-class PreconditionChecks():
+
+class PreconditionChecks:
     """
     Class with methods that can check if pre-conditions are met before running the tests
     """
@@ -51,11 +52,12 @@ class PreconditionChecks():
         Returns bool - True / False"""
         try:
             import arcpy
+
             installInfo = arcpy.GetInstallInfo()
-            if installInfo.get('ProductName') == "ArcGISPro":
+            if installInfo.get("ProductName") == "ArcGISPro":
                 return True
             else:
-                print("Installed local GIS: " + installInfo.get('ProductName'))
+                print("Installed local GIS: " + installInfo.get("ProductName"))
                 return False
         except ImportError:
             return False
@@ -64,7 +66,7 @@ class PreconditionChecks():
     def check_Python_version():
         """Checks if Python version is 3.4 and above
         Returns bool"""
-        if ((sys.version_info.major >= 3) & (sys.version_info.minor >= 4)):
+        if (sys.version_info.major >= 3) & (sys.version_info.minor >= 4):
             print("PreConditionCheck: Python version: " + sys.version)
             return True
         else:
@@ -84,6 +86,7 @@ class PreconditionChecks():
         :return: bool
         """
         import urllib
+
         try:
             resp = urllib.request.urlopen(url)
             if resp.status == 200:
@@ -93,11 +96,13 @@ class PreconditionChecks():
         except urllib.error.URLError:
             return False
 
-class PortalUtils():
+
+class PortalUtils:
     """
     Class to set a base state on the portal. Utilities to search, delete old outputs on portals can be found here.
     Add more utilities as need arises.
     """
+
     @staticmethod
     def search_portal_item(gis, item_name, item_type):
         """
@@ -129,7 +134,10 @@ class PortalUtils():
             return gis.admin.properties.version
 
         except Exception as search_Ex:
-            print("Exception. You might not have admin permission to get version: ", search_Ex.__str__())
+            print(
+                "Exception. You might not have admin permission to get version: ",
+                search_Ex.__str__(),
+            )
         return ""
 
     @staticmethod
@@ -153,7 +161,7 @@ class PortalUtils():
                 else:
                     return (True, None)
             except RuntimeError:
-                return (True, None) #Item not found after deletion
+                return (True, None)  # Item not found after deletion
 
         except Exception as delete_ex:
             print("Exception occurred : ", delete_ex.__str__())
@@ -173,10 +181,16 @@ class PortalUtils():
         :return: True on success. False on any failure and prints error
         """
         # Create user data
-        user_names = ['arcgis_python_api', 'publisher1', 'publisher2', 'user1', 'user2']
-        user_password = 'sharing.1'
-        last_name = 'dino'
-        role_list = ['org_admin', 'org_publisher', 'org_publisher', 'org_user', 'org_user']
+        user_names = ["arcgis_python_api", "publisher1", "publisher2", "user1", "user2"]
+        user_password = "sharing.1"
+        last_name = "dino"
+        role_list = [
+            "org_admin",
+            "org_publisher",
+            "org_publisher",
+            "org_user",
+            "org_user",
+        ]
         email = "amani@esri.com"
 
         # Check if user is present, else create
@@ -184,10 +198,17 @@ class PortalUtils():
         return_value = True
         for user in user_names:
             try:
-                print("Creating user: " + user, end= " ")
+                print("Creating user: " + user, end=" ")
                 user_obj_list = gis.users.get(user)
                 if user_obj_list is None:
-                    created_user = gis.users.create(user, user_password, user, last_name, email, role = role_list[index])
+                    created_user = gis.users.create(
+                        user,
+                        user_password,
+                        user,
+                        last_name,
+                        email,
+                        role=role_list[index],
+                    )
                     if created_user is not None:
                         print("Created new user: " + user)
                     else:
@@ -210,14 +231,14 @@ class PortalUtils():
         :param gis: The GIS connection object to the portal
         :return: True on success. False on any failure and prints error
         """
-        group_names = ['group1', 'group2', 'group3']
-        tags = 'arcgis_python_api,automation,dino_tests'
+        group_names = ["group1", "group2", "group3"]
+        tags = "arcgis_python_api,automation,dino_tests"
         return_value = True
 
         for group in group_names:
             try:
                 print("Creating ", group, end=" ")
-                search_result = gis.groups.search(group, max_groups = 1)
+                search_result = gis.groups.search(group, max_groups=1)
                 if len(search_result) > 0 and search_result[0].title == group:
                     print(" already exists..")
                     continue
@@ -243,10 +264,10 @@ class PortalUtils():
         :param gis: The GIS connection object to the portal
         :return: True on success. False on any failure and prints error
         """
-        tags = 'arcgis_python_api,dino_tests,stress_tests'
+        tags = "arcgis_python_api,dino_tests,stress_tests"
         return_value = True
 
-        for group_index in range(1,151):
+        for group_index in range(1, 151):
             try:
                 print("Creating ", str(group_index), end=" ")
                 group_name = "group_150_" + str(group_index)
@@ -273,12 +294,12 @@ class PortalUtils():
         :param gis:
         :return: bool
         """
-        user_names = ['arcgis_python_api', 'publisher1', 'publisher2', 'user1', 'user2']
-        group_names = ['group1', 'group2', 'group3']
+        user_names = ["arcgis_python_api", "publisher1", "publisher2", "user1", "user2"]
+        group_names = ["group1", "group2", "group3"]
         return_value = True
 
-        for group in group_names[:2]: #only adding users to group1, group2
-            group_search = gis.groups.search('title : ' + group, max_groups = 1)
+        for group in group_names[:2]:  # only adding users to group1, group2
+            group_search = gis.groups.search("title : " + group, max_groups=1)
             if group_search is not None and len(group_search) > 0:
                 group_obj = group_search[0]
 
@@ -298,13 +319,17 @@ class PortalUtils():
         :param gis:
         :return: bool
         """
-        user_names = ['arcgis_python_api', 'publisher1','user1',]
-        group_index = range(1,151)
+        user_names = [
+            "arcgis_python_api",
+            "publisher1",
+            "user1",
+        ]
+        group_index = range(1, 151)
         return_value = True
 
         for group in group_index:  # only adding users to group1, group2
             group_name = "group_150_" + str(group)
-            group_search = gis.groups.search('title : ' + group_name, max_groups=1)
+            group_search = gis.groups.search("title : " + group_name, max_groups=1)
             if group_search is not None and len(group_search) > 0:
                 group_obj = group_search[0]
 
@@ -328,29 +353,36 @@ class PortalUtils():
         from glob import glob1
 
         # function to add and publish
-        def add_and_publish(file, gis, item_properties = {}, publish_item = False, folder=None, publish_parameters = {}):
+        def add_and_publish(
+            file,
+            gis,
+            item_properties={},
+            publish_item=False,
+            folder=None,
+            publish_parameters={},
+        ):
             # check if such an item exists
-            file_name=""
+            file_name = ""
             if file is None:
-                #happens for text based items
-                file_name = item_properties['title']
+                # happens for text based items
+                file_name = item_properties["title"]
                 file_name_wextn = file_name
             else:
-                file_name = pathlib.Path(file).stem #gives file name without extension
+                file_name = pathlib.Path(file).stem  # gives file name without extension
                 file_name_wextn = pathlib.Path(file).name
 
-            print("Adding " + file_name_wextn, end= " ")
-            sr = gis.content.search('title:' + file_name, max_items=1)
+            print("Adding " + file_name_wextn, end=" ")
+            sr = gis.content.search("title:" + file_name, max_items=1)
             if sr is not None and len(sr) > 0:
                 print(" already exists")
                 return True
 
-            sr2 = gis.content.search('title:' + file_name_wextn, max_items=1)
+            sr2 = gis.content.search("title:" + file_name_wextn, max_items=1)
             if sr2 is not None and len(sr2) > 0:
                 print(" already exists")
                 return True
 
-            sr3 = gis.content.search('name:' + file_name_wextn, max_items=1)
+            sr3 = gis.content.search("name:" + file_name_wextn, max_items=1)
             if sr3 is not None and len(sr3) > 0:
                 print(" already exists")
                 return True
@@ -393,7 +425,7 @@ class PortalUtils():
         file_list = glob1(file_path, "set1*.csv")
         for file in file_list:
             add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
-        print('-----------------------------------------------------------')
+        print("-----------------------------------------------------------")
 
         # add and publish fgdb
         print("Adding fgdb")
@@ -401,67 +433,97 @@ class PortalUtils():
         file_list = glob1(file_path, "set1*.zip")
         for file in file_list:
             add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
-        print('-----------------------------------------------------------')
+        print("-----------------------------------------------------------")
 
         # add and publish geojson
         print("Adding geojson files")
         file_path = os.path.join(base_path, "geojson")
         file_list = glob1(file_path, "set1*.json")
-        item_properties = {'type':'GeoJson'}
+        item_properties = {"type": "GeoJson"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False)
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+            )
+        print("-----------------------------------------------------------")
 
         # Add some image files (jpeg, png etc)
-        print("Adding image files - illustrating how a user would have project files in a folder")
+        print(
+            "Adding image files - illustrating how a user would have project files in a folder"
+        )
         file_path = os.path.join(base_path, "images")
         file_list = glob1(file_path, "set1*.png")
-        item_properties = {'type': 'Image'}
+        item_properties = {"type": "Image"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False, folder="f1_english")
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+                folder="f1_english",
+            )
+        print("-----------------------------------------------------------")
 
         # Add some KML
         print("Adding KML files")
         file_path = os.path.join(base_path, "kml")
         file_list = glob1(file_path, "set1*.kml")
-        item_properties = {'type': 'KML'}
+        item_properties = {"type": "KML"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False, folder='f1_english')
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+                folder="f1_english",
+            )
+        print("-----------------------------------------------------------")
 
         # Add some Locators
         print("Adding Locator files")
         file_path = os.path.join(base_path, "Locators")
         file_list = glob1(file_path, "set1*.zip")
-        item_properties = {'type': 'Locator Package'}
+        item_properties = {"type": "Locator Package"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False, folder='f1_english')
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+                folder="f1_english",
+            )
+        print("-----------------------------------------------------------")
 
         # Add some layer files
         print("Adding layer files")
         file_path = os.path.join(base_path, "lyr")
         file_list = glob1(file_path, "set1*")
-        item_properties = {'type': 'KML'}
+        item_properties = {"type": "KML"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False, folder='f1_english')
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+                folder="f1_english",
+            )
+        print("-----------------------------------------------------------")
 
         # Add some map documents
         print("Adding map doc files")
         file_path = os.path.join(base_path, "mxd")
         file_list = glob1(file_path, "set1*.mxd")
-        item_properties = {'type': 'Map Document'}
+        item_properties = {"type": "Map Document"}
         for file in file_list:
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False)
-        print('-----------------------------------------------------------')
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+            )
+        print("-----------------------------------------------------------")
 
         # Add some office files
         print("Adding office files")
@@ -470,17 +532,21 @@ class PortalUtils():
 
         for file in file_list:
             extn = os.path.splitext(file)[1]
-            if extn == '.docx':
-                item_properties = {'type': 'Microsoft Word'}
-            elif extn == '.pptx':
-                item_properties = {'type': 'Microsoft Powerpoint'}
-            elif extn == '.pdf':
-                item_properties = {'type': 'PDF'}
-            elif extn == '.xlsx':
-                item_properties = {'type': 'Microsoft Excel'}
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False)
-        print('-----------------------------------------------------------')
+            if extn == ".docx":
+                item_properties = {"type": "Microsoft Word"}
+            elif extn == ".pptx":
+                item_properties = {"type": "Microsoft Powerpoint"}
+            elif extn == ".pdf":
+                item_properties = {"type": "PDF"}
+            elif extn == ".xlsx":
+                item_properties = {"type": "Microsoft Excel"}
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+            )
+        print("-----------------------------------------------------------")
 
         # Add some packages
         print("Adding arcgis packages")
@@ -489,21 +555,25 @@ class PortalUtils():
 
         for file in file_list:
             extn = os.path.splitext(file)[1]
-            if extn == '.lpk':
-                item_properties = {'type': 'Layer Package'}
-            elif extn == '.mmpk':
-                item_properties = {'type': 'Mobile Map Package'}
-            elif extn == '.gpk':
-                item_properties = {'type': 'Geoprocessing Package'}
-            elif extn == '.spk' or extn == '.slpk':
-                item_properties = {'type': 'Scene Package'}
-            elif extn == '.spk' or extn == '.tpk':
-                item_properties = {'type': 'Tile Package'}
-            elif extn == '.spk' or extn == '.vtpk':
-                item_properties = {'type': 'Vector Tile Package'}
-            add_and_publish(os.path.join(file_path, file), gis, item_properties=item_properties,
-                            publish_item=False)
-        print('-----------------------------------------------------------')
+            if extn == ".lpk":
+                item_properties = {"type": "Layer Package"}
+            elif extn == ".mmpk":
+                item_properties = {"type": "Mobile Map Package"}
+            elif extn == ".gpk":
+                item_properties = {"type": "Geoprocessing Package"}
+            elif extn == ".spk" or extn == ".slpk":
+                item_properties = {"type": "Scene Package"}
+            elif extn == ".spk" or extn == ".tpk":
+                item_properties = {"type": "Tile Package"}
+            elif extn == ".spk" or extn == ".vtpk":
+                item_properties = {"type": "Vector Tile Package"}
+            add_and_publish(
+                os.path.join(file_path, file),
+                gis,
+                item_properties=item_properties,
+                publish_item=False,
+            )
+        print("-----------------------------------------------------------")
 
         # Add some hosted SD files
         print("Adding SD files")
@@ -512,16 +582,18 @@ class PortalUtils():
         file_list = glob1(file_path, "W*.sd")
         for file in file_list:
             add_and_publish(os.path.join(file_path, file), gis, publish_item=True)
-        print('-----------------------------------------------------------')
+        print("-----------------------------------------------------------")
 
         # Add some hosted shape files
         print("Adding shape files")
         file_path = os.path.join(base_path, "shp")
         file_list = glob1(file_path, "set1*.zip")
         for file in file_list:
-            item_properties = {'type': 'Shapefile', 'name':file}
-            add_and_publish(os.path.join(file_path, file), gis, item_properties, publish_item=True)
-        print('-----------------------------------------------------------')
+            item_properties = {"type": "Shapefile", "name": file}
+            add_and_publish(
+                os.path.join(file_path, file), gis, item_properties, publish_item=True
+            )
+        print("-----------------------------------------------------------")
 
         # Add some web maps
         print("Adding WebMaps")
@@ -530,28 +602,35 @@ class PortalUtils():
         for file in file_list:
             with open(os.path.join(file_path, file)) as file_handle:
                 webmap_def = json.load(file_handle)
-                item_properties = {'title':'set1_' + file.split('.')[0],
-                                   'type': 'Web Map',
-                                   'text':json.dumps(webmap_def)}
-                add_and_publish(None, gis, item_properties=item_properties,
-                                publish_item=False)
-        print('-----------------------------------------------------------')
+                item_properties = {
+                    "title": "set1_" + file.split(".")[0],
+                    "type": "Web Map",
+                    "text": json.dumps(webmap_def),
+                }
+                add_and_publish(
+                    None, gis, item_properties=item_properties, publish_item=False
+                )
+        print("-----------------------------------------------------------")
 
         # Add unstyled layer items
         print("Adding unstyled layer items")
-        item_properties = {'title':'set1_unstyled_layer1',
-                           'type': 'Map Service',
-                           'url':'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'}
+        item_properties = {
+            "title": "set1_unstyled_layer1",
+            "type": "Map Service",
+            "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+        }
         add_and_publish(None, gis, item_properties=item_properties, publish_item=False)
-        print('-----------------------------------------------------------')
+        print("-----------------------------------------------------------")
 
         # Add empty items
         print("Adding emtpy web apps")
-        item_properties = {'title': 'set1_empty_webapp',
-                           'type': 'Web Mapping Application',
-                           'url': 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'}
+        item_properties = {
+            "title": "set1_empty_webapp",
+            "type": "Web Mapping Application",
+            "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+        }
         add_and_publish(None, gis, item_properties=item_properties, publish_item=False)
-        print('-----------------------------------------------------------')
+        print("-----------------------------------------------------------")
 
     @staticmethod
     def create_sample_content_set2(gis):
@@ -573,11 +652,11 @@ class PortalUtils():
         :return: True on success. False on any failure and prints error
         """
         # Search if folder already exists
-        new_folder_list = ['f1_english', 'f2_敏感性增加', 'f3_Kompatibilität']
+        new_folder_list = ["f1_english", "f2_敏感性增加", "f3_Kompatibilität"]
 
         return_value = True
         for folder in new_folder_list:
-            print("Creating : " + folder, end= " ")
+            print("Creating : " + folder, end=" ")
             try:
                 create_result = gis.content.create_folder(folder)
                 if create_result is not None:
@@ -601,7 +680,7 @@ class PortalUtils():
         :param gis:The GIS connection object for which these folders need to be created
         :return: True on success. False on any failure and prints error
         """
-        new_folder_list = ['f1_english', 'f2_كامتالتصويلح', 'f3_совместимость']
+        new_folder_list = ["f1_english", "f2_كامتالتصويلح", "f3_совместимость"]
 
         return_value = True
         for folder in new_folder_list:

@@ -1,7 +1,7 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        ContentManager class tests
 # Purpose:     Sanity tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -9,7 +9,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
-#region PreCondition check
+# region PreCondition check
 test_skip = False
 class_skip = False
 module_skip = False
@@ -17,13 +17,13 @@ module_skip = False
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
 
-if (r1 & r2):
+if r1 & r2:
     print("## Precondition checks passed ##")
     module_skip = False
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
@@ -31,10 +31,10 @@ try:
     from arcgis.gis import GIS
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
-#endregion PreCondition Check
+    raise (exit())
+# endregion PreCondition Check
 
-#TestModule
+# TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in GIS module")
 def setUpModule():
     """
@@ -42,14 +42,16 @@ def setUpModule():
     :return:
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
+
 
 class Test_GroupManager_portal_builtin(unittest.TestCase):
     """
     Test to check if a GroupManager object works with builtin portal
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -58,22 +60,24 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
 
-        #region Read config data
+        # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['teamportal']['url']
-        cls.portal_username = _conf_reader['teamportal']['admin_user']
-        cls.portal_password = _conf_reader['teamportal']['admin_password']
+        cls.portal_url = _conf_reader["teamportal"]["url"]
+        cls.portal_username = _conf_reader["teamportal"]["admin_user"]
+        cls.portal_password = _conf_reader["teamportal"]["admin_password"]
 
         _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
+        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
-        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_GroupManager_cls']
-        #endregion
+        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_cls_path = (
+            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_GroupManager_cls"]
+        )
+        # endregion
 
-        #region precondition checks and sign in
+        # region precondition checks and sign in
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
             cls.class_skip = True
@@ -84,16 +88,23 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
 
         print("==================================================================")
         print("Beginning tests in Test_GroupManager_portal_builtin class")
-        #endregion
+        # endregion
 
     def setUp(self):
-        test_skip = False #reset the skip flag
-        print("Test: "+self._testMethodName)
+        test_skip = False  # reset the skip flag
+        print("Test: " + self._testMethodName)
         self.namePrefix = "dino_GroupManager_"
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -110,11 +121,17 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
         try:
-            group_search_result = self.gis.groups.search(query = "")
+            group_search_result = self.gis.groups.search(query="")
 
-            print("Number of groups returned in search: " + str(len(group_search_result)))
+            print(
+                "Number of groups returned in search: " + str(len(group_search_result))
+            )
 
-            self.assertGreaterEqual(len(group_search_result),150, "Search did not return all groups when used with default parameters")
+            self.assertGreaterEqual(
+                len(group_search_result),
+                150,
+                "Search did not return all groups when used with default parameters",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -133,12 +150,19 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
         try:
-            group_search_result = self.gis.groups.search(query="owner: " + self.portal_username)
+            group_search_result = self.gis.groups.search(
+                query="owner: " + self.portal_username
+            )
 
-            print("Number of groups returned in search: " + str(len(group_search_result)))
+            print(
+                "Number of groups returned in search: " + str(len(group_search_result))
+            )
 
-            self.assertGreaterEqual(len(group_search_result), 150,
-                                    "Search did not return > 150 groups when used with query parameters")
+            self.assertGreaterEqual(
+                len(group_search_result),
+                150,
+                "Search did not return > 150 groups when used with query parameters",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -161,11 +185,20 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
             # Should return all groups that end with 2x such as group_150_2, group_150_2(0,1,2 .. 9)
             # resulting in a total of 11
 
-            print("Number of groups returned in search: " + str(len(group_search_result)))
+            print(
+                "Number of groups returned in search: " + str(len(group_search_result))
+            )
 
-            self.assertLessEqual(len(group_search_result), 100,
-                                    "Search did not return <=100 when used with query parameters")
-            self.assertEqual(len(group_search_result), 11, "Group search did not return exactly 11 groups")
+            self.assertLessEqual(
+                len(group_search_result),
+                100,
+                "Search did not return <=100 when used with query parameters",
+            )
+            self.assertEqual(
+                len(group_search_result),
+                11,
+                "Group search did not return exactly 11 groups",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -184,12 +217,19 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
         try:
-            group_search_result = self.gis.groups.search(query="owner: " + self.portal_username, max_groups = 50)
+            group_search_result = self.gis.groups.search(
+                query="owner: " + self.portal_username, max_groups=50
+            )
 
-            print("Number of groups returned in search: " + str(len(group_search_result)))
+            print(
+                "Number of groups returned in search: " + str(len(group_search_result))
+            )
 
-            self.assertLessEqual(len(group_search_result), 50,
-                                    "Search did not return <= 50 groups when used with max_groups=50")
+            self.assertLessEqual(
+                len(group_search_result),
+                50,
+                "Search did not return <= 50 groups when used with max_groups=50",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -208,12 +248,19 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
         try:
-            group_search_result = self.gis.groups.search(query="owner: " + self.portal_username, max_groups=110)
+            group_search_result = self.gis.groups.search(
+                query="owner: " + self.portal_username, max_groups=110
+            )
 
-            print("Number of groups returned in search: " + str(len(group_search_result)))
+            print(
+                "Number of groups returned in search: " + str(len(group_search_result))
+            )
 
-            self.assertLessEqual(len(group_search_result), 110,
-                                 "Search did not return <= 110 groups when used with max_groups=50")
+            self.assertLessEqual(
+                len(group_search_result),
+                110,
+                "Search did not return <= 110 groups when used with max_groups=50",
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -225,6 +272,7 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-#TestModule
+
+# TestModule
 def tearDownModule():
     print("**End GIS module Tests**")

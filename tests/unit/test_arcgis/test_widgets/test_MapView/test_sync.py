@@ -5,6 +5,7 @@ import pytest
 from utils.mocks import MockMapView
 from arcgis.widgets import MapView
 
+
 @patch("ipywidgets.dlink")
 def test_two_sync(mock_dlink):
     mock_mapview1 = MockMapView()
@@ -25,6 +26,7 @@ def test_two_sync(mock_dlink):
 
     assert len(dlinks1) != 0 and len(dlinks1) == len(dlinks2)
     assert mock_dlink.call_count == 8
+
 
 @patch("ipywidgets.dlink")
 def test_two_unsync(mock_dlink):
@@ -59,6 +61,7 @@ def test_two_unsync(mock_dlink):
 
     for dlink in [dl1, dl2, dl3, dl4, dl5, dl6, dl7, dl8]:
         dlink.unlink.assert_called()
+
 
 @patch("ipywidgets.dlink")
 def test_three_sync_unsync(mock_dlink):
@@ -97,15 +100,16 @@ def test_three_sync_unsync(mock_dlink):
     MapView._unsync_navigation(mock_mapview2, mock_mapview3)
 
     # Assert that only the correct dlinks were removed
-    assert preunsync_dlink_len_mapview1 == len(mock_mapview1._mapview_uuid_to_dlinks) 
-    assert preunsync_dlink_len_mapview2 > len(mock_mapview2._mapview_uuid_to_dlinks) 
-    assert preunsync_dlink_len_mapview3 > len(mock_mapview3._mapview_uuid_to_dlinks) 
+    assert preunsync_dlink_len_mapview1 == len(mock_mapview1._mapview_uuid_to_dlinks)
+    assert preunsync_dlink_len_mapview2 > len(mock_mapview2._mapview_uuid_to_dlinks)
+    assert preunsync_dlink_len_mapview3 > len(mock_mapview3._mapview_uuid_to_dlinks)
 
     assert mock_mapview2 not in mock_mapview3._synced_mapviews
     assert mock_mapview2._uuid not in mock_mapview3._mapview_uuid_to_dlinks
 
     assert mock_mapview3 not in mock_mapview2._synced_mapviews
     assert mock_mapview3._uuid not in mock_mapview2._mapview_uuid_to_dlinks
+
 
 @patch("arcgis.widgets._mapview._mapview._is_iterable", lambda x: False)
 def test_assert_correct_internal_methods_are_called():
@@ -115,10 +119,11 @@ def test_assert_correct_internal_methods_are_called():
     mock_mapview2._isinstance.return_value = True
 
     MapView.sync_navigation(mock_mapview1, mock_mapview2)
-    mock_mapview1._sync_navigation.assert_called_with(mock_mapview2,
-                                                      ignore_errors = False)
+    mock_mapview1._sync_navigation.assert_called_with(
+        mock_mapview2, ignore_errors=False
+    )
 
     MapView.unsync_navigation(mock_mapview1, mapview=mock_mapview2)
-    mock_mapview1._unsync_navigation.assert_called_with(mock_mapview2,
-                                                        ignore_errors = False)
-
+    mock_mapview1._unsync_navigation.assert_called_with(
+        mock_mapview2, ignore_errors=False
+    )
