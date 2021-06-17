@@ -149,6 +149,10 @@ class EntityRecognizer:
             self.train_ds = self._model.train_ds
             self.valid_ds = self._model.val_ds
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'precision_score', 'recall_score', 'f1_score']
+
     @property
     def available_metrics(self):
         """
@@ -156,7 +160,7 @@ class EntityRecognizer:
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        return ['valid_loss', 'precision', 'recall', 'f1']
+        return ['valid_loss', 'precision_score', 'recall_score', 'f1_score']
 
     @classmethod
     def available_backbone_models(cls, architecture):

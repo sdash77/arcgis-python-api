@@ -20,6 +20,9 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from fastai.vision import imagenet_stats
+    import fastai
+    from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
+    from .._data import _get_batch_stats, sniff_rgb_bands    
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     HAS_FASTAI = True
 except:
@@ -120,7 +123,7 @@ def IC_show_results(self, nrows=5, **kwargs):
         symbology_x_batch = symbology_x_batch.squeeze()
 
     # Get color Array
-    color_array = self._data._multispectral_color_array
+    # color_array = self._data._multispectral_color_array
 
     # Handle Sparse Data (not to be applied with Multilabel data)
     if self._data.dataset_type != "MultiLabeled_Tiles" and y_batch.ndim > 1:
@@ -245,3 +248,124 @@ def get_TFIC_post_processed_model(arcgis_model, input_normalization=True):
     return new_model
 
 ## Tensorflow specific utils end ##
+
+
+## Funtions required for custom fastai databunch
+def add_ms_attributes(data):
+    if len(data.train_ds) < 300:
+        norm_pct = 1
+    else:
+        norm_pct = 0.3
+
+    # Statistics
+    dummy_stats = {
+        "batch_stats_for_norm_pct_0" : {
+            "band_min_values": None,
+            "band_max_values": None,
+            "band_mean_values": None,
+            "band_std_values": None,
+            "scaled_min_values": None,
+            "scaled_max_values": None,
+            "scaled_mean_values": None,
+            "scaled_std_values": None
+        }
+    }
+    normstats_json_path = os.path.abspath(data.path / 'esri_normalization_stats.json')
+    if not os.path.exists(normstats_json_path):
+        normstats = dummy_stats
+        with open(normstats_json_path, 'w', encoding='utf-8') as f:
+            json.dump(normstats, f, ensure_ascii=False, indent=4)
+    else:
+        with open(normstats_json_path) as f:
+            normstats = json.load(f)
+
+
+    norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
+    if norm_pct_search in normstats:
+        batch_stats = normstats[norm_pct_search]
+        for s in batch_stats:
+            if batch_stats[s] is not None:
+                batch_stats[s] = torch.tensor(batch_stats[s])
+    else:
+        batch_stats = _get_batch_stats(data.x, norm_pct, _band_std_values=True, reshape=True)
+        normstats[norm_pct_search] = dict(batch_stats)
+        for s in normstats[norm_pct_search]:
+            if normstats[norm_pct_search][s] is not None:
+                normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
+        with open(normstats_json_path, 'w', encoding='utf-8') as f:
+            json.dump(normstats, f, ensure_ascii=False, indent=4)
+    
+
+    # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
+    data._band_min_values = batch_stats['band_min_values']
+    data._band_max_values = batch_stats['band_max_values']
+    data._band_mean_values = batch_stats['band_mean_values']
+    data._band_std_values = batch_stats['band_std_values']
+    data._scaled_min_values = batch_stats['scaled_min_values']
+    data._scaled_max_values = batch_stats['scaled_max_values']
+    data._scaled_mean_values = batch_stats['scaled_mean_values']
+    data._scaled_std_values = batch_stats['scaled_std_values']
+    
+    # Prevent Divide by zeros
+    data._band_max_values[data._band_min_values == data._band_max_values] += 1
+    # data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
+
+    data = data.normalize(stats=(data._band_mean_values, data._band_std_values), do_x=True, do_y=False)
+    
+    data._do_normalize = True
+    data._is_multispectral = True
+    data._imagery_type = 'multispectral'
+    data._bands = list(range(data.x[0].shape[0]))
+    data._extract_bands = list(range(data.x[0].shape[0]))
+    data._symbology_rgb_bands = [0, 1, 2]
+    data._train_tail = True    
+
+def adapt_fastai_databunch(data):
+    # Case: from_model  method.
+    if hasattr(data, 'emd'):
+        data._dataset_type = data.emd['MetaDataMode']
+
+    _is_ms = False
+    # Case: from_model method
+    if hasattr(data, '_is_multispectral'):
+        _is_ms = data._is_multispectral  
+
+    if len(data.x.items) != 0:
+        _is_ms = _is_ms or data.x[0].shape[0] != 3          
+
+    # Case: Customdatabunch RGB
+    if not hasattr(data, '_dataset_type'):
+        if isinstance(data.y[0], fastai.core.MultiCategory):
+            data._dataset_type = 'MultiLabeled_Tiles'
+            data.dataset_type = data._dataset_type                    
+        else:
+            data._dataset_type = 'Labeled_Tiles'
+            data.dataset_type = data._dataset_type
+    
+    # Case: Cutomdatabunch Multispectral.
+    if _is_ms:
+        if hasattr(data, 'stats'):
+            # If dataset is already normalized just store the stats
+            norm_stats = data.stats
+            data._band_mean_values = torch.tensor(norm_stats[0])
+            data._band_std_values = torch.tensor(norm_stats[1])
+            data._scaled_mean_values = torch.tensor(norm_stats[0])
+            data._scaled_std_values = torch.tensor(norm_stats[1])
+            data._band_min_values = torch.tensor([0] * len(norm_stats[0]))
+            data._band_max_values = torch.tensor([1] * len(norm_stats[0]))
+            data._scaled_min_values = torch.tensor([0] * len(norm_stats[0]))
+            data._scaled_max_values = torch.tensor([1] * len(norm_stats[0]))
+            data._do_normalize = True
+            data._is_multispectral = True
+            data._imagery_type = 'multispectral'
+            data._bands = list(range(data.x[0].shape[0]))
+            data._extract_bands = list(range(data.x[0].shape[0]))
+            data._symbology_rgb_bands = [0, 1, 2]
+            data._train_tail = True                     
+        else:
+            add_ms_attributes(data)   
+
+    if not hasattr(data, 'chip_size'):
+        data.chip_size = data.train_ds[0][0].shape[1]
+
+    return data

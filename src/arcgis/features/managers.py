@@ -12,6 +12,7 @@ from typing import Tuple
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
 import concurrent.futures as _cf
+from typing import Optional, Dict, List, Any
 
 # pylint: disable=protected-access
 
@@ -37,6 +38,10 @@ class AttachmentManager(object):
         keywords=None,
         show_images=False,
         as_df=False,
+        return_metadata=False,
+        return_url=False,
+        max_records=None,
+        offset=0,
     ):
         """
 
@@ -107,6 +112,34 @@ class AttachmentManager(object):
         as_df                       optional bool. Default is False, if True, the results will be
                                     a Pandas' DataFrame.  If False, the values will be a list of
                                     dictionary values.
+        -------------------------   ---------------------------------------------------------------
+        return_metadata             Optional Boolean. If true, metadata stored in the `exifInfo`
+                                    column will be returned for attachments that have `exifInfo`.
+                                    This option is supported only when "name": "exifInfo" in the
+                                    layer's attachmentProperties includes "isEnabled": true. When
+                                    set to false, or not set, None is returned for `exifInfo`.
+        -------------------------   ---------------------------------------------------------------
+        return_url                  Optional Boolean. Specifies whether to return the attachment
+                                    URL. The default is false. This parameter is supported if the
+                                    `supportsQueryAttachmentsWithReturnUrl` property is true on the
+                                    layer. Applications can use this URL to download the attachment
+                                    image.
+        -------------------------   ---------------------------------------------------------------
+        max_records                 Optional Integer. This option fetches query results up to the
+                                    `resultRecordCount` specified. When `resultOffset` is specified
+                                    and this parameter is not, the feature service defaults to the
+                                    `maxRecordCount`. The maximum value for this parameter is the
+                                    value of the layer's `maxRecordCount` property. This parameter
+                                    only applies if `supportPagination` is true.
+        -------------------------   ---------------------------------------------------------------
+        offset                      Optional Integer. This parameter is designed to be used in
+                                    conjunction with `max_records` to page through a long list of
+                                    attachments, one request at a time. This option fetches query
+                                    results by skipping a specified number of records. The query
+                                    results start from the next record (i.e., resultOffset + 1).
+                                    The default value is 0. This parameter only applies when
+                                    `supportPagination` is true. You can use this option to fetch
+                                    records that are beyond `maxRecordCount` property.
         =========================   ===============================================================
 
         :returns: list of downloaded files
@@ -221,7 +254,11 @@ class AttachmentManager(object):
                 "globalIds": ",".join([str(v) for v in global_ids]),
                 "definitionExpression": where,
                 "keywords": ",".join([str(v) for v in keywords]),
-                "size": None,
+                "size": size,
+                "returnMetadata": return_metadata,
+                "returnUrl": return_url,
+                "resultRecordCount": max_records,
+                "resultOffset": offset,
             }
             iterparams = copy.copy(params)
             for k, v in iterparams.items():

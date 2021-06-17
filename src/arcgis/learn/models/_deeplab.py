@@ -411,6 +411,10 @@ class DeepLab(ArcGISModel):
             else:
                 logger.error("Metric not found in the loaded model")
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
+
     @property
     def _model_metrics(self):
         return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}

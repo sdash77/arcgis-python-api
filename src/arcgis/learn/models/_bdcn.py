@@ -147,6 +147,10 @@ class BDCNEdgeDetector(ModelExtension):
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'f1_score']
+
     @property
     def _is_edge_detection(self):
         return True

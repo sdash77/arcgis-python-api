@@ -253,6 +253,10 @@ class SingleShotDetector(ArcGISModel):
     def _supported_datasets():
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'average_precision']
+
     @classmethod
     def from_model(cls, emd_path, data=None):
 
