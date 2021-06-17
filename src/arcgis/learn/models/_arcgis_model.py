@@ -147,8 +147,9 @@ class _MultiGPUCallback(LearnerCallback):
 
 
 def _set_multigpu_callback(model):
-    if (not hasattr(arcgis.env, "_gpuid")) or \
-            (arcgis.env._gpuid >= torch.cuda.device_count()):
+    if ((not hasattr(arcgis.env, "_gpuid")) or \
+            (arcgis.env._gpuid >= torch.cuda.device_count())) and \
+            (not getattr(arcgis.env, "_processorType", False)=='CPU'):
         model.learn.callback_fns.append(_MultiGPUCallback)
 
 
