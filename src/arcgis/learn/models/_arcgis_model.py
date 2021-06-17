@@ -481,6 +481,17 @@ class ArcGISModel(object):
 
         if data is not None and getattr(data, 'path', None) is None:
             data.path = Path(os.path.abspath('.'))
+
+        if getattr(self, "_is_edge_detection", False):
+
+            if len(data.classes) > 2:
+                raise Exception(
+                    "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
+                    # noqa
+                )
+
+            data.class_mapping = {1:data.classes[1]}
+
         self.learn = None
         self._data = data
         self._learning_rate = None
