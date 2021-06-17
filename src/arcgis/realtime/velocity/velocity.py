@@ -20,7 +20,7 @@ class Velocity:
     @property
     def feeds(self):
         """
-        Provides access to managing configured Feeds with ArcGIS Velocity
+        Provides access to the resource manager for managing configured Feeds with ArcGIS Velocity. See :class:`~arcgis.realtime.FeedsManager`.
 
         :return: feeds
         """
@@ -31,7 +31,7 @@ class Velocity:
     @property
     def realtime_analytics(self):
         """
-         Provides access to managing configured Real-time analytics tasks with ArcGIS Velocity
+         Provides access to  the resource manager for managing configured Real-time analytics tasks with ArcGIS Velocity. See :class:`~arcgis.realtime.RealTimeAnalyticsManager`.
 
         :return: realtime_analytics
         """
@@ -44,7 +44,7 @@ class Velocity:
     @property
     def bigdata_analytics(self):
         """
-         Provides access to managing configured Big data analytics tasks with ArcGIS Velocity
+         Provides access to the resource manager for managing configured Big data analytics tasks with ArcGIS Velocity. See :class:`~arcgis.realtime.BigDataAnalyticsManager`.
 
         :return: bigdata_analytics
         """
