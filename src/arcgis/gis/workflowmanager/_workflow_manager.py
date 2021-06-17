@@ -154,7 +154,7 @@ class WorkflowManagerAdmin:
 
         url = '{base}/checkStatus?token={token}'.format(base=self._url, token=self._gis._con.token)
 
-        return_obj = _ujson.loads(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return_obj = _ujson.loads(str(self._gis._con.get(url)))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
@@ -368,10 +368,7 @@ class JobManager:
         """
         try:
             url = f'{self._url}/jobs/{id}'
-            job_dict = ast.literal_eval(
-                str(self._gis._con.get(url, {"token": self._gis._con.token, "extProps": get_ext_props})).encode('cp850',
-                                                                                                                'replace').decode(
-                    'utf-8'))
+            job_dict = json.loads(json.dumps(self._gis._con.get(url, {"token": self._gis._con.token, "extProps": get_ext_props})))
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -680,10 +677,9 @@ class WorkflowManager:
         :return: array
         """
         try:
-            role_array = ast.literal_eval(str(self._gis._con.get('{base}/community/roles'.format(base=self._url),
+            role_array = json.loads(json.dumps(self._gis._con.get('{base}/community/roles'.format(base=self._url),
                                                                  params={"token": self._gis._con.token})[
-                                                  'roles']).encode(
-                'cp850', 'replace').decode('utf-8'))
+                                                  'roles']))
             return_array = [WMRole(r) for r in role_array]
             return return_array
         except:
@@ -697,10 +693,9 @@ class WorkflowManager:
         :return: array
         """
         try:
-            user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/users'.format(base=self._url),
+            user_array = json.loads(json.dumps(self._gis._con.get('{base}/community/users'.format(base=self._url),
                                                                  params={"token": self._gis._con.token})[
-                                                  'users']).encode(
-                'cp850', 'replace').decode('utf-8'))
+                                                  'users']))
             return_array = [self.user(u['username']) for u in user_array]
             return return_array
         except:
@@ -714,9 +709,8 @@ class WorkflowManager:
         :return: A list of the assignable user objects
         """
         try:
-            user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/users'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['users']).encode(
-                'cp850', 'replace').decode('utf-8'))
+            user_array = json.loads(json.dumps(self._gis._con.get('{base}/community/users'.format(base=self._url),
+                                                           params={"token": self._gis._con.token})['users']))
             return_array = [self.user(u['username']) for u in user_array if u['isAssignable']]
             return return_array
         except:
@@ -731,9 +725,8 @@ class WorkflowManager:
         :return: A list of the assignable group objects
         """
         try:
-            group_array = ast.literal_eval(str(self._gis._con.get('{base}/community/groups'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['groups']).encode(
-                'cp850', 'replace').decode('utf-8'))
+            group_array = json.loads(json.dumps(self._gis._con.get('{base}/community/groups'.format(base=self._url),
+                                                           params={"token": self._gis._con.token})['groups']))
             return_array = [self.group(g['id']) for g in group_array if g['isAssignable']]
             return return_array
         except:
@@ -747,9 +740,9 @@ class WorkflowManager:
         :return: array
         """
         try:
-            return ast.literal_eval(str(
+            return json.loads(json.dumps(
                 self._gis._con.get('{base}/settings'.format(base=self._url), params={"token": self._gis._con.token})[
-                    'settings']).encode('cp850', 'replace').decode('utf-8'))
+                    'settings']))
         except:
             self._handle_error(sys.exc_info())
 
@@ -761,10 +754,9 @@ class WorkflowManager:
         :return: array
         """
         try:
-            group_array = ast.literal_eval(str(self._gis._con.get('{base}/community/groups'.format(base=self._url),
+            group_array = json.loads(json.dumps(self._gis._con.get('{base}/community/groups'.format(base=self._url),
                                                                   params={"token": self._gis._con.token})[
-                                                   'groups']).encode(
-                'cp850', 'replace').decode('utf-8'))
+                                                   'groups']))
             return_array = [self.group(g['id']) for g in group_array]
             return return_array
         except:
@@ -790,9 +782,9 @@ class WorkflowManager:
             params["searchType"] = search_type
 
         try:
-            return ast.literal_eval(str(
+            return json.loads(json.dumps(
                 self._gis._con.get('{base}/searches'.format(base=self._url), params=params)[
-                    'searches']).encode('cp850', 'replace').decode('utf-8'))
+                    'searches']))
         except:
             self._handle_error(sys.exc_info())
 
@@ -804,9 +796,14 @@ class WorkflowManager:
         :return: List of all current job templates in the Workflow Manager (required information for create_job call)
         """
         try:
-            template_array = ast.literal_eval(str(self._gis._con.get('{base}/jobTemplates'.format(base=self._url),
+            a = self._gis._con.get('{base}/jobTemplates'.format(base=self._url),
                                                                      params={"token": self._gis._con.token})[
-                                                      'jobTemplates']).encode('cp850', 'replace').decode('utf-8'))
+                                                      'jobTemplates']
+            b = json.dumps(a)
+            c = json.loads(b)
+            template_array = json.loads(json.dumps(self._gis._con.get('{base}/jobTemplates'.format(base=self._url),
+                                                                     params={"token": self._gis._con.token})[
+                                                      'jobTemplates']))
             return_array = [JobTemplate(t, self._gis, self._url) for t in template_array]
             return return_array
         except:
@@ -820,9 +817,9 @@ class WorkflowManager:
         :return: List of all current diagrams in the Workflow Manager
         """
         try:
-            diagram_array = ast.literal_eval(str(
+            diagram_array = json.loads(json.dumps(
                 self._gis._con.get('{base}/diagrams'.format(base=self._url), params={"token": self._gis._con.token})[
-                    'diagrams']).encode('cp850', 'replace').decode('utf-8'))
+                    'diagrams']))
             return_array = [JobDiagram(d, self._gis, self._url) for d in diagram_array]
             return return_array
         except:
@@ -1259,7 +1256,7 @@ class WorkflowManager:
 
         url = '{base}/tableDefinitions?token={token}'.format(base=self._url, token=self._gis._con.token)
 
-        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
@@ -1692,7 +1689,7 @@ class Job(object):
 
         url = '{base}/jobs/{jobId}/attachments?token={token}'.format(base=self._url, jobId=self.job_id,
                                                                      token=self._gis._con.token)
-        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         return return_obj['attachments']
 
     @property
@@ -1705,7 +1702,7 @@ class Job(object):
 
         url = '{base}/jobs/{jobId}/history?token={token}'.format(base=self._url, jobId=self.job_id,
                                                                  token=self._gis._con.token)
-        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         if 'success' in return_obj:
             return return_obj['success']
         return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
@@ -1764,7 +1761,7 @@ class WMRole(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        role_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
+        role_dict = json.loads(json.dumps(gis._con.get(url, params)))
         return WMRole(role_dict)
 
     def post(self, gis, url):
@@ -1805,8 +1802,7 @@ class JobTemplate(object):
         gis = object.__getattribute__(self, '_gis')
         url = object.__getattribute__(self, '_url')
         id = object.__getattribute__(self, 'job_template_id')
-        full_object = ast.literal_eval(
-            str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
+        full_object = json.loads(json.dumps(gis._con.get(url, {"token": gis._con.token})))
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -1818,7 +1814,7 @@ class JobTemplate(object):
                 raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
 
     def get(gis, url, params):
-        job_template_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
+        job_template_dict = json.loads(json.dumps(gis._con.get(url, params)))
         return JobTemplate(job_template_dict, gis, url)
 
     def put(self, gis, url):
@@ -1871,7 +1867,7 @@ class Group(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        group_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
+        group_dict = json.loads(json.dumps(gis._con.get(url, params)))
         return Group(group_dict)
 
 
@@ -1897,8 +1893,7 @@ class JobDiagram(object):
         gis = object.__getattribute__(self, '_gis')
         url = object.__getattribute__(self, '_url')
         id = object.__getattribute__(self, 'diagram_id')
-        full_object = ast.literal_eval(
-            str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
+        full_object = json.loads(json.dumps(gis._con.get(url, {"token": gis._con.token})))
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -1910,7 +1905,7 @@ class JobDiagram(object):
                 raise KeyError(f'The attribute "{item}" is invalid for Diagrams')
 
     def get(gis, url, params):
-        job_diagram_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
+        job_diagram_dict = json.loads(json.dumps(gis._con.get(url, params)))
         return JobDiagram(job_diagram_dict, gis, url)
 
     def post(self, gis, url):
@@ -1969,5 +1964,5 @@ class JobLocation(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
-        job_location_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
+        job_location_dict = json.loads(json.dumps(gis._con.get(url, params)))
         return JobLocation(job_location_dict)
