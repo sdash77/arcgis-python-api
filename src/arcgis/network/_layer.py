@@ -5,7 +5,7 @@ from arcgis.gis import Layer, _GISResource
 # Supported Data Types
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
-
+from arcgis.network import _utils
 from arcgis.mapping import MapImageLayer
 
 try:
@@ -494,6 +494,14 @@ class RouteLayer(NetworkLayer):
         params = {
             "f": "json",
         }
+        if isinstance(travel_mode, str):
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=travel_mode
+            )
+        else:
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+            )
         stops = _handle_spatial_inputs(data=stops)
         params["stops"] = stops
         if directions_output_type is None:
@@ -794,6 +802,15 @@ class ServiceAreaLayer(NetworkLayer):
 
         url = self._url + "/solveServiceArea"
         params = {"f": "json", "facilities": _handle_spatial_inputs(facilities)}
+
+        if isinstance(travel_mode, str):
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=travel_mode
+            )
+        else:
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+            )
 
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
@@ -1103,6 +1120,15 @@ class ClosestFacilityLayer(NetworkLayer):
             "incidents": _handle_spatial_inputs(incidents),
         }
 
+        if isinstance(travel_mode, str):
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=travel_mode
+            )
+        else:
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+            )
+
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
         if not polyline_barriers is None:
@@ -1344,6 +1370,14 @@ class ODCostMatrixLayer(NetworkLayer):
             "origins": _handle_spatial_inputs(origins),
             "destinations": _handle_spatial_inputs(destinations),
         }
+        if isinstance(travel_mode, str):
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=travel_mode
+            )
+        else:
+            travel_mode = _utils.find_travel_mode(
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+            )
         allowed_output_types = {
             "esriNAODOutputSparseMatrix": "esriNAODOutputSparseMatrix",
             "Sparse Matrix": "esriNAODOutputSparseMatrix",

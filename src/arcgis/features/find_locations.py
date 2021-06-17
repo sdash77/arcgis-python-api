@@ -774,7 +774,7 @@ def choose_best_facilities(
     max_travel_range=2147483647,
     max_travel_range_field=None,
     max_travel_range_units="Minutes",
-    travel_mode="Driving Time",
+    travel_mode=None,
     time_of_day=None,
     time_zone_for_time_of_day="GeoLocal",
     travel_direction="FacilityToDemand",
@@ -1039,7 +1039,6 @@ def choose_best_facilities(
                                     candidate_count=1,
                                     output_name="choose best facilities")
     """
-
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "goal": goal,
@@ -1074,18 +1073,13 @@ def choose_best_facilities(
         fn=gis._tools.featureanalysis._tbx.choose_best_facilities, **kwargs
     )
     try:
+        from arcgis.network import _utils
+
         if isinstance(travel_mode, str):
-            route_service = network.RouteLayer(
-                gis.properties.helperServices.route.url, gis=gis
-            )
-            travelmodes = route_service.retrieve_travel_modes().get(
-                "supportedTravelModes", []
-            )
-            tm = [i for i in travelmodes if i["name"] == travel_mode]
-            if tm:
-                params["travel_mode"] = tm[0]
-            else:
-                params["travel_mode"] = travel_mode
+            travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+            params["travel_mode"] = travel_mode
+        else:
+            params["travel_mode"] = _utils.find_travel_mode(gis=gis)
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)

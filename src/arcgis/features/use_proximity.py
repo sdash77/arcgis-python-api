@@ -12,6 +12,7 @@ import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
+from arcgis import network
 
 _logger = logging.getLogger()
 # --------------------------------------------------------------------------
@@ -452,7 +453,7 @@ def create_drive_time_areas(
     input_layer,
     break_values=[5, 10, 15],
     break_units="Minutes",
-    travel_mode="Driving",
+    travel_mode=None,
     overlap_policy="Overlap",
     time_of_day=None,
     time_zone_for_time_of_day="GeoLocal",
@@ -684,17 +685,13 @@ def create_drive_time_areas(
 
     try:
         if isinstance(travel_mode, str):
-            route_service = network.RouteLayer(
-                gis.properties.helperServices.route.url, gis=gis
+            params["travel_mode"] = network._utils.find_travel_mode(
+                gis=gis, travel_mode=travel_mode
             )
-            travelmodes = route_service.retrieve_travel_modes().get(
-                "supportedTravelModes", []
+        else:
+            params["travel_mode"] = network._utils.find_travel_mode(
+                gis=gis, travel_mode=network._utils.default_travel_mode(gis=gis)
             )
-            tm = [i for i in travelmodes if i["name"] == travel_mode]
-            if tm:
-                params["travel_mode"] = tm[0]
-            else:
-                params["travel_mode"] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)
@@ -949,7 +946,7 @@ def plan_routes(
     return_to_start=True,
     end_layer=None,
     end_layer_route_id_field=None,
-    travel_mode="Driving Time",
+    travel_mode=None,
     stop_service_time=0,
     max_route_time=525600,
     include_route_layers=False,
@@ -1251,17 +1248,13 @@ def plan_routes(
     params["estimate"] = estimate
     try:
         if isinstance(travel_mode, str):
-            route_service = network.RouteLayer(
-                gis.properties.helperServices.route.url, gis=gis
+            params["travel_mode"] = network._utils.find_travel_mode(
+                gis=gis, travel_mode=travel_mode
             )
-            travelmodes = route_service.retrieve_travel_modes().get(
-                "supportedTravelModes", []
+        else:
+            params["travel_mode"] = network._utils.find_travel_mode(
+                gis=gis, travel_mode=network._utils.default_travel_mode(gis=gis)
             )
-            tm = [i for i in travelmodes if i["name"] == travel_mode]
-            if tm:
-                params["travel_mode"] = tm[0]
-            else:
-                params["travel_mode"] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)
