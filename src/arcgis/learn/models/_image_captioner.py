@@ -88,6 +88,10 @@ class ImageCaptioner(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)  # Load model and vocab
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'corpus_bleu']
+
     @classmethod
     def from_model(cls, emd_path, data=None):
 

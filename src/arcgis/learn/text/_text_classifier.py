@@ -221,6 +221,10 @@ class TextClassifier(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'error_rate']
+
     @classmethod
     def available_backbone_models(cls, architecture):
         """

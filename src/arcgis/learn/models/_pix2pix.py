@@ -57,6 +57,10 @@ class Pix2Pix(ArcGISModel):
         def __repr__(self):
             return '<%s>' % (type(self).__name__)
         
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
+    
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
