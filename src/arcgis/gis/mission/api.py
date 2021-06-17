@@ -4,6 +4,7 @@ from arcgis.gis import Item
 from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
+from typing import Union
 
 ###########################################################################
 class MissionJob(object):
@@ -271,7 +272,7 @@ class MissionCatalog:
         locale: str = "en",
         base_map: dict = None,
         wm_description: str = None,
-        webmap_id: str = None,
+        webmap_id: Union[str, Item] = None,
     ) -> MissionJob:
         """
 
