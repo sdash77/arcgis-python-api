@@ -6377,8 +6377,6 @@ class Raster:
         """
         Create a Raster object from a `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
 
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
-
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
@@ -6399,6 +6397,19 @@ class Raster:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the Raster object.
         =================     ====================================================================
@@ -9903,8 +9914,6 @@ class RasterCollection:
         """
         Create a RasterCollection object from a `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__ `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
 
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
-
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
@@ -9977,6 +9986,19 @@ class RasterCollection:
                                     |   "verify":True,
                                     |   "headers":{"Authorization": "Bearer access_token_string"}
                                     | }
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
@@ -10139,8 +10161,6 @@ class RasterCollection:
         """
         Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
 
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
-
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
@@ -10183,6 +10203,19 @@ class RasterCollection:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        request_params        Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
