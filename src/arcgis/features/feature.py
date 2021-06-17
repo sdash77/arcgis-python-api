@@ -73,7 +73,17 @@ class Feature(object):
         value               Required. Value to update the field with.
         ===============     ====================================================================
 
-        :return:
+        .. code-block:: python
+
+            # UsageExample
+
+            >>> feat_set = feature_layer.query(where="OBJECTID=1")
+            >>> feat = feat_set[0]
+            >>> feat.setvalue(field_name = "field_name",
+            >>>               value = "new_value")
+            True
+
+        :returns:
             A boolean indicating whether ``field_name`` value was updated (True), or not updated (False).
 
         """
@@ -109,6 +119,7 @@ class Feature(object):
         **Argument**          **Description**
         -------------     -----------------------------------------------------------
         field names       Required String. The name for each attribute field.
+
                           .. note::
                             ``feature.fields`` will return a list of all field names.
         =============     ===========================================================
@@ -702,6 +713,7 @@ class FeatureSet(object):
         """
         The ``to_dict`` method converts the :class:`~arcgis.features.FeatureSet` object to a Python dictionary.
 
+
         :returns:
             A Python dictionary
         """
@@ -1284,13 +1296,13 @@ class FeatureSet(object):
     # ----------------------------------------------------------------------
     def save(self, save_location, out_name, encoding=None):
         """
-        The ``save`` method saves a :class:`~arcgis.features.Feature` object to a :class:`~arcgis.features.Feature`
-        class.
+        The ``save`` method saves a :class:`~arcgis.features.FeatureSet` object to a
+        :class:`~arcgis.features.FeatureSet` class.
 
         =================    ====================================================================
         **Argument**         **Description**
         -----------------    --------------------------------------------------------------------
-        save_location        Required string. Path to export the FeatureSet to.
+        save_location        Required string. Path to export the :class:`~arcgis.features.FeatureSet` to.
         -----------------    --------------------------------------------------------------------
         out_name             Required string. Name of the saved table.
         -----------------    --------------------------------------------------------------------
@@ -1299,6 +1311,13 @@ class FeatureSet(object):
                              default is None.
         =================    ====================================================================
 
+        .. code-block:: python
+
+            # Obtain a feature from a feature layer:
+
+            >>> feat_set = feature_layer.save(save_location = "C:\ArcGISProjects\"
+            >>>                               out_name = "Power_Plant_Data")
+            "C:\ArcGISProjects\Power_Plant_Data"
 
         :returns:
             A string
@@ -1479,7 +1498,7 @@ class FeatureCollection(Layer):
     @staticmethod
     def from_featureset(fset, symbol=None, name=None):
         """
-        The ``from_featureset`` method creates a ``FeatureCollection`` object from a
+        The ``from_featureset`` method creates a :class:`~arcgis.features.FeatureCollection` object from a
         :class:`~arcgis.features.FeatureSet` object.
 
         ==================     ====================================================================
@@ -1498,8 +1517,17 @@ class FeatureCollection(Layer):
                                provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> feat_set = feature_layer.query(where="OBJECTID=1")
+            >>> feat_collect = from_featureset(feat_set)
+            >>> type(feat_collect)
+            "acrgis.features.FeatureCollection"
+
         :returns:
-            A ``FeatureCollection`` object.
+            A :class:`~arcgis.features.FeatureCollection` object.
         """
         if not isinstance(fset, FeatureSet):
             raise ValueError

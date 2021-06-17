@@ -75,7 +75,9 @@ except:
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
-    **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
+    .. warning::
+        The ``SpatialDataFrame`` class is deprecated in favor of the :class:`~arcgis.features.GeoAccessor` and the
+        :class:`~arcgis.features.GeoSeriesAccessor` pattern. Please see those classes for more details.
 
     A Spatial Dataframe is an object to manipulate, manage and translate
     data into new forms of information for users.
