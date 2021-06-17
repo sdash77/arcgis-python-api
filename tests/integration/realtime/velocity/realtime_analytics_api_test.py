@@ -5,9 +5,9 @@ from arcgis.realtime.velocity.realtime_analytics_manager import RealTimeAnalytic
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
-    url = ""
-    username = ""
-    password = ""
+    url = "https://devext.arcgis.com"
+    username = "pythontest_a4iot"
+    password = "a4iot.arcgis"
     gis = GIS(url, username, password)
     SKIP_TESTS = False
     # Skip task start/stop/delete tests by default. Set as false to run
@@ -21,7 +21,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     realtime_analytics = velocity.realtime_analytics
     realtime_analytics_item = realtime_analytics.get(
-        "7a8f2100aedb47be85d57d4969757a16"
+        "3dbe9e68d3d0466194571d1f804da7e4"
     )
 
     # ----------------------------------------------------------------------
@@ -50,7 +50,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
 
         try:
             response = self.realtime_analytics.get(
-                "7a8f2100aedb47be85d57d4969757a16"
+                "3dbe9e68d3d0466194571d1f804da7e4"
             )
             assert isinstance(response, RealTimeAnalytics)
 
@@ -143,7 +143,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_delete_realtime_analytics ----")
         try:
             realtime_analytics_to_delete = self.realtime_analytics.get(
-                "e6a8caa0e38f44fab569cebbaf5fea2a"
+                "2bc17c7e28994759ad8c8e53dff361c1"
             )
             try:
                 response = realtime_analytics_to_delete.delete()
