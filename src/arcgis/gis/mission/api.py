@@ -4,6 +4,7 @@ from arcgis.gis import Item
 from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
+from typing import Union
 
 ###########################################################################
 class MissionJob(object):
@@ -271,6 +272,7 @@ class MissionCatalog:
         locale: str = "en",
         base_map: dict = None,
         wm_description: str = None,
+        webmap_id: Union[str, Item] = None,
     ) -> MissionJob:
         """
 
@@ -296,11 +298,11 @@ class MissionCatalog:
 
                                **Format: <xmin>, <ymin>, <xmax>, <ymax>**
         ------------------     --------------------------------------------------------------------
-        templateWebMapId	   Optional. String. The portal item id of the web map to use as a template for the mission.
+        webmap_id	       Optional String. The portal item id of the web map to use as a template for the mission.
         ------------------     --------------------------------------------------------------------
-        locale	               Optional. String. The locale in which to generate Mission assets with. Must be a valid IETF BCP 47 language tag. Defaults to en
+        locale	               Optional String. The locale in which to generate Mission assets with. Must be a valid IETF BCP 47 language tag. Defaults to en
         ------------------     --------------------------------------------------------------------
-        base_map               Optional. JSON Object. The basemap to add to the mission.
+        base_map               Optional JSON Object. The basemap to add to the mission.
                                See: https://developers.arcgis.com/documentation/common-data-types/basemap.htm
         ------------------     --------------------------------------------------------------------
         wm_description         Optional string. The description of the web map added to the mission.
@@ -311,7 +313,8 @@ class MissionCatalog:
 
 
         """
-
+        if isinstance(webmap_id, Item):
+            webmap_id = webmap_id.itemid
         url = f"{self._url}/missions/add"
         params = {
             "title": title,
@@ -324,6 +327,7 @@ class MissionCatalog:
             "locale": locale or "en",
             "baseMap": base_map or "",
             "webMapDescription": wm_description,
+            "templateWebMapId": webmap_id,
             "f": "json",
         }
         resp = self._con.post(url, params)
