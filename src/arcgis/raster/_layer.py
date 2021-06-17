@@ -10041,6 +10041,7 @@ class RasterCollection:
 
                 if isinstance(query_extent, (Envelope, Polygon)):
                     envelope_dict = json.loads(query_extent.envelope.JSON)
+                    projected_envelope = None
                     if envelope_dict["spatialReference"] is None:
                         raise RuntimeError(
                             "Invalid bbox: Polygon/Envelope object should contain spatialReference"
@@ -10052,7 +10053,7 @@ class RasterCollection:
                             out_sr=4326,
                         )
                     except Exception:
-                        RuntimeError(
+                        raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
                     bbox_list = []
