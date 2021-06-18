@@ -1430,7 +1430,14 @@ class NetworkDataset(_GISResource):
     """
 
     def __init__(self, url, gis=None):
+        if gis is None:
+            from arcgis.env import active_gis
+
+            gis = active_gis
+        if gis:
+            url = _validate_url(url, gis)
         super(NetworkDataset, self).__init__(url, gis)
+
         try:
             from ..gis.server._service._adminfactory import AdminServiceGen
 
