@@ -121,7 +121,7 @@ class BaseServer(object):
     def url(self, value):
         """gets/sets the service url"""
         self._url = value
-        self.refresh()
+        self._refresh()
 
     # ----------------------------------------------------------------------
     def __iter__(self):
