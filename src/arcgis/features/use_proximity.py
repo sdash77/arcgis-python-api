@@ -7,6 +7,7 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
+import json
 import logging
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
@@ -690,7 +691,7 @@ def create_drive_time_areas(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:
@@ -1254,7 +1255,7 @@ def plan_routes(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:

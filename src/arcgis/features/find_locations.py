@@ -14,6 +14,7 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
+import json
 import logging
 import arcgis as _arcgis
 import arcgis.network as network
@@ -1079,7 +1080,7 @@ def choose_best_facilities(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:

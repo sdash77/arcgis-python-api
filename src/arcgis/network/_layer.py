@@ -1,3 +1,4 @@
+import json
 import logging
 import datetime
 from arcgis.gis import Layer, _GISResource
@@ -232,10 +233,7 @@ class NetworkLayer(Layer):
         network dataset or in the portal if the GIS server is federated"""
         url = self._url + "/retrieveTravelModes"
         params = {"f": "json"}
-        return self._con.get(
-            path=url,
-            params=params,
-        )
+        return self._con.get(path=url, params=params,)
 
 
 ###########################################################################
@@ -499,7 +497,7 @@ class RouteLayer(NetworkLayer):
                 gis=self._gis, travel_mode=travel_mode
             )
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
@@ -810,10 +808,10 @@ class ServiceAreaLayer(NetworkLayer):
                 gis=self._gis, travel_mode=travel_mode
             )
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
             )
 
         if not barriers is None:
@@ -1129,10 +1127,10 @@ class ClosestFacilityLayer(NetworkLayer):
                 gis=self._gis, travel_mode=travel_mode
             )
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
             )
 
         if not barriers is None:
@@ -1381,10 +1379,10 @@ class ODCostMatrixLayer(NetworkLayer):
                 gis=self._gis, travel_mode=travel_mode
             )
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = travel_mode
+            params["travel_mode"] = json.dumps(travel_mode)
         else:
             travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
             )
         allowed_output_types = {
             "esriNAODOutputSparseMatrix": "esriNAODOutputSparseMatrix",
