@@ -5,6 +5,8 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
+from arcgis._impl.common._utils import _validate_url
+from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -915,7 +917,8 @@ def generate_origin_destination_cost_matrix(
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncODCostMatrix.url
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.generate_origin_destination_cost_matrix.__annotations__.keys(),
