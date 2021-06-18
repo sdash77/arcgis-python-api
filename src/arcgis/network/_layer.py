@@ -7,6 +7,7 @@ from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
 
 from arcgis.mapping import MapImageLayer
+from arcgis._impl.common._utils import _validate_url
 
 try:
 
@@ -232,10 +233,7 @@ class NetworkLayer(Layer):
         network dataset or in the portal if the GIS server is federated"""
         url = self._url + "/retrieveTravelModes"
         params = {"f": "json"}
-        return self._con.get(
-            path=url,
-            params=params,
-        )
+        return self._con.get(path=url, params=params,)
 
 
 ###########################################################################
@@ -1452,8 +1450,8 @@ class NetworkDataset(_GISResource):
             raise TypeError(
                 "item must be a type of Network Analysis Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        url = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def _load_layers(self):

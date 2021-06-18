@@ -7,6 +7,7 @@ import arcgis.env
 import logging
 from ..features import FeatureSet
 from ..geometry import Geometry
+from arcgis._impl.common._utils import _validate_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,8 +57,8 @@ class Geocoder(_GISResource):
             raise TypeError(
                 "item must be a type of Geocoding Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        url = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     def _geocode(
         self,
@@ -571,7 +572,8 @@ def get_geocoders(gis):
         geocode_services = gis.properties["helperServices"]["geocode"]
         for geocode_service in geocode_services:
             try:
-                geocoders.append(Geocoder(geocode_service["url"], gis))
+                url = _validate_url(geocode_service["url"], gis=gis)
+                geocoders.append(Geocoder(url, gis))
             except RuntimeError as runtime_error:
                 _LOGGER.warning("Unable to use Geocoder at " + geocode_service["url"])
                 _LOGGER.warning(str(runtime_error))

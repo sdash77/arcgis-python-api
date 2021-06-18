@@ -1,15 +1,23 @@
 import logging as _logging
 import arcgis
 from datetime import datetime
+from functools import lru_cache
 from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from arcgis._impl.common._utils import _validate_url
 
 _log = _logging.getLogger(__name__)
 
 _use_async = False
+
+
+@lru_cache(maxsize=50)
+def _create_toolbox(url, gis, verbose=False):
+    """holds the cached toolbox"""
+    return _import_toolbox(url_or_item=url, gis=gis, verbose=verbose)
 
 
 def get_travel_modes(gis=None):
@@ -34,7 +42,8 @@ def get_travel_modes(gis=None):
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.routingUtilities.url
-    tbx = _import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis)
     return tbx.get_travel_modes()
 
 
@@ -68,7 +77,8 @@ def get_tool_info(service_name="asyncRoute", tool_name="FindRoutes", gis=None):
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.routingUtilities.url
-    tbx = _import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis)
     kwargs = {
         "service_name": service_name,
         "tool_name": tool_name,
