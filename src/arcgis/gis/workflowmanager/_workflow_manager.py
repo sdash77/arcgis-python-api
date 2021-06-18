@@ -80,19 +80,19 @@ class WorkflowManagerAdmin:
 
     def create_item(self, name) -> tuple:
         """
-        Creates a `Workflow Manager` schema that stores all the configuration 
+        Creates a `Workflow Manager` schema that stores all the configuration
         information and location data in the data store on Portal. This can
         be run by any user assigned to the administrator role in Portal.
-        
-        For users that do not belong to the administrator role, the 
+
+        For users that do not belong to the administrator role, the
         following privileges are required to run Create Workflow Item:
-        
+
         ==================  =========================================================
         **Argument**        **Description**
         ------------------  ---------------------------------------------------------
         name                Required String. The name of the new schema.
         ==================  =========================================================
-        
+
         :returns: string (item_id)
         """
         url = "{base}/admin/createWorkflowItem?token={token}&name={name}".format(
@@ -533,7 +533,7 @@ class WorkflowManager:
     ):
         """
         Evaluates an arcade expression
-        
+
         ======================  ===============================================================
         **Argument**            **Description**
         ----------------------  ---------------------------------------------------------------
@@ -543,9 +543,9 @@ class WorkflowManager:
         ----------------------  ---------------------------------------------------------------
         context_type            Optional String.
         ----------------------  ---------------------------------------------------------------
-        mode                    Optional String. 
+        mode                    Optional String.
         ======================  ===============================================================
-        
+
         :returns: String
         """
         url = f"{self._url}/evaluateArcade?token={self._gis._con.token}"
@@ -771,7 +771,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        props               a list of Props objects to update 
+        props               a list of Props objects to update
                             (Prop object example: {'propName': 'string', 'value': 'string'})
         ===============     ====================================================================
 

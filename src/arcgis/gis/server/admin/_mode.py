@@ -91,7 +91,7 @@ class Mode(BaseServer):
         ---------------     --------------------------------------------------------------------
         run_async           Optional boolean. Determines if this operation must run asynchronously.
         ---------------     --------------------------------------------------------------------
-        allow_editing       Optional boolean. Specifies if edits to feature services are allowed 
+        allow_editing       Optional boolean. Specifies if edits to feature services are allowed
                             while a Server is in read-only mode. The default value is true.
         ===============     ====================================================================
 

@@ -73,6 +73,9 @@ class ChangeDetector(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
         
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'precision', 'recall', 'f1']
 
     def __str__(self):
         return self.__repr__()

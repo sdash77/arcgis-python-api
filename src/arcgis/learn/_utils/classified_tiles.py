@@ -194,7 +194,12 @@ def per_class_metrics(self,
         x, y = batch
         y = y.to('cpu')
         with torch.no_grad():
-            if type(x) is list or type(x) is tuple:
+            if getattr(self, "_is_model_extension", False):
+                if self._is_multispectral:
+                    predictions = model(self._model_conf.transform_input_multispectral(x)).to('cpu')
+                else:
+                    predictions = model(self._model_conf.transform_input(x)).to('cpu')
+            elif type(x) is list or type(x) is tuple:
                 predictions = model(*x).detach().to('cpu')
             else:
                 predictions = model(x).detach().to('cpu')

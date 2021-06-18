@@ -127,6 +127,10 @@ class RetinaNet(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'average_precision']
+
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
@@ -469,31 +473,39 @@ class RetinaNet(ArcGISModel):
         include_pad_detections = False
         if len(chips) == 1:
             include_pad_detections = True
+        
+        from .._utils.pascal_voc_rectangles import modified_getitem
+        from fastai.data_block import LabelList
+        orig_getitem = LabelList.__getitem__
+        LabelList.__getitem__ = modified_getitem
 
-        for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
-            if bbox:
-                scores = bbox.scores
-                bboxes, lbls = bbox._compute_boxes()
-                bboxes.add_(1).mul_(
-                    torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
-                for index, bbox in enumerate(bboxes):
-                    if lbls is not None:
-                        label = lbls[index]
-                    else:
-                        label = 'Default'
+        try:
+            for chip in chips:
+                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+                bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
+                if bbox:
+                    scores = bbox.scores
+                    bboxes, lbls = bbox._compute_boxes()
+                    bboxes.add_(1).mul_(
+                        torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                    for index, bbox in enumerate(bboxes):
+                        if lbls is not None:
+                            label = lbls[index]
+                        else:
+                            label = 'Default'
 
-                    data = bb2hw(bbox)
-                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
-                        chip['predictions'].append({
-                            'xmin': data[0],
-                            'ymin': data[1],
-                            'width': data[2],
-                            'height': data[3],
-                            'score': float(scores[index]),
-                            'label': label
-                        })
+                        data = bb2hw(bbox)
+                        if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                            chip['predictions'].append({
+                                'xmin': data[0],
+                                'ymin': data[1],
+                                'width': data[2],
+                                'height': data[3],
+                                'score': float(scores[index]),
+                                'label': label
+                            })
+        finally:
+            LabelList.__getitem__ = orig_getitem
 
         self._data.valid_ds.tfms = valid_tfms
 

@@ -173,13 +173,15 @@ def run_python_script(
 
     if inspect.isfunction(code):
         if param_as_input == True:
-            params["code"] = (
+            params["python_script"] = (
                 inspect.getsource(code) + "\n" + code.__name__ + "(**user_variables)"
             )
         else:
-            params["code"] = inspect.getsource(code) + "\n" + code.__name__ + "()"
+            params["python_script"] = (
+                inspect.getsource(code) + "\n" + code.__name__ + "()"
+            )
     elif isinstance(code, str):
-        params["code"] = code
+        params["python_script"] = code
     else:
         raise ValueError("code must be a string or Python Function.")
 
@@ -334,7 +336,7 @@ def dissolve_boundaries(
     }
 
     if output_name is None:
-        output_service_name = "Dissolve_Bounds_" + _id_generator()
+        output_service_name = _id_generator(prefix="Dissolve_Bounds_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -501,7 +503,7 @@ def merge_layers(
         if key == "merge_attributes" and params[key] is None:
             params[key] = []
     if output_name is None:
-        output_service_name = "Merge_Layers_" + _id_generator()
+        output_service_name = _id_generator(prefix="Merge_Layers_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -622,7 +624,7 @@ def clip_layer(
     }
 
     if output_name is None:
-        output_service_name = "Clip_Layer_" + _id_generator()
+        output_service_name = _id_generator(prefix="Clip_Layer_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -744,11 +746,11 @@ def overlay_data(
                             |                                    | * Polygon— Polygon                                                                |
                             +------------------------------------+-----------------------------------------------------------------------------------+
     ----------------------  -------------------------------------------------------------------------------
-    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain 
-                            overlapping features. The default is `True`. Change this parameter to `False` 
-                            if you don't want self-intersecting features for the input layer or the 
-                            overlay layer. Setting this to `False` will also improve performance. For 10.6 
-                            and 10.6.1, this parameter is only used when `overlayType` is `Intersect`. 
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain
+                            overlapping features. The default is `True`. Change this parameter to `False`
+                            if you don't want self-intersecting features for the input layer or the
+                            overlay layer. Setting this to `False` will also improve performance. For 10.6
+                            and 10.6.1, this parameter is only used when `overlayType` is `Intersect`.
                             The parameter is not used for 10.7 or later and will always be `True`.
 
 
@@ -800,7 +802,7 @@ def overlay_data(
     }
 
     if output_name is None:
-        output_service_name = "Overlay_Layers_" + _id_generator()
+        output_service_name = _id_generator(prefix="Overlay_Layers_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1034,7 +1036,7 @@ def calculate_fields(
     }
 
     if output_name is None:
-        output_service_name = "Calculate_Field_" + _id_generator()
+        output_service_name = _id_generator(prefix="Calculate_Field_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1144,7 +1146,7 @@ def copy_to_data_store(
     }
 
     if output_name is None:
-        output_service_name = "Copy_to_Data_Store_" + _id_generator()
+        output_service_name = _id_generator(prefix="Copy_to_Data_Store_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

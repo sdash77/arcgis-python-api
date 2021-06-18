@@ -114,7 +114,7 @@ def summarize_center_and_dispersion(
     }
 
     if output_name is None:
-        output_service_name = "Sum_Cntr_and_Disp_" + _id_generator()
+        output_service_name = _id_generator(prefix="Sum_Cntr_and_Disp_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -393,7 +393,7 @@ def build_multivariable_grid(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Build Multi Variable Grid_" + _id_generator()
+        output_service_name = _id_generator(prefix="Build Multi Variable Grid_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -633,7 +633,7 @@ def aggregate_points(
     if context is not None:
         params["context"] = context
     if output_name is None:
-        output_service_name = "Aggregate Points_" + _id_generator()
+        output_service_name = _id_generator(prefix="Aggregate Points_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -791,7 +791,7 @@ def describe_dataset(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Describe_Dataset_" + _id_generator()
+        output_service_name = _id_generator(prefix="Describe_Dataset_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1013,11 +1013,11 @@ def join_features(
 
                                                                                                                 The default value is 'False'.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output 
-                                                                                                                feature class (known as a left outer join) or only those that have the specified 
-                                                                                                                relationships with the join features (inner join). This option is only available when the 
+    keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output
+                                                                                                                feature class (known as a left outer join) or only those that have the specified
+                                                                                                                relationships with the join features (inner join). This option is only available when the
                                                                                                                 `join_operation` parameter is `JoinOneToOne`. False (inner join) is the default.
-                                                                                                                
+
                                                                                                                 This parameter is available at ArcGIS Enterprise **10.9+**.
     ==========================================================================================================  =============================================================================================
 
@@ -1070,7 +1070,7 @@ def join_features(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Join_Features_" + _id_generator()
+        output_service_name = _id_generator(prefix="Join_Features_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1137,6 +1137,8 @@ def reconstruct_tracks(
     time_split_unit=None,
     context=None,
     future=False,
+    arcade_split=None,
+    split_boundary=None,
 ):
     """
     .. image:: _static/images/reconstruct_tracks/reconstruct_tracks.png
@@ -1262,6 +1264,24 @@ def reconstruct_tracks(
     future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                                                                             The default value is 'False'.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    arcade_split                                                                            Optional String.  An expression that splits tracks based on values,
+                                                                                            geometry, or time values. Expressions that validate to true will be
+                                                                                            split. This parameter is only available with ArcGIS Enterprise 10.9
+                                                                                            and later.  The default is `None`.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    split_boundary                                                                          Optional String.
+
+                                                                                            Specifies how the track segment between two features is created
+                                                                                            when a track is split. The split type is applied to split
+                                                                                            expressions, distance splits, and time splits. This parameter
+                                                                                            is only available with ArcGIS Enterprise 10.9 and later.
+
+                                                                                            - `Gap` - No segment is created between the two features. This is the default when `None` is specified.
+                                                                                            - `FinishLast` - A segment is created between the two features that ends after the split.
+                                                                                            - `StartNext` - A segment is created between the two features that ends before the split.
+
+                                                                                            The default is `None`.
     ======================================================================================  ===============================================================
 
     :returns: feature layer collection item
@@ -1303,6 +1323,8 @@ def reconstruct_tracks(
         "context": context,
         "gis": gis,
         "future": future,
+        "arcade_split": arcade_split,
+        "split_boundary_option": split_boundary,
     }
     for key in list(params.keys()):
         value = params[key]
@@ -1310,7 +1332,7 @@ def reconstruct_tracks(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Reconstruct_Tracks_" + _id_generator()
+        output_service_name = _id_generator(prefix="Reconstruct_Tracks_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1491,7 +1513,7 @@ def summarize_attributes(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Summarize Attributes_" + _id_generator()
+        output_service_name = _id_generator(prefix="Summarize Attributes_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")
@@ -1750,7 +1772,7 @@ def summarize_within(
             del params[key]
 
     if output_name is None:
-        output_service_name = "Summarize Within_" + _id_generator()
+        output_service_name = _id_generator(prefix="Summarize Within_")
         output_name = output_service_name.replace(" ", "_")
     else:
         output_service_name = output_name.replace(" ", "_")

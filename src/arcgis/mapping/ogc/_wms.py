@@ -69,7 +69,7 @@ class WMSLayer(BaseOGC):
     def properties(self) -> PropertyMap:
         """
         Returns the properties of the Layer.
-        
+
         :returns: PropertyMap
         """
         if self._properties is None:
@@ -102,7 +102,7 @@ class WMSLayer(BaseOGC):
     # ---------------------------------------------------------------------
     @property
     def _extents(self) -> list:
-        """list of extents from the service in the form of 
+        """list of extents from the service in the form of
         [[minx, miny], [maxx, maxy]] for each entry in the list
         """
         try:
@@ -143,8 +143,7 @@ class WMSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     def _capabilities_url(self, service_url: str, vendor_kwargs: dict = None) -> str:
-        """Return a capabilities url
-        """
+        """Return a capabilities url"""
         pieces = urlparse(service_url)
         args = parse_qs(pieces.query)
         if "service" not in args:
@@ -179,7 +178,7 @@ class WMSLayer(BaseOGC):
 
     # ----------------------------------------------------------------------
     def _xml_to_dictionary(self, t) -> dict:
-        """ converts the xml to a dictionary object (recursivly)"""
+        """converts the xml to a dictionary object (recursivly)"""
         import json
         from collections import defaultdict
 

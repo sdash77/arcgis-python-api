@@ -11,7 +11,7 @@ from functools import lru_cache
 class OGCCollection:
     """
     Represents a single OGC dataset
-    
+
     ================  ===============================================================================
     **Argument**      **Description**
     ----------------  -------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ class OGCCollection:
     ----------------  -------------------------------------------------------------------------------
     gis               Optional GIS. The connection object.
     ================  ===============================================================================
-    
+
     """
 
     _gis = None
@@ -70,7 +70,7 @@ class OGCCollection:
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """
         Queries the OGC Feature Service Layer and Returns back the information as a Spatially Enabled DataFrame.
-        
+
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ class OGCCollection:
         ----------------  -------------------------------------------------------------------------------
         time_filter       Optional String. The dates to filter time by.
         ================  ===============================================================================
-        
+
         :returns: Union[Dict[str, Any], pd.DataFrame]
         """
         url = f"{self._url}/items"
@@ -163,7 +163,7 @@ class OGCCollection:
     def get(self, feature_id: int) -> Dict[str, Any]:
         """
         Gets an individual feature on the service
-        
+
         :returns: Dict[str, Any]
         """
         assert isinstance(feature_id, int)
@@ -176,7 +176,7 @@ class OGCCollection:
 class OGCFeatureService:
     """
     Represents the Hosted OGC Feature Server
-    
+
     ================  ===============================================================================
     **Argument**      **Description**
     ----------------  -------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ class OGCFeatureService:
     ----------------  -------------------------------------------------------------------------------
     gis               Optional GIS. The connection object.
     ================  ===============================================================================
-    
+
     """
 
     _gis = None
@@ -219,7 +219,7 @@ class OGCFeatureService:
     def conformance(self) -> Dict[str, Any]:
         """
         Provides the API conformance with the OGC standard.
-        
+
         :returns: Dict[str, Any]
         """
         url = f"{self._url}/conformance"
@@ -231,7 +231,7 @@ class OGCFeatureService:
     def collections(self) -> Iterator[OGCCollection]:
         """
         Yields all the OGC Feature Service Layers within the service.
-        
+
         :returns: Iterator[OGCCollection]
         """
         url = f"{self._url}/collections"

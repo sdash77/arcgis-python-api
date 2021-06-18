@@ -62,17 +62,17 @@ class Dispatcher(FeatureModel):
 
     def update(self, contact_number=None, name=None, user_id=None):
         """
-            Updates the dispatcher on the server
+        Updates the dispatcher on the server
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            contact_number         Optional :class:`String`. The contact number of the dispatcher
-            ------------------     --------------------------------------------------------------------
-            name                   Optional :class:`String`. The name of the dispatcher
-            ------------------     --------------------------------------------------------------------
-            user_id                Optional :class:`String`. The user id of the dispatcher
-            ==================     ====================================================================
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        contact_number         Optional :class:`String`. The contact number of the dispatcher
+        ------------------     --------------------------------------------------------------------
+        name                   Optional :class:`String`. The name of the dispatcher
+        ------------------     --------------------------------------------------------------------
+        user_id                Optional :class:`String`. The user id of the dispatcher
+        ==================     ====================================================================
 
         """
         update_dispatcher(self.project, self, contact_number, name, user_id)

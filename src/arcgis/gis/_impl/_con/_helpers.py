@@ -60,7 +60,7 @@ def validate_url(url: str):
 
 # --------------------------------------------------------------------------
 def _normalize_url(url, charset="utf-8"):
-    """ Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
+    """Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
 
     def _clean(string):
         string = str(unquote(string), "utf-8", "replace")
@@ -161,7 +161,7 @@ def _normalize_url(url, charset="utf-8"):
 
 # --------------------------------------------------------------------------
 def _parse_hostname(url, include_port=False):
-    """ Parses the hostname out of a URL."""
+    """Parses the hostname out of a URL."""
     parsed_url = urlparse((url))
     return parsed_url.netloc if include_port else parsed_url.hostname
 
@@ -175,7 +175,7 @@ def _is_http_url(url):
 
 # --------------------------------------------------------------------------
 def _unpack(obj_or_seq, key=None, flatten=False):
-    """ Turns a list of single item dicts in a list of the dict's values."""
+    """Turns a list of single item dicts in a list of the dict's values."""
 
     # The trivial case (passed in None, return None)
     if not obj_or_seq:

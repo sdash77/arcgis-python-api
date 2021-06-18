@@ -150,7 +150,7 @@ class _DotDensity(object):
     # ----------------------------------------------------------------------
     @ref_scale.setter
     def ref_scale(self, value):
-        """"""
+        """ """
         if isinstance(value, (int, float)):
             self._ref_scale = value
         else:
@@ -338,8 +338,7 @@ class _DotDensity(object):
 
 
 def _size_info(field, min_value, max_value, min_size=6, max_size=37.5, unit="unknown"):
-    """
-    """
+    """ """
     return {
         "type": "sizeInfo",
         "field": field,

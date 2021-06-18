@@ -75,83 +75,83 @@ except:
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
-        **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
-    
-        A Spatial Dataframe is an object to manipulate, manage and translate
-        data into new forms of information for users.
+    **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
 
-        Functionality of the Spatial DataFrame is determined by the Geometry Engine
-        available to the object at creation.  It will first leverage the arcpy
-        geometry engine, then shapely, then it will create the geometry objects
-        without any engine.
+    A Spatial Dataframe is an object to manipulate, manage and translate
+    data into new forms of information for users.
 
-        **Scenerios**
+    Functionality of the Spatial DataFrame is determined by the Geometry Engine
+    available to the object at creation.  It will first leverage the arcpy
+    geometry engine, then shapely, then it will create the geometry objects
+    without any engine.
 
-        =================   ======================================================
-        **Engine Type**     **Functionality**
-        -----------------   ------------------------------------------------------
-        ArcPy               Users will have the full functionality provided by the
-                            API.
-        -----------------   ------------------------------------------------------
-        Shapely             Users get a sub-set of operations, and all properties.
+    **Scenerios**
 
-                            :Valid Properties:
+    =================   ======================================================
+    **Engine Type**     **Functionality**
+    -----------------   ------------------------------------------------------
+    ArcPy               Users will have the full functionality provided by the
+                        API.
+    -----------------   ------------------------------------------------------
+    Shapely             Users get a sub-set of operations, and all properties.
 
-                            - JSON
-                            - WKT
-                            - WKB
-                            - area
-                            - centroid
-                            - extent
-                            - first_point
-                            - hull_rectangle
-                            - is_multipart
-                            - label_point
-                            - last_point
-                            - length
-                            - length3D
-                            - part_count
-                            - point_count
-                            - true_centroid
+                        :Valid Properties:
 
-                            :Valid Functions:
+                        - JSON
+                        - WKT
+                        - WKB
+                        - area
+                        - centroid
+                        - extent
+                        - first_point
+                        - hull_rectangle
+                        - is_multipart
+                        - label_point
+                        - last_point
+                        - length
+                        - length3D
+                        - part_count
+                        - point_count
+                        - true_centroid
 
-                            - boundary
-                            - buffer
-                            - contains
-                            - convex_hull
-                            - crosses
-                            - difference
-                            - disjoint
-                            - distance_to
-                            - equals
-                            - generalize
-                            - intersect
-                            - overlaps
-                            - symmetric_difference
-                            - touches
-                            - union
-                            - within
+                        :Valid Functions:
 
-                            Everything else will return None
+                        - boundary
+                        - buffer
+                        - contains
+                        - convex_hull
+                        - crosses
+                        - difference
+                        - disjoint
+                        - distance_to
+                        - equals
+                        - generalize
+                        - intersect
+                        - overlaps
+                        - symmetric_difference
+                        - touches
+                        - union
+                        - within
 
-        -----------------   ------------------------------------------------------
-        No Engine           Values will return None by default
-        =================   ======================================================
+                        Everything else will return None
+
+    -----------------   ------------------------------------------------------
+    No Engine           Values will return None by default
+    =================   ======================================================
 
 
 
-        Required Parameters:
-          None
-        Optional:
-          :param data: panda's dataframe containing attribute information
-          :param geometry: list/array/geoseries of arcgis.geometry objects
-          :param sr: spatial reference of the dataframe.  This can be the factory
-           code, WKT string, arcpy.SpatialReference object, or
-           arcgis.SpatailReference object.
-          :param gis: passing a gis.GIS object set to Pro will ensure arcpy is
-           installed and a full swatch of functionality is available to
-           the end user.
+    Required Parameters:
+      None
+    Optional:
+      :param data: panda's dataframe containing attribute information
+      :param geometry: list/array/geoseries of arcgis.geometry objects
+      :param sr: spatial reference of the dataframe.  This can be the factory
+       code, WKT string, arcpy.SpatialReference object, or
+       arcgis.SpatailReference object.
+      :param gis: passing a gis.GIS object set to Pro will ensure arcpy is
+       installed and a full swatch of functionality is available to
+       the end user.
     """
 
     _internal_names = [
@@ -566,7 +566,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     )
     # ----------------------------------------------------------------------
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # merge operation: using metadata of the left object
         if method == "merge":
             for name in self._metadata:
@@ -1537,35 +1537,35 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     # ----------------------------------------------------------------------
     @staticmethod
     def from_hdf(path_or_buf, key=None, **kwargs):
-        """ read from the store, close it if we opened it
+        """read from the store, close it if we opened it
 
-            Retrieve pandas object stored in file, optionally based on where
-            criteria
+        Retrieve pandas object stored in file, optionally based on where
+        criteria
 
-            Parameters
-            ----------
-            path_or_buf : path (string), buffer, or path object (pathlib.Path or
-                py._path.local.LocalPath) to read from
+        Parameters
+        ----------
+        path_or_buf : path (string), buffer, or path object (pathlib.Path or
+            py._path.local.LocalPath) to read from
 
-                .. versionadded:: 0.19.0 support for pathlib, py.path.
+            .. versionadded:: 0.19.0 support for pathlib, py.path.
 
-            key : group identifier in the store. Can be omitted if the HDF file
-                contains a single pandas object.
-            where : list of Term (or convertable) objects, optional
-            start : optional, integer (defaults to None), row number to start
-                selection
-            stop  : optional, integer (defaults to None), row number to stop
-                selection
-            columns : optional, a list of columns that if not None, will limit the
-                return columns
-            iterator : optional, boolean, return an iterator, default False
-            chunksize : optional, nrows to include in iteration, return an iterator
+        key : group identifier in the store. Can be omitted if the HDF file
+            contains a single pandas object.
+        where : list of Term (or convertable) objects, optional
+        start : optional, integer (defaults to None), row number to start
+            selection
+        stop  : optional, integer (defaults to None), row number to stop
+            selection
+        columns : optional, a list of columns that if not None, will limit the
+            return columns
+        iterator : optional, boolean, return an iterator, default False
+        chunksize : optional, nrows to include in iteration, return an iterator
 
-            Returns
-            -------
-            The selected object
+        Returns
+        -------
+        The selected object
 
-            """
+        """
         return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf, key=key, **kwargs))
 
     # ----------------------------------------------------------------------

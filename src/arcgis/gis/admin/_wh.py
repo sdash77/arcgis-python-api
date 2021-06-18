@@ -248,7 +248,7 @@ class WebhookManager(object):
                                url="https://hooks.zapier.com/hooks/catch/6694048/odqj9o3/",
                                events=["/items/981e98b949d9432ebf26433f40948cec/move",
                                        "/items/981e98b949d9432ebf26433f40948cec/update"]
-        
+
         See `Webhook Blog Post <https://www.esri.com/arcgis-blog/products/arcgis-enterprise/administration/webhooks-dev-summit-2019/>`_ for a detailed explanation.
 
         """
@@ -323,7 +323,7 @@ class Webhook(object):
     # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """"""
+        """ """
         if self._properties is None:
             self._init()
         return self._properties
@@ -386,7 +386,7 @@ class Webhook(object):
 
     # ----------------------------------------------------------------------
     def activate(self):
-        """"""
+        """ """
         url = self._url + "/activate"
         params = {"f": "json"}
         res = self._con.post(url, params)

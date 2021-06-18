@@ -62,6 +62,10 @@ class SuperResolution(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
+
     @property
     def supported_backbones(self):
         """

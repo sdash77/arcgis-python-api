@@ -905,7 +905,7 @@ class ParcelFabricManager(object):
         --------------------------- --------------------------------------------------------------------
         divide_record               Required String: Record identifier (guid). If missing, no history is created.
         --------------------------- --------------------------------------------------------------------
-        divide_option               Required String. The type of division to be performed: 
+        divide_option               Required String. The type of division to be performed:
                                         - ProportionalArea
                                         - EqualArea
                                         - EqualWidth

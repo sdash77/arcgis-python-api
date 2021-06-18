@@ -193,7 +193,7 @@ class Geocoder(_GISResource):
         :returns:
            dictionary or FeatureSet
 
-    """
+        """
         url = self.url + "/findAddressCandidates"
 
         params = {

@@ -295,8 +295,8 @@ class Machine(BaseServer):
     def hardware(self):
         """
         This resource displays hardware information for the machine in your
-        ArcGIS Server site. It updates the information when it detects any 
-        change to the configuration of your machine, as well as each time 
+        ArcGIS Server site. It updates the information when it detects any
+        change to the configuration of your machine, as well as each time
         the machine is restarted.
 
         :return: dict
@@ -336,23 +336,23 @@ class Machine(BaseServer):
 
     def synchronize(self):
         """
-        On occasion, one or more machines in a server site might be 
-        unavailable due to network issues or because they are down 
-        (intentionally or unintentionally). Once these machines become 
-        available again, they will need to synchronize with the site to 
-        pick up any changes made to the site during that downtime. This 
-        is done automatically by the site, but it is only a one-time 
-        attempt. If there are any issues with this synchronizing effort, 
+        On occasion, one or more machines in a server site might be
+        unavailable due to network issues or because they are down
+        (intentionally or unintentionally). Once these machines become
+        available again, they will need to synchronize with the site to
+        pick up any changes made to the site during that downtime. This
+        is done automatically by the site, but it is only a one-time
+        attempt. If there are any issues with this synchronizing effort,
         a SEVERE message is logged.
 
         This operation allows administrators to manually synchronize specific
-        machines with the site. Synchronizing a machine with the site will 
-        reconfigure the machine and redeploy all services. This will take a 
-        few minutes. During this time, all administrative operations on the 
+        machines with the site. Synchronizing a machine with the site will
+        reconfigure the machine and redeploy all services. This will take a
+        few minutes. During this time, all administrative operations on the
         site will be blocked.
-        
+
         :returns: Boolean
-        
+
         """
         url = self._url + "/synchronizeWithSite"
         params = {"f": "json"}

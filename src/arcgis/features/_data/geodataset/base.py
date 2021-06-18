@@ -173,11 +173,13 @@ def _call_function(
                     kwargs["other"] = other
                 vals = [getattr(s, op)(**kwargs) for s in this.geometry]
                 return GeoSeries(
-                    [getattr(s, op)(**kwargs) for s in this.geometry], index=this.index,
+                    [getattr(s, op)(**kwargs) for s in this.geometry],
+                    index=this.index,
                 )
         else:
             return GeoSeries(
-                [getattr(s, op)(**kwargs) for s in this.geometry], index=this.index,
+                [getattr(s, op)(**kwargs) for s in this.geometry],
+                index=this.index,
             )
     else:
         if isPSeries:

@@ -19,7 +19,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple
+from typing import Tuple, Any, Dict
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -50,8 +50,7 @@ def _tempinput(data):
 
 
 def _lazy_property(fn):
-    """Decorator that makes a property lazy-evaluated.
-    """
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
     attr_name = "_lazy_" + fn.__name__
 
@@ -127,12 +126,16 @@ class GIS(object):
                         authentication. If a PFX or P12 certificate is used, a password is required.
                         If a PEM file is used, the key_file is required.
     ----------------    ---------------------------------------------------------------
-    verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
-                        being accessed via the IP or hostname instead of the name on the
-                        certificate, set this value to False.  This will ensure that all
-                        SSL certificate issues are ignored.
-                        The default is True.
-                        **Warning** Setting the value to False can be a security risk.
+    verify_cert         Optional boolean or string. If a site has an invalid SSL
+                        certificate or is being accessed via the IP or hostname instead
+                        of the name on the certificate, set this value to `False`.  This
+                        will ensure that all SSL certificate issues are ignored.  When
+                        giving a string. It must be the full path to the certificate
+                        path.
+
+                        The default is `True`.
+
+                        **Warning** Setting the value to `False` can be a security risk.
     ----------------    ---------------------------------------------------------------
     set_active          Optional boolean. The default is True.  If True, the GIS object
                         will be used as the default GIS object throughout the whole
@@ -220,14 +223,14 @@ class GIS(object):
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
-    
+
     .. code-block:: python
 
         # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
-                  
+
     """
 
     _server_list = None
@@ -276,6 +279,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
+        self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
@@ -406,6 +410,7 @@ class GIS(object):
                 custom_auth=custom_auth,  # token=self._utoken,
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
+                timeout=self._timeout,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -424,6 +429,7 @@ class GIS(object):
                     referer=self._referer,
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
+                    timeout=self._timeout,
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -491,6 +497,7 @@ class GIS(object):
                     # token=self._utoken,
                     trust_env=kwargs.get("trust_env", None),
                     client_secret=client_secret,
+                    timeout=self._timeout,
                 )
                 self._portal = pp
         except:
@@ -664,7 +671,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
-        """ Decrypts the .pfx file to be used with requests.
+        """Decrypts the .pfx file to be used with requests.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -709,7 +716,7 @@ class GIS(object):
         return key_file.name, cert_file.name
 
     def _config_is_in_new_format(self, config):
-        """ Any version <= 1.3.0 of the API used a different config file
+        """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
         a profile was modified. Thus, if 'date_modified' is found in at least
         one profile, it is in the new format
@@ -857,8 +864,8 @@ class GIS(object):
     def notebook_server(self) -> "List[NotebookServer]":
         """
         Provide access to the Notebook Server registerd with the organization or enterprise.
-        
-        :returns: List[`NotebookServer`] 
+
+        :returns: List[`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
@@ -1135,7 +1142,7 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     def _get_properties(self, force=False):
-        """ Returns the portal properties (using cache unless force=True). """
+        """Returns the portal properties (using cache unless force=True)."""
         return self._portal.get_properties(force)
 
     def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
@@ -3736,8 +3743,7 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     @property
     def me(self):
-        """ Gets the logged in user.
-        """
+        """Gets the logged in user."""
         if self._me is None:
             meuser = self._portal.logged_in_user()
             if meuser is not None:
@@ -3793,17 +3799,17 @@ class UserManager(object):
 
 class RoleManager(object):
     """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS.
-       Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
-       property of the :class:`~arcgis.gis.UserManager`
+    Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
+    property of the :class:`~arcgis.gis.UserManager`
 
-       .. code-block:: python
+    .. code-block:: python
 
-            # Usage Example
+         # Usage Example
 
-            >>> role_mgr = gis.users.roles
-            >>> type(role_mgr)
+         >>> role_mgr = gis.users.roles
+         >>> type(role_mgr)
 
-            <class 'arcgis.gis.RoleManager'>
+         <class 'arcgis.gis.RoleManager'>
     """
 
     def __init__(self, gis):
@@ -4619,7 +4625,7 @@ class ContentManager(object):
         item_id=None,
         **kwargs,
     ):
-        """ Adds content to the GIS by creating an item.
+        """Adds content to the GIS by creating an item.
 
         .. note::
             Content can be a file (such as a service definition, shapefile,
@@ -5014,7 +5020,7 @@ class ContentManager(object):
         snippet=None,
         item_id=None,
     ):
-        """ Creates a service in the Portal.
+        """Creates a service in the Portal.
 
 
         =======================    =============================================================
@@ -5178,7 +5184,7 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def get(self, itemid):
-        """ Returns the item object for the specified itemid.
+        """Returns the item object for the specified itemid.
 
 
         =======================    =============================================================
@@ -5373,6 +5379,81 @@ class ContentManager(object):
                 items["results"] = items["results"][:max_items]
             return items
 
+    def _market_listings(
+        self,
+        query: str,
+        sort_field: str = None,
+        sort_order: str = "asc",
+        num: int = 10,
+        start: int = 1,
+        my_listings: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        This operation searches for marketplace listings. The searches are
+        performed against a high performance index that indexes the most
+        popular fields of a listing. See the Search reference page for
+        information on the fields and the syntax of the query.
+
+        By default, this search spans all public listings in the
+        marketplace. However, if you're logged in as a vendor org admin and
+        you specify the mylistings=true parameter, it then searches all
+        public and private listings in your organization.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. The field to sort by. You can also sort by
+                            multiple fields (comma separated) for listings, sort field
+                            names are case-insensitive.
+
+                            Supported sort field names are `title`, `created`,
+                            `listingpublisheddate`, `type`, `owner`, `avgrating`,
+                            `numratings`, `numcomments`, and `numviews`.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. Describes whether the order returns in
+                            ascending or descending order. Default is ascending.
+
+                            Values: `asc` or `desc`
+        ----------------    ---------------------------------------------------------------
+        num                 Optional Integer. The maximum number of results to be included
+                            in the result set response.
+
+                            The default value is `10`, and the maximum allowed value is `100`.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Integer. The number of the first entry in the result
+                            set response. The index number is 1-based.
+        ----------------    ---------------------------------------------------------------
+        my_listings         Optional Boolean.  If `True` and you're logged in as a vendor
+                            org admin, it searches all public and private listings in your
+                            organization.
+
+                            **Note** that if `my_listings=True`, the q parameter is optional.
+
+                            Values: `False (default) | True`
+        ================    ===============================================================
+
+
+        :returns: Dictionary[str, Any]
+        """
+        params = {
+            "f": "json",
+            "q": query,
+            "sortField": sort_field,
+            "sortOrder": sort_order,
+            "mylistings": my_listings,
+            "num": num,
+            "start": start,
+        }
+        for key in list(params.keys()):
+            if params[key] is None:
+                del params[key]
+
+        url = f"{self._gis._portal.resturl}content/listings"
+        resp = self._gis._con.get(url, params)
+        return resp
+
     def search(
         self,
         query,
@@ -5384,7 +5465,7 @@ class ContentManager(object):
         categories=None,
         category_filters=None,
     ):
-        """ Searches for portal items.
+        """Searches for portal items.
 
         .. note::
             A few things that will be helpful to know...
@@ -6136,20 +6217,20 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name, service_type):
-        """ For a desired service name, determines if that service name is
-            available for use or not.
+        """For a desired service name, determines if that service name is
+        available for use or not.
 
-            ================  ======================================================================
-            **Argument**      **Description**
-            ----------------  ----------------------------------------------------------------------
-            service_name      Required string. A desired service name.
-            ----------------  ----------------------------------------------------------------------
-            service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
-            ================  ======================================================================
+        ================  ======================================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------------------------
+        service_name      Required string. A desired service name.
+        ----------------  ----------------------------------------------------------------------
+        service_type      Required string. The type of service to be created.  Currently the options are imageService or featureService.
+        ================  ======================================================================
 
-            :return:
-                 True if the specified service_name is available for the
-               specified service_type, False if the service_name is unavailable.
+        :return:
+             True if the specified service_name is available for the
+           specified service_type, False if the service_name is unavailable.
 
         """
         path = "portals/self/isServiceNameAvailable"
@@ -6173,7 +6254,7 @@ class ContentManager(object):
         owner=None,
         preserve_item_id=False,
     ):
-        """ Clone content to the GIS by creating new items.
+        """Clone content to the GIS by creating new items.
 
         .. note::
         Cloning an item will create a copy of the item and for certain
@@ -6222,9 +6303,9 @@ class ContentManager(object):
         ---------------------     --------------------------------------------------------------------
         owner                     Optional string. Defaults to the logged in user.
         ---------------------     --------------------------------------------------------------------
-        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS 
-                                  Online, the clone item will attempt to keep the same item ids for the 
-                                  items if available.  ArcGIS Enterprise must be 10.9+. 
+        preserve_item_id          Optional Boolean.  When true and the destination `GIS` is not ArcGIS
+                                  Online, the clone item will attempt to keep the same item ids for the
+                                  items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
 
         :return:
@@ -7157,7 +7238,7 @@ class Group(dict):
         )
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image """
+        """URL to the thumbnail image"""
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             return self._gis.url + "/home/images/group-no-image.png"
@@ -7447,7 +7528,7 @@ class Group(dict):
             return None
 
     def add_users(self, usernames=None, admins=None):
-        """ Adds users to this group.
+        """Adds users to this group.
 
         .. note::
             This method will only work if the user for the
@@ -8428,7 +8509,7 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-        """ Retrieves the URL to the thumbnail image.
+        """Retrieves the URL to the thumbnail image.
 
         :return:
            The thumbnail's URL.
@@ -8608,7 +8689,7 @@ class User(dict):
         new_security_answer=None,
         reset_by_email=False,
     ):
-        """ Resets a user's password, security question, and/or security answer.
+        """Resets a user's password, security question, and/or security answer.
 
         .. note::
             This function does not apply to those using enterprise accounts
@@ -8675,7 +8756,7 @@ class User(dict):
         security_question=None,
         security_answer=None,
     ):
-        """ Updates this user's properties.
+        """Updates this user's properties.
 
         .. note::
             Only pass in arguments for properties you want to update.
@@ -9383,7 +9464,7 @@ class Item(dict):
         """
         Provides access to the Notebook Item's Snapshots. If the user is not
         the owner of the `Item`, the snapshots will be an empty list.
-        
+
         :returns: List[SnapShot]
         """
         if (
@@ -9616,7 +9697,22 @@ class Item(dict):
             if not self._hydrated and not k.startswith("_"):
                 self._hydrate()
             return dict.__getitem__(self, k)
-
+    # ----------------------------------------------------------------------
+    @property
+    def can_delete(self) -> bool:
+        """
+        Checks if the Item can be removed from the system.
+        
+        :returns: bool
+        """
+        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        params = {"f" : "json"}
+        try:
+            return self._gis._con.get(url, params).get("success", False)
+        except Exception as e:
+            _log.warning(e)
+            return False
+        
     # ----------------------------------------------------------------------
     @property
     def content_status(self):
@@ -10151,7 +10247,7 @@ class Item(dict):
             return None
 
     def get_thumbnail_link(self):
-        """ URL to the thumbnail image. """
+        """URL to the thumbnail image."""
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
             if self._gis.properties.portalName == "ArcGIS Online":
@@ -10170,9 +10266,9 @@ class Item(dict):
 
     @property
     def metadata(self):
-        """ Gets and sets the item metadata for the specified item.
-            Returns None if the item does not have metadata.
-            Items with metadata have 'Metadata' in their typeKeywords.
+        """Gets and sets the item metadata for the specified item.
+        Returns None if the item does not have metadata.
+        Items with metadata have 'Metadata' in their typeKeywords.
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
         try:
@@ -10870,7 +10966,7 @@ class Item(dict):
         return res
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
-        """ Updates an item in a Portal.
+        """Updates an item in a Portal.
 
 
         .. note::
@@ -11058,16 +11154,15 @@ class Item(dict):
 
         if self.type == "Feature Service":
             params["stype"] = "features"
-            if not self.layers[0].container:
+            if len(self.layers) > 0 and not self.layers[0].container:
                 params["name"] = os.path.basename(
                     os.path.abspath(
                         os.path.join(self.layers[0]._url, ".." + os.sep + "..")
                     )
                 )
-            else:
-                params["name"] = os.path.basename(
-                    os.path.dirname(self.layers[0].container._url)
-                )
+            else:  # hasattr(self, "url") and self.url and len(self.url) > 0:
+                params["name"] = os.path.basename(os.path.dirname(self.url))
+
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
         if self.type == "Map Service":
@@ -11264,12 +11359,12 @@ class Item(dict):
             return item_data
 
     def dependent_upon(self):
-        """ Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
+        """Returns items, urls, etc that this item is dependent on. This capability (item dependencies)
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
     def dependent_to(self):
-        """ Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
+        """Returns items, urls, etc that are dependent to this item. This capability (item dependencies)
         is not yet available on ArcGIS Online. Currently it is available only with an ArcGIS Enterprise."""
         return self._portal.get_item_dependents_to(self.itemid)
 
@@ -11350,7 +11445,7 @@ class Item(dict):
         return related_items
 
     def add_relationship(self, rel_item, rel_type):
-        """ Adds a relationship from this item to rel_item.
+        """Adds a relationship from this item to rel_item.
 
         .. note::
             Relationships are not tied to an item. They are directional links from an origin item
@@ -12122,7 +12217,7 @@ class Item(dict):
         return res
 
     def _check_publish_status(self, ret, folder):
-        """ Internal method to check the status of a publishing job.
+        """Internal method to check the status of a publishing job.
 
 
         ===============     ====================================================================
@@ -13160,8 +13255,7 @@ def rot13(s, b64=False, of=False):
 
 
 class _GISResource(object):
-    """ a GIS service
-    """
+    """a GIS service"""
 
     def __init__(self, url, gis=None):
 

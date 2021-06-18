@@ -435,7 +435,7 @@ class MapFeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
-        """ list attachments for a given OBJECT ID """
+        """list attachments for a given OBJECT ID"""
 
         params = {"f": "json"}
         if self._dynamic_layer is not None:
@@ -1237,7 +1237,7 @@ class MapFeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False):
-        """ returns results of query """
+        """returns results of query"""
         try:
             result = self._con.post(path=url, postdata=params, token=self._token)
         except Exception as queryException:
@@ -1305,7 +1305,7 @@ class MapFeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _query_df(self, url, params):
-        """ returns results of a query as a pd.DataFrame"""
+        """returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
         import numpy as np

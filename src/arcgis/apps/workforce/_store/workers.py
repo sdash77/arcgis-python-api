@@ -7,12 +7,12 @@ from .utils import add_features, update_features, remove_features, validate
 
 
 def get_worker(project, object_id=None, global_id=None, user_id=None):
-    """ Gets the identified worker.  Exactly one form of identification should be provided.
-        :param project:
-        :param object_id: The worker's OBJECTID.
-        :param global_id: The worker's GlobalID.
-        :param user_id: The worker's named user user_id.
-        :returns: Worker
+    """Gets the identified worker.  Exactly one form of identification should be provided.
+    :param project:
+    :param object_id: The worker's OBJECTID.
+    :param global_id: The worker's GlobalID.
+    :param user_id: The worker's named user user_id.
+    :returns: Worker
     """
     if object_id:
         where = "{} = {}".format(project._worker_schema.object_id, object_id)
@@ -27,18 +27,18 @@ def get_worker(project, object_id=None, global_id=None, user_id=None):
 
 
 def get_workers(project):
-    """ Gets all workers in the project.
-        :param project:
-        :returns: list of Workers
+    """Gets all workers in the project.
+    :param project:
+    :returns: list of Workers
     """
     return query_workers(project, "1=1")
 
 
 def query_workers(project, where):
-    """ Executes a query against the workers feature layer.
-        :param project: The project in which to query workers.
-        :param where: An ArcGIS where clause.
-        :returns: list of Workers
+    """Executes a query against the workers feature layer.
+    :param project: The project in which to query workers.
+    :param where: An ArcGIS where clause.
+    :returns: list of Workers
     """
     worker_features = project.workers_layer.query(
         where, return_all_records=True
@@ -58,7 +58,7 @@ def add_worker(
     user_id=None,
 ):
     """
-        Creates and adds a worker to the project
+    Creates and adds a worker to the project
     """
     project._update_cached_objects()
     worker = workforce.Worker(
@@ -68,15 +68,15 @@ def add_worker(
 
 
 def add_workers(project, workers):
-    """ Adds Workers to a project.
+    """Adds Workers to a project.
 
-        Side effect: Upon successful addition on the server, the object_id and global_id fields of
-        each Worker in workers will be updated to the values assigned by the server.
+    Side effect: Upon successful addition on the server, the object_id and global_id fields of
+    each Worker in workers will be updated to the values assigned by the server.
 
-        :param project:
-        :param workers: list of Workers
-        :raises ValidationError: Indicates that one or more workers failed validation.
-        :raises ServerError: Indicates that the server rejected the workers.
+    :param project:
+    :param workers: list of Workers
+    :raises ValidationError: Indicates that one or more workers failed validation.
+    :raises ServerError: Indicates that the server rejected the workers.
     """
     project._update_cached_objects()
     if workers:
@@ -116,7 +116,7 @@ def update_worker(
     user_id=None,
 ):
     """
-        Updates a worker and submits the changes to the server
+    Updates a worker and submits the changes to the server
     """
     project._update_cached_objects()
     if geometry:
@@ -137,11 +137,11 @@ def update_worker(
 
 
 def update_workers(project, workers):
-    """ Updates Workers.
-        :param project:
-        :param workers: list of Workers to update
-        :raises ValidationError: Indicates that one or more workers failed validation.
-        :raises ServerError: Indicates that the server rejected the workers.
+    """Updates Workers.
+    :param project:
+    :param workers: list of Workers to update
+    :raises ValidationError: Indicates that one or more workers failed validation.
+    :raises ServerError: Indicates that the server rejected the workers.
     """
     project._update_cached_objects()
     if workers:
@@ -152,11 +152,11 @@ def update_workers(project, workers):
 
 
 def delete_workers(project, workers):
-    """ Removes workers from the project.
-        :param project:
-        :param workers: list of Workers
-        :raises ValidationError: Indicates that one or more workers failed validation.
-        :raises ServerError: Indicates that the server rejected the removal.
+    """Removes workers from the project.
+    :param project:
+    :param workers: list of Workers
+    :raises ValidationError: Indicates that one or more workers failed validation.
+    :raises ServerError: Indicates that the server rejected the removal.
     """
     project._update_cached_objects()
     if workers:

@@ -335,6 +335,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def __str__(self):
         return self.__repr__()
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'miou', 'dice']
+
     def mIOU(self, mean=False, show_progress=True):
 
         """

@@ -468,6 +468,10 @@ class FasterRCNN(ModelExtension):
                 p.requires_grad = False
         return idx
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'average_precision']
+
     @property
     def _is_fasterrcnn(self):
         return True

@@ -6,7 +6,7 @@ import tempfile
 
 # ----------------------------------------------------------------------
 def pfx_to_pem(pfx_path, pfx_password):
-    """ Decrypts the .pfx file to be used with requests.
+    """Decrypts the .pfx file to be used with requests.
 
     ===============     ====================================================================
     **Argument**        **Description**

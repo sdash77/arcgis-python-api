@@ -6,11 +6,14 @@ import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import CSVLayer
 
-csv_url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.csv'
+csv_url = (
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.csv"
+)
 
 
 class TestCSVLayer(unittest.TestCase):
     """Runs the tests for the CSV Layer"""
+
     def test_csv_layer_url(self):
         csv = CSVLayer(csv_url)
         assert isinstance(csv, CSVLayer)
@@ -25,7 +28,7 @@ class TestCSVLayer(unittest.TestCase):
         assert csv.renderer
         assert str(csv).find("<CSV") > -1
         csv.title = "test"
-        assert csv.title == 'test'
+        assert csv.title == "test"
         assert csv._lyr_json
         assert csv.properties
 
@@ -45,12 +48,10 @@ class TestCSVLayer(unittest.TestCase):
             assert csv.renderer
             assert str(csv).find("<CSV") > -1
             csv.title = "test"
-            assert csv.title == 'test'
+            assert csv.title == "test"
             assert csv._lyr_json
             assert csv.properties
             print(csv.properties)
-
-
 
 
 if __name__ == "__main__":

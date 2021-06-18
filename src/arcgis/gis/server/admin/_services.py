@@ -75,7 +75,7 @@ class ServiceManager(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _folder(self):
-        """ returns current folder """
+        """returns current folder"""
         return self._folderName
 
     # ----------------------------------------------------------------------
@@ -103,7 +103,7 @@ class ServiceManager(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def folders(self):
-        """ returns a list of all folders """
+        """returns a list of all folders"""
         if self._folders is None:
             self._init()
             self._folders = self.properties["folders"]
@@ -191,7 +191,7 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _services_list(self):
-        """ returns the services in the current folder """
+        """returns the services in the current folder"""
         self._services = []
         params = {"f": "json"}
         json_dict = self._con.get(path=self._currentURL, params=params)
@@ -544,7 +544,7 @@ class ServiceManager(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _types(self):
-        """ returns the allowed services types """
+        """returns the allowed services types"""
         params = {"f": "json"}
         u_url = self._url + "/types"
         return self._con.get(path=u_url, params=params)
@@ -965,7 +965,7 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
-        """ populates server admin information """
+        """populates server admin information"""
         from .parameters import Extension
 
         params = {"f": "json"}
@@ -1105,7 +1105,7 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     def start(self):
-        """ starts the specific service """
+        """starts the specific service"""
         params = {"f": "json"}
         u_url = self._url + "/start"
         res = self._con.post(path=u_url, postdata=params)
@@ -1115,7 +1115,7 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     def stop(self):
-        """ stops the current service """
+        """stops the current service"""
         params = {"f": "json"}
         u_url = self._url + "/stop"
         res = self._con.post(path=u_url, postdata=params)
@@ -1125,7 +1125,7 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     def restart(self):
-        """ restarts the current service """
+        """restarts the current service"""
         self.stop()
         self.start()
         return True
@@ -1174,7 +1174,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def status(self):
-        """ returns the status of the service """
+        """returns the status of the service"""
         params = {
             "f": "json",
         }
@@ -1184,7 +1184,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def statistics(self):
-        """ returns the stats for the service """
+        """returns the stats for the service"""
         params = {"f": "json"}
         u_url = self._url + "/statistics"
         return self._con.get(path=u_url, params=params)
@@ -1192,7 +1192,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _permissions(self):
-        """ returns the permissions for the service """
+        """returns the permissions for the service"""
         params = {"f": "json"}
         u_url = self._url + "/permissions"
         return self._con.get(path=u_url, param_dict=params)
@@ -1200,7 +1200,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _iteminfo(self):
-        """ returns the item information """
+        """returns the item information"""
         params = {"f": "json"}
         u_url = self._url + "/iteminfo"
         return self._con.get(path=u_url, params=params)
@@ -1375,7 +1375,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def iteminformation(self):
-        """ returns the item information
+        """returns the item information
 
         :returns: ItemInformationManager
 

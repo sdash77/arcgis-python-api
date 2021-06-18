@@ -19,6 +19,9 @@ import sys
 if sys.platform == "win32":
     try:
         import certifi_win32
+
+        certifi_win32.generate_pem()
+        certifi_win32.wincerts.where()
     except ImportError:
         pass
 
@@ -49,6 +52,7 @@ class Connection(object):
     Universal Connection Object
     """
 
+    _timeout = None
     _refresh_token = None
     _token = None
     _token_url = None
@@ -92,9 +96,13 @@ class Connection(object):
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
         trust_env = T/F if to ignore netrc files
+
+        timeout:int=600
+
         """
         from arcgis.gis import GIS
 
+        self._timeout = kwargs.get("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
@@ -609,6 +617,224 @@ class Connection(object):
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) + ")"
         raise Exception(errormessage)
 
+    def post_multipart(self, path, params=None, files=None, **kwargs):
+        """
+        sends a MultiPart Form POST request.
+
+        ===========================   =====================================================
+        **Parameters**                **Description**
+        ---------------------------   -----------------------------------------------------
+        path                          optional string.  URL or part of the url resource
+                                      to call.
+        ---------------------------   -----------------------------------------------------
+        params                        optional dict.  Contains data to pass to the web
+                                      resource.
+        ---------------------------   -----------------------------------------------------
+        files                         optional list of files
+
+                                      Files can be provided two ways:
+
+                                      The most basic way is:
+                                      Way1: {key : r"c:\temp\myfile.foo}
+                                      This is just the file path and the key.
+
+
+                                      The preferred way:
+
+                                      Way 2: {key : (file_name, open(c:\temp\myfile.foo, 'rb'), image\jpeg)}
+
+                                      Way 2 requires providing the filename, IO object as 'rb', and the mimetype.
+        ===========================   =====================================================
+
+
+        ===========================   =====================================================
+        **Optional Parameters**       **Description**
+        ---------------------------   -----------------------------------------------------
+        add_token                     optional boolean.  True means try to add the boolean,
+                                      else do not add a ?token=<foo> to the call. If
+                                      is_geoevent is True, then the token will be appended
+                                      to the header.
+        ---------------------------   -----------------------------------------------------
+        is_geoevent                   optional boolean. True means the auth token will be placed in the header
+        ---------------------------   -----------------------------------------------------
+        try_json                      optional boolean.  If true, the call adds the ?f=json.
+        ---------------------------   -----------------------------------------------------
+        ssl                           optional boolean. If true all calls are forced to be
+                                      https.
+        ---------------------------   -----------------------------------------------------
+        out_folder                    optional string.  This is the save folder for the data.
+        ---------------------------   -----------------------------------------------------
+        file_name                     optional string. The save name of the file. This will override the file name if provided in the response.
+        ---------------------------   -----------------------------------------------------
+        force_bytes                   optional boolean.  Deprecated.
+        ---------------------------   -----------------------------------------------------
+        add_headers                   optional dict.  If provided, additional headers will be given for a single call.
+        ---------------------------   -----------------------------------------------------
+        post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
+        ---------------------------   -----------------------------------------------------
+        json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        timeout                       optional Integer. Timeout in seconds
+        ===========================   =====================================================
+
+        :returns: data returned from the URL call.
+        """
+        timeout = kwargs.pop("timeout", self._timeout)
+        retry_count = 0
+        json_encode = kwargs.pop("json_encode", True)
+        if self._baseurl.endswith("/") == False:
+            self._baseurl += "/"
+        url = path
+        token = kwargs.pop("token", _DEFAULT_TOKEN)
+        post_json = kwargs.pop("post_json", False)
+        token_as_header = kwargs.pop("token_as_header", False)
+        token_header = kwargs.pop("token_header", "X-Esri-Authorization")
+        # if self._auth == "IWA":
+        #    self._session = None
+        if "postdata" in kwargs:  # handles legacy issues
+            params = kwargs.pop("postdata")
+        if params is None:
+            params = {}
+        if self._session is None:
+            self._create_session()
+        try_json = kwargs.pop("try_json", True)
+        add_token = kwargs.pop("add_token", True)
+        if url.find("://") == -1:
+            url = self._baseurl + url
+        if kwargs.pop("ssl", False) or self._all_ssl:
+            url = url.replace("http://", "https://")
+        if add_token:
+            if token != _DEFAULT_TOKEN:
+                if token is not None:
+                    params["token"] = token
+                else:
+                    params.pop("token", None)
+                    # pass
+            elif token_as_header == False and self.token is not None:  # as ?token=
+                params["token"] = self.token
+            elif (
+                token_as_header and self.token is not None
+            ):  # (token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % token})
+            elif (
+                token_as_header and token_header and self.token
+            ):  # as X-Esri-Auth header with generated token
+                self._session.headers.update({token_header: "Bearer %s" % self.token})
+
+        if try_json:
+            params["f"] = "json"
+        fields = {}
+        if files:
+
+            if isinstance(files, dict):
+                for k, v in files.items():
+                    if isinstance(v, (list, tuple)):
+                        fields[k] = v
+                    else:
+                        fields[k] = (
+                            os.path.basename(v),
+                            open(v, "rb"),
+                            mimetypes.guess_type(v)[0],
+                        )
+            elif isinstance(files, (list, tuple)):
+                for key, filePath, fileName in files:
+                    if isinstance(fileName, str):
+                        fields[key] = (
+                            fileName,
+                            open(filePath, "rb"),
+                            mimetypes.guess_type(filePath)[0],
+                        )
+                    else:
+                        fields[key] = v
+            files = fields
+
+        out_path = (
+            kwargs.pop("out_path", None)
+            or kwargs.pop("out_folder", None)
+            or tempfile.gettempdir()
+        )
+        file_name = kwargs.pop("file_name", None)
+        try:
+            if self._cert_file:
+                cert = (self._cert_file, self._key_file)
+            else:
+                cert = None
+            if json_encode:
+                for k, v in params.items():
+                    if isinstance(v, (dict, list, tuple, bool)):
+                        params[k] = json.dumps(v)
+                    elif isinstance(v, PropertyMap):
+                        params[k] = json.dumps(dict(v))
+                    elif isinstance(v, InsensitiveDict):
+                        params[k] = v.json
+            # When data and files are present, they need to be combined
+            # https://stackoverflow.com/a/12385661
+            params.update(fields)
+            mp_encoder = MultipartEncoder(fields=params)
+            if post_json:  # edge case workflow
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files
+                    )
+            else:
+                # data=mp_encoder
+                if timeout:
+                    resp = self._session.post(
+                        url=url,
+                        data=mp_encoder,
+                        cert=cert,
+                        timeout=timeout,
+                        headers={"Content-Type": mp_encoder.content_type}
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, data=mp_encoder, cert=cert, headers={"Content-Type": mp_encoder.content_type}
+                    )
+        except requests.exceptions.SSLError as err:
+            raise requests.exceptions.SSLError(
+                "Please set verify_cert=False due to encountered SSL error: %s" % err
+            )
+        except requests.exceptions.InvalidURL as errIU:
+            raise requests.exceptions.SSLError("Invalid URL provided: %s" % errIU)
+        except requests.exceptions.ConnectionError as errCE:
+            raise requests.exceptions.ConnectionError(
+                "A connection error has occurred: %s" % errCE
+            )
+
+        except requests.exceptions.InvalidHeader as errIH:
+            raise requests.exceptions.InvalidHeader(
+                "A invalid header was provided: %s" % errIH
+            )
+        except requests.exceptions.HTTPError as errh:
+            raise requests.exceptions.HTTPError("Http Error: %s" % errh)
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
+            )
+        except requests.exceptions.MissingSchema as errMS:
+            raise requests.exceptions.MissingSchema(
+                "URL scheme must be provided: %s" % errMS
+            )
+        except Exception as e:
+            raise Exception("A general error occurred: %s" % e)
+        except:
+            import traceback
+
+            raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        retry_count = 0
+        return self._handle_response(
+            resp=resp,
+            out_path=out_path,
+            file_name=file_name,
+            try_json=try_json,
+            force_bytes=kwargs.pop("force_bytes", False),
+        )
+
     # ----------------------------------------------------------------------
     def post(self, path, params=None, files=None, **kwargs):
         """
@@ -666,11 +892,14 @@ class Connection(object):
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
+        ---------------------------   -----------------------------------------------------
+        timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        timeout = kwargs.pop("timeout", self._timeout)
         retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -758,13 +987,25 @@ class Connection(object):
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             if post_json:  # edge case workflow
-                resp = self._session.post(
-                    url=url, json=params, cert=cert, files=files, timeout=10
-                )
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, json=params, cert=cert, files=files
+                    )
             else:
-                resp = self._session.post(
-                    url=url, data=params, cert=cert, files=files, timeout=10
-                )
+                if timeout:
+
+                    resp = self._session.post(
+                        url=url, data=params, cert=cert, files=files, timeout=timeout
+                    )
+                else:
+                    resp = self._session.post(
+                        url=url, data=params, cert=cert, files=files
+                    )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1086,7 +1327,7 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def relogin(self, expiration=None):
-        """ Re-authenticates with the portal using the same username/password. """
+        """Re-authenticates with the portal using the same username/password."""
         if expiration is None:
             expiration = self._expiration
         self.logout()
@@ -1094,20 +1335,20 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def logout(self):
-        """ Logs out of the portal. """
+        """Logs out of the portal."""
         self._token = None
         self._create_time = None
 
     # ----------------------------------------------------------------------
     @property
     def is_logged_in(self):
-        """ Returns true if logged into the portal. """
+        """Returns true if logged into the portal."""
         return (self._auth in ["ANON", "UNKNOWN"]) == False
 
     # ----------------------------------------------------------------------
     @property
     def product(self):
-        """ Returns true if logged into the portal. """
+        """Returns true if logged into the portal."""
         return self._product
 
     # ----------------------------------------------------------------------

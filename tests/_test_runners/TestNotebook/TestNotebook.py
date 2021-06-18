@@ -2,29 +2,35 @@ import sys
 import os
 import unittest
 import logging
+
 log = logging.getLogger()
 
 from nbconvert import HTMLExporter
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
-from _test_runners.TestNotebook.NotebookRunnerNbConvert \
-    import NotebookRunnerNbConvert
-from _test_runners.TestNotebook.NotebookRunnerSelenium \
-    import NotebookRunnerSelenium
+from _test_runners.TestNotebook.NotebookRunnerNbConvert import NotebookRunnerNbConvert
+from _test_runners.TestNotebook.NotebookRunnerSelenium import NotebookRunnerSelenium
+
 
 class TestNotebook(unittest.TestCase):
     """Given a notebook file, run it and output the ran notebook as HTML.
     Check the notebook for any errors in the python code's execution
     (unhandled exceptions, if output_type == "error"), fail the test if so.
     """
-    def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
-                 jenkins_job_url=None, 
-                 notebook_runner="nbconvert",
-                 active_jupyter_backend = None, # only used with selenium
-                 browser = None, # only used with selenium
-                 num_attempts = 1,
-                 **kwargs):
+
+    def __init__(
+        self,
+        notebook_file_path,
+        output_dir,
+        cell_timeout_sec=300,
+        jenkins_job_url=None,
+        notebook_runner="nbconvert",
+        active_jupyter_backend=None,  # only used with selenium
+        browser=None,  # only used with selenium
+        num_attempts=1,
+        **kwargs,
+    ):
         """notebook_file_path is the path to the notebook to test
         output_dir is where all ran notebooks and converted html go to
         notebook_timeout is the max number of seconds a CELL in a nb can run
@@ -38,8 +44,9 @@ class TestNotebook(unittest.TestCase):
         self.output_dir = output_dir
         self.jenkins_job_url = jenkins_job_url
         self.num_attempts = num_attempts
-        self.notebook_file_name_no_ext = os.path.splitext(os.path.basename(
-            notebook_file_path))[0]
+        self.notebook_file_name_no_ext = os.path.splitext(
+            os.path.basename(notebook_file_path)
+        )[0]
 
         # Set up notebook runner
         nb_runner_kwargs = {}
@@ -50,8 +57,7 @@ class TestNotebook(unittest.TestCase):
             self.runner = NotebookRunnerNbConvert(**nb_runner_kwargs)
         elif "selenium" in notebook_runner:
             if active_jupyter_backend:
-                nb_runner_kwargs["active_jupyter_backend"] = \
-                    active_jupyter_backend
+                nb_runner_kwargs["active_jupyter_backend"] = active_jupyter_backend
             if browser:
                 nb_runner_kwargs["browser"] = browser
 
@@ -68,60 +74,84 @@ class TestNotebook(unittest.TestCase):
         last_thrown_exception = ""
         for i in range(0, self.num_attempts):
             try:
-                log.info(f"Testing notebook {self.notebook_file_name_no_ext} "\
-                         f"for the {i+1} time")
+                log.info(
+                    f"Testing notebook {self.notebook_file_name_no_ext} "
+                    f"for the {i+1} time"
+                )
                 result = self.runner.run_notebook()
                 self._check_notebook_for_errors(result.output_ipynb_path)
-                #If we're reached here, we've passed
+                # If we're reached here, we've passed
                 msg = "Notebook {nb_name} passed!\n{nb_links_text}\n-----\n".format(
-                      nb_name = self.notebook_file_name_no_ext,
-                      nb_links_text = self._get_nb_links_text())
+                    nb_name=self.notebook_file_name_no_ext,
+                    nb_links_text=self._get_nb_links_text(),
+                )
                 print(msg)
                 log.debug(msg)
                 return
             except Exception as e:
                 last_thrown_exception = e
-                log.warn(f"\n---\nNotebook {self.notebook_file_name_no_ext} failed on "\
-                         f"attempt {i+1} of {self.num_attempts} with this exception:")
+                log.warn(
+                    f"\n---\nNotebook {self.notebook_file_name_no_ext} failed on "
+                    f"attempt {i+1} of {self.num_attempts} with this exception:"
+                )
                 log.exception(e)
         # If we've reached here, we've failed more than the # of retries
         raise last_thrown_exception
 
-
     def _check_notebook_for_errors(self, notebook_file_path):
         """If the output notebook has any errors, fail the test"""
-        with open(notebook_file_path, "r",
-                  encoding="utf-8") as output_file:
+        with open(notebook_file_path, "r", encoding="utf-8") as output_file:
             nb = nbformat.read(output_file, nbformat.current_nbformat)
-            self.errors = [output for cell in nb.cells if "outputs" in cell
-                           for output in cell["outputs"]\
-                           if output.output_type == "error"]
-            log.debug("Notebook {} errs: {}".format(
-                self.notebook_file_name_no_ext,
-                self.errors))
+            self.errors = [
+                output
+                for cell in nb.cells
+                if "outputs" in cell
+                for output in cell["outputs"]
+                if output.output_type == "error"
+            ]
+            log.debug(
+                "Notebook {} errs: {}".format(
+                    self.notebook_file_name_no_ext, self.errors
+                )
+            )
             self.assertEqual(len(self.errors), 0, self._get_failure_message())
 
     def _get_failure_message(self):
-        return "Notebook {nb_name} ran with {num_errors} errors. {nb_links}"\
-               "".format(nb_name=self.notebook_file_name_no_ext,
-                         num_errors=len(self.errors),
-                         nb_links=self._get_nb_links_text())
+        return "Notebook {nb_name} ran with {num_errors} errors. {nb_links}" "".format(
+            nb_name=self.notebook_file_name_no_ext,
+            num_errors=len(self.errors),
+            nb_links=self._get_nb_links_text(),
+        )
 
     def _get_nb_links_text(self):
         """Create links generated from the jenkins job for readability"""
         if self.jenkins_job_url:
-            return "You can view the output notebook in a web browser here: "\
-                    "{jenkins_html_link} , or download the executed notebook"\
-                    " here: {jenkins_nb_link}".format(
+            return (
+                "You can view the output notebook in a web browser here: "
+                "{jenkins_html_link} , or download the executed notebook"
+                " here: {jenkins_nb_link}".format(
                     jenkins_html_link=self._assemble_jenkins_html_link(),
-                    jenkins_nb_link=self._assemble_jenkins_nb_link())
+                    jenkins_nb_link=self._assemble_jenkins_nb_link(),
+                )
+            )
         else:
             return ""
 
     def _assemble_jenkins_html_link(self):
-        return self.jenkins_job_url + "ExecutedNotebooks/" + \
-                self.notebook_file_name_no_ext + ".html"
+        return (
+            self.jenkins_job_url
+            + "ExecutedNotebooks/"
+            + self.notebook_file_name_no_ext
+            + ".html"
+        )
 
     def _assemble_jenkins_nb_link(self):
-        return self.jenkins_job_url+"artifact/"+"geosaurus/"+"automation/"+\
-                "staging/" + self.notebook_file_name_no_ext + ".ipynb"
+        return (
+            self.jenkins_job_url
+            + "artifact/"
+            + "geosaurus/"
+            + "automation/"
+            + "staging/"
+            + self.notebook_file_name_no_ext
+            + ".ipynb"
+        )

@@ -22,6 +22,7 @@ try:
     import torch
     import torch.nn.functional as F
     from torchvision import models
+    import fastai
     from fastai.metrics import accuracy, MultiLabelFbeta
     from fastai.callbacks import *
     from fastai.vision import Image
@@ -47,6 +48,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     from matplotlib import pyplot as plt
+    from .._utils.image_classification import adapt_fastai_databunch
     import copy
 
     HAS_FASTAI = True
@@ -84,7 +86,6 @@ def _prediction_function(predictions):
             max_prediction_class = prediction[0]
 
     return max_prediction_class, max_prediction_value
-
 
 class FeatureClassifier(ArcGISModel):
     """
@@ -125,11 +126,17 @@ class FeatureClassifier(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch',
                  *args, **kwargs):
 
+        # condition when databunch is from fastai
+        # it will not contain class_mapping
+        if not hasattr(data, 'class_mapping'):
+            data = adapt_fastai_databunch(data)
+
         self._backend = backend
         if self._backend == 'tensorflow':
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
+    
             super().__init__(data, backbone, **kwargs)
 
             backbone_cut = None
@@ -186,6 +193,10 @@ class FeatureClassifier(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
 
     @property
     def supported_backbones(self):

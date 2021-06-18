@@ -51,10 +51,10 @@ class KbertnetesPy(object):
         token: str = None,
         **kwargs,
     ):
-        """ The Portal constructor. Requires URL and optionally username/password."""
+        """The Portal constructor. Requires URL and optionally username/password."""
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
-
+        self._timeout = kwargs.pop("timeout", 600)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
         if homepos != -1:
@@ -130,6 +130,7 @@ class KbertnetesPy(object):
                     client_id=client_id,
                     client_secret=client_secret,
                     token=token,
+                    timeout=self._timeout,
                 )
             else:
                 self.con = Connection(
@@ -150,13 +151,14 @@ class KbertnetesPy(object):
                     trust_env=trust_env,
                     custom_auth=custom_auth,
                     token=token,
+                    timeout=self._timeout,
                 )
         # self.get_version(True)
         self.get_properties(True)
 
     # ----------------------------------------------------------------------
     def get_properties(self, force=False):
-        """ Returns the portal properties (using cache unless force=True). """
+        """Returns the portal properties (using cache unless force=True)."""
 
         # If we've never retrieved the properties before, or the caller is
         # forcing a check of the server, then check the server
@@ -195,7 +197,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_version(self, force=False):
-        """ Returns the portal version (using cache unless force=True).
+        """Returns the portal version (using cache unless force=True).
 
         .. note::
             The version information is retrieved when you create the
@@ -271,7 +273,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def add_group_users(self, user_names, group_id, admin_names):
-        """ Adds users to the group specified.
+        """Adds users to the group specified.
 
         .. note::
             This method will only work if the user for the
@@ -482,7 +484,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def create_group_from_dict(self, group, thumbnail=None):
-        """ Creates a group and returns a group id if successful.
+        """Creates a group and returns a group id if successful.
 
         .. note::
            Use create_group in most cases.  This method is useful for taking a group
@@ -529,7 +531,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def delete_group(self, group_id):
-        """ Deletes a group.
+        """Deletes a group.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -549,7 +551,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_group(self, group_id):
-        """ Returns group information for the specified group group_id.
+        """Returns group information for the specified group group_id.
 
         Arguments
             group_id : required string, indicating group.
@@ -595,7 +597,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_group_thumbnail(self, group_id):
-        """ Returns the bytes that make up the thumbnail for the specified group group_id.
+        """Returns the bytes that make up the thumbnail for the specified group group_id.
 
         Arguments
             group_id:     required string, specifies the group's thumbnail
@@ -624,7 +626,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_group_members(self, group_id):
-        """ Returns members of the specified group.
+        """Returns members of the specified group.
 
         Arguments
             group_id:    required string, specifies the group
@@ -658,7 +660,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_group_content(self, group_id, max_items=10):
-        """ Returns members of the specified group.
+        """Returns members of the specified group.
 
         Arguments
             group_id:    required string, specifies the group
@@ -708,7 +710,7 @@ class KbertnetesPy(object):
     def invite_group_users(
         self, user_names, group_id, role="group_member", expiration=10080
     ):
-        """ Invites users to a group.
+        """Invites users to a group.
 
         .. note::
             A user who is invited to a group will see a list of invitations
@@ -749,7 +751,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def leave_group(self, group_id):
-        """ Removes the logged in user from the specified group.
+        """Removes the logged in user from the specified group.
 
         Requires:
             User must be logged in.
@@ -768,7 +770,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def reassign_group(self, group_id, target_owner):
-        """ Reassigns a group to another owner.
+        """Reassigns a group to another owner.
 
 
 
@@ -792,7 +794,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def remove_group_users(self, user_names, group_id):
-        """ Remove users from a group.
+        """Remove users from a group.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -825,7 +827,7 @@ class KbertnetesPy(object):
         outside_org=False,
         categories=None,
     ):
-        """ Searches for portal groups.
+        """Searches for portal groups.
 
         .. note::
             A few things that will be helpful to know.
@@ -929,7 +931,7 @@ class KbertnetesPy(object):
     def share_item_as_group_admin(
         self, item_id, groups="", allow_members_to_edit=False
     ):
-        """ Shares public item with the specified list of groups belonging to caller
+        """Shares public item with the specified list of groups belonging to caller
 
         ================  ========================================================
         **Argument**      **Description**
@@ -959,7 +961,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def unshare_item_as_group_admin(self, item_id, groups=""):
-        """ Stops sharing public item with the specified list of groups belonging to caller
+        """Stops sharing public item with the specified list of groups belonging to caller
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1004,7 +1006,7 @@ class KbertnetesPy(object):
         is_open_data=False,
         leaving_disallowed=False,
     ):
-        """ Updates a group.
+        """Updates a group.
 
         .. note::
             Only provide the values for the arguments you wish to update.
@@ -1167,7 +1169,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_user(self, username):
-        """ Returns the user information for the specified username.
+        """Returns the user information for the specified username.
 
         Arguments
             username        required string, the username whose information you want.
@@ -1222,7 +1224,7 @@ class KbertnetesPy(object):
     def get_org_users(
         self, max_users=1000, exclude_system=True, user_type=None, role=None
     ):
-        """ Returns all users within the portal organization.
+        """Returns all users within the portal organization.
 
         Arguments
             max_users : optional int, the maximum number of users to return.
@@ -1316,7 +1318,7 @@ class KbertnetesPy(object):
         owner=None,
         folder=None,
     ):
-        """ Adds content to a Portal.
+        """Adds content to a Portal.
 
 
         .. note::
@@ -1524,7 +1526,7 @@ class KbertnetesPy(object):
         tags=None,
         snippet=None,
     ):
-        """ Creates service.
+        """Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
              The item id of the created service item if successful, None if unsuccessful.
@@ -1597,7 +1599,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def create_folder(self, owner, title):
-        """ Creates a folder for the given user with the given title.
+        """Creates a folder for the given user with the given title.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1619,7 +1621,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def delete_folder(self, owner, folder):
-        """ Deletes folder owned by owner with the given folder name.
+        """Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1646,7 +1648,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def delete_item(self, item_id, owner, folder=None, force=False):
-        """ Deletes an item.
+        """Deletes an item.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1681,7 +1683,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def move_item(self, itemid, owner, current_folder, folder_id):
-        """ Moves the item to given folder """
+        """Moves the item to given folder"""
 
         path = "content/users/" + owner
         if current_folder:
@@ -1695,7 +1697,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_folder_id(self, owner, folder_name):
-        """ Finds the folder for a particular owner and returns its id.
+        """Finds the folder for a particular owner and returns its id.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1720,7 +1722,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def can_delete(self, item_id, owner, folder=None):
-        """ checks if you can delete the item.
+        """checks if you can delete the item.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1749,7 +1751,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def protect_item(self, item_id, owner, folder=None, enable=True):
-        """ Enable or disable delete protection on the item
+        """Enable or disable delete protection on the item
 
         ================  ========================================================
         **Argument**      **Description**
@@ -1793,7 +1795,7 @@ class KbertnetesPy(object):
         folder=None,
         large_thumbnail=None,
     ):
-        """ Updates an item in a Portal.
+        """Updates an item in a Portal.
 
 
         .. note::
@@ -1934,7 +1936,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def reassign_user(self, username, target_username):
-        """ Reassigns all of a user's items and groups to another user.
+        """Reassigns all of a user's items and groups to another user.
 
         Items are transferred to the target user into a folder named
         <user>_<folder> where user corresponds to the user whose items were
@@ -2055,7 +2057,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def delete_user(self, username, reassign_to=None):
-        """ Deletes a user from the portal, optionally deleting or reassigning groups and items.
+        """Deletes a user from the portal, optionally deleting or reassigning groups and items.
 
         .. note::
             You can not delete a user in Portal if that user owns groups or items.  If you
@@ -2098,7 +2100,7 @@ class KbertnetesPy(object):
         groups="",
         allow_members_to_edit=False,
     ):
-        """ Shares an item with the specified list of groups
+        """Shares an item with the specified list of groups
 
         ================  ========================================================
         **Argument**      **Description**
@@ -2150,7 +2152,7 @@ class KbertnetesPy(object):
         new_security_question=None,
         new_security_answer=None,
     ):
-        """ Resets a user's password, security question, and/or security answer.
+        """Resets a user's password, security question, and/or security answer.
 
         .. note::
             This function does not apply to those using enterprise accounts
@@ -2194,7 +2196,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def unshare_item(self, item_id, owner, folder=None, groups=""):
-        """ Stops sharing the item with the specified list of groups
+        """Stops sharing the item with the specified list of groups
 
         ================  ========================================================
         **Argument**      **Description**
@@ -2239,7 +2241,7 @@ class KbertnetesPy(object):
         user_type=None,
         role=None,
     ):
-        """ Searches portal users.
+        """Searches portal users.
 
         This gives you a list of users and some basic information
         about those users.  To get more detailed information (such as role), you
@@ -2354,7 +2356,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_item(self, itemid):
-        """ Returns the item information for the specified item.
+        """Returns the item information for the specified item.
 
         Arguments
             itemid            required string, the item-id whose information you want.
@@ -2460,7 +2462,7 @@ class KbertnetesPy(object):
         region=None,
         user_type=None,
     ):
-        """ Updates a user's properties.
+        """Updates a user's properties.
 
         .. note::
             Only pass in arguments for properties you want to update.
@@ -2548,10 +2550,10 @@ class KbertnetesPy(object):
         current_folder=None,
         target_folder=None,
     ):
-        """ Allows the administrator to reassign a single item from one user to another.
+        """Allows the administrator to reassign a single item from one user to another.
 
         .. note::
-             	If you wish to move all of a user's items (and groups) to another user then use the
+                If you wish to move all of a user's items (and groups) to another user then use the
                 reassign_user method.  This method only moves one item at a time.
 
         ================  ========================================================
@@ -2596,7 +2598,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def create_role(self, name, description):
-        """ Creates a custom role with specified name and description
+        """Creates a custom role with specified name and description
 
         :return:
             role_id if role is created, else None
@@ -2611,7 +2613,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_org_roles(self, max_roles=1000):
-        """ Returns all roles within the portal organization.
+        """Returns all roles within the portal organization.
 
         Arguments
             max_roles : optional int, the maximum number of users to return.
@@ -2638,7 +2640,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def update_user_role(self, username, role):
-        """ Updates a user's role.
+        """Updates a user's role.
 
         .. note::
             There are three types of roles in Portal - user, publisher, and administrator.
@@ -2733,7 +2735,7 @@ class KbertnetesPy(object):
     #### END ITEM OPERATIONS  #############################################
     # ----------------------------------------------------------------------
     def signup(self, username, password, fullname, email):
-        """ Signs up users to an instance of Portal for ArcGIS.
+        """Signs up users to an instance of Portal for ArcGIS.
 
         .. note::
             This method only applies to Portal and not ArcGIS
@@ -2780,7 +2782,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def login(self, username, password, expiration=60):
-        """ Logs into the portal using username/password.
+        """Logs into the portal using username/password.
 
         .. note::
              You can log into a portal when you construct a portal
@@ -2807,7 +2809,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def logout(self):
-        """ Logs out of the portal.
+        """Logs out of the portal.
 
         .. note::
              The portal will forget any existing tokens it was using, all
@@ -2823,7 +2825,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def logged_in_user(self):
-        """ Returns information about the logged in user.
+        """Returns information about the logged in user.
 
         :return:
             a dict with the following keys:
@@ -2850,7 +2852,7 @@ class KbertnetesPy(object):
             idpUsername       string, name of the user in their identity provider
             ================  ========================================================
 
-         """
+        """
         try:
             username = self._properties["user"]["username"]
             return self.get_user(username)
@@ -2860,13 +2862,13 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     @property
     def is_logged_in(self):
-        """ Returns true if logged into the portal. """
+        """Returns true if logged into the portal."""
         return self.con.is_logged_in
 
     # ----------------------------------------------------------------------
     @property
     def is_all_ssl(self):
-        """ Returns true if this portal requires SSL. """
+        """Returns true if this portal requires SSL."""
 
         # If properties aren't set yet, return true (assume SSL until the
         # properties tell us otherwise)
@@ -2879,19 +2881,19 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     @property
     def is_multitenant(self):
-        """ Returns true if this portal is multitenant. """
+        """Returns true if this portal is multitenant."""
         return self._properties["portalMode"] == "multitenant"
 
     # ----------------------------------------------------------------------
     @property
     def is_arcgisonline(self):
-        """ Returns true if this portal is ArcGIS Online. """
+        """Returns true if this portal is ArcGIS Online."""
         return self._properties["portalName"] == "ArcGIS Online" and self.is_multitenant
 
     # ----------------------------------------------------------------------
     @property
     def is_kubernetes(self):
-        """ Returns true if this portal is kubernetes. """
+        """Returns true if this portal is kubernetes."""
         return (
             "portalDeploymentType" in self._properties
             and self._properties["portalDeploymentType"]
@@ -2901,13 +2903,13 @@ class KbertnetesPy(object):
     # ----------------------------------------------------------------------
     @property
     def is_subscription(self):
-        """ Returns true if this portal is an ArcGIS Online subscription. """
+        """Returns true if this portal is an ArcGIS Online subscription."""
         return bool(self._properties.get("urlKey"))
 
     # ----------------------------------------------------------------------
     @property
     def is_org(self):
-        """ Returns true if this portal is an organization. """
+        """Returns true if this portal is an organization."""
         return bool(self._properties.get("id"))
 
     # ----------------------------------------------------------------------
@@ -2928,7 +2930,7 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def generate_token(self, username, password, expiration=60):
-        """ Generates and returns a new token, but doesn't re-login.
+        """Generates and returns a new token, but doesn't re-login.
 
         .. note::
             This method is not needed when using the Portal class
