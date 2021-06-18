@@ -18,12 +18,12 @@ import functools
 def _validate_url(url: str, gis: "GIS", url_type: str = None) -> str:
     """calculates the service URL"""
     finders = [
-        'naserver',
-        'gpserver',
-        'mapserver',
-        'featureserver',
-        'imageserver',
-        'geoenrichmentserver',
+        "naserver",
+        "gpserver",
+        "mapserver",
+        "featureserver",
+        "imageserver",
+        "geoenrichmentserver",
     ]
     part = None
     if not any([url.lower().endswith(f) for f in finders]):
