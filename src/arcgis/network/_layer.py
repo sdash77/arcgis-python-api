@@ -498,6 +498,8 @@ class RouteLayer(NetworkLayer):
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=travel_mode
             )
+        elif isinstance(travel_mode, dict):
+            params["travel_mode"] = travel_mode
         else:
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
@@ -807,6 +809,8 @@ class ServiceAreaLayer(NetworkLayer):
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=travel_mode
             )
+        elif isinstance(travel_mode, dict):
+            params["travel_mode"] = travel_mode
         else:
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
@@ -1124,6 +1128,8 @@ class ClosestFacilityLayer(NetworkLayer):
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=travel_mode
             )
+        elif isinstance(travel_mode, dict):
+            params["travel_mode"] = travel_mode
         else:
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
@@ -1374,6 +1380,8 @@ class ODCostMatrixLayer(NetworkLayer):
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=travel_mode
             )
+        elif isinstance(travel_mode, dict):
+            params["travel_mode"] = travel_mode
         else:
             travel_mode = _utils.find_travel_mode(
                 gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)

@@ -1073,13 +1073,15 @@ def choose_best_facilities(
         fn=gis._tools.featureanalysis._tbx.choose_best_facilities, **kwargs
     )
     try:
-        from arcgis.network import _utils
-
         if isinstance(travel_mode, str):
-            travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+            travel_mode = network._utils.find_travel_mode(
+                gis=gis, travel_mode=travel_mode
+            )
+            params["travel_mode"] = travel_mode
+        elif isinstance(travel_mode, dict):
             params["travel_mode"] = travel_mode
         else:
-            params["travel_mode"] = _utils.find_travel_mode(gis=gis)
+            params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)

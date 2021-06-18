@@ -7,6 +7,7 @@ from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox
+from arcgis.network import _utils
 
 _log = _logging.getLogger(__name__)
 
@@ -1095,10 +1096,12 @@ def edit_vehicle_routing_problem(
         : -len("/EditVehicleRoutingProblem")
     ]
     if isinstance(travel_mode, str):
-        travel_mode = _utils.find_travel_mode(gis=self._gis, travel_mode=travel_mode)
+        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+    elif isinstance(travel_mode, dict):
+        params["travel_mode"] = travel_mode
     else:
         travel_mode = _utils.find_travel_mode(
-            gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
         )
     tbx = import_toolbox(url, gis=gis)
     defaults = dict(
