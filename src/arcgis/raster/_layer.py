@@ -5606,6 +5606,130 @@ class ImageryLayer(Layer):
             self._original_info = dictdata
             return self._original_info
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any imagery layer 
+        published with mosaic datasets or a raster dataset.
+
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                          - dictionary structure: pixel_size={point}
+                                          - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                          - pixel_size={"x": 0.18, "y": 0.18}
+                                          - pixel_size='0.18,0.18'
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Available in 10.8+
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                     This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+
+                                        Example:
+                                             - | [
+                                               |  {"color":"r"},
+                                               |  {"color":"g"},
+                                               |  {"color":"b","edgecolor":"w"}
+                                               | ]
+
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+            When working with multidimensional imagery layers, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+            raster function on the layer for slicing the data along defined variables and dimensions.
+            `plot_histograms()` can then be used on the output layer returned upon applying the filter.  
+        
+        :returns: None
+        
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        from arcgis.raster._charts import plot_histograms
+
+        return plot_histograms(
+            self,
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
             return self._repr_svg_()
@@ -7101,6 +7225,127 @@ class Raster:
     def _repr_jpeg_(self):
         return self._engine_obj._repr_jpeg_()
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        return self._engine_obj.plot_histograms(
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def export_image(
         self,
         bbox=None,
@@ -8383,6 +8628,127 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def _repr_jpeg_(self):
         return None
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        return super().plot_histograms(
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def export_image(
         self,
         bbox=None,
@@ -9168,6 +9534,130 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
     def _repr_jpeg_(self):
         return None
+
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        from arcgis.raster._charts import plot_histograms
+
+        return plot_histograms(
+            self,
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
 
     def export_image(
         self,
