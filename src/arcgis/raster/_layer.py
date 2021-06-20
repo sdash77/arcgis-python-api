@@ -10204,7 +10204,7 @@ class RasterCollection:
                               Example:
                                     {"verify":False}
         -----------------     --------------------------------------------------------------------
-        request_params        Optional string. The backend engine to be used for Raster processing.
+        engine                Optional string. The backend engine to be used for Raster processing.
 
                               Possible options:
                                 - "arcpy" : Use the arcpy engine for processing. 
