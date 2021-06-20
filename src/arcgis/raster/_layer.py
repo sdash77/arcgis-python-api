@@ -6497,11 +6497,9 @@ class Raster:
         return self._engine_obj.raster_info
 
     @staticmethod
-    def from_stac_item(stac_item, request_params=None, *, gis=None):
+    def from_stac_item(stac_item, request_params=None, engine=None, *, gis=None):
         """
         Create a Raster object from a `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -6523,6 +6521,19 @@ class Raster:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the Raster object.
         =================     ====================================================================
@@ -6580,7 +6591,7 @@ class Raster:
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, gis=gis)
+        ras = Raster(metadata_file, engine=engine, gis=gis)
         return ras
 
     def get_raster_bands(self, band_ids_or_names=None):
@@ -10386,13 +10397,12 @@ class RasterCollection:
         attribute_dict=None,
         request_method="POST",
         request_params=None,
+        engine=None,
         *,
         gis=None,
     ):
         """
         Create a RasterCollection object from a `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__ `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -10467,6 +10477,19 @@ class RasterCollection:
                                     |   "headers":{"Authorization": "Bearer access_token_string"}
                                     | }
         -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
+        -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
@@ -10530,6 +10553,7 @@ class RasterCollection:
 
                 if isinstance(query_extent, (Envelope, Polygon)):
                     envelope_dict = json.loads(query_extent.envelope.JSON)
+                    projected_envelope = None
                     if envelope_dict["spatialReference"] is None:
                         raise RuntimeError(
                             "Invalid bbox: Polygon/Envelope object should contain spatialReference"
@@ -10541,7 +10565,7 @@ class RasterCollection:
                             out_sr=4326,
                         )
                     except Exception:
-                        RuntimeError(
+                        raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
                     bbox_list = []
@@ -10602,7 +10626,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:
@@ -10622,12 +10646,10 @@ class RasterCollection:
 
     @staticmethod
     def from_stac_catalog(
-        stac_catalog, attribute_dict=None, request_params=None, *, gis=None
+        stac_catalog, attribute_dict=None, request_params=None, engine=None, *, gis=None
     ):
         """
         Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -10671,6 +10693,19 @@ class RasterCollection:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
@@ -10772,7 +10807,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:
