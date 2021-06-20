@@ -1814,7 +1814,7 @@ class ImageryLayer(Layer):
                     assert len(data.shape) == 4
                     data = np.transpose(data, [3, 1, 2, 0])
             else:
-                if len(data) == 2:
+                if len(data.shape) == 2:
                     data = np.expand_dims(data, axis=2)
                 else:
                     data = np.transpose(data, axes=[1, 2, 0])
