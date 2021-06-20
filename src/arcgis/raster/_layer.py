@@ -923,7 +923,7 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        required dictionary/Point/Polygon.  A geometry that defines the
+        geometry                        required dictionary/Point/Polygon. A geometry that defines the
                                         location to be identified. The location can be a point or polygon.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     optional string or dict. Specifies the mosaic rule when defining how
@@ -969,7 +969,7 @@ class ImageryLayer(Layer):
                                         
                                         Added at 10.6.1.
         ----------------------------    --------------------------------------------------------------------
-        max_item_count                  optional int. If the returnCatalogItems parameter is set to true, 
+        max_item_count                  optional int. If the return_catalog_items parameter is set to true, 
                                         this parameter will take effect. The default behavior is to return 
                                         all raster catalog items within the requested geometry. 
                                         Otherwise, the number of items returned will be the value specified in the
@@ -1017,8 +1017,14 @@ class ImageryLayer(Layer):
 
         if isinstance(geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
-        if isinstance(geometry, Polygon):
+        elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(geometry, dict):
+            if "x" in geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
+
         if mosaic_rule is not None:
             params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
