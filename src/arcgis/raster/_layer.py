@@ -1568,8 +1568,15 @@ class ImageryLayer(Layer):
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
-                                If image format is chosen, the bytes of the exported image are
+                                Values: json,image,kmz,numpy_array
+
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array 
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
+                                If f="image", the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
         ----------------------  --------------------------------------------------------------------
@@ -1806,6 +1813,50 @@ class ImageryLayer(Layer):
                 token=self._token,
                 timeout=None,
             )
+
+        elif f == "numpy_array":
+            params["f"] = "image"
+            params["format"] = "lerc"
+            params["lercVersion"] = 2
+            res = self._con.post(
+                url, params, try_json=False, force_bytes=True, token=self._token
+            )
+
+            try:
+                import lerc
+            except ImportError:
+                raise ImportError(
+                    "lerc not found. Install lerc to export image service as numpy array"
+                )
+
+            if not isinstance(res, bytes):
+                raise RuntimeError(res)
+            result, data, valid_mask = lerc.decode(res)
+            if result != 0:
+                raise RuntimeError("decoding bytes from imagery service failed.")
+
+            # transpose
+            if "hasMultidimensions" in self.properties:
+                is_multidimensional = self.properties.hasMultidimensions
+            if is_multidimensional:
+                if len(data.shape) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif len(data) == 3:
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+                else:
+                    assert len(data.shape) == 4
+                    data = np.transpose(data, [3, 1, 2, 0])
+            else:
+                if len(data.shape) == 2:
+                    data = np.expand_dims(data, axis=2)
+                else:
+                    data = np.transpose(data, axes=[1, 2, 0])
+
+            return data
+
         else:
             print("Unsupported output format")
 
@@ -7505,8 +7556,15 @@ class Raster:
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
-                                If image format is chosen, the bytes of the exported image are
+                                Values: json,image,kmz,numpy_array
+
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array 
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
+                                If f="image", the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
                                 (Available only when image_server engine is used)
