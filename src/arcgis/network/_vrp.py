@@ -1104,7 +1104,8 @@ def edit_vehicle_routing_problem(
         travel_mode = _utils.find_travel_mode(
             gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
         )
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.edit_vehicle_routing_problem.__annotations__.keys(),
