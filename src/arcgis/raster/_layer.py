@@ -8,7 +8,7 @@ import copy
 import requests as _requests
 
 from arcgis._impl.common._utils import _date_handler
-from arcgis.gis import Layer
+from arcgis.gis import Layer, Item
 from arcgis.geometry import Geometry, Envelope
 from arcgis.features import FeatureSet
 from arcgis.gis import _GISResource
@@ -1570,9 +1570,9 @@ class ImageryLayer(Layer):
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz,numpy_array
 
-                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
                                 the dimensions of the array will be rows, columns, and number of bands.
-                                If the raster is a multidimensional raster, the dimensions of the array 
+                                If the raster is a multidimensional raster, the dimensions of the array
                                 will be number of slices, rows, columns, and number of bands.
                                 LERC needs to be installed to export image service as numpy array.
 
@@ -5955,7 +5955,7 @@ class ImageryLayer(Layer):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
@@ -7558,9 +7558,9 @@ class Raster:
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz,numpy_array
 
-                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
                                 the dimensions of the array will be rows, columns, and number of bands.
-                                If the raster is a multidimensional raster, the dimensions of the array 
+                                If the raster is a multidimensional raster, the dimensions of the array
                                 will be number of slices, rows, columns, and number of bands.
                                 LERC needs to be installed to export image service as numpy array.
 
@@ -7685,7 +7685,7 @@ class Raster:
         return self._engine_obj.__rpow__(other)
 
     def __abs__(self):
-        return self._engine_obj.__abs__(other)
+        return self._engine_obj.__abs__()
 
     def __lshift__(self, other):
         return self._engine_obj.__lshift__(other)
@@ -7718,10 +7718,10 @@ class Raster:
         return self._engine_obj.__rmod__(other)
 
     def __neg__(self):
-        return self._engine_obj.__neg__(other)
+        return self._engine_obj.__neg__()
 
     def __invert__(self):
-        return self._engine_obj.__invert__(other)
+        return self._engine_obj.__invert__()
 
     def __and__(self, other):
         return self._engine_obj.__and__(other)
@@ -9077,7 +9077,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
@@ -14110,6 +14110,7 @@ class RasterCatalogItem(object):
     def _init(self, connection=None):
         """loads the properties into the class"""
         from arcgis._impl.common._mixins import PropertyMap
+        from urllib.error import HTTPError
 
         if connection is None:
             connection = self._con
