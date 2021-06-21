@@ -1120,9 +1120,10 @@ def generate_raster(
 
     .. code-block:: python
 
-        # Usage Example 1: Performs raster analysis on a multidimensional raster. A tiled image layer is created in ArcGIS Online.
+        # Usage Example 1: Performs raster analysis on a distributed server deployment.
 
-        generate_raster_op = generate_raster(raster_function='raster_function',
+        generate_raster_op = generate_raster(raster_function={"rasterFunction":"Grayscale"},
+                                             function_arguments = {"Raster": {"url":<url>}
                                              output_name="output_name",
                                              process_as_multidimensional=True
                                              gis=gis,
@@ -1180,7 +1181,7 @@ def convert_feature_to_raster(
                                              The available units are Feet, Miles, Meters, and Kilometers.
 
                                              Example
-                                                {"distance":60,"units":meters}
+                                                {"distance":60,"units":"meters"}
     ------------------------------------     --------------------------------------------------------------------
     value_field                              Optional string.  The field that will be used to assign values to the
                                              output raster.
@@ -1266,19 +1267,13 @@ def convert_feature_to_raster(
 
     .. code-block:: python
 
-        # Usage Example 1: Generates a new imagery layer based on output cell size from the input feature layer.
+        # Usage Example 1: Convert the feature layer into an imagery layer. 
 
-        layer = gis.content.search("my_layer", item_type="Feature Layer Collection")[0].layers[0]
+        feature_layer = gis.content.search("feature_layer_item", item_type="Feature Layer Collection")[0].layers[0]
 
-        raster = conver_feature_to_raster(input_feature=layer,
-                                        output_cell_size={'distance': 60,
-                                        'units': meters}, context={'extent': {
-            'xmin': -122.68,
-            'ymin': 45.53,
-            'xmax': -122.45,
-            'ymax': 45.6,
-            'spatialReference': {'wkid': 4326},
-            }}, gis=gis)
+        raster = conver_feature_to_raster(input_feature=feature_layer,
+                                          output_cell_size={"distance": 60,"units": "meters"}, 
+                                          gis=gis)
 
     """
 
@@ -1554,6 +1549,12 @@ def copy_raster(
                                          raster_type_name="Tiled Imagery Layer", 
                                          gis = gis)
 
+        # Usage Example 1: This example copies the imagery layer and creates a new imagery layer item in the GIS. 
+
+        raster = gis.content.search("raster_lyr")[0].layers[0]
+        copy_raster_op = copy_raster(input_raster=raster,
+                                     output_name="output_name",
+                                     gis=gis)
 
     """
 
@@ -1923,7 +1924,7 @@ def convert_raster_to_feature(
 
     .. code-block:: python
 
-        # Usage Example 1: This example converts raster data to feature class vector data.
+        # Usage Example 1: This example converts imagery layer to feature layer.
 
         raster = gis.content.search("raster_lyr")[0].layers[0]
 
@@ -2613,7 +2614,7 @@ def interpolate_points(
     .. code-block:: python
 
         # Usage Example 1: Performs point interpolation on the feature layer.
-        # Operation is optimized for speed
+        # In this example operation is optimized for SPEED
 
         layer = gis.content.search("layer_shp", item_type="Feature Layer Collection")[0].layers[0]
 
@@ -2624,7 +2625,7 @@ def interpolate_points(
                                                       gis=gis)
 
         # Usage Example 2: Performs point interpolation on the feature layer.
-        # Operation is optimized for accuracy       
+        # In this example operation is optimized for ACCURACY
 
         interpolate_points_acc = interpolate_points(input_point_features=layer,
                                                     interpolate_field='field',
@@ -2784,7 +2785,7 @@ def classify(
 
     .. code-block:: python
 
-        # Usage Example 1: Classifies a raster based on an Esri Classifier Definition (.ecd) file and raster data inputs.
+        # Usage Example 1: Classifies a raster based on an Esri Classifier Definition dictionary and raster data inputs.
         
         classifier = {
             'EsriClassifierDefinitionFile': 0,
@@ -2969,12 +2970,12 @@ def segment(
 
     .. code-block:: python
 
-        # Usage Example 1: Performs segmentation on an input raster using nearest neighbor sampling method.
+        # Usage Example 1: Performs segmentation on an input raster using nearest neighbor resampling method.
 
-        imgLayer = gis.content.search("imgLayer")[0].layers[0]
+        img_layer = gis.content.search("imgLayer")[0].layers[0]
 
-        segment_op = segment(input_raster=imgLayer,
-                             context={'resamplingMethod':"Nearest"},
+        segment_op = segment(input_raster=img_layer,
+                             context={"resamplingMethod":"Nearest"},
                              gis=gis)
     """
 
@@ -3088,18 +3089,13 @@ def train_classifier(
 
         # Usage Example 1: Trains image classifiers based on 'Maximum Likelihood Estimation' algorithm.
 
-        train = gis.content.search("my_classifier")[0].layers[0]
-        
-        classifier = {
-            'EsriClassifierDefinitionFile': 0,
-            'FileVersion': 3,
-            'NumberDefinitions': 1,
-            'Definitions': [...],
-            }
-
-        classify_op = classify(input_raster=train,
-                               input_classifier_definition=classifier,
-                               gis=gis)
+        raster = gis.content.search('my_inp_raster')[0].layers[0]
+        segment = gis.content.search('my_segmented_raster')[0].layers[0]
+ 
+        train = train_classifier(input_raster=raster, 
+                                 input_training_sample_json=<sample_json>, 
+                                 classifier_parameters={"method":"mlc"}, 
+                                 segmented_raster=segment)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4347,12 +4343,9 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
 
     .. code-block:: python
 
-        # Usage Example 1: Returns the contents of the specified datastore registered with the server.
+        # Usage Example 1: Returns the contents of the rasterstore registered with the server.
 
-        datastore = gis.content.search("trial_datastore")
-        datastore[0].get_data()
-
-        datastore_op = list_datastore_content(datastore, gis=gis)
+        datastore_op = list_datastore_content("/rasterStores/rasterstore", gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4561,6 +4554,14 @@ def calculate_statistics(
 
     :return:
     The imagery layer url
+
+    .. code-block:: python
+
+        # Usage Example 1: This snippet calculates statistics for the given image collection.
+
+        collection = gis.content.search('my_img_collection')[0]
+        overview = calculate_statistics(image_collection=collection.url,
+                                        gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
