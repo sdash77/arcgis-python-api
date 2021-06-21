@@ -42,14 +42,14 @@ from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
 
 class Deeplab(nn.Module):
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilation=False):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilation=False, pretrained=True):
         super().__init__()
         self.pointrend = pointrend
         self.vgg = False
         if getattr(backbone_fn, '_is_multispectral', False):
-            self.backbone = create_body(backbone_fn, pretrained=True, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+            self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
         else:
-            self.backbone = create_body(backbone_fn, pretrained=True)
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
         
         backbone_name = backbone_fn.__name__
 

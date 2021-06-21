@@ -79,11 +79,17 @@ class ImageCaptioner(ArcGISModel):
 
         super().__init__(data, backbone, **kwargs)
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self.decoder_params = kwargs.get('decoder_params', {})
         self.learn = image_captioner_learner(self._data,
                                              self._backbone,
                                              decoder_params=self.decoder_params,
-                                             metrics=kwargs.get('metrics', None)
+                                             metrics=kwargs.get('metrics', None),
+                                             pretrained=pretrained_backbone
                                              )
         if pretrained_path is not None:
             self.load(pretrained_path)  # Load model and vocab
