@@ -7249,7 +7249,7 @@ class Raster:
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
+                                Values: json,image,kmz, numpy_array
                                 If image format is chosen, the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
