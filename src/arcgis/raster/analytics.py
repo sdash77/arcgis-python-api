@@ -1117,6 +1117,16 @@ def generate_raster(
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Performs raster analysis on a multidimensional raster. A tiled image layer is created in ArcGIS Online.
+
+        generate_raster_op = generate_raster(raster_function='raster_function',
+                                             output_name="output_name",
+                                             process_as_multidimensional=True
+                                             gis=gis,
+                                             tiles_only=True)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
 
@@ -1253,6 +1263,23 @@ def convert_feature_to_raster(
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Generates a new imagery layer based on output cell size from the input feature layer.
+
+        layer = gis.content.search("my_layer", item_type="Feature Layer Collection")[0].layers[0]
+
+        raster = conver_feature_to_raster(input_feature=layer,
+                                        output_cell_size={'distance': 60,
+                                        'units': meters}, context={'extent': {
+            'xmin': -122.68,
+            'ymin': 45.53,
+            'xmax': -122.45,
+            'ymax': 45.6,
+            'spatialReference': {'wkid': 4326},
+            }}, gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1753,6 +1780,29 @@ def summarize_raster_within(
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Summarizes raster based on the input zone layer.
+
+        zone_layer = gis.content.search("zone_lyr")[0].layers[0]
+        raster_inp = gis.content.search("raster_inp_lyr")[0].layers[0]
+
+        summarize1 = summarize_raster_within(input_zone_layer=zone_layer,
+                                             input_raster_layer_to_summarize=raster_inp,
+                                             zone_field="Value",
+                                             gis=gis)
+
+        # Usage Example 2: Summarizes raster based on the multidimensional input zone layer.
+
+        multi_zone_layer = gis.content.search("multi_zone_lyr")[0].layers[0]
+        raster_inp = gis.content.search("raster_inp_lyr")[0].layers[0]
+
+        summarize2 = summarize_raster_within(input_zone_layer=multi_zone_layer,
+                                             input_raster_layer_to_summarize=raster_inp,
+                                             zone_field="Value",
+                                             process_as_multidimensional=True
+                                             gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1870,6 +1920,16 @@ def convert_raster_to_feature(
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example converts raster data to feature class vector data.
+
+        raster = gis.content.search("raster_lyr")[0].layers[0]
+
+        feature = convert_raster_to_feature(input_raster=raster,
+                                            output_type='Polygon',
+                                            gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2060,6 +2120,19 @@ def calculate_density(
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Creates a density map within a specified distance from said location.
+
+        sample_lyr = gis.content.search("sample_lyr", item_type="Feature Layer Collection")[0].layers[0]
+
+        calculate_density_op = calculate_density(input_point_or_line_features=sample_lyr, 
+                                                search_distance={"distance":"10","units":"Meters"}, 
+                                                gis=gis)
+
+        # To view output inline, run:
+        calculate_density_op.layers[0]
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2307,6 +2380,18 @@ def create_viewshed(
      - output_raster
 
      - output_above_ground_level_raster (generated if value specified for above_ground_level_output_name)
+
+    .. code-block:: python
+
+        # Usage Example 1: Creates viewshed with cut-off distance
+
+        elevation = gis.content.search("elev_lyr")[0].layers[0]
+        observer =  gis.content.search("obs_shp", item_type="Feature Layer Collection")[0].layers[0]
+
+        create_viewshed_op = create_viewshed(input_elevation_surface=elevation,
+                                             input_observer_features=observer,
+                                             maximum_viewing_distance={"distance":"100","units":"Miles"},
+                                             gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2524,6 +2609,28 @@ def interpolate_points(
      - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data)
 
      - output_error_raster (if output_prediction_error is set to True).
+
+    .. code-block:: python
+
+        # Usage Example 1: Performs point interpolation on the feature layer.
+        # Operation is optimized for speed
+
+        layer = gis.content.search("layer_shp", item_type="Feature Layer Collection")[0].layers[0]
+
+        interpolate_points_speed = interpolate_points(input_point_features=layer,
+                                                      interpolate_field='field',
+                                                      optimize_for="SPEED",
+                                                      transform_data=True,
+                                                      gis=gis)
+
+        # Usage Example 2: Performs point interpolation on the feature layer.
+        # Operation is optimized for accuracy       
+
+        interpolate_points_acc = interpolate_points(input_point_features=layer,
+                                                    interpolate_field='field',
+                                                    optimize_for="ACCURACY",
+                                                    transform_data=True,
+                                                    gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2674,6 +2781,30 @@ def classify(
 
     :return:
        output_raster : Imagery Layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Classifies a raster based on an Esri Classifier Definition (.ecd) file and raster data inputs.
+        
+        classifier = {
+            'EsriClassifierDefinitionFile': 0,
+            'FileVersion': 3,
+            'NumberDefinitions': 1,
+            'Definitions': [...],
+            }
+
+        raster = gis.content.search('image_tif')[0].layers[0]
+
+        classify_op = classify(input_raster=raster,
+                               input_classifier_definition=classifier,
+                               gis=gis)
+
+        # Usage Example 2: Performs classification such that the output raster is projected onto the specified spatial reference.
+
+        classify_op = classify(input_raster=raster,
+                               input_classifier_definition=classifier,
+                               context={"outSR":{spatial reference}}
+                               gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2835,6 +2966,16 @@ def segment(
 
     :return:
        output_raster : Imagery Layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Performs segmentation on an input raster using nearest neighbor sampling method.
+
+        imgLayer = gis.content.search("imgLayer")[0].layers[0]
+
+        segment_op = segment(input_raster=imgLayer,
+                             context={'resamplingMethod':"Nearest"},
+                             gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2942,6 +3083,23 @@ def train_classifier(
 
     :return:
        Returns .ecs file in dictionary format
+
+    .. code-block:: python
+
+        # Usage Example 1: Trains image classifiers based on 'Maximum Likelihood Estimation' algorithm.
+
+        train = gis.content.search("my_classifier")[0].layers[0]
+        
+        classifier = {
+            'EsriClassifierDefinitionFile': 0,
+            'FileVersion': 3,
+            'NumberDefinitions': 1,
+            'Definitions': [...],
+            }
+
+        classify_op = classify(input_raster=train,
+                               input_classifier_definition=classifier,
+                               gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4186,6 +4344,15 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
 
     :return:
         List of contents in the datastore
+
+    .. code-block:: python
+
+        # Usage Example 1: Returns the contents of the specified datastore registered with the server.
+
+        datastore = gis.content.search("trial_datastore")
+        datastore[0].get_data()
+
+        datastore_op = list_datastore_content(datastore, gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4249,6 +4416,17 @@ def build_footprints(
 
     :return:
     The imagery layer url
+
+    .. code-block:: python
+
+        # Usage Example 1: Determines the extent of every raster in the given image collection.
+        # 'GEOMETRY' computation method refines the footprints
+
+        collection = gis.content.search("Imgcollect_footprints")[0]
+
+        footprints = build_footprints(image_collection=collection.url,
+                                      computation_method='GEOMETRY',
+                                      gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4306,6 +4484,14 @@ def build_overview(
 
     :return:
     The imagery layer url
+
+    .. code-block:: python
+
+        # Usage Example 1: This snippet is a quick implementation of the build_overview function.
+
+        collection = gis.content.search('my_img_collection')[0]
+        overview = build_overview(image_collection=collection.url,
+                                  gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis

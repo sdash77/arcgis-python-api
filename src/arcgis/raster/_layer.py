@@ -1602,7 +1602,7 @@ class ImageryLayer(Layer):
             # Usage Example 1: Loads the source image as raster and export the new image as PNG to source location
 
             raster_source = Raster('\\data\source.tif')
-            raster_source.export_image(size='1000*1000', export_format='PNG')
+            raster_source.export_image(size=[1000,1000])
 
         """
         if self.tiles_only:
@@ -5719,6 +5719,7 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
 
         .. tip::
+
             When working with multidimensional imagery layers, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
             raster function on the layer for slicing the data along defined variables and dimensions.
             `plot_histograms()` can then be used on the output layer returned upon applying the filter.  
@@ -6079,7 +6080,7 @@ class Raster:
     """
     A raster object is a variable that references a raster. It can be used to query the properties of the raster dataset.
 
-    Usage: arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)
+    Usage: ``arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)``
 
     The Raster class can work with arcpy engine or image server engine. By default,
     if the path is an image service url, then the Raster class uses the image server engine
@@ -6140,6 +6141,8 @@ class Raster:
 
     .. code-block:: python
 
+        # Example Usage
+        
         # Overlay an image service on the 'MapView' widget
         map = gis.map()
         layer = gis.content.search('my_img_service')
@@ -7497,6 +7500,7 @@ class Raster:
         ============================    ====================================================================
 
         .. tip::
+        
         When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
         raster function on the Raster object for slicing the data along defined variables and dimensions.
         `plot_histograms()` can then be used on the output raster returned upon applying the filter.
