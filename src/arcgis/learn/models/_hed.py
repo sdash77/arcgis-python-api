@@ -30,11 +30,13 @@ class CustomHED():
     except:
         pass
     
-    def get_model(self, data, backbone=None):
+    def get_model(self, data, backbone=None, **kwargs):
         """
         In this fuction you have to define your model with following two arguments!
         
         """
+        pretrained_backbone = kwargs.get('pretrained_backbone', True)
+        
         if backbone is None:
             self._backbone = self.models.vgg19
         elif type(backbone) is str:
@@ -45,7 +47,7 @@ class CustomHED():
         else:
             self._backbone = backbone
 
-        model = self.hed._HEDModel(self._backbone, data.chip_size)
+        model = self.hed._HEDModel(self._backbone, data.chip_size, pretrained=pretrained_backbone)
         
         return model
     

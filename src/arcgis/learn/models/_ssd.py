@@ -121,6 +121,11 @@ class SingleShotDetector(ArcGISModel):
 
         super().__init__(data, backbone, **kwargs)
 
+        if pretrained_path is not None:
+            backbone_pretrained = False
+        else:
+            backbone_pretrained = True
+            
         self._backend = backend
         if self._backend == 'tensorflow':
             self._intialize_tensorflow(data, grids, zooms, ratios, backbone, drop, bias, pretrained_path, location_loss_factor)
@@ -155,7 +160,7 @@ class SingleShotDetector(ArcGISModel):
                     
                 self._create_anchors(grids, zooms, ratios)
 
-                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut, pretrained=False), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1]
 
@@ -192,9 +197,9 @@ class SingleShotDetector(ArcGISModel):
                 
                 self._create_anchors(grids, zooms, ratios)
                 if hasattr(self, '_orig_backbone'):
-                    feature_sizes = model_sizes(create_body(self._orig_backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                    feature_sizes = model_sizes(create_body(self._orig_backbone, pretrained=False, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 else:
-                    feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                    feature_sizes = model_sizes(create_body(self._backbone, pretrained=False, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1] 
 
@@ -215,7 +220,7 @@ class SingleShotDetector(ArcGISModel):
                 backbone_cut = cnn_config(self._orig_backbone)['cut']
                 backbone_split = cnn_config(self._orig_backbone)['split']
 
-            self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+            self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, pretrained=backbone_pretrained, split_on=backbone_split, custom_head=ssd_head)
             self.learn.metrics = [AveragePrecision(self, data.c-1)]
             self._arcgis_init_callback() # make first conv weights learnable
 

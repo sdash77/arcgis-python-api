@@ -1,14 +1,12 @@
 from ._util import (
     _to_datetime,
     _datetime2ole,
-    _ole2datetime,
-    _iso_to_datetime,
-    _check_if_iso_format,
     _time_filter,
     _linear_regression,
     _harmonic_regression,
 )
 import datetime as _datetime
+import copy as _copy
 import logging as _logging
 
 _LOGGER = _logging.getLogger(__name__)
@@ -492,3 +490,273 @@ def temporal_profile(
                     )
         # _plt.gcf().autofmt_xdate()
         _plt.show()
+
+
+def plot_histograms(
+    raster,
+    geometry=None,
+    pixel_size=None,
+    time=None,
+    bands=[],
+    display_stats=True,
+    plot_properties=None,
+    subplot_properties=None,
+):
+
+    """
+    Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+    the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+    number line that displays the range of image pixel values that has been split into number ranges, 
+    or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+    of the bin; the height of the bar represents the number of pixels that fall into that range. 
+    Understanding the distribution of your data is an important step in the data exploration process.
+
+    ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+
+    ============================    ====================================================================
+    **Arguments**                   **Description**
+    ----------------------------    --------------------------------------------------------------------
+    geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                    within which the histogram is computed. The geometry can be an
+                                    envelope or a polygon. If not provided, then the full extent of the 
+                                    raster will be used for the computation.
+
+                                    **Note:** This parameter is honoured if the raster uses "image_server" engine.
+    ----------------------------    --------------------------------------------------------------------
+    pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                    resolution being looked at). If pixel size is not specified, then
+                                    pixel_size will default to the base resolution of the dataset.
+                                    The structure of the pixel_size parameter is the same as the
+                                    structure of the point object returned by the ArcGIS REST API.
+                                    In addition to the dictionary structure, you can specify the pixel size
+                                    with a comma-separated string.
+                                    
+                                    Syntax:
+                                    - dictionary structure: pixel_size={point}
+                                    - Point simple syntax: pixel_size='<x>,<y>'
+                                    Examples:
+                                    - pixel_size={"x": 0.18, "y": 0.18}
+                                    - pixel_size='0.18,0.18'
+
+                                    **Note:** This parameter is honoured if the raster uses "image_server" engine.
+    ----------------------------    --------------------------------------------------------------------
+    time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                    time instant or the time extent of the exported image.
+                                    Time instant specified as datetime.date, datetime.datetime or
+                                    timestamp in milliseconds since epoch
+                                    Syntax: time=<timeInstant>
+                                    
+                                    Time extent specified as list of [<startTime>, <endTime>]
+                                    For time extents one of <startTime> or <endTime> could be None. A
+                                    None value specified for start time or end time will represent
+                                    infinity for start or end time respectively.
+                                    Syntax: time=[<startTime>, <endTime>] ; specified as
+                                    datetime.date, datetime.datetime or timestamp
+                                    
+                                    Added at 10.8
+
+                                    **Note:** This parameter is honoured if the raster uses "image_server" engine.
+    ----------------------------    --------------------------------------------------------------------
+    bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                    Image histogram charts are plotted for these specific bands.
+
+                                    Example:
+                                        - [0,2,3]
+    ----------------------------    --------------------------------------------------------------------
+    display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                    along with the histograms.
+
+                                    Some basic descriptive statistics are calculated and displayed on 
+                                    histograms. The mean and median are displayed with one line each, and 
+                                    one standard deviation above and below the mean is displayed using two lines.
+
+                                        - False - The statistics will not be displayed along with the histograms.
+                                        - True - The statistics will be displayed along with the histograms. \
+                                                This is the default.
+    ----------------------------    --------------------------------------------------------------------
+    plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                    properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                    parameters and values specified in dict format.
+
+                                    Example:
+                                        - {"figsize":(15,15)}
+    ----------------------------    --------------------------------------------------------------------
+    subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                    histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                    parameters and values specified in dictionary format.
+
+                                    Example:
+                                        - | [
+                                        |  {"color":"r"},
+                                        |  {"color":"g"},
+                                        |  {"color":"b","edgecolor":"w"}
+                                        | ]
+                                        
+                                    **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                    parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+    ============================    ====================================================================
+
+    .. tip::
+    When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+    raster function on the Raster object for slicing the data along defined variables and dimensions.
+    `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+    
+    :returns: None
+
+    """
+
+    subplot_properties_temp = _copy.deepcopy(subplot_properties)
+    color_flag = False
+
+    from ._layer import _ArcpyRaster
+
+    if isinstance(raster, _ArcpyRaster):
+        try:
+            arcpy_raster = raster._raster
+            stats = arcpy_raster.getStatistics()
+            histograms = arcpy_raster.getHistograms()
+            if not histograms or not stats:
+                import arcpy
+
+                arcpy.CalculateStatistics_management(arcpy_raster)
+            stats = arcpy_raster.getStatistics()
+            histograms = arcpy_raster.getHistograms()
+        except Exception as e:
+            _LOGGER.warning(e)
+
+        if not histograms:
+            raise RuntimeError("No histograms found for the raster")
+        if not stats:
+            raise RuntimeError("No statistics found for the raster")
+        stats_histograms = {"statistics": stats, "histograms": histograms}
+    else:
+        if geometry is None:
+            geometry = raster.extent
+        stats_histograms = raster.compute_stats_and_histograms(
+            geometry=geometry, pixel_size=pixel_size, time=time
+        )
+        if "histograms" not in stats_histograms or not stats_histograms["histograms"]:
+            raise RuntimeError("No histograms found for the raster in the given extent")
+        if "statistics" not in stats_histograms or not stats_histograms["statistics"]:
+            raise RuntimeError("No statistics found for the raster in the given extent")
+
+    band_count = len(stats_histograms["histograms"])
+    bands = [0] if isinstance(bands, list) and len(bands) == 0 else bands
+    if isinstance(bands, int) or isinstance(bands, str):
+        bands = [bands]
+    if isinstance(bands, list):
+        for band in bands:
+            if not isinstance(band, int) or band not in range(band_count):
+                raise RuntimeError("Invalid band index : " + str(band))
+    else:
+        raise RuntimeError("bands should be of type list")
+
+    if plot_properties is None:
+        plot_properties = {}
+    if not isinstance(plot_properties, dict):
+        raise RuntimeError("plot_properties should be of type dict")
+    if len(plot_properties) == 0 or (
+        len(plot_properties) > 0 and "figsize" not in plot_properties.keys()
+    ):
+        plot_properties["figsize"] = (10, 10)
+
+    fig = _plt.figure(**plot_properties)
+
+    if subplot_properties_temp is None:
+        subplot_properties_temp = {}
+    if isinstance(subplot_properties_temp, list):
+        if len(subplot_properties_temp) != len(bands):
+            raise RuntimeError(
+                "subplot_properties length should be same as the number of band indexes passed into parameter: bands"
+            )
+    if isinstance(subplot_properties_temp, dict):
+        if "color" not in subplot_properties_temp:
+            color_flag = True
+        subplot_properties_temp = [subplot_properties_temp] * len(bands)
+
+    if isinstance(subplot_properties_temp, list):
+        for property_dict in subplot_properties_temp:
+            if isinstance(property_dict, dict):
+                if any(key in property_dict for key in ["x", "height", "align"]):
+                    raise RuntimeError(
+                        "subplot_properties dictionaries cannot contain these keys : x, height or align"
+                    )
+                if len(property_dict) == 0 or "edgecolor" not in property_dict:
+                    property_dict.update({"edgecolor": "black"})
+            else:
+                raise RuntimeError("subplot_properties indexes should be of type dict")
+    else:
+        raise RuntimeError(
+            "subplot_properties should be of type dict or list (of dictionaries)"
+        )
+
+    property_gen = iter(subplot_properties_temp)
+    color_gen = iter(_cm.rainbow(_np.linspace(0, 1, len(bands))))
+    for i, band in enumerate(bands):
+        ax = fig.add_subplot(len(bands), 1, i + 1)
+        next_property = next(property_gen)
+        if "color" not in next_property or color_flag:
+            c = next(color_gen)
+            next_property["color"] = c
+        min_val = stats_histograms["histograms"][band]["min"]
+        max_val = stats_histograms["histograms"][band]["max"]
+        bins = stats_histograms["histograms"][band]["size"]
+        step = (max_val - min_val) / bins
+        bin_list = _np.arange(min_val, max_val, step)
+        if "width" not in next_property:
+            next_property["width"] = step
+        next_property.update(
+            {
+                "x": bin_list,
+                "height": stats_histograms["histograms"][band]["counts"],
+                "align": "edge",
+            }
+        )
+        ax.bar(**next_property)
+        ax.set_xticks(
+            _np.linspace(
+                stats_histograms["statistics"][band]["min"],
+                stats_histograms["statistics"][band]["max"],
+                10,
+                dtype=int,
+            )
+        )
+        ax.set_ylabel("count")
+        ax.set_title("Distribution for Band: " + str(band))
+
+        if display_stats:
+            if "mean" in stats_histograms["statistics"][band]:
+                mean_stat = stats_histograms["statistics"][band]["mean"]
+                ax.axvline(
+                    mean_stat,
+                    linewidth=1.5,
+                    label="Mean: " + str(mean_stat),
+                    color="blue",
+                )
+            if "median" in stats_histograms["statistics"][band]:
+                median_stat = stats_histograms["statistics"][band]["median"]
+                ax.axvline(
+                    median_stat,
+                    linewidth=1.5,
+                    label="Median: " + str(median_stat),
+                    color="green",
+                )
+            if "standardDeviation" in stats_histograms["statistics"][band]:
+                sd_stat = stats_histograms["statistics"][band]["standardDeviation"]
+                if "mean" in stats_histograms["statistics"][band]:
+                    ax.axvline(
+                        mean_stat + sd_stat,
+                        linewidth=1.5,
+                        label="StdDev: " + str(sd_stat),
+                        color="gray",
+                        linestyle="--",
+                    )
+                    ax.axvline(
+                        mean_stat - sd_stat, linewidth=1.5, color="gray", linestyle="--"
+                    )
+        if display_stats or "label" in next_property:
+            ax.legend()
+    fig.suptitle("Histograms", fontsize=20)
+    if "subplotpars" not in plot_properties:
+        _plt.subplots_adjust(hspace=0.5)
+    _plt.show()

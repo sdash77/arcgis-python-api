@@ -62,6 +62,7 @@ class MyFasterRCNN():
         assert type(pretrained_backbone) == bool
         if backbone.__name__ == 'resnet50':
             model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained_backbone,
+                                                                              pretrained_backbone=False,
                                                                               min_size = 1.5*data.chip_size,
                                                                               max_size = 2*data.chip_size,
                                                                               **self.fasterrcnn_kwargs)
