@@ -13571,9 +13571,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
 
     def train_deep_learning_model(
         self,
@@ -13791,8 +13795,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
 ###########################################################################

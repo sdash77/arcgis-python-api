@@ -5,6 +5,8 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis._impl.common._utils import _validate_url
+from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -1250,8 +1252,8 @@ def generate_service_areas(
     url = gis.properties.helperServices.asyncServiceArea.url[
         : -len("/GenerateServiceAreas")
     ]
-
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis)
     defaults = dict(
         zip(
             tbx.generate_service_areas.__annotations__.keys(),
