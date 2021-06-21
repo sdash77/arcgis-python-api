@@ -638,13 +638,13 @@ class FeatureLayer(Layer):
         top_filter                           Required Dict. The `top_filter` define the aggregation of the data.
 
                                                - groupByFields define the field or fields used to aggregate
-                                                               your data.
+                                                your data.
                                                - topCount defines the number of features returned from the top
-                                                          features query and is a numeric value.
+                                                features query and is a numeric value.
                                                - orderByFields defines the order in which the top features will
-                                                               be returned. orderByFields can be specified in
-                                                               either ascending (asc) or descending (desc)
-                                                               order, ascending being the default.
+                                                be returned. orderByFields can be specified in
+                                                either ascending (asc) or descending (desc)
+                                                order, ascending being the default.
 
                                              Example: {"groupByFields": "worker", "topCount": 1,
                                                        "orderByFields": "employeeNumber"}
@@ -1312,9 +1312,9 @@ class FeatureLayer(Layer):
                                             reference. If the geometry spatial reference is not specified, the
                                             unit is derived from the feature service data spatial reference.
                                             This parameter only applies if supportsQueryWithDistance is true.
-                                            Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
+                                            Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
                                                     esriSRUnit_Foot | esriSRUnit_Kilometer |
-                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
+                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
         -------------------------------     --------------------------------------------------------------------
         time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
                                             datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -1500,9 +1500,49 @@ class FeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> feat_set = feature_layer.query(where = "OBJECTID1")
+            >>> type(feat_set)
+            <arcgis.Features.FeatureSet>
+            >>> feat_set[0]
+            <Feature 1>
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the object IDs instead of Features
+
+            >>> id_set = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_ids_only = True)
+
+            >>> type(id_set)
+            <Array>
+            >>> id_set[0]
+            <"Item_id1">
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> search_count = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_count_only = True)
+
+            >>> type(search_count)
+            <Integer>
+            >>> search_count
+            <149>
+
         :returns:
             A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
-             is specified, such as ``count``
+            is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -2121,14 +2161,26 @@ class FeatureLayer(Layer):
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
         future                     Optional Boolean.  When true, the response is returned as a
-                                   `concurrent.futures.Future` object.
+                                   :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> feature_layer.append(source_table_name= "Building",
+                                    fieldMappings=[{"name" : "CountyID",
+                                                    "sourceName" : "GEOID10"}],
+                                    upsert = True,
+                                    append_fields = ["fieldName1", "fieldName2",...., fieldname22],
+                                    return_messages = False)
+            <True>
 
 
         :returns:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
-            If ``future`` =True, then the result is a `Future` object. Call ``result()`` to get the response.
+            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
 
         """
         import copy
@@ -2258,7 +2310,7 @@ class FeatureLayer(Layer):
 
 
         :returns:
-            A dictionary if future=False (default), else a ``concurrent.Future`` class.
+            A dictionary if future=False (default), else a:class:`~concurrent.futures.Future` object.
 
 
         """
@@ -3204,6 +3256,46 @@ class Table(FeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> feat_set = feature_layer.query(where = "OBJECTID1")
+            >>> type(feat_set)
+            <arcgis.Features.FeatureSet>
+            >>> feat_set[0]
+            <Feature 1>
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the object IDs instead of Features
+
+            >>> id_set = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_ids_only = True)
+
+            >>> type(id_set)
+            <Array>
+            >>> id_set[0]
+            <"Item_id1">
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> search_count = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_count_only = True)
+
+            >>> type(search_count)
+            <Integer>
+            >>> search_count
+            <149>
+
         :returns:
             A :class:`~arcgis.features.FeatureSet` object or Panda's DataFrame containing the features
             matching the query unless another return type is specified, such as ``count``
@@ -3932,6 +4024,7 @@ class FeatureLayerCollection(_GISResource):
         out_sr                              Optional Integer. The ``WKID`` for the spatial reference of the returned
                                             geometry.
         ===============================     ====================================================================
+
 
         """
         qurl = self._url + "/query"
