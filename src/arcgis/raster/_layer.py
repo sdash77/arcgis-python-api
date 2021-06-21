@@ -10152,7 +10152,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
