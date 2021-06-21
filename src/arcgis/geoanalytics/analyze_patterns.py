@@ -950,6 +950,7 @@ def find_point_clusters(
     params = inspect_function_inputs(tbx.find_point_clusters, **params)
 
     try:
+        params['future'] = True
         gpjob = tbx.find_point_clusters(**params)
         if future:
 
