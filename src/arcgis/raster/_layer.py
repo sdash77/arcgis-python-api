@@ -1547,6 +1547,13 @@ class ImageryLayer(Layer):
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz,numpy_array
+
+                                if f="numpy_array" and if the raster is a single- or multiband raster, 
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array 
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
                                 If image format is chosen, the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
@@ -7250,6 +7257,13 @@ class Raster:
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz, numpy_array
+
+                                if f="numpy_array" and if the raster is a single- or multiband raster, 
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array 
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
                                 If image format is chosen, the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
