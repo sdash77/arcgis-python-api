@@ -501,10 +501,15 @@ def _get_geometry(data):
 
 def _get_geometry_from_feature_layer(data):
     geo = None
-    layer_fset = layer.query()
-    for ele in layer_fset.features:
-        geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
-    return geometry
+    layer_fset = data.query()
+    try:
+        for ele in layer_fset.features:
+            geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
+    except:
+        _LOGGER.warning(
+            "Failure while constructing the union of the individual feature geometries"
+        )
+    return geo
 
 
 def build_query_string(field_name, operator, field_values):

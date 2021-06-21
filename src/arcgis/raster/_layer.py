@@ -1570,9 +1570,9 @@ class ImageryLayer(Layer):
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz,numpy_array
 
-                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
                                 the dimensions of the array will be rows, columns, and number of bands.
-                                If the raster is a multidimensional raster, the dimensions of the array 
+                                If the raster is a multidimensional raster, the dimensions of the array
                                 will be number of slices, rows, columns, and number of bands.
                                 LERC needs to be installed to export image service as numpy array.
 
@@ -7558,9 +7558,9 @@ class Raster:
         f                       optional string. The response format.  default is json
                                 Values: json,image,kmz,numpy_array
 
-                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster, 
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
                                 the dimensions of the array will be rows, columns, and number of bands.
-                                If the raster is a multidimensional raster, the dimensions of the array 
+                                If the raster is a multidimensional raster, the dimensions of the array
                                 will be number of slices, rows, columns, and number of bands.
                                 LERC needs to be installed to export image service as numpy array.
 
@@ -10462,9 +10462,6 @@ class RasterCollection:
     def __iter__(self):
         return self._ras_coll_engine_obj.__iter__()
 
-    def __next__(self):
-        return self._ras_coll_engine_obj.__next__()
-
     def __len__(self):
         return self._ras_coll_engine_obj.__len__()
 
@@ -11850,11 +11847,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def __iter__(self):
         return iter(self._df.to_dict("records", into=dict))
 
-    def __next__(self):
-        return self._df.to_dict("records", into=dict)[item]
-
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         return self._df.to_dict("records", into=dict)[item]
@@ -12250,20 +12244,19 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         return ras_list
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            item = self[self._start]
-        except IndexError:
-
-            self._start = 0
-            raise StopIteration
-        self._start += 1
-        return item
+        lim = True
+        while lim:
+            try:
+                item = self[self._start]
+            except IndexError:
+                lim = False
+                self._start = 0
+            else:
+                self._start += 1
+                yield item
 
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         if item < self._max_rec_count:
@@ -13014,11 +13007,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
     def __iter__(self):
         return iter(self._df.to_dict("records", into=dict))
 
-    def __next__(self):
-        return self._df.to_dict("records", into=dict)[item]
-
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         return self._df.to_dict("records", into=dict)[item]
