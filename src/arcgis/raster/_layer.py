@@ -1803,7 +1803,7 @@ class ImageryLayer(Layer):
             if "hasMultidimensions" in self.properties:
                 is_multidimensional = self.properties.hasMultidimensions
             if is_multidimensional:
-                if len(data) == 2:
+                if len(data.shape) == 2:
                     data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
                 elif len(data) == 3:
                     if len(self.slices) == 1:
