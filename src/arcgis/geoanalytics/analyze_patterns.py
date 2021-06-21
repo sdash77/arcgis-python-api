@@ -338,6 +338,7 @@ def forest(
     )
 
     try:
+        params['future'] = True
         gpjob = tbx.forest_based_classification_and_regression(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
