@@ -75,7 +75,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
-        res = self._con.post(self._url, params)
+        res = self._con.post(self._url, params, timeout=None)
         if "success" in res:
             return res["success"]
         return res
@@ -93,7 +93,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s/cancel" % job_id
         params = {"f": "json"}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     @property
@@ -101,7 +101,7 @@ class ImageryLayerCacheManager(_GISResource):
         """returns a list of all the jobs on the tile server"""
         url = self._url + "/jobs"
         params = {"f": "json"}
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         if "jobs" in res:
             return res["jobs"]
         return res
@@ -142,7 +142,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s" % job_id
         params = {"f": "json"}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     def import_tiles(self, item, levels=None, extent=None, merge=False, replace=False):
@@ -193,7 +193,7 @@ class ImageryLayerCacheManager(_GISResource):
         else:
             raise ValueError("The `item` must be a string or Item")
         url = self._url + "/importTiles"
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         return res
 
     # ----------------------------------------------------------------------
@@ -244,7 +244,7 @@ class ImageryLayerCacheManager(_GISResource):
                     )
                     extent = extent2
                 params["extent"] = extent
-            return self._con.post(url, params)
+            return self._con.post(url, params, timeout=None)
         return None
 
     # ----------------------------------------------------------------------
@@ -269,7 +269,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s/rerun" % job_id
         params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     def edit_tile_service(
@@ -320,7 +320,7 @@ class ImageryLayerCacheManager(_GISResource):
         if not max_export_tile_count is None:
             params["maxExportTileCount"] = int(max_export_tile_count)
         url = self._url + "/edit"
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         if "success" in res:
             if res["success"]:
                 self._img_lyr._hydrated = False
@@ -362,7 +362,7 @@ class ImageryLayerCacheManager(_GISResource):
         if extent:
             params["extent"] = extent
         url = self._url + "/deleteTiles"
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
 
 ###########################################################################
@@ -720,7 +720,7 @@ class ImageryLayer(Layer):
             params = {"f": "json"}
             if self._datastore_raster:
                 params["Raster"] = self._uri
-            hist_return = self._con.post(url, params, token=self._token)
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -809,7 +809,7 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params)
+            return self._con.post(path=url, postdata=params, timeout=None)
         return None
 
     # ----------------------------------------------------------------------
@@ -836,7 +836,7 @@ class ImageryLayer(Layer):
                 if isinstance(self._uri, bytes):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
-            return self._con.post(path=url, params=params)
+            return self._con.post(path=url, params=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def project(self, geometries, in_sr, out_sr):
@@ -883,7 +883,7 @@ class ImageryLayer(Layer):
         params = {"f": "json", "inSR": in_sr, "outSR": out_sr, "geometries": geometries}
         if self._datastore_raster:
             params["Raster"] = self._uri
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def identify(
@@ -1077,7 +1077,7 @@ class ImageryLayer(Layer):
                 del params["renderingRule"]
                 params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def measure(
@@ -1243,7 +1243,7 @@ class ImageryLayer(Layer):
             params["areaUnit"] = area_unit
         if angular_unit:
             params["angularUnit"] = angular_unit
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def set_filter(
         self,
@@ -1776,7 +1776,7 @@ class ImageryLayer(Layer):
                 del params["renderingRule"]
                 params["Raster"] = self._uri
         if f == "json":
-            return self._con.post(url, params, token=self._token)
+            return self._con.post(url, params, token=self._token, timeout=None)
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 return self._con.post(
@@ -1786,10 +1786,16 @@ class ImageryLayer(Layer):
                     try_json=False,
                     file_name=save_file,
                     token=self._token,
+                    timeout=None,
                 )
             else:
                 return self._con.post(
-                    url, params, try_json=False, force_bytes=True, token=self._token
+                    url,
+                    params,
+                    try_json=False,
+                    force_bytes=True,
+                    token=self._token,
+                    timeout=None,
                 )
         elif f == "kmz":
             return self._con.post(
@@ -1798,6 +1804,7 @@ class ImageryLayer(Layer):
                 out_folder=save_folder,
                 file_name=save_file,
                 token=self._token,
+                timeout=None,
             )
         else:
             print("Unsupported output format")
@@ -2068,19 +2075,23 @@ class ImageryLayer(Layer):
                     params["where"] = sql
                     if records is None:
                         records = self._con.post(
-                            path=url, postdata=params, token=self._token
+                            path=url, postdata=params, token=self._token, timeout=None
                         )
 
                     else:
                         res = self._con.post(
-                            path=url, postdata=params, token=self._token
+                            path=url, postdata=params, token=self._token, timeout=None
                         )
                         records["features"].extend(res["features"])
                 result = records
             else:
-                result = self._con.post(path=url, postdata=params, token=self._token)
+                result = self._con.post(
+                    path=url, postdata=params, token=self._token, timeout=None
+                )
         else:
-            result = self._con.post(path=url, postdata=params, token=self._token)
+            result = self._con.post(
+                path=url, postdata=params, token=self._token, timeout=None
+            )
         if "error" in result:
             raise ValueError(result)
 
@@ -2158,7 +2169,7 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryEnvelope"
         if out_format is not None:
             params["format"] = out_format
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def get_raster_file(self, download_info, out_folder=None):
@@ -2269,7 +2280,7 @@ class ImageryLayer(Layer):
             "geometries": geometries,
             "spatialReference": spatial_reference,
         }
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def slices(self, muldidef=None):
         """
@@ -2307,7 +2318,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def statistics(self, variable=None):
         """
@@ -2344,7 +2355,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )
 
     def get_histograms(self, variable=None):
         """
@@ -2389,7 +2402,7 @@ class ImageryLayer(Layer):
                 params["variable"] = variable
             if self._datastore_raster:
                 params["Raster"] = self._uri
-            hist_return = self._con.post(url, params, token=self._token)
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -2528,7 +2541,7 @@ class ImageryLayer(Layer):
             params["itemIds"] = item_ids
         if not service_url is None:
             params["serviceUrl"] = service_url
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params, token=self._token, timeout=None)
 
     # ----------------------------------------------------------------------
     def _delete_rasters(self, raster_ids):
@@ -2552,7 +2565,7 @@ class ImageryLayer(Layer):
             )
         params = {"f": "json", "rasterIds": raster_ids}
         url = "%s/delete" % self._url
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def _update_raster(
@@ -2675,7 +2688,7 @@ class ImageryLayer(Layer):
             params["geodataTransforms"] = geodata_transforms
         if apply_method is not None:
             params["geodataTransformApplyMethod"] = apply_method
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def _upload(self, fp, description=None):
@@ -2689,7 +2702,7 @@ class ImageryLayer(Layer):
         if description:
             params["description"] = description
         files = {"file": fp}
-        res = self._con.post(path=url, postdata=params, files=files)
+        res = self._con.post(path=url, postdata=params, files=files, timeout=None)
         if "success" in res and res["success"]:
             return res["item"]["itemID"]
         return None
@@ -2826,7 +2839,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def compute_tie_points(self, raster_id, geodata_transforms):
@@ -2864,7 +2877,7 @@ class ImageryLayer(Layer):
             "rasterId": raster_id,
             "geodataTransform": geodata_transforms,
         }
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def legend(self, band_ids=None, rendering_rule=None, as_html=False):
@@ -2915,7 +2928,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        legend = self._con.post(path=url, postdata=params)
+        legend = self._con.post(path=url, postdata=params, timeout=None)
         if as_html is True:
             legend_table = "<table>"
             for legend_element in legend["layers"][0]["legend"]:
@@ -3076,7 +3089,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def compute_histograms(
@@ -3225,7 +3238,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params, token=self._token, timeout=None)
 
         # ----------------------------------------------------------------------
 
@@ -3348,9 +3361,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        sample_data = self._con.post(path=url, postdata=params, token=self._token)[
-            "samples"
-        ]
+        sample_data = self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )["samples"]
         from copy import deepcopy
 
         new_sample_data = deepcopy(sample_data)
@@ -3393,7 +3406,9 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )
 
     def mosaic_by(
         self,
@@ -3554,7 +3569,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def calculate_volume(
         self,
@@ -3640,7 +3655,7 @@ class ImageryLayer(Layer):
             if self._datastore_raster:
                 params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params)
+            return self._con.post(path=url, postdata=params, timeout=None)
 
         return None
 
@@ -3693,7 +3708,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def _compute_multidimensional_info(
         self,
@@ -3809,9 +3824,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        res = self._con.post(path=url, postdata=params, token=self._token)[
-            "multidimensionalInfo"
-        ]
+        res = self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )["multidimensionalInfo"]
         return res
 
     @property
@@ -5588,7 +5603,7 @@ class ImageryLayer(Layer):
             dictdata = {}
             token = None
             try:
-                dictdata = self._con.post(self.url, params)
+                dictdata = self._con.post(self.url, params, timeout=None)
             except Exception as e:
                 try:
                     if (
@@ -5601,7 +5616,9 @@ class ImageryLayer(Layer):
                 except Exception as e:
                     token = self._token
                 try:
-                    dictdata = self._con.post(self.url, params, token=token)
+                    dictdata = self._con.post(
+                        self.url, params, token=token, timeout=None
+                    )
                 except Exception as e:
                     if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                         dictdata = self._con.get(self.url, params, token=token)
@@ -13744,7 +13761,7 @@ class ImageryTileManager(object):
         if aoi:
             params["areaOfInterest"] = aoi
 
-        res = self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params, timeout=None)
         sid = res["jobId"]
         success, res = self._status(url, res)
         if success == False:
@@ -13863,7 +13880,7 @@ class ImageryTileManager(object):
 
         if aoi:
             params["areaOfInterest"] = aoi
-        res = self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params, timeout=None)
         sid = res["jobId"]
         success, res = self._status(url, res)
         if success == False:
