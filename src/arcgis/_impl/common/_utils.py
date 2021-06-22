@@ -13,6 +13,44 @@ import logging
 import decimal
 import functools
 
+
+@functools.lru_cache(maxsize=35)
+def _validate_url(url: str, gis: "GIS", url_type: str = None) -> str:
+    """calculates the service URL"""
+    finders = [
+        "naserver",
+        "gpserver",
+        "mapserver",
+        "featureserver",
+        "imageserver",
+        "geoenrichmentserver",
+    ]
+    part = None
+    if not any([url.lower().endswith(f) for f in finders]):
+        part = os.path.basename(url)
+        url = os.path.dirname(url)
+    res = gis._private_service_url(url)
+    return_url = None
+    if gis._is_hosted_nb_home and "privateServiceUrl" in res:
+        return_url = res["privateServiceUrl"]
+    else:
+        if url_type is None or str(url_type).lower() == "public":
+            if "serviceUrl" in res:
+                return_url = res["serviceUrl"]
+            else:
+                return_url = url
+        else:
+            if "privateServiceUrl" in res:
+                return_url = res["privateServiceUrl"]
+            elif "serviceUrl" in res:
+                return_url = res["serviceUrl"]
+            else:
+                return_url = url
+    if part:
+        return f"{return_url}/{part}"
+    return return_url
+
+
 # ----------------------------------------------------------------------
 def bytesto(size, to="m", bsize=1024):
     """convert bytes to megabytes, etc.

@@ -81,6 +81,11 @@ class RetinaNet(ArcGISModel):
 
     def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None, *args, **kwargs):
 
+        if pretrained_path is not None:
+            backbone_pretrained = False
+        else:
+            backbone_pretrained = True
+
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
@@ -108,7 +113,7 @@ class RetinaNet(ArcGISModel):
         self._chip_size = (data.chip_size,data.chip_size)
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, -2)
+        self._encoder = create_body(self._backbone, backbone_pretrained)
 
         # Initialize the model, loss function and the Learner object        
         self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors, n_bands=n_bands)

@@ -1,7 +1,13 @@
+from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import _BaseKube
 from ._logs import LogManager
 from ._datastores import DataStores
+from ._overview import Overview
+from ._usage import UsageStatistics
+from ._mode import Mode
+from ._system import SystemManager
+from arcgis.gis.admin._license import LicenseManager
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
 
@@ -57,7 +63,32 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def logs(self):
+    def overview(self) -> Overview:
+        """
+        Provides access to the overview resource to access persisted cache
+        or real-time information.
+
+        :returns: Overview
+
+        """
+        url = f"{self._url}/overview"
+        return Overview(url=url, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def usage(self) -> UsageStatistics:
+        """
+        Provides access to the metrics viewer and metrics API tools.
+
+        :returns: UsageStatistics
+
+        """
+        url = f"{self._url}/usagestatistics"
+        return UsageStatistics(url=url, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def logs(self) -> LogManager:
         """provides access to the Kubernetes Logs"""
         if self._log is None:
             url = f"{self._url}/logs"
@@ -66,23 +97,20 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def mode(self):
+    def mode(self) -> Mode:
         if self._mode is None:
-            from ._mode import Mode
-
             self._mode = Mode(url=f"{self._url}/mode", gis=self._gis)
         return self._mode
 
     # ----------------------------------------------------------------------
     @property
-    def datastores(self):
+    def datastores(self) -> DataStores:
         """
         The Datastore Manager allows the administrator to manage the registered datastores
 
         :return: `DataStores`
         """
         if self._ds is None:
-            from ._datastores import DataStores
 
             url = self._url + "/data"
             self._ds = DataStores(url=url, gis=self._gis)
@@ -90,7 +118,7 @@ class KubernetesAdmin(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def system(self):
+    def system(self) -> SystemManager:
         """
         This is a collection of system-wide resources for your deployment
         such as the configuration store, licenses, and deployment-wide
@@ -100,21 +128,18 @@ class KubernetesAdmin(_BaseKube):
 
         """
         if self._sm is None:
-            from ._system import SystemManager
-
             url = self._url + "/system"
             self._sm = SystemManager(url=url, gis=self._gis)
         return self._sm
 
     # ----------------------------------------------------------------------
     @property
-    def license(self):
+    def license(self) -> LicenseManager:
         """
         provides a set of tools to access and manage user licenses and
         entitlements.
         """
         if self._license is None:
-            from arcgis.gis.admin._license import LicenseManager
 
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)

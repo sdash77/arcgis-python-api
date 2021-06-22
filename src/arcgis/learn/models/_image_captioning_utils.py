@@ -30,10 +30,10 @@ import fasttext.util
 
 
 class EncoderAttention(nn.Module):
-    def __init__(self, backbone, cut=None):
+    def __init__(self, backbone, cut=None, pretrained=True):
         """Load the pretrained backbone and replace top fc layer."""
         super().__init__()
-        self.backbone = create_body(backbone, cut=cut)
+        self.backbone = create_body(backbone, cut=cut, pretrained=pretrained)
         # Get number of channels of backbone.
         self.feature_size = model_sizes(self.backbone, size=(200, 200))[-1][1]
 
@@ -323,7 +323,7 @@ def load_fasttext_embeddings(language='en'):
     return ft
 
 
-def image_captioner_learner(data, backbone, attention=True, decoder_params=None, metrics=None):
+def image_captioner_learner(data, backbone, attention=True, decoder_params=None, metrics=None, pretrained=True):
     if attention:
         pretrained_embeddings = decoder_params.get('pretrained_embeddings', False)
 
@@ -346,7 +346,7 @@ def image_captioner_learner(data, backbone, attention=True, decoder_params=None,
         decoder_params['vocab'] = data.vocab
         decoder_params['vocab_size'] = len(data.vocab.itos)
         # create ecoder using backbone
-        encoder = EncoderAttention(backbone)
+        encoder = EncoderAttention(backbone, pretrained=pretrained)
         # get channels from encoder which were computed during init.
         decoder_params['feature_size'] = encoder.feature_size
         # create LSTM decoder

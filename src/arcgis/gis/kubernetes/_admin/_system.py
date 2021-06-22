@@ -1,5 +1,10 @@
 import json
 from arcgis.gis.kubernetes._admin._base import _BaseKube
+from ._deployment import DeploymentManager
+from ._upgrades import UpgradeManager
+from ._recovery import RecoveryManager
+from ._content import LanguageManager
+from ._architecture import ArchitectureManager
 
 
 class Server(_BaseKube):
@@ -96,7 +101,7 @@ class ServerManager(_BaseKube):
         d = []
         url = f"{self._url}/properties"
         params = {"f": "json"}
-
+        res = self._con.get(url, params)
         if "properties" in res:
             for i in res["properties"]:
                 purl = f"{url}/{i['id']}"
@@ -161,8 +166,12 @@ class SystemManager(_BaseKube):
     deployment-wide security.
     """
 
+    _recovery = None
     _indexer = None
     _sm = None
+    _deployments = None
+    _upgrades = None
+    _license = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
@@ -183,6 +192,86 @@ class SystemManager(_BaseKube):
         self._con = gis._con
         if initialize:
             self._init(gis._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def deployments(self) -> DeploymentManager:
+        """ """
+        url = f"{self._url}/deployments"
+        if self._deployments is None:
+            self._deployments = DeploymentManager(url=url, gis=self._gis)
+        return self._deployments
+
+    # ----------------------------------------------------------------------
+    @property
+    def upgrades(self) -> UpgradeManager:
+        """
+        Returns access to the upgrade operations on the Enterprise
+        """
+        url = f"{self._url}/upgrades"
+        if self._upgrades is None:
+            self._upgrades = UpgradeManager(url=url, gis=self._gis)
+        return self._upgrades
+
+    # ----------------------------------------------------------------------
+    @property
+    def recovery(self) -> RecoveryManager:
+        """
+        This resource allows an administrator the ability to manage
+        disaster recovery settings.
+
+        :returns: RecoveryManager
+        """
+        if self._recovery is None:
+            url = f"{self._url}/disasterrecovery"
+            self._recovery = RecoveryManager(url=url, gis=self._gis)
+        return self._recovery
+
+    # ----------------------------------------------------------------------
+    @property
+    def _adaptors(self):
+        """ """
+        # web adaptor
+        raise NotImplemented("Not Implemented in 1.9.0")
+
+    # ----------------------------------------------------------------------
+    @property
+    def licenses(self) -> List[Dict[str, Any]]:
+        """
+        The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
+
+        :returns: List[Dict[str, Any]]
+        """
+        if self._license is None:
+            url = f"{self._url}/licenses"
+            self._license = LicenseManager(url=url, gis=self._gis)
+        return self._license
+
+    # ----------------------------------------------------------------------
+    @property
+    def content(self) -> LanguageManager:
+        """
+        The content resource provides access to the languages resource.
+        The languages resource provides a list of current languages for an
+        organization.
+
+        :returns: LanguageManager
+
+        """
+        return LanguageManager(url=f"{self._url}/content", gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tasks(self):
+        """ """
+        return
+
+    # ----------------------------------------------------------------------
+    @property
+    def architecture_profiles(self) -> ArchitectureManager:
+        """ """
+        # architecture profiles
+        return
 
     # ----------------------------------------------------------------------
     @property

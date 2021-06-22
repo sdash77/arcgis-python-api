@@ -129,6 +129,52 @@ class KubeService(object):
 
     # ----------------------------------------------------------------------
     @property
+    def scaling(self) -> Dict[str, Any]:
+        """
+        This resource returns the scaling and resource allocation for a
+        specific GIS service microservice. When used to update the service,
+        it updates the scaling (replicas min and max) and resource allocation
+        (cpuMin, cpuMax, memoryMin, memoryMax).
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required Dict[str, Any]. The service scaling properties.
+        ===============     ====================================================================
+
+        :return: Dict[str, Any]
+
+        """
+        url = f"{self._url}/scaling"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @scaling.setter
+    def scaling(self, value: Dict[str, Any]):
+        """
+        This resource returns the scaling and resource allocation for a
+        specific GIS service microservice. When used to update the service,
+        it updates the scaling (replicas min and max) and resource allocation
+        (cpuMin, cpuMax, memoryMin, memoryMax).
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required Dict[str, Any]. The service scaling properties.
+        ===============     ====================================================================
+
+        :return: Dict[str, Any]
+        """
+        url = f"{self._url}/scaling/edit"
+        params = {
+            "f": "json",
+            "serviceScalingSpec": value,
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
     def properties(self) -> PropertyMap:
         """
         To edit a service, you need to submit the complete JSON representation of
