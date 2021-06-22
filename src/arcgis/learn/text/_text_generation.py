@@ -7,7 +7,12 @@ try:
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
+    try:
+        # For version 3.3.0
+        from transformers.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
+    except ModuleNotFoundError as e:
+        # For version 4.5.1
+        from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
     EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_CAUSAL_LM_MAPPING.keys()]
 
 except Exception as e:

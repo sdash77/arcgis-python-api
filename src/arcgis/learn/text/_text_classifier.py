@@ -141,7 +141,7 @@ class TextClassifier(ArcGISModel):
             self.learn.model = self.learn.model.to(self._device)
             layer_groups = self.learn.model.get_layer_groups()
             self.learn.split(layer_groups)
-            self._freeze()
+            # self._freeze()
 
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length, config=None):
@@ -247,7 +247,7 @@ class TextClassifier(ArcGISModel):
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
-    def _freeze(self):
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """

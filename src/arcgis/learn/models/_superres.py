@@ -152,7 +152,10 @@ class SuperResolution(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_superres"
-        _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
         _emd_template["ModelType"] = "SuperResolution"
         _emd_template["downsample_factor"] = self._data.downsample_factor
         return _emd_template
