@@ -246,7 +246,9 @@ def _clone_layer_raster(
                 allow_analysis = info["allowAnalysis"]
             if not allow_analysis:
                 raise RuntimeError("Input image service doesnt allow analysis.")
-        if layer.tiles_only or (not allow_raster_function and allow_analysis):
+        if (layer._engine != _ArcpyRaster) and (
+            layer.tiles_only or (not allow_raster_function and allow_analysis)
+        ):
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
@@ -263,6 +265,17 @@ def _clone_layer_raster(
             newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine == _ArcpyRaster:
+        allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
+        info = None
+        try:
+            info = layer._get_service_info()
+        except:
+            pass
+        if info is not None and isinstance(info, dict):
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
         try:
             import arcpy, json
 
@@ -284,7 +297,7 @@ def _clone_layer_raster(
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
 
-    if layer.tiles_only:
+    if layer._engine != _ArcpyRaster and layer.tiles_only:
         newlyr._engine_obj._fn = function_chain_ra
 
     newlyr._engine_obj._where_clause = layer._where_clause
@@ -336,7 +349,9 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
                 allow_analysis = info["allowAnalysis"]
             if not allow_analysis:
                 raise RuntimeError("Input image service doesnt allow analysis.")
-        if layer.tiles_only or (not allow_raster_function and allow_analysis):
+        if (layer._engine != _ArcpyRaster) and (
+            layer.tiles_only or (not allow_raster_function and allow_analysis)
+        ):
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
@@ -353,6 +368,17 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
             newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine == _ArcpyRaster:
+        allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
+        info = None
+        try:
+            info = layer._get_service_info()
+        except:
+            pass
+        if info is not None and isinstance(info, dict):
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
         try:
             import arcpy, json
 
@@ -374,7 +400,7 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
 
-    if layer.tiles_only:
+    if layer._engine != _ArcpyRaster and layer.tiles_only:
         newlyr._engine_obj._fn = function_chain_ra
 
     newlyr._engine_obj._where_clause = layer._where_clause
