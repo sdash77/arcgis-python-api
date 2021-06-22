@@ -35,12 +35,17 @@ def _validate_url(url: str, gis: "GIS", url_type: str = None) -> str:
         return_url = res["privateServiceUrl"]
     else:
         if url_type is None or str(url_type).lower() == "public":
-            return_url = res["serviceUrl"]
+            if "serviceUrl" in res:
+                return_url = res["serviceUrl"]
+            else:
+                return_url = url
         else:
             if "privateServiceUrl" in res:
                 return_url = res["privateServiceUrl"]
-            else:
+            elif "serviceUrl" in res:
                 return_url = res["serviceUrl"]
+            else:
+                return_url = url
     if part:
         return f"{return_url}/{part}"
     return return_url
