@@ -239,6 +239,13 @@ TimeSeriesModel
     :inherited-members:
     :undoc-members:
 
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Unstructured Text Models
 ------------------------
 arcgis.learn.text module
