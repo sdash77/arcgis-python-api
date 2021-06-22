@@ -52,6 +52,41 @@ SystemManager
     :undoc-members:
     :show-inheritance:
 
+Container
+----------------
+.. autoclass:: arcgis.gis.nb.Container
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ContainerNotebook
+-----------------
+.. autoclass:: arcgis.gis.nb.ContainerNotebook
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DirectoryManager
+----------------
+.. autoclass:: arcgis.gis.nb.DirectoryManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+WebAdaptor
+----------------
+.. autoclass:: arcgis.gis.nb.WebAdaptor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+WebAdaptorManager
+----------------
+.. autoclass:: arcgis.gis.nb.WebAdaptorManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 SiteManager
 ----------------
 .. autoclass:: arcgis.gis.nb.SiteManager
