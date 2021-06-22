@@ -1,6 +1,8 @@
 import unittest
 import datetime
-from tests.integration.workflow_manager.workflowmanager_setup import WorkflowManagerSetup
+from tests.integration.workflow_manager.workflowmanager_setup import (
+    WorkflowManagerSetup,
+)
 
 
 ###########################################################################
@@ -19,8 +21,15 @@ class TestWorkflowManager(unittest.TestCase):
         self.namePrefix = "dino_"
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-                                     str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -36,7 +45,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     def test_create_item_returns_successfully(self):
         # Act
-        actual = self.connection.workflow_manager_admin.create_item('Test Item123')
+        actual = self.connection.workflow_manager_admin.create_item("Test Item123")
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
@@ -45,9 +54,13 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         try:
             # Try creating item with already created name
-            self.connection.workflow_manager_admin.create_item(self.connection.item_name)
+            self.connection.workflow_manager_admin.create_item(
+                self.connection.item_name
+            )
         except Exception as testException:
-            assert True, "Expected error returned during test: " + testException.__str__()
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
 
     # endregion
 

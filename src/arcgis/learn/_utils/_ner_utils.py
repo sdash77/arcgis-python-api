@@ -107,9 +107,17 @@ def _from_json(path, text_key='text', offset_key='labels', encoding="UTF-8"):
         data_list = f.readlines()
     for i, item in enumerate(data_list):
         try:
-            train_data.append((json.loads(item).get(text_key), {'entities':json.loads(item).get(offset_key)}))
-        except:
-            pass
+            execute_second_exeption = False
+            train_data.append((json.loads(item)[text_key], {'entities':json.loads(item)[offset_key]}))
+        except KeyError as key:
+            _key = key
+            execute_second_exeption =True
+        if execute_second_exeption:
+            try:
+                train_data.append((json.loads(item)['data'], {'entities':json.loads(item)['label']}))
+            except KeyError as key:
+                raise Exception(f"{_key} key not present in record {i} of input json file.")
+
         
     return train_data
 
@@ -151,7 +159,14 @@ class _NERData:
     #     returns: A list [text,{entities},text,{entities}] that can be ingested by ``EntityRecognizer``.
     """
 
-    def __init__(self, dataset_type, path, batch_size, class_mapping=None, seed=42, val_split_pct=0.1, encoding="UTF-8"):
+    def __init__(self,
+                 dataset_type,
+                 path,
+                 batch_size,
+                 class_mapping=None,
+                 seed=42,
+                 val_split_pct=0.1,
+                 encoding="UTF-8"):
         self.dataset_type = dataset_type
         self.path = path
         self.data = None
@@ -201,15 +216,13 @@ class _NERData:
             #  ('robbery', 'Crime'),
             #  ('of the', 'O'),
             #  ('Associated Bank in the 1500 block of W Broadway', 'Address')]
-            with open(path, 'r', encoding=self.encoding) as f:
-                data_list = f.readlines()
-
-            data_list = [json.loads(item) for item in data_list]
-
-            for row in data_list:
+            data_list = _from_json(path=path,
+                                encoding=self.encoding
+                                )
+            for i, row in enumerate(data_list):
                 prev_start = 0
                 tmp_tags_list, tmp_tokens_list = [], []
-                text, labels = row["text"], row["labels"]
+                text, labels = row[0], row[1]['entities']
                 for item in sorted(labels, key=lambda x: x[0]):
                     c_text = text[prev_start: item[0]].strip()
                     tmp_tags_list.append("O")
@@ -245,7 +258,6 @@ class _NERData:
                              f"\nPlease use a base model of the backbone and fine-tune it on your data or use a "
                              f"model which is fine-tuned on a data having same labels as - `{unique_tags}`")
             raise Exception(error_message)
-
         self.data = TextDataObject.prepare_data_for_entity_recognition(
             tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
             unique_tags=unique_tags, seed=self.seed, batch_size=self.batch_size, val_split_pct=self.val_split_pct,
@@ -258,8 +270,8 @@ class _NERData:
 
         random.seed(self.seed)
         v_list = spacy.__version__.split('.')
-        version = sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
-        if version < 20108: #checking spacy version
+        version = sum([int(j)*10**(2*i) for i, j in enumerate(v_list[::-1])])
+        if version < 20108:  # checking spacy version
             error_message = ("Entity recognition model needs spacy version 2.1.8 or higher." 
                              f"Your current spacy version is {spacy.__version__}, please update using \'pip install'")
             return logging.error(error_message)
@@ -273,28 +285,32 @@ class _NERData:
             address_tag = 'Address'
 
         if self.dataset_type == 'ner_json':
-            train_data = _from_json(path=path, encoding=self.encoding)
+            train_data = _from_json(path=path,
+                                    encoding=self.encoding
+                                    )
             path = path.parent
         elif self.dataset_type == 'BIO' or self.dataset_type == 'IOB':
             tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=self.encoding)
             train_data = _from_iob_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
         elif self.dataset_type == 'LBIOU' or self.dataset_type == 'BILUO':
-            nlp=spacy.blank('en')
+            nlp = spacy.blank('en')
             tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=self.encoding)
 
             for tags, tokens in zip(tags_collection, tokens_collection):
                 try:
                     tags = _iob_to_biluo(tags)
 
-                    doc = spacy.tokens.doc.Doc(
-                    nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
+                    doc = spacy.tokens.doc.Doc(nlp.vocab,
+                                                words=tokens,
+                                                spaces=[True]*(len(tokens)-1)+[False])
                     # run the standard pipeline against it
                     for name, proc in nlp.pipeline:
                         doc = proc(doc)
                     text = ' '.join(tokens)
                     tags = _offsets_from_biluo_tags(doc, tags)
-                    train_data.append((text,{'entities':tags}))
-                except:
+                    train_data.append((text, {'entities': tags}))
+                except Exception as exception:
+                    raise Exception(f'Exception while preparing data : {exception} ')
                     pass
         else:
             error_message = (f"Wrong argument - {self.dataset_type} supplied for `dataset_type` parameter. "

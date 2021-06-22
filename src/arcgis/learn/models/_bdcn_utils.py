@@ -85,14 +85,14 @@ class _IDblock(nn.Module):
         return s1, s2
 
 class _BDCNModel(nn.Module):
-    def __init__(self, backbone_fn, chip_size=224):
+    def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
 
         backbone_name = backbone_fn.__name__
         if "vgg" in backbone_name:
-            self.backbone = create_body(backbone_fn, pretrained=True)[0]
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)[0]
         else:
-            self.backbone = create_body(backbone_fn, pretrained=True)
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
 
         self.hookable_modules = flatten_model(self.backbone)
         

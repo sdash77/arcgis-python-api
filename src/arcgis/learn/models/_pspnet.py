@@ -129,6 +129,11 @@ class PSPNetClassifier(ArcGISModel):
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
+
+        if pretrained_path is not None:
+            backbone_pretrained = False
+        else:
+            backbone_pretrained = True
         
         self._check_dataset_support(data)
         if not (self._check_backbone_support(backbone)):
@@ -172,7 +177,7 @@ class PSPNetClassifier(ArcGISModel):
                                                    backbone=self._backbone,
                                                    chip_size=self._data.chip_size, 
                                                    pyramid_sizes=pyramid_sizes, 
-                                                   pretrained=True, 
+                                                   pretrained=backbone_pretrained, 
                                                    metrics=accuracy, 
                                                    unet_aux_loss=unet_aux_loss,
                                                    vggv2=self._vggv2)
@@ -186,7 +191,7 @@ class PSPNetClassifier(ArcGISModel):
                                          backbone=self._backbone, 
                                          chip_size=self._data.chip_size, 
                                          pyramid_sizes=pyramid_sizes, 
-                                         pretrained=True,
+                                         pretrained=backbone_pretrained,
                                          pointrend=self._pointrend,
                                          keep_dilation=self.keep_dilation,
                                          metrics=accuracy)
@@ -242,6 +247,10 @@ class PSPNetClassifier(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
 
     # Return a list of supported backbones names
     @property

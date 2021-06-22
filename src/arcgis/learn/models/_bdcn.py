@@ -30,11 +30,13 @@ class CustomBDCN():
     except:
         pass
     
-    def get_model(self, data, backbone=None):
+    def get_model(self, data, backbone=None, **kwargs):
         """
         In this fuction you have to define your model with following two arguments!
         
         """
+        pretrained_backbone = kwargs.get('pretrained_backbone', True)
+        
         if backbone is None:
             self._backbone = self.models.vgg19
         elif type(backbone) is str:
@@ -45,7 +47,7 @@ class CustomBDCN():
         else:
             self._backbone = backbone
 
-        model = self.bdcn._BDCNModel(self._backbone, data.chip_size)
+        model = self.bdcn._BDCNModel(self._backbone, data.chip_size, pretrained=pretrained_backbone)
         
         return model
     
@@ -146,6 +148,10 @@ class BDCNEdgeDetector(ModelExtension):
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'f1_score']
 
     @property
     def _is_edge_detection(self):

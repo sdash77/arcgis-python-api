@@ -3,6 +3,7 @@ from uuid import uuid4
 from unittest.mock import MagicMock
 from utils.mocks.mock_gis import MockGIS
 
+
 class MockMapView(MagicMock):
     _mapview_uuid_to_dlinks = {}
     _synced_mapviews = []

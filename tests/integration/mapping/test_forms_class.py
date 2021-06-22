@@ -23,17 +23,23 @@ if r1 & r2:
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
     import arcgis
     from arcgis.gis import GIS
     from arcgis.mapping import WebMap
-    from arcgis.mapping.forms import FormCollection, FormInfo, FormGroupElement, FormFieldElement, FormExpressionInfo
+    from arcgis.mapping.forms import (
+        FormCollection,
+        FormInfo,
+        FormGroupElement,
+        FormFieldElement,
+        FormExpressionInfo,
+    )
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
+    raise (exit())
 # endregion PreCondition Check
 
 
@@ -54,6 +60,7 @@ class Test_Forms(unittest.TestCase):
     """
     Test forms functionality
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -63,12 +70,14 @@ class Test_Forms(unittest.TestCase):
 
         # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['workforce_ago']['url']
-        cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
-        cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False)
+        cls.portal_url = _conf_reader["workforce_ago"]["url"]
+        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
+        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
+        cls.gis = GIS(
+            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+        )
         cls.layer_url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/NapervilleShelters/FeatureServer/0"
 
         print("==================================================================")
@@ -80,9 +89,11 @@ class Test_Forms(unittest.TestCase):
         fl = arcgis.features.FeatureLayer(url=self.layer_url)
         self.wm.add_layer(fl)
         map_name = "forms " + str(time.time())
-        webmap_item_properties = {'title': f'{map_name}',
-                                  'snippet': 'Map created using Python API for testing',
-                                  'tags': ['automation', 'regression', 'python']}
+        webmap_item_properties = {
+            "title": f"{map_name}",
+            "snippet": "Map created using Python API for testing",
+            "tags": ["automation", "regression", "python"],
+        }
         self.wm_item = self.wm.save(webmap_item_properties)
         self.wm = WebMap(self.wm_item)
         self.forms = self.wm.forms
@@ -98,7 +109,9 @@ class Test_Forms(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_get(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -115,7 +128,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_indexing(self):
         try:
             form = self.forms[0]
@@ -131,7 +146,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_info_properties(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -149,7 +166,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_info_exists(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -166,7 +185,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_info_clear_all(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -185,7 +206,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_info_get(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -212,7 +235,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_add(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -236,7 +261,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_add_at_index(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -249,7 +276,6 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[1], group_element)
             self.assertEqual(form.elements[2], form_element)
 
-
         except AssertionError as assertErrorException:
             raise assertErrorException
 
@@ -259,7 +285,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_add_group(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -276,7 +304,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_delete(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -302,7 +332,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_move(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -332,12 +364,20 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_field_element(self):
         try:
             form = self.forms.get(title="Shelters")
-            form_element = FormFieldElement(label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
-                                            input_type="text-box")
+            form_element = FormFieldElement(
+                label="Facility Name",
+                field_name="facname",
+                description="test",
+                editable=True,
+                hint="the name",
+                input_type="text-box",
+            )
             form.add(form_element)
             self.assertEqual(form.elements[0].label, "Facility Name")
             self.assertEqual(form.elements[0].field_name, "facname")
@@ -357,7 +397,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_field_input_type_defaults(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -368,12 +410,16 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[0].input_type["type"], "text-box")
 
             # integer - no cvd
-            form_element = FormFieldElement(label="Shelter Capacity", field_name="sheltcap")
+            form_element = FormFieldElement(
+                label="Shelter Capacity", field_name="sheltcap"
+            )
             form.add(form_element)
             self.assertEqual(form.elements[1].input_type["type"], "text-box")
 
             # string - with cvd
-            form_element = FormFieldElement(label="Hours Operation", field_name="hoursoper")
+            form_element = FormFieldElement(
+                label="Hours Operation", field_name="hoursoper"
+            )
             form.add(form_element)
             self.assertEqual(form.elements[2].input_type["type"], "combo-box")
 
@@ -396,28 +442,40 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_field_input_type_default_overrides(self):
         try:
             form = self.forms.get(title="Shelters")
             # Test Default Overrides
             # string - no cvd
-            form_element = FormFieldElement(label="Facility Name", field_name="facname", input_type="text-area")
+            form_element = FormFieldElement(
+                label="Facility Name", field_name="facname", input_type="text-area"
+            )
             form.add(form_element)
             self.assertEqual(form.elements[0].input_type, "text-area")
 
             # integer - no cvd
-            form_element = FormFieldElement(label="Shelter Capacity", field_name="sheltcap", input_type="text-area")
+            form_element = FormFieldElement(
+                label="Shelter Capacity", field_name="sheltcap", input_type="text-area"
+            )
             form.add(form_element)
             self.assertEqual(form.elements[1].input_type, "text-area")
 
             # string - with cvd
-            form_element = FormFieldElement(label="Hours Operation", field_name="hoursoper", input_type="radio-buttons")
+            form_element = FormFieldElement(
+                label="Hours Operation",
+                field_name="hoursoper",
+                input_type="radio-buttons",
+            )
             form.add(form_element)
             self.assertEqual(form.elements[2].input_type, "radio-buttons")
 
             # integer - with cvd
-            form_element = FormFieldElement(label="Facility Type", field_name="factype", input_type="radio-buttons")
+            form_element = FormFieldElement(
+                label="Facility Type", field_name="factype", input_type="radio-buttons"
+            )
             form.add(form_element)
             self.assertEqual(form.elements[3].input_type, "radio-buttons")
 
@@ -430,11 +488,15 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_group_element(self):
         try:
             form = self.forms.get(title="Shelters")
-            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
+            group_element = FormGroupElement(
+                label="Group 1", description="test", initial_state="collapsed"
+            )
             group = form.add(group_element)
             self.assertEqual(group.label, "Group 1")
             self.assertEqual(group.description, "test")
@@ -463,11 +525,15 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_expression_info(self):
         try:
             form = self.forms.get(title="Shelters")
-            expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
+            expression = FormExpressionInfo(
+                title="New Expression", name="expr0", expression="test"
+            )
             self.assertEqual(expression.expression, "test")
             self.assertEqual(expression.title, "New Expression")
             expression.title = "New Expression 2"
@@ -475,8 +541,15 @@ class Test_Forms(unittest.TestCase):
             with self.assertRaises(ValueError):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
-            expression_2 = FormExpressionInfo(title="New Expression 3", name="expr1", expression="test")
-            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
+            expression_2 = FormExpressionInfo(
+                title="New Expression 3", name="expr1", expression="test"
+            )
+            el = FormFieldElement(
+                label="test",
+                field_name="facname",
+                visibility_expression=expression,
+                required_expression=expression_2,
+            )
             form.add(el)
             self.assertEqual(len(form.expressions), 0)
             print(form)
@@ -491,21 +564,31 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_expression_update(self):
         try:
             form = self.forms.get(title="Shelters")
-            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
+            group_element = FormGroupElement(
+                label="Group 1", description="test", initial_state="collapsed"
+            )
             group = form.add(group_element)
-            expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
-            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression)
+            expression = FormExpressionInfo(
+                title="New Expression", name="expr0", expression="test"
+            )
+            el = FormFieldElement(
+                label="test", field_name="facname", visibility_expression=expression
+            )
             group.add(el)
             form.update()
 
             new_wm = WebMap(self.wm_item)
             self.assertIn("formInfo", new_wm.layers[0])
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"]))
-            self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"]))
+            self.assertEqual(
+                1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"])
+            )
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["expressionInfos"]))
 
         except AssertionError as assertErrorException:
@@ -517,12 +600,20 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_element_attribute_clear(self):
         try:
             form = self.forms.get(title="Shelters")
-            form_element = FormFieldElement(label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
-                                            input_type="text-box")
+            form_element = FormFieldElement(
+                label="Facility Name",
+                field_name="facname",
+                description="test",
+                editable=True,
+                hint="the name",
+                input_type="text-box",
+            )
             form.add(form_element)
             form_element.description = None
             form_element.hint = None
@@ -538,14 +629,22 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_form_expression_clear(self):
         try:
             form = self.forms.get(title="Shelters")
-            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
+            group_element = FormGroupElement(
+                label="Group 1", description="test", initial_state="collapsed"
+            )
             group = form.add(group_element)
-            expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
-            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression)
+            expression = FormExpressionInfo(
+                title="New Expression", name="expr0", expression="test"
+            )
+            el = FormFieldElement(
+                label="test", field_name="facname", visibility_expression=expression
+            )
             group.add(el)
             el.visibility_expression = None
             self.assertEqual(el.visibility_expression, None)
@@ -559,7 +658,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_forms_validate_add(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -575,7 +676,9 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_forms_validation(self):
         try:
             with self.assertRaises(ValueError):

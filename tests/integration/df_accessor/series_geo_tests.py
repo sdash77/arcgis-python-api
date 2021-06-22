@@ -1,6 +1,7 @@
 import os
 import sys
-#sys.path.append(r"C:\SVN\achapkowski_geosaurus_fork\src")
+
+# sys.path.append(r"C:\SVN\achapkowski_geosaurus_fork\src")
 
 import tempfile
 import shutil, datetime
@@ -20,38 +21,76 @@ try:
     HASARCPY = True
     import arcpy
 except ImportError:
-    HASARCPY =False
+    HASARCPY = False
 
 
 geoms = [
-    Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}),
-    Geometry({
-  "points" : [[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
-  "spatialReference" : {"wkid" : 4326}}),
-
-    Geometry({
-  "paths" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
-             [[-97.06326,32.759],[-97.06298,32.755]]],
-  "spatialReference" : {"wkid" : 4326}
-}),
-    Geometry({
-  "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-              [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-              [-97.06326,32.759]]],
-  "spatialReference" : {"wkid" : 4326}
-})
-
+    Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}}),
+    Geometry(
+        {
+            "points": [
+                [-97.06138, 32.837],
+                [-97.06133, 32.836],
+                [-97.06124, 32.834],
+                [-97.06127, 32.832],
+            ],
+            "spatialReference": {"wkid": 4326},
+        }
+    ),
+    Geometry(
+        {
+            "paths": [
+                [
+                    [-97.06138, 32.837],
+                    [-97.06133, 32.836],
+                    [-97.06124, 32.834],
+                    [-97.06127, 32.832],
+                ],
+                [[-97.06326, 32.759], [-97.06298, 32.755]],
+            ],
+            "spatialReference": {"wkid": 4326},
+        }
+    ),
+    Geometry(
+        {
+            "rings": [
+                [
+                    [-97.06138, 32.837],
+                    [-97.06133, 32.836],
+                    [-97.06124, 32.834],
+                    [-97.06127, 32.832],
+                    [-97.06138, 32.837],
+                ],
+                [
+                    [-97.06326, 32.759],
+                    [-97.06298, 32.755],
+                    [-97.06153, 32.749],
+                    [-97.06326, 32.759],
+                ],
+            ],
+            "spatialReference": {"wkid": 4326},
+        }
+    ),
 ]
-simple_polygon = Geometry({
-  "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]]],
-  "spatialReference" : {"wkid" : 4326}
-}).buffer(1)
+simple_polygon = Geometry(
+    {
+        "rings": [
+            [
+                [-97.06138, 32.837],
+                [-97.06133, 32.836],
+                [-97.06124, 32.834],
+                [-97.06127, 32.832],
+            ]
+        ],
+        "spatialReference": {"wkid": 4326},
+    }
+).buffer(1)
 
 pt_single_geoms = [
-    Geometry({"x" : -118.15, "y" : 29.80, "spatialReference" : {"wkid" : 4326}}),
-    Geometry({"x" : -120.95, "y" : 30.80, "spatialReference" : {"wkid" : 4326}}),
-    Geometry({"x" : -110.75, "y" : 31.80, "spatialReference" : {"wkid" : 4326}}),
-    Geometry({"x" : -100.0, "y" : 32.80, "spatialReference" : {"wkid" : 4326}})
+    Geometry({"x": -118.15, "y": 29.80, "spatialReference": {"wkid": 4326}}),
+    Geometry({"x": -120.95, "y": 30.80, "spatialReference": {"wkid": 4326}}),
+    Geometry({"x": -110.75, "y": 31.80, "spatialReference": {"wkid": 4326}}),
+    Geometry({"x": -100.0, "y": 32.80, "spatialReference": {"wkid": 4326}}),
 ]
 import pytest
 import pandas as pd
@@ -64,26 +103,32 @@ def test_series_gen():
     """tests series creates from GeoArray"""
     series = pd.Series(data=GeoArray(geoms))
     assert isinstance(series, pd.Series)
-    assert series.dtype.name == 'geometry'
+    assert series.dtype.name == "geometry"
     assert isinstance(series.dtype, GeoType)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_has_geom_namespace():
     """tests 'geom' namespace exists"""
     series = pd.Series(data=GeoArray(geoms))
-    assert hasattr(series, 'geom')
-#--------------------------------------------------------------------------
+    assert hasattr(series, "geom")
+
+
+# --------------------------------------------------------------------------
 def test_create_df_from_series():
     """tests df creation from series"""
     if HASARCPY:
         series = pd.Series(GeoArray)
-        df = pd.DataFrame(data=series, columns=['SHAPE'])
-        df.spatial.set_geometry('SHAPE')
-        assert hasattr(df.SHAPE, 'geom')
+        df = pd.DataFrame(data=series, columns=["SHAPE"])
+        df.spatial.set_geometry("SHAPE")
+        assert hasattr(df.SHAPE, "geom")
         assert isinstance(df, pd.DataFrame)
+
+
 ##--------------------------------------------------------------------------
 ## Tests Properties
 ##--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 def test_area():
     """tests area"""
     try:
@@ -93,30 +138,38 @@ def test_area():
         assert sum(df.SHAPE.geom.area) >= -5
     except:
         pass
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_as_arcpy():
     """tests the arcpy property"""
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert df.SHAPE.geom.as_arcpy is not None
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_as_shapely():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     geom = df.SHAPE.geom
     assert isinstance(geom.as_shapely, pd.Series)
-    assert geom.as_shapely.dtype.name.lower() == 'object'
-    assert geom.as_shapely.name == 'as_shapely'
-#--------------------------------------------------------------------------
+    assert geom.as_shapely.dtype.name.lower() == "object"
+    assert geom.as_shapely.name == "as_shapely"
+
+
+# --------------------------------------------------------------------------
 def test_centroid():
     """tests the centroid property"""
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.centroid, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_extent():
     """tests the extent property"""
     try:
@@ -128,7 +181,9 @@ def test_extent():
         assert isinstance(ext, pd.Series)
     except:
         pass
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_first_point():
     """tests the first point property"""
     v = GeoArray(geoms)
@@ -137,7 +192,9 @@ def test_first_point():
     fp = df.SHAPE.geom.first_point
     assert isinstance(fp[0], Geometry)
     assert isinstance(fp, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_geo_extent():
     """tests the geoextent property"""
     v = GeoArray(geoms)
@@ -146,7 +203,9 @@ def test_geo_extent():
     ext = df.SHAPE.geom.geoextent
     assert isinstance(ext[0], tuple)
     assert isinstance(ext, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_geo_type():
     """performs the geometry_type tests"""
     v = GeoArray(geoms)
@@ -155,7 +214,9 @@ def test_geo_type():
     gt = df.SHAPE.geom.geometry_type
     assert isinstance(gt[0], str)
     assert isinstance(gt, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_hull_rect():
     """performs the hull_rectangle tests"""
     try:
@@ -167,7 +228,9 @@ def test_hull_rect():
         assert isinstance(ext, pd.Series)
     except:
         pass
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_is_empty():
     """performs the is_empty tests"""
     v = GeoArray(geoms)
@@ -177,7 +240,9 @@ def test_is_empty():
     assert ext[0] == 0
     assert ext[0] == False
     assert isinstance(ext, pd.Series)
-#----------------------------------------------------l----------------------
+
+
+# ----------------------------------------------------l----------------------
 def test_is_multipart():
     """performs the is_multipart tests"""
     v = GeoArray(geoms)
@@ -185,7 +250,9 @@ def test_is_multipart():
     df.spatial.set_geometry("SHAPE")
     ext = df.SHAPE.geom.is_multipart
     assert isinstance(ext, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_is_valid():
     """performs the is_valid tests"""
     v = GeoArray(geoms)
@@ -193,7 +260,9 @@ def test_is_valid():
     df.spatial.set_geometry("SHAPE")
     ext = df.SHAPE.geom.is_valid
     assert isinstance(ext, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_JSON():
     """performs the JSON tests"""
     v = GeoArray(geoms)
@@ -202,21 +271,26 @@ def test_JSON():
     ext = df.SHAPE.geom.JSON
     assert isinstance(ext[0], str)
     assert isinstance(ext, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_label_point():
     """performs the label_point tests"""
     try:
-            
+
         v = GeoArray(geoms)
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
         ext = df.SHAPE.geom.label_point
-        assert ext.dtype.name == 'geometry'
+        assert ext.dtype.name == "geometry"
         assert isinstance(ext, pd.Series)
         assert isinstance(ext[0], Geometry)
     except:
         pass
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
+
 
 def test_last_point():
     """performs the last_point tests"""
@@ -224,118 +298,134 @@ def test_last_point():
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     ext = df.SHAPE.geom.last_point
-    assert ext.dtype.name == 'geometry'
+    assert ext.dtype.name == "geometry"
     assert isinstance(ext, pd.Series)
     assert isinstance(ext[0], Geometry)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_part_cnt():
     """performs the part_count tests"""
     import numpy as np
+
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     ext = df.SHAPE.geom.part_count
     assert isinstance(ext, pd.Series)
-    assert isinstance(ext[0], (int, np.int64))#isinstance(ext[0], int)
-#--------------------------------------------------------------------------
+    assert isinstance(ext[0], (int, np.int64))  # isinstance(ext[0], int)
+
+
+# --------------------------------------------------------------------------
 def test_point_count():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.point_count, pd.Series)
     assert isinstance(df.SHAPE.geom.point_count[0], (int, np.int64))
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_sr():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.spatial_reference, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_WKB():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.WKB, pd.Series)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_WKT():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.WKT, pd.Series)
+
+
 def test_length():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.length, pd.Series)
+
+
 def test_length3D():
     v = GeoArray(geoms)
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     assert isinstance(df.SHAPE.geom.length3D, pd.Series)
+
+
 ##--------------------------------------------------------------------------
 ## Tests Geometry Methods
 ##--------------------------------------------------------------------------
-geojson_point = {
-    "type": "Point",
-    "coordinates": [0.0, 1.0]}
+geojson_point = {"type": "Point", "coordinates": [0.0, 1.0]}
 pt = Geometry(geojson_point)
-geojson_point = {
-    "type": "Point",
-    "coordinates": [1.0, 1.0]}
+geojson_point = {"type": "Point", "coordinates": [1.0, 1.0]}
 pt1 = Geometry(geojson_point)
-geojson_point = {
-    "type": "Point",
-    "coordinates": [2.0, 3.0]}
+geojson_point = {"type": "Point", "coordinates": [2.0, 3.0]}
 pt2 = Geometry(geojson_point)
 gj_geoms = [pt, pt1, pt2]
 geojson_polygon = {
     "type": "Polygon",
     "coordinates": [
-        [[10.0, 0.0], [20.0, 0.0], [20.0, 10.0], [10.0, 10.0],
-         [10.0, 0.0]]]}
+        [[10.0, 0.0], [20.0, 0.0], [20.0, 10.0], [10.0, 10.0], [10.0, 0.0]]
+    ],
+}
 polygon = Geometry(geojson_polygon)
 geojson_polygon = {
     "type": "Polygon",
-    "coordinates": [
-        [[0.0, 0.0],
-         [10.0, 0.0],
-         [10.0, 5.0],
-         [5.0, 5.0],
-         [0.0, 0.0]]]}
+    "coordinates": [[[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [5.0, 5.0], [0.0, 0.0]]],
+}
 polygon2 = Geometry(geojson_polygon)
 poly_geoms = [polygon, polygon2]
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 def test_angleDistTo():
     """tests angle distance to"""
     try:
-        df = pd.DataFrame(data=[['a', 1, 2.1, gj_geoms[0]]], columns=['a', 'b', 'c', 'SHAPE'])
+        df = pd.DataFrame(
+            data=[["a", 1, 2.1, gj_geoms[0]]], columns=["a", "b", "c", "SHAPE"]
+        )
         df.spatial.set_geometry("SHAPE")
         r = df.SHAPE.geom.angle_distance_to(gj_geoms[1])
         assert isinstance(r, pd.Series)
         assert isinstance(r[0], tuple)
     except:  # Handles ARCPY not being signed in
         pass
+
+
 ##--------------------------------------------------------------------------
 def test_boundary():
-    if HASARCPY:        
+    if HASARCPY:
         v = GeoArray([geoms[3]])
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
-        b =  df.SHAPE.geom.boundary()
+        b = df.SHAPE.geom.boundary()
         assert isinstance(b, pd.Series)
-        assert b.geom.geometry_type.unique()[0]== 'polyline'
+        assert b.geom.geometry_type.unique()[0] == "polyline"
+
+
 ##--------------------------------------------------------------------------
 def test_buffer():
-    if HASARCPY:            
+    if HASARCPY:
         v = GeoArray(gj_geoms)
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
         g = df.SHAPE.geom.buffer(100)
-        assert df.SHAPE.geom.buffer(100).dtype.name == 'geometry'
+        assert df.SHAPE.geom.buffer(100).dtype.name == "geometry"
         df.spatial.set_geometry(g)
-        assert all([df.spatial.geometry_type[0] == 'polygon'])
-        assert df.spatial.geometry_type[0] == 'polygon'
-#--------------------------------------------------------------------------
+        assert all([df.spatial.geometry_type[0] == "polygon"])
+        assert df.spatial.geometry_type[0] == "polygon"
+
+
+# --------------------------------------------------------------------------
 def test_contains():
     """tests the contain logic"""
     v = GeoArray([g.label_point for g in [geoms[3]]])
@@ -343,170 +433,222 @@ def test_contains():
     df.spatial.set_geometry("SHAPE")
     g = df.SHAPE.geom.buffer(2000)
     assert all(df.SHAPE.geom.contains(g[0])) == False
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_convex_hull():
-    """ tests the convex_hull method"""
+    """tests the convex_hull method"""
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     g = df.SHAPE.geom.convex_hull()
-    assert g.dtype.name == 'geometry'
-#--------------------------------------------------------------------------
+    assert g.dtype.name == "geometry"
+
+
+# --------------------------------------------------------------------------
 def test_clip():
     """test the clip operation"""
     if HASARCPY:
-            
+
         v = GeoArray([geoms[3]])
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
         g = df.SHAPE.geom.clip(v[0].extent)
         assert g.dtype.name.lower() == "geometry"
-        assert g.geom.geometry_type.unique()[0] == 'polygon'
-#--------------------------------------------------------------------------
+        assert g.geom.geometry_type.unique()[0] == "polygon"
+
+
+# --------------------------------------------------------------------------
 def test_crosses():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.crosses(geoms[3])
-    assert r.dtype.name in ['bool', 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_cut():
     v = GeoArray([geoms[3]])
     line = geoms[2]
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
-    #df.SHAPE.geom.
+    # df.SHAPE.geom.
     r = df.SHAPE.geom.cut(line)
-    assert r.dtype.name.lower() == 'geometry'
+    assert r.dtype.name.lower() == "geometry"
 
-#--------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
 def test_densify():
-    if HASARCPY:            
+    if HASARCPY:
         v = GeoArray([geoms[3]])
         df = pd.DataFrame({"SHAPE": v})
         r = df.SHAPE.geom.densify(method="GEODESIC", distance=10, deviation=1)
         assert r.dtype.name.lower() == "geometry"
-        assert r.geom.geometry_type.unique()[0] == 'polygon'
-#--------------------------------------------------------------------------
+        assert r.geom.geometry_type.unique()[0] == "polygon"
+
+
+# --------------------------------------------------------------------------
 def skip_test_difference():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": geoms[0].buffer(100)})
-    df.spatial.set_geometry('SHAPE')
+    df.spatial.set_geometry("SHAPE")
     r = df.SHAPE.geom.difference(geoms[0].buffer(10))
     assert r.dtype.name.lower() == "geometry"
-    assert r.geom.geometry_type.unique()[0] == 'polygon'
-#--------------------------------------------------------------------------
+    assert r.geom.geometry_type.unique()[0] == "polygon"
+
+
+# --------------------------------------------------------------------------
 def test_disjoint():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.disjoint(geoms[3])
-    assert r.dtype.name.lower() in ["bool", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_dist_to():
     pass
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_equals():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.equals(geoms[3])
-    assert r.dtype.name.lower() in ["bool", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_generalize():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.generalize(1)
     assert r.dtype.name.lower() == "geometry"
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_get_area():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.get_area(method="PLANAR", units="SQUAREFEET")
-    assert r.dtype.name.lower() in ["float64", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["float64", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_get_length():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.get_length(method="PLANAR", units="FEET")
-    assert r.dtype.name.lower() in ["float64", 'object']
+    assert r.dtype.name.lower() in ["float64", "object"]
 
-#--------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
 def test_get_part():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.get_part(index=0)
-    assert r.dtype.name.lower() in ['object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["object"]
+
+
+# --------------------------------------------------------------------------
 def test_intersect():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.intersect(geoms[3], 4)
     assert r.dtype.name.lower() == "bool"
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_touches():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.touches(geoms[3])
-    assert r.dtype.name.lower() in ["bool", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_meas_on_ln():
     v = GeoArray([geoms[2]])
     df = pd.DataFrame({"SHAPE": v})
-    r = df.SHAPE.geom.measure_on_line(geoms[0],True)
-    assert r.dtype.name.lower() in ["float64", 'object']
-#--------------------------------------------------------------------------
+    r = df.SHAPE.geom.measure_on_line(geoms[0], True)
+    assert r.dtype.name.lower() in ["float64", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_overlaps():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.overlaps(geoms[3])
-    assert r.dtype.name.lower() in ["bool", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_pt_ang_dist():
     if HASARCPY:
         v = GeoArray([geoms[3]])
         df = pd.DataFrame({"SHAPE": v})
-        r = df.SHAPE.geom.point_from_angle_and_distance(angle=90, distance=1.1, method='PLANAR')
-        assert r.dtype.name.lower() == 'geometry'
+        r = df.SHAPE.geom.point_from_angle_and_distance(
+            angle=90, distance=1.1, method="PLANAR"
+        )
+        assert r.dtype.name.lower() == "geometry"
         assert isinstance(r[0], Geometry)
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_posit_alg_ln():
     v = GeoArray([geoms[2]])
     df = pd.DataFrame({"SHAPE": v})
-    r = df.SHAPE.geom.position_along_line(.3,True)
+    r = df.SHAPE.geom.position_along_line(0.3, True)
     assert r.dtype.name.lower() == "geometry"
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_prj_as():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
     r = df.SHAPE.geom.project_as(spatial_reference=3875)
     assert r.dtype.name.lower() == "geometry"
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_query_pt_dist():
     if HASARCPY:
         v = GeoArray([geoms[2]])
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
-        pt = Geometry({'x' : -97.06133, 'y' : 32.8379, 'spatialReference' : {'wkid' : 4326}})
+        pt = Geometry(
+            {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+        )
         r = df.SHAPE.geom.query_point_and_distance(pt, True)
-        assert r.dtype.name.lower() in ["float64", 'object']
-        assert isinstance(r[0], tuple)  
-#--------------------------------------------------------------------------
+        assert r.dtype.name.lower() in ["float64", "object"]
+        assert isinstance(r[0], tuple)
+
+
+# --------------------------------------------------------------------------
 def test_seg_alg_ln():
     v = GeoArray([geoms[2]])
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
-    r = df.SHAPE.geom.segment_along_line(.1,.30, True)
+    r = df.SHAPE.geom.segment_along_line(0.1, 0.30, True)
     assert r.dtype.name.lower() == "geometry"
-#--------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
 def test_union():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     df.spatial.set_geometry("SHAPE")
-    #r = df.SHAPE.geom.union(geoms[3].buffer(4)
-    #assert r.dtype.name.lower() == 'geometry'
-#--------------------------------------------------------------------------
+    # r = df.SHAPE.geom.union(geoms[3].buffer(4)
+    # assert r.dtype.name.lower() == 'geometry'
+
+
+# --------------------------------------------------------------------------
 def test_snap_to_line():
-    if HASARCPY:        
-        pt = Geometry({'x' : -97.06133, 'y' : 32.8379, 'spatialReference' : {'wkid' : 4326}})
+    if HASARCPY:
+        pt = Geometry(
+            {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+        )
         v = GeoArray([geoms[2]])
         df = pd.DataFrame({"SHAPE": v})
         df.spatial.set_geometry("SHAPE")
@@ -514,28 +656,35 @@ def test_snap_to_line():
         assert r.dtype.name.lower() == "geometry"
         assert isinstance(r[0], Geometry)
 
-#--------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
 def test_within():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.within(geoms[3])
-    assert r.dtype.name.lower() in ["bool", 'object']
-#--------------------------------------------------------------------------
+    assert r.dtype.name.lower() in ["bool", "object"]
+
+
+# --------------------------------------------------------------------------
 def test_sym_diff():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.symmetric_difference(geoms[3].buffer(1.1))
     assert r.dtype.name.lower() == "geometry"
+
+
 def test_print():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     print(df.SHAPE)
+
+
 ###########################################################################
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_print()
     test_series_gen()
     test_has_geom_namespace()
-    print('property tests')
+    print("property tests")
     test_area()
     test_as_arcpy()
     test_as_shapely()
@@ -558,7 +707,7 @@ if __name__ == '__main__':
     test_WKT()
     test_length()
     test_length3D()
-    print('method tests')
+    print("method tests")
     test_angleDistTo()
     test_boundary()
     test_buffer()
@@ -567,7 +716,7 @@ if __name__ == '__main__':
     test_clip()
     test_crosses()
     test_densify()
-    #test_difference()
+    # test_difference()
     test_disjoint()
     test_equals()
     test_generalize()
@@ -587,9 +736,7 @@ if __name__ == '__main__':
     test_pt_ang_dist()
     test_snap_to_line()
 
-    #test_cut()
-    #test_union()
+    # test_cut()
+    # test_union()
 
-    print('series tests finished')
-
-
+    print("series tests finished")

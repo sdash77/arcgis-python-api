@@ -8,7 +8,7 @@ try:
     from arcgis.gis import GIS
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
+    raise (exit())
 
 
 class TestLicense(unittest.TestCase):
@@ -22,13 +22,19 @@ class TestLicense(unittest.TestCase):
         Store License information for an org
         """
         _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
+        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.data_folder_path = _conf_reader2['license_data']['data_folder']
-        cls.lic_file1 = cls.data_folder_path + _conf_reader2['license_data']['lic_file1']
-        cls.lic_file2 = cls.data_folder_path + _conf_reader2['license_data']['lic_file2']
+        cls.data_folder_path = _conf_reader2["license_data"]["data_folder"]
+        cls.lic_file1 = (
+            cls.data_folder_path + _conf_reader2["license_data"]["lic_file1"]
+        )
+        cls.lic_file2 = (
+            cls.data_folder_path + _conf_reader2["license_data"]["lic_file2"]
+        )
 
-        _profiles = ['your_kubernetes_profile']  # profile names go here #'your_online_profile', 'your_enterprise_profile',
+        _profiles = [
+            "your_kubernetes_profile"
+        ]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
         cls.k_gis = GIS(profile=_profiles[0], verify_cert=False, trust_env=True)
         cls.org = cls.k_gis.admin.organizations.orgs[0]
         cls.lic1 = cls.org.license
@@ -44,7 +50,7 @@ class TestLicense(unittest.TestCase):
         assert self.lic1.properties
         assert isinstance(self.lic1.properties, dict)
         assert bool(self.lic1.properties)
-        prop = ['licenseManagerInfo', 'maximumRegisteredMembers', 'version']
+        prop = ["licenseManagerInfo", "maximumRegisteredMembers", "version"]
         assert [p in self.lic1.properties.keys() for p in prop]
 
     def test_validate_license(self):
@@ -56,7 +62,7 @@ class TestLicense(unittest.TestCase):
         res3 = self.lic1.validate(self.lic_file2, list_ut=True)
         assert isinstance(res3, dict)
         assert bool(res3)
-        self.assertEqual(*res3, 'userTypes')
+        self.assertEqual(*res3, "userTypes")
 
     def test_update_license_manager(self):
         """tests updates to license manager"""
@@ -64,7 +70,7 @@ class TestLicense(unittest.TestCase):
         assert self.lic1.update_license_manager(config=config)
         org2 = self.k_gis.admin.organizations.orgs[0]
         lic2 = org2.license
-        info = lic2.properties['licenseManagerInfo']
+        info = lic2.properties["licenseManagerInfo"]
         self.assertDictEqual(config, info)
 
 

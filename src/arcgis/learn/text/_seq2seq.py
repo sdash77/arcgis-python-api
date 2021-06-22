@@ -111,7 +111,7 @@ class SequenceToSequence(ArcGISModel):
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
-        self._freeze()
+        # self._freeze()
       
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length):
@@ -178,6 +178,10 @@ class SequenceToSequence(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'seq2seq_acc', 'corpus_bleu']
+
     @classmethod
     def available_backbone_models(cls, architecture):
         """
@@ -200,7 +204,7 @@ class SequenceToSequence(ArcGISModel):
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForSequenceToSequence._available_backbone_models(architecture)
 
-    def _freeze(self):
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """

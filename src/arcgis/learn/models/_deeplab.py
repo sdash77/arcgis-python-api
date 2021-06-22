@@ -124,7 +124,19 @@ def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_
     '''
     Create default torchvision pretrained model with resnet101.
     '''
-    model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
+    #model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
+    
+    model = models.segmentation.segmentation._segm_resnet('deeplabv3',
+                                                         'resnet101',
+                                                         21,
+                                                         True,
+                                                         pretrained_backbone=False
+                                                        )
+    if pretrained:
+        state_dict = models.utils.load_state_dict_from_url(
+        models.segmentation.segmentation.model_urls['deeplabv3_resnet101_coco']
+        )
+        model.load_state_dict(state_dict)
     model = _DeepLabOverride(chip_size,
                              num_class,
                              model.backbone,
@@ -220,6 +232,11 @@ class DeepLab(ArcGISModel):
         if backbone is None:
             backbone = models.resnet101
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self._check_dataset_support(data)
         if not (self._check_backbone_support(backbone)):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
@@ -253,11 +270,11 @@ class DeepLab(ArcGISModel):
         
         self._code = image_classifier_prf
         if self._backbone.__name__ == 'resnet101':
-            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
+            model = _create_deeplab(data.chip_size, data.c, pretrained=pretrained_backbone, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
         else:
-            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilation=self.keep_dilation)
+            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilation=self.keep_dilation, pretrained=pretrained_backbone)
 
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
@@ -410,6 +427,10 @@ class DeepLab(ArcGISModel):
                 return accuracy
             else:
                 logger.error("Metric not found in the loaded model")
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
 
     @property
     def _model_metrics(self):

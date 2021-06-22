@@ -10,6 +10,27 @@ MissionServer
     :undoc-members:
     :show-inheritance:
 
+Mission
+----------------
+.. autoclass:: arcgis.gis.mission.Mission
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MissionCatalog
+----------------
+.. autoclass:: arcgis.gis.mission.MissionCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MissionJob
+----------------
+.. autoclass:: arcgis.gis.mission.MissionJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 DirectoryManager
 ----------------
 .. autoclass:: arcgis.gis.mission._system.DirectoryManager

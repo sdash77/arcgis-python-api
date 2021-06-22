@@ -147,8 +147,9 @@ class _MultiGPUCallback(LearnerCallback):
 
 
 def _set_multigpu_callback(model):
-    if (not hasattr(arcgis.env, "_gpuid")) or \
-            (arcgis.env._gpuid >= torch.cuda.device_count()):
+    if ((not hasattr(arcgis.env, "_gpuid")) or \
+            (arcgis.env._gpuid >= torch.cuda.device_count())) and \
+            (not getattr(arcgis.env, "_processorType", False)=='CPU'):
         model.learn.callback_fns.append(_MultiGPUCallback)
 
 
@@ -216,6 +217,10 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
+
+        if int(os.environ.get('RANK', 0)):
+            return
+            
         current = self.get_monitor_value()
         if isinstance(current, torch.Tensor):
             if current.is_cuda:
@@ -481,6 +486,17 @@ class ArcGISModel(object):
 
         if data is not None and getattr(data, 'path', None) is None:
             data.path = Path(os.path.abspath('.'))
+
+        if getattr(self, "_is_edge_detection", False):
+
+            if len(data.classes) > 2:
+                raise Exception(
+                    "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
+                    # noqa
+                )
+
+            data.class_mapping = {1:data.classes[1]}
+
         self.learn = None
         self._data = data
         self._learning_rate = None
@@ -557,8 +573,17 @@ class ArcGISModel(object):
 
     def lr_find(self, allow_plot=True):
         """
-        Runs the Learning Rate Finder, and displays the graph of its output.
-        Helps in choosing the optimum learning rate for training the model.
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
         """
         self._check_requisites()
         temp1 = self.learn.path
@@ -1240,7 +1265,7 @@ class ArcGISModel(object):
 
         if _emd_template.get('InferenceFunction', False):
             if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
-                                                  "ObjectClassification"] or save_inference_file:
+                                                  "ObjectClassification", "CycleGAN", "Pix2Pix", "SuperResolution"] or save_inference_file:
                 inference_file = _emd_template['InferenceFunction']
                 if "[Functions]" in inference_file:
                     inference_file = inference_file[len("[Functions]System\\DeepLearning\\ArcGISLearn\\"):]

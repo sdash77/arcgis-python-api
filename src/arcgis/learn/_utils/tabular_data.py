@@ -41,7 +41,7 @@ try:
     from sklearn.pipeline import make_pipeline
     from sklearn.compose import make_column_transformer
     from sklearn.impute import SimpleImputer
-    from sklearn.preprocessing import Normalizer, LabelEncoder, MinMaxScaler
+    from sklearn.preprocessing import Normalizer, LabelEncoder, MinMaxScaler, StandardScaler
 except:
     HAS_SK_LEARN = False
 
@@ -370,7 +370,7 @@ class TabularDataObject(object):
         if not self._procs:
             numerical_transformer = make_pipeline(
                 SimpleImputer(strategy='median'),
-                Normalizer())
+                StandardScaler())
 
             categorical_transformer = make_pipeline(
                 SimpleImputer(strategy='constant')
@@ -657,7 +657,7 @@ class TabularDataObject(object):
         if not self._procs:
             numerical_transformer = make_pipeline(
                 SimpleImputer(strategy='median'),
-                Normalizer())
+                StandardScaler())
 
             categorical_transformer = make_pipeline(
                 SimpleImputer(strategy='constant')

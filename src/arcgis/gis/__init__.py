@@ -828,6 +828,29 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
+    def velocity(self):
+        """
+        The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
+        :return: :class:`~arcgis.realtime.velocity.Velocity`
+        """
+        if self._portal.is_arcgisonline and self._subscription_information is not None :
+            _velocity_url = None
+            org_capabilities = self._subscription_information['orgCapabilities']
+            for capabilities in org_capabilities:
+                if capabilities["id"] == "velocity":
+                    _velocity_url = capabilities["velocityUrl"]
+                    if "/iot" not in _velocity_url:
+                        _velocity_url += "/iot/"
+
+            if _velocity_url is not None:
+                velocity = arcgis.realtime.velocity.Velocity(url=_velocity_url, gis=self)
+                return velocity
+            else:
+                raise Exception("Velocity is not available on this organizaiton.")
+        else:
+            raise Exception("ArcGIS Enterprise does not support Velocity")
+
+    @_lazy_property
     def hub(self):
         """
         The resource manager for GIS hub. See :class:`~arcgis.apps.hub.Hub`.
@@ -9674,7 +9697,22 @@ class Item(dict):
             if not self._hydrated and not k.startswith("_"):
                 self._hydrate()
             return dict.__getitem__(self, k)
-
+    # ----------------------------------------------------------------------
+    @property
+    def can_delete(self) -> bool:
+        """
+        Checks if the Item can be removed from the system.
+        
+        :returns: bool
+        """
+        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        params = {"f" : "json"}
+        try:
+            return self._gis._con.get(url, params).get("success", False)
+        except Exception as e:
+            _log.warning(e)
+            return False
+        
     # ----------------------------------------------------------------------
     @property
     def content_status(self):
@@ -13248,10 +13286,12 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
+        is_raster = False
         if (
             type(self).__name__ == "ImageryLayer"
             or type(self).__name__ == "_ImageServerRaster"
         ):
+            is_raster = True
             if self._fn is not None:
                 params["renderingRule"] = self._fn
             if hasattr(self, "_uri"):
@@ -13264,7 +13304,12 @@ class _GISResource(object):
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
-                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                if is_raster:
+                    dictdata = self._con.post(
+                        self.url, params, token=self._lazy_token, timeout=None
+                    )
+                else:
+                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)

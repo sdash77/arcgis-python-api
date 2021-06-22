@@ -532,7 +532,7 @@ def classify_image(model_configuration, model, images, device, predict_bg, model
         return preds
     else:
         if prob_raster:
-            preds = pred_batch[0].detach()
+            preds = pred_batch[-1].detach()
         else:
             preds = model_configuration.post_process(pred_batch, thres=threshold, thinning=thinning)
         if thinning:

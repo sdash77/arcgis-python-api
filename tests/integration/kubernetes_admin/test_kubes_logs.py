@@ -5,8 +5,12 @@ import sys, datetime
 
 
 from arcgis.gis import GIS
-profiles = [ 'your_kubernetes_profile']  # profile names go here #'your_online_profile', 'your_enterprise_profile',
-VERIFY_CERT = False # Boolean T/F
+
+profiles = [
+    "your_kubernetes_profile"
+]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
+VERIFY_CERT = False  # Boolean T/F
+
 
 class TestLogsAdminTemplate(unittest.TestCase):
     """
@@ -21,9 +25,13 @@ class TestLogsAdminTemplate(unittest.TestCase):
             assert admin.logs
             logs = admin.logs
             assert logs
-            res = logs.query(start_time=datetime.datetime.now() - datetime.datetime.now() - datetime.timedelta(days=1))
+            res = logs.query(
+                start_time=datetime.datetime.now()
+                - datetime.datetime.now()
+                - datetime.timedelta(days=1)
+            )
             assert res
-            assert logs.edit('DEBUG')
+            assert logs.edit("DEBUG")
             assert logs.settings
             assert admin.logs.clean()
         pass

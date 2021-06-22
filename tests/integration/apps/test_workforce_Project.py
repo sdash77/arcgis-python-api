@@ -1,14 +1,14 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        Workforce Project class tests
 # Purpose:     Sanity tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
-#region PreCondition check
+# region PreCondition check
 test_skip = False
 class_skip = False
 module_skip = False
@@ -16,13 +16,13 @@ module_skip = False
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
 
-if (r1 & r2):
+if r1 & r2:
     print("## Precondition checks passed ##")
     module_skip = False
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
@@ -33,19 +33,22 @@ try:
     from arcgis.apps.workforce.managers import *
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
-#endregion PreCondition Check
+    raise (exit())
+# endregion PreCondition Check
 
-#TestModule
-@unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in Workforce Project")
+# TestModule
+@unittest.skipIf(
+    module_skip, "Precondition check failed. Skipping tests in Workforce Project"
+)
 def setUpModule():
     """
     Run checks for host system
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
+
 
 class Test_Workforce_Project(unittest.TestCase):
     """
@@ -59,15 +62,22 @@ class Test_Workforce_Project(unittest.TestCase):
         :return:
         """
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['workforce_ago']['url']
-        cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
-        cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
+        cls.portal_url = _conf_reader["workforce_ago"]["url"]
+        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
+        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         t = datetime.datetime.now()
-        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-                                    str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         cls.project = create_project(cls.time_stamp)
         cls.project_id = cls.project.id
 
@@ -79,12 +89,19 @@ class Test_Workforce_Project(unittest.TestCase):
 
     def setUp(self):
         self.setup_project()
-        print("Test: "+self._testMethodName)
+        print("Test: " + self._testMethodName)
         self.namePrefix = "dino_"
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -103,18 +120,28 @@ class Test_Workforce_Project(unittest.TestCase):
             project = Project(self.gis.content.get(self.project_id))
             self.assertIsNotNone(project, "Cannot access project")
 
-            self.assertIsInstance(project.assignment_types, AssignmentTypeManager, "Incorrect type")
-            self.assertIsInstance(project.assignments, AssignmentManager, "Incorrect type")
+            self.assertIsInstance(
+                project.assignment_types, AssignmentTypeManager, "Incorrect type"
+            )
+            self.assertIsInstance(
+                project.assignments, AssignmentManager, "Incorrect type"
+            )
             self.assertIsInstance(project.assignments_item, Item, "Incorrect type")
 
-            self.assertIsInstance(project.assignments_layer, FeatureLayer, "Incorrect type")
+            self.assertIsInstance(
+                project.assignments_layer, FeatureLayer, "Incorrect type"
+            )
             self.assertIsInstance(project.assignments_layer_url, str, "Incorrect type")
 
             self.assertIsInstance(project.dispatcher_web_map_id, str, "Incorrect type")
             self.assertIsInstance(project.dispatcher_webmap, WebMap, "Incorrect type")
-            self.assertIsInstance(project.dispatchers, DispatcherManager, "Incorrect type")
+            self.assertIsInstance(
+                project.dispatchers, DispatcherManager, "Incorrect type"
+            )
             self.assertIsInstance(project.dispatchers_item, Item, "Incorrect type")
-            self.assertIsInstance(project.dispatchers_layer, FeatureLayer, "Incorrect type")
+            self.assertIsInstance(
+                project.dispatchers_layer, FeatureLayer, "Incorrect type"
+            )
             self.assertIsInstance(project.dispatchers_layer_url, str, "Incorrect type")
 
             self.assertIsInstance(project.group, Group, "Incorrect type")
@@ -125,10 +152,14 @@ class Test_Workforce_Project(unittest.TestCase):
 
             self.assertIsInstance(project.owner, User, "Incorrect type")
             self.assertIsInstance(project.owner_user_id, str, "Incorrect type")
-            self.assertEqual(project.owner_user_id, "ar_workforce_python_api", "Incorrect owner name")
+            self.assertEqual(
+                project.owner_user_id, "ar_workforce_python_api", "Incorrect owner name"
+            )
 
             self.assertIsInstance(project.summary, str, "Incorrect type")
-            self.assertEqual(project.summary, "Python API Regression Test", "Incorrect summary")
+            self.assertEqual(
+                project.summary, "Python API Regression Test", "Incorrect summary"
+            )
             self.assertIsInstance(project.title, str, "Incorrect type")
             self.assertIsInstance(project.version, str, "Incorrect type")
 
@@ -169,6 +200,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
-#TestModule
+# TestModule
 def tearDownModule():
     print("**End Workforce Project Tests**")

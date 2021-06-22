@@ -8,7 +8,7 @@ import copy
 import requests as _requests
 
 from arcgis._impl.common._utils import _date_handler
-from arcgis.gis import Layer
+from arcgis.gis import Layer, Item
 from arcgis.geometry import Geometry, Envelope
 from arcgis.features import FeatureSet
 from arcgis.gis import _GISResource
@@ -75,7 +75,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
-        res = self._con.post(self._url, params)
+        res = self._con.post(self._url, params, timeout=None)
         if "success" in res:
             return res["success"]
         return res
@@ -93,7 +93,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s/cancel" % job_id
         params = {"f": "json"}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     @property
@@ -101,7 +101,7 @@ class ImageryLayerCacheManager(_GISResource):
         """returns a list of all the jobs on the tile server"""
         url = self._url + "/jobs"
         params = {"f": "json"}
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         if "jobs" in res:
             return res["jobs"]
         return res
@@ -142,7 +142,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s" % job_id
         params = {"f": "json"}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     def import_tiles(self, item, levels=None, extent=None, merge=False, replace=False):
@@ -193,7 +193,7 @@ class ImageryLayerCacheManager(_GISResource):
         else:
             raise ValueError("The `item` must be a string or Item")
         url = self._url + "/importTiles"
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         return res
 
     # ----------------------------------------------------------------------
@@ -244,7 +244,7 @@ class ImageryLayerCacheManager(_GISResource):
                     )
                     extent = extent2
                 params["extent"] = extent
-            return self._con.post(url, params)
+            return self._con.post(url, params, timeout=None)
         return None
 
     # ----------------------------------------------------------------------
@@ -269,7 +269,7 @@ class ImageryLayerCacheManager(_GISResource):
         """
         url = self._url + "/jobs/%s/rerun" % job_id
         params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
     # ----------------------------------------------------------------------
     def edit_tile_service(
@@ -320,7 +320,7 @@ class ImageryLayerCacheManager(_GISResource):
         if not max_export_tile_count is None:
             params["maxExportTileCount"] = int(max_export_tile_count)
         url = self._url + "/edit"
-        res = self._con.post(url, params)
+        res = self._con.post(url, params, timeout=None)
         if "success" in res:
             if res["success"]:
                 self._img_lyr._hydrated = False
@@ -362,7 +362,7 @@ class ImageryLayerCacheManager(_GISResource):
         if extent:
             params["extent"] = extent
         url = self._url + "/deleteTiles"
-        return self._con.post(url, params)
+        return self._con.post(url, params, timeout=None)
 
 
 ###########################################################################
@@ -415,8 +415,10 @@ class _RasterRenderingService(Layer):
                         + "/rest/services/System/RasterRendering/ImageServer"
                     )
         self.url = url
-        if url is not None:
+        if url:
             self.token = gis._con.generate_portal_server_token(serverUrl=url)
+        else:
+            self.token = None
 
 
 class ImageryLayer(Layer):
@@ -483,6 +485,7 @@ class ImageryLayer(Layer):
         self._raster_info = {}
         self._tiles_only = None
         self._extent_set = False
+        self._original_info = {}
 
     @property
     def rasters(self):
@@ -717,7 +720,7 @@ class ImageryLayer(Layer):
             params = {"f": "json"}
             if self._datastore_raster:
                 params["Raster"] = self._uri
-            hist_return = self._con.post(url, params, token=self._token)
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -806,7 +809,7 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params)
+            return self._con.post(path=url, postdata=params, timeout=None)
         return None
 
     # ----------------------------------------------------------------------
@@ -833,7 +836,7 @@ class ImageryLayer(Layer):
                 if isinstance(self._uri, bytes):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
-            return self._con.post(path=url, params=params)
+            return self._con.post(path=url, params=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def project(self, geometries, in_sr, out_sr):
@@ -880,7 +883,7 @@ class ImageryLayer(Layer):
         params = {"f": "json", "inSR": in_sr, "outSR": out_sr, "geometries": geometries}
         if self._datastore_raster:
             params["Raster"] = self._uri
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def identify(
@@ -920,7 +923,7 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        required dictionary/Point/Polygon.  A geometry that defines the
+        geometry                        required dictionary/Point/Polygon. A geometry that defines the
                                         location to be identified. The location can be a point or polygon.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     optional string or dict. Specifies the mosaic rule when defining how
@@ -966,7 +969,7 @@ class ImageryLayer(Layer):
                                         
                                         Added at 10.6.1.
         ----------------------------    --------------------------------------------------------------------
-        max_item_count                  optional int. If the returnCatalogItems parameter is set to true, 
+        max_item_count                  optional int. If the return_catalog_items parameter is set to true, 
                                         this parameter will take effect. The default behavior is to return 
                                         all raster catalog items within the requested geometry. 
                                         Otherwise, the number of items returned will be the value specified in the
@@ -1014,8 +1017,14 @@ class ImageryLayer(Layer):
 
         if isinstance(geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
-        if isinstance(geometry, Polygon):
+        elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(geometry, dict):
+            if "x" in geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
+
         if mosaic_rule is not None:
             params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
@@ -1068,7 +1077,7 @@ class ImageryLayer(Layer):
                 del params["renderingRule"]
                 params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def measure(
@@ -1098,11 +1107,12 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        from_geometry         required Geomerty or dictionary. A geometry that defines the "from"
+        from_geometry         required Geometry or dictionary. A geometry that defines the "from"
                               location of the measurement.
         -----------------     --------------------------------------------------------------------
-        to_geometry           optional Geomerty. A geometry that defines the "to" location of the
-                              measurement. The type of geometry must be the same as from_geometry.
+        to_geometry           optional Geometry or dictionary. A geometry that defines the "to"
+                              location of the measurement. The type of geometry must be the same
+                              as from_geometry.
         -----------------     --------------------------------------------------------------------
         measure_operation     optional string or dict. Specifies the type of measure being
                               performed.
@@ -1202,13 +1212,21 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
         from arcgis.geometry._types import Polygon, Point, Envelope
+        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(from_geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(from_geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
-        elif isinstance(from_geometry, Envelope):
+        elif isinstance(from_geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(from_geometry, dict):
+            if "x" in from_geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "xmin" in from_geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
         if to_geometry:
             params["toGeometry"] = to_geometry
         if measure_operation is not None:
@@ -1225,7 +1243,7 @@ class ImageryLayer(Layer):
             params["areaUnit"] = area_unit
         if angular_unit:
             params["angularUnit"] = angular_unit
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def set_filter(
         self,
@@ -1550,8 +1568,15 @@ class ImageryLayer(Layer):
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
-                                If image format is chosen, the bytes of the exported image are
+                                Values: json,image,kmz,numpy_array
+
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
+                                If f="image", the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
         ----------------------  --------------------------------------------------------------------
@@ -1758,7 +1783,7 @@ class ImageryLayer(Layer):
                 del params["renderingRule"]
                 params["Raster"] = self._uri
         if f == "json":
-            return self._con.post(url, params, token=self._token)
+            return self._con.post(url, params, token=self._token, timeout=None)
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 return self._con.post(
@@ -1768,10 +1793,16 @@ class ImageryLayer(Layer):
                     try_json=False,
                     file_name=save_file,
                     token=self._token,
+                    timeout=None,
                 )
             else:
                 return self._con.post(
-                    url, params, try_json=False, force_bytes=True, token=self._token
+                    url,
+                    params,
+                    try_json=False,
+                    force_bytes=True,
+                    token=self._token,
+                    timeout=None,
                 )
         elif f == "kmz":
             return self._con.post(
@@ -1780,7 +1811,52 @@ class ImageryLayer(Layer):
                 out_folder=save_folder,
                 file_name=save_file,
                 token=self._token,
+                timeout=None,
             )
+
+        elif f == "numpy_array":
+            params["f"] = "image"
+            params["format"] = "lerc"
+            params["lercVersion"] = 2
+            res = self._con.post(
+                url, params, try_json=False, force_bytes=True, token=self._token
+            )
+
+            try:
+                import lerc
+            except ImportError:
+                raise ImportError(
+                    "lerc not found. Install lerc to export image service as numpy array"
+                )
+
+            if not isinstance(res, bytes):
+                raise RuntimeError(res)
+            result, data, valid_mask = lerc.decode(res)
+            if result != 0:
+                raise RuntimeError("decoding bytes from imagery service failed.")
+
+            # transpose
+            if "hasMultidimensions" in self.properties:
+                is_multidimensional = self.properties.hasMultidimensions
+            if is_multidimensional:
+                if len(data.shape) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif len(data) == 3:
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+                else:
+                    assert len(data.shape) == 4
+                    data = np.transpose(data, [3, 1, 2, 0])
+            else:
+                if len(data.shape) == 2:
+                    data = np.expand_dims(data, axis=2)
+                else:
+                    data = np.transpose(data, axes=[1, 2, 0])
+
+            return data
+
         else:
             print("Unsupported output format")
 
@@ -2050,19 +2126,23 @@ class ImageryLayer(Layer):
                     params["where"] = sql
                     if records is None:
                         records = self._con.post(
-                            path=url, postdata=params, token=self._token
+                            path=url, postdata=params, token=self._token, timeout=None
                         )
 
                     else:
                         res = self._con.post(
-                            path=url, postdata=params, token=self._token
+                            path=url, postdata=params, token=self._token, timeout=None
                         )
                         records["features"].extend(res["features"])
                 result = records
             else:
-                result = self._con.post(path=url, postdata=params, token=self._token)
+                result = self._con.post(
+                    path=url, postdata=params, token=self._token, timeout=None
+                )
         else:
-            result = self._con.post(path=url, postdata=params, token=self._token)
+            result = self._con.post(
+                path=url, postdata=params, token=self._token, timeout=None
+            )
         if "error" in result:
             raise ValueError(result)
 
@@ -2140,7 +2220,7 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryEnvelope"
         if out_format is not None:
             params["format"] = out_format
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def get_raster_file(self, download_info, out_folder=None):
@@ -2251,7 +2331,7 @@ class ImageryLayer(Layer):
             "geometries": geometries,
             "spatialReference": spatial_reference,
         }
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def slices(self, muldidef=None):
         """
@@ -2289,7 +2369,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def statistics(self, variable=None):
         """
@@ -2326,7 +2406,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )
 
     def get_histograms(self, variable=None):
         """
@@ -2371,7 +2453,7 @@ class ImageryLayer(Layer):
                 params["variable"] = variable
             if self._datastore_raster:
                 params["Raster"] = self._uri
-            hist_return = self._con.post(url, params, token=self._token)
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -2510,7 +2592,7 @@ class ImageryLayer(Layer):
             params["itemIds"] = item_ids
         if not service_url is None:
             params["serviceUrl"] = service_url
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params, token=self._token, timeout=None)
 
     # ----------------------------------------------------------------------
     def _delete_rasters(self, raster_ids):
@@ -2534,7 +2616,7 @@ class ImageryLayer(Layer):
             )
         params = {"f": "json", "rasterIds": raster_ids}
         url = "%s/delete" % self._url
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def _update_raster(
@@ -2657,7 +2739,7 @@ class ImageryLayer(Layer):
             params["geodataTransforms"] = geodata_transforms
         if apply_method is not None:
             params["geodataTransformApplyMethod"] = apply_method
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def _upload(self, fp, description=None):
@@ -2671,7 +2753,7 @@ class ImageryLayer(Layer):
         if description:
             params["description"] = description
         files = {"file": fp}
-        res = self._con.post(path=url, postdata=params, files=files)
+        res = self._con.post(path=url, postdata=params, files=files, timeout=None)
         if "success" in res and res["success"]:
             return res["item"]["itemID"]
         return None
@@ -2808,7 +2890,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def compute_tie_points(self, raster_id, geodata_transforms):
@@ -2846,7 +2928,7 @@ class ImageryLayer(Layer):
             "rasterId": raster_id,
             "geodataTransform": geodata_transforms,
         }
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def legend(self, band_ids=None, rendering_rule=None, as_html=False):
@@ -2897,7 +2979,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        legend = self._con.post(path=url, postdata=params)
+        legend = self._con.post(path=url, postdata=params, timeout=None)
         if as_html is True:
             legend_table = "<table>"
             for legend_element in legend["layers"][0]["legend"]:
@@ -3058,7 +3140,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
     def compute_histograms(
@@ -3207,7 +3289,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params, token=self._token, timeout=None)
 
         # ----------------------------------------------------------------------
 
@@ -3330,9 +3412,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        sample_data = self._con.post(path=url, postdata=params, token=self._token)[
-            "samples"
-        ]
+        sample_data = self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )["samples"]
         from copy import deepcopy
 
         new_sample_data = deepcopy(sample_data)
@@ -3375,7 +3457,9 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )
 
     def mosaic_by(
         self,
@@ -3536,7 +3620,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def calculate_volume(
         self,
@@ -3622,7 +3706,7 @@ class ImageryLayer(Layer):
             if self._datastore_raster:
                 params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params)
+            return self._con.post(path=url, postdata=params, timeout=None)
 
         return None
 
@@ -3675,7 +3759,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        return self._con.post(path=url, postdata=params)
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def _compute_multidimensional_info(
         self,
@@ -3791,9 +3875,9 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
 
-        res = self._con.post(path=url, postdata=params, token=self._token)[
-            "multidimensionalInfo"
-        ]
+        res = self._con.post(
+            path=url, postdata=params, token=self._token, timeout=None
+        )["multidimensionalInfo"]
         return res
 
     @property
@@ -5553,41 +5637,172 @@ class ImageryLayer(Layer):
             return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
-        url = self._url
+        if self._original_info != {}:
+            return self._original_info
+        else:
+            url = self._url
 
-        params = {"f": "json"}
-        if rendering_rule is not None:
-            params["renderingRule"] = rendering_rule
+            params = {"f": "json"}
+            if rendering_rule is not None:
+                params["renderingRule"] = rendering_rule
 
-        if self._datastore_raster:
-            params["Raster"] = self._uri
-            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
-                del params["renderingRule"]
+            if self._datastore_raster:
+                params["Raster"] = self._uri
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                    del params["renderingRule"]
 
-        dictdata = {}
-        token = None
-        try:
-            dictdata = self._con.post(self.url, params)
-        except Exception as e:
+            dictdata = {}
+            token = None
             try:
-                if (
-                    (hasattr(self, "_lazy_token")) and self._lazy_token is None
-                ) or not hasattr(self, "_lazy_token"):
-                    token = self._gis._con.generate_portal_server_token(
-                        serverUrl=self._url
+                dictdata = self._con.post(self.url, params, timeout=None)
+            except Exception as e:
+                try:
+                    if (
+                        (hasattr(self, "_lazy_token")) and self._lazy_token is None
+                    ) or not hasattr(self, "_lazy_token"):
+                        token = self._gis._con.generate_portal_server_token(
+                            serverUrl=self._url
+                        )
+                        self._lazy_token = token
+                except Exception as e:
+                    token = self._token
+                try:
+                    dictdata = self._con.post(
+                        self.url, params, token=token, timeout=None
                     )
-            except Exception as e:
-                token = self._token
-            try:
-                dictdata = self._con.post(self.url, params, token=token)
-            except Exception as e:
-                if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params, token=token)
-                elif str(e).lower().find("token required") > -1:
-                    dictdata = self._con.get(self.url, params)
-                else:
-                    raise e
-        return dictdata
+                except Exception as e:
+                    if hasattr(e, "msg") and e.msg == "Method Not Allowed":
+                        dictdata = self._con.get(self.url, params, token=token)
+                    elif str(e).lower().find("token required") > -1:
+                        dictdata = self._con.get(self.url, params)
+                    else:
+                        raise e
+            self._original_info = dictdata
+            return self._original_info
+
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any imagery layer 
+        published with mosaic datasets or a raster dataset.
+
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                          - dictionary structure: pixel_size={point}
+                                          - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                          - pixel_size={"x": 0.18, "y": 0.18}
+                                          - pixel_size='0.18,0.18'
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Available in 10.8+
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                     This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+
+                                        Example:
+                                             - | [
+                                               |  {"color":"r"},
+                                               |  {"color":"g"},
+                                               |  {"color":"b","edgecolor":"w"}
+                                               | ]
+
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+            When working with multidimensional imagery layers, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+            raster function on the layer for slicing the data along defined variables and dimensions.
+            `plot_histograms()` can then be used on the output layer returned upon applying the filter.  
+        
+        :returns: None
+        
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        from arcgis.raster._charts import plot_histograms
+
+        return plot_histograms(
+            self,
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
 
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
@@ -5740,7 +5955,7 @@ class ImageryLayer(Layer):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
@@ -6356,11 +6571,9 @@ class Raster:
         return self._engine_obj.raster_info
 
     @staticmethod
-    def from_stac_item(stac_item, request_params=None, *, gis=None):
+    def from_stac_item(stac_item, request_params=None, engine=None, *, gis=None):
         """
         Create a Raster object from a `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -6382,6 +6595,19 @@ class Raster:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the Raster object.
         =================     ====================================================================
@@ -6439,7 +6665,7 @@ class Raster:
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, gis=gis)
+        ras = Raster(metadata_file, engine=engine, gis=gis)
         return ras
 
     def get_raster_bands(self, band_ids_or_names=None):
@@ -7084,6 +7310,127 @@ class Raster:
     def _repr_jpeg_(self):
         return self._engine_obj._repr_jpeg_()
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        return self._engine_obj.plot_histograms(
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def export_image(
         self,
         bbox=None,
@@ -7209,8 +7556,15 @@ class Raster:
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
-                                If image format is chosen, the bytes of the exported image are
+                                Values: json,image,kmz,numpy_array
+
+                                **Note:** If f="numpy_array" and if the raster is a single or multiband raster,
+                                the dimensions of the array will be rows, columns, and number of bands.
+                                If the raster is a multidimensional raster, the dimensions of the array
+                                will be number of slices, rows, columns, and number of bands.
+                                LERC needs to be installed to export image service as numpy array.
+
+                                If f="image", the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
                                 (Available only when image_server engine is used)
@@ -7331,7 +7685,7 @@ class Raster:
         return self._engine_obj.__rpow__(other)
 
     def __abs__(self):
-        return self._engine_obj.__abs__(other)
+        return self._engine_obj.__abs__()
 
     def __lshift__(self, other):
         return self._engine_obj.__lshift__(other)
@@ -7364,10 +7718,10 @@ class Raster:
         return self._engine_obj.__rmod__(other)
 
     def __neg__(self):
-        return self._engine_obj.__neg__(other)
+        return self._engine_obj.__neg__()
 
     def __invert__(self):
-        return self._engine_obj.__invert__(other)
+        return self._engine_obj.__invert__()
 
     def __and__(self, other):
         return self._engine_obj.__and__(other)
@@ -8366,6 +8720,127 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def _repr_jpeg_(self):
         return None
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        return super().plot_histograms(
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def export_image(
         self,
         bbox=None,
@@ -8602,7 +9077,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
@@ -9152,6 +9627,130 @@ class _ArcpyRaster(Raster, ImageryLayer):
     def _repr_jpeg_(self):
         return None
 
+    def plot_histograms(
+        self,
+        geometry=None,
+        pixel_size=None,
+        time=None,
+        bands=[],
+        display_stats=True,
+        plot_properties=None,
+        subplot_properties=None,
+    ):
+        """
+        Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
+        the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
+        number line that displays the range of image pixel values that has been split into number ranges, 
+        or bins. A bar is drawn for each bin, and the width of the bar represents the density number range 
+        of the bin; the height of the bar represents the number of pixels that fall into that range. 
+        Understanding the distribution of your data is an important step in the data exploration process.
+    
+        ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
+    
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        optional Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon. If not provided, then the full extent of the 
+                                        raster will be used for the computation.
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                        - dictionary structure: pixel_size={point}
+                                        - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                        - pixel_size={"x": 0.18, "y": 0.18}
+                                        - pixel_size='0.18,0.18'
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+
+                                        **Note:** This parameter is honoured if the raster uses "image_server" engine.
+        ----------------------------    --------------------------------------------------------------------
+        bands                           optional list of band indices. By default takes the first band (band index - 0).
+                                        Image histogram charts are plotted for these specific bands.
+    
+                                        Example:
+                                            - [0,2,3]
+        ----------------------------    --------------------------------------------------------------------
+        display_stats                   optional boolean. Specifies whether to plot the band-wise statistics 
+                                        along with the histograms.
+    
+                                        Some basic descriptive statistics are calculated and displayed on 
+                                        histograms. The mean and median are displayed with one line each, and 
+                                        one standard deviation above and below the mean is displayed using two lines.
+    
+                                            - False - The statistics will not be displayed along with the histograms.
+                                            - True - The statistics will be displayed along with the histograms. \
+                                                    This is the default.
+        ----------------------------    --------------------------------------------------------------------
+        plot_properties                 optional dictionary. This parameter can be used to set the figure 
+                                        properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
+                                        parameters and values specified in dict format.
+    
+                                        Example:
+                                            - {"figsize":(15,15)}
+        ----------------------------    --------------------------------------------------------------------
+        subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
+                                        histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters and values specified in dictionary format.
+    
+                                        Example:
+                                            - | [
+                                            |  {"color":"r"},
+                                            |  {"color":"g"},
+                                            |  {"color":"b","edgecolor":"w"}
+                                            | ]
+                                            
+                                        **Note:** `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
+                                        parameters: ''x', 'height' or 'align' cannot be passed into subplot_properties.
+        ============================    ====================================================================
+
+        .. tip::
+        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+        raster function on the Raster object for slicing the data along defined variables and dimensions.
+        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+        
+        :returns: None
+    
+        """
+        from arcgis.raster._charts import plot_histograms
+
+        return plot_histograms(
+            self,
+            geometry=geometry,
+            pixel_size=pixel_size,
+            time=time,
+            bands=bands,
+            display_stats=display_stats,
+            plot_properties=plot_properties,
+            subplot_properties=subplot_properties,
+        )
+
     def export_image(
         self,
         bbox=None,
@@ -9553,7 +10152,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
     def __invert__(self):
         from arcgis.raster.functions import boolean_not
 
-        return boolean_not(self)
+        return boolean_not([self])
 
     def __and__(self, other):
         from arcgis.raster.functions import boolean_and
@@ -9879,13 +10478,12 @@ class RasterCollection:
         attribute_dict=None,
         request_method="POST",
         request_params=None,
+        engine=None,
         *,
         gis=None,
     ):
         """
         Create a RasterCollection object from a `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__ `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -9960,6 +10558,19 @@ class RasterCollection:
                                     |   "headers":{"Authorization": "Bearer access_token_string"}
                                     | }
         -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
+        -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
@@ -10023,6 +10634,7 @@ class RasterCollection:
 
                 if isinstance(query_extent, (Envelope, Polygon)):
                     envelope_dict = json.loads(query_extent.envelope.JSON)
+                    projected_envelope = None
                     if envelope_dict["spatialReference"] is None:
                         raise RuntimeError(
                             "Invalid bbox: Polygon/Envelope object should contain spatialReference"
@@ -10034,7 +10646,7 @@ class RasterCollection:
                             out_sr=4326,
                         )
                     except Exception:
-                        RuntimeError(
+                        raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
                     bbox_list = []
@@ -10095,7 +10707,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:
@@ -10115,12 +10727,10 @@ class RasterCollection:
 
     @staticmethod
     def from_stac_catalog(
-        stac_catalog, attribute_dict=None, request_params=None, *, gis=None
+        stac_catalog, attribute_dict=None, request_params=None, engine=None, *, gis=None
     ):
         """
         Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
-
-        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -10164,6 +10774,19 @@ class RasterCollection:
 
                               Example:
                                     {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        engine                Optional string. The backend engine to be used for Raster processing.
+
+                              Possible options:
+                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                - "image_server" : Use the Image Server engine for processing (This is the default).
+                              
+                              Example:
+                                    "image_server"
+
+                              **Note:** When using image_server engine, RasterRendering service should be enabled \
+                                        in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
@@ -10265,7 +10888,7 @@ class RasterCollection:
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, gis=gis)
+            ras = Raster(metadata_file, engine=engine, gis=gis)
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:
@@ -13196,7 +13819,7 @@ class ImageryTileManager(object):
         if aoi:
             params["areaOfInterest"] = aoi
 
-        res = self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params, timeout=None)
         sid = res["jobId"]
         success, res = self._status(url, res)
         if success == False:
@@ -13315,7 +13938,7 @@ class ImageryTileManager(object):
 
         if aoi:
             params["areaOfInterest"] = aoi
-        res = self._con.post(path=url, postdata=params)
+        res = self._con.post(path=url, postdata=params, timeout=None)
         sid = res["jobId"]
         success, res = self._status(url, res)
         if success == False:
@@ -13487,6 +14110,7 @@ class RasterCatalogItem(object):
     def _init(self, connection=None):
         """loads the properties into the class"""
         from arcgis._impl.common._mixins import PropertyMap
+        from urllib.error import HTTPError
 
         if connection is None:
             connection = self._con

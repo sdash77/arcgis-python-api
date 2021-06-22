@@ -6468,10 +6468,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                 )
 
                 if gis._con._product == "AGOL":
+                    single_image = False
+                    if raster_type_name is None:
+                        single_image = True
                     uri_list = _upload_imagery_agol(
                         upload_rasters_list,
                         gis,
                         upload_properties=upload_properties,
+                        single_image=single_image,
                     )
                 else:
                     item_id_list = _upload_imagery_enterprise(
@@ -10093,8 +10097,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                     raster_type = json.loads(raster_type)
                 except:
                     pass
-            if isinstance(input_raster, dict) and isinstance(raster_type, dict):
-                input_raster.update({"rasterType": raster_type})
+            if raster_type_name is not None:
+                if isinstance(input_raster, dict) and isinstance(raster_type, dict):
+                    input_raster.update({"rasterType": raster_type})
 
         gpjob = self._tbx.copy_raster(
             input_raster=input_raster,
@@ -12729,7 +12734,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         if input_multidimensional_rasters is not None:
-            input_multidimensional_rasters = _set_multiple_raster_inputs(
+            input_multidimensional_rasters = self._set_multiple_raster_inputs(
                 input_multidimensional_rasters
             )
 
@@ -13571,9 +13576,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
 
     def train_deep_learning_model(
         self,
@@ -13791,8 +13800,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
 ###########################################################################
