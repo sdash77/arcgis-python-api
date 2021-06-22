@@ -1265,7 +1265,7 @@ class ArcGISModel(object):
 
         if _emd_template.get('InferenceFunction', False):
             if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
-                                                  "ObjectClassification"] or save_inference_file:
+                                                  "ObjectClassification", "CycleGAN", "Pix2Pix", "SuperResolution"] or save_inference_file:
                 inference_file = _emd_template['InferenceFunction']
                 if "[Functions]" in inference_file:
                     inference_file = inference_file[len("[Functions]System\\DeepLearning\\ArcGISLearn\\"):]
