@@ -265,7 +265,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
         # Freeze the model by default
-        self._freeze()
+        # self._freeze()
 
     def __str__(self):
         return self.__repr__()
@@ -344,8 +344,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         self.entities = data._unique_tags
         self._address_tag = data._address_tag
-
-    def _freeze(self):
+    
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """

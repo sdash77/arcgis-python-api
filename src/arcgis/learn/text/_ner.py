@@ -197,6 +197,12 @@ class EntityRecognizer:
         Unfreezes the earlier layers of the model for fine-tuning.
         """
         self._model.unfreeze()
+    
+    def freeze(self):
+        """
+        Freeze up to last layer group to train only the last layer group of the model.
+        """
+        self._model.freeze()
 
     def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """

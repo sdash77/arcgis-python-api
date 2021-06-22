@@ -130,6 +130,12 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         logging.error('unfreeze() is not implemented for EntityRecognizer model with spaCy backbone.')
 
+    def freeze(self):
+        """
+        Not implemented for this model.
+        """
+        logging.error('freeze() is not implemented for EntityRecognizer model with spaCy backbone.')
+
     def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
 
         """
