@@ -187,6 +187,21 @@ class FeatureLayer(Layer):
                                             The default for ``layer_id`` is 0.
         ===============================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> buck_1.type
+            'Feature Service'
+            >>> new_layer= FeatureLayer.fromitem(item = buck_1)
+            >>> type(new_layer)
+            <class 'arcgis.features.layer.FeatureLayer'>
+
         :returns:
             A :class:`~arcgis.features.FeatureSet` object
         """
@@ -577,6 +592,20 @@ class FeatureLayer(Layer):
                                             before unique values are returned.
                                             ex. "name_2 like '%K%'"
         ===============================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> lay = buck_1.layers[0]
+            >>> layer = lay.get_unique_values(attribute = "COUNTY")
+            >>> layer
+            ['PITKIN', 'PLATTE', 'TWIN FALLS']
 
         :returns:
             A List
@@ -1504,7 +1533,7 @@ class FeatureLayer(Layer):
 
             # Usage Example with only a "where" sql statement
 
-            >>> feat_set = feature_layer.query(where = "OBJECTID1")
+            >>> feat_set = feature_layer.query(where = "OBJECTID= 1")
             >>> type(feat_set)
             <arcgis.Features.FeatureSet>
             >>> feat_set[0]
@@ -2028,7 +2057,7 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
-        The``get_html_popup`` method provides details about the HTML pop-up
+        The ``get_html_popup`` method provides details about the HTML pop-up
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
@@ -2308,9 +2337,39 @@ class FeatureLayer(Layer):
                                    is the default.
         ======================     ====================================================================
 
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> lay = buck_1.layers[0]
+
+            >>> la_df = lay.delete_features(where = "OBJECTID > 15")
+            >>> la_df
+            {'deleteResults': [
+            {'objectId': 1, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 2, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 3, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 4, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 5, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 6, 'uniqueId': 6, 'globalId': None, 'success': True},
+            {'objectId': 7, 'uniqueId': 7, 'globalId': None, 'success': True},
+            {'objectId': 8, 'uniqueId': 8, 'globalId': None, 'success': True},
+            {'objectId': 9, 'uniqueId': 9, 'globalId': None, 'success': True},
+            {'objectId': 10, 'uniqueId': 10, 'globalId': None, 'success': True},
+            {'objectId': 11, 'uniqueId': 11, 'globalId': None, 'success': True},
+            {'objectId': 12, 'uniqueId': 12, 'globalId': None, 'success': True},
+            {'objectId': 13, 'uniqueId': 13, 'globalId': None, 'success': True},
+            {'objectId': 14, 'uniqueId': 14, 'globalId': None, 'success': True},
+            {'objectId': 15, 'uniqueId': 15, 'globalId': None, 'success': True}]}
+
 
         :returns:
-            A dictionary if future=False (default), else a:class:`~concurrent.futures.Future` object.
+            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
 
 
         """
