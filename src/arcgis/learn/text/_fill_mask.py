@@ -7,7 +7,12 @@ try:
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_MASKED_LM_MAPPING
+    try:
+        # For version 3.3.0
+        from transformers.modeling_auto import MODEL_FOR_MASKED_LM_MAPPING
+    except ModuleNotFoundError as e:
+        # For version 4.5.1
+        from transformers.models.auto.modeling_auto import MODEL_FOR_MASKED_LM_MAPPING
     EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_MASKED_LM_MAPPING.keys()]
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -62,10 +67,17 @@ class FillMask(InferenceOnlyModel):
 
     def _load_model(self):
         try:
+            # For version 3.3.0
             if self._pretrained_path:
                 self.model = pipeline(self._task, model=self._pretrained_path, device=self._device, topk=10)
             else:
                 self.model = pipeline(self._task, model=self._backbone, device=self._device, topk=10)
+        except TypeError as e:
+            # For version 4.5.1
+            if self._pretrained_path:
+                self.model = pipeline(self._task, model=self._pretrained_path, device=self._device, top_k=10)
+            else:
+                self.model = pipeline(self._task, model=self._backbone, device=self._device, top_k=10)
         except Exception as e:
             error_message = (f"`{self._backbone}` is not valid backbone name for {self._task} task.\n"
                              f"For selecting backbone name for {self._task} task, kindly visit:- "
