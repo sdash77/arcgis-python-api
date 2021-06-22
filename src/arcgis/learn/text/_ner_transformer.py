@@ -472,7 +472,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         cls_object.path = getattr(data, 'working_dir', data.path)
         return cls_object
 
-    def extract_entities(self, text_list, batch_size=4, drop=True, debug=False):
+    def extract_entities(self, text_list, batch_size=4, drop=True, debug=False, show_progress=True):
         results, columns, file_names = [], [], []
         if isinstance(text_list,  (str, bytes)):
             path = text_list
@@ -497,7 +497,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         tokenizer, id2label = self.learn.model._tokenizer, self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
         self.logger.info(f"Generating Inference using - {model_type} transformer model.")
-        for i in progress_bar(range(0, len(text_list), batch_size)):
+        for i in progress_bar(range(0, len(text_list), batch_size), display=show_progress):
             tokens, labels = self.learn.model.generate_inference(text_list[i: i + batch_size], self._device)
             if debug:
                 batch_results = get_results(tokens, labels, tokenizer, id2label, model_type, len(tokens))
