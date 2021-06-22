@@ -7,6 +7,7 @@ from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
 
 from arcgis.mapping import MapImageLayer
+from arcgis._impl.common._utils import _validate_url
 
 try:
 
@@ -1432,7 +1433,14 @@ class NetworkDataset(_GISResource):
     """
 
     def __init__(self, url, gis=None):
+        if gis is None:
+            from arcgis.env import active_gis
+
+            gis = active_gis
+        if gis:
+            url = _validate_url(url, gis)
         super(NetworkDataset, self).__init__(url, gis)
+
         try:
             from ..gis.server._service._adminfactory import AdminServiceGen
 
@@ -1452,8 +1460,8 @@ class NetworkDataset(_GISResource):
             raise TypeError(
                 "item must be a type of Network Analysis Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        url = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def _load_layers(self):

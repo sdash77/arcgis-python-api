@@ -5,9 +5,9 @@ from arcgis.realtime.velocity.bigdata_analytics_manager import BigDataAnalytics
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
-    url = ""
-    username = ""
-    password = ""
+    url = "https://devext.arcgis.com"
+    username = "pythontest_a4iot"
+    password = "a4iot.arcgis"
     gis = GIS(url, username, password)
     SKIP_TESTS = False
     # Skip task start/stop/delete tests by default. Set as false to run
@@ -21,7 +21,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     bigdata_analytics = velocity.bigdata_analytics
     bigdata_analytics_item = bigdata_analytics.get(
-        "7a49c634c09f4e558f842db06c76a346"
+        "bf9c78e94fde40dabda67b6b4c8d3395"
     )
 
     # ----------------------------------------------------------------------
@@ -50,7 +50,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
 
         try:
             response = self.bigdata_analytics.get(
-                "7a49c634c09f4e558f842db06c76a346"
+                "bf9c78e94fde40dabda67b6b4c8d3395"
             )
             assert isinstance(response, BigDataAnalytics)
 
@@ -145,7 +145,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_delete_bigdata_analytics ----")
         try:
             bigdata_analytics_to_delete = self.bigdata_analytics.get(
-                "f34d3a7c899f4c178c9a0ff9dfc24bf9"
+                "3302845ecb68466ea4aa4f98b27ec51e"
             )
             try:
                 response = bigdata_analytics_to_delete.delete()

@@ -6,6 +6,8 @@ from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
 from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis._impl.common._utils import _validate_url
+from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -1509,7 +1511,8 @@ def find_closest_facilities(
     url = gis.properties.helperServices.asyncClosestFacility.url[
         : -len("/FindClosestFacilities")
     ]
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.find_closest_facilities.__annotations__.keys(),

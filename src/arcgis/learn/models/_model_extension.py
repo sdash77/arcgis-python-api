@@ -98,6 +98,13 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
+        kwargs['pretrained_backbone'] = pretrained_backbone
+        
         super().__init__(data, backbone, **kwargs)
         self._model_conf = model_conf()
         self._model_conf_class  = model_conf

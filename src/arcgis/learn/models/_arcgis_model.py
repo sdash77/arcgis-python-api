@@ -217,6 +217,10 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
+
+        if int(os.environ.get('RANK', 0)):
+            return
+            
         current = self.get_monitor_value()
         if isinstance(current, torch.Tensor):
             if current.is_cuda:
