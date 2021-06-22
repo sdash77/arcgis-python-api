@@ -1,4 +1,6 @@
 from urllib.parse import urlparse
+
+
 def validate_url(x):
     try:
         result = urlparse(x)
