@@ -11430,7 +11430,7 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example: Filters the raster collection based on user-defined extent.
+            # Usage Example: Filters the raster collection based on specified geometry.
 
             aoi = {
             "spatialReference": {"wkid": 32610},

@@ -79,7 +79,7 @@ def upload_imagery_to_agol_userstore(
                                                             gis=gis
                                                             )
 
-        # Following snippet executes the copy_raster() function on the uploaded imagery.
+        # Following snippet executes the copy_raster() function on the uploaded imagery to create imagery layer item on ArcGIS Online.
 
         copy_raster_op = copy_raster(input_raster=uploaded_imagery,
                                      raster_type_name="Raster Dataset",
