@@ -4431,11 +4431,11 @@ def build_footprints(
         # Usage Example 1: Determines the extent of every raster in the given image collection.
         # 'GEOMETRY' computation method refines the footprints
 
-        collection = gis.content.search("Imgcollect_footprints")[0]
+        collection = gis.content.search("my_img_collection")[0]
 
-        footprints = build_footprints(image_collection=collection.url,
-                                      computation_method='GEOMETRY',
-                                      gis=gis)
+        collection_url = build_footprints(image_collection=collection.url,
+                                          computation_method="GEOMETRY",
+                                          gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4498,9 +4498,10 @@ def build_overview(
 
         # Usage Example 1: This snippet is a quick implementation of the build_overview function.
 
-        collection = gis.content.search('my_img_collection')[0]
-        overview = build_overview(image_collection=collection.url,
-                                  gis=gis)
+        collection = gis.content.search("my_img_collection")[0]
+
+        collection_url = build_overview(image_collection=collection.url,
+                                        gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -4575,9 +4576,10 @@ def calculate_statistics(
 
         # Usage Example 1: This snippet calculates statistics for the given image collection.
 
-        collection = gis.content.search('my_img_collection')[0]
-        overview = calculate_statistics(image_collection=collection.url,
-                                        gis=gis)
+        collection = gis.content.search("my_img_collection")[0]
+
+        collection_url = calculate_statistics(image_collection=collection.url,
+                                              gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
