@@ -3,6 +3,7 @@ import logging
 from functools import lru_cache
 from arcgis.gis import GIS
 from arcgis import network
+from arcgis._impl.common._utils import _validate_url
 
 _log = logging.getLogger()
 
@@ -47,7 +48,8 @@ def _gp_travel_mode(gis: GIS, travel_mode: str = None) -> str:
 # -------------------------------------------------------------------------
 def _route_service_travel_modes(gis, travel_mode: str = None) -> str:
     """gets the default values from the routing service"""
-    route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+    url = _validate_url(gis.properties.helperServices.route.url)
+    route_service = network.RouteLayer(url, gis=gis)
     modes = route_service.retrieve_travel_modes()
     if travel_mode is None:
         travel_mode = modes["defaultTravelMode"]
@@ -79,8 +81,7 @@ def default_travel_mode(gis: GIS) -> str:
         output = network.analysis.get_travel_modes(gis=gis)
         return output.default_travel_mode
     except:
-        route_service = network.RouteLayer(
-            gis.properties.helperServices.route.url, gis=gis
-        )
+        url = _validate_url(gis.properties.helperServices.route.url)
+        route_service = network.RouteLayer(url, gis=gis)
         modes = route_service.retrieve_travel_modes()
         return modes["defaultTravelMode"]
