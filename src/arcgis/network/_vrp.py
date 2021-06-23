@@ -1096,6 +1096,14 @@ def edit_vehicle_routing_problem(
     url = gis.properties.helperServices.syncVRP.url[
         : -len("/EditVehicleRoutingProblem")
     ]
+    if isinstance(travel_mode, str):
+        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+    elif isinstance(travel_mode, dict):
+        params["travel_mode"] = json.dumps(travel_mode)
+    else:
+        travel_mode = _utils.find_travel_mode(
+            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
+        )
     url = _validate_url(url, gis)
     tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
