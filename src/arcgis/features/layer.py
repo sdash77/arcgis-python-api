@@ -2563,11 +2563,13 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
-            return self._con.post(path=edit_url, postdata=params)  # )
+            return self._con.post_multipart(path=edit_url, postdata=params)
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
                 params.pop("token", None)
-                return self._con.post(path=edit_url, postdata=params, add_token=False)
+                return self._con.post_multipart(
+                    path=edit_url, postdata=params, add_token=False
+                )
             else:
                 raise
 
