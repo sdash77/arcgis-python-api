@@ -316,8 +316,7 @@ class TabularDataObject(object):
         from numbers import Integral
         if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
             return False
-
-        if isinstance(int(labels[0]), (str, Integral)):
+        else:
             return True
 
     def _is_categorical(self, labels):
