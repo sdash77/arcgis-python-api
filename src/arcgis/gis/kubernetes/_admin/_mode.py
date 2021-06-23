@@ -1,4 +1,5 @@
 from ._base import _BaseKube
+from typing import Dict, Any, Optional
 
 ###########################################################################
 class Mode(_BaseKube):
@@ -15,7 +16,9 @@ class Mode(_BaseKube):
         return self.properties
 
     # ----------------------------------------------------------------------
-    def update(self, read_only: bool, description: str = None) -> dict:
+    def update(
+        self, read_only: bool, description: Optional[str] = None
+    ) -> Dict[str, str]:
         """
         Updates the site's mode to set it in read only
 

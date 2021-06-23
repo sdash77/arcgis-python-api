@@ -187,8 +187,17 @@ class EntityRecognizer:
 
     def lr_find(self, allow_plot=True):
         """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
-        Helps in choosing the optimum learning rate for training the model.
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
         """
         return self._model.lr_find(allow_plot=allow_plot)
 
@@ -197,6 +206,12 @@ class EntityRecognizer:
         Unfreezes the earlier layers of the model for fine-tuning.
         """
         self._model.unfreeze()
+    
+    def freeze(self):
+        """
+        Freeze up to last layer group to train only the last layer group of the model.
+        """
+        self._model.freeze()
 
     def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
@@ -425,7 +440,7 @@ class EntityRecognizer:
 
         return clas_object
 
-    def extract_entities(self, text_list, drop=True, batch_size=4):
+    def extract_entities(self, text_list, drop=True, batch_size=4, show_progress=True):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -449,12 +464,16 @@ class EntityRecognizer:
                                 at once. (Reduce it if getting CUDA Out of Memory
                                 Errors). Default is set to 4.
                                 Not applicable for models with `spaCy` backbone.
+        ---------------------   -------------------------------------------
+        show_progress           optional Bool. If set to True, will display a
+                                progress bar depicting the items processed so far.
+                                Applicable only when a list of text is passed
         =====================   ===========================================
 
         :returns: Pandas DataFrame
         """
 
-        return self._model.extract_entities(text_list, drop=drop, batch_size=batch_size)
+        return self._model.extract_entities(text_list, drop=drop, batch_size=batch_size, show_progress=show_progress)
 
     def show_results(self, ds_type='valid'):
         """

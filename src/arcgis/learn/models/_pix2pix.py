@@ -129,7 +129,10 @@ class Pix2Pix(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_pix2pix"
-        _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "Pix2Pix"
         _emd_template["n_channel"] = self._data.n_channel
         if self._data._is_multispectral:
