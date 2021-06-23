@@ -1551,6 +1551,13 @@ def copy_raster(
                                          raster_type_name="Tiled Imagery Layer", 
                                          gis = gis)
 
+        # Usage Example 9: This example copies the imagery layer and creates a new imagery layer item in the GIS. 
+        
+        raster = gis.content.search("raster_lyr")[0].layers[0]
+        copy_raster_op = copy_raster(input_raster=raster,
+                                     output_name="output_name",
+                                     gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
