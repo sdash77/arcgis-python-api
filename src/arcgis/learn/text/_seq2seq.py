@@ -269,7 +269,7 @@ class SequenceToSequence(ArcGISModel):
         """
         if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path)
+        return super().load(name_or_path, strict=False)
 
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
              save_optimizer=False, **kwargs):

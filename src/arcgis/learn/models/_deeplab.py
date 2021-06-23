@@ -28,7 +28,12 @@ try:
     from .._utils.classified_tiles import per_class_metrics
     from fastai.vision import flatten_model
     from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
-    from torchvision.models.segmentation.segmentation import _segm_resnet
+    #
+    try:
+        from torchvision.models.segmentation.segmentation import _segm_model
+    except:
+        from torchvision.models.segmentation.segmentation import _segm_resnet as _segm_model
+    #
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
@@ -126,12 +131,12 @@ def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_
     '''
     #model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
     
-    model = models.segmentation.segmentation._segm_resnet('deeplabv3',
-                                                         'resnet101',
-                                                         21,
-                                                         True,
-                                                         pretrained_backbone=False
-                                                        )
+    model = _segm_model('deeplabv3',
+                         'resnet101',
+                         21,
+                         True,
+                         pretrained_backbone=False
+                        )
     if pretrained:
         state_dict = models.utils.load_state_dict_from_url(
         models.segmentation.segmentation.model_urls['deeplabv3_resnet101_coco']
