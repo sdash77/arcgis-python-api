@@ -1493,7 +1493,7 @@ class ArcGISModel(object):
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics,
                           save_optimizer=save_optimizer, save_inference_file=save_inference_file, **kwargs)
 
-    def load(self, name_or_path):
+    def load(self, name_or_path, **kwargs):
         """
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
@@ -1524,7 +1524,7 @@ class ArcGISModel(object):
 
 
         try:
-            self.learn.load(name, purge=False)
+            self.learn.load(name, purge=False, **kwargs)
         except Exception as e:
             raise e
         finally:
