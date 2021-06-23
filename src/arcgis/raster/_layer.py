@@ -451,7 +451,7 @@ class ImageryLayer(Layer):
                                              **Note:** When working with datastore rasters or non image service urls, RasterRendering service
                                              should be enabled in the active GIS connection
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. GIS of the Raster object.
+    gis                                      Optional. GIS of the ImageryLayer object.
     ====================================     ====================================================================
 
     .. code-block:: python
