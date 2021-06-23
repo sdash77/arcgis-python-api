@@ -199,7 +199,7 @@ class ImageryLayerCacheManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None, merge=False, replace=False):
         """
-        The starts tile generation for ArcGIS Online.  The levels of detail
+        Starts tile generation for ArcGIS Online.  The levels of detail
         and the extent are needed to determine the area where tiles need
         to be rebuilt.
 
@@ -422,6 +422,64 @@ class _RasterRenderingService(Layer):
 
 
 class ImageryLayer(Layer):
+    """
+
+    The ImageryLayer class can be used to represent an image service resource as a layer. An ImageryLayer object retrieves and
+    displays data from image services. ImageryLayer allows you to and apply server defined or client-defined raster functions
+    (e.g. remap, colormap), and mosaic rules.
+
+    ImageryLayer objects can also be created using raster datasets or raster products present in datastore registered with the server/active GIS
+    (types: fileShares, cloudStores, rasterStores). To learn more about datastores, visit think `link <https://enterprise.arcgis.com/en/portal/latest/administer/windows/what-is-arcgis-data-store.htm>`__.
+
+    Usage: ``arcgis.raster.ImageryLayer(url, gis=gis)``
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    url                                      Required string. The input raster path
+
+                                             Example:
+
+                                                url = "https://myserver/arcgis/rest/services/ImageServiceName/ImageServer"
+
+                                                url = "/fileShares/file_share_name/path/to/raster"
+
+                                                url = "/cloudStores/cloud_store_name/path/to/raster"
+
+                                                url = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif"
+
+                                             **Note:** When working with datastore rasters or non image service urls, RasterRendering service
+                                             should be enabled in the active GIS connection
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional. GIS of the Raster object.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Example Usage
+
+        # Imagery layer items are available as content in the GIS. Items can be searched using gis.content.search()
+        # This snippet creates an imagery layer using the 'layers' property of the searched Imagery Layer Item
+        img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+
+        # Create an imagery layer from an image service url
+        img_lyr = ImageryLayer("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer", gis=gis)
+
+        # Create an imagery layer from a .tif file present in user's registered fileShare datastore
+        # (Requires RasterRendering service to be enabled in the active GIS)
+        img_lyr = ImageryLayer("/fileShares/data/Amberg.tif", gis=gis)
+
+        # Create an imagery layer from a publicly accesible Cloud-Optimized GeoTIFF
+        # (Requires RasterRendering service to be enabled in the active GIS)
+        img_lyr = ImageryLayer("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
+                                gis=gis)
+
+        # Overlay an imagery layer on the 'MapView' widget
+        map = gis.map()
+        map.add_layer(img_lyr)
+
+    """
+
     _ilm = None
     rendering_service_object = None
 
@@ -558,7 +616,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def catalog_item(self, id):
         """
-        The Raster Catalog Item property represents a single raster catalog item
+        catalog_item() returns a single raster catalog item associated with the specified id
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -566,6 +624,8 @@ class ImageryLayer(Layer):
         id                    required integer. The id is the 'raster id'.
         =================     ====================================================================
 
+        :returns:
+            Raster Catalog Item associated with the id
         """
         if self._datastore_raster:
             raise RuntimeError(
@@ -610,6 +670,7 @@ class ImageryLayer(Layer):
 
     @classmethod
     def fromitem(cls, item):
+        """Create Imagery Layer from GIS Item"""
         if not item.type == "Image Service":
             raise TypeError("item must be a type of Image Service, not " + item.type)
 
@@ -817,7 +878,7 @@ class ImageryLayer(Layer):
     def multidimensional_info(self):
         """
         The multidimensional_info property returns multidimensional
-        informtion of the Layer. This property is supported if the
+        information of the Layer. This property is supported if the
         hasMultidimensions property of the Layer is true.
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
@@ -856,20 +917,24 @@ class ImageryLayer(Layer):
                               (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
                               valid entry.
-                              
-                              .. note :: An image coordinate system ID can be specified
-                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                              conflicts with wkid
+
+                              .. note::
+
+                                    An image coordinate system ID can be specified
+                                    using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                    conflicts with wkid
         -----------------     --------------------------------------------------------------------
         out_sr                required string, dictionary, SpatialReference.  The in_sr can accept a
                               multitudes of values.  These can be a WKID, image coordinate system
                               (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
                               valid entry.
-                              
-                              .. note :: An image coordinate system ID can be specified
-                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                              conflicts with wkid
+
+                              .. note::
+
+                                    An image coordinate system ID can be specified
+                                    using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                    conflicts with wkid
         =================     ====================================================================
 
         :returns: dictionary
@@ -2113,7 +2178,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def get_download_info(self, raster_ids, polygon=None, extent=None, out_format=None):
         """
-        The Download Rasters operation returns information (the file ID)
+        The get_download_info() operation returns information (the file ID)
         that can be used to download the raw raster files that are
         associated with a specified set of rasters in the raster catalog.
 
@@ -2139,6 +2204,8 @@ class ImageryLayer(Layer):
                               ENVI, JP2, GIF, BMP, and PNG.
                               Example: out_format='TIFF'
         =================     ====================================================================
+
+        :returns: dictionary
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -2170,8 +2237,8 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def get_raster_file(self, download_info, out_folder=None):
         """
-        The Raster File method represents a single raw raster file. The
-        download_info is obtained by using the get_download_info operation.
+        The get_raster_file() method returns a list of raw raster files. The
+        download_info is obtained by using the get_download_info() operation.
 
 
         =================     ====================================================================
@@ -2253,10 +2320,12 @@ class ImageryLayer(Layer):
                               image coordinate system (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
                               valid entry.
-                              
-                              **Note:** An image coordinate system ID can be specified
-                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
-                              conflicts with wkid
+
+                              .. note::
+
+                                    An image coordinate system ID can be specified
+                                    using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                    conflicts with wkid
         =================     ====================================================================
 
         :returns: dictionary, The result of this operation includes x and y values for the column
@@ -2715,8 +2784,8 @@ class ImageryLayer(Layer):
         process_as_multidimensional=False,
     ):
         """
-        The result of this operation contains both statistics and histograms
-        computed from the given extent.
+        The result of this operation contains both statistics and histograms computed for the imagery layer
+        from the given extent.
 
         ============================    ====================================================================
         **Argument**                    **Description**
@@ -2779,22 +2848,43 @@ class ImageryLayer(Layer):
 
         .. code-block:: python
 
-            # Usage Example 1: Compute the stats and histogram at a point for a time instant.
+            # Usage Example 1: Compute the stats and histograms in the specified area of interest for a time instant.
 
-            comp_stats_hist_01 = image_service.compute_stats_and_histograms(geometry=pt,
-                                                                            rendering_rule={"rasterFunction":None},
-                                                                            time="1326650400000")
+            aoi = {
+            "spatialReference": {"wkid": 32610},
+            "xmax": 725000,
+            "xmin": 720000,
+            "ymax": 4300000,
+            "ymin": 4250000,
+            }
+
+            aoi_geometry = Geometry(aoi)
+
+            comp_stats_hist_01 = img_lyr.compute_stats_and_histograms(geometry=aoi,
+                                                                      rendering_rule={"rasterFunction":None},
+                                                                      time="1326650400000")
 
         .. code-block:: python
 
-            # Usage Example 2: Compute the stats and histogram at a point for a time extent.
-            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+            # Usage Example 2: Compute the stats and histograms in the specified area of interest for a time extent.
 
+            aoi = {
+            "spatialReference": {"wkid": 32610},
+            "xmax": 725000,
+            "xmin": 720000,
+            "ymax": 4300000,
+            "ymin": 4250000,
+            }
+
+            aoi_geometry = Geometry(aoi)
+
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
             start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
             end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
-            comp_stats_hist_02 = image_service.compute_stats_and_histograms(geometry=pt,
-                                                                            rendering_rule={"rasterFunction":None},
-                                                                            time=[start,end])
+            
+            comp_stats_hist_02 = img_lyr.compute_stats_and_histograms(geometry=aoi,
+                                                                      rendering_rule={"rasterFunction":None},
+                                                                      time=[start,end])
 
         """
         if self.tiles_only:
@@ -3099,10 +3189,8 @@ class ImageryLayer(Layer):
         process_as_multidimensional=False,
     ):
         """
-        The compute_histograms operation is performed on an imagery layer
-        method. This operation is supported by any imagery layer published with
-        mosaic datasets or a raster dataset. The result of this operation contains
-        both statistics and histograms computed from the given extent.
+        The result of this operation is an array of histograms for all raster bands computed for the imagery
+        layer from the given extent
 
         ============================    ====================================================================
         **Arguments**                   **Description**
@@ -3127,7 +3215,7 @@ class ImageryLayer(Layer):
                                         contains functions that alter the number of bands, the response will
                                         indicate a correct bandCount value.
         ----------------------------    --------------------------------------------------------------------
-        pixel_size                      optional list or dictionary. The pixel level being used (or the
+        pixel_size                      optional string or dictionary. The pixel level being used (or the
                                         resolution being looked at). If pixel size is not specified, then
                                         pixel_size will default to the base resolution of the dataset.
                                         The structure of the pixel_size parameter is the same as the
@@ -3173,22 +3261,43 @@ class ImageryLayer(Layer):
 
         .. code-block:: python
 
-            # Usage Example 1: Compute the histogram at a point for a time instant.
+            # Usage Example 1: Compute the histograms in the specified area of interest for a time instant.
+            
+            aoi = {
+            "spatialReference": {"wkid": 32610},
+            "xmax": 725000,
+            "xmin": 720000,
+            "ymax": 4300000,
+            "ymin": 4250000,
+            }
 
-            comp_hist_01 = image_service.compute_histograms(geometry=pt,
-                                                            rendering_rule={"rasterFunction":None},
-                                                            time="1326650400000")
+            aoi_geometry = Geometry(aoi)
+
+            comp_hist_01 = img_lyr.compute_histograms(geometry=aoi,
+                                                      rendering_rule={"rasterFunction":None},
+                                                      time="1326650400000")
 
         .. code-block:: python
 
-            # Usage Example 2: Compute the histogram at a point for a time extent.
-            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+            # Usage Example 2: Compute the histograms in the specified area of interest for a time extent.
 
+            aoi = {
+            "spatialReference": {"wkid": 32610},
+            "xmax": 725000,
+            "xmin": 720000,
+            "ymax": 4300000,
+            "ymin": 4250000,
+            }
+
+            aoi_geometry = Geometry(aoi)
+
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
             start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
             end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
-            comp_hist_02 = image_service.compute_histograms(geometry=pt,
-                                                            rendering_rule={"rasterFunction":None},
-                                                            time=[start, end])
+            
+            comp_hist_02 = img_lyr.compute_histograms(geometry=aoi,
+                                                      rendering_rule={"rasterFunction":None},
+                                                      time=[start, end])
 
         """
         if self.tiles_only:
@@ -3826,10 +3935,12 @@ class ImageryLayer(Layer):
 
     @property
     def mosaic_rule(self):
-        """The mosaic rule used by the imagery layer to define:
-        * The selection of rasters that will participate in the mosaic
-        * The mosaic method, e.g. how the selected rasters are ordered.
-        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
+        """
+        The mosaic rule used by the imagery layer to define:
+
+                - The selection of rasters that will participate in the mosaic
+                - The mosaic method, e.g. how the selected rasters are ordered.
+                - The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
         Set by calling the mosaic_by or filter_by methods on the layer
         """
@@ -6095,8 +6206,8 @@ class Raster:
     Usage: ``arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)``
 
     The Raster class can work with arcpy engine or image server engine. By default,
-    if the path is an image service url, then the Raster class uses the image server engine
-    for processing and if it is a local path it uses the arcpy engine.
+    if the path is a local path, then the Raster class uses the arcpy engine
+    else it will use image_server engine.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -6107,6 +6218,15 @@ class Raster:
                                                 path = r"/path/to/raster"
 
                                                 path = "https://myserver/arcgis/rest/services/ImageServiceName/ImageServer"
+
+                                                path = "/fileShares/file_share_name/path/to/raster"
+
+                                                path = "/cloudStores/cloud_store_name/path/to/raster"
+
+                                                path = "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif"
+
+                                             **Note:** When working with datastore rasters or non image service urls, RasterRendering service
+                                             should be enabled in the active GIS connection
     ------------------------------------     --------------------------------------------------------------------
     is_multidimensional                      Optional boolean. Determines whether the input raster will be
                                              treated as multidimensional.
@@ -6155,12 +6275,22 @@ class Raster:
 
         # Example Usage
 
-        # Overlay an image service on the 'MapView' widget
         map = gis.map()
 
-        service_url = gis.content.search("my_img_service")[0].url
+        # Overlay an image service on the 'MapView' widget
+        service_url = gis.content.search("my_image_service", item_type="Imagery Layer")[0].url
         raster = Raster(path=service_url, gis=gis)
         map.add_layer(raster)
+
+        # Overlay .tif file present in user's registered fileShare datastore
+        # (Requires RasterRendering service to be enabled in the active GIS)
+        raster = Raster("/fileShares/data/Amberg.tif", gis=gis)
+        map.add_layer(raster)
+
+        # Overlay a publicly accesible Cloud-Optimized GeoTIFF
+        # (Requires RasterRendering service to be enabled in the active GIS)
+        raster = Raster("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
+                        gis=gis)
 
         # Overlay a local .tif file
         raster = Raster(r"./data/Amberg.tif")
@@ -6278,8 +6408,8 @@ class Raster:
         """When displaying a 1 band raster in a :class:`~arcgis.widgets.MapView`
         widget, what matplotlib colormap to apply to the raster.
 
-        Value must be a `str`. See `~arcgis.mapping.display_colormaps()` for
-        a list of compatible values.
+        Value must be a `str`. See `arcgis.mapping.symbol.display_colormaps() <https://developers.arcgis.com/python/api-reference/arcgis.mapping.toc.html#arcgis.mapping.symbol.display_colormaps>`__
+        for a list of compatible values.
         """
         return self._cmap
 
@@ -6977,7 +7107,7 @@ class Raster:
 
         .. code-block:: python
 
-            # Usage Example: Adds a new dimension to the multidimensional raster
+            # Usage Example: Adds a new dimension to the specified variable of multidimensional raster
 
             raster1 = Raster(r"/path/to/mult_dim.crf")
 
@@ -7533,9 +7663,9 @@ class Raster:
 
         .. tip::
         
-        When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
-        raster function on the Raster object for slicing the data along defined variables and dimensions.
-        `plot_histograms()` can then be used on the output raster returned upon applying the filter.
+            When working with multidimensional rasters, you can use the `multidimensional_filter() <https://developers.arcgis.com/python/api-reference/arcgis.raster.functions.html#multidimensional-filter>`__
+            raster function on the Raster object for slicing the data along defined variables and dimensions.
+            `plot_histograms()` can then be used on the output raster returned upon applying the filter.
         
         :returns: None
 
@@ -7781,7 +7911,7 @@ class Raster:
 
             # Usage Example 1: Draws the function chain applied on the Raster object created from an Image service.
 
-            service_url = gis.content.search("my_img_service")[0].url
+            service_url = gis.content.search("my_image_service", item_type="Imagery Layer")[0].url
             raster = Raster(service_url, gis=gis)
             grayscale_raster = grayscale(raster=raster)
             invert_raster = boolean_not(rasters=[grayscale_raster])
@@ -10462,7 +10592,7 @@ class RasterCollection:
     .. code-block:: python
 
         # Usage Example 1: Creates a raster collection from image service url
-        service_url = gis.content.search('my_rasters')[0].url
+        service_url = gis.content.search('my_rasters', item_type="Imagery Layer")[0].url
 
         rc = RasterCollection(rasters=service_url, gis=gis)
 
@@ -11133,7 +11263,7 @@ class RasterCollection:
         ------------------------------------     --------------------------------------------------------------------
         date_time_format                         Optional string. the time format that is used to format the time field values.
                                                  Please ref the python date time standard for this argument (`See this <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior>`__).
-                                                 
+
                                                  Default is None and this means using the Pro standard time format
                                                  '%Y-%m-%dT%H:%M:%S' and ignoring the following sub-second.
         ------------------------------------     --------------------------------------------------------------------
@@ -14465,7 +14595,7 @@ class RasterCatalogItem(object):
         compression=75,
     ):
         """
-        The Raster Image method returns a composite image for a single
+        The image() method returns a composite image for a single
         raster catalog item. You can use this method for generating
         dynamic images based on a single catalog item.
         This method provides information about the exported image, such

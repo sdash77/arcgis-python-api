@@ -69,17 +69,17 @@ def upload_imagery_to_agol_userstore(
 
     .. code-block:: python
 
-        # Usage Example 1: Generates an expirable direct access url and uploads files to the user's raster store.
+        # Usage Example: Generates an expirable direct access url and uploads files to the user's raster store.
 
-        sas_url = generate_direct_access_url(180, gis=gis)
+        sas_url = generate_direct_access_url(expiration=180, gis=gis)
 
-        uploaded_imagery = upload_imagery_to_agol_userstore(files=r"\\data\\folder_crf", 
+        uploaded_imagery = upload_imagery_to_agol_userstore(files=r"/path/to/data", 
                                                             direct_access_url=sas_url,
                                                             upload_properties={"displayProgress":True},
                                                             gis=gis
                                                             )
 
-        # Following snippet executes the copy_raster function on the uploaded imagery.
+        # Following snippet executes the copy_raster() function on the uploaded imagery.
 
         copy_raster_op = copy_raster(input_raster=uploaded_imagery,
                                      raster_type_name="Raster Dataset",
