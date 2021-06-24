@@ -26,25 +26,37 @@ except:
     class BaseSpatialPandas:
         pass
 
+
 from arcgis.gis import GIS
 from six import PY3
 from six import string_types
 from arcgis.geometry import _types
+
 GEO_COLUMN_DEFAULT = "SHAPE"
-GEOM_TYPES = (_types.Point, _types.MultiPoint,
-              _types.Polygon,_types.Geometry,
-              _types.Polyline,
-              _types.BaseGeometry)
+GEOM_TYPES = (
+    _types.Point,
+    _types.MultiPoint,
+    _types.Polygon,
+    _types.Geometry,
+    _types.Polyline,
+    _types.BaseGeometry,
+)
 
 try:
     import arcpy
     from arcpy import Geometry
+
     HASARCPY = True
     HAS_ARCPY = True
-    GEOM_TYPES = [arcpy.Point, arcpy.Polygon,
-                  arcpy.Geometry, arcpy.PointGeometry,
-                  arcpy.Polyline, arcpy.Multipatch,
-                  arcpy.Multipoint] + list(GEOM_TYPES)
+    GEOM_TYPES = [
+        arcpy.Point,
+        arcpy.Polygon,
+        arcpy.Geometry,
+        arcpy.PointGeometry,
+        arcpy.Polyline,
+        arcpy.Multipatch,
+        arcpy.Multipoint,
+    ] + list(GEOM_TYPES)
     GEOM_TYPES = tuple(GEOM_TYPES)
 except:
     # warning.warn("Missing Pro will cause functionality to be limited")
@@ -53,99 +65,112 @@ except:
 try:
     import shapely
     from shapely.geometry.base import BaseGeometry as _BaseGeometry
+
     GEOM_TYPES = [_BaseGeometry] + list(GEOM_TYPES)
     GEOM_TYPES = tuple(GEOM_TYPES)
     HASSHAPELY = True
 except:
     HASSHAPELY = False
 
+
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
-        **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
-    
-        A Spatial Dataframe is an object to manipulate, manage and translate
-        data into new forms of information for users.
+    **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
 
-        Functionality of the Spatial DataFrame is determined by the Geometry Engine
-        available to the object at creation.  It will first leverage the arcpy
-        geometry engine, then shapely, then it will create the geometry objects
-        without any engine.
+    A Spatial Dataframe is an object to manipulate, manage and translate
+    data into new forms of information for users.
 
-        **Scenerios**
+    Functionality of the Spatial DataFrame is determined by the Geometry Engine
+    available to the object at creation.  It will first leverage the arcpy
+    geometry engine, then shapely, then it will create the geometry objects
+    without any engine.
 
-        =================   ======================================================
-        **Engine Type**     **Functionality**
-        -----------------   ------------------------------------------------------
-        ArcPy               Users will have the full functionality provided by the
-                            API.
-        -----------------   ------------------------------------------------------
-        Shapely             Users get a sub-set of operations, and all properties.
+    **Scenerios**
 
-                            :Valid Properties:
+    =================   ======================================================
+    **Engine Type**     **Functionality**
+    -----------------   ------------------------------------------------------
+    ArcPy               Users will have the full functionality provided by the
+                        API.
+    -----------------   ------------------------------------------------------
+    Shapely             Users get a sub-set of operations, and all properties.
 
-                            - JSON
-                            - WKT
-                            - WKB
-                            - area
-                            - centroid
-                            - extent
-                            - first_point
-                            - hull_rectangle
-                            - is_multipart
-                            - label_point
-                            - last_point
-                            - length
-                            - length3D
-                            - part_count
-                            - point_count
-                            - true_centroid
+                        :Valid Properties:
 
-                            :Valid Functions:
+                        - JSON
+                        - WKT
+                        - WKB
+                        - area
+                        - centroid
+                        - extent
+                        - first_point
+                        - hull_rectangle
+                        - is_multipart
+                        - label_point
+                        - last_point
+                        - length
+                        - length3D
+                        - part_count
+                        - point_count
+                        - true_centroid
 
-                            - boundary
-                            - buffer
-                            - contains
-                            - convex_hull
-                            - crosses
-                            - difference
-                            - disjoint
-                            - distance_to
-                            - equals
-                            - generalize
-                            - intersect
-                            - overlaps
-                            - symmetric_difference
-                            - touches
-                            - union
-                            - within
+                        :Valid Functions:
 
-                            Everything else will return None
+                        - boundary
+                        - buffer
+                        - contains
+                        - convex_hull
+                        - crosses
+                        - difference
+                        - disjoint
+                        - distance_to
+                        - equals
+                        - generalize
+                        - intersect
+                        - overlaps
+                        - symmetric_difference
+                        - touches
+                        - union
+                        - within
 
-        -----------------   ------------------------------------------------------
-        No Engine           Values will return None by default
-        =================   ======================================================
+                        Everything else will return None
+
+    -----------------   ------------------------------------------------------
+    No Engine           Values will return None by default
+    =================   ======================================================
 
 
 
-        Required Parameters:
-          None
-        Optional:
-          :param data: panda's dataframe containing attribute information
-          :param geometry: list/array/geoseries of arcgis.geometry objects
-          :param sr: spatial reference of the dataframe.  This can be the factory
-           code, WKT string, arcpy.SpatialReference object, or
-           arcgis.SpatailReference object.
-          :param gis: passing a gis.GIS object set to Pro will ensure arcpy is
-           installed and a full swatch of functionality is available to
-           the end user.
+    Required Parameters:
+      None
+    Optional:
+      :param data: panda's dataframe containing attribute information
+      :param geometry: list/array/geoseries of arcgis.geometry objects
+      :param sr: spatial reference of the dataframe.  This can be the factory
+       code, WKT string, arcpy.SpatialReference object, or
+       arcgis.SpatailReference object.
+      :param gis: passing a gis.GIS object set to Pro will ensure arcpy is
+       installed and a full swatch of functionality is available to
+       the end user.
     """
-    _internal_names = ['_data', '_cacher', '_item_cache', '_cache',
-                       'is_copy', '_subtyp', '_index',
-                       '_default_kind', '_default_fill_value', '_metadata',
-                       '__array_struct__', '__array_interface__']
-    _metadata = ['sr', '_geometry_column_name', '_gis']
+
+    _internal_names = [
+        "_data",
+        "_cacher",
+        "_item_cache",
+        "_cache",
+        "is_copy",
+        "_subtyp",
+        "_index",
+        "_default_kind",
+        "_default_fill_value",
+        "_metadata",
+        "__array_struct__",
+        "__array_interface__",
+    ]
+    _metadata = ["sr", "_geometry_column_name", "_gis"]
     _geometry_column_name = GEO_COLUMN_DEFAULT
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
         """
 
@@ -220,52 +245,71 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sdf = SpatialDataFrame.from_layer(feature_layer)
 
         """
-        warnings.warn("SpatialDataFrame has been deprecated.  Please switch to the GeoAccessor/GeoSeriesAccessor.")
+        warnings.warn(
+            "SpatialDataFrame has been deprecated.  Please switch to the GeoAccessor/GeoSeriesAccessor."
+        )
 
         if not HAS_PANDAS:
             warnings.warn("pandas and numpy are required for SpatialDataFrame.")
             warnings.warn("Please install them.")
-        gis = kwargs.pop('gis', arcgis.env.active_gis)
+        gis = kwargs.pop("gis", arcgis.env.active_gis)
         self._gis = gis
-        sr = self._sr(kwargs.pop('sr', 4326))
-        geometry = kwargs.pop('geometry', None)
+        sr = self._sr(kwargs.pop("sr", 4326))
+        geometry = kwargs.pop("geometry", None)
         super(SpatialDataFrame, self).__init__(*args, **kwargs)
 
         if isinstance(sr, _types.SpatialReference):
             self.sr = sr
         elif isinstance(sr, integer_types):
-            self.sr = _types.SpatialReference({'wkid' : sr})
+            self.sr = _types.SpatialReference({"wkid": sr})
         elif isinstance(sr, string_types):
-            self.sr = _types.SpatialReference({'wkt' : sr})
-        elif hasattr(sr, 'factoryCode'):
-            self.sr = _types.SpatialReference({'wkid' : sr.factoryCode})
-        elif hasattr(sr, 'exportToString'):
-            self.sr = _types.SpatialReference({'wkt' : sr.exportToString()})
+            self.sr = _types.SpatialReference({"wkt": sr})
+        elif hasattr(sr, "factoryCode"):
+            self.sr = _types.SpatialReference({"wkid": sr.factoryCode})
+        elif hasattr(sr, "exportToString"):
+            self.sr = _types.SpatialReference({"wkt": sr.exportToString()})
         elif not sr is None:
-            raise ValueError("sr (spatial reference) must be a _types.SpatialReference object")
+            raise ValueError(
+                "sr (spatial reference) must be a _types.SpatialReference object"
+            )
         else:
             self.sr = None
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
-        elif 'SHAPE' in self.columns:
-            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)) and self['SHAPE'].dtype.name == 'object':
-                if all(isinstance(x, _types.Geometry) for x in self[self._geometry_column_name]) == False:
-                    geometry = [_types.Geometry(g) for g in self['SHAPE'].tolist()]
-                    del self['SHAPE']
+        elif "SHAPE" in self.columns:
+            if (
+                isinstance(self["SHAPE"], (GeoSeries, pd.Series))
+                and self["SHAPE"].dtype.name == "object"
+            ):
+                if (
+                    all(
+                        isinstance(x, _types.Geometry)
+                        for x in self[self._geometry_column_name]
+                    )
+                    == False
+                ):
+                    geometry = [_types.Geometry(g) for g in self["SHAPE"].tolist()]
+                    del self["SHAPE"]
                     self.set_geometry(geometry, inplace=True)
         if self.sr is None:
             try:
-                self.sr = self.geometry[self.geometry.first_valid_index()].spatialReference
+                self.sr = self.geometry[
+                    self.geometry.first_valid_index()
+                ].spatialReference
             except:
                 self.sr = self._sr(sr)
         self._delete_index()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def _constructor(self):
         """constructor for class as per Pandas' github page"""
         return SpatialDataFrame
-    #----------------------------------------------------------------------
-    def info(self, verbose=None, buf=None, max_cols=None, memory_usage=None, null_counts=None):
+
+    # ----------------------------------------------------------------------
+    def info(
+        self, verbose=None, buf=None, max_cols=None, memory_usage=None, null_counts=None
+    ):
         """
         Concise summary of a DataFrame.
 
@@ -297,9 +341,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         cols = list(self.columns)
         cols.pop(cols.index("SHAPE"))
-        return self[cols].info(verbose, buf, max_cols,
-                               memory_usage, null_counts)
-    #----------------------------------------------------------------------
+        return self[cols].info(verbose, buf, max_cols, memory_usage, null_counts)
+
+    # ----------------------------------------------------------------------
     def _sr(self, sr):
         """sets the spatial reference"""
         if isinstance(sr, _types.SpatialReference):
@@ -307,79 +351,88 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         elif isinstance(sr, dict):
             return _types.SpatialReference(sr)
         elif isinstance(sr, integer_types):
-            return _types.SpatialReference({'wkid' : sr})
+            return _types.SpatialReference({"wkid": sr})
         elif isinstance(sr, string_types):
-            return _types.SpatialReference({'wkt' : sr})
-        elif hasattr(sr, 'factoryCode'):
-            return _types.SpatialReference({'wkid' : sr.factoryCode})
-        elif hasattr(sr, 'exportToString'):
-            return _types.SpatialReference({'wkt' : sr.exportToString()})
+            return _types.SpatialReference({"wkt": sr})
+        elif hasattr(sr, "factoryCode"):
+            return _types.SpatialReference({"wkid": sr.factoryCode})
+        elif hasattr(sr, "exportToString"):
+            return _types.SpatialReference({"wkt": sr.exportToString()})
         elif not sr is None:
-            raise ValueError("sr (spatial reference) must be a _types.SpatialReference object")
+            raise ValueError(
+                "sr (spatial reference) must be a _types.SpatialReference object"
+            )
         else:
             return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def __feature_set__(self):
         """returns a dictionary representation of an Esri FeatureSet"""
         import numpy as np
         import datetime
         import time
+
         cols_norm = [col for col in self.columns]
         cols_lower = [col.lower() for col in self.columns]
         fields = []
         features = []
         date_fields = []
         _geom_types = {
-            arcgis.geometry._types.Point :  "esriGeometryPoint",
-            arcgis.geometry._types.Polyline : "esriGeometryPolyline",
-            arcgis.geometry._types.MultiPoint : "esriGeometryMultipoint",
-            arcgis.geometry._types.Polygon : "esriGeometryPolygon"
+            arcgis.geometry._types.Point: "esriGeometryPoint",
+            arcgis.geometry._types.Polyline: "esriGeometryPolyline",
+            arcgis.geometry._types.MultiPoint: "esriGeometryMultipoint",
+            arcgis.geometry._types.Polygon: "esriGeometryPolygon",
         }
         if self.sr is None:
-            sr = {'wkid' : 4326}
+            sr = {"wkid": 4326}
         else:
             sr = self.sr
         fs = {
-            "objectIdFieldName" : "",
-            "globalIdFieldName" : "",
-            "displayFieldName" : "",
-            "geometryType" : _geom_types[type(self.geometry[self.geometry.first_valid_index()])],
-            "spatialReference" : sr,
-            "fields" : [],
-            "features" : []
+            "objectIdFieldName": "",
+            "globalIdFieldName": "",
+            "displayFieldName": "",
+            "geometryType": _geom_types[
+                type(self.geometry[self.geometry.first_valid_index()])
+            ],
+            "spatialReference": sr,
+            "fields": [],
+            "features": [],
         }
-        if 'objectid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
-        elif 'fid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
-        elif 'oid' in cols_lower:
-            fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
-            fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
+        if "objectid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
+        elif "fid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
+        elif "oid" in cols_lower:
+            fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
+            fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
         else:
-            self['OBJECTID'] = list(range(1, self.shape[0] + 1))
+            self["OBJECTID"] = list(range(1, self.shape[0] + 1))
             res = self.__feature_set__
-            del self['OBJECTID']
+            del self["OBJECTID"]
             return res
-        if 'objectIdFieldName' in fs:
-            fields.append({
-                "name" : fs['objectIdFieldName'],
-                "type" : "esriFieldTypeOID",
-                "alias" : fs['objectIdFieldName']
-            })
-            cols_norm.pop(cols_norm.index(fs['objectIdFieldName']))
-        if 'globalIdFieldName' in fs and len(fs['globalIdFieldName']) > 0:
-            fields.append({
-                "name" : fs['globalIdFieldName'],
-                "type" : "esriFieldTypeGlobalID",
-                "alias" : fs['globalIdFieldName']
-            })
-            cols_norm.pop(cols_norm.index(fs['globalIdFieldName']))
-        elif 'globalIdFieldName' in fs and \
-             len(fs['globalIdFieldName']) == 0:
-            del fs['globalIdFieldName']
+        if "objectIdFieldName" in fs:
+            fields.append(
+                {
+                    "name": fs["objectIdFieldName"],
+                    "type": "esriFieldTypeOID",
+                    "alias": fs["objectIdFieldName"],
+                }
+            )
+            cols_norm.pop(cols_norm.index(fs["objectIdFieldName"]))
+        if "globalIdFieldName" in fs and len(fs["globalIdFieldName"]) > 0:
+            fields.append(
+                {
+                    "name": fs["globalIdFieldName"],
+                    "type": "esriFieldTypeGlobalID",
+                    "alias": fs["globalIdFieldName"],
+                }
+            )
+            cols_norm.pop(cols_norm.index(fs["globalIdFieldName"]))
+        elif "globalIdFieldName" in fs and len(fs["globalIdFieldName"]) == 0:
+            del fs["globalIdFieldName"]
         if self._geometry_column_name in cols_norm:
             cols_norm.pop(cols_norm.index(self._geometry_column_name))
         for col in cols_norm:
@@ -390,53 +443,42 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 col_val = ""
             if isinstance(col_val, (str, np.str)):
                 l = self[col].str.len().max()
-                if str(l) == 'nan':
+                if str(l) == "nan":
                     l = 255
 
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeString",
-                    "length" : int(l),
-                    "alias" : col
-                })
-                if fs['displayFieldName'] == "":
-                    fs['displayFieldName'] = col
-            elif isinstance(col_val, (datetime.datetime,
-                                      pd.Timestamp,
-                                      np.datetime64,
-                                      pd.datetime)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeDate",
-                    "alias" : col
-                })
+                fields.append(
+                    {
+                        "name": col,
+                        "type": "esriFieldTypeString",
+                        "length": int(l),
+                        "alias": col,
+                    }
+                )
+                if fs["displayFieldName"] == "":
+                    fs["displayFieldName"] = col
+            elif isinstance(
+                col_val, (datetime.datetime, pd.Timestamp, np.datetime64, pd.datetime)
+            ):
+                fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
                 date_fields.append(col)
             elif isinstance(col_val, (np.int32, np.int16, np.int8)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeSmallInteger",
-                    "alias" : col
-                })
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
+                )
             elif isinstance(col_val, (int, np.int, np.int64)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeInteger",
-                    "alias" : col
-                })
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
+                )
             elif isinstance(col_val, (float, np.float64)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeDouble",
-                    "alias" : col
-                })
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
+                )
             elif isinstance(col_val, (np.float32)):
-                fields.append({
-                    "name" : col,
-                    "type" : "esriFieldTypeSingle",
-                    "alias" : col
-                })
-        fs['fields'] = fields
-        for row in self.to_dict('records'):
+                fields.append(
+                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
+                )
+        fs["fields"] = fields
+        for row in self.to_dict("records"):
             geom = {}
             if self._geometry_column_name in row:
                 geom = row[self._geometry_column_name]
@@ -446,25 +488,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
                 except:
                     row[f] = None
-            features.append(
-                {
-                    "geometry" : dict(geom),
-                    "attributes" : row
-                }
-            )
+            features.append({"geometry": dict(geom), "attributes": row})
             del row
             del geom
-        fs['features'] = features
+        fs["features"] = features
         return fs
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
         """returns the object as an Feature Collection JSON string"""
         if HASARCPY:
-            template = {
-                "type": "FeatureCollection",
-                "features": []
-            }
+            template = {"type": "FeatureCollection", "features": []}
             geom_type = self.geometry_type
             if geom_type.lower() == "point":
                 geom_type = "Point"
@@ -473,67 +508,79 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             elif geom_type.lower() == "polygon":
                 geom_type = "Polygon"
             df_copy = self.copy(deep=True)
-            df_copy['geom_json'] = self.geometry.JSON
-            df_copy['SHAPE'] = df_copy['geom_json']
-            del df_copy['geom_json']
+            df_copy["geom_json"] = self.geometry.JSON
+            df_copy["SHAPE"] = df_copy["geom_json"]
+            del df_copy["geom_json"]
             for index, row in df_copy.iterrows():
-                geom = row['SHAPE']
-                del row['SHAPE']
-                template['features'].append(
-                    {"type" : geom_type,
-                     "geometry" : pd.io.json.loads(geom),
-                     "attributes":row}
+                geom = row["SHAPE"]
+                del row["SHAPE"]
+                template["features"].append(
+                    {
+                        "type": geom_type,
+                        "geometry": pd.io.json.loads(geom),
+                        "attributes": row,
+                    }
                 )
             return pd.io.json.dumps(template)
+
     @property
     def geoextent(self):
         """returns the extent of the spatial dataframe"""
         return self.series_extent
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __getstate__(self):
         meta = {k: getattr(self, k, None) for k in self._metadata}
-        return dict(_data=self._data, _typ=self._typ,
-                    _metadata=self._metadata, **meta)
-    #----------------------------------------------------------------------
+        return dict(_data=self._data, _typ=self._typ, _metadata=self._metadata, **meta)
+
+    # ----------------------------------------------------------------------
     def __setattr__(self, attr, val):
-        if attr.lower() in ['geometry', 'shape', 'shape@']:
+        if attr.lower() in ["geometry", "shape", "shape@"]:
             object.__setattr__(self, attr, val)
         else:
             super(SpatialDataFrame, self).__setattr__(attr, val)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _get_geometry(self):
         """returns the geometry series"""
         if self._geometry_column_name not in self.columns:
-            raise AttributeError("Geometry Column Not Present: %s" % self._geometry_column_name)
+            raise AttributeError(
+                "Geometry Column Not Present: %s" % self._geometry_column_name
+            )
         return self[self._geometry_column_name]
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _set_geometry(self, col):
         """sets the geometry for the panda's dataframe"""
         if isinstance(col, (GeoSeries, list, numpy.array, numpy.ndarray, Series)):
             self.set_geometry(col, inplace=True)
         else:
             raise ValueError("Must be a list, np.array, or GeoSeries")
-    #----------------------------------------------------------------------
-    geometry = property(fget=_get_geometry,
-                        fset=_set_geometry,
-                        fdel=None,
-                        doc="Get/Set the geometry data for SpatialDataFrame")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
+    geometry = property(
+        fget=_get_geometry,
+        fset=_set_geometry,
+        fdel=None,
+        doc="Get/Set the geometry data for SpatialDataFrame",
+    )
+    # ----------------------------------------------------------------------
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # merge operation: using metadata of the left object
-        if method == 'merge':
+        if method == "merge":
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.left, name, None))
         # concat operation: using metadata of the first object
-        elif method == 'concat':
+        elif method == "concat":
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
         else:
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other, name, None))
         return self
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def copy(self, deep=True):
         """
         Make a copy of this SpatialDataFrame object
@@ -548,7 +595,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if deep:
             data = data.copy()
         return SpatialDataFrame(data, sr=self.sr).__finalize__(self)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def plot(self, *args, **kwargs):
         """
         Plot draws the data on a web map. The user can describe in simple terms how to
@@ -1138,44 +1186,55 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
 
         """
-        if ('kind' in kwargs and \
-           kwargs['kind'] == 'map') or \
-           (len(args) > 3 and args[3] == 'map'):
+        if ("kind" in kwargs and kwargs["kind"] == "map") or (
+            len(args) > 3 and args[3] == "map"
+        ):
             from arcgis.features._data.geodataset.viz import plot
+
             has_wm = True
-            wm = kwargs.pop('map_widget', None)
+            wm = kwargs.pop("map_widget", None)
             if wm is None:
                 has_wm = False
                 wm = GIS().map()
             if has_wm:
-                plot(df=self,
-                     map_widget=wm,
-                     name=kwargs.pop('name', "Feature Collection Layer"),
-                     renderer_type=kwargs.pop("renderer_type", None),
-                     symbol_type=kwargs.pop('symbol_type', None),
-                     symbol_style=kwargs.pop('symbol_style', None),
-                     col=kwargs.pop('col', None),
-                     colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', 'jet'),
-                     alpha=kwargs.pop('alpha', 1),
-                     **kwargs)
+                plot(
+                    df=self,
+                    map_widget=wm,
+                    name=kwargs.pop("name", "Feature Collection Layer"),
+                    renderer_type=kwargs.pop("renderer_type", None),
+                    symbol_type=kwargs.pop("symbol_type", None),
+                    symbol_style=kwargs.pop("symbol_style", None),
+                    col=kwargs.pop("col", None),
+                    colors=kwargs.pop("cmap", None)
+                    or kwargs.pop("colors", None)
+                    or kwargs.pop("pallette", "jet"),
+                    alpha=kwargs.pop("alpha", 1),
+                    **kwargs
+                )
                 return True
             else:
-                return plot(df=self,
-                            map_widget=wm,
-                            name=kwargs.pop('name', "Feature Collection Layer"),
-                            renderer_type=kwargs.pop("renderer_type", None),
-                            symbol_type=kwargs.pop('symbol_type', None),
-                            symbol_style=kwargs.pop('symbol_style', None),
-                            col=kwargs.pop('col', None),
-                            colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', 'jet'),
-                            alpha=kwargs.pop('alpha', 1),
-                            **kwargs)
-        if ('kind' in kwargs and \
-           kwargs['kind'] == 'map') or \
-           (len(args) > 3 and args[3] == 'map') and \
-           ('as_graphic' in kwargs and kwargs['as_graphic']):
+                return plot(
+                    df=self,
+                    map_widget=wm,
+                    name=kwargs.pop("name", "Feature Collection Layer"),
+                    renderer_type=kwargs.pop("renderer_type", None),
+                    symbol_type=kwargs.pop("symbol_type", None),
+                    symbol_style=kwargs.pop("symbol_style", None),
+                    col=kwargs.pop("col", None),
+                    colors=kwargs.pop("cmap", None)
+                    or kwargs.pop("colors", None)
+                    or kwargs.pop("pallette", "jet"),
+                    alpha=kwargs.pop("alpha", 1),
+                    **kwargs
+                )
+        if (
+            ("kind" in kwargs and kwargs["kind"] == "map")
+            or (len(args) > 3 and args[3] == "map")
+            and ("as_graphic" in kwargs and kwargs["as_graphic"])
+        ):
             from arcgis.features import FeatureCollection, FeatureSet
             from arcgis import geometry
+
             if self._gis is None:
                 gis = GIS(set_active=False)
             else:
@@ -1188,56 +1247,56 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             if HASARCPY:
                 if sr:
                     wkid = None
-                    if hasattr(sr, 'factoryCode'):
-                        wkid = {'wkid' : sr.factoryCode}
+                    if hasattr(sr, "factoryCode"):
+                        wkid = {"wkid": sr.factoryCode}
                     elif isinstance(sr, geometry.SpatialReference):
                         wkid = self.sr
                     ext = self.geoextent
                     extent = {
-                        "xmin" : ext[0],
-                        "ymin" : ext[1],
-                        "xmax" : ext[2],
-                        "ymax" : ext[3],
-                        "spatialReference" : wkid
+                        "xmin": ext[0],
+                        "ymin": ext[1],
+                        "xmax": ext[2],
+                        "ymax": ext[3],
+                        "spatialReference": wkid,
                     }
                 else:
                     ext = self.geoextent
                     extent = {
-                        "xmin" : ext[0],
-                        "ymin" : ext[1],
-                        "xmax" : ext[2],
-                        "ymax" : ext[3],
-                        "spatialReference" : {'wkid' : 4326}
+                        "xmin": ext[0],
+                        "ymin": ext[1],
+                        "xmax": ext[2],
+                        "ymax": ext[3],
+                        "spatialReference": {"wkid": 4326},
                     }
             else:
                 sr = self.sr
                 if self.sr is None:
-                    sr = {'wkid' : 4326}
+                    sr = {"wkid": 4326}
 
                 ext = self.geoextent
                 extent = {
-                    "xmin" : ext[0],
-                    "ymin" : ext[1],
-                    "xmax" : ext[2],
-                    "ymax" : ext[3],
-                    "spatialReference" : sr
+                    "xmin": ext[0],
+                    "ymin": ext[1],
+                    "xmax": ext[2],
+                    "ymax": ext[3],
+                    "spatialReference": sr,
                 }
-            if 'map_widget' not in kwargs:
+            if "map_widget" not in kwargs:
                 raise Exception("map_widget is required to plot the SpatialDataFrame")
             else:
-                m = kwargs.pop('map_widget')
-                symbol = kwargs.pop('symbol', None)
-                popup = kwargs.pop('popup', None)
+                m = kwargs.pop("map_widget")
+                symbol = kwargs.pop("symbol", None)
+                popup = kwargs.pop("popup", None)
             try:
                 fs = FeatureSet.from_dict(self.__feature_set__)
                 m.draw(fs, symbol=symbol, popup=popup)
-                if extent and \
-                   isinstance(extent, dict):
+                if extent and isinstance(extent, dict):
                     m.extent = extent
             except:
-                raise Exception('Could not plot the Spatial DataFrame.')
+                raise Exception("Could not plot the Spatial DataFrame.")
         else:
             return super(SpatialDataFrame, self).plot(*args, **kwargs)
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_xy(df, x_column, y_column, sr=4326):
@@ -1260,8 +1319,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from .io.fileops import _from_xy
-        return _from_xy(df=df, x_column=x_column,
-                        y_column=y_column, sr=sr)
+
+        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None):
@@ -1293,6 +1353,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
+
         if geocoder is None:
             geocoder = arcgis.env.active_gis._tools.geocoders[0]
 
@@ -1307,25 +1368,27 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 stop = i + batch_size if i + batch_size < N else N
                 # print('Geocoding from ' + str(start) + ' to ' + str(stop))
 
-                res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
+                res = batch_geocode(
+                    list(df[start:stop][address_column]), geocoder=geocoder
+                )
                 for index in range(len(res)):
                     address = df.ix[start + index, address_column]
                     try:
-                        loc = res[index]['location']
-                        x = loc['x']
-                        y = loc['y']
+                        loc = res[index]["location"]
+                        x = loc["x"]
+                        y = loc["y"]
                         # self.ix[start + index, 'x'] = x
                         # self.ix[start + index, 'y'] = y
-                        geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y}))
+                        geoms.append(arcgis.geometry.Geometry({"x": x, "y": y}))
 
                     except:
                         x, y = None, None
                         try:
-                            loc = geocode(address, geocoder=geocoder)[0]['location']
-                            x = loc['x']
-                            y = loc['y']
+                            loc = geocode(address, geocoder=geocoder)[0]["location"]
+                            x = loc["x"]
+                            y = loc["y"]
                         except:
-                            print('Unable to geocode address: ' + address)
+                            print("Unable to geocode address: " + address)
                             pass
                         # self.ix[start + index, 'x'] = x
                         # self.ix[start + index, 'y'] = y
@@ -1334,7 +1397,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             raise ValueError("Address column not found in dataframe")
 
         return SpatialDataFrame(df, geometry=geoms)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(filename, **kwargs):
         """
@@ -1356,16 +1420,19 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from .io import from_featureclass
-        gis = kwargs.pop('gis', arcgis.env.active_gis)
+
+        gis = kwargs.pop("gis", arcgis.env.active_gis)
         if HASARCPY:
             return from_featureclass(filename=filename, **kwargs)
-        elif isinstance(gis, GIS) and \
-             gis._con._auth.lower() != "anon":
+        elif isinstance(gis, GIS) and gis._con._auth.lower() != "anon":
             return from_featureclass(filename=filename, **kwargs)
         else:
-            raise Exception("Cannot create the SpatialDataFrame, you must " +\
-                            "have an authenticated GIS.")
-    #----------------------------------------------------------------------
+            raise Exception(
+                "Cannot create the SpatialDataFrame, you must "
+                + "have an authenticated GIS."
+            )
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_layer(layer, **kwargs):
         """
@@ -1381,11 +1448,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from .io import from_layer
+
         return from_layer(layer=layer, **kwargs)
-    #----------------------------------------------------------------------
-    def to_featureclass(self,
-                        out_location, out_name,
-                        overwrite=True, skip_invalid=True):
+
+    # ----------------------------------------------------------------------
+    def to_featureclass(
+        self, out_location, out_name, overwrite=True, skip_invalid=True
+    ):
         """converts a SpatialDataFrame to a feature class
 
         ====================    =========================================================
@@ -1405,11 +1474,16 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from .io import to_featureclass
-        return to_featureclass(df=self,
-                               out_location=out_location,
-                               out_name=out_name,
-                               overwrite=overwrite, skip_invalid=skip_invalid)
-    #----------------------------------------------------------------------
+
+        return to_featureclass(
+            df=self,
+            out_location=out_location,
+            out_name=out_name,
+            overwrite=overwrite,
+            skip_invalid=skip_invalid,
+        )
+
+    # ----------------------------------------------------------------------
     def to_hdf(self, path_or_buf, key, **kwargs):
         """Write the contained data to an HDF5 file using HDFStore.
 
@@ -1457,47 +1531,47 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
 
         from pandas.io import pytables
+
         return pytables.to_hdf(path_or_buf, key, pd.DataFrame(self), **kwargs)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
     def from_hdf(path_or_buf, key=None, **kwargs):
-        """ read from the store, close it if we opened it
+        """read from the store, close it if we opened it
 
-            Retrieve pandas object stored in file, optionally based on where
-            criteria
+        Retrieve pandas object stored in file, optionally based on where
+        criteria
 
-            Parameters
-            ----------
-            path_or_buf : path (string), buffer, or path object (pathlib.Path or
-                py._path.local.LocalPath) to read from
+        Parameters
+        ----------
+        path_or_buf : path (string), buffer, or path object (pathlib.Path or
+            py._path.local.LocalPath) to read from
 
-                .. versionadded:: 0.19.0 support for pathlib, py.path.
+            .. versionadded:: 0.19.0 support for pathlib, py.path.
 
-            key : group identifier in the store. Can be omitted if the HDF file
-                contains a single pandas object.
-            where : list of Term (or convertable) objects, optional
-            start : optional, integer (defaults to None), row number to start
-                selection
-            stop  : optional, integer (defaults to None), row number to stop
-                selection
-            columns : optional, a list of columns that if not None, will limit the
-                return columns
-            iterator : optional, boolean, return an iterator, default False
-            chunksize : optional, nrows to include in iteration, return an iterator
+        key : group identifier in the store. Can be omitted if the HDF file
+            contains a single pandas object.
+        where : list of Term (or convertable) objects, optional
+        start : optional, integer (defaults to None), row number to start
+            selection
+        stop  : optional, integer (defaults to None), row number to stop
+            selection
+        columns : optional, a list of columns that if not None, will limit the
+            return columns
+        iterator : optional, boolean, return an iterator, default False
+        chunksize : optional, nrows to include in iteration, return an iterator
 
-            Returns
-            -------
-            The selected object
+        Returns
+        -------
+        The selected object
 
-            """
-        return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf,
-                                            key=key, **kwargs))
-    #----------------------------------------------------------------------
-    def to_feature_collection(self,
-                              name=None,
-                              drawing_info=None,
-                              extent=None,
-                              global_id_field=None):
+        """
+        return SpatialDataFrame(pd.read_hdf(path_or_buf=path_or_buf, key=key, **kwargs))
+
+    # ----------------------------------------------------------------------
+    def to_feature_collection(
+        self, name=None, drawing_info=None, extent=None, global_id_field=None
+    ):
         """
         converts a Spatial DataFrame to a Feature Collection
 
@@ -1528,156 +1602,169 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         if name is None:
             name = random.choice(string.ascii_letters) + uuid.uuid4().hex[:5]
-        template = {
-            'showLegend' : True,
-            'layers' : []
-        }
+        template = {"showLegend": True, "layers": []}
         if extent is None:
             ext = self.geoextent
             extent = {
-                "xmin" : ext[0],
-                "ymin" : ext[1],
-                "xmax" : ext[2],
-                "ymax" : ext[3],
-                "spatialReference" : self.sr
+                "xmin": ext[0],
+                "ymin": ext[1],
+                "xmax": ext[2],
+                "ymax": ext[3],
+                "spatialReference": self.sr,
             }
         fs = self.__feature_set__
         fields = []
-        for fld in fs['fields']:
-            if fld['name'].lower() == fs['objectIdFieldName'].lower():
-                fld['editable'] = False
-                fld['sqlType'] = "sqlTypeOther"
-                fld['domain'] = None
-                fld['defaultValue'] = None
-                fld['nullable'] = False
+        for fld in fs["fields"]:
+            if fld["name"].lower() == fs["objectIdFieldName"].lower():
+                fld["editable"] = False
+                fld["sqlType"] = "sqlTypeOther"
+                fld["domain"] = None
+                fld["defaultValue"] = None
+                fld["nullable"] = False
             else:
-                fld['editable'] = True
-                fld['sqlType'] = "sqlTypeOther"
-                fld['domain'] = None
-                fld['defaultValue'] = None
-                fld['nullable'] = True
+                fld["editable"] = True
+                fld["sqlType"] = "sqlTypeOther"
+                fld["domain"] = None
+                fld["defaultValue"] = None
+                fld["nullable"] = True
         if drawing_info is None:
             di = {
-                'renderer' : {
-                    'labelingInfo' : None,
-                    'label' : "",
-                    'description' : "",
-                    'type' : 'simple',
-                    'symbol' : None
-
+                "renderer": {
+                    "labelingInfo": None,
+                    "label": "",
+                    "description": "",
+                    "type": "simple",
+                    "symbol": None,
                 }
             }
             symbol = None
             if symbol is None:
-                if fs['geometryType'] in ["esriGeometryPoint", "esriGeometryMultipoint"]:
-                    di['renderer']['symbol'] = {"color":[0,128,0,128],"size":18,"angle":0,
-                                                "xoffset":0,"yoffset":0,
-                                                "type":"esriSMS",
-                                                "style":"esriSMSCircle",
-                                                "outline":{"color":[0,128,0,255],"width":1,
-                                                           "type":"esriSLS","style":"esriSLSSolid"}}
-                elif fs['geometryType'] == 'esriGeometryPolyline':
-                    di['renderer']['symbol'] = {
+                if fs["geometryType"] in [
+                    "esriGeometryPoint",
+                    "esriGeometryMultipoint",
+                ]:
+                    di["renderer"]["symbol"] = {
+                        "color": [0, 128, 0, 128],
+                        "size": 18,
+                        "angle": 0,
+                        "xoffset": 0,
+                        "yoffset": 0,
+                        "type": "esriSMS",
+                        "style": "esriSMSCircle",
+                        "outline": {
+                            "color": [0, 128, 0, 255],
+                            "width": 1,
+                            "type": "esriSLS",
+                            "style": "esriSLSSolid",
+                        },
+                    }
+                elif fs["geometryType"] == "esriGeometryPolyline":
+                    di["renderer"]["symbol"] = {
                         "type": "esriSLS",
                         "style": "esriSLSDot",
-                        "color": [0,128,0,128],
-                        "width": 1
+                        "color": [0, 128, 0, 128],
+                        "width": 1,
                     }
-                elif fs['geometryType'] == 'esriGeometryPolygon':
-                    di['renderer']['symbol'] = {
+                elif fs["geometryType"] == "esriGeometryPolygon":
+                    di["renderer"]["symbol"] = {
                         "type": "esriSFS",
                         "style": "esriSFSSolid",
-                        "color": [0,128,0,128],
+                        "color": [0, 128, 0, 128],
                         "outline": {
                             "type": "esriSLS",
                             "style": "esriSLSSolid",
-                            "color": [110,110,110,255],
-                            "width": 1
-                        }
+                            "color": [110, 110, 110, 255],
+                            "width": 1,
+                        },
                     }
             else:
-                di['renderer']['symbol'] = symbol
+                di["renderer"]["symbol"] = symbol
         else:
             di = drawing_info
         layer = {
-            'featureSet' : {'features' : fs['features'],
-                            'geometryType' : fs['geometryType']
-                            },
-            'layerDefinition' : {
-                'htmlPopupType' : 'esriServerHTMLPopupTypeNone',
-                'objectIdField' : fs['objectIdFieldName'] or "OBJECTID",
+            "featureSet": {
+                "features": fs["features"],
+                "geometryType": fs["geometryType"],
+            },
+            "layerDefinition": {
+                "htmlPopupType": "esriServerHTMLPopupTypeNone",
+                "objectIdField": fs["objectIdFieldName"] or "OBJECTID",
                 #'types' : [],
-                'defaultVisibility' : True,
-                'supportsValidateSql' : True,
-                'supportsAttachmentsByUploadId' : True,
-                'useStandardizedQueries' : False,
-                'supportsApplyEditsWithGlobalIds' : True,
-                'standardMaxRecordCount' : 32000,
-                'supportsTruncate' : False,
-                'extent' : extent,
-                'maxScale' : 0,
-                'supportsAppend' : True,
-                'supportsCalculate' : True,
-                'copyrightText' : "",
+                "defaultVisibility": True,
+                "supportsValidateSql": True,
+                "supportsAttachmentsByUploadId": True,
+                "useStandardizedQueries": False,
+                "supportsApplyEditsWithGlobalIds": True,
+                "standardMaxRecordCount": 32000,
+                "supportsTruncate": False,
+                "extent": extent,
+                "maxScale": 0,
+                "supportsAppend": True,
+                "supportsCalculate": True,
+                "copyrightText": "",
                 #'templates' : [],
-                'description' : "",
+                "description": "",
                 #'relationships' : [],
-                'supportsRollbackOnFailureParameter' : True,
-                'hasM' : False,
-                'displayField' : "",
-                'drawingInfo' : di,
-                'type' : 'Feature Layer',
-                'supportedQueryFormats' : 'JSON, geoJSON',
-                'isDataVersioned' : False,
-                'maxRecordCount' : 2000,
-                'minScale' : 0,
-                'supportsStatistics' : True,
-                'hasAttachments' : False,
+                "supportsRollbackOnFailureParameter": True,
+                "hasM": False,
+                "displayField": "",
+                "drawingInfo": di,
+                "type": "Feature Layer",
+                "supportedQueryFormats": "JSON, geoJSON",
+                "isDataVersioned": False,
+                "maxRecordCount": 2000,
+                "minScale": 0,
+                "supportsStatistics": True,
+                "hasAttachments": False,
                 #'indexes' : [],
-                'tileMaxRecordCount' : 8000,
-                'supportsAdvancedQueries' : True,
+                "tileMaxRecordCount": 8000,
+                "supportsAdvancedQueries": True,
                 #'globalIdField' : "",
-                'hasZ' : False,
-                'name' : name,
-                'id' : 0,
-                'allowGeometryUpdates' : True,
+                "hasZ": False,
+                "name": name,
+                "id": 0,
+                "allowGeometryUpdates": True,
                 #'typeIdField' : "",
-                'geometryType' : fs['geometryType'],
-                'currentVersion' : 10.51,
+                "geometryType": fs["geometryType"],
+                "currentVersion": 10.51,
                 #'maxRecordCountFactor' : 1,
-                'supportsCoordinatesQuantization' : True,
-                'fields' : fs['fields'],
-                'hasStaticData' : True,# False
-                'capabilities' : 'Create,Delete,Query,Update,Editing,Extract,Sync',
-                'advancedQueryCapabilities' :  {'supportsReturningGeometryCentroid': False,
-                                                'supportsQueryRelatedPagination': True,
-                                                'supportsHavingClause': True,
-                                                'supportsOrderBy': True,
-                                                'supportsPaginationOnAggregatedQueries': True,
-                                                'supportsQueryWithDatumTransformation': True,
-                                                'supportsAdvancedQueryRelated': True,
-                                                'supportsOutFieldSQLExpression': True,
-                                                'supportsPagination': True,
-                                                'supportsStatistics': True,
-                                                'supportsSqlExpression': True,
-                                                'supportsQueryWithDistance': True,
-                                                'supportsReturningQueryExtent': True,
-                                                'supportsDistinct': True,
-                                                'supportsQueryWithResultType': True},
-
-            }
+                "supportsCoordinatesQuantization": True,
+                "fields": fs["fields"],
+                "hasStaticData": True,  # False
+                "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync",
+                "advancedQueryCapabilities": {
+                    "supportsReturningGeometryCentroid": False,
+                    "supportsQueryRelatedPagination": True,
+                    "supportsHavingClause": True,
+                    "supportsOrderBy": True,
+                    "supportsPaginationOnAggregatedQueries": True,
+                    "supportsQueryWithDatumTransformation": True,
+                    "supportsAdvancedQueryRelated": True,
+                    "supportsOutFieldSQLExpression": True,
+                    "supportsPagination": True,
+                    "supportsStatistics": True,
+                    "supportsSqlExpression": True,
+                    "supportsQueryWithDistance": True,
+                    "supportsReturningQueryExtent": True,
+                    "supportsDistinct": True,
+                    "supportsQueryWithResultType": True,
+                },
+            },
         }
         if global_id_field is not None:
-            layer['layerDefinition']['globalIdField'] = global_id_field
+            layer["layerDefinition"]["globalIdField"] = global_id_field
         return FeatureCollection(layer)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def to_featureset(self):
         """
         Converts a spatial dataframe to a feature set object
         """
         from arcgis.features import FeatureSet
+
         return FeatureSet.from_dataframe(self)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _to_arcpy_featureset(self):
         """
         Converts a Spatial DataFrame to arcpy.FeatureSet so it can be used
@@ -1687,24 +1774,24 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         """
         if HAS_ARCPY:
             import uuid, string, random
+
             l = []
             for i in range(3):
                 l.append(random.choice(string.ascii_letters))
             l = "".join(l)
             out_name = l
-            res = self.to_featureclass(out_location='in_memory',
-                                       out_name=out_name)
+            res = self.to_featureclass(out_location="in_memory", out_name=out_name)
 
             feature_set = arcpy.FeatureSet()
             feature_set.load(res)
             return feature_set
         else:
-            raise Exception("ArcPy must be present to convert to arcpy.FeatureSet object")
-    #----------------------------------------------------------------------
-    def to_featurelayer(self,
-                        title,
-                        gis=None,
-                        tags=None):
+            raise Exception(
+                "ArcPy must be present to convert to arcpy.FeatureSet object"
+            )
+
+    # ----------------------------------------------------------------------
+    def to_featurelayer(self, title, gis=None, tags=None):
         """
         publishes a spatial dataframe to a new feature layer
 
@@ -1723,13 +1810,15 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         from arcgis import env
+
         if gis is None:
             gis = env.active_gis
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
         return content.import_data(self, title=title, tags=tags)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def set_geometry(self, col, drop=False, inplace=False, sr=None):
         """
         Set the SpatialDataFrame geometry using either an existing column or
@@ -1764,9 +1853,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if sr:
             sr = self._sr(sr=sr)
         if not sr:
-            sr = getattr(col, 'sr', None)
-            if sr is None and \
-               isinstance(col, GeoSeries):
+            sr = getattr(col, "sr", None)
+            if sr is None and isinstance(col, GeoSeries):
                 col.sr = self.sr
         to_remove = None
         if isinstance(col, string_types):
@@ -1776,7 +1864,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             geo_column_name = self._geometry_column_name
         if isinstance(col, (GeoSeries, Series, list, numpy.ndarray)):
             level = col
-        elif hasattr(col, 'ndim') and col.ndim != 1:
+        elif hasattr(col, "ndim") and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
@@ -1800,8 +1888,10 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             level.sr = sr
         # Check that we are using a listlike of geometries
         if not all(isinstance(item, GEOM_TYPES) or not item for item in level):
-            raise TypeError("Input geometry column must contain valid geometry objects.")
-        #if isinstance(frame[geo_column_name], pd.Series):
+            raise TypeError(
+                "Input geometry column must contain valid geometry objects."
+            )
+        # if isinstance(frame[geo_column_name], pd.Series):
         #    frame[geo_column_name] = GeoSeries(frame[geo_column_name])
         if isinstance(level, (list, tuple, numpy.ndarray)):
             level = GeoSeries(level)
@@ -1810,23 +1900,29 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         frame.sr = sr
         frame._delete_index()
 
-        if (frame.sr != self.sr and HASARCPY):
+        if frame.sr != self.sr and HASARCPY:
             if isinstance(sr, dict):
-                if hasattr(sr, 'as_arcpy') and HASARCPY:
+                if hasattr(sr, "as_arcpy") and HASARCPY:
                     sr = sr.as_arcpy
-                elif 'wkid' in sr:
-                    sr = sr['wkid']
-                elif 'wkt' in sr:
-                    sr = sr['wkt']
+                elif "wkid" in sr:
+                    sr = sr["wkid"]
+                elif "wkt" in sr:
+                    sr = sr["wkt"]
         import json
+
         gtypes = frame.geometry.apply(lambda x: type(x)).unique()
-        if len(gtypes) == 1 and \
-           gtypes[0] in [_types.Point, _types.Polygon, _types.Polyline]:
+        if len(gtypes) == 1 and gtypes[0] in [
+            _types.Point,
+            _types.Polygon,
+            _types.Polyline,
+        ]:
             pass
-        elif HASARCPY: # Use ArcPy to Enforce Proper Geometry Construction
+        elif HASARCPY:  # Use ArcPy to Enforce Proper Geometry Construction
             for idx, g in frame.geometry.iteritems():
                 if isinstance(g, arcpy.Point):
-                    g = arcgis.geometry.Geometry(json.loads(arcpy.PointGeometry(g, sr).JSON))
+                    g = arcgis.geometry.Geometry(
+                        json.loads(arcpy.PointGeometry(g, sr).JSON)
+                    )
                 elif hasattr(g, "JSON"):
                     g = arcgis.geometry.Geometry(json.loads(g.JSON))
                 elif isinstance(g, string_types):
@@ -1841,9 +1937,9 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                         try:
                             frame.at[idx, self._geometry_column_name] = g
                         except:
-                            frame.set_value(index=idx,
-                                        col=self._geometry_column_name,
-                                        value=g)
+                            frame.set_value(
+                                index=idx, col=self._geometry_column_name, value=g
+                            )
                 else:
                     try:
                         frame.iloc[idx, self._geometry_column_name] = g
@@ -1856,14 +1952,14 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         else:
             sr = self.sr
             if sr is None:
-                sr = {'wkid' : 4326}
+                sr = {"wkid": 4326}
             for idx, g in frame.geometry.iteritems():
                 if hasattr(g, "JSON") and HASARCPY:
                     g = arcgis.geometry.Geometry(json.loads(g.JSON))
                 elif str(type(g)) == "<class 'arcpy.arcobjects.arcobjects.Point'>":
-                    g = arcgis.geometry.Geometry({'x':g.X,
-                                                  'y':g.Y,
-                                                  'spatialReference':sr})
+                    g = arcgis.geometry.Geometry(
+                        {"x": g.X, "y": g.Y, "spatialReference": sr}
+                    )
                 elif isinstance(g, string_types):
                     g = arcgis.geometry.Geometry(json.loads(g))
                 elif isinstance(g, dict):
@@ -1871,24 +1967,29 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 else:
                     raise ValueError("Invalid Geometry")
                 if sr is None:
-                    sr = {'wkid' : 4326}
-                if 'spatialReference' not in g:
-                    g['spatialReference'] = dict(sr)
+                    sr = {"wkid": 4326}
+                if "spatialReference" not in g:
+                    g["spatialReference"] = dict(sr)
                 if inplace:
                     try:
                         frame.loc[idx, self._geometry_column_name] = g
                     except:
-                        frame.set_value(index=idx, col=self._geometry_column_name, value=g)
+                        frame.set_value(
+                            index=idx, col=self._geometry_column_name, value=g
+                        )
                 else:
                     try:
                         frame.iloc[idx, self._geometry_column_name] = g
                     except:
-                        frame.set_value(index=idx, col=self._geometry_column_name, value=g)
+                        frame.set_value(
+                            index=idx, col=self._geometry_column_name, value=g
+                        )
             frame.sr = self._sr(sr)
         if not inplace:
             return frame
         self = frame
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
@@ -1909,7 +2010,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         elif isinstance(result, DataFrame) and geo_col not in result:
             result.__class__ = DataFrame
         return result
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def reproject(self, spatial_reference, transformation=None, inplace=False):
         """
         Reprojects a given dataframe into a new coordinate system.
@@ -1934,19 +2036,21 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                 wkt = spatial_reference.exportToString()
                 wkid = spatial_reference.factoryCode
                 if wkid:
-                    sr = _types.SpatialReference({'wkid' : wkid})
+                    sr = _types.SpatialReference({"wkid": wkid})
                 elif wkt:
-                    sr = _types.SpatialReference({'wkt': wkt})
+                    sr = _types.SpatialReference({"wkt": wkt})
                 else:
                     sr = None
             elif isinstance(spatial_reference, int):
-                sr = _types.SpatialReference({'wkid' : spatial_reference})
+                sr = _types.SpatialReference({"wkid": spatial_reference})
             elif isinstance(spatial_reference, string_types):
-                sr = _types.SpatialReference({'wkt' : spatial_reference})
+                sr = _types.SpatialReference({"wkt": spatial_reference})
             elif isinstance(spatial_reference, _types.SpatialReference):
                 sr = spatial_reference
             else:
-                raise ValueError("spatial_referernce must be of type: int, string, _types.SpatialReference, or arcpy.SpatialReference")
+                raise ValueError(
+                    "spatial_referernce must be of type: int, string, _types.SpatialReference, or arcpy.SpatialReference"
+                )
 
             if inplace:
                 df = self
@@ -1962,7 +2066,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             else:
                 raise Exception("could not reproject the dataframe.")
             return df
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def select_by_location(self, other, matches_only=True):
         """
         Selects all rows in a given SpatialDataFrame based on a given geometry
@@ -1981,17 +2086,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
         """
         if isinstance(other, Geometry):
-            if self.geometry_type.lower() == 'point':
+            if self.geometry_type.lower() == "point":
                 res = self.within(other)
             else:
                 res = self.overlaps(other)
             if matches_only:
                 return self[res]
             else:
-                self['select_by_location'] = res
+                self["select_by_location"] = res
         else:
             raise ValueError("Input must be a geometry")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def merge_datasets(self, other):
         """
         This operation combines two dataframes into one new DataFrame.
@@ -2007,19 +2113,24 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         :returns: SpatialDataFrame
 
         """
-        if isinstance(other, SpatialDataFrame) and \
-           other.geometry_type == self.geometry_type:
+        if (
+            isinstance(other, SpatialDataFrame)
+            and other.geometry_type == self.geometry_type
+        ):
             return pd.concat(objs=[self, other], axis=0)
         elif isinstance(other, DataFrame):
             return pd.concat(objs=[self, other], axis=0)
         elif isinstance(other, Series):
-            self['merged_datasets'] = other
-        elif isinstance(other, SpatialDataFrame) and \
-             other.geometry_type != self.geometry_type:
+            self["merged_datasets"] = other
+        elif (
+            isinstance(other, SpatialDataFrame)
+            and other.geometry_type != self.geometry_type
+        ):
             raise ValueError("Spatial DataFrames must have the same geometry type.")
         else:
             raise ValueError("Merge datasets cannot merge types %s" % type(other))
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def erase(self, other, inplace=False):
         """
         Erases
@@ -2043,20 +2154,26 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
             df.geometry = self.geometry.symmetricDifference(other)
             return df
         else:
-            raise ValueError("Input must be of type arcpy.Geometry, not %s" % type(other))
+            raise ValueError(
+                "Input must be of type arcpy.Geometry, not %s" % type(other)
+            )
+
 
 ###########################################################################
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, sr=None):
     if inplace:
-        raise ValueError("Can't do inplace setting when converting from"
-                         " DataFrame to SpatialDataFrame")
+        raise ValueError(
+            "Can't do inplace setting when converting from"
+            " DataFrame to SpatialDataFrame"
+        )
     gf = SpatialDataFrame(self)
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, sr=sr)
+
 
 if PY3:
     DataFrame.set_geometry = _dataframe_set_geometry
 else:
     import types
-    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None,
-                                              DataFrame)
+
+    DataFrame.set_geometry = types.MethodType(_dataframe_set_geometry, None, DataFrame)

@@ -38,14 +38,14 @@ from fastprogress.fastprogress import progress_bar
 from skimage.morphology import skeletonize, binary_dilation
 
 class _HEDModel(nn.Module):
-    def __init__(self, backbone_fn, chip_size=224):
+    def __init__(self, backbone_fn, chip_size=224, pretrained=True):
         super().__init__()
 
         backbone_name = backbone_fn.__name__
         if "vgg" in backbone_name:
-            self.backbone = create_body(backbone_fn, pretrained=True)[0]#[:-1]
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)[0]#[:-1]
         else:
-            self.backbone = create_body(backbone_fn, pretrained=True)
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
         
         self.hookable_modules = list(self.backbone.children())
 

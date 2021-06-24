@@ -1,15 +1,16 @@
 import sys
 import builtins
 from utils._common import *
-from utils.imports import __import__custom, configure_imports, \
-                          clear_arcgis_import_cache
+from utils.imports import __import__custom, configure_imports, clear_arcgis_import_cache
 
 __import__real = builtins.__import__
 
+
 def test_no_ipywidgets():
     try:
-        configure_imports(__import__real = __import__real,
-        modules_to_raise_importerrors = ['ipywidgets'])
+        configure_imports(
+            __import__real=__import__real, modules_to_raise_importerrors=["ipywidgets"]
+        )
         builtins.__import__ = __import__custom
         clear_arcgis_import_cache()
 
@@ -21,12 +22,14 @@ def test_no_ipywidgets():
     except ImportError as e:
         builtins.__import__ = __import__real
         clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg('ipywidgets')) from e
+        raise Exception(_assemble_err_msg("ipywidgets")) from e
+
 
 def test_no_pandas():
     try:
-        configure_imports(__import__real = __import__real,
-        modules_to_raise_importerrors = ['pandas'])
+        configure_imports(
+            __import__real=__import__real, modules_to_raise_importerrors=["pandas"]
+        )
         builtins.__import__ = __import__custom
         clear_arcgis_import_cache()
 
@@ -39,12 +42,14 @@ def test_no_pandas():
     except ImportError as e:
         builtins.__import__ = __import__real
         clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg('pandas')) from e
+        raise Exception(_assemble_err_msg("pandas")) from e
+
 
 def test_no_fastai():
     try:
-        configure_imports(__import__real = __import__real,
-                          modules_to_raise_importerrors = ['fastai'])
+        configure_imports(
+            __import__real=__import__real, modules_to_raise_importerrors=["fastai"]
+        )
         builtins.__import__ = __import__custom
         clear_arcgis_import_cache()
 
@@ -62,7 +67,8 @@ def test_no_fastai():
     except ImportError as e:
         builtins.__import__ = __import__real
         clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg('fastai')) from e
+        raise Exception(_assemble_err_msg("fastai")) from e
+
 
 def test_minimal_install():
     """
@@ -71,12 +77,23 @@ def test_minimal_install():
     In theory, the basic functionality of the Python API can be used with
     just `six` in the environment
     """
-    mods_import_errors = ['pandas', 'fastai', 'numpy', 'shapely', 'PIL',
-                          'arcpy', 'matplotlib', 'ipywidgets', 'keyring']
- 
+    mods_import_errors = [
+        "pandas",
+        "fastai",
+        "numpy",
+        "shapely",
+        "PIL",
+        "arcpy",
+        "matplotlib",
+        "ipywidgets",
+        "keyring",
+    ]
+
     try:
-        configure_imports(__import__real = __import__real,
-                          modules_to_raise_importerrors = mods_import_errors)
+        configure_imports(
+            __import__real=__import__real,
+            modules_to_raise_importerrors=mods_import_errors,
+        )
 
         builtins.__import__ = __import__custom
         clear_arcgis_import_cache()
@@ -93,8 +110,11 @@ def test_minimal_install():
         clear_arcgis_import_cache()
         raise Exception(_assemble_err_msg(mods_import_errors)) from e
 
+
 def _assemble_err_msg(module_names):
-    return f"`arcgis` could not be imported when `{module_names}` are not" \
-           f"in the environment. You, as the developer, need to rewrite the "\
-           "`import` statements that import these modules. Try moving them "\
-           f"inside of a function, or in a try: except statement."
+    return (
+        f"`arcgis` could not be imported when `{module_names}` are not"
+        f"in the environment. You, as the developer, need to rewrite the "
+        "`import` statements that import these modules. Try moving them "
+        f"inside of a function, or in a try: except statement."
+    )

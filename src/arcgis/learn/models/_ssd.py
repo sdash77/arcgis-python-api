@@ -29,7 +29,7 @@ try:
     from torchvision import models
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, postprocess
-    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou, AveragePrecision
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family, _change_tail
@@ -121,6 +121,11 @@ class SingleShotDetector(ArcGISModel):
 
         super().__init__(data, backbone, **kwargs)
 
+        if pretrained_path is not None:
+            backbone_pretrained = False
+        else:
+            backbone_pretrained = True
+            
         self._backend = backend
         if self._backend == 'tensorflow':
             self._intialize_tensorflow(data, grids, zooms, ratios, backbone, drop, bias, pretrained_path, location_loss_factor)
@@ -155,7 +160,7 @@ class SingleShotDetector(ArcGISModel):
                     
                 self._create_anchors(grids, zooms, ratios)
 
-                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut, pretrained=False), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1]
 
@@ -192,9 +197,9 @@ class SingleShotDetector(ArcGISModel):
                 
                 self._create_anchors(grids, zooms, ratios)
                 if hasattr(self, '_orig_backbone'):
-                    feature_sizes = model_sizes(create_body(self._orig_backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                    feature_sizes = model_sizes(create_body(self._orig_backbone, pretrained=False, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 else:
-                    feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                    feature_sizes = model_sizes(create_body(self._backbone, pretrained=False, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1] 
 
@@ -215,7 +220,8 @@ class SingleShotDetector(ArcGISModel):
                 backbone_cut = cnn_config(self._orig_backbone)['cut']
                 backbone_split = cnn_config(self._orig_backbone)['split']
 
-            self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+            self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, pretrained=backbone_pretrained, split_on=backbone_split, custom_head=ssd_head)
+            self.learn.metrics = [AveragePrecision(self, data.c-1)]
             self._arcgis_init_callback() # make first conv weights learnable
 
             if focal_loss:
@@ -251,6 +257,10 @@ class SingleShotDetector(ArcGISModel):
     @staticmethod
     def _supported_datasets():
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'average_precision']
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -720,34 +730,42 @@ class SingleShotDetector(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
-        for chip in chips:
-            if self._data._is_multispectral:
-                t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
-                scaled_t = self._data._min_max_scaler(t)[0]
-                frame = Image(scaled_t[self._data._extract_bands])
-            else:
-                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
-            if bbox:
-                scores = bbox.scores
-                bboxes, lbls = bbox._compute_boxes()
-                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
-                for index, bbox in enumerate(bboxes):
-                    if lbls is not None:
-                        label = lbls[index]
-                    else:
-                        label = 'Default'
+        from .._utils.pascal_voc_rectangles import modified_getitem
+        from fastai.data_block import LabelList
+        orig_getitem = LabelList.__getitem__
+        LabelList.__getitem__ = modified_getitem
 
-                    data = bb2hw(bbox)
-                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
-                        chip['predictions'].append({
-                            'xmin': data[0],
-                            'ymin': data[1],
-                            'width': data[2],
-                            'height': data[3],
-                            'score': float(scores[index]),
-                            'label': label
-                        })
+        try:
+            for chip in chips:
+                if self._data._is_multispectral:
+                    t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                    scaled_t = self._data._min_max_scaler(t)[0]
+                    frame = Image(scaled_t[self._data._extract_bands])
+                else:
+                    frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+                bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
+                if bbox:
+                    scores = bbox.scores
+                    bboxes, lbls = bbox._compute_boxes()
+                    bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                    for index, bbox in enumerate(bboxes):
+                        if lbls is not None:
+                            label = lbls[index]
+                        else:
+                            label = 'Default'
+
+                        data = bb2hw(bbox)
+                        if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                            chip['predictions'].append({
+                                'xmin': data[0],
+                                'ymin': data[1],
+                                'width': data[2],
+                                'height': data[3],
+                                'score': float(scores[index]),
+                                'label': label
+                            })
+        finally:
+            LabelList.__getitem__ = orig_getitem
 
         self._data.valid_ds.tfms = valid_tfms
 

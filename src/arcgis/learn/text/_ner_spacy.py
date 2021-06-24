@@ -130,6 +130,12 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         logging.error('unfreeze() is not implemented for EntityRecognizer model with spaCy backbone.')
 
+    def freeze(self):
+        """
+        Not implemented for this model.
+        """
+        logging.error('freeze() is not implemented for EntityRecognizer model with spaCy backbone.')
+
     def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
 
         """
@@ -498,7 +504,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         return self.model(text)
 
-    def extract_entities(self, text_list, drop=True, **kwargs):
+    def extract_entities(self, text_list, drop=True, show_progress=True, **kwargs):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -556,7 +562,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
 
-            for i, item in progress_bar(list(item_list.iteritems())):
+            for i, item in progress_bar(list(item_list.iteritems()), display=show_progress):
                 df.loc[i] = None
                 doc = self._extract_entities_text(item)  # predicting entities using entity_extractor model
                 text = doc.text
@@ -613,10 +619,10 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         if ds_type.lower() == 'valid':
             xs = self.val_ds._random_batch(self.val_ds.x)
-            return self.extract_entities(xs)
+            return self.extract_entities(xs, show_progress=False)
         elif ds_type.lower() == 'train':
             xs = self.train_ds._random_batch(self.train_ds.x)
-            return self.extract_entities(xs)
+            return self.extract_entities(xs, show_progress=False)
         else:
             print('Please provide a valid ds_type:[\'valid\'|\'train\']')
 

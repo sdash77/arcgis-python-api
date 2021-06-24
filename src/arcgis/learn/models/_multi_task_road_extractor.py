@@ -131,6 +131,12 @@ class MultiTaskRoadExtractor(ArcGISModel):
         #        "This model only works for road extraction. And In order to use this model it's corresponding model-specific parameters should also be passed at prepare_data."
         #    )
         # Set default backbone to be 'resnet34'
+
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self._validate_kwargs(**kwargs)
         if backbone is None:
             backbone = models.resnet34
@@ -282,7 +288,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._chip_size = (self._orient_data.chip_size, self._orient_data.chip_size)
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, -2)
+        self._encoder = create_body(self._backbone, pretrained_backbone)
 
         # Initialize the model, loss function and the Learner object
         mtl_models = {
@@ -335,6 +341,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def __str__(self):
         return self.__repr__()
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'miou', 'dice']
+
     def mIOU(self, mean=False, show_progress=True):
 
         """
@@ -354,6 +364,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
         #self._check_requisites()
+        if (hasattr(self.learn.data, 'emd') and (self._learning_rate is None)):
+            return self.learn.data.emd['mIoU'] # if model is loaded without data then reads the miou value from emd
         num_classes = torch.arange(self._orient_data.c)
         miou = compute_miou(self, self._orient_data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:

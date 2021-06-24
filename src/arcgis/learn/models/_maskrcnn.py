@@ -151,6 +151,11 @@ class MaskRCNN(ArcGISModel):
         if backbone is None:
             backbone = models.resnet50
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self._check_dataset_support(data)
         if not (self._check_backbone_support(backbone)):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
@@ -170,7 +175,8 @@ class MaskRCNN(ArcGISModel):
 
         if self._backbone.__name__ == 'resnet50':
             model = models.detection.maskrcnn_resnet50_fpn(
-                pretrained=True,
+                pretrained=pretrained_backbone,
+                pretrained_backbone=False,
                 min_size = 1.5*data.chip_size,
                 max_size = 2*data.chip_size,
                 **self.maskrcnn_kwargs
@@ -182,7 +188,7 @@ class MaskRCNN(ArcGISModel):
                 model.transform.image_std = scaled_std_values
         elif self._backbone.__name__ in ['resnet18','resnet34'] and not pointrend:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
+                backbone_small = create_body(self._backbone_ms, pretrained=pretrained_backbone, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small, 
@@ -194,7 +200,7 @@ class MaskRCNN(ArcGISModel):
                     **self.maskrcnn_kwargs
                 )
             else:
-                backbone_small = create_body(self._backbone)
+                backbone_small = create_body(self._backbone, pretrained=pretrained_backbone)
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small,
@@ -204,7 +210,7 @@ class MaskRCNN(ArcGISModel):
                     **self.maskrcnn_kwargs
                 )
         else:
-            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
+            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, pretrained=pretrained_backbone)
             if self._is_multispectral:
                 backbone_fpn = _change_tail(backbone_fpn, data)
                 model = models.detection.MaskRCNN(
@@ -241,6 +247,7 @@ class MaskRCNN(ArcGISModel):
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(data, model, loss_func=mask_rcnn_loss).to_distributed(self._rank_distributed)
+                self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
             else:
                 self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
         else:
@@ -284,6 +291,10 @@ class MaskRCNN(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
 
     @property
     def supported_backbones(self):

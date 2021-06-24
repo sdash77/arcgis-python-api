@@ -1,5 +1,6 @@
 from utils.imports.clear_import_cache import clear_arcgis_import_cache
 
+
 def import_all_arcgis_submodules():
     clear_arcgis_import_cache()
     import arcgis
@@ -43,4 +44,5 @@ def import_all_arcgis_submodules():
     import arcgis.apps
     import arcgis.apps.hub
     import arcgis.learn
+
     clear_arcgis_import_cache()

@@ -71,6 +71,13 @@ MaskRCNN
     :inherited-members:
     :undoc-members:
 
+MMDetection
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMDetection
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Pixel Classification Models
 ---------------------------
 UnetClassifier
@@ -129,6 +136,13 @@ ChangeDetector
     :inherited-members:
     :undoc-members:
 
+MMSegmentation
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMSegmentation
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Image Translation Models
 ------------------------
 CycleGAN
@@ -174,6 +188,27 @@ Transform3d
     :members:
     :undoc-members:
 
+Object Tracking Models
+------------------------
+SiamMask
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.SiamMask
+    :members:
+    :inherited-members:
+
+ObjectTracker
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.ObjectTracker
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+Track
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.Track
+    :members:
+    :inherited-members:
+
 Scanned Maps
 ------------
 ScannedMapDigitizer
@@ -181,7 +216,7 @@ ScannedMapDigitizer
 .. autoclass:: arcgis.learn.ScannedMapDigitizer
     :members:
 
-Tabular and Feature Data Models
+Feature, Tabular and Timeseries models
 -------------------------------
 FullyConnectedNetwork
 ^^^^^^^^^^^^^^^^^^^^^
@@ -204,6 +239,13 @@ TimeSeriesModel
     :inherited-members:
     :undoc-members:
 
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Unstructured Text Models
 ------------------------
 arcgis.learn.text module
@@ -214,7 +256,7 @@ arcgis.learn.text module
    arcgis.learn.text
 
 
-Inferencing Methods (Image Server)
+Inferencing Methods
 ----------------------------------
 detect_objects
 ^^^^^^^^^^^^^^
@@ -231,6 +273,13 @@ classify_pixels
 compute_accuracy_for_object_detection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.compute_accuracy_for_object_detection
+
+Embeddings
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.Embeddings
+    :members:
+    :inherited-members:
+    :undoc-members:
 
 Model Management
 ----------------

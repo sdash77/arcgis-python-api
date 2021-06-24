@@ -30,17 +30,18 @@ class DatePicker(object):
                                 (year, month, day)
     =========================   ===========================================
     """
-    def __init__(self, range=False, operator='is', label="", **kwargs):
+
+    def __init__(self, range=False, operator="is", label="", **kwargs):
         self._id = str(uuid.uuid4())
         self.type = "dateSelectorWidget"
 
         self._operator_mapping = {
-            'is': 'is_on',
-            'is not': 'is_not_on',
-            'is before': 'is_before',
-            'is or is before': 'is_on_before',
-            'is after': 'is_after',
-            'is or is after': 'is_on_after'
+            "is": "is_on",
+            "is not": "is_not_on",
+            "is before": "is_before",
+            "is or is before": "is_on_before",
+            "is after": "is_after",
+            "is or is after": "is_on_after",
         }
 
         self._selection_type = "single"
@@ -51,20 +52,50 @@ class DatePicker(object):
             max_value = kwargs.get("max_value", None)
             if min_value:
                 if isinstance(min_value, str) and min_value.lower() == "today":
-                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                    self._min_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": True,
+                    }
                 else:
-                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": min_value[0], "month": min_value[1]-1, "date": min_value[2], "hours": min_value[3] if len(min_value) > 3 else 0, "minutes": min_value[4] if len(min_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+                    self._min_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": False,
+                        "year": min_value[0],
+                        "month": min_value[1] - 1,
+                        "date": min_value[2],
+                        "hours": min_value[3] if len(min_value) > 3 else 0,
+                        "minutes": min_value[4] if len(min_value) > 3 else 0,
+                        "seconds": 0,
+                        "milliSeconds": 0,
+                    }
             else:
-                #raise Exception("Please provide min_value parameter")
+                # raise Exception("Please provide min_value parameter")
                 self._min_value = None
 
             if max_value:
                 if isinstance(max_value, str) and max_value.lower() == "today":
-                    self._max_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                    self._max_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": True,
+                    }
                 else:
-                    self._max_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": max_value[0], "month": max_value[1]-1, "date": max_value[2], "hours": max_value[3] if len(max_value) > 3 else 0, "minutes": max_value[4] if len(max_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+                    self._max_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": False,
+                        "year": max_value[0],
+                        "month": max_value[1] - 1,
+                        "date": max_value[2],
+                        "hours": max_value[3] if len(max_value) > 3 else 0,
+                        "minutes": max_value[4] if len(max_value) > 3 else 0,
+                        "seconds": 0,
+                        "milliSeconds": 0,
+                    }
             else:
-                #raise Exception("Please provide max_value parameter")
+                # raise Exception("Please provide max_value parameter")
                 self._max_value = None
         else:
             self.operator = operator
@@ -72,12 +103,27 @@ class DatePicker(object):
             self._max_value = None
             if min_value:
                 if isinstance(min_value, str) and min_value.lower() == "today":
-                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                    self._min_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": True,
+                    }
                 else:
-                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": min_value[0], "month": min_value[1]-1, "date": min_value[2], "hours": min_value[3] if len(min_value) > 3 else 0, "minutes": min_value[4] if len(min_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+                    self._min_value = {
+                        "type": "date",
+                        "includeTime": False,
+                        "defaultToToday": False,
+                        "year": min_value[0],
+                        "month": min_value[1] - 1,
+                        "date": min_value[2],
+                        "hours": min_value[3] if len(min_value) > 3 else 0,
+                        "minutes": min_value[4] if len(min_value) > 3 else 0,
+                        "seconds": 0,
+                        "milliSeconds": 0,
+                    }
             else:
                 self._min_value = None
-                #raise Exception("Please provide value parameter")
+                # raise Exception("Please provide value parameter")
 
         self.label = label
 
@@ -86,7 +132,7 @@ class DatePicker(object):
         if self._selection_type == "range":
             self._operator_logic = "between"
         else:
-            self._operator_logic = self._operator_mapping.get(self.operator, 'is_on')
+            self._operator_logic = self._operator_mapping.get(self.operator, "is_on")
 
         data = {
             "type": "dateSelectorWidget",
@@ -94,7 +140,7 @@ class DatePicker(object):
             "datePickerOption": {
                 "type": "datePicker",
                 "selectionType": self._selection_type,
-                "operator": self._operator_logic
+                "operator": self._operator_logic,
             },
             "id": self._id,
             "name": "Date Selector (1)",
@@ -102,20 +148,21 @@ class DatePicker(object):
             "showLastUpdate": True,
             "noDataVerticalAlignment": "middle",
             "showCaptionWhenNoData": True,
-            "showDescriptionWhenNoData": True
+            "showDescriptionWhenNoData": True,
         }
 
         if self._min_value:
-            data['datePickerOption']['minDefaultValue'] = self._min_value
+            data["datePickerOption"]["minDefaultValue"] = self._min_value
 
         if self._max_value:
-            data['datePickerOption']['maxDefaultValue'] = self._max_value
+            data["datePickerOption"]["maxDefaultValue"] = self._max_value
 
         return data
 
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
         from arcgis.apps.dashboard import SidePanel
+
         sp = SidePanel()
         sp.add_selector(self)
         url = Dashboard._publish_random(sp)
@@ -153,20 +200,22 @@ class NumberSelector(object):
     =========================   ===========================================
     """
 
-    def __init__(self, range=False, display_type="spinner", label='Select a number', **kwargs):
+    def __init__(
+        self, range=False, display_type="spinner", label="Select a number", **kwargs
+    ):
 
         self._json = {}
         self._display_type = display_type
         self.type = "numberSelectorWidget"
         self._id = str(uuid.uuid4())
-        self._label = label if label else ''
-        self._increment = kwargs.get('increment_factor', 1)
+        self._label = label if label else ""
+        self._increment = kwargs.get("increment_factor", 1)
         self._lower_limit = 0
         self._upper_limit = 100
         self._lower_default = 0
         self._upper_default = 100
         self._range = range
-        self._operator = kwargs.get('operator', "equal")
+        self._operator = kwargs.get("operator", "equal")
 
         self._left_placeholder_text = ""
         self._right_placeholder_text = ""
@@ -178,7 +227,7 @@ class NumberSelector(object):
             "greater than": "greater",
             "greater than or equal": "greater_or_equal",
             "less than": "less",
-            "less than or equal": "less_or_equal"
+            "less than or equal": "less_or_equal",
         }
 
         self._constraint = {
@@ -186,12 +235,13 @@ class NumberSelector(object):
             "lowerLimit": self._lower_limit,
             "upperLimit": self._upper_limit,
             "firstDefault": self._lower_default,
-            "secondDefault": self._upper_default
+            "secondDefault": self._upper_default,
         }
 
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
         from arcgis.apps.dashboard import SidePanel
+
         sp = SidePanel()
         sp.add_selector(self)
         url = Dashboard._publish_random(sp)
@@ -249,31 +299,40 @@ class NumberSelector(object):
                 "type": "featureServiceDataSource",
                 "itemId": item.itemid,
                 "layerId": layer_id,
-                "table": True
+                "table": True,
             },
             "outFields": ["*"],
             "groupByFields": [],
             "orderByFields": [],
             "statisticDefinitions": [
-                {"onStatisticField": field, "outStatisticFieldName": "lowerLimit",
-                 "statisticType": "min"},
-                {"onStatisticField": field, "outStatisticFieldName": "upperLimit",
-                 "statisticType": "max"},
-                {"onStatisticField": field, "outStatisticFieldName": "averageStatisticValue",
-                 "statisticType": "avg"}
+                {
+                    "onStatisticField": field,
+                    "outStatisticFieldName": "lowerLimit",
+                    "statisticType": "min",
+                },
+                {
+                    "onStatisticField": field,
+                    "outStatisticFieldName": "upperLimit",
+                    "statisticType": "max",
+                },
+                {
+                    "onStatisticField": field,
+                    "outStatisticFieldName": "averageStatisticValue",
+                    "statisticType": "avg",
+                },
             ],
             "maxFeatures": 50,
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
             "clientSideStatistics": False,
-            "name": "main"
+            "name": "main",
         }
 
         self._constraint = {"type": "statistic", "defaultStatistic": "min"}
 
         if default in ["min", "max", "avg"]:
             self._constraint["defaultStatistic"] = default
-    
+
     def set_defined_limits(self, lower_limit=0, upper_limit=100, **kwargs):
         """
         Set the item to pick values from for spinner and slider display type.
@@ -304,14 +363,14 @@ class NumberSelector(object):
 
         self._lower_limit = lower_limit
         self._upper_limit = upper_limit
-        self._lower_default = kwargs.get('default', kwargs.get('lower_default', 0))
-        self._upper_default = kwargs.get('upper_default', 100)
+        self._lower_default = kwargs.get("default", kwargs.get("lower_default", 0))
+        self._upper_default = kwargs.get("upper_default", 100)
         self._constraint = {
             "type": "fixed",
             "lowerLimit": self._lower_limit,
             "upperLimit": self._upper_limit,
             "firstDefault": self._lower_default,
-            "secondDefault": self._upper_default
+            "secondDefault": self._upper_default,
         }
 
     def _convert_to_json(self):
@@ -346,7 +405,12 @@ class NumberSelector(object):
             "type": "numericSelectorWidget",
             "displayType": self._display_type,
             "increment": self._increment,
-            "valueLabelFormat": {"name": "value", "type": "decimal", "prefix": False, "pattern": "#,###"},
+            "valueLabelFormat": {
+                "name": "value",
+                "type": "decimal",
+                "prefix": False,
+                "pattern": "#,###",
+            },
             "selection": {"type": "single" if not self._range else "range"},
             "datasets": [],
             "id": self._id,
@@ -355,21 +419,21 @@ class NumberSelector(object):
             "showLastUpdate": True,
             "noDataVerticalAlignment": "middle",
             "showCaptionWhenNoData": True,
-            "showDescriptionWhenNoData": True
+            "showDescriptionWhenNoData": True,
         }
 
         if not self._range:
-            json['selection']['operator'] = self._operator
+            json["selection"]["operator"] = self._operator
 
         if self._constraint:
             json["constraint"] = self._constraint
 
         if self._display_type == "input":
-            json['selection']['placeholderText'] = self._left_placeholder_text
+            json["selection"]["placeholderText"] = self._left_placeholder_text
             if self._range:
-                json['selection']['rightPlaceHolderText'] = self._right_placeholder_text
+                json["selection"]["rightPlaceHolderText"] = self._right_placeholder_text
 
-        if getattr(self,'_stat_dataset', None):
+        if getattr(self, "_stat_dataset", None):
             json["datasets"].append(self._stat_dataset)
         # else:
         #     json["datasets"].append(self._dataset)
@@ -383,7 +447,7 @@ class CategorySelector(object):
     """
 
     def __init__(self):
-        self._categories_from = 'static'
+        self._categories_from = "static"
 
         self._id = str(uuid.uuid4())
         self._selector = CategorySelectorProperties._create_selector_properties()
@@ -393,6 +457,7 @@ class CategorySelector(object):
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
         from arcgis.apps.dashboard import SidePanel
+
         sp = SidePanel()
         sp.add_selector(self)
         url = Dashboard._publish_random(sp)
@@ -422,26 +487,26 @@ class CategorySelector(object):
             value_type = "string"
 
         self._dataset = {
-            "type":"staticDataset",
-            "data": {
-                "type": "staticValues",
-                "dataType": value_type,
-                "values": []
-            },
-            "name": "main"
+            "type": "staticDataset",
+            "data": {"type": "staticValues", "dataType": value_type, "values": []},
+            "name": "main",
         }
 
         id = 0
         for pair in key_value_pairs:
-            self._dataset['data']['values'].append({
-                "type":" labelledValue",
-                "id": str(id),
-                "label": pair[0],
-                "value": type_caster(pair[1])
-            })
+            self._dataset["data"]["values"].append(
+                {
+                    "type": " labelledValue",
+                    "id": str(id),
+                    "label": pair[0],
+                    "value": type_caster(pair[1]),
+                }
+            )
             id = id + 1
 
-    def set_feature_options(self, item, line_item_text="", field_name=None, max_features=50):
+    def set_feature_options(
+        self, item, line_item_text="", field_name=None, max_features=50
+    ):
         """
         Set feature values for dropdown.
 
@@ -465,7 +530,7 @@ class CategorySelector(object):
 
         self._line_item_text = line_item_text if line_item_text else ""
         if field_name is not None:
-            self._line_item_text = self._line_item_text + '{' + field_name + '}'
+            self._line_item_text = self._line_item_text + "{" + field_name + "}"
 
         self._dataset = {
             "type": "serviceDataset",
@@ -473,7 +538,7 @@ class CategorySelector(object):
                 "type": "featureServiceDataSource",
                 "itemId": item.itemid,
                 "layerId": 0,
-                "table": True
+                "table": True,
             },
             "outFields": ["*"],
             "groupByFields": [],
@@ -483,7 +548,7 @@ class CategorySelector(object):
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
             "clientSideStatistics": False,
-            "name": "main"
+            "name": "main",
         }
 
     def set_group_by_values(self, item, category_field, max_features=50):
@@ -511,7 +576,7 @@ class CategorySelector(object):
                 "type": "featureServiceDataSource",
                 "itemId": item.itemid,
                 "layerId": 0,
-                "table": True
+                "table": True,
             },
             "outFields": ["*"],
             "groupByFields": [category_field],
@@ -520,14 +585,14 @@ class CategorySelector(object):
                 {
                     "onStatisticField": category_field,
                     "outStatisticFieldName": "count_result",
-                    "statisticType": "count"
+                    "statisticType": "count",
                 }
             ],
             "maxFeatures": max_features,
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
             "clientSideStatistics": False,
-            "name": "main"
+            "name": "main",
         }
 
     @property
@@ -541,8 +606,12 @@ class CategorySelector(object):
         json = {
             "type": "categorySelectorWidget",
             "category": {},
-            "selection": {"type": self._selector._selection_type, "defaultSelection": "0", "operator": self._selector._operator},
-            "preferredDisplayType": self._selector._preferred_display, #dropdown, button_bar, radio_buttons
+            "selection": {
+                "type": self._selector._selection_type,
+                "defaultSelection": "0",
+                "operator": self._selector._operator,
+            },
+            "preferredDisplayType": self._selector._preferred_display,  # dropdown, button_bar, radio_buttons
             "displayThreshold": self._selector._display_threshold,
             "datasets": [],
             "id": self._id,
@@ -551,7 +620,7 @@ class CategorySelector(object):
             "showLastUpdate": True,
             "noDataVerticalAlignment": "middle",
             "showCaptionWhenNoData": True,
-            "showDescriptionWhenNoData": True
+            "showDescriptionWhenNoData": True,
         }
 
         if self._selector._none_option:
@@ -563,7 +632,12 @@ class CategorySelector(object):
         elif self._categories_from == "features":
             json["category"] = {"type": "features", "itemText": self._line_item_text}
         elif self._categories_from == "groupByValues":
-            json["category"] = {"type": "groupByValues", "nullLabel": "Null", "blankLabel": "Blank", "labelOverrides": []}
+            json["category"] = {
+                "type": "groupByValues",
+                "nullLabel": "Null",
+                "blankLabel": "Blank",
+                "labelOverrides": [],
+            }
 
         if self._dataset:
             json["datasets"].append(self._dataset)
@@ -572,7 +646,6 @@ class CategorySelector(object):
 
 
 class CategorySelectorProperties(object):
-
     @classmethod
     def _create_selector_properties(cls):
         selector = cls()
@@ -724,4 +797,3 @@ class CategorySelectorProperties(object):
             raise Exception("Invalid value")
 
         self._none_placement = value
-

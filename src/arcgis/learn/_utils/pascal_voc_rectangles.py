@@ -219,7 +219,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
     nms_overlap = kwargs.get('nms_overlap', 0.1)
 
     if getattr(self, "_is_model_extension", False):
-        transform_kwargs,kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input_multispectral)
+        transform_kwargs,kwargs = split_kwargs_by_func(kwargs, self._model_conf.transform_input_multispectral)
 
     title_font_size = 16
     _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
@@ -247,7 +247,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         
         if self._backend == 'pytorch':
             if getattr(self, "_is_model_extension", False):
-                xb = self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
+                xb = self._model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
                 try:
                     _pred_ext = self.learn.model.eval()(xb)
                 except Exception as e:
@@ -400,3 +400,21 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
     if _IS_ARCGISPRONOTEBOOK:
         plt.show()
     return fig,axs
+
+
+from fastai.torch_core import try_int
+from numbers import Integral
+from typing import Union
+def modified_getitem(self,idxs:Union[int,np.ndarray])->'LabelList':
+    "return a single (x, y) if `idxs` is an integer or a new `LabelList` object if `idxs` is a range."
+    idxs = try_int(idxs)
+    if isinstance(idxs, Integral):
+        if self.item is None: x,y = self.x[idxs],self.y[idxs]
+        else:                 x,y = self.item   ,0
+        if self.tfms or self.tfmargs:
+            x = x.apply_tfms(self.tfms, **{})
+        if hasattr(self, 'tfms_y') and self.tfm_y and self.item is None:
+            y = y.apply_tfms(self.tfms_y, **{**self.tfmargs_y, 'do_resolve':False})
+        if y is None: y=0
+        return x,y
+    else: return self.new(self.x[idxs], self.y[idxs])

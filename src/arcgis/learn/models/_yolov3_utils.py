@@ -60,6 +60,8 @@ import warnings
 from fastprogress.fastprogress import progress_bar
 from fastai.basic_train import LearnerCallback
 from ._retinanet_utils import compute_ap, _get_y, IoU_values, tlbr2cthw, cthw2tlbr
+from fastai.basic_train import Callback
+from fastai.torch_core import add_metrics
 
 
 def add_conv(in_ch, out_ch, ksize=3, stride=1):
@@ -199,15 +201,17 @@ class YOLOv3_Model(nn.Module):
 
         train = targets is not None
         output = []
+        output_train = []
         self.loss_dict = defaultdict(float)
         route_layers = []
         for i, module in enumerate(self.module_list):
             # yolo layers
             if i in [14, 22, 28]:
                 if train:
-                    x, *loss_dict = module(x, targets)
+                    x, y, *loss_dict = module(x, targets)
                     for name, loss in zip(['xy', 'wh', 'conf', 'cls', 'l2'] , loss_dict):
                         self.loss_dict[name] += loss
+                    output_train.append(y)
                 else:
                     x = module(x)
                 output.append(x)
@@ -228,7 +232,7 @@ class YOLOv3_Model(nn.Module):
  
 
         if train:
-            return sum(output)
+            return torch.cat(output_train, 1), sum(output)
         else:
             return torch.cat(output, 1)
 
@@ -323,7 +327,7 @@ class YOLOLayer(nn.Module):
         h_anchors = dtype(np.broadcast_to(np.reshape(
             masked_anchors[:, 1], (1, self.n_anchors, 1, 1)), output.shape[:4]))
 
-        pred = output.clone()
+        pred = output.clone().contiguous()
         pred[..., 0] += x_shift
         pred[..., 1] += y_shift
         pred[..., 2] = torch.exp(pred[..., 2]) * w_anchors
@@ -333,6 +337,9 @@ class YOLOLayer(nn.Module):
         if labels is None:
             pred[..., :4] *= self.stride # Scale bbox coordinates to image size
             return pred.view(batchsize, -1, n_ch).data
+
+        pred_train = pred.clone()
+        pred_train[..., :4] *= self.stride
 
         pred = pred[..., :4].data
 
@@ -439,7 +446,7 @@ class YOLOLayer(nn.Module):
 
         loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
 
-        return loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2
+        return loss, pred_train.view(batchsize, -1, n_ch).data, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2
 
 
 class YOLOv3_Loss(nn.Module):
@@ -449,6 +456,8 @@ class YOLOv3_Loss(nn.Module):
 
     def forward(self, output, bbox_tgts, clas_tgts):
         #YOLOv3 model itself outputs loss when training
+        if isinstance(output, tuple):
+            return output[1]
         return output
 
 
@@ -716,7 +725,30 @@ def update_size_zero_anchors(anchors):
     return anchors[zero_anchors:]
 
 
-def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.5, num_keep=100):
+class AveragePrecision(Callback):
+
+    def __init__(self, model, n_classes):
+        self.model = model
+        self.n_classes = n_classes
+
+    def on_epoch_begin(self, **kwargs):
+        self.tps, self.clas, self.p_scores = [], [], []
+        self.classes, self.n_gts = LongTensor(range(self.n_classes)), torch.zeros(self.n_classes).long()
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+
+        tps, p_scores, clas, self.n_gts = compute_cm(self.model, last_output[0], last_target, self.n_gts, self.classes)
+        self.tps.extend(tps)
+        self.p_scores.extend(p_scores)
+        self.clas.extend(clas)
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        aps = compute_ap_score(self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes)
+        aps = torch.mean(torch.tensor(aps))
+        return add_metrics(last_metrics, aps)
+
+
+def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.1, num_keep=100):
 
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
@@ -728,38 +760,51 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect
             model.learn.predicting = True
             output = model.learn.pred_batch(batch=(input, target))
 
-            for i in range(target[0].size(0)): # range batch-size
-                #op - bbox preds, class preds, scores
-                op = model._data.y.analyze_pred(output[i], model=model,thresh=detect_thresh, nms_overlap=iou_thresh, 
-                                                ret_scores=True, device=model._device)
+            tps1, p_scores1, clas1, n_gts = compute_cm(model, output, target, n_gts, classes, iou_thresh, detect_thresh)
+            tps.extend(tps1)
+            p_scores.extend(p_scores1)
+            clas.extend(clas1)
 
-                # Unpad the targets
-                tgt_bbox, tgt_clas = _get_y(target[0][i], target[1][i])
+    aps = compute_ap_score(tps, p_scores, clas, n_gts, n_classes)
+    return aps
+
+def compute_cm(model, output, target, n_gts, classes, iou_thresh=0.1, detect_thresh=0.1):
+    tps, clas, p_scores = [], [], []
+    for i in range(target[0].size(0)): # range batch-size
+        #op - bbox preds, class preds, scores
+        op = model._data.y.analyze_pred(output[i], model=model,thresh=detect_thresh, nms_overlap=iou_thresh, 
+                                        ret_scores=True, device=model._device)
+
+
+        tgt_bbox, tgt_clas = _get_y(target[0][i], target[1][i])
+        
+        try:
+            bbox_pred, preds, scores = op
+            if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
                 
-                try:
-                    bbox_pred, preds, scores = op
-                    if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
-                        
-                        bbox_pred = bbox_pred.to(model._device)
-                        preds = preds.to(model._device)
-                        tgt_bbox = tgt_bbox.to(model._device)
-                        
-                        # Convert the bbox coordinates to center-height-width(cthw) before calculating Intersection Over Union
-                        ious = IoU_values(tlbr2cthw(bbox_pred), tlbr2cthw(tgt_bbox))
-                        max_iou, matches = ious.max(1)
-                        detected = []
-                    
-                        for i in range(len(preds)):
-                            if max_iou[i] >= iou_thresh and matches[i] not in detected and tgt_clas[matches[i]] == preds[i]:
-                                detected.append(matches[i])
-                                tps.append(1)
-                            else: tps.append(0)
-                        clas.append(preds.cpu())
-                        p_scores.append(scores.cpu())
-                except:
-                    pass
-                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)             
-    
+                bbox_pred = bbox_pred.to(model._device)
+                preds = preds.to(model._device)
+                tgt_bbox = tgt_bbox.to(model._device)
+                
+                # Convert the bbox coordinates to center-height-width(cthw) before calculating Intersection Over Union
+                ious = IoU_values(tlbr2cthw(bbox_pred), tlbr2cthw(tgt_bbox))
+                max_iou, matches = ious.max(1)
+                detected = []
+            
+                for i in range(len(preds)):
+                    if max_iou[i] >= iou_thresh and matches[i] not in detected and tgt_clas[matches[i]] == preds[i]:
+                        detected.append(matches[i])
+                        tps.append(1)
+                    else: tps.append(0)
+                clas.append(preds.cpu())
+                p_scores.append(scores.cpu())
+        except:
+            pass
+        n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)
+
+    return tps, p_scores, clas, n_gts
+
+def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     # If no true positives are found return an average precision score of 0.
     if len(tps) == 0: return [0. for cls in range(1,n_classes+1)] 
 

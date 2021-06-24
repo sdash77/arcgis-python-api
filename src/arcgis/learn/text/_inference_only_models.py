@@ -1,5 +1,6 @@
 import traceback
-from .._data import _raise_fastai_import_error
+import warnings
+warnings.filterwarnings("ignore", module='transformers')
 HAS_TRANSFORMER = True
 
 try:
@@ -8,23 +9,42 @@ try:
     import os
     import torch
     from transformers import pipeline, logging
+    logging.get_logger('filelock').setLevel(logging.ERROR)
     from .._utils.common import _get_device_id, _get_emd_path
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING
-    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING.keys()]
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
-    EXPECTED_MODEL_TYPES = []
+
 
 class InferenceOnlyModel:
 
-    def __init__(self):
-        if 'working_dir' in self.kwargs.keys():
-            self.working_dir = self.kwargs.get('working_dir')
+    def __init__(self, backbone=None, task=None, **kwargs):
+        self._task = task
+        self.model = None
+        self._backbone = backbone
+
+        if 'working_dir' in kwargs:
+            self.working_dir = kwargs.get('working_dir')
         else:
-            self.working_dir =  Path.cwd()
+            self.working_dir = Path.cwd()
+        self._pretrained_path = kwargs.get("pretrained_path")
         self._device = _get_device_id()
+        self.logger = logging.get_logger()
+        self.logger.setLevel(logging.ERROR)
+        self._load_model()
+
+    def _load_model(self):
+        try:
+            if self._pretrained_path:
+                self.model = pipeline(self._task, model=self._pretrained_path, device=self._device)
+            else:
+                self.model = pipeline(self._task, model=self._backbone, device=self._device)
+        except Exception as e:
+            error_message = (f"`{self._backbone}` is not valid backbone name for {self._task} task.\n"
+                             f"For selecting backbone name for {self._task} task, kindly visit:- "
+                             f"https://huggingface.co/models?pipeline_tag={self._task} ")
+            raise Exception(error_message)
 
     def _create_emd(self, name_or_path):
         emd_template = {}
@@ -77,6 +97,5 @@ class InferenceOnlyModel:
         with open(emd_path) as f:
             emd_json = json.loads(f.read())
         model_path = Path(emd_path).parent
-        cls_object = cls(pretrained_path=model_path)
+        cls_object = cls(pretrained_path=str(model_path))
         return cls_object
-        

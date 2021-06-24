@@ -30,6 +30,7 @@ try:
     from ._transformer_text_classifier import TransformerForTextClassification, backbone_models_reverse_map, \
         transformer_architectures, transformer_seq_length
     from transformers import logging
+    logging.get_logger('filelock').setLevel(logging.ERROR)
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -140,7 +141,7 @@ class TextClassifier(ArcGISModel):
             self.learn.model = self.learn.model.to(self._device)
             layer_groups = self.learn.model.get_layer_groups()
             self.learn.split(layer_groups)
-            self._freeze()
+            # self._freeze()
 
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length, config=None):
@@ -220,6 +221,10 @@ class TextClassifier(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'error_rate']
+
     @classmethod
     def available_backbone_models(cls, architecture):
         """
@@ -242,7 +247,7 @@ class TextClassifier(ArcGISModel):
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
-    def _freeze(self):
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """

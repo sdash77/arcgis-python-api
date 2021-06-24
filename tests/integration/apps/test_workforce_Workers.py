@@ -1,14 +1,14 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        Workforce Workers tests
 # Purpose:     Sanity tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
-#region PreCondition check
+# region PreCondition check
 test_skip = False
 class_skip = False
 module_skip = False
@@ -16,13 +16,13 @@ module_skip = False
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
 
-if (r1 & r2):
+if r1 & r2:
     print("## Precondition checks passed ##")
     module_skip = False
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
@@ -34,19 +34,22 @@ try:
     from arcgis.apps.workforce.managers import *
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
-#endregion PreCondition Check
+    raise (exit())
+# endregion PreCondition Check
 
-#TestModule
-@unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in Workforce Workers")
+# TestModule
+@unittest.skipIf(
+    module_skip, "Precondition check failed. Skipping tests in Workforce Workers"
+)
 def setUpModule():
     """
     Run checks for host system
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
+
 
 class Test_Workforce_Workers(unittest.TestCase):
     """
@@ -54,11 +57,13 @@ class Test_Workforce_Workers(unittest.TestCase):
     """
 
     def add_worker(self):
-        self.project.workers.add(user_id='ar_workforce_python_api2',
-                                 contact_number='123-456-7890',
-                                 name='ar_workforce_python_api2',
-                                 notes='some notes',
-                                 title='Inspector')
+        self.project.workers.add(
+            user_id="ar_workforce_python_api2",
+            contact_number="123-456-7890",
+            name="ar_workforce_python_api2",
+            notes="some notes",
+            title="Inspector",
+        )
 
     def reset_project(self):
         self.project.workers.batch_delete(self.project.workers.search())
@@ -73,15 +78,22 @@ class Test_Workforce_Workers(unittest.TestCase):
         :return:
         """
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['workforce_ago']['url']
-        cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
-        cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
+        cls.portal_url = _conf_reader["workforce_ago"]["url"]
+        cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
+        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         t = datetime.datetime.now()
-        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-                                    str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         cls.project = create_project(cls.time_stamp)
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
@@ -94,12 +106,19 @@ class Test_Workforce_Workers(unittest.TestCase):
         # reset project for each test
         self.reset_project()
         self.setup_project()
-        print("Test: "+self._testMethodName)
+        print("Test: " + self._testMethodName)
         self.namePrefix = "dino_"
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -116,9 +135,13 @@ class Test_Workforce_Workers(unittest.TestCase):
     def test_search_worker(self):
         try:
             worker = self.project.workers.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(
+                worker.user_id, "ar_workforce_python_api2", "Incorrect user id"
+            )
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "not_working", "Incorrect status")
             self.assertEqual(worker.notes, "some notes", "Incorrect note")
             self.assertEqual(worker.title, "Inspector", "Incorrect title")
@@ -140,15 +163,23 @@ class Test_Workforce_Workers(unittest.TestCase):
         try:
             # batch update
             worker = self.project.workers.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(
+                worker.user_id, "ar_workforce_python_api2", "Incorrect user id"
+            )
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "not_working", "Incorrect status")
             worker.update(status="working")
             worker = self.project.workers.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(
+                worker.user_id, "ar_workforce_python_api2", "Incorrect user id"
+            )
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "working", "Incorrect status")
 
         except AssertionError as assertErrorException:
@@ -165,16 +196,24 @@ class Test_Workforce_Workers(unittest.TestCase):
         try:
             # batch update
             worker = self.project.workers.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(
+                worker.user_id, "ar_workforce_python_api2", "Incorrect user id"
+            )
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "not_working", "Incorrect status")
             worker.status = "working"
             self.project.workers.batch_update([worker])
             worker = self.project.workers.search()[0]
-            self.assertEqual(worker.user_id, "ar_workforce_python_api2", "Incorrect user id")
+            self.assertEqual(
+                worker.user_id, "ar_workforce_python_api2", "Incorrect user id"
+            )
             self.assertEqual(worker.name, "ar_workforce_python_api2", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "working", "Incorrect status")
 
         except AssertionError as assertErrorException:
@@ -223,15 +262,19 @@ class Test_Workforce_Workers(unittest.TestCase):
 
     def test_add_worker(self):
         try:
-            self.project.workers.add(user_id='ar_OpsDashAUITest',
-                                     contact_number='123-456-7890',
-                                     name='ar_OpsDashAUITest',
-                                     notes='some notes',
-                                     title='Inspector')
+            self.project.workers.add(
+                user_id="ar_OpsDashAUITest",
+                contact_number="123-456-7890",
+                name="ar_OpsDashAUITest",
+                notes="some notes",
+                title="Inspector",
+            )
             worker = self.project.workers.search()[-1]
             self.assertEqual(worker.user_id, "ar_OpsDashAUITest", "Incorrect user id")
             self.assertEqual(worker.name, "ar_OpsDashAUITest", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "not_working", "Incorrect status")
 
         except AssertionError as assertErrorException:
@@ -246,17 +289,21 @@ class Test_Workforce_Workers(unittest.TestCase):
 
     def test_batch_add_worker(self):
         try:
-            worker = Worker(self.project,
-                            user_id='ar_OpsDashAUITest',
-                            contact_number='123-456-7890',
-                            name='ar_OpsDashAUITest',
-                            notes='some notes',
-                            title='Inspector')
+            worker = Worker(
+                self.project,
+                user_id="ar_OpsDashAUITest",
+                contact_number="123-456-7890",
+                name="ar_OpsDashAUITest",
+                notes="some notes",
+                title="Inspector",
+            )
             self.project.workers.batch_add([worker])
             worker = self.project.workers.search()[-1]
             self.assertEqual(worker.user_id, "ar_OpsDashAUITest", "Incorrect user id")
             self.assertEqual(worker.name, "ar_OpsDashAUITest", "Incorrect name")
-            self.assertEqual(worker.contact_number, "123-456-7890", "Incorrect contact number")
+            self.assertEqual(
+                worker.contact_number, "123-456-7890", "Incorrect contact number"
+            )
             self.assertEqual(worker.status, "not_working", "Incorrect status")
 
         except AssertionError as assertErrorException:
@@ -270,6 +317,6 @@ class Test_Workforce_Workers(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
-#TestModule
+# TestModule
 def tearDownModule():
     print("**End Workforce WorkerManager Tests**")

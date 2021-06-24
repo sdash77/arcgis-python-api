@@ -5,9 +5,10 @@ from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
+
 ########################################################################
 class EmailManager(BasePortalAdmin):
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         super(EmailManager, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
@@ -17,20 +18,19 @@ class EmailManager(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
-        params = {"f":"json"}
-        result = connection.get(path=self._url,
-                                params=params)
+        params = {"f": "json"}
+        result = connection.get(path=self._url, params=params)
         try:
-            if 'status' in result and result['status'] == 'error':
+            if "status" in result and result["status"] == "error":
                 self._properties = None
                 self._json_dict = None
             else:
@@ -39,7 +39,8 @@ class EmailManager(BasePortalAdmin):
         except:
             self._json_dict = {}
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def test(self, email):
         """
         Sends a test email to a provided email account to ensure the
@@ -53,25 +54,25 @@ class EmailManager(BasePortalAdmin):
 
         :returns: Bool
         """
-        params = {
-            "mailTo" : email,
-            "f" : "json"
-        }
+        params = {"mailTo": email, "f": "json"}
         url = self._url + "/test"
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
-    def update(self,
-               server,
-               from_email,
-               require_auth,
-               email_label=None,
-               port=25,
-               encryption="SSL",
-               username=None,
-               password=None):
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        server,
+        from_email,
+        require_auth,
+        email_label=None,
+        port=25,
+        encryption="SSL",
+        username=None,
+        password=None,
+    ):
         """
         Configures the Email Server for Portal
 
@@ -100,14 +101,15 @@ class EmailManager(BasePortalAdmin):
 
         :returns: boolean
         """
-        allowed_encrypt = ['none', 'tls', 'ssl']
+        allowed_encrypt = ["none", "tls", "ssl"]
         if email_label is None:
             email_label = from_email
         if require_auth:
             require_auth = "yes"
-            if username is None or \
-               password is None:
-                raise ValueError("`username` and `password` are required when require_auth=True")
+            if username is None or password is None:
+                raise ValueError(
+                    "`username` and `password` are required when require_auth=True"
+                )
         else:
             require_auth = "no"
 
@@ -120,15 +122,16 @@ class EmailManager(BasePortalAdmin):
             "password": password,
             "smtpPort": 25,
             "encryptionMethod": str(encryption).upper(),
-            "f": "json"
+            "f": "json",
         }
         url = self._url + "/update"
         res = self._con.post(url, params)
-        if 'status' in res:
+        if "status" in res:
             self._properties = None
-            return res['status'] == 'success'
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes the current email configuration
@@ -136,13 +139,15 @@ class EmailManager(BasePortalAdmin):
         :returns: Boolean
         """
         url = self._url + "/delete"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
+        if "status" in res:
             self._properties = None
-            return res['status'] == "success"
+            return res["status"] == "success"
         else:
             return False
+
+
 ########################################################################
 class System(BasePortalAdmin):
     """
@@ -152,16 +157,15 @@ class System(BasePortalAdmin):
     indexing capabilities, license information, and the properties of your
     portal.
     """
+
     _gis = None
     _con = None
     _url = None
     _email = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(System, self).__init__(url=url,
-                                     gis=gis,
-                                     **kwargs)
+        super(System, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -169,11 +173,11 @@ class System(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def email(self):
         """
@@ -181,15 +185,19 @@ class System(BasePortalAdmin):
 
         :returns: EmailManager
         """
-        #if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
-        if self._gis.version >= [7,3] or "supportsEmail" in self._gis.properties:
+        # if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
+        if self._gis.version >= [7, 3] or "supportsEmail" in self._gis.properties:
             if self._email is None:
-                self._email = EmailManager(url=self._url + "/emailSettings",
-                                           gis=self._gis)
+                self._email = EmailManager(
+                    url=self._url + "/emailSettings", gis=self._gis
+                )
         else:
-            raise Exception("Configuring Email Servers is not supported on this enterprise configuration.")
+            raise Exception(
+                "Configuring Email Servers is not supported on this enterprise configuration."
+            )
         return self._email
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -231,9 +239,10 @@ class System(BasePortalAdmin):
            validation. The default value is false.
         """
         url = "%s/properties" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, properties):
         """
@@ -275,10 +284,10 @@ class System(BasePortalAdmin):
            validation. The default value is false.
         """
         url = "%s/properties/update" % self._url
-        params = {"f" : "json",
-                  "properties" : properties}
+        params = {"f": "json", "properties": properties}
         self._con.post(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def web_adaptors(self):
         """
@@ -289,7 +298,8 @@ class System(BasePortalAdmin):
         """
         url = "%s/webadaptors" % self._url
         return WebAdaptors(url=url, gis=self._con)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def directories(self):
         """
@@ -314,12 +324,13 @@ class System(BasePortalAdmin):
         """
         res = []
         surl = "%s/directories" % self._url
-        params = {'f' : "json"}
-        for d in self._con.get(path=surl, params=params)['directories']:
-            url = "%s/directories/%s" % (self._url, d['name'])
+        params = {"f": "json"}
+        for d in self._con.get(path=surl, params=params)["directories"]:
+            url = "%s/directories/%s" % (self._url, d["name"])
             res.append(Directory(url=url, gis=self._con))
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def licenses(self):
         """
@@ -331,16 +342,18 @@ class System(BasePortalAdmin):
         Customer Service if you have questions about license levels or
         expiration properties.
         """
-        if self._gis.version < [7,1]:
+        if self._gis.version < [7, 1]:
             url = "%s/licenses" % self._url
             return Licenses(url=url, gis=self._con)
         else:
             import os
+
             u = os.path.dirname(self._url)
             url = "%s/license" % u
             return PortalLicense(url=url, gis=self._con)
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def database(self):
         """
@@ -351,9 +364,10 @@ class System(BasePortalAdmin):
         You can use the properety to update database accounts
         """
         url = "%s/database" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @database.setter
     def database(self, value):
         """
@@ -364,11 +378,12 @@ class System(BasePortalAdmin):
         You can use the properety to update database accounts
         """
         url = "%s/database" % self._url
-        params = {"f" : "json"}
-        for k,v in value.items():
+        params = {"f": "json"}
+        for k, v in value.items():
             params[k] = v
         self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def incremental_backup(self):
         """
@@ -378,25 +393,22 @@ class System(BasePortalAdmin):
         :returns: dict
         """
         url = "%s/database/settings" % self._url
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @incremental_backup.setter
-    def incremental_backup(self, value:bool):
+    def incremental_backup(self, value: bool):
         """
         Gets/Sets the Incremental Backup for the Enterprise Configuration
 
         :returns: dict
         """
         url = "%s/database/settings/edit" % self._url
-        params = {
-            "incrementalBackupEnabled": value,
-            "f" : "json"
-        }
+        params = {"incrementalBackupEnabled": value, "f": "json"}
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def index_status(self):
         """
@@ -445,10 +457,11 @@ class System(BasePortalAdmin):
         """
 
         url = "%s/indexer/status" % self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
-    def reindex(self, mode='FULL', includes=None):
+
+    # ----------------------------------------------------------------------
+    def reindex(self, mode="FULL", includes=None):
         """
         This operation allows you to generate or update the indexes for
         content; such as users, groups, and items stored in the database
@@ -472,20 +485,17 @@ class System(BasePortalAdmin):
 
         """
         url = "%s/indexer/reindex" % self._url
-        if mode.lower() == 'full':
+        if mode.lower() == "full":
             mode = "FULL_MODE"
-        params = {
-            "f" : "json",
-            "mode" : mode
-        }
+        params = {"f": "json", "mode": mode}
         if includes:
-            params['includes'] = includes
-        res = self._con.post(path=url,
-                             postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+            params["includes"] = includes
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def languages(self):
         """
@@ -494,10 +504,10 @@ class System(BasePortalAdmin):
         modify which language'content will be available.
         """
         url = "%s/languages" % self._url
-        params = {"f" : "json"}
-        return self._con.get(url,
-                             params)
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @languages.setter
     def languages(self, value):
         """
@@ -506,11 +516,10 @@ class System(BasePortalAdmin):
         modify which language'content will be available.
         """
         url = "%s/languages/update" % self._url
-        params = {"f" : "json",
-                  'languages' : value}
-        self._con.post(url,
-                       params)
-    #----------------------------------------------------------------------
+        params = {"f": "json", "languages": value}
+        self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     @property
     def content_discovery(self):
         """
@@ -536,10 +545,11 @@ class System(BasePortalAdmin):
 
         """
         url = "%s/content/configuration" % self._url
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.get(url, params)
         return res["isExternalContentEnabled"]
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @content_discovery.setter
     def content_discovery(self, value):
         """
@@ -563,10 +573,11 @@ class System(BasePortalAdmin):
 
         """
         import json
+
         url = "%s/content/configuration/update" % self._url
-        params = {'f' : 'json',
-                  'externalContentEnabled': json.dumps(value)}
+        params = {"f": "json", "externalContentEnabled": json.dumps(value)}
         res = self._con.post(url, params)
+
 
 ########################################################################
 class WebAdaptors(BasePortalAdmin):
@@ -576,15 +587,14 @@ class WebAdaptors(BasePortalAdmin):
     configuration web page or the command line utility provided with the
     installation.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(WebAdaptors, self).__init__(url=url,
-                                        gis=gis,
-                                        **kwargs)
+        super(WebAdaptors, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -592,11 +602,11 @@ class WebAdaptors(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         Returns all instances of WebAdaptors
@@ -633,12 +643,13 @@ class WebAdaptors(BasePortalAdmin):
         """
 
         res = []
-        if 'webAdaptors' in self.properties:
+        if "webAdaptors" in self.properties:
             for wa in self.properties.webAdaptors:
-                url = "%s/%s" % (self._url, wa['id'])
+                url = "%s/%s" % (self._url, wa["id"])
                 res.append(WebAdaptor(url=url, gis=self._con))
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def configuration(self):
         """
@@ -646,9 +657,10 @@ class WebAdaptors(BasePortalAdmin):
         Adaptor configured with the portal.
         """
         url = "%s/config" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @configuration.setter
     def configuration(self, shared_key):
         """
@@ -667,14 +679,12 @@ class WebAdaptors(BasePortalAdmin):
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):
-            params = {
-                "webAdaptorsConfig": {'sharedkey' : shared_key},
-                "f" : "json"}
-        elif isinstance(shared_key, dict) and \
-             'sharedKey' in shared_key:
-            params = {"webAdaptorsConfig": shared_key,
-                      "f" : "json"}
+            params = {"webAdaptorsConfig": {"sharedkey": shared_key}, "f": "json"}
+        elif isinstance(shared_key, dict) and "sharedKey" in shared_key:
+            params = {"webAdaptorsConfig": shared_key, "f": "json"}
         return self._con.post(path=url, postdata=params)
+
+
 ########################################################################
 class WebAdaptor(BasePortalAdmin):
     """
@@ -695,15 +705,14 @@ class WebAdaptor(BasePortalAdmin):
     credentials. However, the authorization of the request (by looking up
     roles and permissions) is still enforced by the portal's sharing rules.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(WebAdaptor, self).__init__(url=url,
-                                        gis=gis,
-                                        **kwargs)
+        super(WebAdaptor, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -711,11 +720,11 @@ class WebAdaptor(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unregister(self):
         """
         You can use this operation to unregister the ArcGIS Web Adaptor
@@ -726,8 +735,10 @@ class WebAdaptor(BasePortalAdmin):
         be updated.
         """
         url = "%s/unregister" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
+
+
 ########################################################################
 class Directory(BasePortalAdmin):
     """
@@ -741,15 +752,14 @@ class Directory(BasePortalAdmin):
     directories). However, you can change each registered directory through
     this API.
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(Directory, self).__init__(url=url,
-                                        gis=gis,
-                                        **kwargs)
+        super(Directory, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -757,11 +767,11 @@ class Directory(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -773,7 +783,8 @@ class Directory(BasePortalAdmin):
         independently by the system administrator.
         """
         return PropertyMap(self._json_dict)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
         """
@@ -785,12 +796,10 @@ class Directory(BasePortalAdmin):
         independently by the system administrator.
         """
         url = "%s/edit" % self._url
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         if isinstance(value, PropertyMap):
             value = dict(value)
-        for k,v in value.items():
+        for k, v in value.items():
             params[k] = v
         return self._con.post(path=url, postdata=params)
 
@@ -818,12 +827,11 @@ class PortalLicense(BasePortalAdmin):
     Manager, and Release License operations.
 
     """
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super().__init__(url=url,
-                                     gis=gis,
-                                     **kwargs)
+        super().__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -831,11 +839,11 @@ class PortalLicense(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def import_license(self, file):
         """
         The `import_license` operation is used to import a new license
@@ -860,14 +868,15 @@ class PortalLicense(BasePortalAdmin):
         :returns: Boolean
 
         """
-        file = {'file' : file}
-        params = {'f' : "json"}
+        file = {"file": file}
+        params = {"f": "json"}
         url = "%s/importLicense" % self._url
         res = self._con.post(url, params, files=file)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def populate(self):
         """
 
@@ -879,13 +888,14 @@ class PortalLicense(BasePortalAdmin):
         :returns: boolean
 
         """
-        params = {'f' : "json"}
+        params = {"f": "json"}
         url = "%s/populateLicense" % self._url
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def release_license(self, username):
         """
         If a user checks out an ArcGIS Pro license for offline or
@@ -911,14 +921,15 @@ class PortalLicense(BasePortalAdmin):
 
         """
         params = {
-            'f' : "json",
+            "f": "json",
         }
         url = "%s/releaseLicense" % self._url
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, info):
         """
         ArcGIS License Server Administrator works with your portal and
@@ -968,16 +979,14 @@ class PortalLicense(BasePortalAdmin):
 
 
         """
-        params = {
-            'f' : "json",
-            'licenseManagerInfo' : info
-        }
+        params = {"f": "json", "licenseManagerInfo": info}
         url = "%s/updateLicenseManager" % self._url
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate(self, file, list_ut=False):
         """
         The `validate` operation is used to validate an input license file.
@@ -1002,12 +1011,12 @@ class PortalLicense(BasePortalAdmin):
         :returns: Dict
 
         """
-        file = {'file' : file}
-        params = {'f' : "json",
-                  'listAdministratorUserTypes' : list_ut}
+        file = {"file": file}
+        params = {"f": "json", "listAdministratorUserTypes": list_ut}
         url = "%s/validateLicense" % self._url
         res = self._con.post(url, params, files=file)
         return res
+
 
 ########################################################################
 class Licenses(BasePortalAdmin):
@@ -1025,15 +1034,14 @@ class Licenses(BasePortalAdmin):
     **Deprecated at ArcGIS Enterprise 10.7**
 
     """
+
     _gis = None
     _con = None
     _url = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(Licenses, self).__init__(url=url,
-                                     gis=gis,
-                                     **kwargs)
+        super(Licenses, self).__init__(url=url, gis=gis, **kwargs)
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, Connection):
             self._con = gis
@@ -1041,11 +1049,11 @@ class Licenses(BasePortalAdmin):
             self._gis = gis
             self._con = gis._con
         else:
-            raise ValueError(
-                    "connection must be of type GIS or Connection")
+            raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def entitlements(self, app="arcgisprodesktop"):
         """
         This operation returns the currently queued entitlements for a
@@ -1067,20 +1075,24 @@ class Licenses(BasePortalAdmin):
         :returns: dict
 
         """
-        allowed = ["appstudioweb", "arcgisprodesktop",
-                   "busanalystonline_2", "drone2map",
-                   "geoplanner", "arcgisInsights",
-                   "LRReporter", "navigator",
-                   "RoadwayReporter"]
-        params = {
-            "f" : "json",
-            "appId" : app
-        }
+        allowed = [
+            "appstudioweb",
+            "arcgisprodesktop",
+            "busanalystonline_2",
+            "drone2map",
+            "geoplanner",
+            "arcgisInsights",
+            "LRReporter",
+            "navigator",
+            "RoadwayReporter",
+        ]
+        params = {"f": "json", "appId": app}
         if app not in allowed:
             raise ValueError("The app value must be: %s" % ",".join(allowed))
         url = "%s/getEntitlements" % self._url
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def remove_entitlement(self, app="arcgisprodesktop"):
         """
         deletes an entitlement from a site
@@ -1097,20 +1109,24 @@ class Licenses(BasePortalAdmin):
         :returns: dict
 
         """
-        allowed = ["appstudioweb", "arcgisprodesktop",
-                   "busanalystonline_2", "drone2map",
-                   "geoplanner", "arcgisInsights",
-                   "LRReporter", "navigator",
-                   "RoadwayReporter"]
-        params = {
-                "f" : "json",
-                "appId" : app
-            }
+        allowed = [
+            "appstudioweb",
+            "arcgisprodesktop",
+            "busanalystonline_2",
+            "drone2map",
+            "geoplanner",
+            "arcgisInsights",
+            "LRReporter",
+            "navigator",
+            "RoadwayReporter",
+        ]
+        params = {"f": "json", "appId": app}
         if app not in allowed:
             raise ValueError("The app value must be: %s" % ",".join(allowed))
         url = "%s/removeAllEntitlements" % self._url
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update_license_manager(self, info):
         """
         ArcGIS License Server Administrator works with your portal and
@@ -1139,13 +1155,11 @@ class Licenses(BasePortalAdmin):
         :returns: dict
 
         """
-        params = {
-            "f" : "json",
-            "licenseManagerInfo" : info
-        }
+        params = {"f": "json", "licenseManagerInfo": info}
         url = "%s/updateLicenseManager" % self._url
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def import_entitlements(self, file, application):
         """
         This operation allows you to import entitlements for ArcGIS Pro and
@@ -1177,15 +1191,11 @@ class Licenses(BasePortalAdmin):
 
         """
         url = "%s/importEntitlements" % self._url
-        params = {
-            "f" : "json",
-            "appId" : application
-        }
-        files = {'file' : file}
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
-    #----------------------------------------------------------------------
+        params = {"f": "json", "appId": application}
+        files = {"file": file}
+        return self._con.post(path=url, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
     def remove_all(self, application):
         """
         This operation removes all entitlements from the portal for ArcGIS
@@ -1197,11 +1207,11 @@ class Licenses(BasePortalAdmin):
         again in the future, all licensing assignments will be available in
         the website.
         """
-        params = {"f" : "json",
-                  "appId" : application}
+        params = {"f": "json", "appId": application}
         url = "%s/removeAllEntitlements" % self._url
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def release_license(self, username):
         """
         If a user checks out an ArcGIS Pro license for offline or
@@ -1216,9 +1226,6 @@ class Licenses(BasePortalAdmin):
         allows the user to check out a new license or use ArcGIS Pro in a
         connected environment.
         """
-        params = {"f" : "json",
-                  "username" : username
-                  }
+        params = {"f": "json", "username": username}
         url = "%s/releaseLicense" % self._url
         return self._con.get(path=url, params=params)
-

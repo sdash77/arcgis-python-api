@@ -4,5 +4,7 @@
 
 from utils.mocks.placeholders.placeholder_item import PlaceholderItem
 from utils.mocks.placeholders.placeholder_featurelayer import PlaceholderFeatureLayer
-from utils.mocks.placeholders.placeholder_featurelayercollection import PlaceholderFeatureLayerCollection
+from utils.mocks.placeholders.placeholder_featurelayercollection import (
+    PlaceholderFeatureLayerCollection,
+)
 from utils.mocks.placeholders.placeholder_table import PlaceholderTable

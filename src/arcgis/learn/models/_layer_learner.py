@@ -7,7 +7,13 @@ import math
 from pathlib import Path
 
 HAS_FASTAI = True
+HAS_SHAP = True
 import_exception=None
+
+try:
+    import shap
+except:
+    HAS_SHAP = False
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -18,7 +24,7 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
-    from .._utils.tabular_data import TabularDataObject
+    from .._utils.tabular_data import TabularDataObject,explain_prediction
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
@@ -103,6 +109,10 @@ class FullyConnectedNetwork(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -204,6 +214,21 @@ class FullyConnectedNetwork(ArcGISModel):
 
         return {'score': score}
 
+    @property
+    def feature_importances_(self):
+        """
+        :Returns the global feature importance summary
+        plot from SHAP.
+        """
+        processed_dataframe = None
+        explain_index = None
+        random_index = None
+        explain_prediction(self, processed_dataframe, index=explain_index, random_index=random_index,
+                               predictor=None,
+                               global_pred=True)
+        return
+
+
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["ModelType"] = "FullyConnectedNetwork"
@@ -260,7 +285,10 @@ class FullyConnectedNetwork(ArcGISModel):
             gis=None,
             prediction_type='features',
             output_raster_path=None,
-            match_field_names=None):
+            match_field_names=None,
+            explain=False,
+            explain_index=None
+            ):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -312,6 +340,17 @@ class FullyConnectedNetwork(ArcGISModel):
                                                     "Field_Name_1": "Field_1",
                                                     "Field_Name_2": "Field_2"
                                                 }
+        ---------------------------------   -------------------------------------------------------------------------
+        explain                             Optional Bool.
+                                            Setting this parameter to true generates prediction explaination plot.
+                                            Plot is generated using model interpretability library called SHAP.
+                                            (https://github.com/slundberg/shap)
+        ---------------------------------   -------------------------------------------------------------------------
+        explain_index                       Optional Int.
+                                            The index of the dataframe passed to the predict function for which model
+                                            interpretability is desired. If the parameter is not passed and if the
+                                            explain parameter is set to true, the SHAP plot will be generated for a
+                                            random index of the dataframe.
         =================================   =========================================================================
 
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
@@ -319,13 +358,18 @@ class FullyConnectedNetwork(ArcGISModel):
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
+        if explain:
+            if not HAS_SHAP:
+                warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
+                explain = False
+                explain_index = None
         if prediction_type in ['features', 'dataframe']:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type,explain,explain_index)
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
@@ -333,7 +377,7 @@ class FullyConnectedNetwork(ArcGISModel):
             if not output_raster_path:
                 raise Exception("Please specify output_raster_folder_path to save the output.")
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names)
+            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index)
 
     def _predict_features(
             self,
@@ -344,7 +388,9 @@ class FullyConnectedNetwork(ArcGISModel):
             output_name="Prediction Layer",
             gis=None,
             match_field_names=None,
-            prediction_type="features"
+            prediction_type="features",
+            explain=False,
+            explain_index=None
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
@@ -405,6 +451,12 @@ class FullyConnectedNetwork(ArcGISModel):
         for field in fields_needed:
             if field not in processed_dataframe.columns:
                 raise Exception(f"Field missing {field}")
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self,processed_dataframe,index=explain_index,random_index=random_index,predictor=None)
 
         dataframe["prediction_results"] = self._df_predict(processed_dataframe.copy())
         if prediction_type == "dataframe":
@@ -420,7 +472,7 @@ class FullyConnectedNetwork(ArcGISModel):
                 online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
+    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -541,6 +593,13 @@ class FullyConnectedNetwork(ArcGISModel):
             for raster_name in sorted(raster_data.keys()):
                 processed_row.append(raster_data[raster_name][i])
             processed_data.append(processed_row)
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self, pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data)),
+                               index=explain_index, random_index=random_index,predictor=None)
 
         processed_numpy = np.array(self._df_predict(pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))), dtype='float64')
         processed_numpy = processed_numpy.reshape([max_raster_rows, max_raster_columns])

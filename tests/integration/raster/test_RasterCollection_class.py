@@ -1,7 +1,7 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        RasterCollection class tests
 # Purpose:     smoke tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
 import os
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -11,7 +11,7 @@ from configparser import ConfigParser
 from pathlib import Path
 import datetime
 
-#region PreCondition check
+# region PreCondition check
 test_skip = False
 class_skip = False
 module_skip = False
@@ -19,13 +19,13 @@ module_skip = False
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
 
-if (r1 & r2):
+if r1 & r2:
     print("## Precondition checks passed ##")
     module_skip = False
 else:
     module_skip = True
     print("Pre condition checks failed. Quitting tests")
-    raise(exit())
+    raise (exit())
 
 # Import the module after Precondition checks pass
 try:
@@ -34,10 +34,10 @@ try:
     from arcgis.raster import RasterCollection
 except ImportError:
     print("API import error. Quitting test")
-    raise(exit())
-#endregion PreCondition Check
+    raise (exit())
+# endregion PreCondition Check
 
-#TestModule
+# TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping tests in GIS module")
 def setUpModule():
     """
@@ -45,14 +45,16 @@ def setUpModule():
     :return:
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
+
 
 class Test_RasterCollection_localfile(unittest.TestCase):
     """
     Make RC using local files
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -61,60 +63,77 @@ class Test_RasterCollection_localfile(unittest.TestCase):
         :return:
         """
 
-        #region Read config data
+        # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader['arcgiscom']['url']
-        cls.portal_username = _conf_reader['arcgiscom']['apidataowner_user']
-        cls.portal_password = _conf_reader['arcgiscom']['apidataowner_password']
+        cls.portal_url = _conf_reader["arcgiscom"]["url"]
+        cls.portal_username = _conf_reader["arcgiscom"]["apidataowner_user"]
+        cls.portal_password = _conf_reader["arcgiscom"]["apidataowner_password"]
 
         _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
+        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
-        cls.qalab_data_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
-        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_ImageryLayer_cls']
-        cls.qalab_output_root = cls.qalab_base_path + _conf_reader2['test_data']['qalab_output_root']
-        cls.qalab_cls_name = _conf_reader2['test_data']['qalab_ImageryLayer_cls']
-        #endregion
+        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_data_path = (
+            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
+        )
+        cls.qalab_cls_path = (
+            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_ImageryLayer_cls"]
+        )
+        cls.qalab_output_root = (
+            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_output_root"]
+        )
+        cls.qalab_cls_name = _conf_reader2["test_data"]["qalab_ImageryLayer_cls"]
+        # endregion
 
-        #region precondition checks and sign in
+        # region precondition checks and sign in
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False)
+        cls.gis = GIS(
+            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+        )
         if cls.gis is None:
             cls.class_skip = True
 
         print("==================================================================")
         print("Beginning tests in Test_RasterCollection_localfile class")
-        #endregion
+        # endregion
 
     def setUp(self):
-        test_skip = False #reset the skip flag
-        print("Test: "+self._testMethodName)
+        test_skip = False  # reset the skip flag
+        print("Test: " + self._testMethodName)
         self.namePrefix = "dino_ImgLyr_"
 
-        #region delete old outputs
+        # region delete old outputs
         self.test_case_name = self.namePrefix + self._testMethodName
-        search_result = PortalUtils.search_portal_item(self.gis, self.test_case_name, None)
+        search_result = PortalUtils.search_portal_item(
+            self.gis, self.test_case_name, None
+        )
 
         if search_result is not None:
             delete_result = PortalUtils.delete_portal_item(self.gis, search_result)
             if not delete_result[0]:
-                test_skip = True #cannot run test case if old output is not deleted
+                test_skip = True  # cannot run test case if old output is not deleted
                 print("Failed to delete old test output: " + str(delete_result[1]))
             else:
                 print("setUp : deleted old output. Proceeding to test case")
         else:
             print("setUp: not old outputs found. Proceeding to test case")
-        #endregion
+        # endregion
 
         t = datetime.datetime.now()
-        self.time_stamp = str.format("{0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
-              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        self.time_stamp = str.format(
+            "{0}_{1}_{2}_{3}_{4}_{5}",
+            str(t.year),
+            str(t.month),
+            str(t.day),
+            str(t.hour),
+            str(t.minute),
+            str(t.second),
+        )
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
@@ -124,20 +143,23 @@ class Test_RasterCollection_localfile(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
     def test_filter_by_calendar_range(self):
         try:
             # read crf file
             # crf_path=r'\\Mac\Home\Documents\GIS_data\Imagery\sentinel-5p\ny-2019-2020\ny_crf\ny_19_20.crf'
-            crf_path = os.path.join(self.qalab_cls_path, 'ny_19_20.crf')
+            crf_path = os.path.join(self.qalab_cls_path, "ny_19_20.crf")
             import arcgis
+
             print(arcgis.__file__)
             no2_rc = RasterCollection(crf_path)
 
             self.assertIsInstance(no2_rc, arcgis.raster.RasterCollection)
 
-            #filter
-            no2_2019 = no2_rc.filter_by_calendar_range('YEAR', 2019, 2019)
+            # filter
+            no2_2019 = no2_rc.filter_by_calendar_range("YEAR", 2019, 2019)
             self.assertIsInstance(no2_2019, arcgis.raster.RasterCollection)
             self.assertLess(no2_2019.count, no2_rc.count)
 

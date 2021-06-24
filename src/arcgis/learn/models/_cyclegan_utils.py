@@ -128,10 +128,12 @@ class CycleGANTrainer(LearnerCallback):
     
     def _set_trainable(self, D_A=False, D_B=False):
         gen = (not D_A) and (not D_B)
-        requires_grad(self.learn.model.G_A, gen)
-        requires_grad(self.learn.model.G_B, gen)
-        requires_grad(self.learn.model.D_A, D_A)
-        requires_grad(self.learn.model.D_B, D_B)
+        ## Removing gradient flags which are causing incorrect
+        ## results on training the model second time.
+        # requires_grad(self.learn.model.G_A, gen)
+        # requires_grad(self.learn.model.G_B, gen)
+        # requires_grad(self.learn.model.D_A, D_A)
+        # requires_grad(self.learn.model.D_B, D_B)
         if not gen:
             self.opt_D_A.lr, self.opt_D_A.mom = self.learn.opt.lr, self.learn.opt.mom
             self.opt_D_A.wd, self.opt_D_A.beta = self.learn.opt.wd, self.learn.opt.beta

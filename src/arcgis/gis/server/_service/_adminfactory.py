@@ -22,22 +22,26 @@ from ._geodataservice import GeoData
 from ._layerfactory import Service
 from ..admin._services import Service as AdminService
 
+
 def add_metaclass(metaclass):
     """Class decorator for creating a class with a metaclass."""
+
     def wrapper(cls):
         orig_vars = cls.__dict__.copy()
-        slots = orig_vars.get('__slots__')
+        slots = orig_vars.get("__slots__")
         if slots is not None:
             if isinstance(slots, str):
                 slots = [slots]
             for slots_var in slots:
                 orig_vars.pop(slots_var)
-        orig_vars.pop('__dict__', None)
-        orig_vars.pop('__weakref__', None)
-        if hasattr(cls, '__qualname__'):
-            orig_vars['__qualname__'] = cls.__qualname__
+        orig_vars.pop("__dict__", None)
+        orig_vars.pop("__weakref__", None)
+        if hasattr(cls, "__qualname__"):
+            orig_vars["__qualname__"] = cls.__qualname__
         return metaclass(cls.__name__, cls.__bases__, orig_vars)
+
     return wrapper
+
 
 def _str_replace(mystring, rd):
     """replaces a value based on a key/value pair where the
@@ -47,9 +51,10 @@ def _str_replace(mystring, rd):
 
     """
     import re
+
     patternDict = {}
     myDict = {}
-    for key,value in rd.items():
+    for key, value in rd.items():
         pattern = re.compile(re.escape(key), re.IGNORECASE)
         patternDict[value] = pattern
     for key in patternDict:
@@ -57,34 +62,35 @@ def _str_replace(mystring, rd):
         mystring = regex_obj.sub(key, mystring)
     return mystring
 
+
 class AdminServiceFactory(type):
     """
     Generates an Administrative Service Object from a url or service object
     """
-    def __call__(cls,
-                 service,
-                 gis,
-                 initialize=False):
+
+    def __call__(cls, service, gis, initialize=False):
         """generates the proper type of layer from a given url"""
 
         url = service._url
-        if isinstance(service, FeatureLayer) or \
-           os.path.basename(url).isdigit():
+        if isinstance(service, FeatureLayer) or os.path.basename(url).isdigit():
             parent = Service(url=os.path.dirname(url), server=gis)
             return AdminServiceGen(parent, gis)
         elif isinstance(service, (NetworkDataset)):
-            rd = {'naserver', 'MapServer'}
+            rd = {"naserver", "MapServer"}
             url = _str_replace(url, rd)
             parent = Service(url=url, server=gis)
             return AdminServiceGen(parent, gis)
         else:
-            rd = {'/rest/': '/admin/'}
+            rd = {"/rest/": "/admin/"}
             connection = service._con
             admin_url = "%s.%s" % (
                 _str_replace(os.path.dirname(url), rd),
-                os.path.basename(url))
+                os.path.basename(url),
+            )
             return AdminService(url=admin_url, gis=gis)
         return type.__call__(cls, service, gis, False)
+
+
 ###########################################################################
 @add_metaclass(AdminServiceFactory)
 class AdminServiceGen(object):
@@ -98,6 +104,7 @@ class AdminServiceGen(object):
        server - Server class
        item - Enterprise or Online Item class
     """
+
     def __init__(self, service, gis):
         iterable = None
         if iterable is None:

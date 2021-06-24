@@ -473,6 +473,17 @@ class TextDataObject:
     def show_batch(self, rows=5, max_len=max_len):
         """
         Shows a batch of dataframe prepared without applying transforms.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional integer. Number of rows in the
+                                dataframe to be shown on the function call.
+                                The default value is `5`.
+        ---------------------   -------------------------------------------
+        max_len                 Optional integer. Maximum number of tokens to be
+                                shown for the text field (source column) of the
+                                dataframe. The default value is `100`.
+        =====================   ===========================================
         """
         if self._task == "classification":
             return self._classification_show_batch(rows=rows, max_len=max_len)
@@ -508,12 +519,14 @@ class TextDataObject:
         # rows = min(len(self._train_df), rows)
         # random_batch = np.random.randint(0,self._train_df.index.max(),rows)
         dataframe = self._train_df.loc[random_batch]
-        if len(self._label_cols) > 1:
-            for idx, item in dataframe.iterrows():
+        for idx, item in dataframe.iterrows():
+            if len(self._label_cols) > 1:
                 target = ";".join([column for column in self._label_cols if int(getattr(item, column))])
-                source = getattr(item, self._text_cols)
-                if max_len is not None: source = " ".join(source.split(" "))[:max_len]
-                processed_data.append([source, target])
+            else:
+                target = getattr(item, self._label_cols[0])
+            source = getattr(item, self._text_cols)
+            if max_len is not None: source = " ".join(source.split(" "))[:max_len]
+            processed_data.append([source, target])
 
             dataframe = pd.DataFrame(processed_data, columns=["source", "target"])
 

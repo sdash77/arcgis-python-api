@@ -26,10 +26,11 @@ class Indicator(_BaseWidget):
     description                 Optional string. Description for the widget.
     =========================   ===========================================
     """
-    def __init__(self, item, name='Indicator', layer=0, title='', description=''):
+
+    def __init__(self, item, name="Indicator", layer=0, title="", description=""):
         super().__init__(name, title, description)
 
-        if item.type not in ['Feature Service', 'mapWidget']:
+        if item.type not in ["Feature Service", "mapWidget"]:
             raise Exception("Please specify an item")
 
         self.item = item
@@ -38,7 +39,7 @@ class Indicator(_BaseWidget):
 
         self._nodata = NoDataProperties._nodata_init()
         self._novalue = NoDataProperties._nodata_init()
-        
+
         self._data = IndicatorData._create_data()
         self._reference = ReferenceData._create_data()
 
@@ -63,7 +64,7 @@ class Indicator(_BaseWidget):
         :return: Indicator Data object. Set data properties, categories and values.
         """
         return self._data
-    
+
     @property
     def reference(self):
         """
@@ -91,7 +92,7 @@ class Indicator(_BaseWidget):
         :return: show last update or not.
         """
         return self._show_last_update
-    
+
     @show_last_update.setter
     def show_last_update(self, value):
         """
@@ -107,79 +108,100 @@ class Indicator(_BaseWidget):
         self._statistic_defintion = []
 
         if self._data.value_type == "statistic":
-            self._statistic_defintion.append({
-                            "onStatisticField":self.data.value_field,
-                            "outStatisticFieldName":"value",
-                            "statisticType":self._data.statistic
-                        })
+            self._statistic_defintion.append(
+                {
+                    "onStatisticField": self.data.value_field,
+                    "outStatisticFieldName": "value",
+                    "statisticType": self._data.statistic,
+                }
+            )
 
-        if self.item.type == 'mapWidget':
+        if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
             widget_id = self.item._id
             layer_id = wlayer["id"]
-            self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._datasource = {"id": str(widget_id) + "#" + str(layer_id)}
         else:
             self._datasource = {
-                        "type": "featureServiceDataSource",
-                        "itemId": self.item.itemid,
-                        "layerId": 0,
-                        "table": True
-                    }
+                "type": "featureServiceDataSource",
+                "itemId": self.item.itemid,
+                "layerId": 0,
+                "table": True,
+            }
 
-        self._datasets =[{
-                    "type": "serviceDataset",
-                    "dataSource": self._datasource,
-                    "outFields": ["*"],
-                    "groupByFields": [],
-                    "orderByFields": [],
-                    "statisticDefinitions": self._statistic_defintion,
-                    "querySpatialRelationship": "esriSpatialRelIntersects",
-                    "returnGeometry": False,
-                    "clientSideStatistics": False,
-                    "name": "main"
-                }]
+        self._datasets = [
+            {
+                "type": "serviceDataset",
+                "dataSource": self._datasource,
+                "outFields": ["*"],
+                "groupByFields": [],
+                "orderByFields": [],
+                "statisticDefinitions": self._statistic_defintion,
+                "querySpatialRelationship": "esriSpatialRelIntersects",
+                "returnGeometry": False,
+                "clientSideStatistics": False,
+                "name": "main",
+            }
+        ]
         if self._reference.reference_type == "fixed":
-            self._datasets.append({
-                    "type":"staticDataset",
-                    "data":self._reference.fixed_value,
-                    "name":"reference"
-                })
+            self._datasets.append(
+                {
+                    "type": "staticDataset",
+                    "data": self._reference.fixed_value,
+                    "name": "reference",
+                }
+            )
         elif self._reference.reference_type == "statistic":
-            self._datasets.append({
+            self._datasets.append(
+                {
                     "type": "serviceDataset",
                     "dataSource": {
                         "type": "featureServiceDataSource",
                         "itemId": self.item.itemid,
                         "layerId": 0,
-                        "table": True
+                        "table": True,
                     },
                     "outFields": ["*"],
                     "groupByFields": [],
                     "orderByFields": [],
-                    "statisticDefinitions": [{
-                            "onStatisticField":self.reference.reference_field,
-                            "outStatisticFieldName":"value",
-                            "statisticType":self._reference.statistic
-                        }],
+                    "statisticDefinitions": [
+                        {
+                            "onStatisticField": self.reference.reference_field,
+                            "outStatisticFieldName": "value",
+                            "statisticType": self._reference.statistic,
+                        }
+                    ],
                     "querySpatialRelationship": "esriSpatialRelIntersects",
                     "returnGeometry": False,
                     "clientSideStatistics": False,
-                    "name": "reference"
-                })
+                    "name": "reference",
+                }
+            )
 
         json_data = {
             "type": "indicatorWidget",
             "defaultSettings": {
                 "topSection": {"fontSize": 80, "textInfo": {}},
                 "middleSection": {"fontSize": 160, "textInfo": {"text": "{value}"}},
-                "bottomSection": {"fontSize": 80, "textInfo": {}}},
+                "bottomSection": {"fontSize": 80, "textInfo": {}},
+            },
             "comparison": self._reference.reference_type,
             "valueField": self._data.value_field,
             "referenceField": self._reference.reference_field,
-            "valueConversion": {"factor": self._data.factor, "offset": self._data.offset},
-            "referenceConversion": {"factor": self._reference.factor, "offset": self._reference.offset},
+            "valueConversion": {
+                "factor": self._data.factor,
+                "offset": self._data.offset,
+            },
+            "referenceConversion": {
+                "factor": self._reference.factor,
+                "offset": self._reference.offset,
+            },
             "valueFormat": {"name": "value", "type": "decimal", "prefix": False},
-            "percentageFormat": {"name": "percentage", "type": "decimal", "prefix": False},
+            "percentageFormat": {
+                "name": "percentage",
+                "type": "decimal",
+                "prefix": False,
+            },
             "ratioFormat": {"name": "ratio", "type": "decimal", "prefix": False},
             "valueType": self._data.value_type,
             "noValueVerticalAlignment": self._novalue.alignment,
@@ -193,18 +215,18 @@ class Indicator(_BaseWidget):
             "showLastUpdate": self.show_last_update,
             "noDataVerticalAlignment": self._nodata.alignment,
             "showCaptionWhenNoData": self._nodata.show_title,
-            "showDescriptionWhenNoData": self._nodata._show_description
+            "showDescriptionWhenNoData": self._nodata._show_description,
         }
         if self._text_color:
-            json_data['defaultSettings']['textColor'] = self._text_color
+            json_data["defaultSettings"]["textColor"] = self._text_color
 
         if self._background_color:
-            json_data['defaultSettings']['backgroundColor'] = self._background_color
+            json_data["defaultSettings"]["backgroundColor"] = self._background_color
 
         return json_data
 
-class IndicatorData(object):
 
+class IndicatorData(object):
     @classmethod
     def _create_data(cls, value_type="statistic"):
         data = IndicatorData()
@@ -235,7 +257,9 @@ class IndicatorData(object):
         if value in ["statistic", "feature"]:
             self._value_type = str(value)
         else:
-            raise Exception("Please set correct value type. Supported value types are 'statistic', 'feature'")
+            raise Exception(
+                "Please set correct value type. Supported value types are 'statistic', 'feature'"
+            )
 
     @property
     def statistic(self):
@@ -250,7 +274,7 @@ class IndicatorData(object):
         Set statistic for data.
         """
         if self._value_type == "statistic":
-            if value in ['count', 'avg', 'min', 'max', 'stddev', 'sum']:
+            if value in ["count", "avg", "min", "max", "stddev", "sum"]:
                 self._statistic = value
         else:
             raise Exception("Can set statistic only for reference type 'statistic'")
@@ -298,15 +322,17 @@ class IndicatorData(object):
         if self._value_type in ["feature", "statistic"]:
             self._value_field = value
         else:
-            raise Exception("Can add value field only for value type 'feature' or 'statistic'")
-        
+            raise Exception(
+                "Can add value field only for value type 'feature' or 'statistic'"
+            )
+
     @property
     def filters(self):
         """
         :return: filters associated with widget
         """
         return self._filters
-    
+
     def add_filter(self, field, join, condition, **kwargs):
         """
         Add filters associated with widget.
@@ -316,26 +342,59 @@ class IndicatorData(object):
             self._filter_join = join
         else:
             raise Exception("Please select from 'AND', 'OR'")
-        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+        if condition in [
+            "between",
+            "not between",
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+            "is null",
+            "is not null",
+        ]:
             self._filter_condition = condition
         else:
             raise Exception("Please select the right condition")
 
         if condition in ["between", "not between"]:
-            self._val1 = kwargs.get('start')
-            self,_val2 = kwargs.get('end')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+            self._val1 = kwargs.get("start")
+            self, _val2 = kwargs.get("end")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "start": self._val1,
+                    "end": self._val2,
+                }
+            )
         else:
             raise Exception("Please provide 'start' and 'end' values as parameters")
 
-        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
-            self._val = kwargs.get('value')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        if condition in [
+            "equal",
+            "not equal",
+            "greater than",
+            "greater than or equal",
+            "less than",
+            "less than or equal",
+        ]:
+            self._val = kwargs.get("value")
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                    "value": self._val,
+                }
+            )
         else:
             raise Exception("Please provide a 'value' parameter for comparison")
 
-class ReferenceData(object):
 
+class ReferenceData(object):
     @classmethod
     def _create_data(cls, reference_type="none"):
         data = ReferenceData()
@@ -367,7 +426,9 @@ class ReferenceData(object):
         if value in ["statistic", "feature", "none", "previous", "fixed"]:
             self._reference_type = str(value)
         else:
-            raise Exception("Please set correct reference type. Supported reference types are 'none', 'statistic', 'previous', 'fixed', 'feature'")
+            raise Exception(
+                "Please set correct reference type. Supported reference types are 'none', 'statistic', 'previous', 'fixed', 'feature'"
+            )
 
     @property
     def statistic(self):
@@ -382,7 +443,7 @@ class ReferenceData(object):
         Set statistic for reference.
         """
         if self._value_type == "statistic":
-            if value in ['count', 'avg', 'min', 'max', 'stddev', 'sum']:
+            if value in ["count", "avg", "min", "max", "stddev", "sum"]:
                 self._statistic = value
         else:
             raise Exception("Can set statistic only for reference type 'statistic'")
@@ -430,7 +491,9 @@ class ReferenceData(object):
         if self._reference_type in ["feature", "previous"]:
             self._reference_field = value
         else:
-            raise Exception("Can add reference field only for value type 'feature' or 'previous'")
+            raise Exception(
+                "Can add reference field only for value type 'feature' or 'previous'"
+            )
 
     @property
     def fixed_value(self):

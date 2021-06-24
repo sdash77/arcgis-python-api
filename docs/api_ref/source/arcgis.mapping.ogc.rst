@@ -32,6 +32,22 @@ GeoRSSLayer
     :undoc-members:
     :show-inheritance:
 
+OGCFeatureService
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.OGCFeatureService
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+
+OGCCollection
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.OGCCollection
+    :members:
+    :inherited-members:
+    :undoc-members:
+    :show-inheritance:
+    
 WMSLayer
 ---------------------------
 .. autoclass:: arcgis.mapping.ogc.WMSLayer
@@ -47,3 +63,5 @@ WMTSLayer
     :inherited-members:
     :undoc-members:
     :show-inheritance:
+    
+
