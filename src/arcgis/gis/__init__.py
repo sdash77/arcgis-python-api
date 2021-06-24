@@ -480,7 +480,7 @@ class GIS(object):
                     props["urlKey"],
                     props["customBaseUrl"],
                 )
-                if self._url != url:                        
+                if self._url != url:
                     self._url = url
                     pp = _portalpy.Portal(
                         url,
@@ -834,9 +834,9 @@ class GIS(object):
         The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
         :return: :class:`~arcgis.realtime.velocity.Velocity`
         """
-        if self._portal.is_arcgisonline and self._subscription_information is not None :
+        if self._portal.is_arcgisonline and self._subscription_information is not None:
             _velocity_url = None
-            org_capabilities = self._subscription_information['orgCapabilities']
+            org_capabilities = self._subscription_information["orgCapabilities"]
             for capabilities in org_capabilities:
                 if capabilities["id"] == "velocity":
                     _velocity_url = capabilities["velocityUrl"]
@@ -844,7 +844,9 @@ class GIS(object):
                         _velocity_url += "/iot/"
 
             if _velocity_url is not None:
-                velocity = arcgis.realtime.velocity.Velocity(url=_velocity_url, gis=self)
+                velocity = arcgis.realtime.velocity.Velocity(
+                    url=_velocity_url, gis=self
+                )
                 return velocity
             else:
                 raise Exception("Velocity is not available on this organizaiton.")
@@ -9698,22 +9700,23 @@ class Item(dict):
             if not self._hydrated and not k.startswith("_"):
                 self._hydrate()
             return dict.__getitem__(self, k)
+
     # ----------------------------------------------------------------------
     @property
     def can_delete(self) -> bool:
         """
         Checks if the Item can be removed from the system.
-        
+
         :returns: bool
         """
         url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
-        params = {"f" : "json"}
+        params = {"f": "json"}
         try:
             return self._gis._con.get(url, params).get("success", False)
         except Exception as e:
             _log.warning(e)
             return False
-        
+
     # ----------------------------------------------------------------------
     @property
     def content_status(self):
