@@ -8,6 +8,7 @@ from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox
 from arcgis._impl.common._utils import _validate_url
+from arcgis.network import _utils
 from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)

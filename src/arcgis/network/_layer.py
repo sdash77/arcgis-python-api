@@ -501,7 +501,7 @@ class RouteLayer(NetworkLayer):
             params["travel_mode"] = json.dumps(travel_mode)
         else:
             travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=gis)
+                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
             )
         stops = _handle_spatial_inputs(data=stops)
         params["stops"] = stops
