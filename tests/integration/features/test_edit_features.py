@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_apply_edits_form_post\src")
 import unittest
 import pandas as pd
 from pandas import Timestamp
@@ -3311,6 +3314,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         sdf.spatial.name
         self._sdf = sdf
 
+    # @unittest.skip("skip me")
     def test_sedf_adds(self):
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False, trust_env=True)
@@ -3320,8 +3324,16 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             resp = item.layers[0].edit_features(adds=self._sdf)
             assert resp['addResults']
 
-            assert item.delete()
+            if item:
+                related = self._get_relationships(item)
+                item.delete()
+                for relate in related:
+                    try:
+                        relate.delete()
+                    except:
+                        ...
 
+    # @unittest.skip("skip me")
     def test_sedf_updates(self):
         """tests performing the updates with SeDF"""
         for profile in PROFILES:
@@ -3335,8 +3347,16 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             update_sdf['OBJECTID'] += 1
             respupdate = item.layers[0].edit_features(updates=update_sdf)
             assert respupdate['updateResults']
-            assert item.delete()
+            if item:
+                related = self._get_relationships(item)
+                item.delete()
+                for relate in related:
+                    try:
+                        relate.delete()
+                    except:
+                        ...
 
+    # @unittest.skip("skip me")
     def test_deletes(self):
         """tests performing the updates with SeDF"""
         for profile in PROFILES:
@@ -3345,13 +3365,27 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
                 item = gis.content.import_data(self._sdf)
                 sdf = item.layers[0].query(as_df=True)
-                resp = item.layers[0].edit_features(deletes=sdf['OBJECTID'].tolist())
+                oidfld = "OBJECTID"
+                for fld in sdf.columns:
+                    if item.layers[0].properties.objectIdField.lower() == fld.lower():
+                        oidfld = fld
+                        break
+
+                resp = item.layers[0].edit_features(deletes=sdf[oidfld].tolist())
                 assert resp['deleteResults']
             except Exception as e:
-                if item:
-                    item.delete()
                 raise e
+            finally:
+                if item:
+                    related = self._get_relationships(item)
+                    item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
+    # @unittest.skip("skip me")
     def test_featureset_adds(self):
         for profile in PROFILES:
             item = None
@@ -3380,8 +3414,15 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 raise e
             finally:
                 if item:
+                    related = self._get_relationships(item)
                     item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
+    # @unittest.skip("skip me")
     def test_featureset_updates(self):
         for profile in PROFILES:
             item = None
@@ -3405,8 +3446,15 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 raise e
             finally:
                 if item:
+                    related = self._get_relationships(item)
                     item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
+    # @unittest.skip("skip me")
     def test_dict_adds(self):
         """
         Tests adding content via List[Dict[str, Any]
@@ -3428,8 +3476,15 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 raise e
             finally:
                 if item:
+                    related = self._get_relationships(item)
                     item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
+    # @unittest.skip("skip me")
     def test_dict_updates(self):
         """
         Tests updates content via List[Dict[str, Any]
@@ -3452,7 +3507,93 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 raise e
             finally:
                 if item:
+                    related = self._get_relationships(item)
                     item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
+
+    def _get_relationships(self, item):
+        """
+        """
+        related = []
+        from arcgis.gis import Item
+
+        for direction in Item._RELATIONSHIP_DIRECTIONS:
+            for rel in Item._RELATIONSHIP_TYPES:
+                try:
+                    rels = item.related_items(rel, direction=direction)
+                    if rels:
+                        related.extend(rels)
+                except:
+                    ...
+        return related
+
+    # @unittest.skip("skip me")
+    def test_list_features_adds(self):
+        """
+        Tests updates content via List[Feature]
+        """
+        for profile in PROFILES:
+            item = None
+            try:
+
+                gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+
+                item = gis.content.import_data(self._sdf)
+                sdf = item.layers[0].query(as_df=True)
+                sdf = self._sdf.head().copy()
+                fs = sdf.spatial.to_featureset()
+                features = fs.features
+                lyr = item.layers[0]
+                resp = lyr.edit_features(adds=features)
+                assert resp
+            except Exception as e:
+
+                raise e
+            finally:
+                if item:
+                    related = self._get_relationships(item)
+                    item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
+
+    def test_list_features_adds_no_attributes(self):
+        """
+        Tests updates content via List[Feature]
+        """
+        for profile in PROFILES:
+            item = None
+            try:
+
+                gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+
+                item = gis.content.import_data(self._sdf)
+                feature_layer: FeatureLayer = item.layers[0]
+
+                geometry = Geometry(
+                    {"y": 32.1, "x": 32.1, "spatialReference": {"wkid": 4326}}
+                )
+
+                # this throws the error
+                resp = feature_layer.edit_features(adds=[Feature(geometry=geometry)])
+            except Exception as e:
+
+                raise e
+            finally:
+                if item:
+                    related = self._get_relationships(item)
+                    item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
 
 if __name__ == "__main__":

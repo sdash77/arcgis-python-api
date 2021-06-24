@@ -2469,8 +2469,15 @@ class FeatureLayer(Layer):
                     [dict(f) for f in adds], default=_date_handler
                 )
             elif isinstance(adds[0], Feature):
+
+                def _handle_feature(f):
+                    d = f.as_dict
+                    if f.attributes is None:
+                        d["attributes"] = {}
+                    return d
+
                 params["adds"] = json.dumps(
-                    [f.as_dict for f in adds], default=_date_handler
+                    [_handle_feature(f.as_dict) for f in adds], default=_date_handler
                 )
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
