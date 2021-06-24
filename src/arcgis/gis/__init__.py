@@ -480,26 +480,27 @@ class GIS(object):
                     props["urlKey"],
                     props["customBaseUrl"],
                 )
-                self._url = url
-                pp = _portalpy.Portal(
-                    url,
-                    self._username,
-                    self._password,
-                    self._key_file,
-                    self._cert_file,
-                    verify_cert=self._verify_cert,
-                    client_id=self._client_id,
-                    proxy_port=self._proxy_port,
-                    proxy_host=self._proxy_host,
-                    expiration=self._expiration,
-                    referer=self._referer,
-                    custom_auth=custom_auth,
-                    # token=self._utoken,
-                    trust_env=kwargs.get("trust_env", None),
-                    client_secret=client_secret,
-                    timeout=self._timeout,
-                )
-                self._portal = pp
+                if self._url != url:                        
+                    self._url = url
+                    pp = _portalpy.Portal(
+                        url,
+                        self._username,
+                        self._password,
+                        self._key_file,
+                        self._cert_file,
+                        verify_cert=self._verify_cert,
+                        client_id=self._client_id,
+                        proxy_port=self._proxy_port,
+                        proxy_host=self._proxy_host,
+                        expiration=self._expiration,
+                        referer=self._referer,
+                        custom_auth=custom_auth,
+                        # token=self._utoken,
+                        trust_env=kwargs.get("trust_env", None),
+                        client_secret=client_secret,
+                        timeout=self._timeout,
+                    )
+                    self._portal = pp
         except:
             pass
 
