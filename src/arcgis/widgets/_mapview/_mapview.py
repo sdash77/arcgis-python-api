@@ -280,6 +280,18 @@ class MapView(widgets.DOMWidget):
 
         .. note::
             The higher the number, the more zoomed in you are.
+
+        .. code-block:: python
+
+            # Usage example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+
+            >>> map2 = gis.map("California")
+            >>> map2.basemap = 'national-geographic'
+            >>> map2
+            >>> map2.zoom = 200
         """
         return self._readonly_zoom
 
@@ -344,6 +356,16 @@ class MapView(widgets.DOMWidget):
         .. note::
             ``rotation`` cannot be set in 3D mode. Rather, 3D mode uses the :attr:`~arcgis.widgets.MapView.heading`
             property.
+
+        .. code-block:: python
+
+            #Usage Example in 2D mode
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.rotation
+            <134.17566310758235>
         """
         return self._readonly_rotation
 
@@ -365,6 +387,16 @@ class MapView(widgets.DOMWidget):
        .. note::
             ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
             property.
+
+        .. code-block:: python
+
+            #Usage Example in 3D mode
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.heading
+            <225.82433689241765>
         """
         return self._readonly_heading
 
@@ -498,6 +530,19 @@ class MapView(widgets.DOMWidget):
                                 }
         ==================     ====================================================================
 
+         .. code-block:: python
+
+            #Usage Example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.extent
+            {
+            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+             }
+
         """
         if self._readonly_extent:
             return self._readonly_extent
@@ -564,6 +609,20 @@ class MapView(widgets.DOMWidget):
                                widget's center.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2
+            >>> map2.center
+            {
+            'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+            'x': -13277101.270396618,
+            'y': 4374001.4894094905
+            }
         """
         if self._readonly_center:
             return self._readonly_center
@@ -727,7 +786,17 @@ class MapView(widgets.DOMWidget):
     def layers(self):
         """
         The ``layers`` property is a list of the JSON representation of layers added to the map widget
-        using the :attr:`~arcgis.widgets.MapView.add_layers` method
+        using the :attr:`~arcgis.widgets.MapView.add_layers` method.
+
+        .. code-block:: python
+
+            #Usage Example in 2D mode
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.layers
+            <134.17566310758235>
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
 
@@ -2059,6 +2128,26 @@ class MapView(widgets.DOMWidget):
         attributes             Optional dict. Specify a dict containing name value pairs of fields and field values
                                associated with the graphic.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            #Usage Example: Drawing two Geometry objects on a map widget.
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> from arcgis.geometry import Geometry, Polygon
+
+            >>> geom = Geometry({
+                            "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                                        [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                                        [-97.06326,32.759]]],
+                            "spatialReference" : {"wkid" : 4326}
+                            })
+            >>> map2 = gis.map("Arlington, Texas")
+            >>> map2.draw(shape=geom)
+            >>> map2
+            <Map Widget Displayed with the drawn Polygons>
+
         """
         from arcgis.features import FeatureSet, Feature, FeatureCollection
         from arcgis.raster import ImageryLayer
@@ -2197,6 +2286,28 @@ class MapView(widgets.DOMWidget):
 
         .. note::
             Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
+
+        .. code-block:: python
+
+            #Usage Example: Drawing two Geometry objects on a map widget.
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> from arcgis.geometry import Geometry, Polygon
+
+            >>> geom = Geometry({
+                            "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                                        [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                                        [-97.06326,32.759]]],
+                            "spatialReference" : {"wkid" : 4326}
+                            })
+            >>> map2 = gis.map("Arlington, Texas")
+            >>> map2.draw(shape=geom)
+            >>> map2
+            <Map Widget Displayed with the drawn Polygons>
+            >>> map2.clear_graphics()
+            >>> map2
+            <Map Widget Displayed without the drawn Polygons>
         """
         self._layers_to_remove = ("nonexistant_layer_id",)
         # All graphics are saved to a layer with the below id
