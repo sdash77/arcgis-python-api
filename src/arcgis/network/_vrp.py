@@ -888,7 +888,7 @@ def edit_vehicle_routing_problem(
     populate_directions=False,
     directions_language=None,
     directions_style_name=None,
-    travel_mode=None,
+    travel_mode="Custom",
     impedance=None,
     time_zone_usage_for_time_fields=None,
     save_output_layer=False,
@@ -1092,6 +1092,8 @@ def edit_vehicle_routing_problem(
     :returns: Named Tuple
 
     """
+    if travel_mode is None:
+        travel_mode = "Custom"
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.syncVRP.url[

@@ -234,7 +234,10 @@ class NetworkLayer(Layer):
         network dataset or in the portal if the GIS server is federated"""
         url = self._url + "/retrieveTravelModes"
         params = {"f": "json"}
-        return self._con.get(path=url, params=params,)
+        return self._con.get(
+            path=url,
+            params=params,
+        )
 
 
 ###########################################################################
@@ -493,16 +496,21 @@ class RouteLayer(NetworkLayer):
         params = {
             "f": "json",
         }
-        if isinstance(travel_mode, str):
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=travel_mode
-            )
-        elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
-        else:
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
-            )
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
+
         stops = _handle_spatial_inputs(data=stops)
         params["stops"] = stops
         if directions_output_type is None:
@@ -804,16 +812,20 @@ class ServiceAreaLayer(NetworkLayer):
         url = self._url + "/solveServiceArea"
         params = {"f": "json", "facilities": _handle_spatial_inputs(facilities)}
 
-        if isinstance(travel_mode, str):
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=travel_mode
-            )
-        elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
-        else:
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
-            )
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
 
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
@@ -1123,16 +1135,20 @@ class ClosestFacilityLayer(NetworkLayer):
             "incidents": _handle_spatial_inputs(incidents),
         }
 
-        if isinstance(travel_mode, str):
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=travel_mode
-            )
-        elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
-        else:
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
-            )
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
 
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
@@ -1375,16 +1391,20 @@ class ODCostMatrixLayer(NetworkLayer):
             "origins": _handle_spatial_inputs(origins),
             "destinations": _handle_spatial_inputs(destinations),
         }
-        if isinstance(travel_mode, str):
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=travel_mode
-            )
-        elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
-        else:
-            travel_mode = _utils.find_travel_mode(
-                gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
-            )
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
         allowed_output_types = {
             "esriNAODOutputSparseMatrix": "esriNAODOutputSparseMatrix",
             "Sparse Matrix": "esriNAODOutputSparseMatrix",
