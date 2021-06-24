@@ -6328,8 +6328,8 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
                                              :class:`~arcgis.widgets.MapView` widget, what matplotlib colormap
-                                             to apply to the raster. See ``arcgis.mapping.display_colormaps()`` for
-                                             a list of compatible values.
+                                             to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
+                                             for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
                                              :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
@@ -6482,7 +6482,7 @@ class Raster:
         """When displaying a 1 band raster in a :class:`~arcgis.widgets.MapView`
         widget, what matplotlib colormap to apply to the raster.
 
-        Value must be a `str`. See `arcgis.mapping.symbol.display_colormaps() <https://developers.arcgis.com/python/api-reference/arcgis.mapping.toc.html#arcgis.mapping.symbol.display_colormaps>`__
+        Value must be a `str`. See :meth:`arcgis.mapping.symbol.display_colormaps`
         for a list of compatible values.
         """
         return self._cmap
