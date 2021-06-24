@@ -38,6 +38,12 @@ try:
     import math
     import warnings
     from fastai.distributed import *
+    import tensorflow as tf
+    tf.get_logger().setLevel(logging.ERROR)
+    import onnx
+    import onnx_tf
+    from onnx_tf.backend import prepare
+    from torchvision import datasets, transforms
     import argparse
     import torch.distributed as dist
     from fastai.torch_core import get_model
@@ -217,6 +223,10 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
+
+        if int(os.environ.get('RANK', 0)):
+            return
+            
         current = self.get_monitor_value()
         if isinstance(current, torch.Tensor):
             if current.is_cuda:
@@ -241,8 +251,6 @@ class SaveModelCallback(TrackerCallback):
 
     def on_train_end(self, **kwargs):
         "Load the best model."
-        if int(os.environ.get('RANK', 0)):
-            return
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -569,8 +577,17 @@ class ArcGISModel(object):
 
     def lr_find(self, allow_plot=True):
         """
-        Runs the Learning Rate Finder, and displays the graph of its output.
-        Helps in choosing the optimum learning rate for training the model.
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
         """
         self._check_requisites()
         temp1 = self.learn.path
@@ -823,9 +840,13 @@ class ArcGISModel(object):
     def _create_emd_template(self, path, compute_metrics=True, save_inference_file=True):
 
         _emd_template = {}
+
         # For old models - add lr, ModelName
         if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
             _emd_template = self._data.emd
+            _emd_template["ModelFormat"] = "NCHW"
+            if self._backend == 'tensorflow' and self._framework == 'tflite':
+                _emd_template["ModelFormat"] = "NHWC"
             _emd_template["ModelFile"] = path.name
             if not _emd_template.get("ModelName"):
                 _emd_template["ModelName"] = type(self).__name__
@@ -855,9 +876,14 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params(save_inference_file)
+
+        _emd_template["ModelFormat"] = "NCHW"
+        if self._backend == 'tensorflow' and self._framework == 'tflite':
+            _emd_template["ModelFormat"] = "NHWC"
         if getattr(self, '_data', None) is not None:
             _emd_template['MinCellSize'] = getattr(self._data, '_emd', {}).get('MinCellSize', None)
             _emd_template['MaxCellSize'] = getattr(self._data, '_emd', {}).get('MaxCellSize', None)
+
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
@@ -1148,11 +1174,17 @@ class ArcGISModel(object):
             #     \nPlease set parameter framework="tflite"
             #     """
             #     raise Exception(_err_msg)
-            elif self._backend != 'tensorflow' and _framework == 'tflite':
-                _err_msg = """
-                Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
-                """
-                raise Exception(_err_msg)
+            elif self._backend != 'tensorflow' and _framework == 'tflite': #and save_format == 'tflite':
+                #_err_msg = """
+                #Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
+                #"""
+                #raise Exception(_err_msg)
+                #saved_path = self.learn.path / self.learn.model_dir / f'{name}.tflite'
+                supported_models =['FeatureClassifier', 'SingleShotDetector', 'RetinaNet','FasterRCNN','MaskRCNN']
+                if(type(self).__name__) in supported_models:
+                    saved_path = self.save_pytorch_tflite(name)
+                else:
+                    raise Exception("This pytorch model cannot be saved in tflite format")
             else:
                 if isinstance(self.learn.model, (DistributedDataParallel)):
                     if not int(os.environ.get('RANK', 0)):
@@ -1167,6 +1199,7 @@ class ArcGISModel(object):
         finally:
 
             self.learn.path = temp
+            self.framework = framework
             self.learn.model_dir = temp1
 
         _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics, save_inference_file)
@@ -1252,7 +1285,7 @@ class ArcGISModel(object):
 
         if _emd_template.get('InferenceFunction', False):
             if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
-                                                  "ObjectClassification"] or save_inference_file:
+                                                  "ObjectClassification", "CycleGAN", "Pix2Pix", "SuperResolution"] or save_inference_file:
                 inference_file = _emd_template['InferenceFunction']
                 if "[Functions]" in inference_file:
                     inference_file = inference_file[len("[Functions]System\\DeepLearning\\ArcGISLearn\\"):]
@@ -1307,6 +1340,33 @@ class ArcGISModel(object):
             return self.learn._save_tflite(name, return_path=True, model_to_save=self._get_post_processed_model(
                 input_normalization=input_normalization), quantized=quantized, data=self._data)
         return self.learn._save_tflite(name)
+
+    def save_pytorch_tflite(self, name):
+        torch_model = self.learn.model
+        torch_model = torch_model.eval()
+        num_input_channels=list(self.learn.model.parameters())[0].shape[1]
+        dummy_input = torch.randn([1, num_input_channels, 224, 224]).cuda()
+        saved_path = self.learn.path / self.learn.model_dir / f'{name}.tflite'
+        saved_path_onnx = self.learn.path / self.learn.model_dir / f'{name}.onnx'
+        if type(self).__name__ == 'FeatureClassifier':
+            torch.onnx.export(torch_model, dummy_input, saved_path_onnx, export_params=True, input_names=['input'],
+                          output_names=['output'])
+        else:
+            torch.onnx.export(torch_model, dummy_input, saved_path_onnx, export_params=True, input_names=['input'],
+                              output_names=['scores','box'])
+        arcgis_onnx = onnx.load(saved_path_onnx)
+
+        tf_onnx = prepare(arcgis_onnx,logging_level='WARNING')
+        saved_path_pb = self.learn.path / self.learn.model_dir / f'{name}'
+        tf_onnx.export_graph(str(saved_path_pb))
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
+        tflite_model = converter.convert()
+        with tf.io.gfile.GFile(saved_path, 'wb') as f:
+            f.write(tflite_model)
+        return saved_path
 
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
@@ -1451,8 +1511,12 @@ class ArcGISModel(object):
                                 model. (Only supported by ``SingleShotDetector``, currently.)
                                 If framework used is ``TF-ONNX``, ``batch_size`` can be
                                 passed as an optional keyword argument.
+                                Setting framework = 'tflite' allows the model to be saved
+                                in tflite format. (Supported for ``FeatureClassifier``,
+                                ``SingleShotDetector``, ``RetinaNet`` ,``FasterRCNN``
+                                and ``MaskRCNN``)
 
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
+                                Framework choice: 'PyTorch', 'TF-ONNX' and 'tflite'
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
@@ -1480,7 +1544,7 @@ class ArcGISModel(object):
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics,
                           save_optimizer=save_optimizer, save_inference_file=save_inference_file, **kwargs)
 
-    def load(self, name_or_path):
+    def load(self, name_or_path, **kwargs):
         """
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
@@ -1509,9 +1573,9 @@ class ArcGISModel(object):
             self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             name = name_or_path
 
-
         try:
-            self.learn.load(name, purge=False)
+            device = getattr(self, '_map_location', None)
+            self.learn.load(name, purge=False, device=device)
         except Exception as e:
             raise e
         finally:

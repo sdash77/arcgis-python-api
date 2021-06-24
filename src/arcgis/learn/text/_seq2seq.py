@@ -111,7 +111,7 @@ class SequenceToSequence(ArcGISModel):
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
-        self._freeze()
+        # self._freeze()
       
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length):
@@ -204,7 +204,7 @@ class SequenceToSequence(ArcGISModel):
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForSequenceToSequence._available_backbone_models(architecture)
 
-    def _freeze(self):
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """
@@ -269,7 +269,7 @@ class SequenceToSequence(ArcGISModel):
         """
         if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path)
+        return super().load(name_or_path, strict=False)
 
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
              save_optimizer=False, **kwargs):

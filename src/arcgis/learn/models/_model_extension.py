@@ -117,6 +117,7 @@ class ModelExtension(ArcGISModel):
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(data, model, loss_func=self._model_conf.loss).to_distributed(self._rank_distributed)
+                self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
             else:
                 self.learn = Learner(data, model, loss_func=self._model_conf.loss)
         else:

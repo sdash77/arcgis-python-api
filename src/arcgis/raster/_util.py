@@ -831,12 +831,15 @@ class _ImageryUploaderAGOL:
                 url = blob.url.split("?", 1)[0]
 
                 if is_dir:
-                    if url != "":
-                        url = url[
-                            0 : url.find(current_time_str) + len(current_time_str)
-                        ]
-                        if url not in self.url_list:
-                            self.url_list.append(url)
+                    if self.file_list[i]["single_image"]:
+                        self.url_list.append(url)
+                    else:
+                        if url != "":
+                            url = url[
+                                0 : url.find(current_time_str) + len(current_time_str)
+                            ]
+                            if url not in self.url_list:
+                                self.url_list.append(url)
                 else:
                     self.url_list.append(url)
                 break
@@ -899,6 +902,7 @@ def _upload_imagery_agol(
     direct_access_url=None,
     auto_renew=True,
     upload_properties=None,
+    single_image=False,
 ):
     """uploads imagery to user's rasterstore on AGOL and returns the list of urls"""
 
@@ -937,7 +941,7 @@ def _upload_imagery_agol(
         time_list.append(current_time)
         file_dict["prefix"] = "_images/" + str(current_time) + "/"
         file_dict["file_name"] = file
-
+        file_dict["single_image"] = single_image
         if os.path.exists(file):
             if os.path.isdir(file):
                 file_dict["is_dir"] = True

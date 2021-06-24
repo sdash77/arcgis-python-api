@@ -327,7 +327,7 @@ class YOLOLayer(nn.Module):
         h_anchors = dtype(np.broadcast_to(np.reshape(
             masked_anchors[:, 1], (1, self.n_anchors, 1, 1)), output.shape[:4]))
 
-        pred = output.clone()
+        pred = output.clone().contiguous()
         pred[..., 0] += x_shift
         pred[..., 1] += y_shift
         pred[..., 2] = torch.exp(pred[..., 2]) * w_anchors

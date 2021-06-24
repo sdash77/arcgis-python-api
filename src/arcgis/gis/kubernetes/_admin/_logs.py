@@ -105,6 +105,21 @@ class LogManager(_BaseKube):
         return res
 
     # ----------------------------------------------------------------------
+    def refresh_index(self) -> bool:
+        """
+        Recreates the log indexes and can be used to troubleshoot issues
+        related to accessing logs, such as if new logs are not being
+        generated or if existing logs are unavailable.
+
+
+        :returns: bool
+
+        """
+        params = {"f": "json"}
+        url = self._url + "/settings/updateLogIndex"
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """Gets the current log settings."""
@@ -213,13 +228,6 @@ class LogManager(_BaseKube):
         :return:
            A JSON of the log items that match the query. If export option is set to True, the
            output log file path is returned.
-
-
-        """
-
-        """
-
-
 
         """
 

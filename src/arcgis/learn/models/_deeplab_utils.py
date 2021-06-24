@@ -33,7 +33,6 @@ import math
 from fastai.callbacks.hooks import hook_outputs
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
-from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
 from ._arcgis_model import _get_backbone_meta
