@@ -29,7 +29,12 @@ def _validate_url(url: str, gis: "GIS", url_type: str = None) -> str:
     if not any([url.lower().endswith(f) for f in finders]):
         part = os.path.basename(url)
         url = os.path.dirname(url)
-    res = gis._private_service_url(url)
+    try:
+        res = gis._private_service_url(url)
+    except:
+        if part:
+            return f"{url}/{part}"
+        return url
     return_url = None
     if gis._is_hosted_nb_home and "privateServiceUrl" in res:
         return_url = res["privateServiceUrl"]

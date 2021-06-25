@@ -8,6 +8,7 @@ from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox
 from arcgis._impl.common._utils import _validate_url
+from arcgis.network import _utils
 from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
@@ -887,7 +888,7 @@ def edit_vehicle_routing_problem(
     populate_directions=False,
     directions_language=None,
     directions_style_name=None,
-    travel_mode=None,
+    travel_mode="Custom",
     impedance=None,
     time_zone_usage_for_time_fields=None,
     save_output_layer=False,
@@ -1091,6 +1092,8 @@ def edit_vehicle_routing_problem(
     :returns: Named Tuple
 
     """
+    if travel_mode is None:
+        travel_mode = "Custom"
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.syncVRP.url[

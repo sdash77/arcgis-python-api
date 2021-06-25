@@ -25,7 +25,10 @@ def _gp_travel_mode(gis: GIS, travel_mode: str = None) -> str:
     ]
 
     if len(matches) > 0:
-        return matches[0]
+        try:
+            return json.loads(matches[0])
+        except:
+            return matches[0]
     else:
         _log.warning(
             f"Cannot find {travel_mode}, using default: {output.default_travel_mode}."

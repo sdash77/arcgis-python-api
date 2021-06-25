@@ -18,6 +18,7 @@ try:
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
     import torchvision
+    from ._maskrcnn import grid_anchors
     tvisver = [int(x) for x in torchvision.__version__.split('.')]
 
     HAS_FASTAI = True
@@ -452,6 +453,7 @@ class FasterRCNN(ModelExtension):
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
             idx = self._freeze()
+            self.learn.model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, self.learn.model.rpn.anchor_generator)
 
         self.learn.model.roi_heads.forward = types.MethodType(forward_roi, self.learn.model.roi_heads)
         self.learn.model.eager_outputs = types.MethodType(eager_outputs_modified, self.learn.model)
