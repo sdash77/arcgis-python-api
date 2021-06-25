@@ -16,6 +16,7 @@ try:
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
+    import types
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta, _resnet_family, _set_ddp_multigpu, _isnotebook
@@ -42,6 +43,38 @@ except Exception as e:
     #raise Exception(e)
     HAS_FASTAI = False
 
+
+def grid_anchors(self, grid_sizes, strides):
+        anchors = []
+        cell_anchors = self.cell_anchors
+        assert cell_anchors is not None
+
+        for size, stride, base_anchors in zip(
+            grid_sizes, strides, cell_anchors
+        ):
+            grid_height, grid_width = size
+            stride_height, stride_width = stride
+            device = base_anchors.device
+
+            # For output anchor, compute [x_center, y_center, x_center, y_center]
+            shifts_x = torch.arange(
+                0, grid_width, dtype=torch.float32, device=device
+            ) * stride_width
+            shifts_y = torch.arange(
+                0, grid_height, dtype=torch.float32, device=device
+            ) * stride_height
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shift_x = shift_x.reshape(-1)
+            shift_y = shift_y.reshape(-1)
+            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+
+            # For every (base anchor, output anchor) pair,
+            # offset each zero-centered base anchor by the center of the output anchor.
+            anchors.append(
+                (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
+            )
+
+        return anchors
 
 class MaskRCNN(ArcGISModel):
     """
@@ -209,6 +242,7 @@ class MaskRCNN(ArcGISModel):
                     max_size = 2*data.chip_size,
                     **self.maskrcnn_kwargs
                 )
+            model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, model.rpn.anchor_generator)
         else:
             backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, pretrained=pretrained_backbone)
             if self._is_multispectral:
@@ -247,6 +281,7 @@ class MaskRCNN(ArcGISModel):
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(data, model, loss_func=mask_rcnn_loss).to_distributed(self._rank_distributed)
+                self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
             else:
                 self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
         else:

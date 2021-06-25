@@ -6328,8 +6328,8 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
                                              :class:`~arcgis.widgets.MapView` widget, what matplotlib colormap
-                                             to apply to the raster. See ``arcgis.mapping.display_colormaps()`` for
-                                             a list of compatible values.
+                                             to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
+                                             for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
                                              :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
@@ -6482,7 +6482,7 @@ class Raster:
         """When displaying a 1 band raster in a :class:`~arcgis.widgets.MapView`
         widget, what matplotlib colormap to apply to the raster.
 
-        Value must be a `str`. See `arcgis.mapping.symbol.display_colormaps() <https://developers.arcgis.com/python/api-reference/arcgis.mapping.toc.html#arcgis.mapping.symbol.display_colormaps>`__
+        Value must be a `str`. See :meth:`arcgis.mapping.symbol.display_colormaps`
         for a list of compatible values.
         """
         return self._cmap
@@ -10854,9 +10854,6 @@ class RasterCollection:
     def __iter__(self):
         return self._ras_coll_engine_obj.__iter__()
 
-    def __next__(self):
-        return self._ras_coll_engine_obj.__next__()
-
     def __len__(self):
         return self._ras_coll_engine_obj.__len__()
 
@@ -12329,11 +12326,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def __iter__(self):
         return iter(self._df.to_dict("records", into=dict))
 
-    def __next__(self):
-        return self._df.to_dict("records", into=dict)[item]
-
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         return self._df.to_dict("records", into=dict)[item]
@@ -12729,20 +12723,19 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         return ras_list
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            item = self[self._start]
-        except IndexError:
-
-            self._start = 0
-            raise StopIteration
-        self._start += 1
-        return item
+        lim = True
+        while lim:
+            try:
+                item = self[self._start]
+            except IndexError:
+                lim = False
+                self._start = 0
+            else:
+                self._start += 1
+                yield item
 
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         if item < self._max_rec_count:
@@ -13493,11 +13486,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
     def __iter__(self):
         return iter(self._df.to_dict("records", into=dict))
 
-    def __next__(self):
-        return self._df.to_dict("records", into=dict)[item]
-
     def __len__(self):
-        return (self._df.to_dict("records", into=dict)).__len__
+        return self.count
 
     def __getitem__(self, item):
         return self._df.to_dict("records", into=dict)[item]

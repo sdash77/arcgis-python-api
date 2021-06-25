@@ -7,7 +7,7 @@ try:
     # Use your ArcGIS enterprise url and credentials to run the test
     url = "https://devext.arcgis.com"
     username = "pythontest_a4iot"
-    password = "a4iot.arcgis"
+    password = "v3locity.pyth0n"
     gis = GIS(url, username, password)
     SKIP_TESTS = False
     # Skip task start/stop/delete tests by default. Set as false to run

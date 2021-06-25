@@ -251,8 +251,6 @@ class SaveModelCallback(TrackerCallback):
 
     def on_train_end(self, **kwargs):
         "Load the best model."
-        if int(os.environ.get('RANK', 0)):
-            return
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -1575,9 +1573,9 @@ class ArcGISModel(object):
             self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             name = name_or_path
 
-
         try:
-            self.learn.load(name, purge=False, **kwargs)
+            device = getattr(self, '_map_location', None)
+            self.learn.load(name, purge=False, device=device)
         except Exception as e:
             raise e
         finally:

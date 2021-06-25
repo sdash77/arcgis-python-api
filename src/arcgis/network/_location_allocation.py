@@ -35,7 +35,7 @@ def solve_location_allocation(
     restrictions=None,
     attribute_parameter_values=None,
     allocation_line_shape=None,
-    travel_mode=None,
+    travel_mode="Custom",
     impedance=None,
     save_output_network_analysis_layer=False,
     overrides=None,

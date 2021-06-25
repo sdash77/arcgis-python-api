@@ -287,7 +287,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
         if not config: config = AutoConfig.from_pretrained(pretrained_model_name)
-        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config)
+        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config, use_fast=False)
         if data._is_empty or data._backbone != backbone:
             self.logger.info('Creating DataBunch')
             data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type,

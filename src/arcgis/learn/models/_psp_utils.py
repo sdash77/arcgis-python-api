@@ -368,6 +368,7 @@ def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), 
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:
             learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
+            learn._map_location_multi_gpu = {'cuda:%d' % 0: 'cuda:%d' % distributed_prep._rank_distributed}
         else:
             learn = Learner(data, model, **kwargs)
     else:
@@ -387,6 +388,7 @@ def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:
             learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
+            learn._map_location_multi_gpu = {'cuda:%d' % 0: 'cuda:%d' % distributed_prep._rank_distributed}
         else:
             learn = Learner(data, model, **kwargs)
     else:

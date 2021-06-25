@@ -196,6 +196,7 @@ class PSPNetClassifier(ArcGISModel):
                                          keep_dilation=self.keep_dilation,
                                          metrics=accuracy)
 
+        self._map_location = getattr(self.learn, '_map_location_multi_gpu', None)
 
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))

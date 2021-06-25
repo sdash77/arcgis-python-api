@@ -1,5 +1,6 @@
 from ._machine_learning import MLModel, raise_data_exception
 import os
+import shutil
 import random
 import json
 import pickle
@@ -47,10 +48,10 @@ _PROTOCOL_LEVEL = 2
 
 class AutoML(object):
     """
-    Automates the process of model selection, training and hyperparameter tuning of 
-    machine learning models within a specified time limit. Based upon 
+    Automates the process of model selection, training and hyperparameter tuning of
+    machine learning models within a specified time limit. Based upon
     MLJar(https://github.com/mljar/mljar-supervised/) and scikit-learn.
-    
+
     Note that automated machine learning support is provided only for supervised learning.
     Refer https://supervised.mljar.com/
 
@@ -134,18 +135,21 @@ class AutoML(object):
                 explain_level = 1
             self._model = base_AutoML(mode=mode, algorithms=algorithms,
                                       total_time_limit=total_time_limit,
-                                      golden_features=False, explain_level=explain_level,eval_metric=eval_metric)
+                                      golden_features=False, explain_level=explain_level, eval_metric=eval_metric)
         else:
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
 
     def fit(self):
+        """
+        Fits the AutoML model.
+        """
         if getattr(self._data, '_is_not_empty', True):
             self._model.fit(self._all_data_df, self._all_labels)
         else:
             raise Exception("Fit can be called only with data.")
-        self.save()
+        # self.save()
 
     def show_results(self, rows=5):
         """
@@ -173,8 +177,8 @@ class AutoML(object):
         # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
         validation_data_batch = self._validation_data.take(sample_batch, axis=0)
-        #validation_data_batch_df = pd.DataFrame(validation_data_batch,
-                                                #columns=self._data._continuous_variables + self._data._categorical_variables)
+        # validation_data_batch_df = pd.DataFrame(validation_data_batch,
+        # columns=self._data._continuous_variables + self._data._categorical_variables)
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
         output_labels = self._predict(validation_data_batch)
         df = self._data._dataframe.loc[
@@ -215,23 +219,70 @@ class AutoML(object):
         else:
             raise Exception("This method is applicable only for classification models.")
 
-    def save(self):
+    def copy_and_overwrite(self, from_path, to_path):
+        dest_dir = os.path.join(to_path, os.path.basename(from_path))
+        if os.path.exists(dest_dir):
+            shutil.rmtree(dest_dir)
+        shutil.copytree(from_path, dest_dir)
+
+    def save(self, path):
         """
-        Saves the model, creates an Esri Model Definition. Uses pickle to save the model and transforms.
-        This method is called internally immedietly after the fit.
+        Saves the model in the path specified. Creates an Esri Model and a dlpk.
+        Uses pickle to save the model and transforms.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        path                    Path of the directory where the model should be saved.
+        =====================   ===========================================
+        :returns path
         """
         if getattr(self._data, '_is_not_empty', True) == False:
             raise Exception("This method is not available when the model is initiated for prediction")
-
+        # Required files to be copied to new path
+        files_required = ['data_info.json', 'ldb_performance.png', 'ldb_performance_boxplot.png', 'params.json',
+                          'progress.json', 'README.md', 'drop_features.json']
+        required_model_folders = []  # List of folders that are to be copied to new path
         base_file_name = os.path.basename(self._model._get_results_path())
         result_path = os.path.abspath(self._model._get_results_path())
-        MLModel._save_encoders(self._data._encoder_mapping, result_path, base_file_name)
+
+        save_model_path = os.path.abspath(path)
+        if not os.path.exists(save_model_path):
+            os.makedirs(save_model_path)
+
+        MLModel._save_encoders(self._data._encoder_mapping, save_model_path, base_file_name)
 
         if self._data._procs:
-            MLModel._save_transforms(self._data._procs, result_path, base_file_name)
+            MLModel._save_transforms(self._data._procs, save_model_path, base_file_name)
 
-        self._write_emd(result_path, base_file_name)
-        print('Model has been saved in the path', result_path)
+        self._write_emd(save_model_path, base_file_name)
+        if (self._model._best_model._name == 'Ensemble') or (self._model._best_model._name == 'Ensemble_Stacked'):
+            model_map = self._model._best_model.models_map
+            required_model_folders.append(os.path.join(result_path, 'Ensemble'))
+            for i in self._model._best_model.selected_models:
+                # print(i['model'])
+                sub_path = list(model_map.keys())[list(model_map.values()).index(i['model'])]
+                final_path = os.path.join(result_path, sub_path)
+                required_model_folders.append(final_path)
+        else:
+            final_path = os.path.join(result_path, self._model._best_model._name)
+            required_model_folders.append(final_path)
+
+        for folder in required_model_folders:
+            # copyfolder(folder,dest)
+            self.copy_and_overwrite(folder, save_model_path)
+
+        for file in files_required:
+            abs_file_path = os.path.join(result_path, file)
+            dest_file = os.path.join(save_model_path, os.path.basename(file))
+            if os.path.isfile(abs_file_path):
+                shutil.copyfile(abs_file_path, dest_file)
+        # Creates dlpk
+        from ._arcgis_model import _create_zip
+        _create_zip(Path(save_model_path).name, str(save_model_path))
+
+        print('Model has been saved in the path', save_model_path)
+        return save_model_path
 
     def _write_emd(self, path, base_file_name):
         emd_file = os.path.join(path, base_file_name + '.emd')
@@ -312,7 +363,7 @@ class AutoML(object):
         return cls(data=empty_data)
 
     def _predict(self, data):
-        data_df = pd.DataFrame(data,columns=self._data._continuous_variables + self._data._categorical_variables)
+        data_df = pd.DataFrame(data, columns=self._data._continuous_variables + self._data._categorical_variables)
         return self._model.predict(data_df)
 
     def predict(

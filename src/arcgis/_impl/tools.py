@@ -3829,8 +3829,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def summarize_within(
         self,
-        sum_within_layer,
         summary_layer,
+        sum_within_layer=None,
         sum_shape=True,
         shape_units=None,
         summary_fields=[],
@@ -3883,7 +3883,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "SummarizeWithin"
 
         params = {}
-        sum_within_layer = self._feature_input(sum_within_layer)
+        if sum_within_layer:
+            sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
         if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name}}
