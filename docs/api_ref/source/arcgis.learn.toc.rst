@@ -136,6 +136,13 @@ ChangeDetector
     :inherited-members:
     :undoc-members:
 
+MMSegmentation
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMSegmentation
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Image Translation Models
 ------------------------
 CycleGAN
@@ -228,6 +235,13 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
     :members:
     :inherited-members:
     :undoc-members:

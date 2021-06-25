@@ -1,3 +1,4 @@
+import json
 import logging
 import datetime
 from arcgis.gis import Layer, _GISResource
@@ -5,8 +6,9 @@ from arcgis.gis import Layer, _GISResource
 # Supported Data Types
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
-
+from arcgis.network import _utils
 from arcgis.mapping import MapImageLayer
+from arcgis._impl.common._utils import _validate_url
 
 try:
 
@@ -494,6 +496,21 @@ class RouteLayer(NetworkLayer):
         params = {
             "f": "json",
         }
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
+
         stops = _handle_spatial_inputs(data=stops)
         params["stops"] = stops
         if directions_output_type is None:
@@ -794,6 +811,21 @@ class ServiceAreaLayer(NetworkLayer):
 
         url = self._url + "/solveServiceArea"
         params = {"f": "json", "facilities": _handle_spatial_inputs(facilities)}
+
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
 
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
@@ -1103,6 +1135,21 @@ class ClosestFacilityLayer(NetworkLayer):
             "incidents": _handle_spatial_inputs(incidents),
         }
 
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
+
         if not barriers is None:
             params["barriers"] = _handle_spatial_inputs(barriers)
         if not polyline_barriers is None:
@@ -1344,6 +1391,20 @@ class ODCostMatrixLayer(NetworkLayer):
             "origins": _handle_spatial_inputs(origins),
             "destinations": _handle_spatial_inputs(destinations),
         }
+        if travel_mode:
+            if isinstance(travel_mode, str):
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=travel_mode
+                )
+                params["travel_mode"] = travel_mode
+            elif isinstance(travel_mode, dict):
+                travel_mode = json.dumps(travel_mode)
+                params["travel_mode"] = travel_mode
+            else:
+                travel_mode = _utils.find_travel_mode(
+                    gis=self._gis, travel_mode=_utils.default_travel_mode(gis=self._gis)
+                )
+                params["travel_mode"] = travel_mode
         allowed_output_types = {
             "esriNAODOutputSparseMatrix": "esriNAODOutputSparseMatrix",
             "Sparse Matrix": "esriNAODOutputSparseMatrix",
@@ -1432,7 +1493,14 @@ class NetworkDataset(_GISResource):
     """
 
     def __init__(self, url, gis=None):
+        if gis is None:
+            from arcgis.env import active_gis
+
+            gis = active_gis
+        if gis:
+            url = _validate_url(url, gis)
         super(NetworkDataset, self).__init__(url, gis)
+
         try:
             from ..gis.server._service._adminfactory import AdminServiceGen
 
@@ -1452,8 +1520,8 @@ class NetworkDataset(_GISResource):
             raise TypeError(
                 "item must be a type of Network Analysis Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        url = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     # ----------------------------------------------------------------------
     def _load_layers(self):

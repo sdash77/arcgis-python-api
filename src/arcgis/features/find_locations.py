@@ -14,6 +14,7 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
+import json
 import logging
 import arcgis as _arcgis
 import arcgis.network as network
@@ -774,7 +775,7 @@ def choose_best_facilities(
     max_travel_range=2147483647,
     max_travel_range_field=None,
     max_travel_range_units="Minutes",
-    travel_mode="Driving Time",
+    travel_mode=None,
     time_of_day=None,
     time_zone_for_time_of_day="GeoLocal",
     travel_direction="FacilityToDemand",
@@ -1039,7 +1040,6 @@ def choose_best_facilities(
                                     candidate_count=1,
                                     output_name="choose best facilities")
     """
-
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "goal": goal,
@@ -1075,17 +1075,14 @@ def choose_best_facilities(
     )
     try:
         if isinstance(travel_mode, str):
-            route_service = network.RouteLayer(
-                gis.properties.helperServices.route.url, gis=gis
+            travel_mode = network._utils.find_travel_mode(
+                gis=gis, travel_mode=travel_mode
             )
-            travelmodes = route_service.retrieve_travel_modes().get(
-                "supportedTravelModes", []
-            )
-            tm = [i for i in travelmodes if i["name"] == travel_mode]
-            if tm:
-                params["travel_mode"] = tm[0]
-            else:
-                params["travel_mode"] = travel_mode
+            params["travel_mode"] = travel_mode
+        elif isinstance(travel_mode, dict):
+            params["travel_mode"] = json.dumps(travel_mode)
+        else:
+            params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)

@@ -87,7 +87,7 @@ class MMDetectionConfig():
 
         return model
 
-    def on_batch_begin(self, learn, model_input_batch, model_target_batch):
+    def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
 
         learn.model.train()
         img_metas = []

@@ -265,7 +265,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
         # Freeze the model by default
-        self._freeze()
+        # self._freeze()
 
     def __str__(self):
         return self.__repr__()
@@ -287,7 +287,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
         if not config: config = AutoConfig.from_pretrained(pretrained_model_name)
-        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config)
+        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config, use_fast=False)
         if data._is_empty or data._backbone != backbone:
             self.logger.info('Creating DataBunch')
             data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type,
@@ -344,8 +344,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         self.entities = data._unique_tags
         self._address_tag = data._address_tag
-
-    def _freeze(self):
+    
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """
@@ -472,7 +472,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         cls_object.path = getattr(data, 'working_dir', data.path)
         return cls_object
 
-    def extract_entities(self, text_list, batch_size=4, drop=True, debug=False):
+    def extract_entities(self, text_list, batch_size=4, drop=True, debug=False, show_progress=True):
         results, columns, file_names = [], [], []
         if isinstance(text_list,  (str, bytes)):
             path = text_list
@@ -497,7 +497,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         tokenizer, id2label = self.learn.model._tokenizer, self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
         self.logger.info(f"Generating Inference using - {model_type} transformer model.")
-        for i in progress_bar(range(0, len(text_list), batch_size)):
+        for i in progress_bar(range(0, len(text_list), batch_size), display=show_progress):
             tokens, labels = self.learn.model.generate_inference(text_list[i: i + batch_size], self._device)
             if debug:
                 batch_results = get_results(tokens, labels, tokenizer, id2label, model_type, len(tokens))

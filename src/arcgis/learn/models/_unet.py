@@ -108,6 +108,11 @@ class UnetClassifier(ArcGISModel):
 
     def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', *args, **kwargs):
 
+        if pretrained_path is not None:
+            backbone_pretrained = False
+        else:
+            backbone_pretrained = True
+
         self._backend = backend
         if self._backend == 'tensorflow':
             super().__init__(data, None)
@@ -154,11 +159,12 @@ class UnetClassifier(ArcGISModel):
             if not _isnotebook() and arcgis_os.name=='posix':
                 _set_ddp_multigpu(self)
                 if self._multigpu_training:
-                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
+                    self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
+                    self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
                 else:
-                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+                    self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
             else:
-                self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+                self.learn = unet_learner(data, arch=self._backbone, pretrained=backbone_pretrained, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
             class_weight = None
             if self.class_balancing:
@@ -205,6 +211,10 @@ class UnetClassifier(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
 
     @property
     def supported_backbones(self):

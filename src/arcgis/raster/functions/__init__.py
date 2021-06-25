@@ -96,7 +96,21 @@ def _clone_layer(
             newlyr = ImageryLayer(layer._uri, layer._gis)
 
     else:
-        newlyr = ImageryLayer(layer._url, layer._gis)
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if layer.tiles_only or (not allow_raster_function and allow_analysis):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._url, layer._gis)
+            newlyr._tiles_only = layer._tiles_only
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -108,6 +122,9 @@ def _clone_layer(
     if layer._datastore_raster:
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._fn = function_chain_ra
+
+    if layer.tiles_only:
+        newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
@@ -145,7 +162,21 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
             newlyr = ImageryLayer(layer._uri, layer._gis)
 
     else:
-        newlyr = ImageryLayer(layer._url, layer._gis)
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if layer.tiles_only or (not allow_raster_function and allow_analysis):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._url, layer._gis)
+            newlyr._tiles_only = layer._tiles_only
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -158,6 +189,9 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     if layer._datastore_raster:
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._fn = function_chain_ra
+
+    if layer.tiles_only:
+        newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
@@ -202,14 +236,46 @@ def _clone_layer_raster(
                 gis=layer._gis,
             )
     else:
-        newlyr = Raster(
-            layer._url,
-            is_multidimensional=layer._is_multidimensional,
-            engine=layer._engine,
-            gis=layer._gis,
-        )
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if (layer._engine != _ArcpyRaster) and (
+            layer.tiles_only or (not allow_raster_function and allow_analysis)
+        ):
+            newlyr = Raster(
+                function_chain_ra,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+        else:
+            newlyr = Raster(
+                layer._url,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+            newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine == _ArcpyRaster:
+        allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
+        info = None
+        try:
+            info = layer._get_service_info()
+        except:
+            pass
+        if info is not None and isinstance(info, dict):
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
         try:
             import arcpy, json
 
@@ -230,6 +296,9 @@ def _clone_layer_raster(
     if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
+
+    if layer._engine != _ArcpyRaster and layer.tiles_only:
+        newlyr._engine_obj._fn = function_chain_ra
 
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
@@ -270,14 +339,46 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
                 gis=layer._gis,
             )
     else:
-        newlyr = Raster(
-            layer._url,
-            is_multidimensional=layer._is_multidimensional,
-            engine=layer._engine,
-            gis=layer._gis,
-        )
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if (layer._engine != _ArcpyRaster) and (
+            layer.tiles_only or (not allow_raster_function and allow_analysis)
+        ):
+            newlyr = Raster(
+                function_chain_ra,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+        else:
+            newlyr = Raster(
+                layer._url,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+            newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine == _ArcpyRaster:
+        allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
+        info = None
+        try:
+            info = layer._get_service_info()
+        except:
+            pass
+        if info is not None and isinstance(info, dict):
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
         try:
             import arcpy, json
 
@@ -298,6 +399,9 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
             newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
+
+    if layer._engine != _ArcpyRaster and layer.tiles_only:
+        newlyr._engine_obj._fn = function_chain_ra
 
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
@@ -5463,7 +5567,19 @@ def _raster_item(raster, raster_id=None):
     template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
 
     if raster is not None and isinstance(raster, ImageryLayer):
-        template_dict["rasterFunctionArguments"]["URL"] = raster.url
+        url = raster.url
+        if "arcgis.com" in url:
+            if (
+                (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
+            ) or not hasattr(raster, "_lazy_token"):
+                raster._lazy_token = raster._gis._con.generate_portal_server_token(
+                    serverUrl=url
+                )
+            if isinstance(raster._lazy_token, str):
+                url = url + "?token=" + raster._lazy_token
+            template_dict["rasterFunctionArguments"]["URL"] = url
+        else:
+            template_dict["rasterFunctionArguments"]["URL"] = raster.url
 
     if raster is not None and isinstance(raster, str):
         template_dict["rasterFunctionArguments"]["URL"] = raster
@@ -7848,6 +7964,8 @@ class RFT:
                     return None
             return layer
 
+        except RuntimeError as err:
+            raise err
         except:
             _LOGGER.warning(
                 "Unable to apply the current raster function template on the imagery layer. "
@@ -8589,6 +8707,18 @@ class RFT:
         return key_value_dict, raster_dictionary
 
     def _apply_rft(self, arg_dict=None, gis=None):
+        lyr = None
+        for key, value in arg_dict.items():
+            if isinstance(value, (ImageryLayer, Raster)):
+                lyr = value
+                break
+            elif isinstance(value, list):
+                for r in value:
+                    if isinstance(r, (ImageryLayer, Raster)):
+                        lyr = r
+                        break
+            if lyr is not None:
+                break
         rft_dict = copy.deepcopy(self._rft_json)
         arg_dict_copy = copy.copy(arg_dict)
         if arg_dict_copy is not None:
@@ -8597,28 +8727,31 @@ class RFT:
                     arg_dict_copy.pop(key, None)
             complete_rft_dict = self._apply_argument(rft_dict, arg_dict_copy)
 
-        if self._local_raster is not None:
-            if self._local_raster._engine == _ArcpyRaster:
-                newlyr = Raster(
-                    self._local_raster._uri,
-                    is_multidimensional=self._local_raster._is_multidimensional,
-                    gis=self._local_raster._gis,
-                )
-            else:
-                newlyr = Raster(
-                    complete_rft_dict,
-                    is_multidimensional=self._local_raster._is_multidimensional,
-                    gis=self._gis,
-                )
+        if (
+            self._local_raster is not None
+        ) and self._local_raster._engine == _ArcpyRaster:
+            # if self._local_raster._engine == _ArcpyRaster:
+            newlyr = Raster(
+                self._local_raster._uri,
+                is_multidimensional=self._local_raster._is_multidimensional,
+                gis=self._local_raster._gis,
+            )
+            # else:
+            # newlyr = Raster(complete_rft_dict, is_multidimensional=self._local_raster._is_multidimensional, gis=self._gis)
             self._local_raster = None
             newlyr._engine_obj._fn = complete_rft_dict
             newlyr._engine_obj._fnra = complete_rft_dict
+            return newlyr
         else:
-            newlyr = ImageryLayer(complete_rft_dict, self._gis)
-            # _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
-            newlyr._fn = complete_rft_dict
-            newlyr._fnra = complete_rft_dict
-        return newlyr
+            if lyr is not None:
+                if isinstance(lyr, Raster):
+                    return _clone_layer_without_copy(
+                        lyr._engine_obj, complete_rft_dict, complete_rft_dict
+                    )
+                else:
+                    return _clone_layer_without_copy(
+                        lyr, complete_rft_dict, complete_rft_dict
+                    )
 
     def draw_graph(self, show_attributes=False, graph_size="14.25, 15.25"):
 

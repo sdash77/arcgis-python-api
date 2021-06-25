@@ -1,13 +1,15 @@
 import logging
+
 # TODO: find more elgant logging solution
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-formatter_str = \
-    u'-----    %(levelname)s    |    '\
-     '%(asctime)s    |    '\
-     '%(filename)s line %(lineno)d'\
-     '     -----\n'\
-     '"%(message)s"'
+formatter_str = (
+    u"-----    %(levelname)s    |    "
+    "%(asctime)s    |    "
+    "%(filename)s line %(lineno)d"
+    "     -----\n"
+    '"%(message)s"'
+)
 formatter = logging.Formatter(formatter_str)
 
 stdout_handler = logging.StreamHandler()

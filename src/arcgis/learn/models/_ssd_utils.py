@@ -325,7 +325,7 @@ class AveragePrecision(Callback):
 def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100, **kwargs):
     tps, clas, p_scores = [], [], []
     if getattr(model, "_is_model_extension", False):
-        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, model.model_conf.transform_input)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, model._model_conf.transform_input)
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
         for input,target in progress_bar(dl, display=show_progress):
@@ -333,9 +333,9 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.5, detect
             if getattr(model, "_is_model_extension", False):
                 try:
                     if model._is_multispectral:
-                        output = model.learn.model.eval()(model.model_conf.transform_input_multispectral(input, **transform_kwargs))
+                        output = model.learn.model.eval()(model._model_conf.transform_input_multispectral(input, **transform_kwargs))
                     else:
-                        output = model.learn.model.eval()(model.model_conf.transform_input(input, **transform_kwargs))
+                        output = model.learn.model.eval()(model._model_conf.transform_input(input, **transform_kwargs))
                 except Exception as e:
 
                     if getattr(model, "_is_fasterrcnn", False):

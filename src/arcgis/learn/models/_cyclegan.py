@@ -59,6 +59,10 @@ class CycleGAN(ArcGISModel):
         def __repr__(self):
             return '<%s>' % (type(self).__name__)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
@@ -128,7 +132,10 @@ class CycleGAN(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_cyclegan"
-        _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True

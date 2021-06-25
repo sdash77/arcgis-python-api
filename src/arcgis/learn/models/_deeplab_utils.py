@@ -33,7 +33,6 @@ import math
 from fastai.callbacks.hooks import hook_outputs
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
-from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
 from ._arcgis_model import _get_backbone_meta
@@ -42,14 +41,14 @@ from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
 
 class Deeplab(nn.Module):
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilation=False):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilation=False, pretrained=True):
         super().__init__()
         self.pointrend = pointrend
         self.vgg = False
         if getattr(backbone_fn, '_is_multispectral', False):
-            self.backbone = create_body(backbone_fn, pretrained=True, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+            self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
         else:
-            self.backbone = create_body(backbone_fn, pretrained=True)
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
         
         backbone_name = backbone_fn.__name__
 
@@ -189,7 +188,13 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            pred = model.learn.model(input)
+            if getattr(model, "_is_model_extension", False):
+                if model._is_multispectral:
+                    pred = model.learn.model(model._model_conf.transform_input_multispectral(input))
+                else:
+                    pred = model.learn.model(model._model_conf.transform_input(input))
+            else:
+                pred = model.learn.model(input)
             target = target.squeeze(1)
             if ignore_mapped_class != []:
                 for k in ignore_mapped_class:

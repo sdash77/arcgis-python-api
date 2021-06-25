@@ -27,9 +27,12 @@ try:
     from fastai.torch_core import to_cpu, grab_idx
     from fastai.basic_train import loss_batch
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    from .._utils.classified_tiles import per_class_metrics
+    from ._deeplab_utils import compute_miou
     import PIL
     from ._ssd_utils import compute_class_AP
     from .._utils.pascal_voc_rectangles import show_results_multispectral, ObjectDetectionCategoryList
+    from ._unet_utils import show_results_multispectral as show_results_multispectral_segmentation
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _set_ddp_multigpu, _isnotebook
     from ._hed_utils import accuracies
@@ -95,23 +98,31 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
+        kwargs['pretrained_backbone'] = pretrained_backbone
+        
         super().__init__(data, backbone, **kwargs)
-        self.model_conf = model_conf()
-        self.model_conf_class  = model_conf
+        self._model_conf = model_conf()
+        self._model_conf_class  = model_conf
         self._backend = 'pytorch'
         self._kwargs = kwargs
-        model = self.model_conf.get_model(data, backbone, **kwargs)
+        model = self._model_conf.get_model(data, backbone, **kwargs)
         if self._is_multispectral:
             model = _change_tail(model, data)
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
             if self._multigpu_training:
-                self.learn = Learner(data, model, loss_func=self.model_conf.loss).to_distributed(self._rank_distributed)
+                self.learn = Learner(data, model, loss_func=self._model_conf.loss).to_distributed(self._rank_distributed)
+                self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
             else:
-                self.learn = Learner(data, model, loss_func=self.model_conf.loss)
+                self.learn = Learner(data, model, loss_func=self._model_conf.loss)
         else:
-            self.learn = Learner(data, model, loss_func=self.model_conf.loss)
-        self.learn.callbacks.append(self._train_callback(self.learn, self.model_conf.on_batch_begin))
+            self.learn = Learner(data, model, loss_func=self._model_conf.loss)
+        self.learn.callbacks.append(self._train_callback(self.learn, self._model_conf.on_batch_begin))
         if self._data.dataset_type == 'Classified_Tiles':
             if getattr(self, "_is_edge_detection", False):
                 from ._hed_utils import accuracy, f1_score
@@ -140,7 +151,7 @@ class ModelExtension(ArcGISModel):
                 return {'last_input':last_input, 'last_target':last_target}
 
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
-        return self.model_conf.post_process(pred, nms_overlap, thresh, self.learn.data.chip_size, device)
+        return self._model_conf.post_process(pred, nms_overlap, thresh, self.learn.data.chip_size, device)
        
     def _get_emd_params(self, save_inference_file):
         import random
@@ -163,7 +174,7 @@ class ModelExtension(ArcGISModel):
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
-        _emd_template['ModelFileConfigurationClass'] = type(self.model_conf).__name__
+        _emd_template['ModelFileConfigurationClass'] = type(self._model_conf).__name__
         _emd_template['DatasetType'] = self._data.dataset_type
         _emd_template['Kwargs'] = self._kwargs
 
@@ -222,7 +233,8 @@ class ModelExtension(ArcGISModel):
         sys.path.append(os.path.dirname(modelconf))
         model_configuration = getattr(importlib.import_module('{}'.format(modelconf.name[0:-3])), modelconfclass)
 
-        backbone = emd['ModelParameters']['backbone']
+        backbone = emd['ModelParameters'].get('backbone', None)
+
         dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
         chip_size = emd["ImageWidth"]
         resize_to = emd.get('resize_to', None)
@@ -318,7 +330,12 @@ class ModelExtension(ArcGISModel):
                 self.show_results = self._show_results_edge_detection
                 self.compute_precision_recall = self._edge_detection_accuracies
             else:
-                self.show_results = self._show_results_segmentation
+                if self._is_multispectral:
+                    self.show_results = self._show_results_multispectral_segmentation
+                else:
+                    self.show_results = self._show_results_segmentation
+                self.mIOU = self._mIOU
+                self.per_class_metrics = self._per_class_metrics
         else:
             if self._is_multispectral:
                 self.show_results = self._show_results_multispectral
@@ -327,6 +344,43 @@ class ModelExtension(ArcGISModel):
             self.average_precision_score = self._average_precision_score
             self.predict = self._predict
             self.predict_video = self._predict_video
+
+    def _mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the progress bar if
+                                True.                                         
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        self._check_requisites()
+        num_classes = torch.arange(self._data.c)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        if mean:
+            return np.mean(miou)
+        return dict(zip(['0'] + self._data.classes[1:], miou)) 
+
+    def _per_class_metrics(self):
+        """
+        Computer per class precision, recall and f1-score on validation set.
+        """        
+        try:
+            self._check_requisites()
+            ## Calling imported function `per_class_metrics`
+            return per_class_metrics(self)
+        except:
+            import pandas as pd
+            return pd.read_json(self._data.emd['per_class_metrics'])
 
     def _show_results_object_detection(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
@@ -370,6 +424,18 @@ class ModelExtension(ArcGISModel):
             **kwargs
         )
 
+    def _show_results_multispectral_segmentation(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+        return_fig = kwargs.get('return_fig', False)
+        ret_val = show_results_multispectral_segmentation(
+            self,
+            nrows=rows,
+            alpha=alpha,
+            **kwargs
+        )
+        if return_fig:
+            fig, ax = ret_val
+            return fig
+
     def _show_results_modified(self, rows=5, **kwargs):
 
         if rows > len(self._data.valid_ds):
@@ -381,9 +447,9 @@ class ModelExtension(ArcGISModel):
         ds = self.learn.dl(ds_type).dataset
         xb,yb = self.learn.data.one_batch(ds_type, detach=False, denorm=False)
         self.learn.model.eval()
-        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._model_conf.transform_input)
         try:
-            preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
+            preds = self.learn.model(self._model_conf.transform_input(xb, **transform_kwargs))
         except Exception as e:
 
             if getattr(self, "_is_fasterrcnn", False):
@@ -420,10 +486,10 @@ class ModelExtension(ArcGISModel):
     def _predict_learn_modified(self, item, **kwargs):
         "Return predicted class, label and probabilities for `item`."
         batch = self.learn.data.one_item(item)
-        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._model_conf.transform_input)
         self.learn.model.eval()
         try:
-            pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
+            pred = self.learn.model(self._model_conf.transform_input(batch[0], **transform_kwargs))
         except Exception as e:
 
             if getattr(self, "_is_fasterrcnn", False):

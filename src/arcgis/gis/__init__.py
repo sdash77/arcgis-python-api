@@ -20,7 +20,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple
+from typing import Tuple, Any, Dict
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -139,10 +139,12 @@ class GIS(object):
     ----------------    ---------------------------------------------------------------
     verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
                         being accessed via the IP or hostname instead of the name on the
-                        certificate, set this value to False.  This will ensure that all
+                        certificate, set this value to ``False``.  This will ensure that all
                         SSL certificate issues are ignored.
-                        The default is True.
-                        **Warning: Setting the value to False can be a security risk.**
+                        The default is ``True``.
+
+                        .. warning::
+                            Setting the value to ``False`` can be a security risk.
     ----------------    ---------------------------------------------------------------
     set_active          Optional boolean. The default is True.  If True, the GIS object
                         will be used as the default GIS object throughout the whole
@@ -286,6 +288,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
+        self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
         self._expiration = kwargs.pop("expiration", None)
         from arcgis._impl.tools import _Tools
@@ -416,6 +419,7 @@ class GIS(object):
                 custom_auth=custom_auth,  # token=self._utoken,
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
+                timeout=self._timeout,
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -434,6 +438,7 @@ class GIS(object):
                     referer=self._referer,
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
+                    timeout=self._timeout,
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -484,25 +489,27 @@ class GIS(object):
                     props["urlKey"],
                     props["customBaseUrl"],
                 )
-                self._url = url
-                pp = _portalpy.Portal(
-                    url,
-                    self._username,
-                    self._password,
-                    self._key_file,
-                    self._cert_file,
-                    verify_cert=self._verify_cert,
-                    client_id=self._client_id,
-                    proxy_port=self._proxy_port,
-                    proxy_host=self._proxy_host,
-                    expiration=self._expiration,
-                    referer=self._referer,
-                    custom_auth=custom_auth,
-                    # token=self._utoken,
-                    trust_env=kwargs.get("trust_env", None),
-                    client_secret=client_secret,
-                )
-                self._portal = pp
+                if self._url != url:
+                    self._url = url
+                    pp = _portalpy.Portal(
+                        url,
+                        self._username,
+                        self._password,
+                        self._key_file,
+                        self._cert_file,
+                        verify_cert=self._verify_cert,
+                        client_id=self._client_id,
+                        proxy_port=self._proxy_port,
+                        proxy_host=self._proxy_host,
+                        expiration=self._expiration,
+                        referer=self._referer,
+                        custom_auth=custom_auth,
+                        # token=self._utoken,
+                        trust_env=kwargs.get("trust_env", None),
+                        client_secret=client_secret,
+                        timeout=self._timeout,
+                    )
+                    self._portal = pp
         except:
             pass
 
@@ -834,6 +841,31 @@ class GIS(object):
         more information.
         """
         return ContentManager(self)
+
+    @_lazy_property
+    def velocity(self):
+        """
+        The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
+        :return: :class:`~arcgis.realtime.velocity.Velocity`
+        """
+        if self._portal.is_arcgisonline and self._subscription_information is not None:
+            _velocity_url = None
+            org_capabilities = self._subscription_information["orgCapabilities"]
+            for capabilities in org_capabilities:
+                if capabilities["id"] == "velocity":
+                    _velocity_url = capabilities["velocityUrl"]
+                    if "/iot" not in _velocity_url:
+                        _velocity_url += "/iot/"
+
+            if _velocity_url is not None:
+                velocity = arcgis.realtime.velocity.Velocity(
+                    url=_velocity_url, gis=self
+                )
+                return velocity
+            else:
+                raise Exception("Velocity is not available on this organizaiton.")
+        else:
+            raise Exception("ArcGIS Enterprise does not support Velocity")
 
     @_lazy_property
     def hub(self):
@@ -5600,6 +5632,81 @@ class ContentManager(object):
             return items
 
 
+    def _market_listings(
+        self,
+        query: str,
+        sort_field: str = None,
+        sort_order: str = "asc",
+        num: int = 10,
+        start: int = 1,
+        my_listings: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        This operation searches for marketplace listings. The searches are
+        performed against a high performance index that indexes the most
+        popular fields of a listing. See the Search reference page for
+        information on the fields and the syntax of the query.
+
+        By default, this search spans all public listings in the
+        marketplace. However, if you're logged in as a vendor org admin and
+        you specify the ``mylistings=true`` parameter, it then searches all
+        public and private listings in your organization.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. The field to sort by. You can also sort by
+                            multiple fields (comma separated) for listings, sort field
+                            names are case-insensitive.
+
+                            Supported sort field names are `title`, `created`,
+                            `listingpublisheddate`, `type`, `owner`, `avgrating`,
+                            `numratings`, `numcomments`, and `numviews`.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. Describes whether the order returns in
+                            ascending or descending order. Default is ascending.
+
+                            Values: `asc` or `desc`
+        ----------------    ---------------------------------------------------------------
+        num                 Optional Integer. The maximum number of results to be included
+                            in the result set response.
+
+                            The default value is `10`, and the maximum allowed value is `100`.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Integer. The number of the first entry in the result
+                            set response. The index number is 1-based.
+        ----------------    ---------------------------------------------------------------
+        my_listings         Optional Boolean.  If `True` and you're logged in as a vendor
+                            org admin, it searches all public and private listings in your
+                            organization.
+
+                            **Note** that if `my_listings=True`, the q parameter is optional.
+
+                            Values: `False (default) | True`
+        ================    ===============================================================
+
+
+        :returns: Dictionary[str, Any]
+        """
+        params = {
+            "f": "json",
+            "q": query,
+            "sortField": sort_field,
+            "sortOrder": sort_order,
+            "mylistings": my_listings,
+            "num": num,
+            "start": start,
+        }
+        for key in list(params.keys()):
+            if params[key] is None:
+                del params[key]
+
+        url = f"{self._gis._portal.resturl}content/listings"
+        resp = self._gis._con.get(url, params)
+        return resp
+
     def search(
         self,
         query,
@@ -10188,6 +10295,22 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def can_delete(self) -> bool:
+        """
+        Checks if the Item can be removed from the system.
+
+        :returns: bool
+        """
+        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        params = {"f": "json"}
+        try:
+            return self._gis._con.get(url, params).get("success", False)
+        except Exception as e:
+            _log.warning(e)
+            return False
+
+    # ----------------------------------------------------------------------
+    @property
     def content_status(self):
         """
         The content_status property states if an Item is authoritative or deprecated.  This
@@ -11692,16 +11815,15 @@ class Item(dict):
 
         if self.type == "Feature Service":
             params["stype"] = "features"
-            if not self.layers[0].container:
+            if len(self.layers) > 0 and not self.layers[0].container:
                 params["name"] = os.path.basename(
                     os.path.abspath(
                         os.path.join(self.layers[0]._url, ".." + os.sep + "..")
                     )
                 )
-            else:
-                params["name"] = os.path.basename(
-                    os.path.dirname(self.layers[0].container._url)
-                )
+            else:  # hasattr(self, "url") and self.url and len(self.url) > 0:
+                params["name"] = os.path.basename(os.path.dirname(self.url))
+
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
         if self.type == "Map Service":
@@ -13875,10 +13997,12 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
+        is_raster = False
         if (
             type(self).__name__ == "ImageryLayer"
             or type(self).__name__ == "_ImageServerRaster"
         ):
+            is_raster = True
             if self._fn is not None:
                 params["renderingRule"] = self._fn
             if hasattr(self, "_uri"):
@@ -13891,7 +14015,12 @@ class _GISResource(object):
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
-                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                if is_raster:
+                    dictdata = self._con.post(
+                        self.url, params, token=self._lazy_token, timeout=None
+                    )
+                else:
+                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)

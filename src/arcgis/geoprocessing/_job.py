@@ -484,6 +484,7 @@ class GPJob(object):
                         }
                     }
                     item.update(item_properties=_item_properties)
+                return item
         return result
 
     def _process_fa(self, result):

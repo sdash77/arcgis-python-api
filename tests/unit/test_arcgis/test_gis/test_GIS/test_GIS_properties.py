@@ -3,6 +3,7 @@ from pytest_blockage import MockHttpCall
 
 from utils.mocks import *
 
+
 def test_url_property():
     """Tests that the `GIS.url` property returns the correct property
     depending on if it's GIS("home") or standard GIS object

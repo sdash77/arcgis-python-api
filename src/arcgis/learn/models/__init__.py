@@ -27,4 +27,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._mmdetection import MMDetection
     from ._embeddings import Embeddings
     from ._connect_net import ConnectNet
+    from ._mmsegmentation import MMSegmentation
     from ._siammask import SiamMask, Track
+    from ._auto_ml import AutoML
+

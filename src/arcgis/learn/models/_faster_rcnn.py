@@ -17,6 +17,9 @@ try:
     from torch.jit.annotations import List, Dict
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
+    import torchvision
+    from ._maskrcnn import grid_anchors
+    tvisver = [int(x) for x in torchvision.__version__.split('.')]
 
     HAS_FASTAI = True
 
@@ -62,6 +65,7 @@ class MyFasterRCNN():
         assert type(pretrained_backbone) == bool
         if backbone.__name__ == 'resnet50':
             model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained_backbone,
+                                                                              pretrained_backbone=False,
                                                                               min_size = 1.5*data.chip_size,
                                                                               max_size = 2*data.chip_size,
                                                                               **self.fasterrcnn_kwargs)
@@ -145,11 +149,13 @@ class MyFasterRCNN():
             model_input_batch = (model_input_batch.permute(0, 2, 3, 1)*std + mean).permute(0, 3, 1, 2)
         
         for bbox, label in zip(*model_target_batch):
-
+            mask = ~((bbox == 0).all(1))
+            bbox = bbox[mask]
+            label = label[mask]
             bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
             target = {}#FasterRCNN require target of each image in the formate of dictionary.
             #If image comes without any bboxes.
-            if bbox.nelement() == 0:        
+            if ( tvisver[0] == 0 and tvisver[1] < 6 ) and bbox.nelement() == 0:
                 bbox = self.torch.tensor([[0.,0.,0.,0.]]).to(learn.data.device)
                 label = self.torch.tensor([0]).to(learn.data.device)
             # FasterRCNN require the formate of bboxes [x1,y1,x2,y2].
@@ -187,7 +193,7 @@ class MyFasterRCNN():
         std  = self.torch.tensor(imagenet_stats[1], dtype=self.torch.float32).to(xb.device)
 
         xb = (xb.permute(0, 2, 3, 1)*std + mean).permute(0, 3, 1, 2)
-        
+
         return list(xb) # model input require in the formate of list
     
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
@@ -447,6 +453,7 @@ class FasterRCNN(ModelExtension):
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
             idx = self._freeze()
+            self.learn.model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, self.learn.model.rpn.anchor_generator)
 
         self.learn.model.roi_heads.forward = types.MethodType(forward_roi, self.learn.model.roi_heads)
         self.learn.model.eager_outputs = types.MethodType(eager_outputs_modified, self.learn.model)
@@ -467,6 +474,10 @@ class FasterRCNN(ModelExtension):
             for p in i.parameters():
                 p.requires_grad = False
         return idx
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'average_precision']
 
     @property
     def _is_fasterrcnn(self):

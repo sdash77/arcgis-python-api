@@ -113,6 +113,10 @@ class PointCNN(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
 
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy', 'precision', 'recall', 'f1']
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         

@@ -3829,8 +3829,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def summarize_within(
         self,
-        sum_within_layer,
         summary_layer,
+        sum_within_layer=None,
         sum_shape=True,
         shape_units=None,
         summary_fields=[],
@@ -3883,7 +3883,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "SummarizeWithin"
 
         params = {}
-        sum_within_layer = self._feature_input(sum_within_layer)
+        if sum_within_layer:
+            sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
         if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name}}
@@ -6419,6 +6420,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_params=None,
         image_collection_properties=None,
         use_input_rasters_by_ref=False,
+        upload_properties=None,
     ):
         gis = self._gis
         input_raster_specified = False
@@ -6428,15 +6430,15 @@ class _RasterAnalysisTools(BaseAnalytics):
         items_on_server = False
         # input rasters
 
-        #parse input and convert to url if it is imagery layer
+        # parse input and convert to url if it is imagery layer
         from arcgis.raster import ImageryLayer
+
         if isinstance(input_rasters, ImageryLayer):
             input_rasters = input_rasters.url
         elif isinstance(input_rasters, list):
             for pos, raster in enumerate(input_rasters):
-               if isinstance(raster, ImageryLayer):
-                   input_rasters[pos] = raster.url
-
+                if isinstance(raster, ImageryLayer):
+                    input_rasters[pos] = raster.url
 
         if isinstance(input_rasters, str):
             if os.path.exists(input_rasters):
@@ -6452,7 +6454,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
                     if "http:" in item or "https:" in item:
-                        url_list.append(item)
+                        if "blob.core" in item:
+                            uri_list.append(item)
+                        else:
+                            url_list.append(item)
                     elif os.path.exists(item):
                         upload_rasters_list.append(item)
                     else:
@@ -6464,8 +6469,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                 )
 
                 if gis._con._product == "AGOL":
-                    url_list = _upload_imagery_agol(
-                        upload_rasters_list, gis, raster_type_name=raster_type_name
+                    single_image = False
+                    if raster_type_name is None:
+                        single_image = True
+                    uri_list = _upload_imagery_agol(
+                        upload_rasters_list,
+                        gis,
+                        upload_properties=upload_properties,
+                        single_image=single_image,
                     )
                 else:
                     item_id_list = _upload_imagery_enterprise(
@@ -6494,7 +6505,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
                 if "http:" in input_rasters or "https:" in input_rasters:
-                    if raster_type_name.lower() == "tiled imagery layer":
+                    if "blob.core" in input_rasters:
+                        input_rasters_dict = {"uri": input_rasters}
+                    elif raster_type_name.lower() == "tiled imagery layer":
                         input_rasters_dict = {"tiled_url": input_rasters}
                         raster_type_name = "Raster Dataset"
                     else:
@@ -6705,14 +6718,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         """
         task = "AddImage"
-        gis = self._gis
 
         image_collection = self._set_image_collection_param(image_collection)
         image_collection_properties = None
         use_input_rasters_by_ref = None
-
-        folderId = None
-        folder = None
+        upload_properties = None
 
         if context is not None:
             if "image_collection_properties" in context:
@@ -6721,6 +6731,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         context_param = {}
         _set_raster_context(context_param, context)
@@ -6733,6 +6746,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             raster_type_params=raster_type_params,
             image_collection_properties=image_collection_properties,
             use_input_rasters_by_ref=use_input_rasters_by_ref,
+            upload_properties=upload_properties,
         )
 
         gpjob = self._tbx.add_image(
@@ -7709,11 +7723,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             The imagery layer item
 
         """
+        kwargs.update({"tiles_only": False})
         task = "CreateImageCollection"
         gis = self._gis
         output_service = None
         image_collection_properties = None
         use_input_rasters_by_ref = None
+        upload_properties = None
 
         if context is not None:
             if "image_collection_properties" in context:
@@ -7722,6 +7738,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         if isinstance(image_collection, Item):
             image_collection = json.dumps({"itemId": image_collection.itemid})
@@ -7775,6 +7794,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             raster_type_params=raster_type_params,
             image_collection_properties=image_collection_properties,
             use_input_rasters_by_ref=use_input_rasters_by_ref,
+            upload_properties=upload_properties,
         )
 
         gpjob = self._tbx.create_image_collection(
@@ -10038,13 +10058,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         task = "CopyRaster"
 
-        gis = self._gis
-
+        upload_properties = None
         use_input_rasters_by_ref = None
         if context is not None:
             if "byref" in context:
                 use_input_rasters_by_ref = context["byref"]
                 del context["byref"]
+            if "upload_properties" in context:
+                upload_properties = context["upload_properties"]
+                del context["upload_properties"]
 
         context_param = {}
         _set_raster_context(context_param, context)
@@ -10055,7 +10077,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        if not isinstance(input_raster, str) and not isinstance(input_raster, list) and not raster_type_name:
+        if (
+            not isinstance(input_raster, str)
+            and not isinstance(input_raster, list)
+            and not raster_type_name
+        ):
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:
@@ -10065,14 +10091,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                 raster_type_params=raster_type_params,
                 image_collection_properties=None,
                 use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
             )
             if isinstance(raster_type, str):
                 try:
                     raster_type = json.loads(raster_type)
                 except:
                     pass
-            if isinstance(input_raster, dict) and isinstance(raster_type, dict):
-                input_raster.update({"rasterType": raster_type})
+            if raster_type_name is not None:
+                if isinstance(input_raster, dict) and isinstance(raster_type, dict):
+                    input_raster.update({"rasterType": raster_type})
 
         gpjob = self._tbx.copy_raster(
             input_raster=input_raster,
@@ -12707,7 +12735,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         if input_multidimensional_rasters is not None:
-            input_multidimensional_rasters = _set_multiple_raster_inputs(
+            input_multidimensional_rasters = self._set_multiple_raster_inputs(
                 input_multidimensional_rasters
             )
 
@@ -13549,9 +13577,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
 
     def train_deep_learning_model(
         self,
@@ -13769,8 +13801,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
 ###########################################################################

@@ -6,6 +6,8 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
+from arcgis._impl.common._utils import _validate_url
+from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ def solve_location_allocation(
     restrictions=None,
     attribute_parameter_values=None,
     allocation_line_shape=None,
-    travel_mode=None,
+    travel_mode="Custom",
     impedance=None,
     save_output_network_analysis_layer=False,
     overrides=None,
@@ -884,7 +886,8 @@ def solve_location_allocation(
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncLocationAllocation.url
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.solve_location_allocation.__annotations__.keys(),
