@@ -1,7 +1,9 @@
 """
 Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis.
 
-The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online from 8.2 as an invite only Beta through an Early Adopter Program (EAP). 
+The Hosted Imagery & Raster Analysis capabilities are available both on ArcGIS Enterprise and ArcGIS Online.
+Refer https://doc.arcgis.com/en/arcgis-online/analyze/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Online.
+Refer https://enterprise.arcgis.com/en/portal/latest/use/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Enterprise.
 """
 from arcgis.geoprocessing._support import (
     _analysis_job,
@@ -1109,8 +1111,7 @@ def generate_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -1256,8 +1257,7 @@ def convert_feature_to_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -1473,10 +1473,7 @@ def copy_raster(
                                          On AGOL, the default output image service for this function would 
                                          be a Tiled Imagery Layer. 
 
-                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. 
-                                         This option of creating Dynamic Imagery Layer is available only to the 
-                                         organizations that are part of the Early Adopter Program (EAP) at 
-                                         ArcGIS Image 9.1 release. 
+                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                          Function will not honor tiles_only parameter on enterprise and 
                                          will generate Dynamic Imagery Layer by default. 
@@ -1775,9 +1772,7 @@ def summarize_raster_within(
     tiles_only                               Keyword only parameter. Optional boolean. 
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) 
-                                             at ArcGIS Image 9.1 release. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
@@ -2115,9 +2110,7 @@ def calculate_density(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -2370,9 +2363,7 @@ def create_viewshed(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -2597,9 +2588,7 @@ def interpolate_points(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -2776,9 +2765,7 @@ def classify(
     tiles_only                           Keyword only parameter. Optional boolean.
                                          In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                         at ArcGIS Image 9.1 release.
+                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                          Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ================================     ====================================================================
@@ -2961,9 +2948,7 @@ def segment(
     tiles_only                           Keyword only parameter. Optional boolean.
                                          In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                         Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                         at ArcGIS Image 9.1 release.
+                                         To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                          Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ================================     ====================================================================
@@ -4970,9 +4955,7 @@ def generate_multidimensional_anomaly(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -5381,9 +5364,7 @@ def aggregate_multidimensional_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -5628,9 +5609,7 @@ def generate_trend_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -5816,9 +5795,7 @@ def predict_using_trend_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -6034,9 +6011,7 @@ def find_argument_statistics(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -6195,9 +6170,7 @@ def linear_spectral_unmixing(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -6426,9 +6399,7 @@ def subset_multidimensional_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -7178,9 +7149,7 @@ def analyze_changes_using_ccdc(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -7538,9 +7507,7 @@ def detect_change_using_change_analysis_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -7941,9 +7908,7 @@ def merge_multidimensional_rasters(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ------------------------------------     --------------------------------------------------------------------
@@ -8193,9 +8158,7 @@ def analyze_changes_using_landtrendr(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              On AGOL, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
@@ -8621,9 +8584,7 @@ def compute_change_raster(
     tiles_only                               Keyword only parameter. Optional boolean.
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP)
-                                             at ArcGIS Image 9.1 release.
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                              Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ------------------------------------     --------------------------------------------------------------------
