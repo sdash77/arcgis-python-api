@@ -884,8 +884,12 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
                       Optionally choose how input_layer fields will be appended from the following:
 
-                      - AppendField - Matches the input_layer field with an append_layer field of a different name. Field types must match.
-                      - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
+                        - AppendField - Matches the input_layer field with an append_layer field of a different name. Field types must match.
+                        - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
+
+                      The following example appends Average_Sales to Mean_Sales, calculates an expression of WeeklyRate multiplied by 1.5 to append the values for Bonus, and sets a value of null for appended features in Errors.
+
+                      Example: [{"inputLayerField": "Mean_Sales","mappingType": "AppendField","mappingValue": "Average_Sales"},{"inputLayerField": "Bonus","mappingType": "Expression","mappingValue": "$feature['WeeklyRate'] * 1.5"},{"inputLayerField": "Errors","mappingType": "Expression","mappingValue": "null"}]
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.

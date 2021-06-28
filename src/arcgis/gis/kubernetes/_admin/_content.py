@@ -39,9 +39,9 @@ class LanguageManager(_BaseKube):
         :return: Dict[str, bool]
         """
         params = {"f": "json"}
-        return self._con.get(url, params)
+        return self._con.get(self._url, params)
 
-    @lanaguages.setter
+    @languages.setter
     def languages(self, languages: Dict[str, bool]):
         """
         This resource returns a list of all Esri supported languages and

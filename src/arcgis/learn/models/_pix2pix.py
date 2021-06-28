@@ -214,4 +214,4 @@ class Pix2Pix(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ['Pix2Pix']
+        return ['Pix2Pix', 'Export_Tiles']
