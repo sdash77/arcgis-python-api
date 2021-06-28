@@ -247,6 +247,7 @@ class ServicesManager(object):
         self._con = gis._con
 
     # ----------------------------------------------------------------------
+    @property
     def services_properties(self):
         """
         This resource is used to provide default settings for new services
