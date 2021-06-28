@@ -150,7 +150,11 @@ class DeploymentManager(_BaseKube):
     _gis = None
     _url = None
 
-    def __init__(self, url: str, gis: GIS = None,) -> None:
+    def __init__(
+        self,
+        url: str,
+        gis: GIS = None,
+    ) -> None:
         """class initializer"""
         super()
         self._url = url
