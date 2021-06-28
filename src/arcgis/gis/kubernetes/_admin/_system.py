@@ -5,6 +5,7 @@ from ._upgrades import UpgradeManager
 from ._recovery import RecoveryManager
 from ._content import LanguageManager
 from ._architecture import ArchitectureManager
+from typing import List, Dict, Any, Tuple, Optional
 
 
 class Server(_BaseKube):

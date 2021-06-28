@@ -4,6 +4,7 @@ except ImportError:
     import json
 
 from arcgis._impl.common._mixins import PropertyMap
+from typing import Dict, Any, Optional, List
 
 ###########################################################################
 class KubeService(object):

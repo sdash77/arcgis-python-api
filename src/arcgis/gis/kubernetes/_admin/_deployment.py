@@ -1,6 +1,6 @@
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 
 class Deployment:
@@ -150,11 +150,7 @@ class DeploymentManager(_BaseKube):
     _gis = None
     _url = None
 
-    def __init__(
-        self,
-        url: str,
-        gis: GIS = None,
-    ) -> None:
+    def __init__(self, url: str, gis: GIS = None,) -> None:
         """class initializer"""
         super()
         self._url = url
