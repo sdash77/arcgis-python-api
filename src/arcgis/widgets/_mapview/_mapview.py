@@ -794,9 +794,14 @@ class MapView(widgets.DOMWidget):
 
             >>> from arcgis.gis import GIS, Item
             >>> from arcgis.widgets import MapView
-            >>> map2 = gis.map("California")
-            >>> map2.layers
-            <134.17566310758235>
+            >>> gis = GIS("pro")
+            >>> itms = gis.content.search("owner:"+ gis.users.me.username)
+            >>> single_item =itms[1]
+            >>> new_layer= FeatureLayer.fromitem(item = single_item)
+            >>> map1 = gis.map("United States")
+            >>> map1.add_layer(new_layer)
+            >>> map1.layers
+            [<FeatureLayer url:"https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/Power_Plants_Itm/FeatureServer/0">]
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
 
