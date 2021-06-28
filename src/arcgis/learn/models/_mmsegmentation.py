@@ -66,6 +66,8 @@ class MMSegmentationConfig():
                     aux_head.num_classes = data.c
             else:
                 cfg.model.auxiliary_head.num_classes = data.c
+        if cfg.model.backbone.type=='CGNet' and getattr(data, '_is_multispectral', False):
+            cfg.model.backbone.in_channels = len(data._extract_bands)
 
         model = self.mmseg.models.build_segmentor(cfg.model)
 
@@ -205,7 +207,7 @@ class MMSegmentation(ModelExtension):
     def _supported_datasets():
         return ['Classified_Tiles']
 
-    supported_models=['ann', 'apcnet', 'ccnet', 'cgnet', 'deeplabv3', 'deeplabv3plus', 'dmnet', 'dnlnet', 'emanet'\
+    supported_models=['ann', 'apcnet', 'ccnet', 'cgnet', 'deeplabv3', 'deeplabv3plus', 'dmnet', 'dnlnet', 'emanet',\
             'fastscnn', 'fcn', 'gcnet', 'hrnet', 'mobilenet_v2', 'nonlocal_net', 'ocrnet', 'psanet', 'pspnet',\
             'resnest', 'sem_fpn', 'unet', 'upernet']
     """

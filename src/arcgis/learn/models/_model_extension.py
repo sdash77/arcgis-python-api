@@ -336,6 +336,7 @@ class ModelExtension(ArcGISModel):
                     self.show_results = self._show_results_segmentation
                 self.mIOU = self._mIOU
                 self.per_class_metrics = self._per_class_metrics
+                self.accuracy = self._accuracy
         else:
             if self._is_multispectral:
                 self.show_results = self._show_results_multispectral
@@ -344,6 +345,16 @@ class ModelExtension(ArcGISModel):
             self.average_precision_score = self._average_precision_score
             self.predict = self._predict
             self.predict_video = self._predict_video
+
+    def _accuracy(self):
+        try:
+            return self.learn.validate()[1].tolist()
+        except Exception as e:
+            accuracy = self._data.emd.get('accuracy')
+            if accuracy:
+                return accuracy
+            else:
+                logger.error("Metric not found in the loaded model")
 
     def _mIOU(self, mean=False, show_progress=True):
 
