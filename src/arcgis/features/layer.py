@@ -2198,7 +2198,7 @@ class FeatureLayer(Layer):
             # Usage Example
 
             >>> feature_layer.append(source_table_name= "Building",
-                                    fieldMappings=[{"name" : "CountyID",
+                                    field_Mappings=[{"name" : "CountyID",
                                                     "sourceName" : "GEOID10"}],
                                     upsert = True,
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
