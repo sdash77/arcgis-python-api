@@ -25,11 +25,14 @@ class KubernetesAdmin(_BaseKube):
     _sm = None
     _sp = None
     _mode = None
+    _catalog = None
     _idp = None
     _security = None
     _services = None
     _license = None
     _metadata = None
+    _uploads = None
+    _properties = None
     _organizations = None
     _category_schema = None
     # ----------------------------------------------------------------------
@@ -275,6 +278,17 @@ class KubernetesAdmin(_BaseKube):
             url = f"{self._url}/services"
             self._services = ServicesManager(url, gis=self._gis)
         return self._services
+
+    # ----------------------------------------------------------------------
+    @property
+    def services_catalog(self):
+        """Provides access to work with the services on the site"""
+        if self._catalog is None:
+            from arcgis.gis.kubernetes._server import KubeServiceDirectory
+
+            url = f"{self._url.replace('/admin', '/rest')}/services"
+            self._catalog = KubeServiceDirectory(url, gis=self._gis)
+        return self._catalog
 
     # ----------------------------------------------------------------------
     @property
