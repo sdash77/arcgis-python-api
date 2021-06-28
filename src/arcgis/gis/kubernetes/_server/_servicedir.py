@@ -45,18 +45,20 @@ class KubeServiceDirectory(_BaseKube):
         """
         import pandas as pd
 
-        pd.set_option("display.max_colwidth", -1)
+        pd.set_option("display.max_colwidth", None)
         data = []
         a_template = """<a href="%s?token=%s">URL Link</a>"""
         columns = ["Service Name", "Service URL"]
         if folder is None:
-            res = self._con.get(self._url, {"f": "json"})
+            url = self._url
+            res = self._con.get(url, {"f": "json"})
         elif folder.lower() in [f.lower() for f in self.folders]:
-            res = self._con.get("%s/%s" % (self._url, folder), {"f": "json"})
+            url = "%s/%s" % (self._url, folder)
+            res = self._con.get(url, {"f": "json"})
         if "services" in res:
             for s in res["services"]:
                 # if s['name'].split('/')[-1].lower() == name.lower():
-                url = "%s/%s/%s" % (self._url, s["name"], s["type"])
+                url = "%s/%s/%s" % (url, s["name"], s["type"])
                 data.append(
                     [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
                 )
@@ -80,15 +82,16 @@ class KubeServiceDirectory(_BaseKube):
     def get(self, name, folder=None):
         """returns a single service in a folder"""
         if folder is None:
+            url = self._url
             res = self._con.get(self._url, {"f": "json"})
         elif folder.lower() in [f.lower() for f in self.folders]:
+            url = "%s/%s" % (self._url, folder)
             res = self._con.get("%s/%s" % (self._url, folder), {"f": "json"})
         if "services" in res:
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
                     return Service(
-                        url="%s/%s/%s" % (self._url, s["name"], s["type"]),
-                        server=self._con,
+                        url="%s/%s/%s" % (url, s["name"], s["type"]), server=self._con,
                     )
                 del s
         return None
@@ -141,3 +144,54 @@ class KubeServiceDirectory(_BaseKube):
         else:
             return self.properties["folders"]
         return []
+
+    # ----------------------------------------------------------------------
+    def publish_sd(self, sd_file, folder=None):
+        """
+        Publishes a service definition file to ArcGIS Server.
+    
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        sd_file                Required string. The service definition file to be uploaded and published.
+        ------------------     --------------------------------------------------------------------
+        folder                 Optional string. The folder in which to publish the service definition
+                               file to.  If this folder is not present, it will be created.  The
+                               default is None in which case the service definition will be published
+                               to the System folder.
+        ==================     ====================================================================
+    
+        :return:
+           A boolean indicating success (True) or failure (False).
+        """
+        import json
+
+        sm = self._gis.admin.services
+        catalog = self._gis.admin.services_catalog
+        uploads = self._gis.admin.uploads
+        if sd_file.lower().endswith(".sd") == False:
+            return False
+        # catalog = self.content
+        if "System" not in catalog.folders:
+            return False
+        if folder and folder.lower() not in [f.lower() for f in catalog.folders]:
+            sm.create_folder(folder)
+        service = catalog.get(name="PublishingTools", folder="System")
+        if service is None:
+            service = catalog.get(name="PublishingToolsEx", folder="System")
+        if service is None:
+            return False
+        status, res = uploads.upload(path=sd_file, description="sd file")
+        if status:
+            uid = res["item"]["itemID"]
+            if folder:
+                config = uploads._service_configuration(uid)
+                if "folderName" in config:
+                    config["folderName"] = folder
+                res = service.publish_service_definition(
+                    in_sdp_id=uid, in_config_overwrite=json.dumps(config)
+                )
+            else:
+                res = service.publish_service_definition(in_sdp_id=uid)
+            return True
+        return False

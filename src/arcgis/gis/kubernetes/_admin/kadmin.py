@@ -31,6 +31,7 @@ class KubernetesAdmin(_BaseKube):
     _services = None
     _license = None
     _metadata = None
+    _uploads = None
     _organizations = None
     _category_schema = None
     # ----------------------------------------------------------------------
