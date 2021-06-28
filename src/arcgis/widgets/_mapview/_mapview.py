@@ -241,7 +241,7 @@ class MapView(widgets.DOMWidget):
     ------------------     --------------------------------------------------------------------
     gis                    The active :class:`~arcgis.gis.GIS` instance you want this map widget to use.
     ------------------     --------------------------------------------------------------------
-    item                   A ``WebMap`` or ```WebScene``` item instance that you want to visualize
+    item                   A ``WebMap`` or ``WebScene`` item instance that you want to visualize
     ------------------     --------------------------------------------------------------------
     mode                   Whether to construct a '2D' map or '3D' map. See the ``mode`` property
                            for more information.
@@ -394,8 +394,8 @@ class MapView(widgets.DOMWidget):
 
             >>> from arcgis.gis import GIS, Item
             >>> from arcgis.widgets import MapView
-            >>> map2 = gis.map("California")
-            >>> map2.heading
+            >>> map3d = gis.map("California", mode ="3D")
+            >>> map3d.heading
             <225.82433689241765>
         """
         return self._readonly_heading
@@ -598,7 +598,7 @@ class MapView(widgets.DOMWidget):
     @property
     def center(self):
         """
-        The ``center`` property  represents the center of the ``Map Widgets``.
+        The ``center`` property  represents the center of the ``Map Widget``.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1003,7 +1003,7 @@ class MapView(widgets.DOMWidget):
 
     def take_screenshot(self, output_in_cell=True, set_as_preview=True, file_path=""):
         """
-        The ``take_screenshot`` method akes a screenshot of the current widget view.
+        The ``take_screenshot`` method takes a screenshot of the current widget view.
 
         .. note::
             Only works in a Jupyter Notebook environment.
@@ -1271,7 +1271,7 @@ class MapView(widgets.DOMWidget):
             You may not need to call this function to view the widget in
             disconnected environments: if your computer cannot reach js.arcgis.com,
             and you have a :class:`~arcgis.gis.GIS` connection to a portal, the widget will
-            automatically attempt to use that portal's JS API that it ships with.
+            automatically attempt to use that Portal's JS API that it ships with.
         """
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
@@ -2036,7 +2036,7 @@ class MapView(widgets.DOMWidget):
         standalone HTML file that can be viewed in any web browser.
 
         By default, only publicly viewable layers will be visible in any
-        exported html map. Specify ``credentials_prompt=True`` to have a :class:`~arcgis.gis.User`
+        exported html map. Specify ``credentials_prompt=True`` to have a user
         be prompted for their credentials when opening the HTML page to view
         private content.
 
@@ -2451,7 +2451,8 @@ class MapView(widgets.DOMWidget):
     allow you to visualize temporal data for an applicable layer added to
     the map. Default: `False`.
     
-    See the `TimeSlider <https://bit.ly/3dFSPa2>`_ page in the ArcGIS REST API page for more info.
+    See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
+    page in the ArcGIS REST API page for more info.
     """
 
     time_mode = Unicode("time-window").tag(sync=True)
@@ -2463,7 +2464,8 @@ class MapView(widgets.DOMWidget):
     Possible values: "instant", "time-window", "cumulative-from-start",
     "cumulative-from-end". Default: "time-window"
 
-    See the `TimeSlider <https://bit.ly/3dFSPa2>`_ page in the ArcGIS REST API page for more info.
+    See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
+    page in the ArcGIS REST API page for more info.
     """
 
     _time_info = Dict({}).tag(sync=True)
@@ -2623,6 +2625,11 @@ class MapView(widgets.DOMWidget):
         """
         The ``sync_navigation`` method synchronizes the navigation from this :class:`~arcgis.widgets.MapView` to
         another :class:`~arcgis.widgets.MapView` instance so panning/zooming/navigating in one will update the other.
+
+        .. note::
+            Users can sync more than two class:`~arcgis.widgets.MapView` instances together. For example, a user can
+            sync MapView A to MapView B, MapView B to MapView C, and MapView C to MapView D together and all will be in
+            sync. Thus, driving one of these ``MapView`` objects will make the other ``MapView`` objects follow.
 
         ==================     ===================================================================
         **Argument**           **Description**
