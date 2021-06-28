@@ -415,7 +415,7 @@ class ModelExtension(ArcGISModel):
         self._show_results_modified(rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        ret_val = show_results_multispectral(
             self,
             nrows=rows, 
             thresh=thresh, 
@@ -423,6 +423,9 @@ class ModelExtension(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if kwargs.get('return_fig', False):
+            fig, ax = ret_val
+            return fig
 
     def _show_results_multispectral_segmentation(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)
