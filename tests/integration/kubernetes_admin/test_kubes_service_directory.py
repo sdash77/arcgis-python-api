@@ -3,6 +3,7 @@ import unittest.mock
 from unittest.mock import MagicMock
 import sys, datetime
 
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_6694\src")
 
 from arcgis.gis import GIS
 
@@ -17,24 +18,40 @@ class TestLogsAdminTemplate(unittest.TestCase):
     Tests the Kubernetes Admin Logs Functions
     """
 
-    def test_admin_logs(self):
-        """runs the admin.logs tests for Kubernetes"""
+    def test_services_directory(self):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
             admin = gis.admin
-            assert admin.logs
-            logs = admin.logs
-            assert logs
-            res = logs.query(
-                start_time=datetime.datetime.now()
-                - datetime.datetime.now()
-                - datetime.timedelta(days=1)
+            assert admin.services_catalog
+
+    def test_services_directory_folder(self):
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            admin = gis.admin
+            assert admin.services_catalog.folders
+
+    def test_services_directory_list(self):
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            admin = gis.admin
+            assert admin.services_catalog.list("System")
+
+    def test_services_directory_get_find(self):
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            admin = gis.admin
+            assert admin.services_catalog.get(name="PublishingTools", folder="System")
+            assert admin.services_catalog.find("PublishingTools", "System")
+
+    def test_admin_sd(self):
+        """runs the admin.logs tests for Kubernetes"""
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            sc = gis.admin.services_catalog
+            result = sc.publish_sd(
+                r"\\qalab_server\seleniumdata\v109\GPServer11\sd\Release\CWT_ByVal_s11_FileParamTest.sd"
             )
-            assert res
-            assert logs.edit("DEBUG")
-            assert logs.settings
-            assert admin.logs.clean()
-        pass
+            assert result
 
 
 if __name__ == "__main__":
