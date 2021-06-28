@@ -173,10 +173,12 @@ class MMSegmentation(ModelExtension):
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
     model                   Required model name or path to the configuration file
-                            from ``MMSegmentation`` repository. The list of the supported
-                            models can be queried using ``MMSegmentation.supported_models``.
+                            from ``MMSegmentation`` repository. The list of the
+                            supported models can be queried using 
+                            ``MMSegmentation.supported_models``.
     ---------------------   -------------------------------------------
-    model_weight            Optional path of the model weight from ``MMSegmentation`` repository.
+    model_weight            Optional path of the model weight from 
+                            ``MMSegmentation`` repository.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -184,7 +186,7 @@ class MMSegmentation(ModelExtension):
 
     :returns: ``MMSegmentation`` Object
     """
-    def __init__(self, data, model, model_weight=False, pretrained_path=None):
+    def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
 
         self._check_dataset_support(data)
 

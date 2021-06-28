@@ -386,6 +386,22 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding 
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        =====================   ===========================================
+        
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -610,22 +626,23 @@ class ModelExtension(ArcGISModel):
                                 predicted bounding boxes if True.
         ---------------------   -------------------------------------------
         resize                  Optional boolean. Resizes the image to the same size
-                                (chip_size parameter in prepare_data) that the model was trained on,
-                                before detecting objects.
+                                (chip_size parameter in prepare_data) that the model
+                                was trained on, before detecting objects.
                                 Note that if resize_to parameter was used in prepare_data,
                                 the image is resized to that size instead.
 
-                                By default, this parameter is false and the detections are run
-                                in a sliding window fashion by applying the model on cropped sections
-                                of the image (of the same size as the model was trained on).
+                                By default, this parameter is false and the detections are
+                                run in a sliding window fashion by applying the model on
+                                cropped sections of the image (of the same size as the 
+                                model was trained on).
         =====================   ===========================================
         
         :returns:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
-                   of lists containing the  xmin, ymin, width and height of each predicted object
-                   in each image. The labels are returned as a list of class values and the
-                   confidence scores are returned as a list of floats indicating the confidence
-                   of each prediction.
+                   of lists containing the  xmin, ymin, width and height of each predicted
+                   object in each image. The labels are returned as a list of class values
+                   and the confidence scores are returned as a list of floats indicating
+                   the confidence of each prediction.
         """
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
@@ -799,8 +816,8 @@ class ModelExtension(ArcGISModel):
                                     with prediction results.
             ---------------------   -------------------------------------------
             output_file_path        Optional path. Path of the final video to be saved.
-                                    If not supplied, video will be saved at path input_video_path
-                                    appended with _prediction.
+                                    If not supplied, video will be saved at path
+                                    input_video_path appended with _prediction.
             ---------------------   -------------------------------------------
             multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
             ---------------------   -------------------------------------------
@@ -826,14 +843,15 @@ class ModelExtension(ArcGISModel):
                                     0-255.
             ---------------------   -------------------------------------------
             resize                  Optional boolean. Resizes the video frames to the same size
-                                    (chip_size parameter in prepare_data) that the model was trained on,
-                                    before detecting objects.
+                                    (chip_size parameter in prepare_data) that the model was
+                                    trained on, before detecting objects.
                                     Note that if resize_to parameter was used in prepare_data,
                                     the video frames are resized to that size instead.
 
                                     By default, this parameter is false and the detections are run
-                                    in a sliding window fashion by applying the model on cropped sections
-                                    of the frame (of the same size as the model was trained on).
+                                    in a sliding window fashion by applying the model on cropped
+                                    sections of the frame (of the same size as the model was
+                                    trained on).
             =====================   ===========================================
             
             """
