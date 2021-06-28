@@ -150,6 +150,7 @@ class AutoML(object):
         else:
             raise Exception("Fit can be called only with data.")
         # self.save()
+        print('All the evaluated models are saved in the path ', os.path.abspath(self._model._get_results_path()))
 
     def show_results(self, rows=5):
         """

@@ -203,10 +203,12 @@ class MMDetection(ModelExtension):
                                     ``prepare_data`` function. 
     -----------------------------   ---------------------------------------------
     model                           Required model name or path to the configuration file
-                                    from ``MMDetection`` repository. The list of the supported
-                                    models can be queried using ``MMDetection.supported_models``.
+                                    from ``MMDetection`` repository. The list of the
+                                    supported models can be queried using
+                                    ``MMDetection.supported_models``.
     -----------------------------   ---------------------------------------------
-    model_weight                    Optional path of the model weight from ``MMDetection`` repository.
+    model_weight                    Optional path of the model weight from
+                                    ``MMDetection`` repository.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -214,11 +216,15 @@ class MMDetection(ModelExtension):
 
     :returns: ``MMDetection`` Object
     """
-    def __init__(self, data, model, model_weight=False, pretrained_path=None):
+    def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
 
         self._check_dataset_support(data)
 
         super().__init__(data, MMDetectionConfig, pretrained_path=pretrained_path, model=model, model_weight=model_weight)
+
+    @property
+    def _is_mmsegdet(self):
+        return True
 
     @property
     def  supported_datasets(self):
@@ -265,7 +271,6 @@ class MMDetection(ModelExtension):
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
         
-        backbone = emd['ModelParameters']['backbone']
         dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
         chip_size = emd["ImageWidth"]
         resize_to = emd.get('resize_to', None)
@@ -485,4 +490,20 @@ class MMDetection(ModelExtension):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding 
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        =====================   ===========================================
+        
         """

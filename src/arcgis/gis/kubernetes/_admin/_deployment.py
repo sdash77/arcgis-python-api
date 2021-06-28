@@ -1,6 +1,6 @@
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 
 class Deployment:
