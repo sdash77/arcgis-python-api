@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
-
+from typing import Dict, Any, Optional, List
 
 ########################################################################
 class LogManager(_BaseKube):
