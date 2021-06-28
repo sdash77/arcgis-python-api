@@ -101,22 +101,35 @@ class _ApplicationProperties(object):
 ###########################################################################
 class WebMap(HasTraits, collections.OrderedDict):
     """
-    Represents a web map and provides access to its basemaps and operational layers as well
-    as functionality to visualize and interact with them.
+    The ``WebMap`` class represents a ``web map`` and provides access to its basemaps and operational layers as well
+    as functionality to visualize and interact with said basemaps and layers.
 
-    An ArcGIS web map is an interactive display of geographic information that you can use to tell stories and answer
-    questions. Maps contain a basemap over which a set of data layers called operational layers are drawn. To learn
-    more about web maps, refer: https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm
+    An ArcGIS ``web map`` is an interactive display of geographic information that you can use to tell stories and
+    answer questions. Maps contain a basemap over which a set of data layers called operational layers are drawn.
 
-    Web maps can be used across ArcGIS apps because they adhere to the same web map specification. This means you can
-    author web maps in one ArcGIS app (including the Python API) and view and modify them in another. To learn more
-    about the web map specification, refer: https://developers.arcgis.com/web-map-specification/
+    .. note::
+        To learn more about web maps, see the
+        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page in the ArcGIS
+        REST API documentation.
+
+    ``Web maps`` can be used across ArcGIS apps because they adhere to the same web map specification. This provides
+    the functionality to author web maps in one ArcGIS app (including the Python API) and view and modify them in
+    another ArcGIS app.
+
+    .. note::
+        To learn more about the web map specification, refer to the
+        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page in the ArcGIS REST API
+        documentation.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    webmapitem             Optional Item object whose Item.type is 'Web Map'. If not specified
-                           an empty WebMap object is created with some useful defaults.
+    webmapitem             Optional :class:`~arcgis.gis.Item` object whose Item.type is ``Web Map``.
+
+                           .. note::
+                            If not specified,
+                            an empty ``WebMap`` object is created with some useful defaults.
+
     ==================     ====================================================================
 
     .. code-block:: python
@@ -289,16 +302,17 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def add_table(self, table, options=None):
         """
-        Adds the given layer to the WebMap.
+        The ``add_table`` method adds the given Table to the ``WebMap``.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         table                  Required object. You can add:
 
-                                   - Table objects
+                                   - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
-        options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
+        options                Optional dict. Specify properties such as ``title``, ``symbol``, ``opacity``,
+                               ``visibility``, and ``renderer``
                                for the table that is added. If not specified, appropriate defaults are applied.
         ==================     ====================================================================
 
@@ -317,16 +331,18 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def add_layer(self, layer, options=None):
         """
-        Adds the given layer to the WebMap.
+        The ``add_layer`` method adds the given layer to the ``WebMap`` object.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         layer                  Required object. You can add:
 
-                                   - Layer objects such as FeatureLayer, MapImageLayer, ImageryLayer etc.
-                                   - Item objects and FeatureSet and FeatureCollections
-                                   - Table objects
+                                   - Layer objects such as :class:`~arcgis.features.FeatureLayer`, ``MapImageLayer``,
+                                   ``ImageryLayer`` etc.
+                                   - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and
+                                   :class:`~arcgis.features.FeatureCollection`
+                                   - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
                                for the layer that is added. If not specified, appropriate defaults are applied.
@@ -350,7 +366,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> True
 
         :return:
-            True if layer was successfully added. Else, raises appropriate exception.
+            True if layer was successfully added. Else, raises an appropriate exception.
         """
         from arcgis.mapping.ogc._base import BaseOGC
         from arcgis.mapping.ogc import WMSLayer, WMTSLayer
