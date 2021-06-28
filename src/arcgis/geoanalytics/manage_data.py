@@ -920,8 +920,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                                                  "mappingType": "Expression",
                                                  "mappingValue": "null"}
                                                ]
-                                              )
-                                                                            
+                                              )                                                                        
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.
