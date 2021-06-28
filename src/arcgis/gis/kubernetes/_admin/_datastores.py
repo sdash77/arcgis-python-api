@@ -8,6 +8,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
+from typing import Dict, Any, List, Tuple
 
 
 class DataStore(_BaseKube):

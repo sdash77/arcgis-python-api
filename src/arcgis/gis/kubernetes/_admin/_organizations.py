@@ -4,6 +4,7 @@ from urllib.request import HTTPError
 from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+from typing import Dict, Any, Optional, List
 
 ###########################################################################
 class KubeOrgSecurity(object):

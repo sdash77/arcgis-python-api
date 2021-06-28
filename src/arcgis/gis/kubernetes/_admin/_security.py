@@ -4,6 +4,7 @@ Contains the base class that all server object inherit from.
 from urllib.request import HTTPError
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
+from typing import Dict, Any, Optional, List
 
 ###########################################################################
 class KubeSecurityCert(object):
