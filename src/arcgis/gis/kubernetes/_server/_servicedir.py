@@ -91,7 +91,8 @@ class KubeServiceDirectory(_BaseKube):
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():
                     return Service(
-                        url="%s/%s/%s" % (url, s["name"], s["type"]), server=self._con,
+                        url="%s/%s/%s" % (url, s["name"], s["type"]),
+                        server=self._con,
                     )
                 del s
         return None
@@ -149,7 +150,7 @@ class KubeServiceDirectory(_BaseKube):
     def publish_sd(self, sd_file, folder=None):
         """
         Publishes a service definition file to ArcGIS Server.
-    
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -160,7 +161,7 @@ class KubeServiceDirectory(_BaseKube):
                                default is None in which case the service definition will be published
                                to the System folder.
         ==================     ====================================================================
-    
+
         :return:
            A boolean indicating success (True) or failure (False).
         """
