@@ -3,6 +3,7 @@ from ._base import _BaseKube
 from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
+from typing import Dict, Any, List, Tuple, Optional
 
 ###########################################################################
 class Overview(_BaseKube):

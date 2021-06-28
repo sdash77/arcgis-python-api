@@ -146,7 +146,7 @@ class DecoderAttention(nn.Module):
         # import pdb; pdb.set_trace();
         embeddings = self.embed(captions)
         # we will not process xxeos token.
-        packed = pack_padded_sequence(embeddings, lengths - 1, batch_first=True)
+        packed = pack_padded_sequence(embeddings, lengths.cpu() - 1, batch_first=True)
         self.init_hidden(features)
         hx, cx = self.hx, self.cx
         outputs = []
@@ -297,7 +297,7 @@ class EncoderDecoder(nn.Module):
 def loss_function_attention(inputs, captions, lengths):
     # skipping xxbos because that is going as input
     # and we need to predict next indexes onwards
-    packed = pack_padded_sequence(captions[:, 1:], lengths-1, batch_first=True)
+    packed = pack_padded_sequence(captions[:, 1:], lengths.cpu()-1, batch_first=True)
     return F.cross_entropy(inputs[0], packed[0])
 
 
@@ -405,7 +405,7 @@ class ReduceTeacherForcing(LearnerCallback):
 def accuracy(inputs, captions, lengths):
     # skipping xxbos because that is going as input
     # and we need to predict next indexes onwards
-    packed = pack_padded_sequence(captions[:, 1:], lengths-1, batch_first=True)
+    packed = pack_padded_sequence(captions[:, 1:], lengths.cpu()-1, batch_first=True)
     return (inputs[0].argmax(dim=-1) == packed[0]).float().mean()
 
 

@@ -179,9 +179,10 @@ def create_anchors(sizes, ratios, scales, flatten=True):
 def activ_to_bbox(acts, anchors, flatten=True):
     "Extrapolate bounding boxes on anchors from the model activations."
     if flatten:
-        acts.mul_(acts.new_tensor([[0.1, 0.1, 0.2, 0.2]]))
-        centers = anchors[...,2:] * acts[...,:2] + anchors[...,:2]
-        sizes = anchors[...,2:] * torch.exp(acts[...,:2])
+        with torch.no_grad():
+            acts.mul_(acts.new_tensor([[0.1, 0.1, 0.2, 0.2]]))
+            centers = anchors[...,2:] * acts[...,:2] + anchors[...,:2]
+            sizes = anchors[...,2:] * torch.exp(acts[...,:2])
         return torch.cat([centers, sizes], -1)
     else: return [activ_to_bbox(act,anc) for act,anc in zip(acts, anchors)]
     

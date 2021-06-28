@@ -89,7 +89,10 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         Loads the appropriate tokenizer for tokenizing the text
         depending on the transformer model-name parameter
         """
-        self._tokenizer = AutoTokenizer.from_pretrained(self._transformer_pretrained_model_name, config=self._config)
+        # FastTokenizer not working for EntityRecognizer in transformers library version 4.5.1
+        use_fast = False if self._task == "ner" else True
+        self._tokenizer = AutoTokenizer.from_pretrained(self._transformer_pretrained_model_name,
+                                                        config=self._config, use_fast=use_fast)
         self._set_max_seq_length()
 
     def init_model(self):

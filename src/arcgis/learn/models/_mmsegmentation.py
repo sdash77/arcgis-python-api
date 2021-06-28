@@ -66,6 +66,8 @@ class MMSegmentationConfig():
                     aux_head.num_classes = data.c
             else:
                 cfg.model.auxiliary_head.num_classes = data.c
+        if cfg.model.backbone.type=='CGNet' and getattr(data, '_is_multispectral', False):
+            cfg.model.backbone.in_channels = len(data._extract_bands)
 
         model = self.mmseg.models.build_segmentor(cfg.model)
 
@@ -173,10 +175,12 @@ class MMSegmentation(ModelExtension):
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
     model                   Required model name or path to the configuration file
-                            from ``MMSegmentation`` repository. The list of the supported
-                            models can be queried using ``MMSegmentation.supported_models``.
+                            from ``MMSegmentation`` repository. The list of the
+                            supported models can be queried using 
+                            ``MMSegmentation.supported_models``.
     ---------------------   -------------------------------------------
-    model_weight            Optional path of the model weight from ``MMSegmentation`` repository.
+    model_weight            Optional path of the model weight from 
+                            ``MMSegmentation`` repository.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -184,7 +188,7 @@ class MMSegmentation(ModelExtension):
 
     :returns: ``MMSegmentation`` Object
     """
-    def __init__(self, data, model, model_weight=False, pretrained_path=None):
+    def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
 
         self._check_dataset_support(data)
 
@@ -203,7 +207,7 @@ class MMSegmentation(ModelExtension):
     def _supported_datasets():
         return ['Classified_Tiles']
 
-    supported_models=['ann', 'apcnet', 'ccnet', 'cgnet', 'deeplabv3', 'deeplabv3plus', 'dmnet', 'dnlnet', 'emanet'\
+    supported_models=['ann', 'apcnet', 'ccnet', 'cgnet', 'deeplabv3', 'deeplabv3plus', 'dmnet', 'dnlnet', 'emanet',\
             'fastscnn', 'fcn', 'gcnet', 'hrnet', 'mobilenet_v2', 'nonlocal_net', 'ocrnet', 'psanet', 'pspnet',\
             'resnest', 'sem_fpn', 'unet', 'upernet']
     """
