@@ -2,7 +2,7 @@ try:
     import ujson as json
 except ImportError:
     import json
-
+from functools import lru_cache
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
 
@@ -247,7 +247,6 @@ class ServicesManager(object):
         self._con = gis._con
 
     # ----------------------------------------------------------------------
-    @property
     def services_properties(self):
         """
         This resource is used to provide default settings for new services
