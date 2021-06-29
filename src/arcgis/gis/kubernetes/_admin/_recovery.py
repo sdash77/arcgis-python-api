@@ -185,9 +185,13 @@ class RecoveryManager(_BaseKube):
         :returns: Dict[str, Any]
 
         """
-        url = f"{self._url}/backuprestore/status"
-        params = {"f": "json"}
-        return self._con.get(url, params).get("status", {})
+        try:
+
+            url = f"{self._url}/backuprestore/status"
+            params = {"f": "json"}
+            return self._con.get(url, params).get("status", {})
+        except:
+            return {}
 
     @property
     def backups(self) -> List[Backup]:
@@ -197,15 +201,18 @@ class RecoveryManager(_BaseKube):
         :return: List[Backup]
 
         """
-        url = f"{self._url}/backuprestore/backups"
-        params = {"f": "json"}
-        res = self._con.get(url, params)
-        backups = []
-        for bckup in res.get("backups", []):
-            name = bckup["backupName"]
-            url = f"{self._url}/backuprestore/backups/{name}"
-            backups.append(Backup(url=url, gis=self._gis))
-        return backups
+        try:
+            url = f"{self._url}/backuprestore/backups"
+            params = {"f": "json"}
+            res = self._con.get(url, params)
+            backups = []
+            for bckup in res.get("backups", []):
+                name = bckup["backupName"]
+                url = f"{self._url}/backuprestore/backups/{name}"
+                backups.append(Backup(url=url, gis=self._gis))
+            return backups
+        except:
+            return []
 
     @property
     def stores(self) -> List[BackupStore]:
