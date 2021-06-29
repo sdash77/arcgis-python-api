@@ -2582,7 +2582,7 @@ class GeoAccessor(object):
     @staticmethod
     def from_xy(df, x_column, y_column, sr=4326):
         """
-        The ``from_exy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
+        The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
 
         ====================    =========================================================
