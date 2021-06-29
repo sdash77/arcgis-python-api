@@ -58,7 +58,7 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The :class:`~arcgis.gis.Datastore` to describe.
+        item                   Required Item. The :class:`~arcgis.gis.Item` to describe.
         ------------------     --------------------------------------------------------------------
         server_id              Optional String. The unique id of the registered server.
         ------------------     --------------------------------------------------------------------

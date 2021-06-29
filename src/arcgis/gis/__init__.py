@@ -121,8 +121,8 @@ class GIS(object):
     url                 Optional string. If URL is None, then the URL will be ArcGIS
                         Online.  This should be a web address to either an ArcGIS Enterprise portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<fully_qualified_domain_name>/<web_adaptor>. An enterprise example is formatted in the form:
-                        https://gis.example.com/portal
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor>. An Enterprise example is formatted in
+                        the form: https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
     username            Optional string. The login user name (case-sensitive).
     ----------------    ---------------------------------------------------------------
@@ -1349,7 +1349,7 @@ class Datastore(dict):
     @property
     def manifest(self):
         """
-        The ``manifest`` method retrieves or sets the manifest resource for bigdata fileshares, as a dictionary.
+        The ``manifest`` property retrieves or sets the manifest resource for bigdata fileshares, as a dictionary.
         """
         data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
 
@@ -1615,7 +1615,7 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
 
         :returns:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis.server.admin._services.Job` when `future=True`
+            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
@@ -1675,7 +1675,7 @@ class GroupMigrationManager(object):
         ================  ===============================================================================
 
         :returns:
-            A dictionary --or-- :class:`~arcgis.gis.server.admin._services.Job` when `future=True`
+            A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
@@ -9480,8 +9480,8 @@ class User(dict):
         .. warning::
             Trial accounts cannot modify esri_access property.
 
-        Please see the `Enable Esri access <https://bit.ly/2JsJV1i>`_ section in the Manage members page in ArcGIS
-        Online Resources for more information.
+        Please see the `Enable Esri access <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23>`_
+        section in the Manage members page in ArcGIS Online Resources for more information.
 
 
         """
@@ -9819,7 +9819,7 @@ class User(dict):
 
     def reassign_to(self, target_username):
         """
-        The ``reassigns_to`` method reassigns all of this user's items and groups to another user.
+        The ``reassign_to`` method reassigns all of this user's items and groups to another user.
 
         Items are transferred to the target user into a folder named
         <user>_<folder> where user corresponds to the user whose items were
