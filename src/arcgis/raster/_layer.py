@@ -919,7 +919,7 @@ class ImageryLayer(Layer):
         params = {"f": "json"}
         if self._datastore_raster:
             params["Raster"] = self._uri
-        return self._con.get(url, params)
+        return self._con.get(url, params, try_json=False)
 
     # ----------------------------------------------------------------------
     def project(self, geometries, in_sr, out_sr):
