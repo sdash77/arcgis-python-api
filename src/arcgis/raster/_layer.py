@@ -481,7 +481,7 @@ class ImageryLayer(Layer):
     """
 
     _ilm = None
-    rendering_service_object = None
+    _rendering_service_object = None
 
     def __init__(self, url, gis=None):
         self._datastore_raster = False
@@ -510,23 +510,26 @@ class ImageryLayer(Layer):
                     self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
-                    if ImageryLayer.rendering_service_object is None or (
+                    if ImageryLayer._rendering_service_object is None or (
                         (
-                            (ImageryLayer.rendering_service_object is not None)
-                            and ImageryLayer.rendering_service_object.gis is not None
+                            (ImageryLayer._rendering_service_object is not None)
+                            and ImageryLayer._rendering_service_object.gis is not None
                         )
-                        and ImageryLayer.rendering_service_object.gis.url != gis.url
+                        and ImageryLayer._rendering_service_object.gis.url != gis.url
                     ):
-                        ImageryLayer.rendering_service_object = _RasterRenderingService(
-                            gis
+                        ImageryLayer._rendering_service_object = (
+                            _RasterRenderingService(gis)
                         )
-                        url = ImageryLayer.rendering_service_object.url
+                        url = ImageryLayer._rendering_service_object.url
                     else:
-                        if ImageryLayer.rendering_service_object.gis is not None:
-                            if ImageryLayer.rendering_service_object.gis.url == gis.url:
-                                url = ImageryLayer.rendering_service_object.url
+                        if ImageryLayer._rendering_service_object.gis is not None:
+                            if (
+                                ImageryLayer._rendering_service_object.gis.url
+                                == gis.url
+                            ):
+                                url = ImageryLayer._rendering_service_object.url
                                 self._lazy_token = (
-                                    ImageryLayer.rendering_service_object.token
+                                    ImageryLayer._rendering_service_object.token
                                 )
 
         super(ImageryLayer, self).__init__(url, gis)
