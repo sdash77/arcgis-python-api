@@ -193,6 +193,28 @@ class MMSegmentation(ModelExtension):
         self._check_dataset_support(data)
 
         super().__init__(data, MMSegmentationConfig, pretrained_path=pretrained_path, model=model, model_weight=model_weight)
+        idx = self._freeze()
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+        self.learn.create_opt(lr=3e-3)
+
+    def unfreeze(self):
+        for _, param in self.learn.model.named_parameters():
+            param.requires_grad = True
+        
+    def _freeze(self):
+        "Freezes the pretrained backbone."
+        if self._model_conf.cfg.model.backbone.type=='CGNet':
+            return 6
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (torch.nn.BatchNorm2d)):
+                continue
+            for p in i.parameters():
+                p.requires_grad = False
+        return idx
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss', 'accuracy']
 
     @property
     def _is_mmsegdet(self):
