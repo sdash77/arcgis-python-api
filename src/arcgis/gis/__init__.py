@@ -4539,9 +4539,9 @@ class GroupManager(object):
         .. note::
             A few things that will be helpful to know.
 
-            1.  The query syntax has many features that can't
-                be adequately described here. See the `Query (Feature Service) <https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-.htm>`_
-                in the ArcGIS REST API for more information.
+            1.  The `group search <https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm>`_ syntax has many features that can't
+                be adequately described here. See the `Search Reference <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_
+                page in the ArcGIS REST API for more information.
 
             2. Searching without specifying a query parameter returns
                a list of all groups in your organization.
@@ -8771,7 +8771,14 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     culture                  The user locale information (language and country).
     ---------------------    ---------------------------------------------------------
-    cultureFormat            The user preferred number and date format defined in CLDR (only applicable for English and Spanish, i.e. when culture is en or es).<br><br>See Languages for supported formats. It will inherit from organization cultureFormat if undefined.
+    cultureFormat            The user preferred number and date format defined in CLDR (only applicable for English,
+                             Spanish, French, German, and italian: i.e. when culture is en, es, fr, de, or it).
+
+                             .. note::
+                                See `Languages <https://developers.arcgis.com/rest/users-groups-and-items/languages.htm>`_
+                                for supported formats. It will inherit from
+                                `organization <https://developers.arcgis.com/rest/users-groups-and-items/portal-self.htm>`_
+                                cultureFormat if undefined.
     ---------------------    ---------------------------------------------------------
     region                   The user preferred region, used to set the featured maps on the home page, content in the gallery, and the default extent of new maps in the Viewer.
     ---------------------    ---------------------------------------------------------
