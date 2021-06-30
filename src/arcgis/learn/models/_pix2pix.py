@@ -156,9 +156,10 @@ class Pix2Pix(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         """
-
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
         self.learn.model.arcgis_results = True
-        self.learn.show_results()
+        self.learn.show_results(rows=rows)
         self.learn.model.arcgis_results = False
 
     def predict(self, img_path):
