@@ -40,6 +40,7 @@ class ContainerNotebook(object):
 
     def close(self) -> bool:
         """This operation stops a running notebook
+        
         :returns: Bool
         """
         url = f"{self._url}/close"
@@ -288,7 +289,7 @@ class WebAdaptorManager(object):
         description: Optional[str] = "",
     ):
         """
-        Registers a new web adapter.
+        Registers a new :class:`web adapter <arcgis.gis.nb.WebAdaptor>`.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -666,7 +667,7 @@ class SystemManager(object):
         """
         Returns a list of active containers.
 
-        :returns: List of Container classes
+        :returns: List of :class:`containers <arcgis.gis.nb.Container>`
         """
         container = []
         url = self._url + "/containers"
@@ -775,11 +776,15 @@ class SystemManager(object):
     # ----------------------------------------------------------------------
     @property
     def directories(self) -> DirectoryManager:
-        """Provides access to registering directories"""
+        """Provides access to registering directories
+        
+        :returns: :class:`~arcgis.gis.nb.DirectoryManager`
+        """
         if self._dir is None:
             url = self._url + "/directories"
             self._dir = DirectoryManager(url=url, gis=self._gis)
         return self._dir
+
 
     # ----------------------------------------------------------------------
     def job_details(self, job_id) -> Dict[str, Any]:
