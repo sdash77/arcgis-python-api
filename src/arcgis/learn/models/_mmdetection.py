@@ -59,6 +59,10 @@ class MMDetectionConfig():
         else:
             cfg.model.bbox_head.num_classes = data.c - 1
 
+        if cfg.model.backbone.type=='DetectoRS_ResNet' and getattr(data, '_is_multispectral', False):
+            if hasattr(cfg.model.neck, 'rfp_backbone'):
+                cfg.model.neck.rfp_backbone.in_channels = len(data._extract_bands)
+
         model = self.mmdet.models.build_detector(cfg.model)
 
         if checkpoint:
@@ -69,7 +73,7 @@ class MMDetectionConfig():
         def forward_modified(self, img, img_metas=None, gt_bboxes=None, gt_labels=None):
             
             if self.training:
-                
+
                 losses = self.forward_train(img, img_metas, gt_bboxes, gt_labels)
                 loss, log_vars = self._parse_losses(losses)
 
@@ -256,8 +260,8 @@ class MMDetection(ModelExtension):
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
 
     supported_models=['atss', 'carafe', 'cascade_rcnn', 'cascade_rpn', 'dcn', 'detectors', 'double_heads', 'dynamic_rcnn',\
-            'empirical_attention', 'fcos', 'foveabox', 'free_anchor', 'fsaf', 'ghm', 'gn+ws', 'hrnet', 'libra_rcnn',\
-            'nas_fcos', 'paa', 'pafpn', 'pisa', 'regnet', 'reppoints', 'res2net', 'resnest', 'sabl', 'vfnet']
+            'empirical_attention', 'fcos', 'foveabox', 'fsaf', 'ghm', 'hrnet', 'libra_rcnn','nas_fcos', 'pafpn', 'pisa',\
+            'regnet', 'reppoints', 'res2net', 'sabl', 'vfnet']
     """
     List of models supported by this class.
     """
