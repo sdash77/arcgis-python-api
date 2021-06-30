@@ -5580,7 +5580,6 @@ def _raster_item(raster, raster_id=None):
                     url = url + "?token=" + raster._lazy_token
             except:
                 url = raster.url
-
             template_dict["rasterFunctionArguments"]["URL"] = url
         else:
             template_dict["rasterFunctionArguments"]["URL"] = raster.url
