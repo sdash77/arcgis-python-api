@@ -323,10 +323,11 @@ class ChildImageClassifier:
 
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         input_image_tensor = tensor(input_image).to(self.device).float()
-
+        model_arch = self.json_info["ModelParameters"]["mtl_model"]
         kernel_size = self.tytx  # json_info["ImageHeight"]
         stride = 2 * self.padding
-
+        if model_arch == 'hourglass':
+            kernel_size = (math.ceil(kernel_size/2))*2
         # Split image into overlapping tiles
         mask_t, base_tensor, t_size, patches = split_tensor(input_image_tensor.unsqueeze(0), kernel_size, stride)
 

@@ -47,6 +47,7 @@ try:
     from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.pix2pix import ImageTupleList2, prepare_data_ms_pix2pix
+    from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
     import PIL
 
@@ -1825,6 +1826,7 @@ def prepare_data(path,
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs)
+            data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
@@ -1850,6 +1852,7 @@ def prepare_data(path,
     elif dataset_type == "Pix2Pix":
         if _is_multispectral:
             data = prepare_data_ms_pix2pix(path, norm_pct, val_split_pct, seed, databunch_kwargs)
+            data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
@@ -2026,6 +2029,7 @@ def prepare_data(path,
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
+        data.show_batch = types.MethodType(show_batch_img2img, data)
 
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
@@ -2037,6 +2041,7 @@ def prepare_data(path,
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
+        data.show_batch = types.MethodType(show_batch_img2img, data)
     else:
         data = (data.transform(transforms, **kwargs_transforms)
                 .databunch(**databunch_kwargs)

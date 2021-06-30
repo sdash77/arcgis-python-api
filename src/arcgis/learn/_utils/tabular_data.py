@@ -1316,7 +1316,9 @@ def show_local_interpretation(model,processed_df,index=0,random_index=False,meth
         else:
             shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True, link="logit")
     elif method == 'FCN':
-        shap_values = explainer.shap_values(train_tensor)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            shap_values = explainer.shap_values(train_tensor)
         shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
 
 def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
@@ -1343,8 +1345,9 @@ def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
             processed_df = processed_df.sample(n=1)[feature_variables]
             train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
                                         torch.tensor(processed_df.values).squeeze().float()), dim=0)
-
-            shap_values = explainer.shap_values(train_tensor)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                shap_values = explainer.shap_values(train_tensor)
             shap.summary_plot(shap_values, processed_df, plot_type="bar")
             return
     else:
@@ -1352,10 +1355,3 @@ def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
                   " with the training data.")
         return
 
-
-
-    shap_values = explainer.shap_values(df,approximate=True)
-    if plot_type == 'bar':
-        return shap.summary_plot(shap_values, df, plot_type="bar")
-    else:
-        return shap.force_plot(explainer.expected_value[0], shap_values, df,matplotlib=True)

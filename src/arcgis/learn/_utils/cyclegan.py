@@ -1,6 +1,6 @@
 from fastai.vision import ItemBase, ItemList, Tensor, ImageList, Tuple, Path, get_transforms, random, open_image, Image, math, plt, torch, Learner, partial, optim, ifnone
 from fastai.data_block import get_files as gf
-from .._utils.common import ArcGISImageList, ArcGISMSImage
+from .._utils.common import ArcGISImageList, ArcGISMSImage, get_top_padding
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
@@ -45,10 +45,19 @@ class ImageTupleList(ImageList):
         return super().new(items, itemsB=self.itemsB, **kwargs)
     
     def get(self, i):
-        img1 = super().get(i)
+        self.img1 = super().get(i)
         fn = self.itemsB[random.randint(0, len(self.itemsB)-1)]
-        return ImageTuple(img1, open_image(fn))
+        self.img2 = open_image(fn)
+        return ImageTuple(self.img1, self.img2)
     
+    def show(self, i, axes=None):
+        self[i]
+        if axes is None:
+            _, axes = plt.subplots(1, 2, figsize=(15,7))
+        
+        self.img1.show(axes[0])
+        self.img2.show(axes[1])
+
     def reconstruct(self, t:Tensor): 
         return ImageTuple(Image(t[0]/2+0.5),Image(t[1]/2+0.5))
     
@@ -76,6 +85,8 @@ class ImageTupleList(ImageList):
         `kwargs` are passed to the show method."""
         figsize = ifnone(figsize, (12,3*len(xs)))
         fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        if axs.ndim==1: # fix for rows=1
+            axs = axs.reshape(1,2)       
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         for i,(x,z) in enumerate(zip(xs,zs)):
             x.to_one().show(ax=axs[i,0], **kwargs)
@@ -113,9 +124,17 @@ class ImageTupleListMS(ArcGISImageList):
         global _batch_stats_b
         img1_scaled = _tensor_scaler_tfm(img1.data, min_values=_batch_stats_a['band_min_values'], max_values=_batch_stats_a['band_max_values'], mode='minmax')
         img2_scaled = _tensor_scaler_tfm(img2.data, min_values=_batch_stats_b['band_min_values'], max_values=_batch_stats_b['band_max_values'], mode='minmax')
-        img1_scaled = ArcGISMSImage(img1_scaled)
-        img2_scaled = ArcGISMSImage(img2_scaled)
-        return ImageTuple(img1_scaled, img2_scaled)
+        self.img1_scaled = ArcGISMSImage(img1_scaled)
+        self.img2_scaled = ArcGISMSImage(img2_scaled)
+        return ImageTuple(self.img1_scaled, self.img2_scaled)
+
+    def show(self, i, axes=None):
+        self[i]
+        if axes is None:
+            _, axes = plt.subplots(1, 2, figsize=(15,7))
+        
+        self.img1_scaled.show(axes[0])
+        self.img2_scaled.show(axes[1])
     
     def reconstruct(self, t:Tensor): 
         return ImageTuple(ArcGISMSImage(t[0]/2+0.5),ArcGISMSImage(t[1]/2+0.5))
@@ -146,6 +165,8 @@ class ImageTupleListMS(ArcGISImageList):
         `kwargs` are passed to the show method."""
         figsize = ifnone(figsize, (12,3*len(xs)))
         fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        if axs.ndim==1: # fix for rows=1
+            axs = axs.reshape(1,2)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         for i,(x,z) in enumerate(zip(xs,zs)):
             x.to_one().show(ax=axs[i,0], **kwargs)
@@ -501,3 +522,19 @@ def folder_check_cyclegan(path):
                         ├─images
                     ├─B
                         ├─images    """)
+
+def show_batch(self, rows=4):
+    fig, axes = plt.subplots(nrows=rows,
+                             ncols=2,
+                             squeeze=False,
+                             figsize=(20, rows * 5))
+    top = get_top_padding(
+            title_font_size=16,
+            nrows=rows,
+            imsize=5
+            )    
+    plt.subplots_adjust(top=top)
+    fig.suptitle('Input / Label', fontsize=16)
+    img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
+    for idx, im_idx in enumerate(img_idxs):
+        self.train_ds.show(im_idx, axes[idx])

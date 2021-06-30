@@ -149,6 +149,8 @@ class pix2pix(nn.Module):
         
     def forward(self, real_A, real_B):
         fake_B = self.G(real_A)
+        if self.training:
+            self.arcgis_results = False
         if self.arcgis_results: return torch.cat([fake_B[:,None],fake_B[:,None]], 1)
         #if not self.training: 
         return [fake_B]

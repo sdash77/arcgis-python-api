@@ -1170,19 +1170,8 @@ class ArcGISModel(object):
             _framework = framework.lower()
             if self._backend == 'tensorflow' and _framework == 'tflite':
                 saved_path = self._save_tflite(name, post_processed=post_processed, quantized=quantized)
-            # elif self._backend == 'tensorflow' and _framework != 'tflite':
-            #     _err_msg = """
-            #     Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
-            #     \nPlease set parameter framework="tflite"
-            #     """
-            #     raise Exception(_err_msg)
-            elif self._backend != 'tensorflow' and _framework == 'tflite': #and save_format == 'tflite':
-                #_err_msg = """
-                #Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
-                #"""
-                #raise Exception(_err_msg)
-                #saved_path = self.learn.path / self.learn.model_dir / f'{name}.tflite'
-                supported_models =['FeatureClassifier', 'SingleShotDetector', 'RetinaNet','FasterRCNN','MaskRCNN']
+            elif self._backend != 'tensorflow' and _framework == 'tflite':
+                supported_models =['FeatureClassifier', 'SingleShotDetector', 'RetinaNet']
                 if(type(self).__name__) in supported_models:
                     saved_path = self._save_pytorch_tflite(name)
                 else:
@@ -1525,8 +1514,8 @@ class ArcGISModel(object):
                                 Setting framework = 'tflite' allows the model trained
                                 in pytorch to be saved in tflite format
                                 (Supported for ``FeatureClassifier``,
-                                ``SingleShotDetector``, ``RetinaNet`` ,``FasterRCNN``
-                                and ``MaskRCNN``). This support is currently experimental.
+                                ``SingleShotDetector``and ``RetinaNet``). This support
+                                is currently experimental.
 
                                 Framework choice: 'PyTorch', 'TF-ONNX' and 'tflite'
         ---------------------   -------------------------------------------

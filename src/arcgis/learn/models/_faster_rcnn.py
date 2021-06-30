@@ -588,7 +588,7 @@ class FasterRCNN(ModelExtension):
     ):
 
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -610,15 +610,18 @@ class FasterRCNN(ModelExtension):
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
         ---------------------   -------------------------------------------
-        resize                  Optional boolean. Resizes the image to the same size
-                                (chip_size parameter in prepare_data) that the model was trained on,
-                                before detecting objects.
-                                Note that if resize_to parameter was used in prepare_data,
-                                the image is resized to that size instead.
+        resize                  Optional boolean. Resizes the image to the
+                                same size (chip_size parameter in prepare_data)
+                                that the model was trained on, before detecting
+                                objects. Note that if resize_to parameter was
+                                used in prepare_data, the image is resized to
+                                that size instead.
 
-                                By default, this parameter is false and the detections are run
-                                in a sliding window fashion by applying the model on cropped sections
-                                of the image (of the same size as the model was trained on).
+                                By default, this parameter is false and the
+                                detections are run in a sliding window fashion
+                                by applying the model on cropped sections of
+                                the image (of the same size as the model was
+                                trained on).
         =====================   ===========================================
         
         :returns: Returns a tuple with predictions, labels and optionally confidence scores
@@ -657,6 +660,7 @@ class FasterRCNN(ModelExtension):
 
             """
             Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+            This method is only supported for RGB images.
 
             =====================   ===========================================
             **Argument**            **Description**
@@ -709,14 +713,15 @@ class FasterRCNN(ModelExtension):
                                     0-255.
             ---------------------   -------------------------------------------
             resize                  Optional boolean. Resizes the video frames to the same size
-                                    (chip_size parameter in prepare_data) that the model was trained on,
-                                    before detecting objects.
-                                    Note that if resize_to parameter was used in prepare_data,
+                                    (chip_size parameter in prepare_data) that the model was
+                                    trained on, before detecting objects. Note that if
+                                    resize_to parameter was used in prepare_data,
                                     the video frames are resized to that size instead.
 
-                                    By default, this parameter is false and the detections are run
-                                    in a sliding window fashion by applying the model on cropped sections
-                                    of the frame (of the same size as the model was trained on).
+                                    By default, this parameter is false and the detections
+                                    are run in a sliding window fashion by applying the
+                                    model on cropped sections of the frame (of the same
+                                    size as the model was trained on).
             =====================   ===========================================
             
             """
