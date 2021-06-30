@@ -558,6 +558,7 @@ class SingleShotDetector(ArcGISModel):
 
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+        This method is only supported for RGB images.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -609,15 +610,18 @@ class SingleShotDetector(ArcGISModel):
                                 color tuple (B, G, R), tuple containing values between
                                 0-255.
         ---------------------   -------------------------------------------
-        resize                  Optional boolean. Resizes the video frames to the same size
-                                (chip_size parameter in prepare_data) that the model was trained on,
-                                before detecting objects.
-                                Note that if resize_to parameter was used in prepare_data,
-                                the video frames are resized to that size instead.
+        resize                  Optional boolean. Resizes the image to the
+                                same size (chip_size parameter in prepare_data)
+                                that the model was trained on, before detecting
+                                objects. Note that if resize_to parameter was
+                                used in prepare_data, the image is resized to
+                                that size instead.
 
-                                By default, this parameter is false and the detections are run
-                                in a sliding window fashion by applying the model on cropped sections
-                                of the frame (of the same size as the model was trained on).
+                                By default, this parameter is false and the
+                                detections are run in a sliding window fashion
+                                by applying the model on cropped sections of
+                                the image (of the same size as the model was
+                                trained on).
         =====================   ===========================================
         
         """
@@ -670,15 +674,18 @@ class SingleShotDetector(ArcGISModel):
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
         ---------------------   -------------------------------------------
-        resize                  Optional boolean. Resizes the image to the same size
-                                (chip_size parameter in prepare_data) that the model was trained on,
-                                before detecting objects.
-                                Note that if resize_to parameter was used in prepare_data,
-                                the image is resized to that size instead.
+        resize                  Optional boolean. Resizes the image to the
+                                same size (chip_size parameter in prepare_data)
+                                that the model was trained on, before detecting
+                                objects. Note that if resize_to parameter was
+                                used in prepare_data, the image is resized to
+                                that size instead.
 
-                                By default, this parameter is false and the detections are run
-                                in a sliding window fashion by applying the model on cropped sections
-                                of the image (of the same size as the model was trained on).
+                                By default, this parameter is false and the
+                                detections are run in a sliding window fashion
+                                by applying the model on cropped sections of
+                                the image (of the same size as the model was
+                                trained on).
         =====================   ===========================================
         
         :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image

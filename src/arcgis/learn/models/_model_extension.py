@@ -423,6 +423,17 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional Integer. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional Float. The probability above which
+                                a detection will be considered valid.
+        =====================   ===========================================
+        
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -455,6 +466,22 @@ class ModelExtension(ArcGISModel):
             return fig
 
     def _show_results_multispectral_segmentation(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional Integer. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. 
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        =====================   ===========================================
+        
+        """
         return_fig = kwargs.get('return_fig', False)
         ret_val = show_results_multispectral_segmentation(
             self,

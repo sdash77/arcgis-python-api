@@ -348,7 +348,7 @@ class MMDetection(ModelExtension):
     ):
 
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -417,6 +417,7 @@ class MMDetection(ModelExtension):
 
             """
             Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+            This method is only supported for RGB images.
 
             =====================   ===========================================
             **Argument**            **Description**
