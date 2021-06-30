@@ -652,7 +652,7 @@ class GIS(object):
     def languages(self) -> List[Dict[str, Any]]:
         """
         Lists the available languages.
-        
+
         :returns: List[Dict[str, Any]]
         """
         url = f"{self._portal.resturl}portals/languages"
@@ -664,12 +664,12 @@ class GIS(object):
     def regions(self) -> List[Dict[str, Any]]:
         """
         Lists the available regions.
-        
+
         :returns: List[Dict[str, Any]]
         """
         url = f"{self._portal.resturl}portals/regions"
         params = {"f": "json"}
-        return self._con.get(url, params)    
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def _private_service_url(self, service_url):
@@ -8860,17 +8860,17 @@ class User(dict):
            A boolean indicating success (True) or failure (False).
 
         """
-        culture_check = [lang['culture'].lower() for lang in self._gis.languages if lang]
-        if culture and \
-           not culture.lower() in culture_check:
+        culture_check = [
+            lang["culture"].lower() for lang in self._gis.languages if lang
+        ]
+        if culture and not culture.lower() in culture_check:
             raise ValueError(
                 f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
             )
-        if region and \
-           not region.upper() in [g['region'] for g in self._gis.regions]:
+        if region and not region.upper() in [g["region"] for g in self._gis.regions]:
             raise ValueError(
                 f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
-            )            
+            )
         user_type = None
         if tags is not None and isinstance(tags, list):
             tags = ",".join(tags)
@@ -8892,8 +8892,8 @@ class User(dict):
             "firstName": first_name,
             "lastName": last_name,
             "clearEmptyFields": True,
-            "cultureFormat" : culture_format,
-            "region" : region,
+            "cultureFormat": culture_format,
+            "region": region,
         }
         if security_answer and security_question:
             params["securityQuestionIdx"] = security_question
