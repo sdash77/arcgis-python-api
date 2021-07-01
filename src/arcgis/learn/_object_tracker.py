@@ -182,11 +182,10 @@ class ObjectTracker:
         :returns: list of active track objects
         """
         if self.frames_processed % self.detect_interval == 0 and self.detector is not None:
-            self.tracks = self.tracker.update(frame)
             predictions, labels, scores = self.detector.predict(frame, return_scores=True)
             dets = self._convert_to_dets(predictions, labels, scores)
             if len(dets) > 0:
-                self.tracks = self.tracker.init(frame, dets)
+                self.tracks = self.tracker.update(frame, detections=dets)
                 tracks_list = self._convert_tracks_to_list(self.tracks)
                 self.processor.init(frame, tracks_list, False)
         else:
@@ -337,5 +336,5 @@ class ObjectTracker:
 
         :returns: list of active track objects
         """
-        active_tracks = filter(lambda track: track.status == 16, tracks)
+        active_tracks = list(filter(lambda track: track.status == 16, tracks))
         return active_tracks

@@ -947,11 +947,11 @@ def prepare_data(path,
     dataset_type            Optional string. `prepare_data` function will infer
                             the `dataset_type` on its own if it contains a
                             map.txt file. If the path does not contain the
-                            map.txt file pass either of 'PASCAL_VOC_rectangles',
+                            map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN' and 'Pix2Pix'.
+                            'superres', 'CycleGAN', 'Pix2Pix' and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',

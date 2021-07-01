@@ -1506,18 +1506,27 @@ class ArcGISModel(object):
                                 with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
-        framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
-
-                                Setting framework = 'tflite' allows the model trained
-                                in pytorch to be saved in tflite format
-                                (Supported for ``FeatureClassifier``,
-                                ``SingleShotDetector``and ``RetinaNet``). This support
-                                is currently experimental.
-
-                                Framework choice: 'PyTorch', 'TF-ONNX' and 'tflite'
+        framework               Optional string. Exports the model in the
+                                specified framework format ('PyTorch', 'tflite'
+                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                Only models saved with the default framework
+                                (PyTorch) can be loaded using `from_model`.
+                                ``tflite`` framework (experimental support) is
+                                supported by ``SingleShotDetector``,
+                                ``FeatureClassifier`` and ``RetinaNet``.
+                                ``torchscript`` format is supported by
+                                ``SiamMask``.
+                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                load the ``PyTorch`` framework saved model
+                                and export it with ``torchscript`` framework
+                                using ArcGIS API for Python v1.8.5.
+                                For usage of SiamMask model in ArcGIS Pro 2.9,
+                                set framework to ``torchscript`` and use the
+                                model files additionally generated inside
+                                'torch_scripts' folder.
+                                If framework is ``TF-ONNX`` (Only supported for
+                                ``SingleShotDetector``), ``batch_size`` can
+                                be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------

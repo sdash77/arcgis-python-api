@@ -995,88 +995,125 @@ def printProgressBar(i, max):
     sys.stdout.write(f"[{'=' * int(n_bar * j):{n_bar}s}] {int(100 * j)}%  completed")
     sys.stdout.flush()
 
+def check_data_sanity(path):
+    if not os.path.isdir(path):
+        raise Exception(f"Invalid directory. Please check the path {path}")
+
+    ann_dir_path = os.path.join(path, "Annotations")
+    if not os.path.isdir(ann_dir_path):
+        raise Exception(f"Invalid directory. Please check the "
+                        f"annotation folder path {ann_dir_path}. "
+                        "Please make sure the folder name is Annotations")
+
+    ann_dirs = os.listdir(ann_dir_path)
+    img_dir_path = os.path.join(path, "JPEGImages")
+    if not os.path.isdir(img_dir_path):
+        raise Exception(f"Invalid directory. Please check the "
+                        f"images folder path {img_dir_path}. "
+                        "Please make sure the folder name is JPEGImages")
+
+    img_dirs = os.listdir(img_dir_path)
+    json_file_path = os.path.join(path, 'meta.json')
+    if not os.path.isfile(json_file_path):
+        raise Exception(f"Invalid file. Please check the "
+                        f"meta.json file path {json_file_path}. "
+                        "Please make sure the name of json is meta.json")
+    json_ann = json.load(open(json_file_path))
+    total = 0
+    for _, video in enumerate(json_ann['videos']):
+        if video in ann_dirs and video in img_dirs:
+            total += 1
+    if total <= 1:
+        raise Exception(f"Please input at least two sequences in the {path.name}"
+                        " directory namely 'Annotations' and 'JPEGImages'."
+                        "Also, please provide at least two sequences "
+                        "in meta.json")
+
 
 def prepare_object_tracking_data(path,
                                  batch_size, val_split_pct,
                                  **kwargs):
+    check_data_sanity(path)
     global image_name_len
     data_dir = path
-    ann_dirs = [os.path.join(path, "Annotations")]
+    ann_dir = os.path.join(path, "Annotations")
     num_obj = 0
     num_ann = 0
     all_objects = 0
     print("Extracting info")
-    for ann_dir in ann_dirs:
-        ann_dict = {}
-        json_ann = json.load(open(os.path.join(data_dir, 'meta.json')))
-        total = len(json_ann['videos'])
-        for vid, video in enumerate(json_ann['videos']):
-            if video not in os.listdir(ann_dir):
+    ann_dict = {}
+    json_ann = json.load(open(os.path.join(data_dir, 'meta.json')))
+    total = len(json_ann['videos'])
+    for vid, video in enumerate(json_ann['videos']):
+        if video not in os.listdir(ann_dir):
+            continue
+        v = json_ann['videos'][video]
+        frames = []
+        for obj in v['objects']:
+            o = v['objects'][obj]
+            frames.extend(o['frames'])
+        frames = sorted(set(frames))
+        annotations = []
+        instanceIds = []
+        for frame in frames:
+            file_name = os.path.join(video, frame)
+            mask_name = video + os.sep + frame
+            mask_filename = os.path.join(ann_dir, file_name + '.png')
+            image_name_len = len(frame)
+            img = cv2.imread(mask_filename, 0)
+            if img is None:
                 continue
-            v = json_ann['videos'][video]
-            frames = []
-            for obj in v['objects']:
-                o = v['objects'][obj]
-                frames.extend(o['frames'])
-            frames = sorted(set(frames))
-            annotations = []
-            instanceIds = []
-            for frame in frames:
-                file_name = os.path.join(video, frame)
-                mask_name = video + os.sep + frame
-                fullname = os.path.join(ann_dir, file_name + '.png')
-                image_name_len = len(frame)
-                img = cv2.imread(fullname, 0)
-                h, w = img.shape[:2]
-                objects = dict()
-                for instanceId in np.unique(img):
-                    if instanceId == 0:
-                        continue
-                    instanceObj = Instance(img, instanceId)
-                    instanceObj_dict = instanceObj.toDict()
-                    mask = (img == instanceId).astype(np.uint8)
-                    contour, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                    polygons = [c.reshape(-1).tolist() for c in contour]
-                    instanceObj_dict['contours'] = [p for p in polygons if len(p) > 4]
-                    if len(instanceObj_dict['contours']) and instanceObj_dict['pixelCount'] > 1000:
-                        objects[instanceId] = instanceObj_dict
+            h, w = img.shape[:2]
+            objects = dict()
+            for instanceId in np.unique(img):
+                if instanceId == 0:
+                    continue
+                instance_obj = Instance(img, instanceId)
+                instance_obj_dict = instance_obj.toDict()
+                mask = (img == instanceId).astype(np.uint8)
+                contour, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                polygons = [c.reshape(-1).tolist() for c in contour]
+                instance_obj_dict['display_mask'] = contour
+                instance_obj_dict['contours'] = [p for p in polygons if len(p) > 4]
+                if len(instance_obj_dict['contours']) and instance_obj_dict['pixelCount'] > 1000:
+                    objects[instanceId] = instance_obj_dict
 
-                for objId in objects:
-                    if len(objects[objId]) == 0:
-                        continue
-                    obj = objects[objId]
-                    len_p = [len(p) for p in obj['contours']]
-                    if min(len_p) <= 4:
-                        print('Warning: invalid contours.')
-                        continue
+            for objId in objects:
+                if len(objects[objId]) == 0:
+                    continue
+                obj = objects[objId]
+                len_p = [len(p) for p in obj['contours']]
+                if min(len_p) <= 4:
+                    print('Warning: invalid contours.')
+                    continue
 
-                    ann = dict()
-                    ann['h'] = h
-                    ann['w'] = w
-                    ann['file_name'] = file_name
-                    ann['id'] = int(objId)
-                    ann['segmentation'] = obj['contours']
-                    ann['iscrowd'] = 0
-                    ann["display_mask"] = contour
-                    ann['area'] = obj['pixelCount']
-                    ann['bbox'] = xyxy_to_xywh(polys_to_boxes([obj['contours']])).tolist()[0]
-                    ann["mask_name"] = mask_name
+                ann = dict()
+                ann['h'] = h
+                ann['w'] = w
+                ann['file_name'] = file_name
+                ann['id'] = int(objId)
+                ann['segmentation'] = obj['contours']
+                ann['iscrowd'] = 0
+                ann["display_mask"] = obj['display_mask']
+                ann['area'] = obj['pixelCount']
+                ann['bbox'] = xyxy_to_xywh(polys_to_boxes([obj['contours']])).tolist()[0]
+                ann["mask_name"] = mask_name
 
-                    annotations.append(ann)
-                    all_objects += 1
-                    instanceIds.append(objId)
-                    num_ann += 1
-            instanceIds = sorted(set(instanceIds))
-            num_obj += len(instanceIds)
-            video_ann = {str(iId): [] for iId in instanceIds}
-            for ann in annotations:
-                video_ann[str(ann['id'])].append(ann)
+                annotations.append(ann)
+                all_objects += 1
+                instanceIds.append(objId)
+                num_ann += 1
+        instanceIds = sorted(set(instanceIds))
+        num_obj += len(instanceIds)
+        video_ann = {str(iId): [] for iId in instanceIds}
+        for ann in annotations:
+            video_ann[str(ann['id'])].append(ann)
 
-            ann_dict[video] = video_ann
-            printProgressBar(vid, total)
+        ann_dict[video] = video_ann
+        printProgressBar(vid, total)
 
-        items = list(ann_dict.items())
-        train_dict = dict(items)
+    items = list(ann_dict.items())
+    train_dict = dict(items)
 
     clear_output()
     crop_path = os.path.join(path, "crop")
@@ -1100,6 +1137,15 @@ def prepare_object_tracking_data(path,
     val_all_obj = int(((all_objects * (val_split_pct * 10)) / 100) * 10)
     if val_set == 0:
         val_set = 1
+
+    def num_anns(elem):
+        ann_dict = elem[1]
+        val = 0
+        for k, v in ann_dict.items():
+            val = val + len(v)
+        return val
+
+    items = sorted(items, key=num_anns, reverse=True)
     train_dict = dict(items[:-val_set])
 
     snippets = train_val_split(train_dict)
