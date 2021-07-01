@@ -19,10 +19,12 @@ from arcgis.mapping import MapImageLayer
 ###########################################################################
 class MapFeatureLayer(Layer):
     """
+    The ``MapFeatureLayer`` class represents Map Feature Layers.
     Map Feature Layers can be added to and visualized using maps.
 
-    Map Feature Layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
-    GIS. `MapFeatureLayer` objects can be obtained through the layers attribute on map image service Items in the GIS.
+    Map Feature Layers are created by publishing feature data to a :class:`~arcgis.gis.GIS`, and are exposed as a
+    broader resource (:class:`~arcgis.gis.Item`) in the ``GIS``.
+    `MapFeatureLayer` objects can be obtained through the layers attribute on map image service Items in the ``GIS``.
     """
 
     _metadatamanager = None
@@ -87,7 +89,8 @@ class MapFeatureLayer(Layer):
     @lru_cache(maxsize=10)
     def attachements(self):
         """
-        Provides a manager to work with attachments if the MapFeatureLayer supports this functionality
+        The ``attachments`` property provides a manager to work with attachments if the ``MapFeatureLayer``
+        supports this functionality.
         """
         if (
             "supportsQueryAttachments" in self.properties
@@ -103,9 +106,10 @@ class MapFeatureLayer(Layer):
     @property
     def time_filter(self):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
+        .. note::
+            Starting at Enterprise 10.7.1+, instead of querying time-enabled map
         service layers or time-enabled feature service layers, a time filter
-        can be specified. Time can be filtered as a single instant or by
+        can be specified using the ``time_filter`` method. Time can be filtered as a single instant or by
         separating the two ends of a time extent with a comma.
 
         ================     =================================================
@@ -164,7 +168,11 @@ class MapFeatureLayer(Layer):
     @property
     def renderer(self):
         """
-        Get/Set the Renderer of the Map Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        The ``renderer`` property retrieves the Renderer of the Map Feature Layer.
+
+        .. note::
+            The ``renderer`` property overrides the default symbology when displaying it on a
+            :class:`~arcgis.mapping.WebMap`.
 
         :returns: InsensitiveDict
 
@@ -198,9 +206,21 @@ class MapFeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item, layer_id=0):
         """
-        Creates a map feature layer from a GIS Item.
-        The type of item should be a 'Map Image Layer'.
-        The layer_id is the id of the layer in Map Service's layers.
+        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapFeatureLayer` from a GIS :class:`~arcgis.gis.Item`.
+
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
+                                                 a :class:`~arcgis.mapping.MapImageService` object.
+        ------------------------------------     --------------------------------------------------------------------
+        layer_id                                 Optional. The id of the layer in the Map Service's Layer. The default
+                                                 is 0.
+        ====================================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.mapping.MapFeatureLayer` object
         """
         from arcgis.mapping import MapImageLayer
 
@@ -210,7 +230,7 @@ class MapFeatureLayer(Layer):
     @property
     def container(self):
         """
-        The `MapImageLayer` to which this layer belongs.
+        The ``container`` property represents the :class:`~arcgis.mapping.MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
             self._storage = MapImageLayer(
@@ -221,7 +241,8 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def export_attachments(self, output_folder, label_field=None):
         """
-        Exports attachments from the map feature layer in Imagenet format using the output_label_field.
+        The ``export_attachments`` method exports attachments from the map feature layer in ``Imagenet`` format using
+        the ``output_label_field``.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -232,6 +253,8 @@ class MapFeatureLayer(Layer):
                                                  If None, a default folder is created.
         ====================================     ====================================================================
 
+        :returns:
+            A path to the exported attachments
         """
         import pandas
         import urllib
@@ -306,19 +329,24 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):
         """
-        This operation groups data using the supplied definition
+        The ``generate_renderer`` operation groups data using the supplied definition
         (classification definition) and an optional where clause. The
-        result is a renderer object. Use baseSymbol and colorRamp to define
-        the symbols assigned to each class. If the operation is performed
-        on a table, the result is a renderer object containing the data
-        classes and no symbols.
+        result is a renderer object. Use ``baseSymbol`` and ``colorRamp`` to define
+        the symbols assigned to each class.
+
+        .. note::
+            If the operation is performed
+            on a table, the result is a renderer object containing the data
+            classes and no symbols.
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
         definition            required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
-                              See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
+                              See the
+                              `classification definitions <https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html>`_
+                              page in the ArcGIS REST API documentation for more information.
         -----------------     --------------------------------------------------------------------
         where                 optional string. A where clause for which the data needs to be
                               classified. Any legal SQL where clause operating on the fields in
@@ -447,7 +475,8 @@ class MapFeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def get_unique_values(self, attribute, query_string="1=1"):
-        """Return a list of unique values for a given attribute
+        """
+        The ``get_unique_values`` method retrieves a list of unique values for a given attribute.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -458,6 +487,9 @@ class MapFeatureLayer(Layer):
                                             before unique values are returned.
                                             ex. "name_2 like '%K%'"
         ===============================     ====================================================================
+
+        :returns:
+            A List
         """
 
         result = self.query(
@@ -512,7 +544,7 @@ class MapFeatureLayer(Layer):
         **kwargs,
     ):
         """
-        Queries a map feature layer based on a sql statement
+        The ``query`` method queries a map feature layer based on a sql statement.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -758,7 +790,8 @@ class MapFeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A FeatureSet containing the features matching the query unless another return type is specified, such as count
+        :returns: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
+        return type is specified, such as ``count``.
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -1070,14 +1103,21 @@ class MapFeatureLayer(Layer):
         return_true_curve=False,
     ):
         """
-        The Query operation is performed on a feature service layer
-        resource. The result of this operation are feature sets grouped
-        by source layer/table object IDs. Each feature set contains
-        Feature objects including the values for the fields requested by
-        the user. For related layers, if you request geometry
-        information, the geometry of each feature is also returned in
-        the feature set. For related tables, the feature set does not
-        include geometries.
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.features.Feature` service layer
+        resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
+        by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
+        :class:`~arcgis.features.Feature` objects including the values for the fields requested by
+        the user.
+
+        .. note::
+            For related layers, if you request geometry
+            information, the geometry of each feature is also returned in
+            the feature set. For related tables, the feature set does not
+            include geometries.
+
+        .. note::
+            See the :attr:`~arcgis.mapping.MapFeatureLayer.query` method for more information.
+
 
         ======================     ====================================================================
         **Argument**               **Description**
@@ -1183,7 +1223,7 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
-        The htmlPopup resource provides details about the HTML pop-up
+        The ``get_html_Popup`` resource provides details about the HTML pop-up
         authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
@@ -1193,7 +1233,8 @@ class MapFeatureLayer(Layer):
         ===============     ====================================================================
 
 
-        :return: string
+        :return:
+            A string
 
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
@@ -1449,7 +1490,7 @@ class MapFeatureLayer(Layer):
 ###########################################################################
 class MapRasterLayer(MapFeatureLayer):
     """
-    A Map Raster Layer represents a geo-referenced image hosted in a Map Service.
+    The ``MapRasterLayer`` class represents a geo-referenced image hosted in a ``Map Service``.
     """
 
     @property
@@ -1496,19 +1537,35 @@ class MapRasterLayer(MapFeatureLayer):
 ###########################################################################
 class MapTable(MapFeatureLayer):
     """
-    Tables represent entity classes with uniform properties. In addition to working with "entities with location" as
-    features, the GIS can also work with non-spatial entities as rows in tables.
+    The ``MapTable`` class represents entity classes with uniform properties.
 
-    Working with tables is similar to working with map feature layers, except that the rows (Features) in a table do not
-    have a geometry, and tables ignore any geometry related operation.
+    .. note::
+        In addition to working with "entities with ``location`` as
+        features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
+
+    Working with tables is similar to working with a :class:`~arcgis.mapping.MapFeatureLayer`, except that the rows
+    (:class:`~arcgis.features.Feature`) in a table do not have a geometry, and tables ignore any geometry related
+    operation.
     """
 
     @classmethod
     def fromitem(cls, item, table_id=0):
         """
-        Creates a Table from a GIS Item.
-        The type of item should be a 'Map Image Service'.
-        The layer_id is the id of the layer.
+        The ``fromitem`` method creates a :class:`~arcgis.mapping.MapTable` from a GIS :class:`~arcgis.gis.Item`.
+
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
+                                                 a :class:`~arcgis.mapping.MapImageService` object.
+        ------------------------------------     --------------------------------------------------------------------
+        layer_id                                 Optional. The id of the layer in the Map Service's Layer. The default
+                                                 is 0.
+        ====================================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.mapping.MapTable` object
         """
         return item.tables[table_id]
 
@@ -1569,7 +1626,7 @@ class MapTable(MapFeatureLayer):
         **kwargs,
     ):
         """
-        Queries a Table Layer based on a set of criteria.
+        The ``query`` methdod queries a Table Layer based on a set of criteria from a sql statement.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -1723,7 +1780,9 @@ class MapTable(MapFeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A FeatureSet or Panda's DataFrame containing the features matching the query unless another return type is specified, such as count
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` or Panda's DataFrame containing the :class:`~arcgis.features.Feature`
+            objects matching the query, unless another return type is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -2023,7 +2082,7 @@ class _MSILayerFactory(type):
 ###########################################################################
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     """
-    Factory that generates the Map Service Layers
+    The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.
 
     ==================     ====================================================================
     **Argument**           **Description**
