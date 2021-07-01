@@ -98,14 +98,10 @@ def _set_time_param(time):
     time_val = time
     if time is not None:
         if type(time) is list:
-            if isinstance(time[0], datetime.datetime) or isinstance(
-                time[0], datetime.date
-            ):
+            if isinstance(time[0], datetime.datetime):
                 if time[0].tzname() is None or time[0].tzname() != "UTC":
                     time[0] = time[0].astimezone(datetime.timezone.utc)
-            if isinstance(time[1], datetime.datetime) or isinstance(
-                time[1], datetime.date
-            ):
+            if isinstance(time[1], datetime.datetime):
                 if time[1].tzname() is None or time[1].tzname() != "UTC":
                     time[1] = time[1].astimezone(datetime.timezone.utc)
             starttime = _date_handler(time[0])
