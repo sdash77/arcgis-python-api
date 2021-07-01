@@ -5568,7 +5568,9 @@ def _raster_item(raster, raster_id=None):
 
     if raster is not None and isinstance(raster, ImageryLayer):
         url = raster.url
-        if "arcgis.com" in url and raster._gis is not None:
+        if "arcgis.com" in url and (
+            hasattr(raster, "_gis") and raster._gis is not None
+        ):
             try:
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
