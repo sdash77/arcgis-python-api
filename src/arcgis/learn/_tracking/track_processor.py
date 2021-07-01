@@ -7,6 +7,29 @@ except ImportError:
     import_exception = traceback.format_exc()
     HAS_CONDA = False
 
+
+def get_default_tracker_options():
+    tracker_options = {
+        "enable_post_processing": True,
+        "detection_interval": 1,
+        "detection_threshold": 0.0,
+        "detect_track_failure": False,
+        "recover_track": False,
+        "stab_period": 6,
+        "detect_fail_interval": 0,
+        "min_obj_size": 10,
+        "template_history": 25,
+        "status_history": 60,
+        "status_fail_threshold": 0.6,
+        "search_period": 60,
+        "knn_distance_ratio": 0.75,
+        "recover_conf_threshold": 0.1,
+        "recover_iou_threshold": 0.1
+    }
+
+    return tracker_options
+
+
 class TrackProcessor:
 
     """
@@ -83,18 +106,18 @@ class TrackProcessor:
     :returns: `TrackProcessor` Object
     """
 
-    def __init__(self,  processor_options={"detect_track_failure": True,
-                                            "recover_track": True,
-                                            "stab_period": 6,
-                                            "detect_fail_interval": 5,
-                                            "min_obj_size": 10,
-                                            "template_history": 25,
-                                            "status_history": 60,
-                                            "status_fail_threshold": 0.6,
-                                            "search_period": 60,
-                                            "knn_distance_ratio": 0.75,
-                                            "recover_conf_threshold": 0.1,
-                                            "recover_iou_threshold": 0.1}):
+    def __init__(self, processor_options={"detect_track_failure": True,
+                                          "recover_track": True,
+                                          "stab_period": 6,
+                                          "detect_fail_interval": 5,
+                                          "min_obj_size": 10,
+                                          "template_history": 25,
+                                          "status_history": 60,
+                                          "status_fail_threshold": 0.6,
+                                          "search_period": 60,
+                                          "knn_distance_ratio": 0.75,
+                                          "recover_conf_threshold": 0.1,
+                                          "recover_iou_threshold": 0.1}):
         if not HAS_CONDA:
             _raise_conda_import_error(import_exception=import_exception)
 
@@ -142,8 +165,8 @@ class TrackProcessor:
             _track_processor.init(frame, dets)
         else:
             _track_processor.add(frame, dets)
+        # TODO: remove return - no need
         return None
-
 
     def update(self, frame, dets):
         """

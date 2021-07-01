@@ -14,7 +14,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
       PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
-      ChangeDetector, Pix2Pix, ConnectNet, SiamMask, Track, Embeddings, MMDetection, MMSegmentation, AutoML
+      ChangeDetector, Pix2Pix, ConnectNet, SiamMask, Track, Embeddings, \
+      MMDetection, MMSegmentation, AutoML, DeepSort
       
     from ._object_tracker import ObjectTracker
 

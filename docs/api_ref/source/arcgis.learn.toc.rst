@@ -196,6 +196,12 @@ SiamMask
     :members:
     :inherited-members:
 
+DeepSort
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.DeepSort
+    :members:
+    :inherited-members:
+
 ObjectTracker
 ^^^^^^^^^^
 .. autoclass:: arcgis.learn.ObjectTracker
