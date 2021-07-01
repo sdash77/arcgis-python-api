@@ -19,6 +19,7 @@ import traceback
 import inspect
 import types
 import functools
+import warnings
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -447,14 +448,9 @@ class ArcGISModel(object):
         # Force move to CPU
         if move_to_cpu:
             arcgis.env._processorType = "CPU"
-
-        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
-            self._device = torch.device("cuda")
-        elif getattr(arcgis.env, "_processorType", "") == "CPU":
-            self._device = torch.device("cpu")
-        else:
-            self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
+        
+        self._device = _get_device()
+        
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
@@ -487,6 +483,7 @@ class ArcGISModel(object):
 
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
+
         if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
             data.class_mapping = {v: v for v in data.classes}
 
@@ -594,28 +591,30 @@ class ArcGISModel(object):
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
-        try:
-            metrics = self.learn.metrics
-            self.learn.metrics = []
-            with tempfile.TemporaryDirectory(prefix='arcgisTemp_') as _tempfolder:
-                self.learn.path = Path(_tempfolder)
-                self.learn.lr_find()
-        except Exception as e:
-            # if some error comes in lr_find
-            raise e
-        finally:
-            self.learn.metrics = metrics
-            # Revert
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            try:
+                metrics = self.learn.metrics
+                self.learn.metrics = []
+                with tempfile.TemporaryDirectory(prefix='arcgisTemp_') as _tempfolder:
+                    self.learn.path = Path(_tempfolder)
+                    self.learn.lr_find()
+            except Exception as e:
+                # if some error comes in lr_find
+                raise e
+            finally:
+                self.learn.metrics = metrics
+                # Revert
+                self.learn.path = temp1
+
+            #
             self.learn.path = temp1
 
-        #
-        self.learn.path = temp1
-
-        from IPython.display import clear_output
-        clear_output()
-        lr, index = self._find_lr()
-        if allow_plot:
-            self._show_lr_plot(index)
+            from IPython.display import clear_output
+            clear_output()
+            lr, index = self._find_lr()
+            if allow_plot:
+                self._show_lr_plot(index)
 
         return lr
 
@@ -757,71 +756,73 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
-        self._check_requisites()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            self._check_requisites()
 
-        if lr is None:
-            print('Finding optimum learning rate.')
+            if lr is None:
+                print('Finding optimum learning rate.')
 
-            lr = self.lr_find(allow_plot=False)
-            if self._slice_lr is True:
-                lr = slice(lr / 10, lr)
+                lr = self.lr_find(allow_plot=False)
+                if self._slice_lr is True and len(self.learn.layer_groups) > 1:
+                    lr = slice(lr / 10, lr)
 
-        self._learning_rate = lr
-        self._model_metrics_cache = None
-        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles" and (
-                dice.__qualname__
-                not in [
-                    metric.func.__qualname__
-                    if hasattr(metric, "func")
-                    else metric.__qualname__
-                    for metric in self.learn.metrics
-                ]
-        ) and not getattr(self, "_is_edge_detection", False):
-            self.learn.metrics.extend([dice])
-        if arcgis.env.verbose:
-            logger.info('Fitting the model.')
+            self._learning_rate = lr
+            self._model_metrics_cache = None
+            if getattr(self._data, "_dataset_type", None) == "Classified_Tiles" and (
+                    dice.__qualname__
+                    not in [
+                        metric.func.__qualname__
+                        if hasattr(metric, "func")
+                        else metric.__qualname__
+                        for metric in self.learn.metrics
+                    ]
+            ) and not getattr(self, "_is_edge_detection", False):
+                self.learn.metrics.extend([dice])
+            if arcgis.env.verbose:
+                logger.info('Fitting the model.')
 
-        if getattr(self, '_backend', 'pytorch') == 'tensorflow':
-            checkpoint = False
+            if getattr(self, '_backend', 'pytorch') == 'tensorflow':
+                checkpoint = False
 
-        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
-        kwargs.pop('callbacks', None)
-        monitored_names = self.available_metrics
-        if monitor not in monitored_names:
-            raise Exception(f"`monitor` must be set to one from {monitored_names}")
-        self.monitor = monitor
-        if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.001, patience=5))
-        if checkpoint:
-            from datetime import datetime
-            now = datetime.now()
-            if checkpoint != True and checkpoint != "all":
-                raise Exception("Checkpoint can only be set to a boolean or 'all'")
-            every = "improvement" if checkpoint is True else "epoch"
-            save_callback_params = kwargs.get("save_callback_params", {"monitor": monitor, "every": every})
-            callbacks.append(SaveModelCallback(self,
-                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
-                                               **save_callback_params))
-        kwargs.pop("save_callback_params", None)
-        # If tensorboardx is installed write a log with name as timestamp
-        if tensorboard and HAS_TENSORBOARDX:
-            training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
-            log_path = Path(self._data.path) / 'training_log'
-            abs_path = os.path.abspath(log_path)
-            training_id = type(self).__name__ + "_" + training_id
-            callbacks.append(
-                partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self)(learn=self.learn))
-            hostname = socket.gethostname()
-            print("Monitor training on Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(hostname, abs_path))
-        # Send out a warning if tensorboardX is not installed
-        elif tensorboard:
-            warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
+            callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
+            kwargs.pop('callbacks', None)
+            monitored_names = self.available_metrics
+            if monitor not in monitored_names:
+                raise Exception(f"`monitor` must be set to one from {monitored_names}")
+            self.monitor = monitor
+            if early_stopping:
+                callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.001, patience=5))
+            if checkpoint:
+                from datetime import datetime
+                now = datetime.now()
+                if checkpoint != True and checkpoint != "all":
+                    raise Exception("Checkpoint can only be set to a boolean or 'all'")
+                every = "improvement" if checkpoint is True else "epoch"
+                save_callback_params = kwargs.get("save_callback_params", {"monitor": monitor, "every": every})
+                callbacks.append(SaveModelCallback(self,
+                                                name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
+                                                **save_callback_params))
+            kwargs.pop("save_callback_params", None)
+            # If tensorboardx is installed write a log with name as timestamp
+            if tensorboard and HAS_TENSORBOARDX:
+                training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
+                log_path = Path(self._data.path) / 'training_log'
+                abs_path = os.path.abspath(log_path)
+                training_id = type(self).__name__ + "_" + training_id
+                callbacks.append(
+                    partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self)(learn=self.learn))
+                hostname = socket.gethostname()
+                print("Monitor training on Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(hostname, abs_path))
+            # Send out a warning if tensorboardX is not installed
+            elif tensorboard:
+                warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
 
-        self._fit_callbacks = callbacks
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
-        else:
-            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
+            self._fit_callbacks = callbacks
+            if one_cycle:
+                self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+            else:
+                self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
 
     def unfreeze(self):
         """
@@ -915,8 +916,12 @@ class ArcGISModel(object):
         _emd_template["ModelFile"] = path.name
 
         if hasattr(self._data, 'chip_size'):
-            _emd_template["ImageHeight"] = self._data.chip_size
-            _emd_template["ImageWidth"] = self._data.chip_size
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+             
+            _emd_template["ImageHeight"] = chip_size[0]
+            _emd_template["ImageWidth"] = chip_size[1]
 
         if hasattr(self._data, '_image_space_used'):
             _emd_template["ImageSpaceUsed"] = self._data._image_space_used
@@ -1506,18 +1511,27 @@ class ArcGISModel(object):
                                 with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
-        framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
-
-                                Setting framework = 'tflite' allows the model trained
-                                in pytorch to be saved in tflite format
-                                (Supported for ``FeatureClassifier``,
-                                ``SingleShotDetector``and ``RetinaNet``). This support
-                                is currently experimental.
-
-                                Framework choice: 'PyTorch', 'TF-ONNX' and 'tflite'
+        framework               Optional string. Exports the model in the
+                                specified framework format ('PyTorch', 'tflite'
+                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                Only models saved with the default framework
+                                (PyTorch) can be loaded using `from_model`.
+                                ``tflite`` framework (experimental support) is
+                                supported by ``SingleShotDetector``,
+                                ``FeatureClassifier`` and ``RetinaNet``.
+                                ``torchscript`` format is supported by
+                                ``SiamMask``.
+                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                load the ``PyTorch`` framework saved model
+                                and export it with ``torchscript`` framework
+                                using ArcGIS API for Python v1.8.5.
+                                For usage of SiamMask model in ArcGIS Pro 2.9,
+                                set framework to ``torchscript`` and use the
+                                model files additionally generated inside
+                                'torch_scripts' folder.
+                                If framework is ``TF-ONNX`` (Only supported for
+                                ``SingleShotDetector``), ``batch_size`` can
+                                be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
