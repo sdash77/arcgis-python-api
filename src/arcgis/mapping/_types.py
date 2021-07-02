@@ -4743,7 +4743,7 @@ class MapImageLayer(Layer):
         as its URL, its width and height, extent and scale.
 
         ==================     ====================================================================
-        **Argument**          **Description**
+        **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         bbox                   required string. The extent (bounding box) of the exported image.
                                Unless the bbox_sr parameter has been specified, the bbox is assumed
