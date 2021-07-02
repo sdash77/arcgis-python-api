@@ -432,7 +432,7 @@ class GPJob(object):
             elif isinstance(value, dict) and "url" in value:
                 return value["url"]
             elif isinstance(value, dict) and "contentList" in value:
-                if value is "":
+                if value == "":
                     return None
                 elif isinstance(value["contentList"], str):
                     return json.loads(value["contentList"])

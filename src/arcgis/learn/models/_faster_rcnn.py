@@ -17,9 +17,6 @@ try:
     from torch.jit.annotations import List, Dict
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
-    import torchvision
-    from ._maskrcnn import grid_anchors
-    tvisver = [int(x) for x in torchvision.__version__.split('.')]
 
     HAS_FASTAI = True
 
@@ -37,6 +34,7 @@ class MyFasterRCNN():
         import pathlib
         import os
         import fastai
+        tvisver = [int(x) for x in torchvision.__version__.split('.')]
     except:
         pass
     
@@ -155,7 +153,7 @@ class MyFasterRCNN():
             bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
             target = {}#FasterRCNN require target of each image in the formate of dictionary.
             #If image comes without any bboxes.
-            if ( tvisver[0] == 0 and tvisver[1] < 6 ) and bbox.nelement() == 0:
+            if ( self.tvisver[0] == 0 and self.tvisver[1] < 6 ) and bbox.nelement() == 0:
                 bbox = self.torch.tensor([[0.,0.,0.,0.]]).to(learn.data.device)
                 label = self.torch.tensor([0]).to(learn.data.device)
             # FasterRCNN require the formate of bboxes [x1,y1,x2,y2].
@@ -453,7 +451,6 @@ class FasterRCNN(ModelExtension):
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
             idx = self._freeze()
-            self.learn.model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, self.learn.model.rpn.anchor_generator)
 
         self.learn.model.roi_heads.forward = types.MethodType(forward_roi, self.learn.model.roi_heads)
         self.learn.model.eager_outputs = types.MethodType(eager_outputs_modified, self.learn.model)

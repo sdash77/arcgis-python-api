@@ -2146,6 +2146,7 @@ def prepare_data(path,
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
+    import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         data.show_batch = types.MethodType(
