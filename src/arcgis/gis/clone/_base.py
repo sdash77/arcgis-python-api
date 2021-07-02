@@ -4,7 +4,7 @@ from arcgis._impl.common._clone import CloneNode, _ItemDefinition, _TextItemDefi
 
 class BaseCloneDefinition(CloneNode):
     """
-    The base cloning module that allows users to extend the cloning API to 
+    The base cloning module that allows users to extend the cloning API to
     meet there cloning workflows.
     """
 

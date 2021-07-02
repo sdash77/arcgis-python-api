@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from ._base import (
     BaseCloneDefinition,
     BaseCloneItemDefinition,
@@ -8,10 +8,15 @@ from ._base import (
 _CLONE_REGISTRY = {}
 
 ###########################################################################
-def register(item_type: str, cls: "BaseCloneDefinition") -> bool:
+def register(
+    item_type: str,
+    cls: Union[
+        BaseCloneDefinition, BaseCloneItemDefinition, BaseCloneTextItemDefinition
+    ],
+) -> bool:
     """
     Loads a custom cloner class into the clone registry
-    
+
     ================    ===============================================================
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
@@ -19,7 +24,7 @@ def register(item_type: str, cls: "BaseCloneDefinition") -> bool:
     ----------------    ---------------------------------------------------------------
     cls                 Required Class. The class to perform the cloning operation.
     ================    ===============================================================
-    
+
     :returns: bool
     """
     global _CLONE_REGISTRY
@@ -38,13 +43,13 @@ def register(item_type: str, cls: "BaseCloneDefinition") -> bool:
 def unregister(item_type: str) -> bool:
     """
     Loads a custom cloner class into the clone registry
-    
+
     ================    ===============================================================
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
     item_type           Required String. The name of the item type to delete from the clone registry
     ================    ===============================================================
-    
+
     :returns: bool
     """
     global _CLONE_REGISTRY
@@ -61,7 +66,7 @@ def unregister(item_type: str) -> bool:
 def clone_registry() -> Dict[str, Any]:
     """
     Returns the Clone Registry
-    
+
     :returns: Dict[str, Any]
     """
     global _CLONE_REGISTRY

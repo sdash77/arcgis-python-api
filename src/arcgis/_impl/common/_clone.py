@@ -896,12 +896,16 @@ class _DeepCloner:
                                             None,
                                         )
                                         if not feature_service:
-                                            feature_service = _get_feature_service_related_item(
-                                                service_url, source
+                                            feature_service = (
+                                                _get_feature_service_related_item(
+                                                    service_url, source
+                                                )
                                             )
                                             if feature_service:
-                                                fs_definition = self._get_item_definitions(
-                                                    feature_service
+                                                fs_definition = (
+                                                    self._get_item_definitions(
+                                                        feature_service
+                                                    )
                                                 )
                                                 if fs_definition is not None:
                                                     item_definition.add_child(
@@ -1182,8 +1186,8 @@ class _DeepCloner:
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             self._preserve_item_id = False
         # If the item is an application or dashboard get the ApplicationDefinition
-        if item['type'] in clone_registry():
-            cls = clone_registry()[item['type']]
+        if item["type"] in clone_registry():
+            cls = clone_registry()[item["type"]]
             if issubclass(cls, BaseCloneTextItemDefinition):
                 source_url = _get_org_url(item._gis)
                 try:
@@ -5700,8 +5704,10 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                     new_id = new_service[
                                                         "layer_id_mapping"
                                                     ][layer_id]
-                                                    new_connection_properties = copy.deepcopy(
-                                                        connection_properties
+                                                    new_connection_properties = (
+                                                        copy.deepcopy(
+                                                            connection_properties
+                                                        )
                                                     )
                                                     new_connection_properties[
                                                         "connection_info"
@@ -5725,9 +5731,11 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                             service_version_infos[
                                                                 new_service["url"]
                                                             ] = {}
-                                                    version_info = service_version_infos[
-                                                        new_service["url"]
-                                                    ]
+                                                    version_info = (
+                                                        service_version_infos[
+                                                            new_service["url"]
+                                                        ]
+                                                    )
                                                     for key, value in {
                                                         "defaultVersionName": "version",
                                                         "defaultVersionGuid": "versionguid",
