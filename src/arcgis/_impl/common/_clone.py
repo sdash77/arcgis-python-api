@@ -20,6 +20,7 @@ import urllib
 import time
 import pathlib
 
+
 _TEXT_BASED_ITEM_TYPES = [
     "Web Map",
     "Feature Service",
@@ -250,9 +251,14 @@ class _DeepCloner:
         # Check if the item is specified in the mapping, if so don't process it
         if item.id in self._clone_mapping["Item IDs"]:
             return None
+        from arcgis.gis.clone import clone_registry
 
+        # if the item is in the clone_registry then use the item definition.
+        if item["type"] in clone_registry():
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group
-        if isinstance(item, gis.Group):
+        elif isinstance(item, gis.Group):
             item_definition = self._get_group_definition(item)
             # add to graph
             self._graph[item_definition.info["id"]] = item_definition
@@ -1178,11 +1184,12 @@ class _DeepCloner:
             BaseCloneTextItemDefinition,
         )
 
-        types = (
+        _CUSTOM_TYPES = (
             BaseCloneDefinition,
             BaseCloneItemDefinition,
             BaseCloneTextItemDefinition,
         )
+
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             self._preserve_item_id = False
         # If the item is an application or dashboard get the ApplicationDefinition
