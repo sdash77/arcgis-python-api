@@ -27,7 +27,7 @@ except Exception as e:
 try:
     import pandas as pd
 except:
-    raise Exception('This module requires Numpy and Pandas')
+    raise Exception('This module requires Pandas')
 
 
 HAS_NUMPY = True
