@@ -41,6 +41,8 @@ try:
     import inspect
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     from matplotlib import pyplot as plt
+    import types
+    from ._maskrcnn import grid_anchors
     HAS_FASTAI = True
     
 except Exception as e:
@@ -68,9 +70,9 @@ class ModelExtension(ArcGISModel):
     ---------------------   ------------------------------------------------------------
     model_conf              A class definition contains the following methods:
 
-                                * ``get_model(self, data, backbone=None)``: for model definition,
+                                * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
                                 
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch)``: for 
+                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for 
                                   feeding input to the model during training, 
 
                                 * ``transform_input(self, xb)``: for feeding input to the model during
@@ -98,12 +100,16 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
-        if pretrained_path is not None:
-            pretrained_backbone = False
-        else:
-            pretrained_backbone = True
+        self._learn_version = kwargs.get('ArcGISLearnVersion', "1.9.0")
 
-        kwargs['pretrained_backbone'] = pretrained_backbone
+        if self._learn_version >= "1.9.0":
+            if pretrained_path is not None:
+                pretrained_backbone = False
+            else:
+                pretrained_backbone = True
+            kwargs['pretrained_backbone'] = pretrained_backbone
+        else:
+            del kwargs['ArcGISLearnVersion']
         
         super().__init__(data, backbone, **kwargs)
         self._model_conf = model_conf()
@@ -111,6 +117,10 @@ class ModelExtension(ArcGISModel):
         self._backend = 'pytorch'
         self._kwargs = kwargs
         model = self._model_conf.get_model(data, backbone, **kwargs)
+        if backbone is not None:
+            backbone_name = backbone if type(backbone) is str else backbone.__name__
+            if model_conf.__name__ == 'MyFasterRCNN' and backbone_name in ['resnet18','resnet34']:
+                model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, model.rpn.anchor_generator)
         if self._is_multispectral:
             model = _change_tail(model, data)
         if not _isnotebook() and os.name=='posix':
@@ -123,6 +133,7 @@ class ModelExtension(ArcGISModel):
         else:
             self.learn = Learner(data, model, loss_func=self._model_conf.loss)
         self.learn.callbacks.append(self._train_callback(self.learn, self._model_conf.on_batch_begin))
+        self.learn._learn_version = self._learn_version
         if self._data.dataset_type == 'Classified_Tiles':
             if getattr(self, "_is_edge_detection", False):
                 from ._hed_utils import accuracy, f1_score
@@ -146,7 +157,11 @@ class ModelExtension(ArcGISModel):
                 self.on_batch_begin_fn = on_batch_begin_fn
 
             def on_batch_begin(self, last_input, last_target, **kwargs):
-                last_input, last_target = self.on_batch_begin_fn(self.learn, last_input, last_target, **kwargs)
+
+                if self._learn_version >= "1.9.0":
+                    last_input, last_target = self.on_batch_begin_fn(self.learn, last_input, last_target, **kwargs)
+                else:
+                    last_input, last_target = self.on_batch_begin_fn(self.learn, last_input, last_target)
 
                 return {'last_input':last_input, 'last_target':last_target}
 
@@ -239,6 +254,7 @@ class ModelExtension(ArcGISModel):
         chip_size = emd["ImageWidth"]
         resize_to = emd.get('resize_to', None)
         kwargs = emd.get('Kwargs', {})
+        kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
@@ -423,6 +439,17 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional Integer. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional Float. The probability above which
+                                a detection will be considered valid.
+        =====================   ===========================================
+        
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -455,6 +482,22 @@ class ModelExtension(ArcGISModel):
             return fig
 
     def _show_results_multispectral_segmentation(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional Integer. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. 
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        =====================   ===========================================
+        
+        """
         return_fig = kwargs.get('return_fig', False)
         ret_val = show_results_multispectral_segmentation(
             self,

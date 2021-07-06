@@ -223,6 +223,22 @@ def per_class_metrics(self,
 
 
 def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
+    """
+    This function randomly picks a few training chips and visualized them. 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional Integer. 
+                            Number of rows to display.
+                            Default: 3.
+    ---------------------   -------------------------------------------
+    alpha                   Optional Float. 
+                            Opacity of the lables for the corresponding
+                            images. Values range between 0 and 1, where
+                            1 means opaque.
+    ------------------------------------------------------------------- 
+    """
+
     import matplotlib.pyplot as plt
     from .._utils.common import kwarg_fill_none, get_nbatches, find_data_loader, get_top_padding, get_symbology_bands, dynamic_range_adjustment, denorm_x, image_tensor_checks_plotting
 

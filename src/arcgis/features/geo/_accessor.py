@@ -79,9 +79,10 @@ class GeoSeriesAccessor:
     @property
     def area(self):
         """
-        Returns the features area
+       The ``area`` method retrieves the :class:`~arcgis.features.Feature` object's area.
 
-        :returns: float in a series
+        :returns:
+            A float in a series
         """
         return pd.Series(self._data.area, name="area", index=self._index)
 
@@ -89,9 +90,11 @@ class GeoSeriesAccessor:
     @property
     def as_arcpy(self):
         """
-        Returns the features as ArcPy Geometry
+        The ``as_arcpy`` method retrieves the features as an ArcPy `geometry <https://pro.arcgis.com/en/pro-app/latest/arcpy/classes/geometry.htm>`_
+        object.
 
-        :returns: arcpy.Geometry in a series
+        :returns:
+            An arcpy.geometry as a series
         """
         return pd.Series(self._data.as_arcpy, name="as_arcpy", index=self._index)
 
@@ -99,9 +102,10 @@ class GeoSeriesAccessor:
     @property
     def as_shapely(self):
         """
-        Returns the features as Shapely Geometry
+        The ``as_shapely`` method retrieves the features as Shapely`Geometry <https://shapely.readthedocs.io/en/stable/manual.html#geometric-objects>`_
 
-        :returns: shapely.Geometry in a series
+        :returns:
+            shapely.Geometry objects in a series
         """
         return pd.Series(self._data.as_shapely, name="as_shapely", index=self._index)
 
@@ -119,9 +123,10 @@ class GeoSeriesAccessor:
     @property
     def extent(self):
         """
-        Returns the feature's extent
+        The ``extent`` method retrieves the feature's extent
 
-        :returns: tuple (xmin,ymin,xmax,ymax) in series
+        :returns:
+            A tuple (xmin,ymin,xmax,ymax) in series
         """
         return pd.Series(self._data.extent, name="extent", index=self._index)
 
@@ -129,9 +134,10 @@ class GeoSeriesAccessor:
     @property
     def first_point(self):
         """
-        Returns the feature's first point
+        The ``first_point`` property retrieves the feature's first :class:`~arcgis.geometry.Point` object
 
-        :returns: Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Point` object
         """
         return pd.Series(self._data.first_point, name="first_point", index=self._index)
 
@@ -139,9 +145,10 @@ class GeoSeriesAccessor:
     @property
     def geoextent(self):
         """
-        A returns the geometry's extents
+        The ``geoextent`` method retrieves the :class:`~arcgis.geometry.Geometry` object's extents
 
-        :returns: Series of Floats
+        :returns:
+            A Series of Floats
         """
         # res = self._data.geoextent
         # res.index = self._index
@@ -151,9 +158,10 @@ class GeoSeriesAccessor:
     @property
     def geometry_type(self):
         """
-        returns the geometry types
+        The ``geometry_type`` property retrieves the :class:`~arcgis.geometry.Geometry` object's type.
 
-        :returns: Series of strings
+        :returns:
+            A Series of strings
         """
         return pd.Series(
             self._data.geometry_type, name="geometry_type", index=self._index
@@ -163,9 +171,10 @@ class GeoSeriesAccessor:
     @property
     def hull_rectangle(self):
         """
-        A space-delimited string of the coordinate pairs of the convex hull
+        The ``hull_rectangle`` retrieves a space-delimited string of the coordinate pairs of the convex hull
 
-        :returns: Series of strings
+        :returns:
+            A Series of strings
         """
         return pd.Series(
             self._data.hull_rectangle, name="hull_rectangle", index=self._index
@@ -175,9 +184,10 @@ class GeoSeriesAccessor:
     @property
     def has_z(self):
         """
-        Determines if the geometry has a Z value
+        The ``has_z`` method determines if the :class:`~arcgis.geometry.Geometry` object has a `Z` value
 
-        :returns: Series of Boolean
+        :returns:
+            A Series of Booleans
         """
         return pd.Series(self._data.has_z, name="has_z", index=self._index)
 
@@ -185,9 +195,10 @@ class GeoSeriesAccessor:
     @property
     def has_m(self):
         """
-        Determines if the geometry has a M value
+        The ``has_m`` method determines if the :class:`~arcgis.geometry.Geometry` objects has an `M` value
 
-        :returns: Series of Boolean
+        :returns:
+            A Series of Booleans
         """
         return pd.Series(self._data.has_m, name="has_m", index=self._index)
 
@@ -195,9 +206,10 @@ class GeoSeriesAccessor:
     @property
     def is_empty(self):
         """
-        Returns True/False if feature is empty
+        The ``is_empty`` method determines if the :class:`~arcgis.geometry.Geometry` object is empty.
 
-        :returns: Series of Booleans
+        :returns:
+            A Series of Booleans
         """
         return pd.Series(self._data.is_empty, name="is_empty", index=self._index)
 
@@ -205,9 +217,10 @@ class GeoSeriesAccessor:
     @property
     def is_multipart(self):
         """
-        Returns True/False if features has multiple parts
+        The ``is_multipart`` method determines if features has multiple parts.
 
-        :returns: Series of Booleans
+        :returns:
+            A Series of Booleans
         """
         return pd.Series(
             self._data.is_multipart, name="is_multipart", index=self._index
@@ -217,9 +230,10 @@ class GeoSeriesAccessor:
     @property
     def is_valid(self):
         """
-        Returns True/False if features geometry is valid
+        The ``is_valid`` method determines if the features :class:`~arcgis.geometry.Geometry` is valid
 
-        :returns: Series of Booleans
+        :returns:
+            A Series of Booleans
         """
         return pd.Series(self._data.is_valid, name="is_valid", index=self._index)
 
@@ -227,7 +241,7 @@ class GeoSeriesAccessor:
     @property
     def JSON(self):
         """
-        Returns JSON string  of Geometry
+        The ``JSON`` method creates a JSON string out of the :class:`~arcgis.geometry.Geometry` object.
 
         :returns: Series of strings
         """
@@ -237,9 +251,10 @@ class GeoSeriesAccessor:
     @property
     def label_point(self):
         """
-        Returns the geometry point for the optimal label location
+        The ``label_point`` method determines the :class:`~arcgis.geometry.Point` for the optimal label location.
 
-        :returns: Series of Geometries
+        :returns:
+            A Series of :class:`~arcgis.geometry.Geometry` object
         """
         return pd.Series(self._data.label_point, name="label_point", index=self._index)
 
@@ -247,9 +262,10 @@ class GeoSeriesAccessor:
     @property
     def last_point(self):
         """
-        Returns the Geometry of the last point in a feature.
+        The ``last_point`` method retrieves the :class:`~arcgis.geometry.Geometry` of the last point in a feature.
 
-        :returns: Series of Geometry
+        :returns:
+            A Series of :class:`~arcgis.geometry.Geometry` objects
         """
         return pd.Series(self._data.last_point, name="last_point", index=self._index)
 
@@ -257,9 +273,10 @@ class GeoSeriesAccessor:
     @property
     def length(self):
         """
-        Returns the length of the features
+        The ``length`` method retrieves the length of the features.
 
-        :returns: Series of float
+        :returns:
+            A Series of floats
         """
         return pd.Series(self._data.length, name="length", index=self._index)
 
@@ -267,9 +284,10 @@ class GeoSeriesAccessor:
     @property
     def length3D(self):
         """
-        Returns the length of the features
+        The ``length3D`` method retrieves the length of the features
 
-        :returns: Series of float
+        :returns:
+            A Series of floats
         """
         return pd.Series(self._data.length3D, name="length3D", index=self._index)
 
@@ -277,9 +295,10 @@ class GeoSeriesAccessor:
     @property
     def part_count(self):
         """
-        Returns the number of parts in a feature's geometry
+        The ``part_count`` method retrieves the number of parts in a feature's :class:`~arcgis.geometry.Geometry`
 
-        :returns: Series of Integer
+        :returns:
+            A Series of Integers
         """
         return pd.Series(self._data.part_count, name="part_count", index=self._index)
 
@@ -287,9 +306,11 @@ class GeoSeriesAccessor:
     @property
     def point_count(self):
         """
-        Returns the number of points in a feature's geometry
+        The ``point_count`` method retrieves the number of :class:`~arcgis.geometry.Point` objects in a feature's
+        :class:`~arcgis.geometry.Geometry`.
 
-        :returns: Series of Integer
+        :returns:
+            A Series of Integers
         """
         return pd.Series(self._data.part_count, name="point_count", index=self._index)
 
@@ -297,9 +318,11 @@ class GeoSeriesAccessor:
     @property
     def spatial_reference(self):
         """
-        Returns the Spatial Reference of the Geometry
+        The ``spatial_reference`` method retrieves the  :class:`~arcgis.geometry.SpatialReference` of the
+        :class:`~arcgis.geometry.Geometry`
 
-        :returns: Series of SpatialReference
+        :returns:
+            A Series of :class:`~arcgis.geometry.SpatialReference` objects.
         """
         return pd.Series(
             self._data.spatial_reference, name="spatial_reference", index=self._index
@@ -309,9 +332,10 @@ class GeoSeriesAccessor:
     @property
     def true_centroid(self):
         """
-        Returns the true centroid of the Geometry
+        The ``true_centroid`` method retrieves the true centroid of the :class:`~arcgis.geometry.Geometry` object.
 
-        :returns: Series of Points
+        :returns:
+            A Series of :class:`~arcgis.geometry.Point` objects
         """
         return pd.Series(
             self._data.true_centroid, name="true_centroid", index=self._index
@@ -321,9 +345,10 @@ class GeoSeriesAccessor:
     @property
     def WKB(self):
         """
-        Returns the Geometry as WKB
+        The ``WKB`` method retrieves the :class:`~arcgis.geometry.Geometry` object as a ``WKB``
 
-        :returns: Series of Bytes
+        :returns:
+            A Series of Bytes
         """
         return pd.Series(self._data.WKB, name="WKB", index=self._index)
 
@@ -331,7 +356,7 @@ class GeoSeriesAccessor:
     @property
     def WKT(self):
         """
-        Returns the Geometry as WKT
+        The ``WKT`` method retrieves the :class:`~arcgis.geometry.Geometry` object's `WKT <http://wiki.gis.com/wiki/index.php/Well-known_text>`_
 
         :returns: Series of String
         """
@@ -342,22 +367,23 @@ class GeoSeriesAccessor:
     ##---------------------------------------------------------------------
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
-        Returns a tuple of angle and distance to another point using a
-        measurement type.
+        The ``angle_distance_to`` method retrieves a tuple of angle and distance to another point using a
+        measurement method.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required Geometry.  A arcgis.Geometry object.
+        second_geometry     Required Geometry.  A :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
-        method              Optional String. PLANAR measurements reflect the projection of geographic
+        method              Optional String. `PLANAR` measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            account the curvature of the earth). `GEODESIC`, `GREAT_ELLIPTIC`,
+                            `LOXODROME`, and `PRESERVE_SHAPE` measurement types may be chosen as
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :returns: a tuple of angle and distance to another point using a measurement type.
+        :returns:
+            A Series where each element is a tuple of angle and distance to another point using a measurement type.
         """
         res = self._data.angle_distance_to(
             **{"second_geometry": second_geometry, "method": method}
@@ -367,16 +393,18 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def boundary(self):
         """
-        Constructs the boundary of the geometry.
+        The ``boundary`` method constructs the boundary of the :class:`~arcgis.geometry.Geometry` object.
 
-        :returns: arcgis.geometry.Polyline
+        :returns:
+           A Pandas Series of :class:`~arcgis.geometry.Polyline` objects
         """
         return pd.Series(self._data.boundary(), index=self._index, name="boundary")
 
     # ----------------------------------------------------------------------
     def buffer(self, distance):
         """
-        Constructs a polygon at a specified distance from the geometry.
+        The ``buffer`` method constructs a :class:`~arcgis.geometry.Polygon` at a specified distance from the
+        :class:`~arcgis.geometry.Geometry` object.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -386,7 +414,8 @@ class GeoSeriesAccessor:
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Polygon
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Polygon` objects
         """
         return pd.Series(
             self._data.buffer(**{"distance": distance}),
@@ -397,7 +426,8 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def clip(self, envelope):
         """
-        Constructs the intersection of the geometry and the specified extent.
+        The ``clip`` method constructs the intersection of the :class:`~arcgis.geometry.Geometry` object and the
+        specified extent.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -406,7 +436,8 @@ class GeoSeriesAccessor:
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns: output geometry clipped to extent
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         return pd.Series(
@@ -416,12 +447,13 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry contains the comparison geometry.
+        The ``contains`` method indicates if the base :class:`~arcgis.geometry.Geometry` contains the
+        comparison :class:`~arcgis.geometry.Geometry`.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional string. The spatial relationship type.
 
@@ -430,7 +462,8 @@ class GeoSeriesAccessor:
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A Pandas Series of booleans indicating success (True), or failure (False)
         """
         return pd.Series(
             self._data.contains(
@@ -443,8 +476,11 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def convex_hull(self):
         """
-        Constructs the geometry that is the minimal bounding polygon such
-        that all outer angles are convex.
+        The ``convex_hull`` method constructs the :class:`~arcgis.geometry.Geometry` that is the minimal bounding
+        :class:`~arcgis.geometry.Polygon` such that all outer angles are convex.
+
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
         return pd.Series(
             self._data.convex_hull(), index=self._index, name="convex_hull"
@@ -453,16 +489,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
-        Indicates if the two geometries intersect in a geometry of a lesser
-        shape type.
+        The ``crosses`` method indicates if the two :class:`~arcgis.geometry.Geometry` objects intersect in a geometry
+        of a lesser shape type.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A Pandas Series of booleans indicating success (True), or failure (False)
 
         """
         return pd.Series(
@@ -474,16 +511,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def cut(self, cutter):
         """
-        Splits this geometry into a part left of the cutting polyline, and
-        a part right of it.
+        The ``cut`` method splits this :class:`~arcgis.geometry.Geometry` into a part to the left of the cutting
+        :class:`~arcgis.geometry.Polyline` and a part to the right of it.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        cutter              Required Polyline. The cuttin polyline geometry
+        cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two geometries
+        :returns:
+            A Pandas Series where each element is a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
         return pd.Series(
@@ -493,7 +531,7 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
-        Creates a new geometry with added vertices
+        The ``densify`` method creates a new :class:`~arcgis.geometry.Geometry` with added vertices
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -515,7 +553,8 @@ class GeoSeriesAccessor:
                             be required to approximate the curve.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         return pd.Series(
@@ -529,19 +568,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
-        Constructs the geometry that is composed only of the region unique
-        to the base geometry but not part of the other geometry. The
-        following illustration shows the results when the red polygon is the
-        source geometry.
+        The ``difference`` method constructs the :class:`~arcgis.geometry.Geometry` that is composed only of the
+        region unique to the base geometry but not part of the other geometry.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
-
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
         return pd.Series(
             self._data.difference(**{"second_geometry": second_geometry}),
@@ -552,16 +589,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
-        Indicates if the base and comparison geometries share no points in
-        common.
+        The ``disjoint`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects share
+        no :class:`~arcgis.geometry.Point` objects in common.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A Pandas Series of booleans indicating success (True), or failure (False)
 
         """
         res = self._data.disjoint(**{"second_geometry": second_geometry})
@@ -570,17 +608,20 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
-        Returns the minimum distance between two geometries. If the
-        geometries intersect, the minimum distance is 0.
-        Both geometries must have the same projection.
+        The ``distance_to`` method retrieves the minimum distance between two :class:`~arcgis.geometry.Geometry`.
+        If the geometries intersect, the minimum distance is 0.
+
+        .. note::
+            Both geometries must have the same projection.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: float
+        :returns:
+            A Pandas Series of floats
 
         """
         res = self._data.distance_to(**{"second_geometry": second_geometry})
@@ -589,17 +630,20 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
-        Indicates if the base and comparison geometries are of the same
-        shape type and define the same set of points in the plane. This is
-        a 2D comparison only; M and Z values are ignored.
+        The ``equals`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects are of
+        the same shape type and define the same set of :class:`~arcgis.geometry.Point` objects in the plane.
+
+        .. note::
+            This is a 2D comparison only; M and Z values are ignored.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A Pandas Series of booleans indicating success (True), or failure (False)
 
 
         """
@@ -612,8 +656,11 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
-        Creates a new simplified geometry using a specified maximum offset
-        tolerance.  This only works on Polylines and Polygons.
+        The ``generalize`` method creates a new simplified :class:`~arcgis.geometry.Geometry` using a specified maximum
+        offset tolerance.
+
+        .. note::
+            This only works on :class:`~arcgis.geometry.Polyline` and :class:`~arcgis.geometry.Polygon` objects.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -621,7 +668,8 @@ class GeoSeriesAccessor:
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         res = self._data.generalize(**{"max_offset": max_offset})
@@ -630,24 +678,25 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
-        Returns the area of the feature using a measurement type.
+        The ``get_area`` method retreives the area of the feature using a measurement type.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. PLANAR measurements reflect the projection of
+        method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                           ` GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Optional String. Areal unit of measure keywords: ACRES | ARES | HECTARES
+        units               Optional String. Areal unit of measure keywords:` ACRES | ARES | HECTARES
                             | SQUARECENTIMETERS | SQUAREDECIMETERS | SQUAREINCHES | SQUAREFEET
                             | SQUAREKILOMETERS | SQUAREMETERS | SQUAREMILES |
-                            SQUAREMILLIMETERS | SQUAREYARDS
+                            SQUAREMILLIMETERS | SQUAREYARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns:
+            A Pandas Series of floats
 
         """
         res = self._data.get_area(**{"method": method, "units": units})
@@ -656,23 +705,24 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def get_length(self, method, units):
         """
-        Returns the length of the feature using a measurement type.
+        The ``get_length`` method retrieves the length of the feature using a measurement type.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. PLANAR measurements reflect the projection of
+        method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Required String. Linear unit of measure keywords: CENTIMETERS |
+        units               Required String. Linear unit of measure keywords: `CENTIMETERS |
                             DECIMETERS | FEET | INCHES | KILOMETERS | METERS | MILES |
-                            MILLIMETERS | NAUTICALMILES | YARDS
+                            MILLIMETERS | NAUTICALMILES | YARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns:
+            A A Pandas Series of floats
 
         """
         res = self._data.get_length(**{"method": method, "units": units})
@@ -681,8 +731,8 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def get_part(self, index=None):
         """
-        Returns an array of point objects for a particular part of geometry
-        or an array containing a number of arrays, one for each part.
+        The ``get_part`` method retrieves an array of :class:`~arcgis.geometry.Point` objects for a particular part of
+        :class:`~arcgis.geometry.Geometry` or an array containing a number of arrays, one for each part.
 
         **requires arcpy**
 
@@ -692,7 +742,8 @@ class GeoSeriesAccessor:
         index               Required Integer. The index position of the geometry.
         ===============     ====================================================================
 
-        :return: arcpy.Array
+        :return:
+            AnA Pandas Series of  arcpy.Arrays
 
         """
         res = self._data.get_part(**{"index": index})
@@ -701,16 +752,19 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
-        Constructs a geometry that is the geometric intersection of the two
-        input geometries. Different dimension values can be used to create
-        different shape types. The intersection of two geometries of the
-        same shape type is a geometry containing only the regions of overlap
-        between the original geometries.
+        The ``intersect`` method constructs a :class:`~arcgis.geometry.Geometry` that is the geometric intersection of
+        the two input geometries. Different dimension values can be used to create
+        different shape types.
+
+        .. note::
+            The intersection of two :class:`~arcgis.geometry.Geometry` objects of the
+            same shape type is a geometry containing only the regions of overlap
+            between the original geometries.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
         dimension           Required Integer. The topological dimension (shape type) of the
                             resulting geometry.
@@ -721,7 +775,8 @@ class GeoSeriesAccessor:
 
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         return pd.Series(
@@ -735,18 +790,20 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
-        Returns a measure from the start point of this line to the in_point.
+        The ``measure_on_line`` method retrieves the measure from the start :class:`~arcgis.geometry.Point` of this line
+        to the ``in_point``.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional Boolean. If False, the measure will be returned as a
                             distance; if True, the measure will be returned as a percentage.
         ===============     ====================================================================
 
-        :return: float
+        :return:
+            A Pandas Series of floats
 
         """
         res = self._data.measure_on_line(
@@ -757,17 +814,18 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
-        Indicates if the intersection of the two geometries has the same
-        shape type as one of the input geometries and is not equivalent to
+        The ``overlaps`` method indicates if the intersection of the two :class:`~arcgis.geometry.Geometry` objects has
+        the same shape type as one of the input geometries and is not equivalent to
         either of the input geometries.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :return:
+            A Pandas Series of booleans indicating success (True), or failure (False)
 
         """
         return pd.Series(
@@ -779,8 +837,8 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
         """
-        Returns a point at a given angle and distance in degrees and meters
-        using the specified measurement type.
+        The ``point_from_angle_and_distance`` retrieves a :class:`~arcgis.geometry.Point` at a given angle and distance
+        in degrees and meters using the specified measurement type.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -796,7 +854,8 @@ class GeoSeriesAccessor:
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        :returns:
+         A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
 
         """
@@ -808,8 +867,8 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
-        Returns a point on a line at a specified distance from the beginning
-        of the line.
+        The ``position_along_line`` method retrieves a :class:`~arcgis.geometry.Point` on a line at a specified
+        distance from the beginning of the line.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -823,7 +882,8 @@ class GeoSeriesAccessor:
                             0.0 (0%) to 1.0 (100%).
         ===============     ====================================================================
 
-        :return: Geometry
+        :return:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects.
 
         """
         res = self._data.position_along_line(
@@ -834,18 +894,21 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
-        Projects a geometry and optionally applies a geotransformation.
+        The ``project_as`` method projects a :class:`~arcgis.geometry.Geometry`and optionally applies a
+        ``geotransformation``.
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        spatial_reference        Required SpatialReference. The new spatial reference. This can be a
-                                 SpatialReference object or the coordinate system name.
+        spatial_reference        Required :class:`~arcgis.geometry.SpatialReference`.
+                                 The new spatial reference. This can be a
+                                 :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The geotransformation name.
+        transformation_name      Required String. The `geotransformation` name.
         ====================     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
         res = self._data.project_as(
             **{
@@ -858,21 +921,26 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry, use_percentage=False):
         """
-        Finds the point on the polyline nearest to the in_point and the
-        distance between those points. Also returns information about the
-        side of the line the in_point is on as well as the distance along
-        the line where the nearest point occurs.
+        The ``query_point_and_distance`` finds the :class:`~arcgis.geometry.Point` on the
+        :class:`~arcgis.geometry.Polyline` nearest to the ``in_point`` and the
+        distance between those points.
+
+        .. note::
+            ``query_point_and_distance`` also returns information about the
+            side of the line the ``in_point`` is on as well as the distance along
+            the line where the nearest point occurs.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional boolean - if False, the measure will be returned as
                             distance, True, measure will be a percentage
         ===============     ====================================================================
 
-        :return: tuple
+        :return:
+            A Pandas Series of tuples
 
         """
         res = self._data.query_point_and_distance(
@@ -883,9 +951,9 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def segment_along_line(self, start_measure, end_measure, use_percentage=False):
         """
-        Returns a Polyline between start and end measures. Similar to
-        Polyline.positionAlongLine but will return a polyline segment between
-        two points on the polyline instead of a single point.
+        The ``segment_along_line`` method retrieves a :class:`~arcgis.geometry.Polyline` between start and end measures.
+        Similar to :attr:`~arcgis.geometry.Polyline.positionAlongLine` but will return a polyline segment between
+        two points on the polyline instead of a single :class:`~arcgis.geometry.Point`.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -896,13 +964,14 @@ class GeoSeriesAccessor:
         ---------------     --------------------------------------------------------------------
         use_percentage      Optional Boolean. The start and end measures may be specified as
                             fixed units or as a ratio.
-                            If True, start_measure and end_measure are used as a percentage; if
-                            False, start_measure and end_measure are used as a distance. For
+                            If ``True``, ``start_measure`` and ``end_measure`` are used as a percentage; if
+                            ``False``, ``start_measure`` and ``end_measure`` are used as a distance. For
                             percentages, the measures should be expressed as a double from 0.0
                             (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
-        :returns: Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         res = self._data.segment_along_line(
@@ -917,15 +986,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
-        Returns a new point based on in_point snapped to this geometry.
+        The ``snap_to_line`` method creates a new :class:`~arcgis.geometry.Point` based on ``in_point`` snapped to this
+        :class:`~arcgis.geometry.Geometry` object.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
 
         """
         res = self._data.snap_to_line(**{"second_geometry": second_geometry})
@@ -934,18 +1005,20 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def symmetric_difference(self, second_geometry):
         """
-        Constructs the geometry that is the union of two geometries minus the
-        instersection of those geometries.
+        The ``symmetric_difference`` method constructs the :class:`~arcgis.geometry.Geometry` that is the union of two
+        geometries minus the intersection of those geometries.
 
-        The two input geometries must be the same shape type.
+        .. note::
+            The two input :class:`~arcgis.geometry.Geometry` must be the same shape type.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
         res = self._data.symmetric_difference(**{"second_geometry": second_geometry})
         return pd.Series(res, index=self._index, name="symmetric_difference")
@@ -953,16 +1026,17 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
-        Indicates if the boundaries of the geometries intersect.
+        The ``touches`` method indicates if the boundaries of the :class:`~arcgis.geometry.Geometry` intersect.
 
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :return:
+            A Pandas Series of booleans indicating touching (True), or not touching (False)
         """
         return pd.Series(
             self._data.touches(**{"second_geometry": second_geometry}),
@@ -973,17 +1047,18 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def union(self, second_geometry):
         """
-        Constructs the geometry that is the set-theoretic union of the input
-        geometries.
+        The ``union`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
+        of the input geometries.
 
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :return:
+            A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
         res = self._data.union(**{"second_geometry": second_geometry})
         return pd.Series(res, index=self._index, name="union")
@@ -991,12 +1066,13 @@ class GeoSeriesAccessor:
     # ----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry is within the comparison geometry.
+        The ``within`` method indicates if the base :class:`~arcgis.geometry.Geometry` is within the comparison
+        :class:`~arcgis.geometry.Geometry`.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional String. The spatial relationship type.
 
@@ -1006,7 +1082,8 @@ class GeoSeriesAccessor:
 
         ===============     ====================================================================
 
-        :return: boolean
+        :return:
+            A Pandas Series of booleans indicating within (True), or not within (False)
 
         """
         return pd.Series(
@@ -1031,8 +1108,9 @@ def is_geometry_type(obj):
 @register_dataframe_accessor("spatial")
 class GeoAccessor(object):
     """
-    The DataFrame Accessor is a namespace that performs dataset operations.
-    This includes visualization, spatial indexing, IO and dataset level properties.
+    The ``GeoAccessor`` class adds a spatial namespace that performs spatial operations on the given Pandas
+    `DataFrame. <https://pandas.pydata.org/docs/reference/frame.html#dataframe>`_
+    The ``GeoAccessor`` class includes visualization, spatial indexing, IO and dataset level properties.
     """
 
     _sr = None
@@ -1118,9 +1196,13 @@ class GeoAccessor(object):
     @property
     def renderer(self):
         """
-        Returns the renderer for the SeDF
+        The ``renderer`` property defines the renderer for the Spatially-enabled DataFrame.
 
-        :returns: InsensitiveDict
+        .. note::
+            If none is given, then the value is reset.
+
+        :returns:
+            InsensitiveDict
         """
         if self._meta.renderer is None:
             self._meta.renderer = self._build_renderer()
@@ -1130,9 +1212,13 @@ class GeoAccessor(object):
     @renderer.setter
     def renderer(self, renderer):
         """
-        Define the renderer for the SeDF.  If none is given, then the value is reset.
+        The ``renderer`` property defines the renderer for the SeDF.
 
-        :returns: InsensitiveDict
+        .. note::
+            If none is given, then the value is reset.
+
+        :returns:
+            InsensitiveDict
         """
 
         if renderer is None:
@@ -1256,7 +1342,7 @@ class GeoAccessor(object):
     @staticmethod
     def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
-        Load a feather-format object from the file path.
+        The ``from-feather`` method loads a feather-format object from the file path.
 
         ======================    =========================================================
         **Argument**              **Description**
@@ -1285,7 +1371,8 @@ class GeoAccessor(object):
                                   reading using multiple threads.
         ======================    =========================================================
 
-        :returns: pd.DataFrame
+        :returns:
+            A Pandas DataFrame (pd.DataFrame)
 
         """
         return read_feather(
@@ -1297,7 +1384,8 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def set_geometry(self, col, sr=None, inplace=True):
-        """Assigns the geometry column by name or by list
+        """
+        The ``set_geometry`` method assigns the geometry column by name or by list.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1317,7 +1405,7 @@ class GeoAccessor(object):
                                Defaults to True.
         ==================     ====================================================================
 
-        :return:
+        :returns:
             Spatially Enabled DataFrame or None
         """
         from ._array import GeoArray
@@ -1375,7 +1463,12 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @property
     def name(self):
-        """returns the name of the geometry column"""
+        """
+        The ``name`` method retrieves the name of the geometry column.
+
+        :returns:
+            A string
+        """
         if self._name is None:
             try:
                 cols = [c.lower() for c in self._data.columns.tolist()]
@@ -1392,7 +1485,11 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def validate(self, strict=False):
         """
-        Determines if the Geo Accessor is Valid with Geometries in all values
+        The ``validate`` method determines if the `GeoAccessor` is Valid with
+        :class:`~arcgis.geometry.Geometry` objects in all values
+
+        :returns:
+            A boolean indicating Success (True), or Failure (False)
         """
         if self._name is None:
             return False
@@ -1413,11 +1510,11 @@ class GeoAccessor(object):
         self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
     ):
         """
-        Joins the current DataFrame to another spatially enabled dataframes based
+        The ``join`` method joins the current DataFrame to another Spatially-Enabled DataFrame based
         on spatial location based.
 
         .. note::
-            requires the SEDF to be in the same coordinate system
+            The ``join`` method requires the Spatially-Enabled DataFrame to be in the same coordinate system
 
 
         ======================    =========================================================
@@ -1593,15 +1690,18 @@ class GeoAccessor(object):
     def plot(self, map_widget=None, **kwargs):
         """
 
-        Plot draws the data on a web map. The user can describe in simple terms how to
-        renderer spatial data using symbol.  To make the process simplier a palette
-        for which colors are drawn from can be used instead of explicit colors.
+        The ``plot`` draws the data on a web map. The user can describe in simple terms how to
+        renderer spatial data using symbol.
+
+        .. note::
+            To make the process simpler, a palette
+            for which colors are drawn from can be used instead of explicit colors.
 
 
         ======================  =========================================================
         **Explicit Argument**   **Description**
         ----------------------  ---------------------------------------------------------
-        map_widget              optional WebMap object. This is the map to display the
+        map_widget              optional ``WebMap`` object. This is the map to display the
                                 data on.
         ----------------------  ---------------------------------------------------------
         palette                 optional string/dict.  Color mapping.  For simple renderer,
@@ -2174,6 +2274,8 @@ class GeoAccessor(object):
         The kwargs parameter accepts all parameters of the create_symbol method and the
         create_renderer method.
 
+        :returns:
+            A ``MapView`` object with new drawings
 
         """
         from ._viz.mapping import plot
@@ -2255,7 +2357,7 @@ class GeoAccessor(object):
         self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
         """
-        Exports a geo enabled dataframe to a feature class.
+        The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2281,7 +2383,8 @@ class GeoAccessor(object):
                                         default is True.
         ===========================     ====================================================================
 
-        :returns: String
+        :returns:
+            A String
 
         """
         if location and not str(os.path.dirname(location)).lower() in [
@@ -2301,7 +2404,7 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
-        Exports a geo enabled dataframe to a table.
+        The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2329,7 +2432,8 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_featurelayer(self, title, gis=None, tags=None, folder=None):
         """
-        publishes a spatial dataframe to a new feature layer
+        The ``to_featurelayer`` method publishes a spatial dataframe to a new
+        :class:`~arcgis.features.FeatureLayer` object.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2345,7 +2449,8 @@ class GeoAccessor(object):
                                         and imported data would be stored.
         ===========================     ====================================================================
 
-        :returns: FeatureLayer
+        :returns:
+            A  :class:`~arcgis.features.FeatureLayer` object.
 
         """
         from arcgis import env
@@ -2363,7 +2468,7 @@ class GeoAccessor(object):
         df, address_column="address", geocoder=None, sr=None, geometry_column=None
     ):
         """
-        Returns a SpatialDataFrame from a dataframe with an address column.
+        The ``from_df`` creates a Spatially Enabled DataFrame from a dataframe with an address column.
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -2386,7 +2491,9 @@ class GeoAccessor(object):
                                 convert to the arcgis.Geometry Objects (new at version 1.8.1)
         ====================    =========================================================
 
-        :returns: DataFrame
+        :returns:
+            Spatially Enabled DataFrame
+
 
 
 
@@ -2475,7 +2582,8 @@ class GeoAccessor(object):
     @staticmethod
     def from_xy(df, x_column, y_column, sr=4326):
         """
-        Converts a Pandas DataFrame into a Spatial DataFrame by providing the X/Y columns.
+        The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
+        by providing the X/Y columns.
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -2501,9 +2609,11 @@ class GeoAccessor(object):
     @staticmethod
     def from_layer(layer):
         """
-        Imports a FeatureLayer to a Spatially Enabled DataFrame
+        The ``from_layer`` method imports a :class:`~arcgis.features.FeatureLayer` to a Spatially Enabled DataFrame
 
-        This operation converts a FeatureLayer or TableLayer to a Pandas' DataFrame
+        .. note::
+            This operation converts a :class:`~arcgis.features.FeatureLayer` or
+            :class:`~arcgis.features.Table` to a Pandas' DataFrame
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -2520,7 +2630,8 @@ class GeoAccessor(object):
         >>> df = from_layer(mylayer)
         >>> print(df.head())
 
-        :returns: Pandas' `DataFrame`
+        :returns:
+            A Pandas' `DataFrame`
 
         """
         import json
@@ -2543,7 +2654,8 @@ class GeoAccessor(object):
     @staticmethod
     def from_featureclass(location, **kwargs):
         """
-        Returns a Spatially enabled `pandas.DataFrame` from a feature class.
+        The ``from_featureclass`` creates a Spatially enabled `pandas.DataFrame` from a
+        :class:`~arcgis.features.Features` class.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2569,7 +2681,8 @@ class GeoAccessor(object):
 
         **Optional Parameters are not supported for URL based resources**
 
-        :returns: pandas.core.frame.DataFrame
+        :returns:
+            A pandas.core.frame.DataFrame object
         """
         return from_featureclass(filename=location, **kwargs)
 
@@ -2577,9 +2690,10 @@ class GeoAccessor(object):
     @staticmethod
     def from_table(filename, **kwargs):
         """
-        Allows a user to read from a non-spatial table
+        The ``from_table`` method allows a :class:`~arcgis.gis.User` to read from a non-spatial table
 
-        **Note: ArcPy is Required for this method**
+        .. note::
+            The ``from_table`` method requires ArcPy
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -2617,7 +2731,8 @@ class GeoAccessor(object):
                             from the input with a new value.
         ===============     ====================================================
 
-        :returns: pd.DataFrame
+        :returns:
+            A Pandas DataFrame (pd.DataFrame)
         """
         from arcgis.features.geo._io.fileops import from_table
 
@@ -2626,15 +2741,18 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def sindex(self, stype="quadtree", reset=False, **kwargs):
         """
-        Creates a spatial index for the given dataset.
+        The ``sindex`` creates a spatial index for the given dataset.
 
-        **By default the spatial index is a QuadTree spatial index.**
+        .. note::
+            By default, the spatial index is a QuadTree spatial index.
 
-        If r-tree indexes should be used for large datasets.  This will allow
+        r-tree indexes should be used for large datasets.  This will allow
         users to create very large out of memory indexes.  To use r-tree indexes,
         the r-tree library must be installed.  To do so, install via conda using
         the following command: `conda install -c conda-forge rtree`
 
+        :returns:
+            A spatial index for the given dataset.
         """
         from arcgis.features.geo._index._impl import SpatialIndex
 
@@ -2915,7 +3033,8 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @property
     def sr(self):
-        """gets/sets the spatial reference of the dataframe"""
+        """
+        The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe"""
         data = [
             getattr(g, "spatialReference", None) or g["spatialReference"]
             for g in self._data[self.name]
@@ -2976,7 +3095,11 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_featureset(self):
         """
-        Converts a spatial dataframe to a feature set object
+        The ``to_featureset`` method converts a Spatially Enabled DataFrame object. to a
+        :class:`~arcgis.features.FeatureSet` object.
+
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` object
         """
         from arcgis.features import FeatureSet
 
@@ -2987,17 +3110,19 @@ class GeoAccessor(object):
         self, name=None, drawing_info=None, extent=None, global_id_field=None
     ):
         """
-        Converts a spatially enabled pd.DataFrame to a Feature Collection
+        The ``to_feature_collection`` converts a spatially enabled a Pandas DataFrame to a
+        :class:`~arcgis.features.FeatureCollection` .
 
         =====================  ===============================================================
         **optional argument**  **Description**
         ---------------------  ---------------------------------------------------------------
-        name                   optional string. Name of the Feature Collection
+        name                   optional string. Name of the :class:`~arcgis.features.FeatureCollection`
         ---------------------  ---------------------------------------------------------------
         drawing_info           Optional dictionary. This is the rendering information for a
                                Feature Collection.  Rendering information is a dictionary with
-                               the symbology, labelling and other properties defined.  See:
-                               https://developers.arcgis.com/documentation/common-data-types/renderer-objects.htm
+                               the symbology, labelling and other properties defined.  See the
+                               `Renderer Objects <https://developers.arcgis.com/documentation/common-data-types/renderer-objects.htm>`_
+                               page in the ArcGIS REST API for more information.
         ---------------------  ---------------------------------------------------------------
         extent                 Optional dictionary.  If desired, a custom extent can be
                                provided to set where the map starts up when showing the data.
@@ -3007,7 +3132,8 @@ class GeoAccessor(object):
         global_id_field        Optional string. The Global ID field of the dataset.
         =====================  ===============================================================
 
-        :returns: FeatureCollection object
+        :returns:
+            A :class:`~arcgis.features.FeatureCollection` object
         """
         from arcgis.features import FeatureCollection
         import string
@@ -3137,8 +3263,10 @@ class GeoAccessor(object):
     @staticmethod
     def from_geodataframe(geo_df, inplace=False, column_name="SHAPE"):
         """
-        Import Geopandas GeoDataFrame into an ArcGIS Spatially enabled DataFrame.
-        Requires geopandas library be installed in current environment.
+        The ``from_geodataframe`` loads a Geopandas GeoDataFrame into an ArcGIS Spatially Enabled DataFrame.
+
+        .. note::
+            The ``from_geodataframe`` method requires geopandas library be installed in current environment.
 
         =====================  ===============================================================
         **Argument**           **Description**
@@ -3153,7 +3281,8 @@ class GeoAccessor(object):
                                 is `SHAPE`.
         =====================  ===============================================================
 
-        :return: ArcGIS Spatially Enabled DataFrame object.
+        :returns:
+            A Spatially Enabled DataFrame.
         """
         try:
             import geopandas as gpd
@@ -3232,9 +3361,10 @@ class GeoAccessor(object):
     @property
     def full_extent(self):
         """
-        Returns the extent of the dataframe
+        The ``full_extent`` method retrieves the extent of the DataFrame.
 
-        :returns: tuple
+        :returns:
+            A tuple
 
         >>> df.spatial.full_extent
         (-118, 32, -97, 33)
@@ -3255,9 +3385,10 @@ class GeoAccessor(object):
     @property
     def area(self):
         """
-        Returns the total area of the dataframe
+        The ``area`` method retrieves the total area of the  ``GeoAccessor`` dataframe.
 
-        :returns: float
+        :returns:
+            A float
 
         >>> df.spatial.area
         143.23427
@@ -3269,9 +3400,10 @@ class GeoAccessor(object):
     @property
     def length(self):
         """
-        Returns the total length of the dataframe
+        The ``length`` method retrieves the total length of the DataFrame
 
-        :returns: float
+        :returns:
+            A float
 
         >>> df.spatial.length
         1.23427
@@ -3283,9 +3415,10 @@ class GeoAccessor(object):
     @property
     def centroid(self):
         """
-        Returns the centroid of the dataframe
+        The ``centroid`` method retrieves the centroid of the dataframe
 
-        :returns: Geometry
+        :returns:
+            :class:`~arcgis.geometry.Geometry`
 
         >>> df.spatial.centroid
         (-14.23427, 39)
@@ -3301,9 +3434,10 @@ class GeoAccessor(object):
     @property
     def true_centroid(self):
         """
-        Returns the true centroid of the dataframe
+        The ``true_centroid`` property retrieves the true centroid of the DataFrame
 
-        :returns: Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         >>> df.spatial.true_centroid
         (1.23427, 34)
@@ -3320,7 +3454,10 @@ class GeoAccessor(object):
     @property
     def geometry_type(self):
         """
-        Returns a list Geometry Types for the DataFrame
+        The ``geometry_type`` property retrieves a list of Geometry Types for the DataFrame.
+
+        :returns:
+            A List
         """
         gt = self._data[self.name].geom.geometry_type
         return pd.unique(gt).tolist()
@@ -3329,9 +3466,10 @@ class GeoAccessor(object):
     @property
     def has_z(self):
         """
-        Returns a boolean that determines if the datasets have `Z` values
+        The ``has_z`` property determines if the datasets have `Z` values
 
-        :returns: Boolean
+        :returns:
+            A boolean indicating `Z` values (True), or not (False)
         """
         return self._data[self.name].geom.has_z.all()
 
@@ -3339,9 +3477,10 @@ class GeoAccessor(object):
     @property
     def has_m(self):
         """
-        Returns a boolean that determines if the datasets have `Z` values
+        The ``has_m`` property determines if the datasets have `M` values
 
-        :returns: Boolean
+        :returns:
+            A boolean indicating `M` values (True), or not (False)
         """
         return self._data[self.name].geom.has_m.all()
 
@@ -3349,9 +3488,10 @@ class GeoAccessor(object):
     @property
     def bbox(self):
         """
-        Returns the total length of the dataframe
+        The ``bbox`` property retrieves the total length of the dataframe
 
-        :returns: Polygon
+        :returns:
+            :class:`~arcgis.geometry.Polygon`
 
         >>> df.spatial.bbox
         {'rings' : [[[1,2], [2,3], [3,3],....]], 'spatialReference' {'wkid': 4326}}
@@ -3384,9 +3524,10 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def distance_matrix(self, leaf_size=16, rebuild=False):
         """
-        Creates a k-d tree to calculate the nearest-neighbor problem.
+        The ``distance_matrix`` creates a k-d tree to calculate the nearest-neighbor problem.
 
-        **requires scipy**
+        .. note::
+            The ``distance_matrix`` method requires SciPy
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -3421,16 +3562,18 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def select(self, other):
         """
-        This operation performs a dataset wide **selection** by geometric
+        The ``select`` operation performs a dataset wide **selection** by geometric
         intersection. A geometry or another Spatially enabled DataFrame
-        can be given and `select` will return all rows that intersect that
-        input geometry.  The `select` operation uses a spatial index to
+        can be given and ``select`` will return all rows that intersect that
+        input geometry.  The ``select`` operation uses a spatial index to
         complete the task, so if it is not built before the first run, the
         function will build a quadtree index on the fly.
 
-        **requires ArcPy or Shapely**
+        .. note::
+            The ``select`` method requires ArcPy or Shapely
 
-        :returns: pd.DataFrame (spatially enabled)
+        :returns:
+            A Pandas DataFrame (pd.DataFrame, spatially enabled)
 
         """
         from arcgis.features.geo._tools import select
@@ -3440,9 +3583,10 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def overlay(self, sdf, op="union"):
         """
-        Performs spatial operation operations on two spatially enabled dataframes.
+        The ``overlay`` performs spatial operation operations on two spatially enabled dataframes.
 
-        **requires ArcPy or Shapely**
+        .. note::
+            The ``overlay`` method requires ArcPy or Shapely
 
         =========================    =========================================================
         **Argument**                 **Description**
@@ -3455,7 +3599,8 @@ class GeoAccessor(object):
                                      `union` is the default operation.
         =========================    =========================================================
 
-        :returns: Spatially enabled DataFrame (pd.DataFrame)
+        :returns:
+            A Spatially enabled DataFrame (pd.DataFrame)
 
         """
         from arcgis.features.geo._tools import overlay
@@ -3465,9 +3610,11 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def relationship(self, other, op, relation=None):
         """
-        This method allows for dataframe to dataframe compairson using
-        spatial relationships.  The return is a pd.DataFrame that meet the
-        operations' requirements.
+        The ``relationship`` method allows for dataframe to dataframe comparison using
+        spatial relationships.
+
+        .. note::
+            The return is a Pandas DataFrame (pd.DataFrame) that meet the operations' requirements.
 
         =========================    =========================================================
         **Argument**                 **Description**
@@ -3499,7 +3646,8 @@ class GeoAccessor(object):
                                      This only applies to contains,
         =========================    =========================================================
 
-        :returns: Spatially enabled DataFrame (pd.DataFrame)
+        :returns:
+            Spatially enabled DataFrame (pd.DataFrame)
 
 
         """
@@ -3534,15 +3682,18 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def voronoi(self):
         """
-        Generates a voronoi diagram on the whole dataset.  If the geometry
-        is not a `Point` then the centroid is used for the geometry.  The
-        result is a polygon `GeoArray` Series that matches 1:1 to the original
-        dataset.
+        The ``voronoi`` method generates a voronoi diagram on the whole dataset.
 
-        **requires scipy**
+        .. note::
+            If the :class:`~arcgis.geometry.Geometry` object is not a `:class:`~arcgis.geometry.Point` then the
+            centroid is used for the geometry.  The result is a :class:`~arcgis.geometry.Polygon` `GeoArray` Series
+            that matches 1:1 to the original dataset.
 
-        :returns: pd.Series
+        .. note::
+            The ``voronoi`` method requires SciPy
 
+        :returns:
+            A Pandas Series (pd.Series)
         """
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
         if _HASARCPY == False and _HASSHAPELY == False:
@@ -3617,21 +3768,23 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """
-        Reprojects the who dataset into a new spatial reference. This is an inplace operation meaning
-        that it will update the defined geometry column from the `set_geometry`.
+        The ``project`` method reprojects the who dataset into a new :class:`~arcgis.geometry.SpatialReference`.
+        This is an inplace operation meaning that it will update the defined geometry column from the ``set_geometry``.
 
-        **This requires ArcPy or pyproj v4**
+        .. note::
+            The ``project`` method requires ArcPy or pyproj v4
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        spatial_reference        Required SpatialReference. The new spatial reference. This can be a
-                                 SpatialReference object or the coordinate system name.
+        spatial_reference        Required :class:`~arcgis.geometry.SpatialReference`. The new spatial reference.
+                                 This can be a SpatialReference object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Optional String. The geotransformation name.
+        transformation_name      Optional String. The ``geotransformation`` name.
         ====================     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating success (True), or failure (False)
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         HASPYPROJ = True
@@ -3679,9 +3832,9 @@ class GeoAccessor(object):
         use_snake_case=True,
     ):
         """
-        Cleans column names by converting them to string, removing special characters, renaming columns without
-        column names to 'noname', renaming duplicates with integer suffixes and switching spaces or Pascal or
-        camel cases to Python's favored snake_case style.
+        The ``sanitize_column_names`` cleans column names by converting them to string, removing special characters,
+        renaming columns without column names to ``noname``, renaming duplicates with integer suffixes and switching
+        spaces or Pascal or camel cases to Python's favored snake_case style.
 
         Snake_casing gives you consistent column names, no matter what the flavor of your backend database is
         when you publish the DataFrame as a Feature Layer in your web GIS.
@@ -3703,7 +3856,8 @@ class GeoAccessor(object):
                                            are in PascalCase or camelCase, it replaces them to snake_case.
         ==============================     ====================================================================
 
-        :returns: pd.DataFrame object if inplace=False. Else None.
+        :returns:
+            pd.DataFrame object if inplace= ``False`` . Else ``None`` .
         """
 
         return _sanitize_column_names(

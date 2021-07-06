@@ -55,7 +55,17 @@ class ImageTupleList2(ImageList):
         else:
             img1 = super().get(i)
             fn = self.itemsB_valid[i]
-        return ImageTuple(img1, open_image(fn))
+        self.img1 = img1
+        self.img2 = open_image(fn)
+        return ImageTuple(self.img1, self.img2)
+
+    def show(self, i, axes=None):
+        self[i]
+        if axes is None:
+             _, axes = plt.subplots(1, 2, figsize=(15,7))
+        
+        self.img1.show(axes[0])
+        self.img2.show(axes[1])
     
     def reconstruct(self, t:Tensor): 
         return ImageTuple(Image(t[0]/2+0.5),Image(t[1]/2+0.5))
@@ -89,6 +99,8 @@ class ImageTupleList2(ImageList):
         
         figsize = ifnone(figsize, (12,3*len(xs)))
         fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        if axs.ndim==1: # fix for rows=1
+            axs = axs.reshape(1,2)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         for i,(x,z) in enumerate(zip(xs,zs)):
             x.to_one().show(ax=axs[i,0], **kwargs)
@@ -147,9 +159,17 @@ class ImageTupleListMS2(ArcGISImageList):
         global _batch_stats_b
         img1_scaled = _tensor_scaler_tfm(img1.data, min_values=_batch_stats_a['band_min_values'], max_values=_batch_stats_a['band_max_values'], mode='minmax')
         img2_scaled = _tensor_scaler_tfm(img2.data, min_values=_batch_stats_b['band_min_values'], max_values=_batch_stats_b['band_max_values'], mode='minmax')
-        img1_scaled = ArcGISMSImage(img1_scaled)
-        img2_scaled = ArcGISMSImage(img2_scaled)
-        return ImageTuple(img1_scaled, img2_scaled)
+        self.img1_scaled = ArcGISMSImage(img1_scaled)
+        self.img2_scaled = ArcGISMSImage(img2_scaled)
+        return ImageTuple(self.img1_scaled, self.img2_scaled)
+
+    def show(self, i, axes=None):
+        self[i]
+        if axes is None:
+             _, axes = plt.subplots(1, 2, figsize=(15,7))
+        
+        self.img1_scaled.show(axes[0])
+        self.img2_scaled.show(axes[1])
     
     def reconstruct(self, t:Tensor): 
         return ImageTuple(ArcGISMSImage(t[0]/2+0.5),ArcGISMSImage(t[1]/2+0.5))
@@ -186,6 +206,8 @@ class ImageTupleListMS2(ArcGISImageList):
         
         figsize = ifnone(figsize, (12,3*len(xs)))
         fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        if axs.ndim==1: # fix for rows=1
+            axs = axs.reshape(1,2)
         fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
         for i,(x,z) in enumerate(zip(xs,zs)):
             x.to_one().show(ax=axs[i,0], **kwargs)

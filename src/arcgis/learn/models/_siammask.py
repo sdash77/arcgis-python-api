@@ -5,6 +5,7 @@ import random
 import traceback
 from ._arcgis_model import _EmptyData
 from .._utils.env import raise_fastai_import_error
+import copy
 
 try:
     import torch
@@ -41,6 +42,7 @@ except Exception as e:
 class Track:
     """
     Creates a Track object, used to maintain the state of a track
+
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -52,6 +54,7 @@ class Track:
     ---------------------   -------------------------------------------
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
+
     :returns: `Track` Object
     """
     def __init__(self, id, label, bbox, mask):
@@ -69,12 +72,16 @@ class Track:
 class SiamMask(ArcGISModel):
     """
     Creates a SiamMask object.
+
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional fastai Databunch. Returned data object from
-                            `prepare_data` function. Default value is None.
+                            `prepare_data` function with dataset_type as
+                            'ObjectTracking' and data format as 'YouTube-VOS'.
+                            Default value is None.
     =====================   ===========================================
+
     :returns: `SiamMask` Object
     """
 
@@ -141,8 +148,21 @@ class SiamMask(ArcGISModel):
         self._arcgis_init_callback()
 
         self.load_model = pretrained_path
+        self._model = None
+        if self.load_model is not None:
+            if not os.path.isfile(self.load_model):
+                raise Exception("Please check model file path")
+            try:
+                pretrained_path = self.load_model
+                siammask = Custom(anchors=self.anchors)
+                self._model = load_pretrain(siammask, pretrained_path)
+                self.load(pretrained_path)
+            except Exception:
+                raise Exception("Error loading model")
+        else:
+            self._model = self.learn.model
 
-
+        self.iou_threshold = 0
 
     def __str__(self):
         return self.__repr__()
@@ -163,6 +183,7 @@ class SiamMask(ArcGISModel):
     def from_model(cls, emd_path, data=None):
         """
         Creates a SiamMask Object tracker from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -173,6 +194,7 @@ class SiamMask(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
+
         :returns: `SiamMask` Object
         """
         emd_path = _get_emd_path(emd_path)
@@ -230,38 +252,37 @@ class SiamMask(ArcGISModel):
         self.learn.create_opt(lr=0.000478630092322)
 
 
-    def init(self, frame, detections, labels=None, reset=True):
+    def init(self, frame, detections, labels=None, reset=True, **kwargs):
         """
         Initializes the position of the object in the frame/Image using detections.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        frame                   Required numpy array. frame is used to initialize
-                                the object to track.
+        frame                   Required numpy array. frame is used to
+                                initialize the objects to track.
         ---------------------   -------------------------------------------
-        detections              Required list. A list of bounding box to intialize
-                                the object.
+        detections              Required list. A list of bounding boxes.
         ---------------------   -------------------------------------------
-        labels                  Optional list. A list of class labels to intialize
-                                the object.
+        labels                  Optional list. A list of labels corresponding
+                                to the bounding boxes.
         =====================   ===========================================
+
         :returns: Track list
         """
+        if self._model is None:
+            raise Exception("SiamMask model not loaded properly.")
 
         if reset:
             self.track_list = []
             self.state_list = {}
             self.num_tracks = 0
 
-        if self.load_model is not None:
+        siammask = copy.deepcopy(self._model)
+        siammask.eval().to(self.device)
 
-            pretrained_path = self.load_model
-            siammask = Custom(anchors=self.anchors)
-            siammask = load_pretrain(siammask, pretrained_path)
-        else:
-            siammask = self.learn.model
-
-        siammask = siammask.eval().to(self.device)
+        if detections is None:
+            detections = []
 
         filtered_detections = []
         for i, detection in enumerate(detections):
@@ -275,13 +296,13 @@ class SiamMask(ArcGISModel):
                 box2 = x, y, w, h
 
                 iou = calculate_iou(box1, box2)
-                if iou > 0:
+                if iou > self.iou_threshold:
                     add = False
                     break
             if add:
                 filtered_detections.append(detection)
-                x, y = detection[0], detection[1]
-                w, h = detection[2], detection[3]
+                #x, y = detection[0], detection[1]
+                #w, h = detection[2], detection[3]
                 target_pos = np.array([x + w / 2, y + h / 2])
                 target_sz = np.array([w, h])
                 state = siamese_init(frame, target_pos,
@@ -289,7 +310,7 @@ class SiamMask(ArcGISModel):
                                      self.cfg['hp'], device=self.device)
                 # mask = state['mask'] > state['p'].seg_thr
 
-                if labels is not None:
+                if labels is not None and len(labels) == len(detections):
                     track = Track(self.num_tracks, labels[i], [x, y, w, h], None)
                 else:
                     track = Track(self.num_tracks, "Object", [x, y, w, h], None)
@@ -299,18 +320,30 @@ class SiamMask(ArcGISModel):
 
         return self.track_list
 
-    def update(self, frame):
+    def update(self, frame, **kwargs):
         """
         Tracks the position of the object in the frame/Image
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is used to update
                                 the object track.
         =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detections              Optional list. A list of bounding boxes.
+        ---------------------   -------------------------------------------
+        labels                  Optional list. A list of labels.
+        =====================   ===========================================
+
         :returns: Updated track list
         """
-        for track in self.track_list:
+        for i, track in enumerate(self.track_list):
             state = siamese_track(self.state_list[track.id][0], frame, mask_enable=True,
                                   refine_enable=True, device=self.device)
             location = state['ploygon'].flatten()
@@ -319,24 +352,32 @@ class SiamMask(ArcGISModel):
             target_pos = state["target_pos"]
             w, h = state["target_sz"]
             x, y = target_pos[0] - (w / 2), target_pos[1] - (h / 2)
-            track.bbox = [x, y, w, h]
-            track.mask = mask
-            track.location = location
-            track.age += 1
-            track.label = track.label
-            track.score = state["score"]
+            self.track_list[i].bbox = [x, y, w, h]
+            self.track_list[i].mask = mask
+            self.track_list[i].location = location
+            self.track_list[i].age += 1
+            self.track_list[i].label = track.label
+            self.track_list[i].score = state["score"]
             self.state_list[track.id][1] = [x, y, w, h]
+
+        detections = kwargs.get("detections", None)
+        if detections:
+            labels = kwargs.get("labels", None)
+            self.track_list = \
+                self.init(frame, detections=detections, labels=labels, reset=False)
         return self.track_list
 
     def remove(self, track_ids):
         """
         Removes the tracks from the track list using track_ids
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         track_ids               Required List. List of track ids to be removed
                                 from the track list.
         =====================   ===========================================
+
         :returns: Updated track list
         """
         try:
@@ -349,8 +390,9 @@ class SiamMask(ArcGISModel):
                 except Exception as e:
                     print(e)
 
-                if self.num_tracks > 0:
-                    self.num_tracks -= 1
+                #TODO: usage of num_tracks needs to be revisited
+                #if self.num_tracks > 0:
+                #    self.num_tracks -= 1
             # print("Tracks has been removed succesfully!")
         except Exception as e:
             print(e)
@@ -360,6 +402,7 @@ class SiamMask(ArcGISModel):
     def show_results(self, rows=5):
         """
         Displays the results of a trained model on a part of the validation set
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -370,6 +413,10 @@ class SiamMask(ArcGISModel):
             self._check_requisites()
             return None
         self._check_requisites()
+        track_list_copy = copy.deepcopy(self.track_list)
+        state_list_copy = copy.deepcopy(self.state_list)
+        num_tracks_copy = self.num_tracks
+
         self.track_list = []
         self.state_list = {}
         self.num_tracks = 0
@@ -424,6 +471,10 @@ class SiamMask(ArcGISModel):
                 axes[idx][j].imshow(image)
                 image_counter += 1
 
+        self.track_list = track_list_copy
+        self.state_list = state_list_copy
+        self.num_tracks = num_tracks_copy
+
     @property
     def _model_metrics(self):
         if self._data._dataset_type == "_ObjectTracking":
@@ -434,6 +485,7 @@ class SiamMask(ArcGISModel):
     def compute_metrics(self, iou_thres=0.2):
         """
         Computes mean IOU and f-measure on validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -442,6 +494,7 @@ class SiamMask(ArcGISModel):
                                 which a predicted mask will be
                                 considered a true positive.
         =====================   ===========================================
+
         :returns: `dict` with mean IOU and F-Measure
         """
         self._check_requisites()

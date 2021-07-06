@@ -7,8 +7,42 @@ try:
     from scipy.optimize import linear_sum_assignment
     import matplotlib.pyplot as plt
     from collections import deque
+    import enum
 except Exception as e:
     pass
+
+class TrackStatus(enum.Enum):
+    lost = 0
+    searching = 8
+    tracking = 16
+
+class Track:
+    """
+    Creates a Track object, used to maintain the state of a track.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    id                      Required int. ID for each track initialized
+    ---------------------   -------------------------------------------
+    label                   Required String. label/class name of the track
+    ---------------------   -------------------------------------------
+    bbox                    Required list. Bounding box of the track
+    ---------------------   -------------------------------------------
+    mask                    Required numpy array. Mask for the tack
+    =====================   ===========================================
+    
+    :returns: `Track` Object
+    """
+    def __init__(self, id, label, bbox, mask):
+        self.id = id
+        self.label = label
+        self.bbox = bbox
+        self.score = 1
+        self.status = 16
+        self.mask = mask
+        self.location = None
+        self.age = 0
 
 class Tracker(): # class for Kalman Filter-based tracker
     def __init__(self):

@@ -12,6 +12,7 @@ try:
     import torch.nn.functional as F
     import numpy as np
     import cv2
+    import copy
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -1312,7 +1313,7 @@ def siamese_init(im, target_pos, target_sz, model, hp=None, device='cpu'):
 
     p.renew()
 
-    net = model
+    net = copy.deepcopy(model)
     p.scales = model.anchors['scales']
     p.ratios = model.anchors['ratios']
     p.anchor_num = model.anchor_num
