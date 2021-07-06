@@ -39,13 +39,13 @@ try:
     import math
     import warnings
     from fastai.distributed import *
-    import tensorflow as tf
-    tf.get_logger().setLevel(logging.ERROR)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        import onnx
-        import onnx_tf
-        from onnx_tf.backend import prepare
+
+
+
+
+
+
+
     from torchvision import datasets, transforms
     import argparse
     import torch.distributed as dist
@@ -1338,6 +1338,13 @@ class ArcGISModel(object):
         return self.learn._save_tflite(name)
 
     def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
         torch_model = self.learn.model
         torch_model = torch_model.eval()
         num_input_channels = list(self.learn.model.parameters())[0].shape[1]

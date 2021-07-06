@@ -5,7 +5,6 @@ import math
 import numpy as np
 import torch.nn.functional as F
 from fastai.basic_train import LearnerCallback
-from torch_geometric.nn import fps, knn
 
 # For AverageMetric callback.
 from fastai.callback import Callback
@@ -22,6 +21,7 @@ def farthest_point_sample(pts, npoint):
     Return:
         centroids: sampled pointcloud index, [B, npoint]
     """
+    from torch_geometric.nn import fps
     device = pts.device
     B, N, C = pts.shape
     
@@ -46,6 +46,7 @@ def find_k_neighbor(rep_pts, pts, K, D):
     :param D: Dilation rate
     :return group_pts: K neighbor points(B, P, K, C)
     """
+    from torch_geometric.nn import knn
     device = pts.device
     B, N, C = pts.shape
     _, N_rep, _ = rep_pts.shape

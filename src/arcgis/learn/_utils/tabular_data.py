@@ -25,10 +25,10 @@ except Exception as e:
     HAS_FASTAI = False
 
 try:
-    import shap
     import pandas as pd
 except:
-    HAS_SHAP = False
+    raise Exception('This module requires Numpy and Pandas')
+
 
 HAS_NUMPY = True
 try:
@@ -1235,6 +1235,10 @@ def explain_prediction(model,processed_df,index=0,random_index=False,predictor=N
             show_local_interpretation(model,processed_df,index,random_index,method='FCN')
 
 def show_local_interpretation(model,processed_df,index=0,random_index=False,method='Tree'):
+    try:
+        import shap
+    except:
+        HAS_SHAP = False
     if method=='Tree':
         explainer = shap.TreeExplainer(model._model,algorithm='Tree')
     elif method == 'KernelRegressor':
@@ -1322,7 +1326,10 @@ def show_local_interpretation(model,processed_df,index=0,random_index=False,meth
         shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
 
 def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
-
+    try:
+        import shap
+    except:
+        HAS_SHAP = False
     #explainer = shap.TreeExplainer(model._model)
     if hasattr(model._data, '_training_indexes'):
         feature_variables = model._data._categorical_variables + model._data._continuous_variables

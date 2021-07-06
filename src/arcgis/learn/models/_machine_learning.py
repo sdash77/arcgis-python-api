@@ -23,11 +23,6 @@ try:
 except:
     HAS_SK_LEARN = False
 
-try:
-    import shap
-except:
-    HAS_SHAP = False
-
 HAS_FAST_PROGRESS = True
 try:
     from fastprogress.fastprogress import progress_bar
@@ -707,6 +702,10 @@ class MLModel(object):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
+            try:
+                import shap
+            except:
+                HAS_SHAP = False
             if not HAS_SHAP:
                 warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
                 explain = False

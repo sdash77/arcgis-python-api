@@ -25,11 +25,10 @@ except:
     HAS_FASTAI = False
 
 try:
-    from supervised.automl import AutoML as base_AutoML
     import numpy as np
     import pandas as pd
 except:
-    HAS_AUTOML = False
+    raise Exception('This module requires Numpy and Pandas')
 
 try:
     import sklearn
@@ -107,6 +106,11 @@ class AutoML(object):
 
     def __init__(self, data=None, total_time_limit=3600,
                  mode='Explain', algorithms=None, eval_metric='auto'):
+        try:
+            from supervised.automl import AutoML as base_AutoML
+        except:
+            HAS_AUTOML = False
+
         if not HAS_SK_LEARN:
             raise Exception("This module requires scikit-learn.")
         if not HAS_SK_LEARN:

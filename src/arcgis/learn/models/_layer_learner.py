@@ -10,11 +10,6 @@ HAS_FASTAI = True
 HAS_SHAP = True
 import_exception=None
 
-try:
-    import shap
-except:
-    HAS_SHAP = False
-
 import arcgis
 from arcgis.features import FeatureLayer
 
@@ -359,6 +354,10 @@ class FullyConnectedNetwork(ArcGISModel):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
+            try:
+                import shap
+            except:
+                HAS_SHAP = False
             if not HAS_SHAP:
                 warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
                 explain = False
