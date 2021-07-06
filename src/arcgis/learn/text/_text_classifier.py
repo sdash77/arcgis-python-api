@@ -164,10 +164,6 @@ class TextClassifier(ArcGISModel):
         if data._is_empty or data._backbone != backbone:
             self.logger.info('Creating DataBunch')
             classes = None
-            label2id, id2label = config.label2id, config.id2label
-            if id2label != {0: 'LABEL_0', 1: 'LABEL_1'}:
-                classes = [id2label[i] for i in sorted(id2label.keys())]
-
             data._prepare_databunch(tokenizer=tokenizer, vocab=vocab, pad_first=pad_first,
                                     pad_idx=pad_idx, backbone=backbone, classes=classes, logger=self.logger)
 
