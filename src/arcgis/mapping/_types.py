@@ -2562,9 +2562,11 @@ class OfflineMapAreaManager(object):
         area                   Required object.  Bookmark or extent. Specify as either:
 
                                    + bookmark name
-                                       `WebMap.definition.bookmarks` returns list of bookmarks.
+                                   `WebMap.definition.bookmarks` returns list of bookmarks.
+
                                    + list of coordinate pairs:
                                        [['xmin', 'ymin'], ['xmax', 'ymax']]
+
                                    + dictionary:
                                          {'xmin': <value>,
                                          'ymin': <value>,
@@ -2572,7 +2574,8 @@ class OfflineMapAreaManager(object):
                                          'ymax': <value>,
                                          'spatialReference' : {'wkid' : <value>}}
 
-                               If spatial reference is not specified, it is assumed 'wkid': 4326.
+                               .. note::
+                                    If spatial reference is not specified, it is assumed 'wkid': 4326.
         ------------------     --------------------------------------------------------------------
         item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------
