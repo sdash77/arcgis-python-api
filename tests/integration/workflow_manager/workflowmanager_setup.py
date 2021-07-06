@@ -23,7 +23,7 @@ class WorkflowManagerSetup:
         if custom_testing:
             self.portal_url = 'https://ps0010886.esri.com/portal'
             self.portal_username = 'admin'
-            self.portal_password = 'esri.agp'
+            self.portal_password = '...'
             self.item_name = 'Testing Item'
             self.workflow_item_id = '45af313c6b054fea88c620afa46b0538'
 

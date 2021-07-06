@@ -1,11 +1,8 @@
-import ast
 import datetime
 import json
 import sys
 import urllib.parse
 import arcgis.gis
-import re
-import ujson as _ujson
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 
 
@@ -94,7 +91,7 @@ class WorkflowManagerAdmin:
             return return_obj['success']
         return return_obj
 
-    def upgrade_item(self, id):
+    def upgrade_item(self, item):
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -102,13 +99,13 @@ class WorkflowManagerAdmin:
         ==================  =========================================================
         **Argument**        **Description**
         ------------------  ---------------------------------------------------------
-        id                  Required String. The id of the existing schema.
+        item                Required Item. The Workflow Manager Item to be upgraded
         ==================  =========================================================
 
         :returns: success object
         """
 
-        url = '{base}/admin/{id}/upgrade?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
+        url = '{base}/admin/{id}/upgrade?token={token}'.format(base=self._url, id=item.id, token=self._gis._con.token)
         return_obj = json.loads(
             self._gis._con.post(url, try_json=False, add_token=False, json_encode=False,
                                 post_json=True))
@@ -118,7 +115,7 @@ class WorkflowManagerAdmin:
             return return_obj['success']
         return return_obj
 
-    def delete_item(self, id):
+    def delete_item(self, item):
         """
         Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
         Requires the administrator or publisher role. If the user has the publisher role,
@@ -127,13 +124,13 @@ class WorkflowManagerAdmin:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  Required String. The id of the existing schema.
+        id                  Required Item. The Workflow Manager Item to be deleted
         ===============     ====================================================================
 
         :return: success object
         """
 
-        url = '{base}/admin/{id}?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
+        url = '{base}/admin/{id}?token={token}'.format(base=self._url, id=item.id, token=self._gis._con.token)
 
         return_obj = json.loads(self._gis._con.delete(url, add_token=False, try_json=False))
         if 'error' in return_obj:
@@ -154,7 +151,7 @@ class WorkflowManagerAdmin:
 
         url = '{base}/checkStatus?token={token}'.format(base=self._url, token=self._gis._con.token)
 
-        return_obj = _ujson.loads(str(self._gis._con.get(url)))
+        return_obj = json.loads(json.dumps(self._gis._con.get(url)))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:

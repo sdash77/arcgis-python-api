@@ -45,7 +45,8 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, str, "Incorrect return type")
 
         # Clean up
-        self.connection.workflow_manager_admin.delete_item(actual)
+        item = self.connection._gis.content.get(actual)
+        self.connection.workflow_manager_admin.delete_item(item)
 
     def test_create_item_returns_error(self):
         # Act
@@ -62,16 +63,18 @@ class TestWorkflowManager(unittest.TestCase):
     def test_delete_item_returns_successfully(self):
         # Act
         item_id = self.connection.workflow_manager_admin.create_item('Testing_Item_' + str(datetime.datetime.now()))
-        actual = self.connection.workflow_manager_admin.delete_item(item_id)
+        item = self.connection._gis.content.get(item_id)
+        actual = self.connection.workflow_manager_admin.delete_item(item)
 
         # Assert
-        self.assertIsTrue(actual, "Incorrect return type")
+        self.assertTrue(actual, "Incorrect return type")
 
     def test_delete_item_returns_error(self):
         # Act
         try:
             # Try creating item with already created name
-            self.connection.workflow_manager_admin.delete_item("unknown_item")
+            fake_item = type('FakeItem', (object,), {"id": "unknown_item"})
+            self.connection.workflow_manager_admin.delete_item(fake_item)
         except Exception as testException:
             assert True, "Expected error returned during test: " + testException.__str__()
 
@@ -81,17 +84,17 @@ class TestWorkflowManager(unittest.TestCase):
 
     def test_upgrade_item_returns_successfully(self):
         # Act
-        item_id = self.connection.workflow_manager_admin.create_item('Testing_Item_' + str(datetime.datetime.now()))
-        actual = self.connection.workflow_manager_admin.upgrade_item(item_id)
+        actual = self.connection.workflow_manager_admin.upgrade_item(self.connection.workflow_item)
 
         # Assert
-        self.assertIsTrue(actual, "Incorrect return type")
+        self.assertTrue(actual, "Incorrect return type")
 
     def test_upgrade_item_returns_error(self):
         # Act
         try:
             # Try creating item with already created name
-            self.connection.workflow_manager_admin.upgrade_item("unknown_item")
+            fake_item = type('FakeItem', (object,), {"id": "unknown_item"})
+            self.connection.workflow_manager_admin.upgrade_item(fake_item)
         except Exception as testException:
             assert True, "Expected error returned during test: " + testException.__str__()
 
