@@ -2,7 +2,6 @@ from pathlib import Path
 import json
 import warnings
 from ._model_extension import ModelExtension
-from ._arcgis_model import _EmptyData
 
 try:
     from fastai.vision import flatten_model, ImageList 
@@ -11,7 +10,6 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from ._arcgis_model import _resnet_family
 
     HAS_FASTAI = True
 
@@ -22,18 +20,17 @@ class MMDetectionConfig():
 
     try:
         import torch
-        import mmdet.models
-        import mmcv
         import types
         import numpy
         import os
         import pathlib
-        import arcgis
     except:
         pass
     
     def get_model(self, data, backbone=None, **kwargs):
 
+        import mmdet.models
+        import mmcv
         import logging
         logging.disable(logging.WARNING)
 
@@ -41,11 +38,12 @@ class MMDetectionConfig():
         checkpoint = kwargs.get('model_weight', False)
 
         if self.os.path.exists(self.pathlib.Path(config)):
-            cfg = self.mmcv.Config.fromfile(config)
+            cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
         else:
-            cfg_abs_path = self.pathlib.Path(self.arcgis.__file__).parent/'learn'/'_mmdetection_config'/(config +'.{}'.format('py'))
-            cfg = self.mmcv.Config.fromfile(cfg_abs_path)
+            import arcgis
+            cfg_abs_path = self.pathlib.Path(arcgis.__file__).parent/'learn'/'_mmdetection_config'/(config +'.{}'.format('py'))
+            cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get('checkpoint', False)
             if checkpoint:
                 cfg.model.pretrained = None
@@ -63,10 +61,10 @@ class MMDetectionConfig():
             if hasattr(cfg.model.neck, 'rfp_backbone'):
                 cfg.model.neck.rfp_backbone.in_channels = len(data._extract_bands)
 
-        model = self.mmdet.models.build_detector(cfg.model)
+        model = mmdet.models.build_detector(cfg.model)
 
         if checkpoint:
-            self.mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
+            mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
 
         from mmcv.runner import auto_fp16
         @auto_fp16(apply_to=('img', ))

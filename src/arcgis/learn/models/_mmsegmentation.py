@@ -8,7 +8,6 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from ._arcgis_model import _resnet_family, _vgg_family
 
     HAS_FASTAI = True
 
@@ -22,8 +21,6 @@ class MMSegmentationConfig():
 
     try:
         import torch
-        import mmseg.models
-        import mmcv
         import numpy
         import pathlib
         import os
@@ -37,6 +34,8 @@ class MMSegmentationConfig():
         
         """
 
+        import mmseg.models
+        import mmcv
         import logging
         logging.disable(logging.WARNING)
 
@@ -44,12 +43,12 @@ class MMSegmentationConfig():
         checkpoint = kwargs.get('model_weight', False)
 
         if self.os.path.exists(self.pathlib.Path(config)):
-            cfg = self.mmcv.Config.fromfile(config)
+            cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
         else:
             import arcgis
             cfg_abs_path = self.pathlib.Path(arcgis.__file__).parent/'learn'/'_mmseg_config'/(config +'.{}'.format('py'))
-            cfg = self.mmcv.Config.fromfile(cfg_abs_path)
+            cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get('checkpoint', False)
             if checkpoint:
                 cfg.model.pretrained = None
@@ -69,10 +68,10 @@ class MMSegmentationConfig():
         if cfg.model.backbone.type=='CGNet' and getattr(data, '_is_multispectral', False):
             cfg.model.backbone.in_channels = len(data._extract_bands)
 
-        model = self.mmseg.models.build_segmentor(cfg.model)
+        model = mmseg.models.build_segmentor(cfg.model)
 
         if checkpoint:
-            self.mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
+            mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
         
         #default forward of the model from the original API should be modified to make it compatible with the learn module.
         from mmcv.runner import auto_fp16
