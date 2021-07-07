@@ -78,8 +78,8 @@ class TabularDataObject(object):
     ):
 
         if not HAS_FASTAI:
-            raise Exception(import_trace)
-            
+            return
+
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
 
