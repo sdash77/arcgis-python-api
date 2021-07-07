@@ -5,6 +5,7 @@ import sys
 import math
 import os
 from pathlib import Path
+import traceback
 
 
 import arcgis
@@ -21,13 +22,11 @@ try:
     from .._utils.TSData import TimeSeriesList, To3dTensor
     from fastai.data_block import DatasetType
     import torch
-except Exception as e:
-    HAS_FASTAI = False
-
-try:
     import pandas as pd
-except:
-    raise Exception('This module requires Pandas')
+    
+except Exception as e:
+    import_trace = traceback.format_exc()
+    HAS_FASTAI = False
 
 
 HAS_NUMPY = True
@@ -80,8 +79,8 @@ class TabularDataObject(object):
     ):
 
         if not HAS_FASTAI:
-            return
-
+            raise Exception(import_trace)
+            
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
 
@@ -1239,6 +1238,7 @@ def show_local_interpretation(model,processed_df,index=0,random_index=False,meth
         import shap
     except:
         HAS_SHAP = False
+        raise Exception(traceback.format_exc())
     if method=='Tree':
         explainer = shap.TreeExplainer(model._model,algorithm='Tree')
     elif method == 'KernelRegressor':
@@ -1330,6 +1330,7 @@ def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
         import shap
     except:
         HAS_SHAP = False
+        raise Exception(traceback.format_exc())
     #explainer = shap.TreeExplainer(model._model)
     if hasattr(model._data, '_training_indexes'):
         feature_variables = model._data._categorical_variables + model._data._continuous_variables

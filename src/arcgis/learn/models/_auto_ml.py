@@ -16,6 +16,7 @@ from arcgis.features import FeatureLayer
 HAS_SK_LEARN = True
 HAS_AUTOML = True
 HAS_FASTAI = True
+HAS_AUTO_ML_DEPS = True
 
 try:
     from arcgis.learn._utils.tabular_data import TabularDataObject
@@ -25,16 +26,13 @@ except:
     HAS_FASTAI = False
 
 try:
+    import sklearn
+    from sklearn import *
     import numpy as np
     import pandas as pd
 except:
-    raise Exception('This module requires Numpy and Pandas')
-
-try:
-    import sklearn
-    from sklearn import *
-except:
-    HAS_SK_LEARN = False
+    missing_deps_trace = traceback.format_exc()
+    HAS_AUTO_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
 try:
@@ -110,10 +108,9 @@ class AutoML(object):
             from supervised.automl import AutoML as base_AutoML
         except:
             HAS_AUTOML = False
-
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
-        if not HAS_SK_LEARN:
+        if not HAS_AUTO_ML_DEPS:
+            raise Exception(missing_deps_trace)
+        if not HAS_AUTOML:
             raise Exception("This module requires mljar-supervised.")
         self._data = data
         if getattr(self._data, '_is_unsupervised', False):
@@ -325,8 +322,8 @@ class AutoML(object):
         :returns: `AutoML` Object
         """
         emd_path = _get_emd_path(emd_path)
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
+        if not HAS_AUTO_ML_DEPS:
+            raise Exception(missing_deps_trace)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
