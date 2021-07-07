@@ -16,7 +16,6 @@ from arcgis.raster.analytics import copy_raster
 from .._utils.tabular_data import TabularDataObject , explain_prediction
 
 HAS_ML_DEPS = True
-HAS_SHAP = True
 
 try:
     import sklearn
@@ -698,11 +697,11 @@ class MLModel(object):
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
-        global HAS_SHAP
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
             try:
                 import shap
+                HAS_SHAP = True
             except:
                 HAS_SHAP = False
             if not HAS_SHAP:

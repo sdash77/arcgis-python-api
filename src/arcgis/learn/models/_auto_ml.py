@@ -13,8 +13,6 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_SK_LEARN = True
-HAS_AUTOML = True
 HAS_FASTAI = True
 HAS_AUTO_ML_DEPS = True
 
@@ -104,9 +102,9 @@ class AutoML(object):
 
     def __init__(self, data=None, total_time_limit=3600,
                  mode='Explain', algorithms=None, eval_metric='auto'):
-        global HAS_AUTOML
         try:
             from supervised.automl import AutoML as base_AutoML
+            HAS_AUTOML = True
         except:
             HAS_AUTOML = False
         if not HAS_AUTO_ML_DEPS:

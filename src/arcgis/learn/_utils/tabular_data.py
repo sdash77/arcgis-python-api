@@ -12,7 +12,6 @@ import arcgis
 from arcgis.features import FeatureLayer
 
 HAS_FASTAI = True
-HAS_SHAP=True
 try:
     from fastai.tabular import TabularList
     from fastai.tabular import TabularDataBunch
@@ -1234,9 +1233,9 @@ def explain_prediction(model,processed_df,index=0,random_index=False,predictor=N
             show_local_interpretation(model,processed_df,index,random_index,method='FCN')
 
 def show_local_interpretation(model,processed_df,index=0,random_index=False,method='Tree'):
-    global HAS_SHAP
     try:
         import shap
+        HAS_SHAP = True
     except:
         HAS_SHAP = False
         raise Exception(traceback.format_exc())
@@ -1327,9 +1326,9 @@ def show_local_interpretation(model,processed_df,index=0,random_index=False,meth
         shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
 
 def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
-    global HAS_SHAP
     try:
         import shap
+        HAS_SHAP = True
     except:
         HAS_SHAP = False
         raise Exception(traceback.format_exc())
