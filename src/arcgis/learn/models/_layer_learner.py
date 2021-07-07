@@ -7,7 +7,6 @@ import math
 from pathlib import Path
 
 HAS_FASTAI = True
-HAS_SHAP = True
 import_exception=None
 
 import arcgis
@@ -356,6 +355,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if explain:
             try:
                 import shap
+                HAS_SHAP = True
             except:
                 HAS_SHAP = False
             if not HAS_SHAP:

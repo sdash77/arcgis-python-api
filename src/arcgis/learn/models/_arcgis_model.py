@@ -39,13 +39,6 @@ try:
     import math
     import warnings
     from fastai.distributed import *
-
-
-
-
-
-
-
     from torchvision import datasets, transforms
     import argparse
     import torch.distributed as dist

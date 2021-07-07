@@ -99,7 +99,7 @@ class MLModel(object):
 
     def __init__(self, data, model_type, **kwargs):
         if not HAS_ML_DEPS:
-             raise Exception(missing_deps_trace)
+            raise Exception(missing_deps_trace)
 
         self._data = data
         self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
@@ -404,7 +404,7 @@ class MLModel(object):
         :returns: `MLModel` Object
         """
         if not HAS_ML_DEPS:
-             raise Exception(missing_deps_trace)
+            raise Exception(missing_deps_trace)
 
         emd_path = str(emd_path)
 
