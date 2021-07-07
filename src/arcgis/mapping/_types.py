@@ -3764,6 +3764,7 @@ class MapImageLayerManager(_GISResource):
     def import_tiles(self, item, levels=None, extent=None, merge=False, replace=False):
         """
         The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -3792,6 +3793,29 @@ class MapImageLayerManager(_GISResource):
 
         :returns:
             A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> imported_tiles = MapImageLayerManager.delete_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  merge = True,
+                                                  replace = True
+                                                  )
+            >>> type(imported_tiles)
+            <Dictionary>
 
         """
         params = {
@@ -3836,6 +3860,27 @@ class MapImageLayerManager(_GISResource):
         :returns:
            Dictionary. If the product is not ArcGIS Online tile service, the
            result will be None.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> update_tiles = MapImageLayerManager.update_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  )
+            >>> type(update_tiles)
+            <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
@@ -3892,15 +3937,6 @@ class MapImageLayerManager(_GISResource):
         """
         The ``edit_tile_service`` operation updates a Tile Service's properties.
 
-        Inputs:
-           service_definition - updates a service definition
-           min_scale - sets the services minimum scale for caching
-           max_scale - sets the service's maximum scale for caching
-           source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
-           export_tiles_allowed - sets the value to let users export tiles
-           max_export_tile_count - sets the maximum amount of tiles to be exported
-             from a single call.
-
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -3919,6 +3955,24 @@ class MapImageLayerManager(_GISResource):
                             .. note::
                                 The default value is 100000.
         ===============     ====================================================
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> MapImageLayerManager.edit_tiles(service_definition = "updated serice definition",
+                                                min_scale = 50,
+                                                max_scale = 100,
+                                                source_item_id = "geowarehouse_item_id",
+                                                export_tiles_allowed = True,
+                                                max_Export_Tile_Count = 10000
+                                                  )
         """
         params = {
             "f": "json",
@@ -3949,14 +4003,6 @@ class MapImageLayerManager(_GISResource):
         extent              optional dictionary,  If specified, the tiles within
                             this extent will be deleted or will be deleted based
                             on the service's full extent.
-                            Example:
-                            6224324.092137296,487347.5253569535,
-                            11473407.698535524,4239488.369818687
-                            the minx, miny, maxx, maxy values or,
-                            {"xmin":6224324.092137296,"ymin":487347.5253569535,
-                            "xmax":11473407.698535524,"ymax":4239488.369818687,
-                            "spatialReference":{"wkid":102100}} the JSON
-                            representation of the Extent object.
         ---------------     ----------------------------------------------------
         levels              required string, The level to delete.
                             Example, 0-5,10,11-20 or 1,2,3 or 0-5
@@ -3964,6 +4010,27 @@ class MapImageLayerManager(_GISResource):
 
         :returns:
            A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> deleted_tiles = MapImageLayerManager.delete_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  )
+            >>> type(deleted_tiles)
+            <Dictionary>
         """
         params = {
             "f": "json",
@@ -4164,6 +4231,41 @@ class MapImageLayer(Layer):
 
         :returns:
             :class:`~arcgis.features.FeatureLayer` or None (if not enabled)
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> layer_to_add ={
+                                "id": <layerId>,
+                                "source": <layer source>
+                                "definitionExpression": "<definitionExpression>",
+                                "drawingInfo":
+                                {
+                                  "renderer": <renderer>,
+                                  "transparency": <transparency>,
+                                  "scaleSymbols": <true>,
+                                  "showLabels": <true>,
+                                  "labelingInfo": <labeling info>
+                                },
+                                "layerTimeOptions":
+                                {
+                                  "useTime" : <true,false>,
+                                  "timeDataCumulative" : <true>,
+                                  "timeOffset" : <timeOffset>,
+                                  "timeOffsetUnits" : "<esriTimeUnitsCenturies>"
+                                }
+                              }
+            >>> new_layer = map_image_item.create_dynamic_layer(layer= layer_to_add)
+            >>>type(new_layer)
+            <arcgis.features.FeatureLayer>
 
         """
         if (
@@ -4421,6 +4523,28 @@ class MapImageLayer(Layer):
 
         :returns:
             A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> identified = map_image_item.identify(geometry = geom1,
+                                        geometry_type = "Multipoint",
+                                        image_display = "width",
+                                        return_geometry =True,
+                                        return_z = True,
+                                        retrun_m = True,
+                                        return_field_name = True,
+                                        )
+            >>> type(identified)
+            <Dictionary>
         """
 
         if geometry_type.find("esriGeometry") == -1:
@@ -4614,6 +4738,29 @@ class MapImageLayer(Layer):
 
         :returns:
             A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> search_results = map_image_item.find(search_text = "Hurricane Data",
+                                    contains = True,
+                                    layers = "top",
+                                    return_geometry = False,
+                                    max_offset = 100,
+                                    return_z = True,
+                                    return_m = False,
+                                    )
+            >>> type(search_results)
+            <Dictionary>
+
         """
         url = "{url}/find".format(url=self._url)
         params = {
@@ -4752,9 +4899,8 @@ class MapImageLayer(Layer):
         bbox                   required string. The extent (bounding box) of the exported image.
                                Unless the bbox_sr parameter has been specified, the bbox is assumed
                                to be in the spatial reference of the map.
-                               Example: bbox="-104,35.6,-94.32,41"
         ------------------     --------------------------------------------------------------------
-        bbox_sr                optional integer, SpatialReference. spatial reference of the bbox.
+        bbox_sr                optional integer, ``SpatialReference``. spatial reference of the bbox.
         ------------------     --------------------------------------------------------------------
         size                   optional string. size - size of image in pixels
         ------------------     --------------------------------------------------------------------
@@ -4788,8 +4934,11 @@ class MapImageLayer(Layer):
         ------------------     --------------------------------------------------------------------
         transparent            optional boolean. If true, the image will be exported with the
                                background color of the map set as its transparent color. The
-                               default is false. Only the .png and .gif formats support
-                               transparency.
+                               default is false.
+
+                               .. note::
+                                Only the .png and .gif formats support
+                                transparency.
         ------------------     --------------------------------------------------------------------
         time_value             optional list. The time instant or the time extent of the features
                                to be identified.
@@ -4844,6 +4993,26 @@ class MapImageLayer(Layer):
 
         :return:
             A string, image of the map.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_image_item.export_map(bbox="-104,35.6,-94.32,41",
+                                          bbox_sr = 4326,
+                                          image_format ="png,
+                                          layers = "include",
+                                          transparent = True,
+                                          scale = 40.0,
+                                          rotation = -45.0
+                                          )
         """
 
         params = {}

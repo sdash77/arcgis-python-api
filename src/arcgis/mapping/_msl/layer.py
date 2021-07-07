@@ -89,7 +89,7 @@ class MapFeatureLayer(Layer):
     @lru_cache(maxsize=10)
     def attachements(self):
         """
-        The ``attachments`` property provides a manager to work with attachments if the ``MapFeatureLayer``
+        The ``attachements`` property provides a manager to work with attachments if the ``MapFeatureLayer``
         supports this functionality.
         """
         if (
@@ -221,6 +221,23 @@ class MapFeatureLayer(Layer):
 
         :returns:
             A :class:`~arcgis.mapping.MapFeatureLayer` object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> print(f"{map_feature_layer.properties.name:30}{type(map_feature_layer)}")
+            <State Boundaries              <class 'arcgis.mapping._msl.layer.MapFeatureLayer'>>
+
         """
         from arcgis.mapping import MapImageLayer
 
@@ -485,11 +502,28 @@ class MapFeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         query_string                        Optional string. SQL Query that will be used to filter attributes
                                             before unique values are returned.
-                                            ex. "name_2 like '%K%'"
         ===============================     ====================================================================
 
         :returns:
             A List
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> unique_values = map_feature_layer.get_unique_values(attribute ="Name",
+                                                    query_string ="name_2 like '%K%'")
+            >>> type(unique_values)
+            <List>
         """
 
         result = self.query(
@@ -640,7 +674,7 @@ class MapFeatureLayer(Layer):
                                             be grouped for calculating the statistics.
                                             example: STATE_NAME, GENDER
         -------------------------------     --------------------------------------------------------------------
-        out_statistics                      Optional string. The definitions for one or more field-based
+        out_statistics                      Optional List. The definitions for one or more field-based
                                             statistics to be calculated.
 
                                             Syntax:
@@ -792,6 +826,50 @@ class MapFeatureLayer(Layer):
 
         :returns: A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another
         return type is specified, such as ``count``.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> query_count = map_feature_layer.query(where "1=1",
+                                        text = "Hurricane Data",
+                                        units = "esriSRUnit_Meter",
+                                        return_count_only = True,
+                                        out_statistics = [
+                                                            {
+                                                            "statisticType": "count",
+                                                            "onStatisticField": "Field1",
+                                                            "outStatisticFieldName": "Out_Field_Name1"
+                                                            },
+                                                            {
+                                                            "statisticType": "avg",
+                                                            "onStatisticField": "Field2",
+                                                            "outStatisticFieldName": "Out_Field_Name2"
+                                                            }
+                                                        ],
+                                        range_values= [
+                                                {
+                                                  "name": "range name",
+                                                  "value": [None, 1500]
+                                                  },
+                                                  {
+                                                    "name": "range name 2",
+                                                    "value":[1000, None]
+                                                  }
+                                                }
+                                            ]
+                                        )
+            >>> query_count
+            <149>
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -1566,6 +1644,22 @@ class MapTable(MapFeatureLayer):
 
         :returns:
             A :class:`~arcgis.mapping.MapTable` object
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapTable
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_table = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> print(f"{map_table.properties.name:30}{type(map_table)}")
+            <State Boundaries              <class 'arcgis.mapping.MapTable'>>
         """
         return item.tables[table_id]
 
@@ -1626,7 +1720,7 @@ class MapTable(MapFeatureLayer):
         **kwargs,
     ):
         """
-        The ``query`` methdod queries a Table Layer based on a set of criteria from a sql statement.
+        The ``query`` method queries a Table Layer based on a set of criteria from a sql statement.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -1783,6 +1877,50 @@ class MapTable(MapFeatureLayer):
         :returns:
             A :class:`~arcgis.features.FeatureSet` or Panda's DataFrame containing the :class:`~arcgis.features.Feature`
             objects matching the query, unless another return type is specified, such as ``count``
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import MapImageLayer, MapFeatureLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+
+            >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
+            >>> map_feature_layer = MapFeatureLayer.fromitem(item = map_image_item,
+                                                             layer_id = 2)
+            >>> query_count = map_feature_layer.query(where "1=1",
+                                        text = "Hurricane Data",
+                                        units = "esriSRUnit_Meter",
+                                        return_count_only = True,
+                                        out_statistics = [
+                                                            {
+                                                            "statisticType": "count",
+                                                            "onStatisticField": "Field1",
+                                                            "outStatisticFieldName": "Out_Field_Name1"
+                                                            },
+                                                            {
+                                                            "statisticType": "avg",
+                                                            "onStatisticField": "Field2",
+                                                            "outStatisticFieldName": "Out_Field_Name2"
+                                                            }
+                                                        ],
+                                        range_values= [
+                                                {
+                                                  "name": "range name",
+                                                  "value": [None, 1500]
+                                                  },
+                                                  {
+                                                    "name": "range name 2",
+                                                    "value":[1000, None]
+                                                  }
+                                                }
+                                            ]
+                                        )
+            >>> query_count
+            <149>
         """
         as_raw = as_df
         if self._dynamic_layer is None:
