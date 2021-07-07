@@ -2565,17 +2565,18 @@ class OfflineMapAreaManager(object):
                                    `WebMap.definition.bookmarks` returns list of bookmarks.
 
                                    + list of coordinate pairs:
-                                       [['xmin', 'ymin'], ['xmax', 'ymax']]
+                                   [['xmin', 'ymin'], ['xmax', 'ymax']]
 
                                    + dictionary:
-                                         {'xmin': <value>,
-                                         'ymin': <value>,
-                                         'xmax': <value>,
-                                         'ymax': <value>,
-                                         'spatialReference' : {'wkid' : <value>}}
+                                   {'xmin': <value>,
+                                   'ymin': <value>,
+                                   'xmax': <value>,
+                                   'ymax': <value>,
+                                   'spatialReference' : {'wkid' : <value>}}
 
                                .. note::
                                     If spatial reference is not specified, it is assumed 'wkid': 4326.
+
         ------------------     --------------------------------------------------------------------
         item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------
@@ -2609,10 +2610,10 @@ class OfflineMapAreaManager(object):
                                scheduler.  The dictionary accepts the following:
 
                                 {
-                                    "hour" : 1
-                                    "minute" = 0
-                                    "nthday" = 3
-                                    "day_of_week" = 0
+                                "hour" : 1
+                                "minute" = 0
+                                "nthday" = 3
+                                "day_of_week" = 0
                                 }
 
                                - hour - a value between 0-23 (integers)
@@ -2623,8 +2624,8 @@ class OfflineMapAreaManager(object):
                                Example **Daily**:
 
                                 {
-                                    "hour": 10,
-                                    "minute" : 30
+                                "hour": 10,
+                                "minute" : 30
                                 }
 
                                This means every day at 10:30 AM UTC
@@ -2648,8 +2649,8 @@ class OfflineMapAreaManager(object):
                                Example:
 
                                 [
-                                  "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/SaveTheBaySync/FeatureServer/1",
-                                  "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/WildfireSync/FeatureServer/0"
+                                "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/SaveTheBaySync/FeatureServer/1",
+                                "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/WildfireSync/FeatureServer/0"
                                 ]
 
         ------------------     --------------------------------------------------------------------
@@ -2661,10 +2662,10 @@ class OfflineMapAreaManager(object):
                                Example:
 
                                 [
-                                  {
-                                    "url": "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
-                                    "levels": "17,18,19"
-                                  }
+                                {
+                                "url": "https://tiledbasemaps.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
+                                "levels": "17,18,19"
+                                }
                                 ]
 
         ==================     ====================================================================
@@ -2672,7 +2673,7 @@ class OfflineMapAreaManager(object):
         .. note::
             Your ``min_scale`` value is always bigger in value than your ``max_scale``.
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        **Key: ** ``Value Dictionary Options`` for **Argument: ** ``item_properties``
 
         =================  =====================================================================
         **Key**            **Value**
@@ -3310,10 +3311,10 @@ class OfflineMapAreaManager(object):
                                          The dictionary accepts the following:
 
                                          {
-                                            "hour" : 1
-                                            "minute" = 0
-                                            "nthday" = 3
-                                            "day_of_week" = 0
+                                         "hour" : 1
+                                         "minute" = 0
+                                         "nthday" = 3
+                                         "day_of_week" = 0
                                          }
 
                                          - hour - a value between 0-23 (integers)
@@ -3324,8 +3325,8 @@ class OfflineMapAreaManager(object):
                                          Example **Daily**:
 
                                          {
-                                            "hour": 10,
-                                            "minute" : 30
+                                         "hour": 10,
+                                         "minute" : 30
                                          }
 
                                          This means every day at 10:30 AM UTC
@@ -3333,9 +3334,9 @@ class OfflineMapAreaManager(object):
                                          Example **Weekly**:
 
                                          {
-                                            "hour" : 23,
-                                            "minute" : 59,
-                                            "day_of_week" : 4
+                                         "hour" : 23,
+                                         "minute" : 59,
+                                         "day_of_week" : 4
                                          }
 
                                          This means every Wednesday at 11:59 PM UTC
