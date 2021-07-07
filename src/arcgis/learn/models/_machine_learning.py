@@ -698,7 +698,7 @@ class MLModel(object):
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
-
+        global HAS_SHAP
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
             try:

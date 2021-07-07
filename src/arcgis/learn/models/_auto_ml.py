@@ -104,6 +104,7 @@ class AutoML(object):
 
     def __init__(self, data=None, total_time_limit=3600,
                  mode='Explain', algorithms=None, eval_metric='auto'):
+        global HAS_AUTOML
         try:
             from supervised.automl import AutoML as base_AutoML
         except:

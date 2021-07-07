@@ -1234,6 +1234,7 @@ def explain_prediction(model,processed_df,index=0,random_index=False,predictor=N
             show_local_interpretation(model,processed_df,index,random_index,method='FCN')
 
 def show_local_interpretation(model,processed_df,index=0,random_index=False,method='Tree'):
+    global HAS_SHAP
     try:
         import shap
     except:
@@ -1326,6 +1327,7 @@ def show_local_interpretation(model,processed_df,index=0,random_index=False,meth
         shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
 
 def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
+    global HAS_SHAP
     try:
         import shap
     except:
