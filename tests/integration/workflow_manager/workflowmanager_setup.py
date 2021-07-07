@@ -21,51 +21,44 @@ class WorkflowManagerSetup:
         custom_testing = False
 
         if custom_testing:
-            self.portal_url = "https://ps0008227.esri.com/portal"
-            self.portal_username = "admin"
-            self.portal_password = "esri.agp"
-            self.item_name = "Testing Item"
-            self.workflow_item_id = "29673015106c44fdbb30d04c9cc60ef0"
+            self.portal_url = 'https://ps0010886.esri.com/portal'
+            self.portal_username = 'admin'
+            self.portal_password = '...'
+            self.item_name = 'Testing Item'
+            self.workflow_item_id = '45af313c6b054fea88c620afa46b0538'
 
-            self._gis = GIS(
-                url=self.portal_url,
-                username=self.portal_username,
-                password=self.portal_password,
-                verify_cert=False,
-            )
+            self._gis = GIS(url=self.portal_url,
+                            username=self.portal_username,
+                            password=self.portal_password,
+                            verify_cert=False)
 
             self.workflow_item = self._gis.content.get(self.workflow_item_id)
             self.workflow_manager = WorkflowManager(self.workflow_item)
+            self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
         else:
             _conf_reader = ConfigParser()
-            _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+            _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
 
-            self.portal_url = _conf_reader["portalhostds"]["url"]
-            self.portal_username = _conf_reader["portalhostds"]["creator_user"]
-            self.portal_password = _conf_reader["portalhostds"]["creator_password"]
+            self.portal_url = _conf_reader['portalhostds']['url']
+            self.portal_username = _conf_reader['portalhostds']['creator_user']
+            self.portal_password = _conf_reader['portalhostds']['creator_password']
 
-            self._gis = GIS(
-                url=self.portal_url,
-                username=self.portal_username,
-                password=self.portal_password,
-                verify_cert=False,
-            )
+            self._gis = GIS(url=self.portal_url,
+                            username=self.portal_username,
+                            password=self.portal_password,
+                            verify_cert=False)
             self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
             # Create Testing Workflow Item
-            self.item_name = "Testing_Item_" + str(datetime.datetime.now())
+            self.item_name = 'Testing_Item_' + str(datetime.datetime.now())
 
             try:
-                self.workflow_item_id = self.workflow_manager_admin.create_item(
-                    self.item_name
-                )
+                self.workflow_item_id = self.workflow_manager_admin.create_item(self.item_name)
 
                 self.workflow_item = self._gis.content.get(self.workflow_item_id)
                 self.workflow_manager = WorkflowManager(self.workflow_item)
             except Exception as testException:
                 # TODO fix to account for bad setup
-                print(
-                    "Error returned while creating Workflow Manager Item: "
-                    + testException.__str__()
-                )
+                print("Error returned while creating Workflow Manager Item: " + testException.__str__())
+

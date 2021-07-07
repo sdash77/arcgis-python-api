@@ -29,6 +29,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._utils import chunks as _chunks
 from ._impl import _portalpy
 
 from ._impl._jb import StatusJob
@@ -3467,9 +3468,12 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -3502,9 +3506,13 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)                
+                
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
