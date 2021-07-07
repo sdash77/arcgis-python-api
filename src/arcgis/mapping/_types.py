@@ -2673,7 +2673,7 @@ class OfflineMapAreaManager(object):
         .. note::
             Your ``min_scale`` value is always bigger in value than your ``max_scale``.
 
-        **Key: ** ``Value Dictionary Options`` for **Argument: ** ``item_properties``
+        **Key:** ``Value Dictionary Options`` for **Argument:** ``item_properties``
 
         =================  =====================================================================
         **Key**            **Value**
