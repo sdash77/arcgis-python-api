@@ -63,7 +63,7 @@ def lazy(func, *resultclasses):
             cls._delegate_text = str in resultclasses
             if cls._delegate_bytes and cls._delegate_text:
                 raise ValueError(
-                    'Cannot call lazy() with both bytes and text return types.'
+                    "Cannot call lazy() with both bytes and text return types."
                 )
             if cls._delegate_text:
                 cls.__str__ = cls.__text_cast
@@ -160,8 +160,8 @@ def lru_cache_time(seconds, maxsize=None):
         @lru_cache(maxsize)
         def time_aware(__ttl, *args, **kwargs):
             """
-            Main wrapper, note that the first argument ttl is not passed down. 
-            This is because no function should bother to know this that 
+            Main wrapper, note that the first argument ttl is not passed down.
+            This is because no function should bother to know this that
             this is here.
             """
 
