@@ -30,6 +30,7 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import chunks as _chunks
+from arcgis._impl.common._ttl import lru_cache_time
 from ._impl import _portalpy
 
 from ._impl._jb import StatusJob
@@ -11128,6 +11129,7 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    @lru_cache_time(60, 255)
     def usage(self, date_range="7D", as_df=True):
         """
 
