@@ -4140,7 +4140,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Summariz eNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example: Calculate the total population within five minutes of driving time of a proposed new store location.
+        The Summarize Nearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example: Calculate the total population within five minutes of driving time of a proposed new store location.
 
         Parameters
         ----------
