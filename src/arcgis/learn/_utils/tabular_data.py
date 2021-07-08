@@ -1354,4 +1354,11 @@ def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
         warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
                   " with the training data.")
         return
-
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        shap_values = explainer.shap_values(df, approximate=True)
+    if plot_type == 'bar':
+        return shap.summary_plot(shap_values, df, plot_type="bar")
+    else:
+        return shap.force_plot(explainer.expected_value[0], shap_values, df, matplotlib=True)
+    return
