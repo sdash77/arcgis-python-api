@@ -199,7 +199,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version": "1.9.0",
+    "version": "1.9.1",
     "description": "ArcGIS API for Python",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
@@ -270,9 +270,7 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {
-        "gp": ["dill"],
-    },
+    "extras_require": {"gp": ["dill"],},
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
