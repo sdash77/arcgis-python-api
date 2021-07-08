@@ -147,10 +147,10 @@ class MyFasterRCNN():
             model_input_batch = (model_input_batch.permute(0, 2, 3, 1)*std + mean).permute(0, 3, 1, 2)
         
         for bbox, label in zip(*model_target_batch):
-            mask = ~((bbox == 0).all(1) | (bbox[:, :2] == bbox[:, 2:]).any(1))
+            bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
+            mask = (bbox[:, 2:] >= (bbox[:, :2]+1.0)).all(1)
             bbox = bbox[mask]
             label = label[mask]
-            bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
             target = {}#FasterRCNN require target of each image in the formate of dictionary.
             #If image comes without any bboxes.
             if ( self.tvisver[0] == 0 and self.tvisver[1] < 6 ) and bbox.nelement() == 0:
