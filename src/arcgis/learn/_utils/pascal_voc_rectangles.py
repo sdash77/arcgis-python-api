@@ -67,7 +67,20 @@ class ObjectMSItemList(ObjectItemList):
 
 
 def show_batch_object_detection(self, rows=5, ds_type=DatasetType.Train, reverse=False, **kwargs):
-    "Show a batch of data in `ds_type` on a few `rows`."
+    """
+    This function randomly picks a few training chips and visualized them. 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional Integer. 
+                            Number of rows to display.
+                            Default: 5.
+    ---------------------   -------------------------------------------
+    reverse                 Optional Boolean. 
+                            'reverse' argument flips the batch when True, 
+                            Default: False.
+    ------------------------------------------------------------------- 
+    """
     x,y = self.one_batch(ds_type, True, True)
     if reverse: x,y = x.flip(0), (y[0].flip(0), y[1].flip(0))
     n_items = rows **2 if self.train_ds.x._square_show else rows
@@ -79,6 +92,21 @@ def show_batch_object_detection(self, rows=5, ds_type=DatasetType.Train, reverse
     self.train_ds.x.show_xys(xs, ys, **kwargs)
 
 def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # parameters adjusted in kwargs
+    """
+    This function randomly picks a few training chips and visualized them. 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional Integer. 
+                            Number of rows to display.
+                            Default: 3.
+    ---------------------   -------------------------------------------
+    alpha                   Optional Float. 
+                            Opacity of the lables for the corresponding
+                            images. Values range between 0 and 1, where
+                            1 means opaque.
+    ------------------------------------------------------------------- 
+    """
     nrows = rows
     ncols = kwargs.get('ncols', nrows)
     #start_index = kwargs.get('start_index', 0) # Does not work with dataloader

@@ -18,6 +18,8 @@ import_exception = None
 try:
     import arcgis
     import numpy as np
+    from matplotlib import use
+    from numpy.core.fromnumeric import resize
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, \
         get_transforms, flip_lr, ResizeMethod
@@ -47,6 +49,7 @@ try:
     from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.pix2pix import ImageTupleList2, prepare_data_ms_pix2pix
+    from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
     import PIL
 
@@ -124,14 +127,16 @@ def _raise_conda_import_error(import_exception=import_exception):
                     f"and is currently supported on Windows.\n{installation_steps}\n")
 
 class _ImagenetCollater():
-    def __init__(self, chip_size):
+    def __init__(self, chip_size, use_chip_size=True):
         self.chip_size = chip_size
+        self.use_chip_size = use_chip_size
 
     def __call__(self, batch):
         _xb = []
         for sample in batch:
             data = sample[0].data
-            if data.shape[1] < self.chip_size or data.shape[2] < self.chip_size:
+            if self.use_chip_size:
+              if data.shape[1] < self.chip_size or data.shape[2] < self.chip_size:
                 data = sample[0].resize(self.chip_size).data
             _xb.append(data)
         _xb = torch.stack(_xb)
@@ -898,6 +903,7 @@ def prepare_data(path,
     -For feature categorization use Labelled Tiles or ImageNet format.
     -For pixel classification, use Classified Tiles format.
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
+    -For DeepSort, use ImageNet format
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -916,10 +922,11 @@ def prepare_data(path,
                                 document will be replicated for each location.
 
     ---------------------   -------------------------------------------
-    chip_size               Optional integer, default 224. Size of the image to train the
-                            model. Images are cropped to the specified chip_size.
+    chip_size               Optional integer, default 224. Size of the image to train the model. 
+                            Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for superres and siammask.
+                            used as chip_size. Not supported for SuperResolution, SiamMask, 
+                            Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -946,11 +953,11 @@ def prepare_data(path,
     dataset_type            Optional string. `prepare_data` function will infer
                             the `dataset_type` on its own if it contains a
                             map.txt file. If the path does not contain the
-                            map.txt file pass either of 'PASCAL_VOC_rectangles',
+                            map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN' and 'Pix2Pix'.
+                            'superres', 'CycleGAN', 'Pix2Pix' and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
@@ -959,12 +966,14 @@ def prepare_data(path,
                             for 'EntityRecognizer' model. Accepted data format
                             for this model are - ['ner_json','BIO', 'LBIOU'].
     ---------------------   -------------------------------------------
-    resize_to               Optional integer. Resize the images to a given size.
-                            Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles"
-                            and  "superres". First resizes the image to the given
+    resize_to               Optional integer or tuple of integers.
+                            A tuple should be of the form (height, width). 
+                            Resize the images to a given size.
+                            Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles", 
+                            "superres" and "ImageNet".First resizes the image to the given
                             size and then crops images of size equal to chip_size.
                             Note: If resize_to is less than chip_size, the
-                            resize_to is used as chip_size.
+                            resize_to is used as chip_size. 
     ---------------------   -------------------------------------------
     working_dir             Optional string. Sets the default path to be used as
                             a prefix for saving trained models and checkpoints.
@@ -1100,8 +1109,12 @@ def prepare_data(path,
         kwargs_transforms['size'] = resize_to
         # Applying SQUISH ResizeMethod to avoid reflection padding
         kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
-
-        if resize_to < chip_size:
+        
+        if isinstance(resize_to, tuple):
+          if min(resize_to) < chip_size:
+            chip_size = min(resize_to)
+        else:
+          if resize_to < chip_size:
             chip_size = resize_to
 
     # Multi Folder training support
@@ -1115,6 +1128,7 @@ def prepare_data(path,
         emd, eas, path = merge_emd_and_stats(data_folders)
         if working_dir is None:
             working_dir = os.getcwd()
+            
     if emd_in is not None:
         emd = copy.deepcopy(emd_in)
     if eas_in is not None:
@@ -1131,6 +1145,7 @@ def prepare_data(path,
     _is_multispectral = False
     _show_batch_multispectral = None
     stats_file = path / 'esri_accumulated_stats.json'
+
     if dataset_type is None:
         if has_esri_files:
             if data_folders is None:
@@ -1512,7 +1527,6 @@ def prepare_data(path,
         if is_no_color(color_mapping):
             color_mapping = {j: [random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
 
-        # TODO : Handle NoData case
         if data_folders is None and images_df is None:
             data = ArcGISSegmentationItemList.from_folder(path / 'images') \
                 .filter_by_func(remove_image_without_label) \
@@ -1666,10 +1680,15 @@ def prepare_data(path,
             def get_y_func(x):
                 return x.parent.stem
 
+            use_chip_size = True
+            if not resize_to is None:
+              use_chip_size = False
+
             if collate_fn is not _bb_pad_collate:
                 databunch_kwargs['collate_fn'] = collate_fn
             else:
-                databunch_kwargs['collate_fn'] = _ImagenetCollater(chip_size)
+                databunch_kwargs['collate_fn'] = \
+                _ImagenetCollater(chip_size, use_chip_size)
             _images_folder = os.path.join(os.path.abspath(path), 'images')
             if not os.path.exists(_images_folder):
                 raise Exception(f"""Could not find a folder "images" in "{os.path.abspath(path)}",
@@ -1706,6 +1725,8 @@ def prepare_data(path,
                     class_mapping[index] = class_name
                     index = index + 1
 
+        # TODO: default transform should not apply if transform is None
+        # TODO: prepare_data fails when dataset_type="Imagenet" and transforms != None  
         if transforms is None:
             ranges = (0, 1)
             if _image_space_used == _map_space:
@@ -1724,6 +1745,10 @@ def prepare_data(path,
                     contrast(scale=(0.75, 1.5))
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
+            if resize_to is not None:
+              del train_tfms[1]
+              del val_tfms[0]
+
             transforms = (train_tfms, val_tfms)
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path / 'images'
@@ -1825,6 +1850,7 @@ def prepare_data(path,
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs)
+            data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
@@ -1850,6 +1876,7 @@ def prepare_data(path,
     elif dataset_type == "Pix2Pix":
         if _is_multispectral:
             data = prepare_data_ms_pix2pix(path, norm_pct, val_split_pct, seed, databunch_kwargs)
+            data.show_batch = types.MethodType(show_batch_img2img, data)
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
@@ -2026,6 +2053,7 @@ def prepare_data(path,
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
+        data.show_batch = types.MethodType(show_batch_img2img, data)
 
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
@@ -2037,11 +2065,15 @@ def prepare_data(path,
         data.n_channel = data.x[0].data[0].shape[0]
         data._imagery_type_a = imagery_type_a
         data._imagery_type_b = imagery_type_b
+        data.show_batch = types.MethodType(show_batch_img2img, data)
     else:
-        data = (data.transform(transforms, **kwargs_transforms)
-                .databunch(**databunch_kwargs)
-                .normalize(imagenet_stats))
-        # RGB Image
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            data = (data.transform(transforms, **kwargs_transforms)
+                    .databunch(**databunch_kwargs)
+                    .normalize(imagenet_stats))
+            # RGB Image
         # We need to divide image pixel values by 255. at the time of opening it
         # because same method is used to open multispectral imagery as well
         # and that workflow depends on the imagery specific stats
@@ -2050,6 +2082,7 @@ def prepare_data(path,
         # in fastai 1.0.60 transforms are applied before normalization
         data.train_ds.x._div = 255.
         data.valid_ds.x._div = 255.
+        data.is_normalized = True
 
     if dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles']:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
@@ -2113,13 +2146,16 @@ def prepare_data(path,
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
-    data.show_batch = types.MethodType(
-        types.FunctionType(
-            data.show_batch.__code__, data.show_batch.__globals__, data.show_batch.__name__,
-            (min(int(math.sqrt(data.batch_size)), 5), *data.show_batch.__defaults__[1:]), data.show_batch.__closure__
-        ),
-        data
-    )
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        data.show_batch = types.MethodType(
+            types.FunctionType(
+                data.show_batch.__code__, data.show_batch.__globals__, data.show_batch.__name__,
+                (min(int(math.sqrt(data.batch_size)), 5), *data.show_batch.__defaults__[1:]), data.show_batch.__closure__
+            ),
+            data
+        )
     data.orig_path = path
     data.resize_to = kwargs_transforms.get('size', None)
     data.height_width = height_width

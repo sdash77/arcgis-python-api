@@ -2,7 +2,6 @@ from pathlib import Path
 import json
 import warnings
 from ._model_extension import ModelExtension
-from ._arcgis_model import _EmptyData
 
 try:
     from fastai.vision import flatten_model, ImageList 
@@ -11,7 +10,6 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from ._arcgis_model import _resnet_family
 
     HAS_FASTAI = True
 
@@ -22,18 +20,17 @@ class MMDetectionConfig():
 
     try:
         import torch
-        import mmdet.models
-        import mmcv
         import types
         import numpy
         import os
         import pathlib
-        import arcgis
     except:
         pass
     
     def get_model(self, data, backbone=None, **kwargs):
 
+        import mmdet.models
+        import mmcv
         import logging
         logging.disable(logging.WARNING)
 
@@ -41,11 +38,12 @@ class MMDetectionConfig():
         checkpoint = kwargs.get('model_weight', False)
 
         if self.os.path.exists(self.pathlib.Path(config)):
-            cfg = self.mmcv.Config.fromfile(config)
+            cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
         else:
-            cfg_abs_path = self.pathlib.Path(self.arcgis.__file__).parent/'learn'/'_mmdetection_config'/(config +'.{}'.format('py'))
-            cfg = self.mmcv.Config.fromfile(cfg_abs_path)
+            import arcgis
+            cfg_abs_path = self.pathlib.Path(arcgis.__file__).parent/'learn'/'_mmdetection_config'/(config +'.{}'.format('py'))
+            cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get('checkpoint', False)
             if checkpoint:
                 cfg.model.pretrained = None
@@ -59,17 +57,21 @@ class MMDetectionConfig():
         else:
             cfg.model.bbox_head.num_classes = data.c - 1
 
-        model = self.mmdet.models.build_detector(cfg.model)
+        if cfg.model.backbone.type=='DetectoRS_ResNet' and getattr(data, '_is_multispectral', False):
+            if hasattr(cfg.model.neck, 'rfp_backbone'):
+                cfg.model.neck.rfp_backbone.in_channels = len(data._extract_bands)
+
+        model = mmdet.models.build_detector(cfg.model)
 
         if checkpoint:
-            self.mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
+            mmcv.runner.load_checkpoint(model, checkpoint, 'cpu', False, logging.getLogger())
 
         from mmcv.runner import auto_fp16
         @auto_fp16(apply_to=('img', ))
         def forward_modified(self, img, img_metas=None, gt_bboxes=None, gt_labels=None):
             
             if self.training:
-                
+
                 losses = self.forward_train(img, img_metas, gt_bboxes, gt_labels)
                 loss, log_vars = self._parse_losses(losses)
 
@@ -221,6 +223,26 @@ class MMDetection(ModelExtension):
         self._check_dataset_support(data)
 
         super().__init__(data, MMDetectionConfig, pretrained_path=pretrained_path, model=model, model_weight=model_weight)
+        idx = self._freeze()
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+        self.learn.create_opt(lr=3e-3)
+
+    def unfreeze(self):
+        for _, param in self.learn.model.named_parameters():
+            param.requires_grad = True
+        
+    def _freeze(self):
+        "Freezes the pretrained backbone."
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (torch.nn.BatchNorm2d)):
+                continue
+            for p in i.parameters():
+                p.requires_grad = False
+        return idx
+
+    @staticmethod
+    def _available_metrics():
+        return ['valid_loss']
 
     @property
     def _is_mmsegdet(self):
@@ -236,8 +258,8 @@ class MMDetection(ModelExtension):
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
 
     supported_models=['atss', 'carafe', 'cascade_rcnn', 'cascade_rpn', 'dcn', 'detectors', 'double_heads', 'dynamic_rcnn',\
-            'empirical_attention', 'fcos', 'foveabox', 'free_anchor', 'fsaf', 'ghm', 'gn+ws', 'hrnet', 'libra_rcnn',\
-            'nas_fcos', 'paa', 'pafpn', 'pisa', 'regnet', 'reppoints', 'res2net', 'resnest', 'sabl', 'vfnet']
+            'empirical_attention', 'fcos', 'foveabox', 'fsaf', 'ghm', 'hrnet', 'libra_rcnn','nas_fcos', 'pafpn', 'pisa',\
+            'regnet', 'reppoints', 'res2net', 'sabl', 'vfnet']
     """
     List of models supported by this class.
     """
@@ -328,7 +350,7 @@ class MMDetection(ModelExtension):
     ):
 
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -397,6 +419,7 @@ class MMDetection(ModelExtension):
 
             """
             Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+            This method is only supported for RGB images.
 
             =====================   ===========================================
             **Argument**            **Description**

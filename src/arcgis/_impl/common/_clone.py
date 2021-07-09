@@ -896,16 +896,12 @@ class _DeepCloner:
                                             None,
                                         )
                                         if not feature_service:
-                                            feature_service = (
-                                                _get_feature_service_related_item(
-                                                    service_url, source
-                                                )
+                                            feature_service = _get_feature_service_related_item(
+                                                service_url, source
                                             )
                                             if feature_service:
-                                                fs_definition = (
-                                                    self._get_item_definitions(
-                                                        feature_service
-                                                    )
+                                                fs_definition = self._get_item_definitions(
+                                                    feature_service
                                                 )
                                                 if fs_definition is not None:
                                                     item_definition.add_child(
@@ -1465,6 +1461,22 @@ class _DeepCloner:
                 resources=item.resources.export(),
                 preserve_item_id=self._preserve_item_id,
             )
+        elif item['type'] == "Web Experience":
+            from arcgis._impl.common._itemdef._expbuilder import _WebExperience
+
+            return _WebExperience(
+                self.target,
+                self._clone_mapping,
+                dict(item),
+                data=None,
+                thumbnail=None,
+                portal_item=item,
+                folder=self.folder,
+                search_existing=self._search_existing_items,
+                owner=self.owner,
+                preserve_item_id=self._preserve_item_id,
+            )
+
         # For all other types get the corresponding definition
         else:
             if item["type"] in _TEXT_BASED_ITEM_TYPES:
@@ -5646,10 +5658,8 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                     new_id = new_service[
                                                         "layer_id_mapping"
                                                     ][layer_id]
-                                                    new_connection_properties = (
-                                                        copy.deepcopy(
-                                                            connection_properties
-                                                        )
+                                                    new_connection_properties = copy.deepcopy(
+                                                        connection_properties
                                                     )
                                                     new_connection_properties[
                                                         "connection_info"
@@ -5673,11 +5683,9 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                             service_version_infos[
                                                                 new_service["url"]
                                                             ] = {}
-                                                    version_info = (
-                                                        service_version_infos[
-                                                            new_service["url"]
-                                                        ]
-                                                    )
+                                                    version_info = service_version_infos[
+                                                        new_service["url"]
+                                                    ]
                                                     for key, value in {
                                                         "defaultVersionName": "version",
                                                         "defaultVersionGuid": "versionguid",

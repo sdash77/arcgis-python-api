@@ -19,7 +19,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict
+from typing import Tuple, Any, Dict, List
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -29,6 +29,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._utils import chunks as _chunks
 from ._impl import _portalpy
 
 from ._impl._jb import StatusJob
@@ -646,6 +647,30 @@ class GIS(object):
 
             return APIKeyManager(self)
         return None
+
+    # ----------------------------------------------------------------------
+    @_lazy_property
+    def languages(self) -> List[Dict[str, Any]]:
+        """
+        Lists the available languages.
+
+        :returns: List[Dict[str, Any]]
+        """
+        url = f"{self._portal.resturl}portals/languages"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @_lazy_property
+    def regions(self) -> List[Dict[str, Any]]:
+        """
+        Lists the available regions.
+
+        :returns: List[Dict[str, Any]]
+        """
+        url = f"{self._portal.resturl}portals/regions"
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def _private_service_url(self, service_url):
@@ -3156,7 +3181,7 @@ class UserManager(object):
                             "email": email,
                             "role": role,
                             "userLicenseType": user_type,
-                            "groups": ",".join(groups),
+                            "groups": ",".join([g for g in groups if g]),
                             "userCreditAssignment": credits,
                         }
                     ],
@@ -3443,9 +3468,12 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -3478,9 +3506,13 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)                
+                
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -8758,6 +8790,7 @@ class User(dict):
         last_name=None,
         security_question=None,
         security_answer=None,
+        culture_format=None,
     ):
         """Updates this user's properties.
 
@@ -8827,12 +8860,25 @@ class User(dict):
                             Usage example:
 
                             security_answer="Working on the Python API"
+        ------------------  ----------------------------------------------------------
+        culture_format      Optional String. Specifies user-preferred number and date format
         ==================  ==========================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
 
         """
+        culture_check = [
+            lang["culture"].lower() for lang in self._gis.languages if lang
+        ]
+        if culture and not culture.lower() in culture_check:
+            raise ValueError(
+                f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
+            )
+        if region and not region.upper() in [g["region"] for g in self._gis.regions]:
+            raise ValueError(
+                f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
+            )
         user_type = None
         if tags is not None and isinstance(tags, list):
             tags = ",".join(tags)
@@ -8854,6 +8900,8 @@ class User(dict):
             "firstName": first_name,
             "lastName": last_name,
             "clearEmptyFields": True,
+            "cultureFormat": culture_format,
+            "region": region,
         }
         if security_answer and security_question:
             params["securityQuestionIdx"] = security_question
@@ -13284,6 +13332,21 @@ class _GISResource(object):
 
     @classmethod
     def fromitem(cls, item):
+        """
+        The ``fromitem`` method is used to create a :class:`~arcgis.features.FeatureLayerCollection` from a
+        :class:`~arcgis.gis.Item` class.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        item                       A required :class:`~arcgis.gis.Item` object. The item needed to convert to
+                                   a :class:`~arcgis.features.FeatureLayerCollection` object.
+        ======================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.features.FeatureLayerCollection` object.
+
+        """
         if not item.type.lower().endswith("service"):
             raise TypeError("item must be a type of service, not " + item.type)
         return cls(item.url, item._gis)
@@ -13326,7 +13389,9 @@ class _GISResource(object):
 
     @property
     def properties(self):
-        """The properties of this object"""
+        """
+        The ``properties`` method retrieves and set properties of this object.
+        """
         if self._hydrated:
             return self._lazy_properties
         else:

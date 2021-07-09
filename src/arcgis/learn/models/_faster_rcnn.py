@@ -17,9 +17,6 @@ try:
     from torch.jit.annotations import List, Dict
     from torchvision.models.detection.roi_heads import fastrcnn_loss
     from torchvision.models.detection.transform import resize_boxes
-    import torchvision
-    from ._maskrcnn import grid_anchors
-    tvisver = [int(x) for x in torchvision.__version__.split('.')]
 
     HAS_FASTAI = True
 
@@ -37,6 +34,7 @@ class MyFasterRCNN():
         import pathlib
         import os
         import fastai
+        tvisver = [int(x) for x in torchvision.__version__.split('.')]
     except:
         pass
     
@@ -149,13 +147,13 @@ class MyFasterRCNN():
             model_input_batch = (model_input_batch.permute(0, 2, 3, 1)*std + mean).permute(0, 3, 1, 2)
         
         for bbox, label in zip(*model_target_batch):
-            mask = ~((bbox == 0).all(1))
+            bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
+            mask = (bbox[:, 2:] >= (bbox[:, :2]+1.0)).all(1)
             bbox = bbox[mask]
             label = label[mask]
-            bbox = ((bbox+1)/2)*learn.data.chip_size # FasterRCNN model require bboxes with values between 0 and H and 0 and W.
             target = {}#FasterRCNN require target of each image in the formate of dictionary.
             #If image comes without any bboxes.
-            if ( tvisver[0] == 0 and tvisver[1] < 6 ) and bbox.nelement() == 0:
+            if ( self.tvisver[0] == 0 and self.tvisver[1] < 6 ) and bbox.nelement() == 0:
                 bbox = self.torch.tensor([[0.,0.,0.,0.]]).to(learn.data.device)
                 label = self.torch.tensor([0]).to(learn.data.device)
             # FasterRCNN require the formate of bboxes [x1,y1,x2,y2].
@@ -453,7 +451,6 @@ class FasterRCNN(ModelExtension):
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
             idx = self._freeze()
-            self.learn.model.rpn.anchor_generator.grid_anchors = types.MethodType(grid_anchors, self.learn.model.rpn.anchor_generator)
 
         self.learn.model.roi_heads.forward = types.MethodType(forward_roi, self.learn.model.roi_heads)
         self.learn.model.eager_outputs = types.MethodType(eager_outputs_modified, self.learn.model)
@@ -588,7 +585,7 @@ class FasterRCNN(ModelExtension):
     ):
 
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -610,15 +607,18 @@ class FasterRCNN(ModelExtension):
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
         ---------------------   -------------------------------------------
-        resize                  Optional boolean. Resizes the image to the same size
-                                (chip_size parameter in prepare_data) that the model was trained on,
-                                before detecting objects.
-                                Note that if resize_to parameter was used in prepare_data,
-                                the image is resized to that size instead.
+        resize                  Optional boolean. Resizes the image to the
+                                same size (chip_size parameter in prepare_data)
+                                that the model was trained on, before detecting
+                                objects. Note that if resize_to parameter was
+                                used in prepare_data, the image is resized to
+                                that size instead.
 
-                                By default, this parameter is false and the detections are run
-                                in a sliding window fashion by applying the model on cropped sections
-                                of the image (of the same size as the model was trained on).
+                                By default, this parameter is false and the
+                                detections are run in a sliding window fashion
+                                by applying the model on cropped sections of
+                                the image (of the same size as the model was
+                                trained on).
         =====================   ===========================================
         
         :returns: Returns a tuple with predictions, labels and optionally confidence scores
@@ -657,6 +657,7 @@ class FasterRCNN(ModelExtension):
 
             """
             Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+            This method is only supported for RGB images.
 
             =====================   ===========================================
             **Argument**            **Description**
@@ -709,14 +710,15 @@ class FasterRCNN(ModelExtension):
                                     0-255.
             ---------------------   -------------------------------------------
             resize                  Optional boolean. Resizes the video frames to the same size
-                                    (chip_size parameter in prepare_data) that the model was trained on,
-                                    before detecting objects.
-                                    Note that if resize_to parameter was used in prepare_data,
+                                    (chip_size parameter in prepare_data) that the model was
+                                    trained on, before detecting objects. Note that if
+                                    resize_to parameter was used in prepare_data,
                                     the video frames are resized to that size instead.
 
-                                    By default, this parameter is false and the detections are run
-                                    in a sliding window fashion by applying the model on cropped sections
-                                    of the frame (of the same size as the model was trained on).
+                                    By default, this parameter is false and the detections
+                                    are run in a sliding window fashion by applying the
+                                    model on cropped sections of the frame (of the same
+                                    size as the model was trained on).
             =====================   ===========================================
             
             """

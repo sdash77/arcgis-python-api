@@ -96,7 +96,7 @@ class Pix2Pix(ArcGISModel):
         resize_to = emd.get('resize_to')
         chip_size = emd['ImageHeight']
         if data is None:
-             if emd.get('IsMultispectral', False):
+            if emd.get('IsMultispectral', False):
                 data = ImageTupleListMS2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent, batch_stats_a=None, batch_stats_b=None).split_none().label_empty().databunch(bs=2,no_check = True)
                 data.n_channel = emd['n_channel']
                 data = get_multispectral_data_params_from_emd(data, emd)
@@ -107,16 +107,16 @@ class Pix2Pix(ArcGISModel):
                         normalization_stats_b[_stat] = torch.tensor(normalization_stats_b[_stat])
                     setattr(data, ('_'+_stat), normalization_stats_b[_stat])
 
-             else:
-                 data = ImageTupleList2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent)\
-                     .split_none()\
-                     .label_empty()\
-                     .transform(size=(chip_size, chip_size))\
-                     .databunch(bs=2, no_check = True)
-        data.n_channel = emd['n_channel']
-        data._is_empty = True
-        data.emd_path = emd_path
-        data.emd = emd
+            else:
+                data = ImageTupleList2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent)\
+                    .split_none()\
+                    .label_empty()\
+                    .transform(size=(chip_size, chip_size))\
+                    .databunch(bs=2, no_check = True)
+            data.n_channel = emd['n_channel']
+            data._is_empty = True
+            data.emd_path = emd_path
+            data.emd = emd
         data.resize_to = chip_size
         
         return cls(data, **model_params, pretrained_path=str(model_file))
@@ -156,9 +156,10 @@ class Pix2Pix(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         """
-
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
         self.learn.model.arcgis_results = True
-        self.learn.show_results()
+        self.learn.show_results(rows=rows)
         self.learn.model.arcgis_results = False
 
     def predict(self, img_path):
@@ -190,7 +191,7 @@ class Pix2Pix(ArcGISModel):
         self.learn.model.arcgis_results = False
         return pred_img
 
-    def compute_metrics(self, accuracy=True, show_progress=True):
+    def compute_metrics(self, show_progress=True):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and 
         Structural Similarity Index Measure (SSIM) on validation set.

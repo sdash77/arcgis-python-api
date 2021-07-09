@@ -1556,12 +1556,13 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         color_list              A list containing different color inputs
-                                (r, g, b).
+                                in list/tuple format [(r, g, b)].
+                                For eg: [[110,10,200], [210,108,11]].
         ---------------------   -------------------------------------------
         color_delta             A value which defines the range around the
                                 threshold value for a specific color used
                                 for creating the mask images.
-                                Default value is 60
+                                Default value is 60.
         ---------------------   -------------------------------------------
         kernel_size             A list of 2 integers corresponding to size
                                 of the morphological filter operations
@@ -1573,7 +1574,7 @@ class ScannedMapDigitizer:
                                 Default value is "rect".
         ---------------------   -------------------------------------------
         show_result             A boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ===========================================
         """
 
@@ -1644,21 +1645,20 @@ class ScannedMapDigitizer:
         =====================   ===============================================
         **Argument**            **Description**
         ---------------------   -----------------------------------------------
-        color                   r, g, b value representing land color.
+        color                   A list containing r, g, b value representing land color.
                                 The color parameter is required for extracting
-                                the land region and generating the binary mask
+                                the land region and generating the binary mask.
         ---------------------   -----------------------------------------------
         color_delta             A value which defines the range around the
                                 threshold value for a specific color used for
                                 creating the mask images.
-                                 Default value is 60
+                                 Default value is 60.
         ---------------------   -----------------------------------------------
-        kernel_size             A list of 2 integers corresponding to size of
-                                the morphological filter operations closing
-                                and opening respectively.
+        kernel_size             An integer corresponding to size of kernel
+                                used for dilation(morphological operation).
         ---------------------   -----------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ===============================================
 
         """
@@ -1710,9 +1710,10 @@ class ScannedMapDigitizer:
         =====================   ==================================================
         **Argument**            **Description**
         ---------------------   --------------------------------------------------
-        color                   r, g, b value representing water color
-        ---------------------   --------------------------------------------------
         search_image            Path to the bigger image/shapefile.
+        ---------------------   --------------------------------------------------
+        color                   A list containing r, g, b value representing water color.
+                                For Eg: [173, 217, 219].
         ---------------------   --------------------------------------------------
         extent                  Extent defines the extreme longitude/latitude
                                 of the search region.
@@ -1722,7 +1723,7 @@ class ScannedMapDigitizer:
         image_width             Width of the search region.
         ---------------------   --------------------------------------------------
         show_result             A boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ==================================================
         """
 
@@ -1803,17 +1804,17 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   --------------------------------------------
         min_scale               An integer representing the minimum scale
-                                at which template matching is performed
+                                at which template matching is performed.
         ---------------------   --------------------------------------------
         max_scale               An integer representing maximum scale at
-                                which template matching is performed
+                                which template matching is performed.
         ---------------------   --------------------------------------------
         num_scales              An integer representing the number
                                 of scales at which template matching is
                                 performed.
         ---------------------   --------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ============================================
 
         """
@@ -1896,11 +1897,11 @@ class ScannedMapDigitizer:
         ---------------------   ----------------------------------------
         padding_param           A tuple that contains x-padding
                                 and y-padding at 0th and 1st index
-                                respectively
+                                respectively.
         ---------------------   ----------------------------------------
         show_result             A Boolean value. Set to "True" to
                                 visualize results and set to "False"
-                                otherwise
+                                otherwise.
         =====================   ========================================
         """
 
@@ -2041,7 +2042,7 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   ---------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   =============================================
 
         """

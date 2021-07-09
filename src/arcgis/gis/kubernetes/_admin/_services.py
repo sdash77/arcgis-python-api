@@ -2,7 +2,7 @@ try:
     import ujson as json
 except ImportError:
     import json
-
+from functools import lru_cache
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
 

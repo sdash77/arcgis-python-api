@@ -215,8 +215,7 @@ class RoadOrientation():
                 [
                     pytorch_tfms.RandomCrop(size=self.base.chip_size, padding_mode='constant',
                                             pad_if_needed=True) if self.base.chip_size else None,
-                    pytorch_tfms.Resize(size=self.base.resize_to,
-                                        interpolation=PILImage.NEAREST) if self.base.resize_to else None,
+                    pytorch_tfms.Resize(size=self.base.resize_to) if self.base.resize_to else None,
                     pytorch_tfms.RandomHorizontalFlip(),
                     pytorch_tfms.RandomVerticalFlip(),
                     pytorch_tfms.Normalize(
@@ -232,8 +231,7 @@ class RoadOrientation():
             # Validation Transforms
             [
                 # Pairwise Transforms
-                [pytorch_tfms.Resize(size=self.base.resize_to,
-                                     interpolation=PILImage.NEAREST) if self.base.resize_to else None],
+                [pytorch_tfms.Resize(size=self.base.resize_to) if self.base.resize_to else None],
                 # Image Transforms
                 [pytorch_tfms.ToTensor()],
                 [pytorch_tfms.Normalize(
@@ -350,26 +348,6 @@ class RoadOrientDataset(Dataset):
 
         seed = np.random.randint(2147483647)  # make a seed with numpy generator
         random.seed(seed)  # apply this seed to img tranfsorms
-        #if self.pair_tfms is not None:
-        #    image = self.pair_tfms(image)
-        #if self.image_tfms is not None:
-        #    image = self.image_tfms(image)
-        #random.seed(seed)  # apply this seed to target tranfsorms
-        #if self.pair_tfms is not None:
-        #    label = self.pair_tfms(label)
-
-        # # Convert to FastAI Image (ItemBase)
-        # image = self._get_fastai_image(image, dtype=np.float32)
-        # label = self._get_fastai_image(label, dtype=np.float32)
-
-        # if self.transforms:
-        #     image = image.apply_tfms(
-        #         self.transforms, do_resolve=True, **self.transforms_kwargs
-        #     )
-        #     label = label.apply_tfms(
-        #         self.transforms, do_resolve=False, **self.transforms_kwargs
-        #     )
-        # np.copy(label.data.squeeze(0).numpy().astype(np.uint8))
         label = np.asarray(label)
         if isinstance(image, PILImage.Image):
             image = torch.from_numpy(np.asarray(image).astype(np.float32).transpose(2, 0, 1))
@@ -378,9 +356,9 @@ class RoadOrientDataset(Dataset):
                 np.copy(label.astype(np.uint8))
             )
             # orient_label = self._get_fastai_image(orient_label, dtype=np.float32)
-            return image, [torch.from_numpy(label), torch.from_numpy(orient_label)]
+            return image, [torch.from_numpy(label.copy()), torch.from_numpy(orient_label.copy())]
         else:
-            return image, [torch.from_numpy(label), torch.from_numpy(label)]
+            return image, [torch.from_numpy(label.copy()), torch.from_numpy(label.copy())]
 
     def _get_fastai_image(self, x, dtype) -> Image:
         """

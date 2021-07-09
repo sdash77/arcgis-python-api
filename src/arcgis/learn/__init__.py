@@ -14,7 +14,8 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
       PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
-      ChangeDetector, Pix2Pix, ConnectNet, SiamMask, Track, Embeddings, MMDetection, MMSegmentation, AutoML
+      ChangeDetector, Pix2Pix, ConnectNet, SiamMask, Track, Embeddings, \
+      MMDetection, MMSegmentation, AutoML, DeepSort
       
     from ._object_tracker import ObjectTracker
 
@@ -1202,6 +1203,10 @@ def train_model(input_folder,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError("ArcGIS Online does not support train_model function.")
+
     return gis._tools.rasteranalysis.train_deep_learning_model(in_folder=input_folder,
                                                                output_name=output_name, 
                                                                model_type=model_type, 
