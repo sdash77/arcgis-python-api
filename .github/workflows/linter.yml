@@ -19,7 +19,7 @@ jobs:
       - name: black
         uses: lgeiger/black-action@v1.0.1
         with:
-          args: ./src --check --exclude learn 
+          args: ./src --check 
 
       - name: Check for modified files
         id: git-check
