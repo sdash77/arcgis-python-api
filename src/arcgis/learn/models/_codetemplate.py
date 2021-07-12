@@ -1,4 +1,3 @@
-
 code = """
 import json
 import sys, os, importlib
@@ -594,7 +593,7 @@ class ArcGISObjectClassifier:
 
         return {'output_vectors': json.dumps(features)}
 """
-entity_recognizer_placeholder= """
+entity_recognizer_placeholder = """
 print('not implemented')
 """
 
@@ -1451,4 +1450,4 @@ class ArcGISImageTranslation:
         xx = xx.transpose(2, 0, 1)
         pixelBlocks['output_pixels'] = xx
         return pixelBlocks
-""" 
+"""

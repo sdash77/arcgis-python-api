@@ -21,20 +21,35 @@ try:
     from fastai.train import to_fp16
     from fastai.metrics import accuracy
     from transformers import AutoTokenizer, AutoConfig
-    from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html, copy_metrics
-    from .._utils._seq2seq_utils import SequenceToSequenceLearner, CorpusBLEU, seq2seq_loss, seq2seq_acc
+    from .._utils.text_data import (
+        TextDataObject,
+        save_data_in_model_metrics_html,
+        copy_metrics,
+    )
+    from .._utils._seq2seq_utils import (
+        SequenceToSequenceLearner,
+        CorpusBLEU,
+        seq2seq_loss,
+        seq2seq_acc,
+    )
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._arcgis_transformer import ModelBackbone, infer_model_type
     from .._utils.common import _get_emd_path
-    from ._transformer_seq2seq import TransformerForSequenceToSequence, backbone_models_reverse_map, \
-        transformer_architectures, transformer_seq_length
+    from ._transformer_seq2seq import (
+        TransformerForSequenceToSequence,
+        backbone_models_reverse_map,
+        transformer_architectures,
+        transformer_seq_length,
+    )
     from transformers import logging
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
     from ._transformer_seq2seq import transformer_architectures, transformer_seq_length
 else:
-    warnings.filterwarnings("ignore", category=UserWarning, module='fastai')
+    warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
 
 class SequenceToSequence(ArcGISModel):
@@ -92,72 +107,96 @@ class SequenceToSequence(ArcGISModel):
     def __init__(self, data, backbone="t5-base", **kwargs):
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
-            
+
         self.logger = logging.get_logger()
-        if kwargs.get('verbose',None):
-            self.logger.setLevel(kwargs.get('verbose').upper())
+        if kwargs.get("verbose", None):
+            self.logger.setLevel(kwargs.get("verbose").upper())
         else:
             self.logger.setLevel(logging.ERROR)
 
-
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
-        self._mixed_precision = kwargs.get('mixed_precision', False)
-        self._seq_len = kwargs.get('seq_len', transformer_seq_length)
+        self._mixed_precision = kwargs.get("mixed_precision", False)
+        self._seq_len = kwargs.get("seq_len", transformer_seq_length)
         self._create_text_learner_object(
-            data, backbone, kwargs.get('pretrained_path', None), mixed_precision=self._mixed_precision, seq_len=self._seq_len)
+            data,
+            backbone,
+            kwargs.get("pretrained_path", None),
+            mixed_precision=self._mixed_precision,
+            seq_len=self._seq_len,
+        )
 
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
-        self._freeze()
-      
-    def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
-                                    seq_len=transformer_seq_length):
+        # self._freeze()
+
+    def _create_text_learner_object(
+        self,
+        data,
+        backbone,
+        pretrained_path=None,
+        mixed_precision=False,
+        seq_len=transformer_seq_length,
+    ):
         self._model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {self._model_type}")
         pretrained_model_name = backbone
         transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
-        pad_first = True if transformer_tokenizer.padding_side == 'left' else False
+        pad_first = True if transformer_tokenizer.padding_side == "left" else False
         pad_idx = transformer_tokenizer.pad_token_id
-        base_tokenizer = TransformersBaseTokenizer(pretrained_tokenizer=transformer_tokenizer, seq_len=seq_len)
+        base_tokenizer = TransformersBaseTokenizer(
+            pretrained_tokenizer=transformer_tokenizer, seq_len=seq_len
+        )
         tokenizer = Tokenizer(tok_func=base_tokenizer, pre_rules=[], post_rules=[])
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             tokenizer.n_cpus = 1
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
         numericalize_processor = NumericalizeProcessor(vocab=vocab)
-        tokenize_processor = TokenizeProcessor(tokenizer=tokenizer, include_bos=False, include_eos=False)
+        tokenize_processor = TokenizeProcessor(
+            tokenizer=tokenizer, include_bos=False, include_eos=False
+        )
         transformer_processor = [tokenize_processor, numericalize_processor]
         if data._is_empty or data._backbone != backbone:
-            self.logger.info('Creating DataBunch')
-            data._prepare_seq2seq_databunch(transformer_processor=transformer_processor, 
-                                            pad_first=pad_first, pad_idx=pad_idx,
-                                            model_type=self._model_type, backbone=backbone)
+            self.logger.info("Creating DataBunch")
+            data._prepare_seq2seq_databunch(
+                transformer_processor=transformer_processor,
+                pad_first=pad_first,
+                pad_idx=pad_idx,
+                model_type=self._model_type,
+                backbone=backbone,
+            )
         databunch = data.get_databunch()
 
         config = AutoConfig.from_pretrained(pretrained_model_name)
 
-        if pretrained_path is not None: pretrained_path = str(_get_emd_path(pretrained_path))
+        if pretrained_path is not None:
+            pretrained_path = str(_get_emd_path(pretrained_path))
 
         model = TransformerForSequenceToSequence(
             architecture=self._model_type,
             pretrained_model_name=pretrained_model_name,
             config=config,
             pretrained_model_path=pretrained_path,
-            seq_len=seq_len
+            seq_len=seq_len,
         )
         from IPython.utils import io
+
         with io.capture_output() as captured:
-            model.init_model()                 #output will be cleared
+            model.init_model()  # output will be cleared
         n_y_vocab = model._config.vocab_size
-        metrics=[seq2seq_acc, CorpusBLEU(n_y_vocab)]
+        metrics = [seq2seq_acc, CorpusBLEU(n_y_vocab)]
         # metrics=[accuracy, CorpusBLEU(n_y_vocab)]
         loss_func = seq2seq_loss
         from fastai.layers import LabelSmoothingCrossEntropy, FlattenedLoss
+
         # loss_func = FlattenedLoss(LabelSmoothingCrossEntropy, axis=-1)
 
-        self.learn = SequenceToSequenceLearner(databunch, model, metrics=metrics, loss_func = loss_func, path=data.path)
+        self.learn = SequenceToSequenceLearner(
+            databunch, model, metrics=metrics, loss_func=loss_func, path=data.path
+        )
 
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -167,7 +206,8 @@ class SequenceToSequence(ArcGISModel):
                 error_message = (
                     f"Mixed precision training is not supported for transformer model - {self._model_type.upper()}."
                     "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
-                    f" or choose a different transformer architectures from - {transformer_architectures}")
+                    f" or choose a different transformer architectures from - {transformer_architectures}"
+                )
                 raise Exception(error_message)
             self.logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
@@ -176,7 +216,11 @@ class SequenceToSequence(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ["valid_loss", "seq2seq_acc", "corpus_bleu"]
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -197,10 +241,11 @@ class SequenceToSequence(ArcGISModel):
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForSequenceToSequence._available_backbone_models(architecture)
 
-    def _freeze(self):
+    def freeze(self):
         """
         Freeze up to last layer group to train only the last layer group of the model.
         """
@@ -228,6 +273,7 @@ class SequenceToSequence(ArcGISModel):
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
 
         emd_path = _get_emd_path(emd_path)
@@ -243,13 +289,20 @@ class SequenceToSequence(ArcGISModel):
         data_is_none = False
         if data is None:
             data_is_none = True
-            data = TextDataObject(task='sequence_translation')
+            data = TextDataObject(task="sequence_translation")
             data._backbone = pretrained_model
             data.create_empty_seq2seq_data(text_cols, label_cols)
             data.emd, data.emd_path = emd, emd_path.parent
-        cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path),
-                         mixed_precision=mixed_precision, seq_len=seq_len, **kwargs)
-        if data_is_none:cls_object._data._is_empty = True
+        cls_object = cls(
+            data,
+            pretrained_model,
+            pretrained_path=str(emd_path),
+            mixed_precision=mixed_precision,
+            seq_len=seq_len,
+            **kwargs,
+        )
+        if data_is_none:
+            cls_object._data._is_empty = True
         return cls_object
 
     def load(self, name_or_path):
@@ -263,12 +316,20 @@ class SequenceToSequence(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-        if '\\' in str(name_or_path) or '/' in str(name_or_path):
+        if "\\" in str(name_or_path) or "/" in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        return super().load(name_or_path)
+        return super().load(name_or_path, strict=False)
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
-             save_optimizer=False, **kwargs):
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        **kwargs,
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment.
@@ -305,19 +366,28 @@ class SequenceToSequence(ArcGISModel):
 
         :returns: the qualified path at which the model is saved
         """
-        
+
         from ..models._arcgis_model import _create_zip
-        zip_files = kwargs.pop('zip_files', True)
-        overwrite = kwargs.pop('overwrite', False)
-        if '\\' in name_or_path or '/' in name_or_path:
+
+        zip_files = kwargs.pop("zip_files", True)
+        overwrite = kwargs.pop("overwrite", False)
+        if "\\" in name_or_path or "/" in name_or_path:
             path = name_or_path
         else:
-            path = os.path.join(self._data.path, 'models', name_or_path)
+            path = os.path.join(self._data.path, "models", name_or_path)
             if not os.path.exists(os.path.dirname(path)):
                 os.mkdir(os.path.dirname(path))
 
-        path = super().save(path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
-                            save_optimizer=save_optimizer, zip_files=False, **kwargs)
+        path = super().save(
+            path,
+            framework,
+            publish=False,
+            gis=None,
+            compute_metrics=compute_metrics,
+            save_optimizer=save_optimizer,
+            zip_files=False,
+            **kwargs,
+        )
 
         self._save_df_to_html(path)
 
@@ -325,13 +395,16 @@ class SequenceToSequence(ArcGISModel):
             _create_zip(path.name, str(path))
 
         if publish:
-            self._publish_dlpk((path/path.stem).with_suffix('.dlpk'), gis=gis, overwrite=overwrite)
+            self._publish_dlpk(
+                (path / path.stem).with_suffix(".dlpk"), gis=gis, overwrite=overwrite
+            )
 
         return Path(path)
 
     @property
     def _model_metrics(self):
         from IPython.utils import io
+
         with io.capture_output() as captured:
             metrics = self.get_model_metrics()
 
@@ -342,8 +415,10 @@ class SequenceToSequence(ArcGISModel):
         # metrics = self.get_model_metrics()
         # _emd_template.update(metrics)
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
-        _emd_template["Architecture"]= self.learn.model._transformer_architecture
-        _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name
+        _emd_template["Architecture"] = self.learn.model._transformer_architecture
+        _emd_template[
+            "PretrainedModel"
+        ] = self.learn.model._transformer_pretrained_model_name
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols
@@ -365,7 +440,9 @@ class SequenceToSequence(ArcGISModel):
         :returns: dataframe
         """
         self._check_requisites()
-        rows = rows if (rows <= self.learn.data.batch_size) else self.learn.data.batch_size
+        rows = (
+            rows if (rows <= self.learn.data.batch_size) else self.learn.data.batch_size
+        )
         return self.learn.show_results(rows=rows, **kwargs)
 
     def get_model_metrics(self):
@@ -373,23 +450,28 @@ class SequenceToSequence(ArcGISModel):
         Calculates the following  metrics:
             * accuracy:   the number of correctly predicted labels in the validation set
                           divided by the total number of items in the validation set
-            * bleu-score  This value indicates the similarity between model predictions 
-                          and the ground truth text. Maximum value is 1 
+            * bleu-score  This value indicates the similarity between model predictions
+                          and the ground truth text. Maximum value is 1
 
         :returns: a dictionary containing the metrics for classification model.
         """
         try:
             self._check_requisites()
         except Exception as e:
-            acc, bleu = self._data.emd.get('seq2seq_acc'), self._data.emd.get('bleu')
-            if acc or bleu: return {'seq2seq_acc': acc, 'bleu': bleu}
-            else: self.logger.error("Metric not found in the loaded model")
+            acc, bleu = self._data.emd.get("seq2seq_acc"), self._data.emd.get("bleu")
+            if acc or bleu:
+                return {"seq2seq_acc": acc, "bleu": bleu}
+            else:
+                self.logger.error("Metric not found in the loaded model")
         else:
-            if hasattr(self.learn, 'recorder'):
+            if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
                 metrics_values = self.learn.recorder.metrics
                 if len(metrics_names) > 0 and len(metrics_values) > 0:
-                    metrics = {x: round(float(metrics_values[-1][i]), 4) for i, x in enumerate(metrics_names)}
+                    metrics = {
+                        x: round(float(metrics_values[-1][i]), 4)
+                        for i, x in enumerate(metrics_names)
+                    }
                 else:
                     metrics = self._calculate_model_metrics()
             else:
@@ -400,11 +482,14 @@ class SequenceToSequence(ArcGISModel):
 
         self._check_requisites()
         self.logger.info("Calculating Model Metrics")
-        metrics_names = ['accuracy','bleu']
-        metrics_values = self.learn.validate()[1:] #0th value is validation loss
+        metrics_names = ["accuracy", "bleu"]
+        metrics_values = self.learn.validate()[1:]  # 0th value is validation loss
         metrics = {}
         if len(metrics_names) > 0 and len(metrics_values) > 0:
-                metrics = {x: round(float(metrics_values[i]), 4) for i, x in enumerate(metrics_names)}
+            metrics = {
+                x: round(float(metrics_values[i]), 4)
+                for i, x in enumerate(metrics_names)
+            }
         return metrics
 
     def predict(self, text_or_list, batch_size=64, show_progress=True, **kwargs):
@@ -416,17 +501,17 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         text_or_list            Required input string or list of input strings.
         ---------------------   -------------------------------------------
-        batch_size              Optional integer. 
-                                Number of inputs to be processed at once. 
+        batch_size              Optional integer.
+                                Number of inputs to be processed at once.
                                 Try reducing the batch size in case of out of
                                 memory errors.
                                 Default value : 64
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. 
+        show_progress           Optional bool.
                                 To show or not to show the progress of prediction task.
                                 Default value : True
         =====================   ===========================================
-        
+
         **kwargs**
 
         =====================   ===========================================
@@ -436,12 +521,12 @@ class SequenceToSequence(ArcGISModel):
                                 Number of beams for beam search. 1 means no beam search.
                                 Default value is set to 1
         ---------------------   -------------------------------------------
-        max_length              Optional integer. 
-                                The maximum length of the sequence to be generated. 
+        max_length              Optional integer.
+                                The maximum length of the sequence to be generated.
                                 Default value is set to 20
         ---------------------   -------------------------------------------
-        min_length              Optional integer. 
-                                The minimum length of the sequence to be generated. 
+        min_length              Optional integer.
+                                The minimum length of the sequence to be generated.
                                 Default value is set to 10
         =====================   ===========================================
 
@@ -451,30 +536,36 @@ class SequenceToSequence(ArcGISModel):
         if isinstance(text_or_list, str):
             text_or_list = [text_or_list]
         preds = self.learn.predict(text_or_list, batch_size, show_progress, **kwargs)
-        return list(zip(text_or_list,preds))
+        return list(zip(text_or_list, preds))
 
     def _save_df_to_html(self, path):
 
-        if getattr(self._data, '_is_empty', False):
+        if getattr(self._data, "_is_empty", False):
             copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return
         validation_dataframe = self._data._valid_df.sample(n=5)
 
-        model_output = self.predict(validation_dataframe[self._data._text_cols].tolist(), show_progress=False)
-        predictions = [pred for _,pred in model_output]
-        labels = [x[0] for x in validation_dataframe[self._data._label_cols].values.tolist()]
-        new_df = pd.DataFrame(validation_dataframe[self._data._text_cols].values, columns=["input"])
+        model_output = self.predict(
+            validation_dataframe[self._data._text_cols].tolist(), show_progress=False
+        )
+        predictions = [pred for _, pred in model_output]
+        labels = [
+            x[0] for x in validation_dataframe[self._data._label_cols].values.tolist()
+        ]
+        new_df = pd.DataFrame(
+            validation_dataframe[self._data._text_cols].values, columns=["input"]
+        )
         new_df["target"] = labels
         new_df["predictions"] = predictions
 
-        df_str = new_df.to_html(index=False, justify='left').replace(">\n", ">")
+        df_str = new_df.to_html(index=False, justify="left").replace(">\n", ">")
 
         msg = "<p><b>Sample Results</b></p>"
 
         text = f"\n\n{msg}\n\n{df_str}"
 
         save_data_in_model_metrics_html(text, path, model_characteristics_folder)
-    
+
     def plot_losses(self, show=True):
         """
         Plot training and validation losses.
@@ -492,9 +583,12 @@ class SequenceToSequence(ArcGISModel):
         """
         self._check_requisites()
         import matplotlib.pyplot as plt
-        if not hasattr(self.learn, 'recorder'):  # return none if the recorder is empty
-            self.logger.error("Model needs to be trained first. Please call `model.fit()` to train the model."
-                         " Then call this method to plot/return the loss curve.")
+
+        if not hasattr(self.learn, "recorder"):  # return none if the recorder is empty
+            self.logger.error(
+                "Model needs to be trained first. Please call `model.fit()` to train the model."
+                " Then call this method to plot/return the loss curve."
+            )
             return
         return_fig = not show
         fig = self.learn.recorder.plot_losses(return_fig=return_fig)
@@ -516,7 +610,7 @@ class SequenceToSequence(ArcGISModel):
     #         return logger.warning(f'Function not implemented for {self._model_type} models')
     #     if type(question_text_or_list) != type(context_text_or_list):
     #         return('Questions and context must either be both of string type or equal length lists of strings.')
-    #     if isinstance(question_text_or_list, str) and isinstance(context_text_or_list, str): 
+    #     if isinstance(question_text_or_list, str) and isinstance(context_text_or_list, str):
     #         question_text_or_list = 'question: ' + question_text_or_list
     #         context_text_or_list = ' context: ' + context_text_or_list
     #         text_or_list = [question_text_or_list + context_text_or_list]

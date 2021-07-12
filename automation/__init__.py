@@ -1,4 +1,5 @@
 import logging
+
 log = logging.getLogger()
 
 from automation._common import *
@@ -6,12 +7,13 @@ from automation._common import *
 log.setLevel(logging.DEBUG)
 debug_log_file_path = os.path.join(STAGING_DIR, "log.log")
 warning_log_file_path = os.path.join(STAGING_DIR, "warnings.log")
-formatter_str = \
-    u'-----    %(levelname)s    |    '\
-     '%(asctime)s    |    '\
-     '%(filename)s line %(lineno)d'\
-     '     -----\n'\
-     '"%(message)s"'
+formatter_str = (
+    u"-----    %(levelname)s    |    "
+    "%(asctime)s    |    "
+    "%(filename)s line %(lineno)d"
+    "     -----\n"
+    '"%(message)s"'
+)
 formatter = logging.Formatter(formatter_str)
 
 debug_file_handler = logging.FileHandler(debug_log_file_path, "w")
@@ -38,7 +40,9 @@ from automation.package_building.publish_to_ftp_site import publish_to_ftp_site
 
 from automation.documentation.build_documentation import build_documentation
 
-from automation.dev_site.stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
+from automation.dev_site.stage_notebooks_for_dev_web_repo import (
+    stage_notebooks_for_dev_web_repo,
+)
 from automation.dev_site.build_dummy_dev_site import build_dummy_dev_site
 
 from automation.testing_utils.run_test_suite import run_test_suite

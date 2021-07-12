@@ -42,7 +42,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -86,6 +86,7 @@ class Connection(object):
         key_file
         proxy_url
         proxy_port
+        proxy : Dict - Dict
         verify_cert
         referer
         all_ssl = True
@@ -102,6 +103,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
+        self._proxy = kwargs.get("proxy", None)
         self._timeout = kwargs.get("timeout", 600)
         self._all_ssl = kwargs.pop("all_ssl", True)
         self.trust_env = kwargs.pop("trust_env", None)
@@ -258,6 +260,8 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def _create_session(self):
+        if self._proxy and isinstance(self._proxy, dict):
+            proxies = self._proxy
         if self._proxy_port and self._proxy_url:
             url = "%s:%s" % (self._proxy_url, self._proxy_port)
             if self._proxy_password and self._proxy_username:
@@ -767,6 +771,8 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
+            # When data and files are present, they need to be combined
+            # https://stackoverflow.com/a/12385661
             params.update(fields)
             mp_encoder = MultipartEncoder(fields=params)
             if post_json:  # edge case workflow
@@ -782,26 +788,20 @@ class Connection(object):
             else:
                 # data=mp_encoder
                 if timeout:
-
-                    self._session.headers.update(
-                        {"Content-Type": mp_encoder.content_type}
-                    )
                     resp = self._session.post(
                         url=url,
                         data=mp_encoder,
                         cert=cert,
-                        files=files,
                         timeout=timeout,
+                        headers={"Content-Type": mp_encoder.content_type},
                     )
-                    self._session.headers.pop("Content-Type")
                 else:
-                    self._session.headers.update(
-                        {"Content-Type": mp_encoder.content_type}
-                    )
                     resp = self._session.post(
-                        url=url, data=mp_encoder, cert=cert, files=files
+                        url=url,
+                        data=mp_encoder,
+                        cert=cert,
+                        headers={"Content-Type": mp_encoder.content_type},
                     )
-                    self._session.headers.pop("Content-Type")
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err

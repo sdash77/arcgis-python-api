@@ -1,5 +1,11 @@
 import json
 from arcgis.gis.kubernetes._admin._base import _BaseKube
+from ._deployment import DeploymentManager
+from ._upgrades import UpgradeManager
+from ._recovery import RecoveryManager
+from ._content import LanguageManager
+from ._architecture import ArchitectureManager
+from typing import List, Dict, Any, Tuple, Optional
 
 
 class Server(_BaseKube):
@@ -51,9 +57,13 @@ class Server(_BaseKube):
 
 ###########################################################################
 class ServerDefaults(_BaseKube):
+    """Represents the server default values"""
+
     @property
     def properties(self):
-        return "foo"
+        url = self._url
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     @properties.setter
     def properties(self, value):
@@ -65,7 +75,7 @@ class ServerDefaults(_BaseKube):
 
 ###########################################################################
 class ServerManager(_BaseKube):
-    """ """
+    """Manages the Registered Servers"""
 
     _gis = None
     _con = None
@@ -80,12 +90,14 @@ class ServerManager(_BaseKube):
 
         """
         servers = []
-        for server in self.properties.servers:
-            url = f"{self._url}/{server.id}"
-            servers.append(Server(url, self._gis))
+        if "servers" in self.properties:
+            for server in self.properties.servers:
+                url = f"{self._url}/{server.id}"
+                servers.append(Server(url, self._gis))
         return servers
 
     # ----------------------------------------------------------------------
+    @property
     def defaults(self):
         """
         Returns the default properties for each server type.
@@ -96,7 +108,7 @@ class ServerManager(_BaseKube):
         d = []
         url = f"{self._url}/properties"
         params = {"f": "json"}
-
+        res = self._con.get(url, params)
         if "properties" in res:
             for i in res["properties"]:
                 purl = f"{url}/{i['id']}"
@@ -161,8 +173,12 @@ class SystemManager(_BaseKube):
     deployment-wide security.
     """
 
+    _recovery = None
     _indexer = None
     _sm = None
+    _deployments = None
+    _upgrades = None
+    _license = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
@@ -183,6 +199,83 @@ class SystemManager(_BaseKube):
         self._con = gis._con
         if initialize:
             self._init(gis._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def deployments(self) -> DeploymentManager:
+        """Manages the deployment settings for enterprise"""
+        url = f"{self._url}/deployments"
+        if self._deployments is None:
+            self._deployments = DeploymentManager(url=url, gis=self._gis)
+        return self._deployments
+
+    # ----------------------------------------------------------------------
+    @property
+    def upgrades(self) -> UpgradeManager:
+        """
+        Returns access to the upgrade operations on the Enterprise
+        """
+        url = f"{self._url}/upgrades"
+        if self._upgrades is None:
+            self._upgrades = UpgradeManager(url=url, gis=self._gis)
+        return self._upgrades
+
+    # ----------------------------------------------------------------------
+    @property
+    def recovery(self) -> RecoveryManager:
+        """
+        This resource allows an administrator the ability to manage
+        disaster recovery settings.
+
+        :returns: RecoveryManager
+        """
+        if self._recovery is None:
+            url = f"{self._url}/disasterrecovery"
+            self._recovery = RecoveryManager(url=url, gis=self._gis)
+        return self._recovery
+
+    # ----------------------------------------------------------------------
+    @property
+    def _adaptors(self):
+        """ """
+        # web adaptor
+        raise NotImplemented("Not Implemented in 1.9.0")
+
+    # ----------------------------------------------------------------------
+    @property
+    def _licenses(self) -> List[Dict[str, Any]]:
+        """
+        The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
+
+        :returns: List[Dict[str, Any]]
+        """
+        raise NotImplemented("Not Implemented in 1.9.0")
+
+    # ----------------------------------------------------------------------
+    @property
+    def content(self) -> LanguageManager:
+        """
+        The content resource provides access to the languages resource.
+        The languages resource provides a list of current languages for an
+        organization.
+
+        :returns: LanguageManager
+
+        """
+        return LanguageManager(url=f"{self._url}/content", gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tasks(self):
+        """ """
+        raise NotImplemented("Not Implemented in 1.9.0")
+
+    # ----------------------------------------------------------------------
+    @property
+    def _architecture_profiles(self) -> ArchitectureManager:
+        """Not Implemented in 1.9.0"""
+        # architecture profiles
+        raise NotImplemented("Not Implemented in 1.9.0")
 
     # ----------------------------------------------------------------------
     @property
@@ -227,7 +320,7 @@ class SystemManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def servers(self):
-        """ """
+        """Returns a manager to work with ArcGIS Servers registerd with Kubernetes"""
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm

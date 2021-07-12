@@ -501,10 +501,15 @@ def _get_geometry(data):
 
 def _get_geometry_from_feature_layer(data):
     geo = None
-    layer_fset = layer.query()
-    for ele in layer_fset.features:
-        geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
-    return geometry
+    layer_fset = data.query()
+    try:
+        for ele in layer_fset.features:
+            geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
+    except:
+        _LOGGER.warning(
+            "Failure while constructing the union of the individual feature geometries"
+        )
+    return geo
 
 
 def build_query_string(field_name, operator, field_values):
@@ -826,12 +831,15 @@ class _ImageryUploaderAGOL:
                 url = blob.url.split("?", 1)[0]
 
                 if is_dir:
-                    if url != "":
-                        url = url[
-                            0 : url.find(current_time_str) + len(current_time_str)
-                        ]
-                        if url not in self.url_list:
-                            self.url_list.append(url)
+                    if self.file_list[i]["single_image"]:
+                        self.url_list.append(url)
+                    else:
+                        if url != "":
+                            url = url[
+                                0 : url.find(current_time_str) + len(current_time_str)
+                            ]
+                            if url not in self.url_list:
+                                self.url_list.append(url)
                 else:
                     self.url_list.append(url)
                 break
@@ -894,6 +902,7 @@ def _upload_imagery_agol(
     direct_access_url=None,
     auto_renew=True,
     upload_properties=None,
+    single_image=False,
 ):
     """uploads imagery to user's rasterstore on AGOL and returns the list of urls"""
 
@@ -932,7 +941,7 @@ def _upload_imagery_agol(
         time_list.append(current_time)
         file_dict["prefix"] = "_images/" + str(current_time) + "/"
         file_dict["file_name"] = file
-
+        file_dict["single_image"] = single_image
         if os.path.exists(file):
             if os.path.isdir(file):
                 file_dict["is_dir"] = True
@@ -1050,7 +1059,7 @@ def _upload(path, description=None, gis=None):
         files["file"] = path
         if description:
             params["description"] = description
-        res = gis._con.post(path=url, postdata=params, files=files)
+        res = gis._con.post(path=url, postdata=params, files=files, timeout=None)
         if "error" in res:
             raise Exception(res)
         else:
@@ -1068,7 +1077,7 @@ def _register_upload(file_path, gis=None):
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     r_url = "%s/uploads/register" % ra_url
     params = {"f": "json", "itemName": os.path.basename(file_path)}
-    reg_res = gis._con.post(r_url, params)
+    reg_res = gis._con.post(r_url, params, timeout=None)
     if "item" in reg_res and "itemID" in reg_res["item"]:
         return reg_res["item"]["itemID"]
     return None
@@ -1101,7 +1110,9 @@ def _upload_by_parts(item_id, file_path, gis=None):
             del writer
             files["file"] = tempFile
             params["partId"] = i + 1
-            res = gis._con.post(upload_part_url, postdata=params, files=files)
+            res = gis._con.post(
+                upload_part_url, postdata=params, files=files, timeout=None
+            )
             if "error" in res:
                 raise Exception(res)
             os.remove(tempFile)
@@ -1118,7 +1129,7 @@ def _commit_upload(item_id, gis=None):
     b_url = "%s/uploads/%s" % (ra_url, item_id)
     commit_part_url = "%s/commit" % b_url
     params = {"f": "json", "parts": _uploaded_parts(itemid=item_id, gis=gis)}
-    res = gis._con.post(commit_part_url, params)
+    res = gis._con.post(commit_part_url, params, timeout=None)
     if "error" in res:
         raise Exception(res)
     else:

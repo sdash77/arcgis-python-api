@@ -16,15 +16,28 @@ try:
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
+    import types
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta, _resnet_family, _set_ddp_multigpu, _isnotebook
+    from ._arcgis_model import (
+        SaveModelCallback,
+        _set_multigpu_callback,
+        _get_backbone_meta,
+        _resnet_family,
+        _set_ddp_multigpu,
+        _isnotebook,
+    )
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
-    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
+    from ._maskrcnn_utils import (
+        is_no_color,
+        mask_rcnn_loss,
+        train_callback,
+        compute_class_AP,
+    )
     from ._MaskRCNN_PointRend import create_pointrend
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastai.torch_core import split_model_idx
@@ -39,8 +52,41 @@ try:
 
     HAS_FASTAI = True
 except Exception as e:
-    #raise Exception(e)
+    # raise Exception(e)
     HAS_FASTAI = False
+
+
+def grid_anchors(self, grid_sizes, strides):
+    anchors = []
+    cell_anchors = self.cell_anchors
+    assert cell_anchors is not None
+
+    for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
+        grid_height, grid_width = size
+        stride_height, stride_width = stride
+        device = base_anchors.device
+
+        # For output anchor, compute [x_center, y_center, x_center, y_center]
+        shifts_x = (
+            torch.arange(0, grid_width, dtype=torch.float32, device=device)
+            * stride_width
+        )
+        shifts_y = (
+            torch.arange(0, grid_height, dtype=torch.float32, device=device)
+            * stride_height
+        )
+        shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+        shift_x = shift_x.reshape(-1)
+        shift_y = shift_y.reshape(-1)
+        shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+
+        # For every (base anchor, output anchor) pair,
+        # offset each zero-centered base anchor by the center of the output anchor.
+        anchors.append(
+            (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
+        )
+
+    return anchors
 
 
 class MaskRCNN(ArcGISModel):
@@ -57,7 +103,7 @@ class MaskRCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `MaskRCNN`, which
-                            is `resnet50` by default. 
+                            is `resnet50` by default.
                             Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
@@ -66,9 +112,9 @@ class MaskRCNN(ArcGISModel):
     pointrend               Optional boolean. If True, it will use PointRend
                             architecture on top of the segmentation head.
                             Default: False. PointRend architecture from
-                            https://arxiv.org/pdf/1912.08193.pdf.      
+                            https://arxiv.org/pdf/1912.08193.pdf.
     =====================   ===========================================
-    
+
     **kwargs**
 
     =============================   =============================================
@@ -129,8 +175,8 @@ class MaskRCNN(ArcGISModel):
                                     during training of the classification head.
                                     Default: 0.5
     -----------------------------   ---------------------------------------------
-    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and 
-                                    the GT box so that they can be considered as negative 
+    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and
+                                    the GT box so that they can be considered as negative
                                     during training of the classification head.
                                     Default: 0.5
     -----------------------------   ---------------------------------------------
@@ -145,15 +191,31 @@ class MaskRCNN(ArcGISModel):
 
     :returns: ``MaskRCNN`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
+
+    def __init__(
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        pointrend=False,
+        *args,
+        **kwargs,
+    ):
 
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
 
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self._check_dataset_support(data)
         if not (self._check_backbone_support(backbone)):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            raise Exception(
+                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+            )
 
         super().__init__(data, backbone, **kwargs)
         if self._is_multispectral:
@@ -166,63 +228,77 @@ class MaskRCNN(ArcGISModel):
 
         self._pointrend = pointrend
 
-        self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
+        self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(
+            kwargs, models.detection.MaskRCNN.__init__
+        )
 
-        if self._backbone.__name__ == 'resnet50':
+        if self._backbone.__name__ == "resnet50":
             model = models.detection.maskrcnn_resnet50_fpn(
-                pretrained=True,
-                min_size = 1.5*data.chip_size,
-                max_size = 2*data.chip_size,
-                **self.maskrcnn_kwargs
+                pretrained=pretrained_backbone,
+                pretrained_backbone=False,
+                min_size=1.5 * data.chip_size,
+                max_size=2 * data.chip_size,
+                **self.maskrcnn_kwargs,
             )
 
             if self._is_multispectral:
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
                 model.transform.image_std = scaled_std_values
-        elif self._backbone.__name__ in ['resnet18','resnet34'] and not pointrend:
+        elif self._backbone.__name__ in ["resnet18", "resnet34"] and not pointrend:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
-                backbone_small.out_channels = 512
-                model = models.detection.MaskRCNN(
-                    backbone_small, 
-                    91, 
-                    min_size = 1.5*data.chip_size, 
-                    max_size = 2*data.chip_size, 
-                    image_mean = scaled_mean_values, 
-                    image_std = scaled_std_values,
-                    **self.maskrcnn_kwargs
+                backbone_small = create_body(
+                    self._backbone_ms,
+                    pretrained=pretrained_backbone,
+                    cut=_get_backbone_meta(self._backbone.__name__)["cut"],
                 )
-            else:
-                backbone_small = create_body(self._backbone)
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small,
                     91,
-                    min_size = 1.5*data.chip_size,
-                    max_size = 2*data.chip_size,
-                    **self.maskrcnn_kwargs
+                    min_size=1.5 * data.chip_size,
+                    max_size=2 * data.chip_size,
+                    image_mean=scaled_mean_values,
+                    image_std=scaled_std_values,
+                    **self.maskrcnn_kwargs,
                 )
+            else:
+                backbone_small = create_body(
+                    self._backbone, pretrained=pretrained_backbone
+                )
+                backbone_small.out_channels = 512
+                model = models.detection.MaskRCNN(
+                    backbone_small,
+                    91,
+                    min_size=1.5 * data.chip_size,
+                    max_size=2 * data.chip_size,
+                    **self.maskrcnn_kwargs,
+                )
+            model.rpn.anchor_generator.grid_anchors = types.MethodType(
+                grid_anchors, model.rpn.anchor_generator
+            )
         else:
-            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
+            backbone_fpn = resnet_fpn_backbone(
+                self._backbone.__name__, pretrained=pretrained_backbone
+            )
             if self._is_multispectral:
                 backbone_fpn = _change_tail(backbone_fpn, data)
                 model = models.detection.MaskRCNN(
-                    backbone_fpn, 
-                    91, 
-                    min_size = 1.5*data.chip_size, 
-                    max_size = 2*data.chip_size, 
-                    image_mean = scaled_mean_values, 
-                    image_std = scaled_std_values,
-                    **self.maskrcnn_kwargs
+                    backbone_fpn,
+                    91,
+                    min_size=1.5 * data.chip_size,
+                    max_size=2 * data.chip_size,
+                    image_mean=scaled_mean_values,
+                    image_std=scaled_std_values,
+                    **self.maskrcnn_kwargs,
                 )
             else:
                 model = models.detection.MaskRCNN(
                     backbone_fpn,
                     91,
-                    min_size = 1.5*data.chip_size,
-                    max_size = 2*data.chip_size,
-                    **self.maskrcnn_kwargs
+                    min_size=1.5 * data.chip_size,
+                    max_size=2 * data.chip_size,
+                    **self.maskrcnn_kwargs,
                 )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -233,14 +309,17 @@ class MaskRCNN(ArcGISModel):
         else:
             in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
             hidden_layer = 256
-            model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                        hidden_layer,
-                                                        data.c)
+            model.roi_heads.mask_predictor = MaskRCNNPredictor(
+                in_features_mask, hidden_layer, data.c
+            )
 
-        if not _isnotebook() and arcgis_os.name=='posix':
+        if not _isnotebook() and arcgis_os.name == "posix":
             _set_ddp_multigpu(self)
             if self._multigpu_training:
-                self.learn = Learner(data, model, loss_func=mask_rcnn_loss).to_distributed(self._rank_distributed)
+                self.learn = Learner(
+                    data, model, loss_func=mask_rcnn_loss
+                ).to_distributed(self._rank_distributed)
+                self._map_location = {"cuda:%d" % 0: "cuda:%d" % self._rank_distributed}
             else:
                 self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
         else:
@@ -251,7 +330,7 @@ class MaskRCNN(ArcGISModel):
 
         # fixes for zero division error when slice is passed
         idx = 27
-        if self._backbone.__name__ in ['resnet18','resnet34']:
+        if self._backbone.__name__ in ["resnet18", "resnet34"]:
             idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
@@ -261,11 +340,11 @@ class MaskRCNN(ArcGISModel):
 
         if pretrained_path is not None:
             self.load(pretrained_path)
-                
+
         if self._is_multispectral:
             self._orig_backbone = self._backbone
             self._backbone = self._backbone_ms
-             
+
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
@@ -283,11 +362,15 @@ class MaskRCNN(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ["valid_loss"]
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """        
+        """Supported torchvision backbones for this model."""
         return MaskRCNN._supported_backbones()
 
     @staticmethod
@@ -295,14 +378,14 @@ class MaskRCNN(ArcGISModel):
         return [*_resnet_family]
 
     @property
-    def  supported_datasets(self):
-        """ Supported dataset types for this model. """
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
         return MaskRCNN._supported_datasets()
-    
+
     @staticmethod
     def _supported_datasets():
-        return ['RCNN_Masks'] 
-    
+        return ["RCNN_Masks"]
+
     @classmethod
     def from_model(cls, emd_path, data=None, **kwargs):
         """
@@ -326,63 +409,79 @@ class MaskRCNN(ArcGISModel):
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
-            
-        model_file = Path(emd['ModelFile'])
-        
+
+        model_file = Path(emd["ModelFile"])
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-            
-        model_params = emd['ModelParameters']
+
+        model_params = emd["ModelParameters"]
         maskrcnn_kwargs = emd.get("MaskRCNNkwargs", {})
 
         try:
-            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
+            color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
-            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=kwargs.get('chip_size', emd['ImageHeight']))
+            data = _EmptyData(
+                path=emd_path.parent.parent,
+                loss_func=None,
+                c=len(class_mapping) + 1,
+                chip_size=kwargs.get("chip_size", emd["ImageHeight"]),
+            )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
-        return cls(data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs)
+        return cls(
+            data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs
+        )
 
     def _get_emd_params(self, save_inference_file):
         import random
 
-        _emd_template = {"ModelParameters" : {}}
+        _emd_template = {"ModelParameters": {}}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
         else:
-            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
         _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["SupportsVariableTileSize"] = True
-        _emd_template['Classes'] = []
+        _emd_template["Classes"] = []
         class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
+        for i, class_name in enumerate(
+            self._data.classes[1:]
+        ):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
-            self._data.color_mapping[inverse_class_mapping[class_name]]
+            color = (
+                [random.choice(range(256)) for i in range(3)]
+                if is_no_color(self._data.color_mapping)
+                else self._data.color_mapping[inverse_class_mapping[class_name]]
+            )
             class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
 
     @property
     def _model_metrics(self):
-        return {'average_precision_score': self.average_precision_score(show_progress=True)}
+        return {
+            "average_precision_score": self.average_precision_score(show_progress=True)
+        }
 
     def _predict_results(self, xb):
 
@@ -394,44 +493,59 @@ class MaskRCNN(ArcGISModel):
         predictionsf = []
         for i in range(len(predictions)):
             predictionsf.append({})
-            predictionsf[i]['masks'] = predictions[i]['masks'].detach().cpu().numpy()
-            predictionsf[i]['boxes'] = predictions[i]['boxes'].detach().cpu().numpy()
-            predictionsf[i]['labels'] = predictions[i]['labels'].detach().cpu().numpy()
-            predictionsf[i]['scores'] = predictions[i]['scores'].detach().cpu().numpy()
-            del predictions[i]['masks']
-            del predictions[i]['boxes']
-            del predictions[i]['labels']
-            del predictions[i]['scores']
-        if self._device == torch.device('cuda'):
+            predictionsf[i]["masks"] = predictions[i]["masks"].detach().cpu().numpy()
+            predictionsf[i]["boxes"] = predictions[i]["boxes"].detach().cpu().numpy()
+            predictionsf[i]["labels"] = predictions[i]["labels"].detach().cpu().numpy()
+            predictionsf[i]["scores"] = predictions[i]["scores"].detach().cpu().numpy()
+            del predictions[i]["masks"]
+            del predictions[i]["boxes"]
+            del predictions[i]["labels"]
+            del predictions[i]["scores"]
+        if self._device == torch.device("cuda"):
             torch.cuda.empty_cache()
         return predictionsf
 
-    def _predict_postprocess(self, predictions, threshold=0.5, box_threshold = 0.5):
+    def _predict_postprocess(self, predictions, threshold=0.5, box_threshold=0.5):
 
         pred_mask = []
         pred_box = []
 
         for i in range(len(predictions)):
-            out = predictions[i]['masks'].squeeze()
+            out = predictions[i]["masks"].squeeze()
             pred_box.append([])
 
             if out.shape[0] != 0:  # handle for prediction with n masks
-                if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
+                if (
+                    len(out.shape) == 2
+                ):  # for out dimension hxw (in case of only one predicted mask)
                     out = out[None]
-                ymask = np.where(out[0]> threshold, 1, 0)
-                if predictions[i]['scores'][0] > box_threshold:
-                    pred_box[i].append(predictions[i]['boxes'][0])
-                for j in range(1,out.shape[0]):
-                    ym1 = np.where(out[j]> threshold, j+1, 0)
+                ymask = np.where(out[0] > threshold, 1, 0)
+                if predictions[i]["scores"][0] > box_threshold:
+                    pred_box[i].append(predictions[i]["boxes"][0])
+                for j in range(1, out.shape[0]):
+                    ym1 = np.where(out[j] > threshold, j + 1, 0)
                     ymask += ym1
-                    if predictions[i]['scores'][j] > box_threshold:
-                        pred_box[i].append(predictions[i]['boxes'][j])
+                    if predictions[i]["scores"][j] > box_threshold:
+                        pred_box[i].append(predictions[i]["boxes"][j])
             else:
-                ymask = np.zeros((self._data.chip_size, self._data.chip_size)) # handle for not predicted masks
+                ymask = np.zeros(
+                    (self._data.chip_size, self._data.chip_size)
+                )  # handle for not predicted masks
             pred_mask.append(ymask)
         return pred_mask, pred_box
 
-    def show_results(self, rows=4, mode='mask', mask_threshold=0.5, box_threshold=0.7, imsize=5, index=0, alpha=0.5, cmap='tab20', **kwargs):
+    def show_results(
+        self,
+        rows=4,
+        mode="mask",
+        mask_threshold=0.5,
+        box_threshold=0.7,
+        imsize=5,
+        index=0,
+        alpha=0.5,
+        cmap="tab20",
+        **kwargs,
+    ):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -454,78 +568,101 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         """
         self._check_requisites()
-        if mode not in ['bbox', 'mask', 'bbox_mask']:
+        if mode not in ["bbox", "mask", "bbox_mask"]:
             raise Exception("mode can be only ['bbox', 'mask', 'bbox_mask']")
 
         # Get Number of items
         nrows = rows
-        ncols=2
+        ncols = 2
 
-
-        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
-        if type_data_loader == 'training':
+        type_data_loader = kwargs.get(
+            "data_loader", "validation"
+        )  # options : traininig, validation, testing
+        if type_data_loader == "training":
             data_loader = self._data.train_dl
-        elif type_data_loader == 'validation':
+        elif type_data_loader == "validation":
             data_loader = self._data.valid_dl
-        elif type_data_loader == 'testing':
+        elif type_data_loader == "testing":
             data_loader = self._data.test_dl
         else:
-            e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
-            raise(e)
+            e = Exception(
+                f"could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing "
+            )
+            raise (e)
 
-        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-        stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
+        statistics_type = kwargs.get(
+            "statistics_type", "dataset"
+        )  # Accepted Values `dataset`, `DRA`
+        stretch_type = kwargs.get(
+            "stretch_type", "minmax"
+        )  # Accepted Values `minmax`, `percentclip`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
-        return_fig = kwargs.get('return_fig', False)
-
+        return_fig = kwargs.get("return_fig", False)
 
         x_batch, y_batch = get_nbatches(data_loader, nrows)
         x_batch = torch.cat(x_batch)
         y_batch = torch.cat(y_batch)
 
         nrows = min(nrows, len(x_batch))
-        
+
         title_font_size = 16
-        if kwargs.get('top', None) is not None:
-            top = kwargs.get('top')
+        if kwargs.get("top", None) is not None:
+            top = kwargs.get("top")
         else:
-            top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
-
-
+            top = 1 - (math.sqrt(title_font_size) / math.sqrt(100 * nrows * imsize))
 
         # Get Predictions
         prediction_store = []
         for i in range(0, x_batch.shape[0], self._data.batch_size):
-            prediction_store.extend(self._predict_results(x_batch[i:i+self._data.batch_size]))
-        pred_mask, pred_box = self._predict_postprocess(prediction_store, mask_threshold, box_threshold)
+            prediction_store.extend(
+                self._predict_results(x_batch[i : i + self._data.batch_size])
+            )
+        pred_mask, pred_box = self._predict_postprocess(
+            prediction_store, mask_threshold, box_threshold
+        )
 
         if self._is_multispectral:
-            rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+            rgb_bands = kwargs.get("rgb_bands", self._data._symbology_rgb_bands)
 
-            e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+            e = Exception(
+                "`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1."
+            )
             symbology_bands = []
-            if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
-                raise(e)
+            if not (len(rgb_bands) == 3 or len(rgb_bands) == 1):
+                raise (e)
             for b in rgb_bands:
                 if type(b) == str:
                     b_index = self._bands.index(b)
                 elif type(b) == int:
-                    self._bands[b] # To check if the band index specified by the user really exists.
+                    self._bands[
+                        b
+                    ]  # To check if the band index specified by the user really exists.
                     b_index = b
                 else:
-                    raise(e)
+                    raise (e)
                 b_index = self._data._extract_bands.index(b_index)
                 symbology_bands.append(b_index)
 
-             # Denormalize X
+            # Denormalize X
             if self._data._do_normalize:
-                x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+                x_batch = (
+                    self._data._scaled_std_values[self._data._extract_bands]
+                    .view(1, -1, 1, 1)
+                    .to(x_batch)
+                    * x_batch
+                ) + self._data._scaled_mean_values[self._data._extract_bands].view(
+                    1, -1, 1, 1
+                ).to(
+                    x_batch
+                )
 
             # Extract RGB Bands
             symbology_x_batch = x_batch[:, symbology_bands]
             if stretch_type is not None:
-                symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
+                symbology_x_batch = image_batch_stretcher(
+                    symbology_x_batch, stretch_type, statistics_type
+                )
 
             # Channel first to channel last for plotting
             symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -539,8 +676,10 @@ class MaskRCNN(ArcGISModel):
         if symbology_x_batch.shape[-1] == 1:
             symbology_x_batch = symbology_x_batch.squeeze()
 
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-        fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
+        fig, ax = plt.subplots(
+            nrows=nrows, ncols=ncols, figsize=(ncols * imsize, nrows * imsize)
+        )
+        fig.suptitle("Ground Truth / Predictions", fontsize=title_font_size)
         for i in range(nrows):
             if nrows == 1:
                 ax_i = ax
@@ -549,33 +688,40 @@ class MaskRCNN(ArcGISModel):
 
             # Ground Truth
             ax_i[0].imshow(symbology_x_batch[i].cpu())
-            ax_i[0].axis('off')
-            if mode in ['mask', 'bbox_mask']:
+            ax_i[0].axis("off")
+            if mode in ["mask", "bbox_mask"]:
                 n_instance = y_batch[i].unique().shape[0]
                 y_merged = y_batch[i].max(dim=0)[0].cpu().numpy()
                 y_rgba = cmap_fn._resample(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
                 ax_i[0].imshow(y_rgba)
-            ax_i[0].axis('off')
+            ax_i[0].axis("off")
 
             # Predictions
             ax_i[1].imshow(symbology_x_batch[i].cpu())
-            ax_i[1].axis('off')
-            if mode in ['mask', 'bbox_mask']:
+            ax_i[1].axis("off")
+            if mode in ["mask", "bbox_mask"]:
                 n_instance = np.unique(pred_mask[i]).shape[0]
                 p_rgba = cmap_fn._resample(n_instance)(pred_mask[i])
                 p_rgba[pred_mask[i] == 0] = 0
                 p_rgba[:, :, -1] = alpha
                 ax_i[1].imshow(p_rgba)
-            if mode in ['bbox_mask','bbox']:
+            if mode in ["bbox_mask", "bbox"]:
                 if pred_box[i] != []:
                     for num_boxes in pred_box[i]:
-                        rect = patches.Rectangle((num_boxes[0], num_boxes[1]), num_boxes[2]-num_boxes[0], num_boxes[3]-num_boxes[1], linewidth=1, edgecolor='r', facecolor='none')
+                        rect = patches.Rectangle(
+                            (num_boxes[0], num_boxes[1]),
+                            num_boxes[2] - num_boxes[0],
+                            num_boxes[3] - num_boxes[1],
+                            linewidth=1,
+                            edgecolor="r",
+                            facecolor="none",
+                        )
                         ax_i[1].add_patch(rect)
-            ax_i[1].axis('off')
+            ax_i[1].axis("off")
         plt.subplots_adjust(top=top)
-        if self._device == torch.device('cuda'):
+        if self._device == torch.device("cuda"):
             torch.cuda.empty_cache()
 
         if _IS_ARCGISPRONOTEBOOK:
@@ -583,7 +729,9 @@ class MaskRCNN(ArcGISModel):
         if return_fig:
             return fig
 
-    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
+    def average_precision_score(
+        self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True
+    ):
 
         """
         Computes average precision on the validation set for each class.
@@ -594,7 +742,7 @@ class MaskRCNN(ArcGISModel):
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
-        ---------------------   -------------------------------------------                        
+        ---------------------   -------------------------------------------
         iou_thresh              Optional float. The intersection over union
                                 threshold with the ground truth mask, above
                                 which a predicted mask will be
@@ -608,8 +756,23 @@ class MaskRCNN(ArcGISModel):
         """
         self._check_requisites()
         if mean:
-            aps = compute_class_AP(self, self._data.valid_dl, 1, show_progress, detect_thresh, iou_thresh, mean)
+            aps = compute_class_AP(
+                self,
+                self._data.valid_dl,
+                1,
+                show_progress,
+                detect_thresh,
+                iou_thresh,
+                mean,
+            )
             return aps
         else:
-            aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh, iou_thresh)
+            aps = compute_class_AP(
+                self,
+                self._data.valid_dl,
+                self._data.c - 1,
+                show_progress,
+                detect_thresh,
+                iou_thresh,
+            )
             return dict(zip(self._data.classes[1:], aps))

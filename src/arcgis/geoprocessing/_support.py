@@ -212,7 +212,6 @@ def _analysis_job_status(gptool, task_url, job_info):
             if "jobStatus" in job_response:
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(1)
-
                     try:
                         job_response = gptool._con.post(
                             job_url, params, token=gptool._token
@@ -250,6 +249,24 @@ def _analysis_job_status(gptool, task_url, job_info):
 
                 if "results" in job_response:
                     return job_response
+                else:
+                    retry_counter = 0
+                    while retry_counter < 5:
+                        time.sleep(retry_counter + 1)
+                        try:
+                            job_response = gptool._con.post(
+                                job_url, params, token=gptool._token
+                            )
+                        except Exception as e:
+                            job_response = gptool._con.post(job_url, params)
+                        if "results" in job_response:
+                            return job_response
+                        retry_counter += 1
+                if "results" in job_response:
+                    return job_response
+                else:
+                    raise Exception("No job results.")
+
             else:
                 raise Exception("No job results.")
         except KeyboardInterrupt:

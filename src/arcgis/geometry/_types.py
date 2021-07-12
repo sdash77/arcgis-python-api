@@ -291,14 +291,16 @@ class Geometry(BaseGeometry):
 
     .. code-block:: python
 
-        geom = Geometry({
-          "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                      [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                      [-97.06326,32.759]]],
-          "spatialReference" : {"wkid" : 4326}
-        })
-        print (geom.type) # POLYGON
-        print (isinstance(geom, Polygon) # True
+        #Usage Example
+
+        >>> geom = Geometry({
+        >>>     "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+        >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+        >>>               [-97.06326,32.759]]],
+        >>>     "spatialReference" : {"wkid" : 4326}
+        >>>                 })
+        >>> print (geom.type) # POLYGON
+        >>> print (isinstance(geom, Polygon) # True
 
     """
 
@@ -462,13 +464,15 @@ class Geometry(BaseGeometry):
     @property
     def as_arcpy(self):
         """
-        Returns the Geometry as an ArcPy Geometry.
+        The ``as_arcpy`` method retrieves the Geometry as an ArcPy Geometry.
 
         If `ArcPy` is not installed, none is returned.
 
-        **Requires ArcPy**
+        .. note::
+            The ``as_arcpy`` method requires ArcPy
 
-        :returns: arcpy.Geometry
+        :returns:
+            An :class:`~arcgis.geometry.Geometry` object
 
         """
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
@@ -539,14 +543,16 @@ class Geometry(BaseGeometry):
     @property
     def geoextent(self):
         """
-        Returns the current feature's extent
+        The ``geoextent`` property retrieves the current feature's extent
 
-        >>> g = Geometry({...})
-        >>> g.geoextent
-        (1,2,3,4)
+        .. code-block:: python
 
+            #Usage Example
+            >>> g = Geometry({...})
+            >>> g.geoextent
+            (1,2,3,4)
 
-        :return: tuple
+        :returns: tuple
         """
         _HASARCPY, _HASSHAPELY = _check_geometry_engine()
 
@@ -626,7 +632,12 @@ class Geometry(BaseGeometry):
 
     @property
     def envelope(self):
-        """Returns the geoextent as an Envelope object"""
+        """
+        The ``envelope`` method retrieves the geoextent as an :class:`~arcgis.geometry.Envelope` object
+
+        :returns:
+            :class:`~arcgis.geometry.Envelope`
+        """
         env_dict = {
             "xmin": self.geoextent[0],
             "ymin": self.geoextent[1],
@@ -639,7 +650,7 @@ class Geometry(BaseGeometry):
 
     def skew(self, x_angle=0, y_angle=0, inplace=False):
         """
-        Create a skew transform along one or both axes.
+        The ``skew`` method creates a skew transform along one or both axes.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -653,7 +664,8 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
 
-        :return: Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import skew
@@ -665,7 +677,7 @@ class Geometry(BaseGeometry):
 
     def rotate(self, theta, inplace=False):
         """
-        Rotates a geometry counter-clockwise by a given angle.
+        The ``rotate`` methode rotates a :class:`~arcgis.geometry.Geometry` object counter-clockwise by a given angle.
 
 
         ===============     ====================================================================
@@ -678,7 +690,8 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
 
-        :return: Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import rotate
@@ -690,7 +703,7 @@ class Geometry(BaseGeometry):
 
     def scale(self, x_scale=1, y_scale=1, inplace=False):
         """
-        Scales in either the x,y or both directions
+        The ``scale`` method scales a :class:`~arcgis.geometry.Geometry` object in either the x,y or both directions.
 
 
         ===============     ====================================================================
@@ -704,8 +717,20 @@ class Geometry(BaseGeometry):
                             creates a new object
         ===============     ====================================================================
 
+        .. code-block:: python
 
-        :return: Geometry
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.sacle(x_scale = 3,
+                                   y_scale = 0.5,
+                                   inplace = False)
+
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import scale
@@ -719,7 +744,8 @@ class Geometry(BaseGeometry):
 
     def translate(self, x_offset=0, y_offset=0, inplace=False):
         """
-        moves a geometry in a given x and y distance
+        The ``translate`` method moves a :class:`~arcgis.geometry.Geometry` object in the x and y direction by a given
+        distance.
 
 
         ===============     ====================================================================
@@ -729,12 +755,24 @@ class Geometry(BaseGeometry):
         ---------------     --------------------------------------------------------------------
         y_offset            Optional Float. Translation y offset
         ---------------     --------------------------------------------------------------------
-        inplace             Optional Boolean. If False, updates the existing Geometry,else it
+        inplace             Optional Boolean. If True, updates the existing Geometry,else it
                             creates a new Geometry object
         ===============     ====================================================================
 
+        .. code-block:: python
 
-        :return: Geometry
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.translate(x_offset = 40,
+                               y_offset = 50,
+                               inplace = True)
+
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         from .affine import translate
@@ -746,7 +784,12 @@ class Geometry(BaseGeometry):
 
     @property
     def is_empty(self):
-        """boolean value that determines if the geometry is empty or not"""
+        """
+        The ``is_empty`` property`` determines if the geometry is empty.
+
+        :returns:
+           A boolean indicating empty (True), or filled (False)
+        """
         if isinstance(self, Point):
             return False
         elif isinstance(self, Polygon):
@@ -762,7 +805,12 @@ class Geometry(BaseGeometry):
 
     @property
     def as_shapely(self):
-        """returns a shapely geometry object"""
+        """
+        The ``as_shapely`` method retrieves a shapely :class:`~arcgis.geometry.Geometry` object
+
+        :returns:
+            A shapely :class:`~arcgis.geometry.Geometry` object
+        """
         _, _HASSHAPELY = _check_geometry_engine()
         if _HASSHAPELY:
             if isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -776,9 +824,11 @@ class Geometry(BaseGeometry):
     @property
     def JSON(self):
         """
-        Returns an Esri JSON representation of the geometry as a string.
+        The ``JSON`` method retrieves an Esri JSON representation of the :class:`~arcgis.geometry.Geometry` object as a
+        string.
 
-        :return: string
+        :returns:
+            A string representing a :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -791,7 +841,7 @@ class Geometry(BaseGeometry):
     @classmethod
     def from_shapely(cls, shapely_geometry, spatial_reference=None):
         """
-        Creates a Python API Geometry object from a Shapely geometry object.
+        The ``from_shapely`` method creates a Python API Geometry object from a Shapely geometry object.
 
 
         ===============     ====================================================================
@@ -805,7 +855,8 @@ class Geometry(BaseGeometry):
                             Defines the spatial reference for the output geometry.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         .. code-block:: python
 
@@ -839,13 +890,16 @@ class Geometry(BaseGeometry):
     @property
     def EWKT(self):
         """
-        Returns the extended well-known text (EWKT) representation for OGC geometry.
+        The ``EKWT`` method retrieves the ``extended well-known text`` (`EWKT`) representation for OGC geometry.
         It provides a portable representation of a geometry value as a text
         string.
-        Any true curves in the geometry will be densified into approximate
-        curves in the WKT string.
 
-        :return: string
+        .. note::
+            Any true curves in the geometry will be densified into approximate
+            curves in the WKT string.
+
+        :returns:
+            A String
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -873,13 +927,16 @@ class Geometry(BaseGeometry):
     @property
     def WKT(self):
         """
-        Returns the well-known text (WKT) representation for OGC geometry.
+        The ``WKY`` method retrieves the ``well-known text`` (``WKT``) representation for OGC geometry.
         It provides a portable representation of a geometry value as a text
         string.
-        Any true curves in the geometry will be densified into approximate
-        curves in the WKT string.
 
-        :return: string
+        .. note::
+            Any true curves in the geometry will be densified into approximate
+            curves in the WKT string.
+
+        :returns:
+            A string
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -902,11 +959,12 @@ class Geometry(BaseGeometry):
     @property
     def WKB(self):
         """
-        Returns the well-known binary (WKB) representation for OGC geometry.
+        The ``WKB`` method retrieves the ``well-known binary`` (`WKB`) representation for OGC geometry.
         It provides a portable representation of a geometry value as a
         contiguous stream of bytes.
 
-        :return: bytes
+        :returns:
+            bytes
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -931,22 +989,26 @@ class Geometry(BaseGeometry):
     @property
     def area(self):
         """
-        The area of a polygon feature. None for all other feature types.
-        The area is in the units of the spatial reference.
+        The ``area`` method retrieves the area of a :class:`~arcgis.geometry.Polygon` feature. The units of the returned
+        area are based off the :class:`~arcgis.geometry.SpatialReference` field.
+
+        .. note::
+            None for all other feature types.
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.area
             -1.869999999973911e-06
 
 
-        :return: float
+        :returns:
+            A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -984,23 +1046,25 @@ class Geometry(BaseGeometry):
     @property
     def centroid(self):
         """
-        Returns the center of the geometry
+        The ``centroid`` method retrieves the center of the :class:`~arcgis.geometry.Geometry` object
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``centroid`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.centroid
             (-97.06258999999994, 32.754333333000034)
 
 
-        :returns: tuple(x,y)
+        :returns:
+            A tuple(x,y)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1028,22 +1092,25 @@ class Geometry(BaseGeometry):
     @property
     def extent(self):
         """
-        The extent of the geometry as a tuple containing xmin, ymin, xmax, ymax
+        The ``extent`` method retrieves the extent of the :class:`~arcgis.geometry.Geometry` object as a tuple
+        containing xmin, ymin, xmax, ymax
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``extent`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.extent
             (-97.06326, 32.749, -97.06124, 32.837)
 
-        :return: tuple
+        :returns:
+            A tuple
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         ptX = []
@@ -1083,21 +1150,21 @@ class Geometry(BaseGeometry):
     @property
     def first_point(self):
         """
-        The first coordinate point of the geometry.
+        The ``first`` method retrieves first coordinate point of the geometry.
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.first_point
             {'x': -97.06138, 'y': 32.837, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
 
-        :return: arcgis.gis.Geometry
+        :return: A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1151,9 +1218,10 @@ class Geometry(BaseGeometry):
     @property
     def has_z(self):
         """
-        Determines if the geometry has a `Z` value.
+        The ``has_z`` method determines if the geometry has a `Z` value.
 
-        :returns: Boolean
+        :returns:
+            A boolean indicating yes (True), or no (False)
 
         """
         return self.get("hasZ", False)
@@ -1162,9 +1230,10 @@ class Geometry(BaseGeometry):
     @property
     def has_m(self):
         """
-        Determines if the geometry has a `M` value.
+        The ``has_m`` method determines if the geometry has a `M` value.
 
-        :returns: Boolean
+        :returns:
+            A boolean indicating yes (True), or no (False)
 
         """
         return self.get("hasM", False)
@@ -1173,23 +1242,25 @@ class Geometry(BaseGeometry):
     @property
     def hull_rectangle(self):
         """
-        A space-delimited string of the coordinate pairs of the convex hull
+        The ``hull_rectangle`` method retrieves the space-delimited string of the coordinate pairs of the convex hull
         rectangle.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``hull-rectangle`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.hull_rectangle
             '-97.06153 32.749 -97.0632940971127 32.7490060186843 -97.0629938635673 32.8370055061228 -97.0612297664546 32.8369994874385'
 
-        :return: string
+        :return:
+            A space-delimited string
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1204,23 +1275,25 @@ class Geometry(BaseGeometry):
     @property
     def is_multipart(self):
         """
-        True, if the number of parts for this geometry is more than one.
+        The ``is_multipart`` method determines if the number of parts for this geometry is more than one.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``is_multipart`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>              [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.is_multipart
             True
 
 
-        :return: boolean
+        :return:
+            A boolean indicating yes (True), or no (False)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1238,23 +1311,25 @@ class Geometry(BaseGeometry):
     @property
     def label_point(self):
         """
-        The point at which the label is located. The label_point is always
-        located within or on a feature.
+        The ``label_point`` method determines the :class:`~arcgis.geometry.Point` at which the label is located.
+        The ``label_point`` is always located within or on a feature.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``label_point`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>> })
             >>> geom.label_point
             {'x': -97.06258999999994, 'y': 32.754333333000034, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
-        :returns: arcgis.geometry.Point
+        :returns:
+            A :class:`~arcgis.geometry.Point` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1275,21 +1350,21 @@ class Geometry(BaseGeometry):
     @property
     def last_point(self):
         """
-        The last coordinate of the feature.
+        The ``last_point`` method retrieves the last coordinate :class:`~arcgis.geometry.Point` of the feature.
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.last_point
             {'x': -97.06326, 'y': 32.759, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
 
-        :returns: arcgis.geometry.Point
+        :returns: A :class:`~arcgis.geometry.Point` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1330,23 +1405,28 @@ class Geometry(BaseGeometry):
     @property
     def length(self):
         """
-        The length of the linear feature. Zero for point and multipoint feature types.
-        The length units is the same as the spatial reference.
+        The ``length`` method retrieves length of the linear feature.
+        The length units is the same as the :class:`~arcgis.geometry.SpatialReference` field.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``length`` method returns zero for :class:`~arcgis.geometry.Point` and
+            :class:`~arcgis.geometry.MultiPoint` feature types.
+
+        .. note::
+            The ``length`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.length
             0.03033576008004027
 
-        :return: float
+        :returns: A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1362,24 +1442,28 @@ class Geometry(BaseGeometry):
     @property
     def length3D(self):
         """
-        The 3D length of the linear feature. Zero for point and multipoint
-        feature types. The length units is the same as the spatial
-        reference.
+        The ``length3D`` method retrieves the 3D length of the linear feature. Zero for point and multipoint
+        The length units is the same as the :class:`~arcgis.geometry.SpatialReference` field.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``length3D`` method returns zero for :class:`~arcgis.geometry.Point` and
+            :class:`~arcgis.geometry.MultiPoint` feature types.
+
+        .. note::
+            The ``length3D`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.length3D
             0.03033576008004027
 
-        :return: float
+        :returns: A float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1395,7 +1479,7 @@ class Geometry(BaseGeometry):
     @property
     def part_count(self):
         """
-        The number of geometry parts for the feature.
+        The ``part_count`` method retrieves the number of :class:`~arcgis.geometry.Geometry` parts for the feature.
 
 
         .. code-block:: python
@@ -1409,7 +1493,7 @@ class Geometry(BaseGeometry):
             >>> geom.part_count
             1
 
-        :return: integer
+        :returns: An Integer representing the amount of :class:`~arcgis.geometry.Geometry` parts
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1430,21 +1514,21 @@ class Geometry(BaseGeometry):
     @property
     def point_count(self):
         """
-        The total number of points for the feature.
+        The ``point_count`` method retrieves total number of :class:`~arcgis.geometry.Point` objects for the feature.
 
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.point_count
             9
 
-        :return: Integer
+        :return: An Integer representing the amount of :class:`~arcgis.geometry.Point` objects
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if isinstance(self, Envelope):
@@ -1465,20 +1549,20 @@ class Geometry(BaseGeometry):
     @property
     def spatial_reference(self):
         """
-        The spatial reference of the geometry.
+        The ``spatial_reference`` method retrieves the :class:`~arcgis.geometry.SpatialReference` of the geometry.
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.spatial_reference
             <SpatialReference Class>
 
-        :return: arcgis.geometery.SpatialReference
+        :returns: A :class:`~arcgis.geometry.SpatialReference` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, Envelope):
@@ -1495,22 +1579,24 @@ class Geometry(BaseGeometry):
     @property
     def true_centroid(self):
         """
-        The center of gravity for a feature.
+        The ``true_centroid`` method retrieves the :class:`~arcgis.geometry.Point` representing the center of gravity
+        for a feature.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``true_centroid`` method requires ArcPy or Shapely
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.true_centroid
             {'x': -97.06272135472369, 'y': 32.746201426025, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
-        :returns: arcgis.geometry.Point
+        :returns: A :class:`~arcgis.geometry.Point` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -1539,21 +1625,25 @@ class Geometry(BaseGeometry):
     @property
     def geometry_type(self):
         """
-        The geometry type: polygon, polyline, point, multipoint
+        The ``geometry_type`` method retrives the geometry type:
+            1. A :class:`~arcgis.geometry.Polygon`
+            2. A :class:`~arcgis.geometry.Polyline`
+            3. A :class:`~arcgis.geometry.Point`
+            4. A :class:`~arcgis.geometry.MultiPoint`
 
         .. code-block:: python
 
             >>> geom = Geometry({
-              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-                          [-97.06326,32.759]]],
-              "spatialReference" : {"wkid" : 4326}
-            })
+            >>>     "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
             >>> geom.geometry_type
             'polygon'
 
 
-        :returns: string
+        :returns: A string representing the geometry type
         """
         if isinstance(self, Envelope):
             return "envelope"
@@ -1571,15 +1661,17 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
-        Returns a tuple of angle and distance to another point using a
-        measurement type.  If `ArcPy` is not installed, none is returned.
+        The ``angle_distance_to`` method retrieves a tuple of angle and distance to another
+        :class:`~arcgis.geometry.Point` using a measurement type.
 
-        **Requires ArcPy**
+        .. note::
+            The ``angle_distance_to`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
+
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required Geometry.  A arcgis.Geometry object.
+        second_geometry     Required Geometry. An :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
         method              Optional String. PLANAR measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
@@ -1588,7 +1680,19 @@ class Geometry(BaseGeometry):
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :returns: a tuple of angle and distance to another point using a measurement type.
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.angle_distance_to(second_geometry = geom2,
+            >>>                        method="PLANAR")
+                {54.5530, 1000.1111}
+
+        :returns: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1605,9 +1709,10 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def boundary(self):
         """
-        Constructs the boundary of the geometry.
+        The ``boundary`` method constructs the boundary of the :class:`~arcgis.geometry.Geometry` object.
 
-        :returns: arcgis.geometry.Polyline
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1620,9 +1725,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def buffer(self, distance):
         """
-        Constructs a polygon at a specified distance from the geometry.
+        The buffer method constructs a :class:`~arcgis.geometry.Polygon` at a specified distance from the
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy**
+        .. note::
+            The ``buffer`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1632,7 +1739,7 @@ class Geometry(BaseGeometry):
                             A negative distance can only be specified against a polygon geometry.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Polygon
+        :returns: A :class:`~arcgis.geometry.Polygon` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1644,21 +1751,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def clip(self, envelope):
         """
-        Constructs the intersection of the geometry and the specified extent.
-        If `ArcPy` is not installed, none is returned.
+        The ``clip`` method constructs the intersection of the :class:`~arcgis.geometry.Geometry` object and the
+        specified extent.
 
-        **Requires ArcPy**
-
+        .. note::
+            The ``clip`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
+        envelope            Required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
         ===============     ====================================================================
 
-        :returns: output geometry clipped to extent
-
+        :returns:
+            The :class:`~arcgis.geometry.Geometry` object clipped to the extent
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -1679,14 +1786,16 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry contains the comparison geometry.
+        The ``contain`` method indicates if the base :class:`~arcgis.geometry.Geometry` object contains the comparison
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``contain`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional string. The spatial relationship type.
 
@@ -1695,7 +1804,20 @@ class Geometry(BaseGeometry):
                             + PROPER - Boundaries of geometries must not intersect.
         ===============     ====================================================================
 
-        :returns: boolean
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.contains(second_geometry = geom2,
+                              relation="CLEMENTINI")
+                True
+
+        :returns:
+            A boolean indicating containment (True), or no containment (False)
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -1714,8 +1836,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def convex_hull(self):
         """
-        Constructs the geometry that is the minimal bounding polygon such
-        that all outer angles are convex.
+        The ``convex_hull`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the minimal bounding
+        :class:`~arcgis.geometry.Polygon` such that all outer angles are convex.
+
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -1785,18 +1910,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
-        Indicates if the two geometries intersect in a geometry of a lesser
-        shape type.
+        The ``crosses`` method indicates if the two :class:`~arcgis.geometry.Geometry` objects intersect in a
+        geometry of a lesser shape type.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``crosses`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating yes (True), or no (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1813,18 +1940,19 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def cut(self, cutter):
         """
-        Splits this geometry into a part left of the cutting polyline, and
-        a part right of it.
+        The ``cut`` method splits this :class:`~arcgis.geometry.Geometry` object into a part left of the cutting
+        :class:`~arcgis.geometry.Polyline` and a part right of it.
 
-        **Requires ArcPy**
+        .. note::
+            The ``cut`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        cutter              Required Polyline. The cuttin polyline geometry
+        cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
 
-        :returns: a list of two geometries
+        :returns: a list of two :class:`~arcgis.geometry.Geometry` objects
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1837,14 +1965,15 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
-        Creates a new geometry with added vertices
+        The ``densify`` method creates a new :class:`~arcgis.geometry.Geometry` object with added vertices
 
-        **Requires ArcPy**
+        .. note::
+            The ``densify`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
+        method              Required String. The type of densification: ``DISTANCE``, ``ANGLE``, or ``GEODESIC``
         ---------------     --------------------------------------------------------------------
         distance            Required float. The maximum distance between vertices. The actual
                             distance between vertices will usually be less than the maximum
@@ -1854,14 +1983,27 @@ class Geometry(BaseGeometry):
                             reference. If using a type of GEODESIC, the distance is measured
                             in meters.
         ---------------     --------------------------------------------------------------------
-        deviation           Required float. Densify uses straight lines to approximate curves.
+        deviation           Required float. ``Densify`` uses straight lines to approximate curves.
                             You use deviation to control the accuracy of this approximation.
                             The deviation is the maximum distance between the new segment and
                             the original curve. The smaller its value, the more segments will
                             be required to approximate the curve.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.densify(method = "GEODESIC",
+                                     distance = 1244.0,
+                                     deviation = 100.0)
+
+        :returns:
+            A new :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1876,20 +2018,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
-        Constructs the geometry that is composed only of the region unique
-        to the base geometry but not part of the other geometry. The
-        following illustration shows the results when the red polygon is the
-        source geometry.
+        The ``difference`` method constructs the :class:`~arcgis.geometry.Geometry` object that is composed only of the
+        region unique to the base geometry but not part of the other geometry.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``difference`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1909,18 +2051,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
-        Indicates if the base and comparison geometries share no points in
-        common.
+        The ``disjoint`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects share no
+        :class:`~arcgis.geometry.Point` objects in common.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            The ``disjoint`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating no :class:`~arcgis.geometry.Point` objects in common (True), or some in common
+            (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1937,19 +2082,22 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
-        Returns the minimum distance between two geometries. If the
+        The ``distance_to`` method retrieves the minimum distance between two :class:`~arcgis.geometry.Geometry` objects. If the
         geometries intersect, the minimum distance is 0.
-        Both geometries must have the same projection.
 
-        **Requires ArcPy/Shapely**
+        .. note::
+            Both geometries must have the same projection.
+
+        .. note::
+            The ``distance_to`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :returns: float
+        :returns: A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -1968,16 +2116,17 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
-        Indicates if the base and comparison geometries are of the same
-        shape type and define the same set of points in the plane. This is
+        The ``equals`` method indicates if the base and comparison :class:`~arcgis.geometry.Geometry` objects are of the
+        same shape type and define the same set of points in the plane. This is
         a 2D comparison only; M and Z values are ignored.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``equals`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
 
         :returns: boolean
@@ -1998,10 +2147,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
-        Creates a new simplified geometry using a specified maximum offset
-        tolerance.
+        The ``generalize`` method creates a new simplified :class:`~arcgis.geometry.Geometry` object using a specified
+        maximum offset tolerance.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``generalize`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2009,7 +2159,8 @@ class Geometry(BaseGeometry):
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
 
-        :returns: arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2022,26 +2173,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
-        Returns the area of the feature using a measurement type.
+        The ``get_area`` method retrieves the area of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``get_area`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. LANAR measurements reflect the projection of
+        method              Required String. `LANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Optional String. Areal unit of measure keywords: ACRES | ARES | HECTARES
+        units               Optional String. Areal unit of measure keywords: `ACRES | ARES | HECTARES
                             | SQUARECENTIMETERS | SQUAREDECIMETERS | SQUAREINCHES | SQUAREFEET
                             | SQUAREKILOMETERS | SQUAREMETERS | SQUAREMILES |
-                            SQUAREMILLIMETERS | SQUAREYARDS
+                            SQUAREMILLIMETERS | SQUAREYARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns: A float representing the area of the :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2054,25 +2206,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_length(self, method, units):
         """
-        Returns the length of the feature using a measurement type.
+        The ``get_length`` method retrieves the length of the :class:`~arcgis.geometry.Geometry` using a measurement type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``get_length`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. PLANAR measurements reflect the projection of
+        method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
-                            take into account the curvature of the earth). GEODESIC,
-                            GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
+                            take into account the curvature of the earth). `GEODESIC`,
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
-        units               Required String. Linear unit of measure keywords: CENTIMETERS |
+        units               Required String. Linear unit of measure keywords: `CENTIMETERS |
                             DECIMETERS | FEET | INCHES | KILOMETERS | METERS | MILES |
-                            MILLIMETERS | NAUTICALMILES | YARDS
+                            MILLIMETERS | NAUTICALMILES | YARDS`
         ===============     ====================================================================
 
-        :returns: float
+        :returns:
+            A float representing the length of the :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2085,18 +2239,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def get_part(self, index=None):
         """
-        Returns an array of point objects for a particular part of geometry
-        or an array containing a number of arrays, one for each part.
+        The ``get_part`` method retrieves an array of :class:`~arcgis.geometry.Point` objects for a particular part of
+        a :class:`~arcgis.geometry.Geometry` object or an array containing a number of arrays, one for each part.
 
-        **Requires ArcPy**
+        .. note::
+            The ``get_part`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        index               Required Integer. The index position of the geometry.
+        index               Required Integer. The index position of the :class:`~arcgis.geometry.Geometry` object.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        :return:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2107,29 +2263,43 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
-        Constructs a geometry that is the geometric intersection of the two
-        input geometries. Different dimension values can be used to create
+        The ``intersect`` method constructs a :class:`~arcgis.geometry.Geometry` object that is the geometric
+        intersection of the two input geometries. Different dimension values can be used to create
         different shape types. The intersection of two geometries of the
         same shape type is a geometry containing only the regions of overlap
         between the original geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``intersect`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         dimension           Required Integer. The topological dimension (shape type) of the
                             resulting geometry.
 
-                            + 1  -A zero-dimensional geometry (point or multipoint).
-                            + 2  -A one-dimensional geometry (polyline).
-                            + 4  -A two-dimensional geometry (polygon).
+                            + 1  -A zero-dimensional geometry (:class:`~arcgis.geometry.Point` or :class:`~arcgis.geometry.MultiPoint`).
+                            + 2  -A one-dimensional geometry (:class:`~arcgis.geometry.Polyline`).
+                            + 4  -A two-dimensional geometry (:class:`~arcgis.geometry.Polygon`).
 
         ===============     ====================================================================
 
-        :returns: boolean
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.intersect(second_geometry = geom2,
+                               dimension = 4)
+                True
+
+        :returns:
+            A boolean indicating an intersection (True), or no intersection (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2164,20 +2334,35 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
-        Returns a measure from the start point of this line to the in_point.
+        The ``measure_on_line`` retrieves a measure from the start :class:`~arcgis.geometry.Point` of this line to
+        the ``in_point``.
 
-        **Requires ArcPy**
+        .. note::
+            The ``measure_on_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional Boolean. If False, the measure will be returned as a
                             distance; if True, the measure will be returned as a percentage.
         ===============     ====================================================================
 
-        :return: float
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.measure_on_line(second_geometry = geom2,
+                                     as_percentage = True)
+                0.33
+
+        :return:
+            A float
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2192,19 +2377,21 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
-        Indicates if the intersection of the two geometries has the same
-        shape type as one of the input geometries and is not equivalent to
+        The ``overlaps`` method indicates if the intersection of the two :class:`~arcgis.geometry.Geometry` objects has
+        the same shape type as one of the input geometries and is **not** equivalent to
         either of the input geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``overlaps`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :return:
+            A boolean indicating an intersection of same shape type (True), or different type (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2221,10 +2408,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
         """
-        Returns a point at a given angle and distance in degrees and meters
-        using the specified measurement type.
+        The ``point_from_angle_and_distance`` retrieves a :class:`~arcgis.geometry.Point` at a given angle and distance,
+        in degrees and meters, using the specified measurement type.
 
-        **Requires ArcPy**
+        .. note::
+            The ``point_from_angle_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2233,14 +2421,28 @@ class Geometry(BaseGeometry):
         ---------------     --------------------------------------------------------------------
         distance            Required Float. The distance in meters to the returned point.
         ---------------     --------------------------------------------------------------------
-        method              Optional String. PLANAR measurements reflect the projection of geographic
+        method              Optional String. `PLANAR` measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            account the curvature of the earth). `GEODESIC`, `GREAT_ELLIPTIC`,
+                            `LOXODROME`, and `PRESERVE_SHAPE` measurement types may be chosen as
                             an alternative, if desired.
         ===============     ====================================================================
 
-        :return: arcgis.geometry.Geometry
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> point = geom.point_from_angle_and_distance(angle=60,
+                                                           distance = 100000,
+                                                           method = "PLANAR")
+            >>> point.type
+                "POINT"
+        :returns:
+            A :class:`~arcgis.geometry.Point` object
 
 
         """
@@ -2256,10 +2458,11 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
-        Returns a point on a line at a specified distance from the beginning
-        of the line.
+        The ``position_along_line`` method retrieves a :class:`~arcgis.geometry.Point` on a line at a specified distance
+        from the beginning of the line.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``position_along_line`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2269,11 +2472,14 @@ class Geometry(BaseGeometry):
         use_percentage      Optional Boolean. The distance may be specified as a fixed unit
                             of measure or a ratio of the length of the line. If True, value
                             is used as a percentage; if False, value is used as a distance.
-                            For percentages, the value should be expressed as a double from
-                            0.0 (0%) to 1.0 (100%).
+
+                            .. note::
+                                For percentages, the value should be expressed as a double from
+                                0.0 (0%) to 1.0 (100%).
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2295,23 +2501,35 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
-        Projects a geometry and optionally applies a geotransformation.
+        The ``project_as`` method projects a :class:`~arcgis.geometry.Geometry` object and optionally applies a
+        ``geotransformation``.
 
-        **Requires ArcPy or pyproj>=1.9 and PROJ.4**
+        .. note::
+            The ``project_as`` method requires ArcPy or pyproj>=1.9 and PROJ.4
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
-                                 SpatialReference object or the coordinate system name.
+                                 :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The geotransformation name.
+        transformation_name      Required String. The ``geotransformation`` name.
         ====================     ====================================================================
 
-        Parameter:
-         :spatial_reference: - The new spatial reference. This can be a
-          SpatialReference object or the coordinate system name.
-         :transformation_name: - The geotransformation name.
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom2 = geom.project_as(spatial_reference="GCS",
+                                        transformation_name = "transformation")
+            >>> geom2.type
+                arcgis.geometry.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         from six import string_types, integer_types
 
@@ -2405,23 +2623,26 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry, use_percentage=False):
         """
-        Finds the point on the polyline nearest to the in_point and the
-        distance between those points. Also returns information about the
-        side of the line the in_point is on as well as the distance along
+        The ``query_point_and_distance`` method finds the :class:`~arcgis.geometry.Point` on the
+        :class:`~arcgis.geometry.Polyline` nearest to the `in_point` and the
+        distance between those points. ``query_point_and_distance`` retrieves information about the
+        side of the line the `in_point` is on as well as the distance along
         the line where the nearest point occurs.
 
-        **Requires ArcPy**
+        .. note::
+            The ``query_point_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         as_percentage       Optional boolean - if False, the measure will be returned as
                             distance, True, measure will be a percentage
         ===============     ====================================================================
 
-        :return: tuple
+        :returns:
+            A tuple
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2436,11 +2657,13 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def segment_along_line(self, start_measure, end_measure, use_percentage=False):
         """
-        Returns a Polyline between start and end measures. Similar to
-        Polyline.positionAlongLine but will return a polyline segment between
-        two points on the polyline instead of a single point.
+        The ``segment_along_line`` method retrieves a :class:`~arcgis.geometry.Polyline` between ``start`` and ``end``
+        measures. ``segment_along_line`` is similar to the :attr:`~arcgis.geometry.Polyline.positionAlongLine` method
+        but will return a polyline segment between two points on the polyline instead of a single
+        :class:`~arcgis.geometry.Point`.
 
-        **Requires ArcPy**
+        .. note::
+            The ``segment_along_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2452,11 +2675,28 @@ class Geometry(BaseGeometry):
         use_percentage      Optional Boolean. The start and end measures may be specified as
                             fixed units or as a ratio.
                             If True, start_measure and end_measure are used as a percentage; if
-                            False, start_measure and end_measure are used as a distance. For
-                            percentages, the measures should be expressed as a double from 0.0
-                            (0 percent) to 1.0 (100 percent).
+                            False, start_measure and end_measure are used as a distance.
+
+                            .. note::
+                                For
+                                percentages, the measures should be expressed as a double from 0.0
+                                (0 percent) to 1.0 (100 percent).
         ===============     ====================================================================
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+            >>>               [-97.06326,32.759]]],
+            >>>   "spatialReference" : {"wkid" : 4326}
+            >>>                 })
+            >>> geom.segment_along_line(start_measure =0,
+                                        end_measure= 1000,
+                                        use_percentage = True)
+                0.56
+
+            :return: a float
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2472,17 +2712,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
-        Returns a new point based on in_point snapped to this geometry.
+        The ``snap_to_line`` method retrieves a new :class:`~arcgis.geometry.Point` based on `in_point` snapped to this
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy**
+        .. note::
+            The ``snap_to_line`` method requires ArcPy
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` - A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Point` object
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2495,20 +2738,23 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def symmetric_difference(self, second_geometry):
         """
-        Constructs the geometry that is the union of two geometries minus the
-        instersection of those geometries.
+        The ``symmetric_difference`` method constructs a new :class:`~arcgis.geometry.Geometry` object that is the union
+        of two geometries minus the intersection of those geometries.
 
-        The two input geometries must be the same shape type.
+        .. note::
+            The two input geometries must be the same shape type.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``symmetric_difference`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2531,17 +2777,22 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
-        Indicates if the boundaries of the geometries intersect.
+        The ``touches`` method indicates if the boundaries of the two :class:`~arcgis.geometry.Geometry` objects
+        intersect.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``touches`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` method. A second geometry
         ===============     ====================================================================
 
-        :return: boolean
+        :returns:
+            A boolean indicating whether the :class:`~arcgis.geometry.Geometry` objects touch (True), or if they do not
+            touch (False)
+
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
@@ -2557,18 +2808,20 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def union(self, second_geometry):
         """
-        Constructs the geometry that is the set-theoretic union of the input
-        geometries.
+        The ``union`` method constructs the :class:`~arcgis.geometry.Geometry` object that is the set-theoretic union
+        of the input geometries.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``union`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :returns:
+            A :class:`~arcgis.geometry.Geometry` object
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
@@ -2586,24 +2839,27 @@ class Geometry(BaseGeometry):
     # ----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
-        Indicates if the base geometry is within the comparison geometry.
+        The ``within`` method indicates if the base :class:`~arcgis.geometry.Geometry` object is within the comparison
+        :class:`~arcgis.geometry.Geometry` object.
 
-        **Requires ArcPy or Shapely**
+        .. note::
+            The ``within`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        second_geometry     Required arcgis.geometry.Geometry. A second geometry
+        second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
         relation            Optional String. The spatial relationship type.
 
-                            - BOUNDARY  - Relationship has no restrictions for interiors or boundaries.
-                            - CLEMENTINI  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
-                            - PROPER  - Boundaries of geometries must not intersect.
+                            - `BOUNDARY`  - Relationship has no restrictions for interiors or boundaries.
+                            - `CLEMENTINI`  - Interiors of geometries must intersect. Specifying CLEMENTINI is equivalent to specifying None. This is the default.
+                            - `PROPER`  - Boundaries of geometries must not intersect.
 
         ===============     ====================================================================
 
-        :return: boolean
+        :returns:
+            A boolean indicating the :class:`~arcgis.geometry.Geometry` object is within (True), or not within (False)
 
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
@@ -2623,11 +2879,15 @@ class Geometry(BaseGeometry):
 ###########################################################################
 class MultiPoint(Geometry):
     """
-    A multipoint contains an array of points, along with a spatialReference
-    field. A multipoint can also have boolean-valued hasZ and hasM fields.
-    These fields control the interpretation of elements of the points
-    array. Omitting an hasZ or hasM field is equivalent to setting it to
-    false.
+    A ``multipoint`` contains an array of :class:`~arcgis.geometry.Point`, along with a
+    :class:`~arcgis.geometry.SpatialReference` field. A ``multipoint`` can also have
+    boolean-valued `hasZ` and `hasM` fields. These fields control the interpretation of elements of the points
+    array.
+
+    .. note::
+        Omitting an `hasZ` or `hasM` field is equivalent to setting it to
+        false.
+
     Each element of the points array is itself an array of two, three, or
     four numbers. It will have two elements for 2D points, two or three
     elements for 2D points with Ms, three elements for 3D points, and three
@@ -2637,8 +2897,10 @@ class MultiPoint(Geometry):
     3D points, the Z coordinate is required and is at index 2. For 3D
     points with Ms, the Z coordinate is at index 2, and the M coordinate,
     if present, is at index 3.
-    An empty multipoint has a points field with no elements. Empty points
-    are ignored.
+
+    .. note::
+        An empty multipoint has a points field with no elements. Empty points
+        are ignored.
     """
 
     _type = "Multipoint"
@@ -2659,19 +2921,26 @@ class MultiPoint(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``MultiPoint`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1.0, fill_color=None):
-        """Returns a group of SVG circle elements for the MultiPoint geometry.
+        """
+        The ``svg`` method returns a group of SVG circle element for the ``MultiPoint`` geometry.
 
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG circle diameters.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG circle diameter.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            A group of SVG circle elements
         """
         if self.is_empty:
             return "<g />"
@@ -2700,7 +2969,20 @@ class MultiPoint(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``MultiPoint`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = multiPoint.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "points" in self:
@@ -2738,10 +3020,10 @@ class MultiPoint(Geometry):
 ########################################################################
 class Point(Geometry):
     """
-    A point contains x and y fields along with a spatialReference field. A
-    point can also contain m and z fields. A point is empty when its x
-    field is present and has the value null or the string "NaN". An empty
-    point has no location in space.
+    The ``Point`` class contains x and y fields along with a :class:`~arcgis.geometry.SpatialReference` field. A
+    ``Point`` can also contain m and z fields. A ``Point`` is empty when its x
+    field is present and has the value `null` or the string `NaN`. An empty
+    ``point`` has **no** location in space.
     """
 
     _type = "Point"
@@ -2756,19 +3038,26 @@ class Point(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Point`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
-        """Returns SVG circle element for the Point geometry.
+        """
+        The ``svg`` method returns a SVG circle element for the ``Point`` geometry.
 
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG circle diameter.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG circle diameter.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            An SVG circle element
         """
         if self.is_empty:
             return "<g />"
@@ -2796,7 +3085,20 @@ class Point(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``Point`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = point.coordinates()
+            >>> coords
+                [x1,y1,m1,z1]
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
@@ -2823,16 +3125,16 @@ class Point(Geometry):
 ########################################################################
 class Polygon(Geometry):
     """
-    A polygon contains an array of rings or curveRings and a
-    spatialReference. For polygons with curveRings, see the sections on
-    JSON curve object and Polygon with curve. Each ring is represented as
-    an array of points. The first point of each ring is always the same as
+    The ``Polygon`` contains an array of rings or curveRings and a
+    :class:`~arcgis.geometry.SpatialReference`. For ``Polygons`` with curveRings, see the sections on
+    JSON curve object and ``Polygon`` with curve. Each ring is represented as
+    an array of :class:`~arcgis.geometry.Point`. The first point of each ring is always the same as
     the last point. Each point in the ring is represented as an array of
-    numbers. A polygon can also have boolean-valued hasM and hasZ fields.
+    numbers. A ``Polygon`` can also have boolean-valued hasM and hasZ fields.
 
-    An empty polygon is represented with an empty array for the rings
-    field. Nulls and/or NaNs embedded in an otherwise defined coordinate
-    stream for polylines/polygons is a syntax error.
+    An empty ``Polygon`` is represented with an empty array for the rings
+    field. `Null` and/or `NaNs` embedded in an otherwise defined coordinate
+    stream for :class:`~arcgis.geometry.Polyline` and ``Polygons`` is a syntax error.
     Polygons should be topologically simple. Exterior rings are oriented
     clockwise, while holes are oriented counter-clockwise. Rings can touch
     at a vertex or self-touch at a vertex, but there should be no other
@@ -2852,6 +3154,22 @@ class Polygon(Geometry):
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
+        """
+        The ``svg`` method retrieves SVG polygon element.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            The SVG polygon element
+        """
+
         if self.is_empty:
             return "<g />"
         if fill_color is None:
@@ -2882,6 +3200,7 @@ class Polygon(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Polyline`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
@@ -2890,7 +3209,20 @@ class Polygon(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``Polygon`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = polygon.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...,[x1,y1,m1,z1] ]
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "rings" in self:
@@ -2940,17 +3272,19 @@ class Polygon(Geometry):
 ########################################################################
 class Polyline(Geometry):
     """
-    A polyline contains an array of paths or curvePaths and a
-    spatialReference. For polylines with curvePaths, see the sections on
-    JSON curve object and Polyline with curve. Each path is represented as
-    an array of points, and each point in the path is represented as an
-    array of numbers. A polyline can also have boolean-valued hasM and hasZ
+    The ``Polyline`` contains an array of paths or curvePaths and a
+    :class:`~arcgis.geometry.SpatialReference`. For ``Polylines`` with curvePaths, see the sections on
+    JSON curve object and ``Polyline`` with curve. Each path is represented as
+    an array of :class:`~arcgis.geometry.Point`, and each point in the path is represented as an
+    array of numbers. A ``Polyline`` can also have boolean-valued hasM and hasZ
     fields.
-    See the description of multipoints for details on how the point arrays
-    are interpreted.
-    An empty polyline is represented with an empty array for the paths
+
+    .. note::
+        See the description of :class:`~arcgis.geometry.MultiPoint` for details on how the point arrays are interpreted.
+
+    An empty ``PolyLine`` is represented with an empty array for the paths
     field. Nulls and/or NaNs embedded in an otherwise defined coordinate
-    stream for polylines/polygons is a syntax error.
+    stream for ``Polylines`` and  :class:`~arcgis.geometry.Polygon` objects is a syntax error.
     """
 
     _type = "Polyline"
@@ -2963,15 +3297,20 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, stroke_color=None):
-        """Returns SVG polyline element for the LineString geometry.
+        """
+        The ``svg`` method retrieves SVG polyline element for the LineString geometry.
 
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG stroke-width.  Default is 1.
-        stroke_color : str, optional
-            Hex string for stroke color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        stroke_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            The SVG polyline element for the LineString Geometry
         """
         if self.is_empty:
             return "<g />"
@@ -2996,6 +3335,7 @@ class Polyline(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Polyline`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
@@ -3004,7 +3344,20 @@ class Polyline(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``Polyline`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = polyLine.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "paths" in self:
@@ -3054,11 +3407,13 @@ class Polyline(Geometry):
 ########################################################################
 class Envelope(Geometry):
     """
-    An envelope is a rectangle defined by a range of values for each
-    coordinate and attribute. It also has a spatialReference field. The
-    fields for the z and m ranges are optional. An empty envelope has no
-    in space and is defined by the presence of an xmin field a null value
-    or a "NaN" string.
+    The ``Envelope`` class represents a rectangle defined by a range of values for each
+    coordinate and attribute. It also has a :class:`~arcgis.geometry.SpatialReference` field. The
+    fields for the `z` and `m` ranges are optional.
+
+    .. note::
+        An empty ``Envelope`` has no points in space and is defined by the presence of an `xmin` field a null value
+        or a `NaN` string.
     """
 
     _type = "Envelope"
@@ -3072,6 +3427,7 @@ class Envelope(Geometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Polyline`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
@@ -3079,7 +3435,22 @@ class Envelope(Geometry):
     #    return hash(json.dumps(dict(self)))
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
-        """ """
+        """
+        The ``svg`` method returns a SVG envelope element for the ``Envelope`` geometry.
+
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG circle diameter.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            An SVG envelope element
+        """
         return self.polygon.svg(scale_factor, fill_color)
 
     # ----------------------------------------------------------------------
@@ -3089,7 +3460,20 @@ class Envelope(Geometry):
 
     # ----------------------------------------------------------------------
     def coordinates(self):
-        """returns the coordinates as a np.array"""
+        """
+        The ``coordinates`` method retrieves the coordinates of the ``Envelope`` as a np.array
+
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> coords = envelope.coordinates()
+            >>> coords
+                [ [x1,y1,m1,z1], [x2,y2,m2,z2],...]
+
+        :returns:
+            An np.array containing coordinate values
+        """
         import numpy as np
 
         if "xmin" in self and "xmax" in self and "ymin" in self and "ymax" in self:
@@ -3111,37 +3495,69 @@ class Envelope(Geometry):
     # ----------------------------------------------------------------------
     @property
     def geohash(self):
-        """A geohash string of the extent is returned."""
+        """
+        The ``geohash`` method retrieves a geohash string of the extent of the ``Envelope.
+
+        :returns:
+            A geohash String
+        """
         return getattr(self.as_arcpy, "geohash", None)
 
     # ----------------------------------------------------------------------
     @property
     def geohash_covers(self):
-        """Returns a list of up to the four longest geohash strings that fit within the extent."""
+        """
+        The ``geohash_covers`` method retrieves a list of up to the four longest geohash strings that
+        fit within the extent of the ``Envelope``.
+
+        :returns:
+           A list of geohash Strings
+        """
         return getattr(self.as_arcpy, "geohashCovers", None)
 
     # ----------------------------------------------------------------------
     @property
     def geohash_neighbors(self):
-        """A list of the geohash neighbor strings for the extent is returned."""
+        """
+        The ``geohash_neighbors`` method retrieves a list of the geohash neighbor strings for the extent of the
+        ``Envelope``.
+
+        :returns:
+           A list of geohash neighbor Strings
+        """
         return getattr(self.as_arcpy, "geohashNeighbors", None)
 
     # ----------------------------------------------------------------------
     @property
     def height(self):
-        """The extent height value."""
+        """
+        The ``height`` property retrieves the extent height value.
+
+        :returns:
+            The extent height value
+        """
         return getattr(self.as_arcpy, "height", None)
 
     # ----------------------------------------------------------------------
     @property
     def width(self):
-        """The extent width value."""
+        """
+        The ``width`` property retrieves the extent width value.
+
+        :returns:
+            The extent width value
+        """
         return getattr(self.as_arcpy, "width", None)
 
     # ----------------------------------------------------------------------
     @property
     def polygon(self):
-        """returns the envelope as a Polygon geometry"""
+        """
+        The ``Polygon`` property retrieves the ``Envelope`` as a :class:`~arcgis.geometry.Polygon` object.
+
+        :returns:
+            A :class:`~arcgis.geometry.Polygon` object
+        """
         fe = self.coordinates().tolist()
         if "spatialReference" in self:
             sr = SpatialReference(self["spatialReference"])
@@ -3177,35 +3593,45 @@ class Envelope(Geometry):
 ########################################################################
 class SpatialReference(BaseGeometry):
     """
-    A spatial reference can be defined using a well-known ID (wkid) or
-    well-known text (wkt). The default tolerance and resolution values for
-    the associated coordinate system are used. The xy and z tolerance
-    values are 1 mm or the equivalent in the unit of the coordinate system.
-    If the coordinate system uses feet, the tolerance is 0.00328083333 ft.
-    The resolution values are 10x smaller or 1/10 the tolerance values.
-    Thus, 0.0001 m or 0.0003280833333 ft. For geographic coordinate systems
-    using degrees, the equivalent of a mm at the equator is used.
-    The well-known ID (WKID) for a given spatial reference can occasionally
+    A ``SpatialReference`` object can be defined using a `well-known ID` (`wkid`) or
+    `well-known text` (`wkt`). The default tolerance and resolution values for
+    the associated coordinate system are used.
+
+    .. note::
+        The x, y and z tolerance
+        values are 1 mm or the equivalent in the unit of the coordinate system.
+        If the coordinate system uses feet, the tolerance is 0.00328083333 ft.
+        The resolution values are 10x smaller or 1/10 the tolerance values.
+        Thus, 0.0001 m or 0.0003280833333 ft. For geographic coordinate systems
+        using degrees, the equivalent of a mm at the equator is used.
+
+    The `well-known ID` (`WKID`) for a given spatial reference can occasionally
     change. For example, the WGS 1984 Web Mercator (Auxiliary Sphere)
-    projection was originally assigned WKID 102100, but was later changed
+    projection was originally assigned `WKID` 102100, but was later changed
     to 3857. To ensure backward compatibility with older spatial data
-    servers, the JSON wkid property will always be the value that was
+    servers, the JSON `wkid` property will always be the value that was
     originally assigned to an SR when it was created.
-    An additional property, latestWkid, identifies the current WKID value
+    An additional property, latestWkid, identifies the current `WKID` value
     (as of a given software release) associated with the same spatial
     reference.
-    A spatial reference can optionally include a definition for a vertical
-    coordinate system (VCS), which is used to interpret the z-values of a
-    geometry. A VCS defines units of measure, the location of z = 0, and
+
+    A ``SpatialReference`` object can optionally include a definition for a `vertical`
+    `coordinate system` (`VCS`), which is used to interpret the z-values of a
+    geometry. A `VCS` defines units of measure, the location of z = 0, and
     whether the positive vertical direction is up or down. When a vertical
-    coordinate system is specified with a WKID, the same caveat as
-    mentioned above applies. There are two VCS WKID properties: vcsWkid and
-    latestVcsWkid. A VCS WKT can also be embedded in the string value of
-    the wkt property. In other words, the WKT syntax can be used to define
-    an SR with both horizontal and vertical components in one string. If
-    either part of an SR is custom, the entire SR will be serialized with
-    only the wkt property.
-    Starting at 10.3, Image Service supports image coordinate systems.
+    coordinate system is specified with a `WKID`, the same caveat as
+    mentioned above applies.
+
+    .. note::
+        There are two `VCS WKID` properties: `vcsWkid` and
+        `latestVcsWkid`. A VCS WKT can also be embedded in the string value of
+        the wkt property. In other words, the WKT syntax can be used to define
+        an SR with both horizontal and vertical components in one string. If
+        either part of an SR is custom, the entire SR will be serialized with
+        only the wkt property.
+
+    .. note::
+        Starting at 10.3, Image Service supports image coordinate systems.
     """
 
     _type = "SpatialReference"
@@ -3234,6 +3660,7 @@ class SpatialReference(BaseGeometry):
     # ----------------------------------------------------------------------
     @property
     def type(self):
+        """The ``type`` method retrieves the type of the current ``Point`` object."""
         return self._type
 
     # ----------------------------------------------------------------------
@@ -3244,7 +3671,21 @@ class SpatialReference(BaseGeometry):
     _repr_svg_ = None
     # ----------------------------------------------------------------------
     def svg(self, scale_factor=1, fill_color=None):
-        """represents the SVG of the object"""
+        """
+        The ``svg`` method retrieves SVG polygon element for a ``SpatialReference`` field.
+
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
+        ----------------  -------------------------------------------------------------------------------
+        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+                          valid, and "#ff3333" if invalid.
+        ================  ===============================================================================
+
+        :returns:
+            The SVG element
+        """
         return "<g/>"
 
     # ----------------------------------------------------------------------
@@ -3264,7 +3705,12 @@ class SpatialReference(BaseGeometry):
     # ----------------------------------------------------------------------
     @property
     def as_arcpy(self):
-        """returns the class as an arcpy SpatialReference object"""
+        """
+        The ``as_arcpy`` property retrieves the class as an ``arcpy SpatialReference`` object.
+
+        :returns:
+            An ``arcpy SpatialReference`` object
+        """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
             import arcpy

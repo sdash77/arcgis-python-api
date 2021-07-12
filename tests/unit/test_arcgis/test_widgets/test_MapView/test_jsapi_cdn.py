@@ -8,9 +8,11 @@ from arcgis.widgets import MapView
 
 arbitrary_js_cdn_str = "https://some-dns.ext/jsapi"
 
+
 def _clear_jsapi_cdn_env_var():
     if "JSAPI_CDN" in os.environ:
         del os.environ["JSAPI_CDN"]
+
 
 def test_jsapi_cdn_env_var_set():
     MapView.set_js_cdn("")
@@ -22,6 +24,7 @@ def test_jsapi_cdn_env_var_set():
     assert mock_mapview._js_cdn_override == arbitrary_js_cdn_str
     _clear_jsapi_cdn_env_var()
 
+
 def test_MapView_set_js_cdn():
     _clear_jsapi_cdn_env_var()
     mock_mapview = MockMapView()
@@ -30,6 +33,7 @@ def test_MapView_set_js_cdn():
     MapView._setup_js_cdn(mock_mapview)
 
     assert mock_mapview._js_cdn_override == arbitrary_js_cdn_str
+
 
 def test_disconn_env_jscdn_path_assembly():
     _clear_jsapi_cdn_env_var()
@@ -41,5 +45,6 @@ def test_disconn_env_jscdn_path_assembly():
 
     MapView._setup_js_cdn(mock_mapview)
 
-    assert mock_mapview._js_cdn_override == \
-        "https://some-portal.ext/portal/jsapi/jsapi4/"
+    assert (
+        mock_mapview._js_cdn_override == "https://some-portal.ext/portal/jsapi/jsapi4/"
+    )

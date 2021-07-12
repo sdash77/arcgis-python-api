@@ -37,7 +37,8 @@ try:
     from ._unet_utils import show_results_multispectral
     from arcgis.learn.models._arcgis_model import _resnet_family, _EmptyData
     from arcgis.learn._utils.common import (
-        get_multispectral_data_params_from_emd ,_get_emd_path
+        get_multispectral_data_params_from_emd,
+        _get_emd_path,
     )
     from arcgis.learn._utils.segmentation_loss_functions import dice
     from arcgis.learn.models._arcgis_model import _device_check
@@ -51,6 +52,7 @@ except Exception as e:
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
+
 
 def safe_json(data):
     """
@@ -67,6 +69,7 @@ def safe_json(data):
     elif isinstance(data, dict):
         return all(isinstance(k, str) and safe_json(v) for k, v in data.items())
     return False
+
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
@@ -124,13 +127,24 @@ class MultiTaskRoadExtractor(ArcGISModel):
     """
 
     def __init__(
-        self, data, backbone=None, pretrained_path=None, *args, **kwargs,
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        *args,
+        **kwargs,
     ):
-        #if data.sub_dataset_type != "RoadOrientation":
+        # if data.sub_dataset_type != "RoadOrientation":
         #    raise Exception(
         #        "This model only works for road extraction. And In order to use this model it's corresponding model-specific parameters should also be passed at prepare_data."
         #    )
         # Set default backbone to be 'resnet34'
+
+        if pretrained_path is not None:
+            pretrained_backbone = False
+        else:
+            pretrained_backbone = True
+
         self._validate_kwargs(**kwargs)
         if backbone is None:
             backbone = models.resnet34
@@ -138,15 +152,21 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
         predefined_mtl_model = None
         # Causes Divide by zero error in  fastai library
-        if hasattr(self._data, "orig_path"):  # If true the data is not empty class obtained from from_model
+        if hasattr(
+            self._data, "orig_path"
+        ):  # If true the data is not empty class obtained from from_model
             if pretrained_path is not None:
                 if os.path.isdir(pretrained_path):
                     for file in os.listdir(pretrained_path):
                         if file.endswith(".emd"):
                             try:
-                                emd = json.load(open(os.path.join(pretrained_path, file)))
-                                bin_size = emd['RoadOrientation']['orient_bin_size']
-                                predefined_mtl_model = emd['ModelParameters']['mtl_model']
+                                emd = json.load(
+                                    open(os.path.join(pretrained_path, file))
+                                )
+                                bin_size = emd["RoadOrientation"]["orient_bin_size"]
+                                predefined_mtl_model = emd["ModelParameters"][
+                                    "mtl_model"
+                                ]
                             except Exception as e:
                                 raise e
                         elif file.endswith(".dlpk"):
@@ -154,8 +174,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 emd_path = _get_emd_path(Path(file))
                                 with open(emd_path) as f:
                                     emd = json.load(f)
-                                bin_size = emd['RoadOrientation']['orient_bin_size']
-                                predefined_mtl_model = emd['ModelParameters']['mtl_model']
+                                bin_size = emd["RoadOrientation"]["orient_bin_size"]
+                                predefined_mtl_model = emd["ModelParameters"][
+                                    "mtl_model"
+                                ]
                             except Exception as e:
                                 raise e
                 else:
@@ -163,83 +185,164 @@ class MultiTaskRoadExtractor(ArcGISModel):
                         emd_path = _get_emd_path(pretrained_path)
                         with open(emd_path) as f:
                             emd = json.load(f)
-                        bin_size = emd['RoadOrientation']['orient_bin_size']
-                        predefined_mtl_model = emd['ModelParameters']['mtl_model']
+                        bin_size = emd["RoadOrientation"]["orient_bin_size"]
+                        predefined_mtl_model = emd["ModelParameters"]["mtl_model"]
                     except Exception as e:
                         raise e
                 try:
                     bin_size
                 except:
-                    print('Could not find the emd file in the specified path. Please provide correct path')
+                    print(
+                        "Could not find the emd file in the specified path. Please provide correct path"
+                    )
 
-                kwargs['orient_bin_size'] = bin_size #To ensure the data is consistent across multiple runs
+                kwargs[
+                    "orient_bin_size"
+                ] = bin_size  # To ensure the data is consistent across multiple runs
 
-
-            self._orient_data=self._get_road_orient_data(data,**kwargs)
+            self._orient_data = self._get_road_orient_data(data, **kwargs)
             if len(data.classes) > 2:
                 raise Exception(
                     "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
                     # noqa
                 )
             self._data.classes = self._orient_data.classes
-            class_key = self._orient_data.classes[0] if isinstance(self._orient_data.classes[0], int) else \
-            self._orient_data.classes[1]
+            class_key = (
+                self._orient_data.classes[0]
+                if isinstance(self._orient_data.classes[0], int)
+                else self._orient_data.classes[1]
+            )
             self._data.class_mapping = {class_key: str(class_key)}
             self._orient_data.class_mapping = self._data.class_mapping
-            self._orient_data._imagery_type = self._data._imagery_type if hasattr(data, '_imagery_type') else None
-            if (self._data._imagery_type == 'MS'):
-                self._orient_data._image_space_used = self._data._image_space_used if hasattr(data,
-                                                                                              '_image_space_used') else None
-                self._orient_data._is_multispectral = self._data._is_multispectral if hasattr(data,
-                                                                                              '_is_multispectral') else None
-                self._orient_data._band_max_values = self._data._band_max_values if hasattr(data,
-                                                                                            '_band_max_values') else None
-                self._orient_data._band_mean_values = self._data._band_mean_values if hasattr(data,
-                                                                                              '_band_mean_values') else None
-                self._orient_data._band_min_values = self._data._band_min_values if hasattr(data,
-                                                                                            '_band_min_values') else None
-                self._orient_data._band_std_values = self._data._band_std_values if hasattr(data,
-                                                                                            '_band_std_values') else None
-                self._orient_data._bands = self._data._bands if hasattr(data, '_bands') else None
-                self._orient_data._extract_bands = self._data._extract_bands if hasattr(data,
-                                                                                        '_extract_bands') else None
-                self._orient_data._image_space_used = self._data._image_space_used if hasattr(data,
-                                                                                              '_image_space_used') else None
-                self._orient_data._min_max_scaler = self._data._min_max_scaler if hasattr(data,
-                                                                                          '_min_max_scaler') else None
-                self._orient_data._min_max_scaler_tfm = self._data._min_max_scaler_tfm if hasattr(data,
-                                                                                                  '_min_max_scaler_tfm') else None
-                self._orient_data._multispectral_color_array = self._data._multispectral_color_array*255 if hasattr(data,
-                                                                                                                '_multispectral_color_array') else None
-                self._orient_data._multispectral_color_mapping = self._data._multispectral_color_mapping if hasattr(
-                    data, '_multispectral_color_mapping') else None
-                self._orient_data._norm_pct = self._data._norm_pct if hasattr(data, '_norm_pct') else None
-                self._orient_data._rgb_bands = self._data._rgb_bands if hasattr(data, '_rgb_bands') else None
-                self._orient_data._scaled_max_values = self._data._scaled_max_values if hasattr(data,
-                                                                                                '_scaled_max_values') else None
-                self._orient_data._scaled_mean_values = self._data._scaled_mean_values if hasattr(data,
-                                                                                                  '_scaled_mean_values') else None
-                self._orient_data._scaled_min_values = self._data._scaled_min_values if hasattr(data,
-                                                                                                '_scaled_min_values') else None
-                self._orient_data._scaled_std_values = self._data._scaled_std_values if hasattr(data,
-                                                                                                '_scaled_std_values') else None
-                self._orient_data._symbology_rgb_bands = self._data._symbology_rgb_bands if hasattr(data,
-                                                                                                    '_symbology_rgb_bands') else None
-                self._orient_data.stats = self._data.stats if hasattr(data, 'stats') else None
-                self._orient_data._do_normalize = self._data._do_normalize if hasattr(data, '_do_normalize') else None
-                self._orient_data.train_ds.tfms = self._data.train_ds.tfms if hasattr(data.train_ds, 'tfms') else None
-                self._orient_data.valid_ds.tfms = self._data.valid_ds.tfms if hasattr(data.valid_ds, 'tfms') else None
+            self._orient_data._imagery_type = (
+                self._data._imagery_type if hasattr(data, "_imagery_type") else None
+            )
+            if self._data._imagery_type == "MS":
+                self._orient_data._image_space_used = (
+                    self._data._image_space_used
+                    if hasattr(data, "_image_space_used")
+                    else None
+                )
+                self._orient_data._is_multispectral = (
+                    self._data._is_multispectral
+                    if hasattr(data, "_is_multispectral")
+                    else None
+                )
+                self._orient_data._band_max_values = (
+                    self._data._band_max_values
+                    if hasattr(data, "_band_max_values")
+                    else None
+                )
+                self._orient_data._band_mean_values = (
+                    self._data._band_mean_values
+                    if hasattr(data, "_band_mean_values")
+                    else None
+                )
+                self._orient_data._band_min_values = (
+                    self._data._band_min_values
+                    if hasattr(data, "_band_min_values")
+                    else None
+                )
+                self._orient_data._band_std_values = (
+                    self._data._band_std_values
+                    if hasattr(data, "_band_std_values")
+                    else None
+                )
+                self._orient_data._bands = (
+                    self._data._bands if hasattr(data, "_bands") else None
+                )
+                self._orient_data._extract_bands = (
+                    self._data._extract_bands
+                    if hasattr(data, "_extract_bands")
+                    else None
+                )
+                self._orient_data._image_space_used = (
+                    self._data._image_space_used
+                    if hasattr(data, "_image_space_used")
+                    else None
+                )
+                self._orient_data._min_max_scaler = (
+                    self._data._min_max_scaler
+                    if hasattr(data, "_min_max_scaler")
+                    else None
+                )
+                self._orient_data._min_max_scaler_tfm = (
+                    self._data._min_max_scaler_tfm
+                    if hasattr(data, "_min_max_scaler_tfm")
+                    else None
+                )
+                self._orient_data._multispectral_color_array = (
+                    self._data._multispectral_color_array * 255
+                    if hasattr(data, "_multispectral_color_array")
+                    else None
+                )
+                self._orient_data._multispectral_color_mapping = (
+                    self._data._multispectral_color_mapping
+                    if hasattr(data, "_multispectral_color_mapping")
+                    else None
+                )
+                self._orient_data._norm_pct = (
+                    self._data._norm_pct if hasattr(data, "_norm_pct") else None
+                )
+                self._orient_data._rgb_bands = (
+                    self._data._rgb_bands if hasattr(data, "_rgb_bands") else None
+                )
+                self._orient_data._scaled_max_values = (
+                    self._data._scaled_max_values
+                    if hasattr(data, "_scaled_max_values")
+                    else None
+                )
+                self._orient_data._scaled_mean_values = (
+                    self._data._scaled_mean_values
+                    if hasattr(data, "_scaled_mean_values")
+                    else None
+                )
+                self._orient_data._scaled_min_values = (
+                    self._data._scaled_min_values
+                    if hasattr(data, "_scaled_min_values")
+                    else None
+                )
+                self._orient_data._scaled_std_values = (
+                    self._data._scaled_std_values
+                    if hasattr(data, "_scaled_std_values")
+                    else None
+                )
+                self._orient_data._symbology_rgb_bands = (
+                    self._data._symbology_rgb_bands
+                    if hasattr(data, "_symbology_rgb_bands")
+                    else None
+                )
+                self._orient_data.stats = (
+                    self._data.stats if hasattr(data, "stats") else None
+                )
+                self._orient_data._do_normalize = (
+                    self._data._do_normalize if hasattr(data, "_do_normalize") else None
+                )
+                self._orient_data.train_ds.tfms = (
+                    self._data.train_ds.tfms if hasattr(data.train_ds, "tfms") else None
+                )
+                self._orient_data.valid_ds.tfms = (
+                    self._data.valid_ds.tfms if hasattr(data.valid_ds, "tfms") else None
+                )
                 if self._orient_data._do_normalize:
-                    self._orient_data = self._orient_data.normalize(stats=(self._orient_data._scaled_mean_values, self._orient_data._scaled_std_values), do_x=True,
-                                          do_y=False)
-                #self._data = self._orient_data
+                    self._orient_data = self._orient_data.normalize(
+                        stats=(
+                            self._orient_data._scaled_mean_values,
+                            self._orient_data._scaled_std_values,
+                        ),
+                        do_x=True,
+                        do_y=False,
+                    )
+                # self._data = self._orient_data
                 self.show_results = self._show_results_multispectral
         else:
-            self._orient_data =self._data # Else use the data attributes obtained from emd
-            #if self._orient_data._do_normalize:
+            self._orient_data = (
+                self._data
+            )  # Else use the data attributes obtained from emd
+            # if self._orient_data._do_normalize:
             #    self._orient_data = self._orient_data.normalize(stats=(self._orient_data._scaled_mean_values, self._orient_data._scaled_std_values), do_x=True, do_y=False)
-        #self._orient_data.train_ds.x._imagery_type = self._orient_data._imagery_type
-        #self._orient_data.valid_ds.x._imagery_type = self._orient_data._imagery_type
+        # self._orient_data.train_ds.x._imagery_type = self._orient_data._imagery_type
+        # self._orient_data.valid_ds.x._imagery_type = self._orient_data._imagery_type
         self._ignore_classes = kwargs.get("ignore_classes", [])
         if self._ignore_classes != [] and len(self._orient_data.classes) <= 3:
             raise Exception(
@@ -282,7 +385,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._chip_size = (self._orient_data.chip_size, self._orient_data.chip_size)
 
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, -2)
+        self._encoder = create_body(self._backbone, pretrained_backbone)
 
         # Initialize the model, loss function and the Learner object
         mtl_models = {
@@ -306,7 +409,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
             **self._model_init_kwargs,
         )
         self._loss_f = road_orient_loss(
-            n_classes=self._orient_data.c, loss_weights=kwargs.get("loss_weights", (1.0, 1.0))
+            n_classes=self._orient_data.c,
+            loss_weights=kwargs.get("loss_weights", (1.0, 1.0)),
         )
         self.learner_params = kwargs.get("learner_params", {})
         learner_kwargs = self.learner_params.copy()
@@ -322,10 +426,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
             self._model,
             loss_func=self._loss_f,
             metrics=[pixel_accuracy, road_iou, dice_coeff],
-            **learner_kwargs
+            **learner_kwargs,
         )
-        if hasattr(self._data,'path'):
-            self.learn.path=self._data.path
+        if hasattr(self._data, "path"):
+            self.learn.path = self._data.path
         self.learn.model = self.learn.model.to(self._device)
         _set_multigpu_callback(self)
         if pretrained_path is not None:
@@ -334,6 +438,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
     def __str__(self):
         return self.__repr__()
+
+    @staticmethod
+    def _available_metrics():
+        return ["valid_loss", "accuracy", "miou", "dice"]
 
     def mIOU(self, mean=False, show_progress=True):
 
@@ -353,33 +461,56 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
         :returns: `dict` if mean is False otherwise `float`
         """
-        #self._check_requisites()
-        if (hasattr(self.learn.data, 'emd') and (self._learning_rate is None)):
-            return self.learn.data.emd['mIoU'] # if model is loaded without data then reads the miou value from emd
+        # self._check_requisites()
+        if hasattr(self.learn.data, "emd") and (self._learning_rate is None):
+            return self.learn.data.emd[
+                "mIoU"
+            ]  # if model is loaded without data then reads the miou value from emd
         num_classes = torch.arange(self._orient_data.c)
-        miou = compute_miou(self, self._orient_data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
+        miou = compute_miou(
+            self,
+            self._orient_data.valid_dl,
+            mean,
+            num_classes,
+            show_progress,
+            self._ignore_mapped_class,
+        )
         if mean:
-            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
+            miou = [
+                miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class
+            ]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
-            return dict(zip(['0'] + self._orient_data.classes[1:], miou))
+            return dict(zip(["0"] + self._orient_data.classes[1:], miou))
         else:
             class_values = [0] + list(self._orient_data.class_mapping.keys())
-            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class}
+            return {
+                class_values[i]: miou[i]
+                for i in range(len(miou))
+                if i not in self._ignore_mapped_class
+            }
 
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
-    def _get_road_orient_data(self,data,**kwargs):
-        #if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
+    def _get_road_orient_data(self, data, **kwargs):
+        # if (not self._data._imagery_type in ['RGB', 'ASSUMED_RGB']):
         #    # TODO: Implement Road Orientation model for MS imagery
         #    raise NotImplementedError('Road Orientation Model does not suppport Multispectral imagery yet!')
         road_data_obj = ClassifiedTilesData(
-            path=self._data.orig_path, class_mapping={}, chip_size=self._data.chip_size, val_split_pct=self._data._val_split_pct,
-            batch_size=self._data.batch_size, transforms=None, seed=42,
-            dataset_type=self._data.dataset_type, resize_to=self._data.resize_to, **kwargs)
-        road_orient_obj = RoadOrientation(self._data,road_data_obj, **kwargs)
-        orient_data = road_orient_obj.get_databunch(data,**kwargs)
+            path=self._data.orig_path,
+            class_mapping={},
+            chip_size=self._data.chip_size,
+            val_split_pct=self._data._val_split_pct,
+            batch_size=self._data.batch_size,
+            transforms=None,
+            seed=42,
+            dataset_type=self._data.dataset_type,
+            resize_to=self._data.resize_to,
+            **kwargs,
+        )
+        road_orient_obj = RoadOrientation(self._data, road_data_obj, **kwargs)
+        orient_data = road_orient_obj.get_databunch(data, **kwargs)
         return orient_data
 
     def _get_optimizer(self, optim_name):
@@ -390,9 +521,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
         gauss_thresh = kwargs.get("gaussian_thresh", 0.6)
         orient_bin_size = kwargs.get("orient_bin_size", 20)
         orient_theta = kwargs.get("orient_theta", 8)
-        assert gauss_thresh > 0.0 and gauss_thresh < 1, 'gauss_thresh should be between 0 and 1'
-        assert orient_bin_size > 0 and orient_bin_size < 360, 'orient_bin_size should be between 1 and 360'
-        assert orient_theta > 0 and orient_theta < 10, 'orient_theta should be between 1 and 10'
+        assert (
+            gauss_thresh > 0.0 and gauss_thresh < 1
+        ), "gauss_thresh should be between 0 and 1"
+        assert (
+            orient_bin_size > 0 and orient_bin_size < 360
+        ), "orient_bin_size should be between 1 and 360"
+        assert (
+            orient_theta > 0 and orient_theta < 10
+        ), "orient_theta should be between 1 and 10"
 
     def unfreeze(self):
         """
@@ -415,27 +552,28 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return MultiTaskRoadExtractor._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
-        return ['Classified_Tiles']
+        return ["Classified_Tiles"]
 
     def fit(self, epochs=10, lr=None, **kwargs):
         if isinstance(lr, slice):
             lr = lr.stop
         # setting monitor because earlystopping also uses this value.
-        super().fit(epochs, lr=lr, monitor=kwargs.pop('monitor', "miou"), **kwargs)
+        super().fit(epochs, lr=lr, monitor=kwargs.pop("monitor", "miou"), **kwargs)
 
-    def _get_emd_params(self,save_inference_file):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
             _emd_template[
-                "InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ModelConfiguration"] = "_road_infrencing"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -554,20 +692,17 @@ class MultiTaskRoadExtractor(ArcGISModel):
         """
         self._check_requisites()
         self.return_fig = kwargs.get("return_fig", False)
-        fig=self.learn.show_results(rows=rows, **kwargs)
+        fig = self.learn.show_results(rows=rows, **kwargs)
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()
         if self.return_fig:
             return fig
 
-    def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs):  # parameters adjusted in kwargs
-        return_fig = kwargs.get('return_fig', False)
-        ret_val = show_results_multispectral(
-            self,
-            nrows=rows,
-            alpha=alpha,
-            **kwargs
-        )
+    def _show_results_multispectral(
+        self, rows=5, alpha=0.7, **kwargs
+    ):  # parameters adjusted in kwargs
+        return_fig = kwargs.get("return_fig", False)
+        ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:
             fig, ax = ret_val
             return fig

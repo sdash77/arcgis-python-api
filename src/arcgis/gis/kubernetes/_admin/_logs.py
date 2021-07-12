@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
-
+from typing import Dict, Any, Optional, List
 
 ########################################################################
 class LogManager(_BaseKube):
@@ -103,6 +103,21 @@ class LogManager(_BaseKube):
         elif "success" in res:
             return res["success"] == "true"
         return res
+
+    # ----------------------------------------------------------------------
+    def refresh_index(self) -> bool:
+        """
+        Recreates the log indexes and can be used to troubleshoot issues
+        related to accessing logs, such as if new logs are not being
+        generated or if existing logs are unavailable.
+
+
+        :returns: bool
+
+        """
+        params = {"f": "json"}
+        url = self._url + "/settings/updateLogIndex"
+        return self._con.post(url, params).get("status", "failed") == "success"
 
     # ----------------------------------------------------------------------
     @property
@@ -213,13 +228,6 @@ class LogManager(_BaseKube):
         :return:
            A JSON of the log items that match the query. If export option is set to True, the
            output log file path is returned.
-
-
-        """
-
-        """
-
-
 
         """
 

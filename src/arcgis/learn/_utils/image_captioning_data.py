@@ -15,22 +15,34 @@ try:
     from torch.utils.data import Dataset, DataLoader
     from fastai.text import Tokenizer, Vocab
     import fastai
-    from fastai.vision import (get_transforms, open_image, image2np, Image,
-                               imagenet_stats, normalize, denormalize)
+    from fastai.vision import (
+        get_transforms,
+        open_image,
+        image2np,
+        Image,
+        imagenet_stats,
+        normalize,
+        denormalize,
+    )
     from fastai.vision.transform import crop
     from fastai.data_block import DataBunch
     from .pointcloud_data import get_device
     from .._utils.common import get_nbatches, get_top_padding
     import matplotlib.patheffects as PathEffects
     import torch
+
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
 StateType = Dict[str, torch.Tensor]
-StepFunctionType = Callable[[torch.Tensor, StateType, int], Tuple[torch.Tensor, StateType]]
-StepFunctionTypeNoTimestep = Callable[[torch.Tensor, StateType], Tuple[torch.Tensor, StateType]]
+StepFunctionType = Callable[
+    [torch.Tensor, StateType, int], Tuple[torch.Tensor, StateType]
+]
+StepFunctionTypeNoTimestep = Callable[
+    [torch.Tensor, StateType], Tuple[torch.Tensor, StateType]
+]
 
 
 # Modified BeamSearch from AllenNLP library.
@@ -77,15 +89,19 @@ class BeamSearchAttention:
 
         for timestep in range(len(predictions) - 2, 0, -1):
             # shape: (batch_size, beam_size, 1)
-            cur_preds = predictions[timestep].gather(1, cur_backpointers).unsqueeze(2)
+            cur_preds = (
+                predictions[timestep].gather(1, cur_backpointers.long()).unsqueeze(2)
+            )
 
             reconstructed_predictions.append(cur_preds)
 
             # shape: (batch_size, beam_size)
-            cur_backpointers = backpointers[timestep - 1].gather(1, cur_backpointers)
+            cur_backpointers = backpointers[timestep - 1].gather(
+                1, cur_backpointers.long()
+            )
 
         # shape: (batch_size, beam_size, 1)
-        final_preds = predictions[0].gather(1, cur_backpointers).unsqueeze(2)
+        final_preds = predictions[0].gather(1, cur_backpointers.long()).unsqueeze(2)
 
         reconstructed_predictions.append(final_preds)
 
@@ -93,7 +109,10 @@ class BeamSearchAttention:
 
     @torch.no_grad()
     def search(
-        self, start_predictions: torch.Tensor, start_state: StateType, step: StepFunctionType
+        self,
+        start_predictions: torch.Tensor,
+        start_state: StateType,
+        step: StepFunctionType,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Given a starting state and a step function, apply beam search to find the
@@ -145,7 +164,9 @@ class BeamSearchAttention:
             old_step = cast(StepFunctionTypeNoTimestep, step)
 
             def new_step(
-                last_predictions: torch.Tensor, state: Dict[str, torch.Tensor], time_step: int
+                last_predictions: torch.Tensor,
+                state: Dict[str, torch.Tensor],
+                time_step: int,
             ):
                 return old_step(last_predictions, state)
 
@@ -183,9 +204,10 @@ class BeamSearchAttention:
             )
 
         # shape: (batch_size, beam_size), (batch_size, beam_size)
-        start_top_log_probabilities, start_predicted_classes = start_class_log_probabilities.topk(
-            self.beam_size
-        )
+        (
+            start_top_log_probabilities,
+            start_predicted_classes,
+        ) = start_class_log_probabilities.topk(self.beam_size)
         if self.beam_size == 1 and (start_predicted_classes == self._end_index).all():
             warnings.warn(
                 "Empty sequences predicted. You may want to increase the beam size or ensure "
@@ -266,7 +288,9 @@ class BeamSearchAttention:
             )
 
             # shape: (batch_size * beam_size, per_node_beam_size)
-            summed_top_log_probabilities = top_log_probabilities + expanded_last_log_probabilities
+            summed_top_log_probabilities = (
+                top_log_probabilities + expanded_last_log_probabilities
+            )
 
             # shape: (batch_size, beam_size * per_node_beam_size)
             reshaped_summed = summed_top_log_probabilities.reshape(
@@ -287,7 +311,7 @@ class BeamSearchAttention:
             # Use the beam indices to extract the corresponding classes.
             # shape: (batch_size, beam_size)
             restricted_predicted_classes = reshaped_predicted_classes.gather(
-                1, restricted_beam_indices
+                1, restricted_beam_indices.long()
             )
 
             predictions.append(restricted_predicted_classes)
@@ -318,11 +342,11 @@ class BeamSearchAttention:
                 # shape: (batch_size * beam_size, *)
                 state[key] = (
                     state_tensor.reshape(batch_size, self.beam_size, *last_dims)
-                    .gather(1, expanded_backpointer)
+                    .gather(1, expanded_backpointer.long())
                     .reshape(batch_size * self.beam_size, *last_dims)
                 )
 
-            attention_maps.append(state['attention_map'])
+            attention_maps.append(state["attention_map"])
 
         if not torch.isfinite(last_log_probabilities).all():
             warnings.warn(
@@ -332,7 +356,9 @@ class BeamSearchAttention:
                 RuntimeWarning,
             )
 
-        reconstructed_predictions = self.reconstruct_sequences(predictions, backpointers)
+        reconstructed_predictions = self.reconstruct_sequences(
+            predictions, backpointers
+        )
 
         # shape: (batch_size, beam_size, max_steps)
         all_predictions = torch.cat(list(reversed(reconstructed_predictions)), 2)
@@ -357,20 +383,22 @@ class BeamSearchAttention:
 #     pass
 #     # get
 
+
 class ImageCaptioningDataset(Dataset):
-    def __init__(self,
-                 root_path,
-                 images,
-                 captions,
-                 tokenizer,
-                 vocab,
-                 transforms,
-                 chip_sz,
-                 resize_to,
-                 norm_stats,
-                 split,
-                 flip_vert
-                 ):
+    def __init__(
+        self,
+        root_path,
+        images,
+        captions,
+        tokenizer,
+        vocab,
+        transforms,
+        chip_sz,
+        resize_to,
+        norm_stats,
+        split,
+        flip_vert,
+    ):
 
         # set path and annotations
         self.root_path = Path(root_path)
@@ -390,8 +418,9 @@ class ImageCaptioningDataset(Dataset):
         self.transforms = transforms
         self.crop_tfm = crop(size=chip_sz, row_pct=(0, 1), col_pct=(0, 1))
         if transforms is None:
-            self.train_transforms, self.val_transforms = \
-                get_transforms(flip_vert=flip_vert)
+            self.train_transforms, self.val_transforms = get_transforms(
+                flip_vert=flip_vert
+            )
         elif transforms is False:
             self.train_transforms, self.val_transforms = None, None
         else:
@@ -404,7 +433,7 @@ class ImageCaptioningDataset(Dataset):
 
     def __getitem__(self, index):
         # read image using gdal or PIL
-        im = open_image(self.root_path / 'images' / self.images[index])
+        im = open_image(self.root_path / "images" / self.images[index])
         # Apply transforms on the image.
 
         # get caption using the index.
@@ -412,7 +441,11 @@ class ImageCaptioningDataset(Dataset):
         cap = cap[random.randint(0, len(cap) - 1)]
         # convert to word index
         cap = self.tokenizer._process_all_1([cap])[0]
-        cap = [self.vocab.stoi['xxbos']] + self.vocab.numericalize(cap) + [self.vocab.stoi['xxeos']]
+        cap = (
+            [self.vocab.stoi["xxbos"]]
+            + self.vocab.numericalize(cap)
+            + [self.vocab.stoi["xxeos"]]
+        )
         # return images and captions as indexes
 
         if len(im.shape) > 2:
@@ -425,14 +458,20 @@ class ImageCaptioningDataset(Dataset):
         else:
             crop_flag = True
 
-        size = (self.resize_to, self.resize_to) if self.resize_to is not None else self.resize_to
+        size = (
+            (self.resize_to, self.resize_to)
+            if self.resize_to is not None
+            else self.resize_to
+        )
         if self.resize_to is not None:
             self.chip_size = self.resize_to
 
         if self.transforms is not False:
-            if self.split == 'train':
+            if self.split == "train":
                 if crop_flag:
-                    im = im.apply_tfms(self.crop_tfm).apply_tfms(self.train_transforms, size=size)
+                    im = im.apply_tfms(self.crop_tfm).apply_tfms(
+                        self.train_transforms, size=size
+                    )
                 else:
                     im = im.apply_tfms(self.train_transforms, size=size)
             else:
@@ -440,13 +479,15 @@ class ImageCaptioningDataset(Dataset):
 
         return normalize(im.px, *self.norm_stats), cap
 
+
 def normalize(x, mean, std):
     "Normalize `x` with `mean` and `std`."
     to_tensor = lambda z: torch.tensor(z).to(x.device)
     if type(mean[0]) is not torch.Tensor:
         mean = to_tensor(mean)
         std = to_tensor(std)
-    return (x-mean[..., None, None]) / std[..., None, None]
+    return (x - mean[..., None, None]) / std[..., None, None]
+
 
 def denormalize(x, mean, std, do_x=True):
     "Denormalize `x` with `mean` and `std`."
@@ -454,7 +495,12 @@ def denormalize(x, mean, std, do_x=True):
     if type(mean[0]) is not torch.Tensor:
         mean = to_tensor(mean)
         std = to_tensor(std)
-    return x.cpu().float()*std[...,None,None] + mean[...,None,None] if do_x else x.cpu()
+    return (
+        x.cpu().float() * std[..., None, None] + mean[..., None, None]
+        if do_x
+        else x.cpu()
+    )
+
 
 def read_json(file_name):
     with open(file_name) as f:
@@ -465,6 +511,7 @@ def read_json(file_name):
 def read_csv(file_name):
     df = pd.read_csv(file_name)
     return df
+
 
 def parse_json(obj, keys, index, caption_list, club_items):
     if index == (len(keys) - 1):
@@ -482,27 +529,27 @@ def parse_json(obj, keys, index, caption_list, club_items):
     else:
         if type(obj) is list:
             for o in obj:
-                parse_json(o[keys[index]], keys, index+1, caption_list, club_items)
+                parse_json(o[keys[index]], keys, index + 1, caption_list, club_items)
         else:
             obj = obj[keys[index]]
-            parse_json(obj, keys, index+1, caption_list, club_items)
+            parse_json(obj, keys, index + 1, caption_list, club_items)
 
 
 def get_annotations(ann_object, key, read_type):
-    if read_type == 'json':
+    if read_type == "json":
         # 'images,filename', 'images,sentences,raw'
-        input_key,  annotation_key = key.split('|')
-        keys = annotation_key.split(',')
-        input_keys = input_key.split(',')
+        input_key, annotation_key = key.split("|")
+        keys = annotation_key.split(",")
+        input_keys = input_key.split(",")
         depth = len(keys)
         all_captions = []
         all_images = []
         parse_json(ann_object, keys, 0, all_captions, club_items=True)
         parse_json(ann_object, input_keys, 0, all_images, club_items=False)
         return all_images, all_captions
-    if ann_path == 'csv':
+    if ann_path == "csv":
         raise NotImplementedError
-    if ann_path == 'arcgis':
+    if ann_path == "arcgis":
         raise NotImplementedError
 
 
@@ -527,8 +574,9 @@ def collate_fn(data):
     images, captions = zip(*data)
 
     # Merge images (from tuple of 3D tensor to 4D tensor).
-    images = torch.stack([im.px if isinstance(im, fastai.vision.image.Image)\
-                          else im for im in images], 0)
+    images = torch.stack(
+        [im.px if isinstance(im, fastai.vision.image.Image) else im for im in images], 0
+    )
 
     # Merge captions (from tuple of 1D tensor to 2D tensor).
     lengths = torch.tensor([len(cap) for cap in captions]).long()
@@ -539,14 +587,9 @@ def collate_fn(data):
     return images, (targets, lengths)
 
 
-def prepare_captioning_dataset(path,
-                               chip_sz,
-                               batch_size,
-                               val_split_pct,
-                               transforms,
-                               resize_to,
-                               **kwargs
-                               ):
+def prepare_captioning_dataset(
+    path, chip_sz, batch_size, val_split_pct, transforms, resize_to, **kwargs
+):
     """
     If 'annotations.json' is present in root path, then we should use that,
     also pass 'annotations_key' in wherecaptions are present, seperated by commas
@@ -557,38 +600,38 @@ def prepare_captioning_dataset(path,
     """
 
     if not HAS_FASTAI:
-        raise_fastai_import_error(import_exception=import_exception,
-                                    message="",
-                                    installation_steps=' ')
+        raise_fastai_import_error(
+            import_exception=import_exception, message="", installation_steps=" "
+        )
 
     # Read file and get all captions.
-    imagecap_kwargs = kwargs.get('image_captioning_kwargs')
-    if (path / 'annotations.json').exists():
+    imagecap_kwargs = kwargs.get("image_captioning_kwargs")
+    if (path / "annotations.json").exists():
         # RSICD Dataset.
-        imagecap_kwargs = {'annotations_key':'images,filename|images,sentences,raw'}
-        annotations_json = path / 'annotations.json'
-        annotations_key = imagecap_kwargs.get('annotations_key')
+        imagecap_kwargs = {"annotations_key": "images,filename|images,sentences,raw"}
+        annotations_json = path / "annotations.json"
+        annotations_key = imagecap_kwargs.get("annotations_key")
         annotation_object = read_json(annotations_json)
-        ann_type = 'json'
+        ann_type = "json"
 
-    elif (path / 'annotations.csv').exists():
-        annotations_csv = path / 'annotations.csv'
-        annotations_key = imagecap_kwargs.get('annotations_key')
+    elif (path / "annotations.csv").exists():
+        annotations_csv = path / "annotations.csv"
+        annotations_key = imagecap_kwargs.get("annotations_key")
         annotation_object = read_csv(annotations_csv)
-        ann_type = 'csv'
+        ann_type = "csv"
 
-    elif (path / 'labels').exists():
-        annotation_object = path / 'labels'
-        ann_type = 'arcgis'
+    elif (path / "labels").exists():
+        annotation_object = path / "labels"
+        ann_type = "arcgis"
 
     else:
         raise Exception("Unindentified format")
 
-    lang = imagecap_kwargs.get('language', 'en')
+    lang = imagecap_kwargs.get("language", "en")
 
-    paired_images, paired_captions = get_annotations(annotation_object,
-                                                     annotations_key,
-                                                     ann_type)
+    paired_images, paired_captions = get_annotations(
+        annotation_object, annotations_key, ann_type
+    )
 
     # create tokenizer and vocab
     tokenizer = Tokenizer(n_cpus=1, lang=lang)
@@ -596,8 +639,8 @@ def prepare_captioning_dataset(path,
     vocab = Vocab.create(tokenized_captions, max_vocab=100000, min_freq=4)
     del tokenized_captions
 
-    norm_stats = kwargs.get('norm_stats', imagenet_stats)
-    flip_vert = kwargs.get('imagery_type', 'satellite') != 'oriented'
+    norm_stats = kwargs.get("norm_stats", imagenet_stats)
+    flip_vert = kwargs.get("imagery_type", "satellite") != "oriented"
 
     # create train val idxs using split pct
     total_files = len(paired_images)
@@ -612,42 +655,44 @@ def prepare_captioning_dataset(path,
     train_captions = paired_captions[total_val_files:]
 
     # instantiate ImageCaptioning class
-    train_dataset = ImageCaptioningDataset(path,
-                                           train_images,
-                                           train_captions,
-                                           tokenizer,
-                                           vocab,
-                                           transforms,
-                                           chip_sz,
-                                           resize_to,
-                                           norm_stats,
-                                           split='train',
-                                           flip_vert=flip_vert)
+    train_dataset = ImageCaptioningDataset(
+        path,
+        train_images,
+        train_captions,
+        tokenizer,
+        vocab,
+        transforms,
+        chip_sz,
+        resize_to,
+        norm_stats,
+        split="train",
+        flip_vert=flip_vert,
+    )
 
-    valid_dataset = ImageCaptioningDataset(path,
-                                           val_images,
-                                           val_captions,
-                                           tokenizer,
-                                           vocab,
-                                           transforms,
-                                           chip_sz,
-                                           resize_to,
-                                           norm_stats,
-                                           split='val',
-                                           flip_vert=False)
+    valid_dataset = ImageCaptioningDataset(
+        path,
+        val_images,
+        val_captions,
+        tokenizer,
+        vocab,
+        transforms,
+        chip_sz,
+        resize_to,
+        norm_stats,
+        split="val",
+        flip_vert=False,
+    )
 
     # create train val dataloaders with appropriate batch size.
-    databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
+    databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
 
-    train_dl = DataLoader(train_dataset,
-                          batch_size=batch_size,
-                          collate_fn=collate_fn,
-                          **databunch_kwargs)
+    train_dl = DataLoader(
+        train_dataset, batch_size=batch_size, collate_fn=collate_fn, **databunch_kwargs
+    )
 
-    valid_dl = DataLoader(valid_dataset,
-                          batch_size=batch_size,
-                          collate_fn=collate_fn,
-                          **databunch_kwargs)
+    valid_dl = DataLoader(
+        valid_dataset, batch_size=batch_size, collate_fn=collate_fn, **databunch_kwargs
+    )
 
     # create Databunch
     device = get_device()
@@ -671,45 +716,43 @@ def show_image_and_text(ax, image, text, show_coords):
         image = image.px
     ax.imshow(image2np(image))
     # ax.title.set_text('\n'.join(wrap(text, 40)))
-    ax.set_title('\n'.join(wrap(text, 40)), y=-0.15, pad=0.1)
-    ax.title.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='w')])
+    ax.set_title("\n".join(wrap(text, 40)), y=-0.15, pad=0.1)
+    ax.title.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="w")])
     if not show_coords:
-        ax.axis('off')
+        ax.axis("off")
 
 
 def show_batch(self, rows=2, **kwargs):
     # create a grid of square root of rows
-    figsize = kwargs.get('figsize', (5*rows, 5*rows))
-    show_coords = kwargs.get('show_coords', False)
+    figsize = kwargs.get("figsize", (5 * rows, 5 * rows))
+    show_coords = kwargs.get("show_coords", False)
     fig, ax = plt.subplots(rows, rows, figsize=figsize)
 
-    img_idxs = [random.randint(0, len(self.train_ds)) for k in range(rows**2)]
+    img_idxs = [random.randint(0, len(self.train_ds)) for k in range(rows ** 2)]
     # iterate through the rows and get transformed images from the dataset class
     for k, idx in enumerate(img_idxs):
         img, captions = self.train_ds[idx]
         caption = self.vocab.textify(captions[1:-1])
         # use matplotlib for display
-        show_image_and_text(ax[k//rows][k % rows],
-                            denormalize(img, *self.norm_stats),
-                            caption,
-                            show_coords)
+        show_image_and_text(
+            ax[k // rows][k % rows],
+            denormalize(img, *self.norm_stats),
+            caption,
+            show_coords,
+        )
 
 
 def show_results(self, rows, **kwargs):
 
-    figsize = kwargs.get('figsize', (20, rows*5))
-    return_fig = kwargs.get('return_fig', False)
-    show_coords = kwargs.get('show_coords', False)
-    beam_width = kwargs.get('beam_width', 3)
-    max_len = kwargs.get('max_len', 15)
+    figsize = kwargs.get("figsize", (20, rows * 5))
+    return_fig = kwargs.get("return_fig", False)
+    show_coords = kwargs.get("show_coords", False)
+    beam_width = kwargs.get("beam_width", 3)
+    max_len = kwargs.get("max_len", 15)
     fig, ax = plt.subplots(rows, 2, figsize=figsize, squeeze=False)
-    top = get_top_padding(
-            title_font_size=16,
-            nrows=rows,
-            imsize=5
-            )    
+    top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     plt.subplots_adjust(top=top)
-    fig.suptitle('Ground Truth / Prediction', fontsize=16)
+    fig.suptitle("Ground Truth / Prediction", fontsize=16)
     nbatches = (rows // self._data.valid_dl.batch_size) + 1
     dls = get_nbatches(self._data.valid_dl, nbatches)
     images, captions = [], []
@@ -717,8 +760,12 @@ def show_results(self, rows, **kwargs):
 
     # concatenating multiple batches after doing predictions.
     for x_in, current_caption_gt in zip(*dls):
-        captions_gts.extend([cap.tolist()[:length.item()] for cap, length in zip(*current_caption_gt)])
-        current_images, current_captions, _ = self.learn.model.sample(x_in, beam_width=beam_width, max_len=max_len)
+        captions_gts.extend(
+            [cap.tolist()[: length.item()] for cap, length in zip(*current_caption_gt)]
+        )
+        current_images, current_captions, _ = self.learn.model.sample(
+            x_in, beam_width=beam_width, max_len=max_len
+        )
         images.append(current_images)
         captions.extend(current_captions)
     images = torch.cat(images).cpu()
@@ -730,9 +777,16 @@ def show_results(self, rows, **kwargs):
         # textify gt because its still tokenized.
         caption_gt = self._data.vocab.textify(caption_gt[1:-1])
         # use matplotlib for display
-        show_image_and_text(ax[k][0], denormalize(img, *self._data.norm_stats), caption_gt, show_coords)
-        show_image_and_text(ax[k][1], denormalize(img, *self._data.norm_stats), caption_pred, show_coords)
-        if k == rows-1:
+        show_image_and_text(
+            ax[k][0], denormalize(img, *self._data.norm_stats), caption_gt, show_coords
+        )
+        show_image_and_text(
+            ax[k][1],
+            denormalize(img, *self._data.norm_stats),
+            caption_pred,
+            show_coords,
+        )
+        if k == rows - 1:
             break
     if return_fig:
         return fig

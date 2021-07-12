@@ -14,30 +14,29 @@
 
 
 # model settings
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type='EncoderDecoder',
-    pretrained='open-mmlab://contrib/mobilenet_v3_large',
+    type="EncoderDecoder",
+    pretrained="open-mmlab://contrib/mobilenet_v3_large",
     backbone=dict(
-        type='MobileNetV3',
-        arch='large',
-        out_indices=(1, 3, 16),
-        norm_cfg=norm_cfg),
+        type="MobileNetV3", arch="large", out_indices=(1, 3, 16), norm_cfg=norm_cfg
+    ),
     decode_head=dict(
-        type='LRASPPHead',
+        type="LRASPPHead",
         in_channels=(16, 24, 960),
         in_index=(0, 1, 2),
         channels=128,
-        input_transform='multiple_select',
+        input_transform="multiple_select",
         dropout_ratio=0.1,
         num_classes=19,
         norm_cfg=norm_cfg,
-        act_cfg=dict(type='ReLU'),
+        act_cfg=dict(type="ReLU"),
         align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+    ),
     # model training and testing settings
     train_cfg=dict(),
-    test_cfg=dict(mode='whole'))
+    test_cfg=dict(mode="whole"),
+)
 
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/mobilenet_v3/lraspp_m-v3-d8_512x1024_320k_cityscapes/lraspp_m-v3-d8_512x1024_320k_cityscapes_20201224_220337-cfe8fb07.pth'
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/mobilenet_v3/lraspp_m-v3-d8_512x1024_320k_cityscapes/lraspp_m-v3-d8_512x1024_320k_cityscapes_20201224_220337-cfe8fb07.pth"

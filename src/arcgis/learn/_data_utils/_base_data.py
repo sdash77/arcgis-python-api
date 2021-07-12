@@ -37,10 +37,17 @@ PIXEL_SPACE = "PIXEL_SPACE"
 
 class ArcgisData(object):
     def __init__(
-            self, path: Union[str, Path], class_mapping: Dict, chip_size: int = 256,
-            val_split_pct: float = 0.1, batch_size: Union[int, Tuple[int]] = 64,
-            transforms: List = [], seed: int = 42, dataset_type=None,
-            resize_to: int = None, **kwargs
+        self,
+        path: Union[str, Path],
+        class_mapping: Dict,
+        chip_size: int = 256,
+        val_split_pct: float = 0.1,
+        batch_size: Union[int, Tuple[int]] = 64,
+        transforms: List = [],
+        seed: int = 42,
+        dataset_type=None,
+        resize_to: int = None,
+        **kwargs,
     ):
         """
         Base class for all data object used by Arcgis learn/training modules.
@@ -132,7 +139,9 @@ class ArcgisData(object):
         self.seed = seed
         set_all_seed(self.seed)
         self.path = Path(path) if isinstance(path, str) else path
-        assert self.path.exists(), ("Invalid input path. Please ensure that the input path is correct.")
+        assert (
+            self.path.exists()
+        ), "Invalid input path. Please ensure that the input path is correct."
 
         self.kwargs = kwargs
         self.has_esri_files = self._check_esri_files(self.path)
@@ -184,7 +193,8 @@ class ArcgisData(object):
         # Hack to update back the imagery to multispectral if it is "RGB"
         self.imagery_type = (
             "MULTISPECTRAL"
-            if self.imagery_is_multispectral and self.imagery_type in ["RGB", "ASSUMED_RGB"]
+            if self.imagery_is_multispectral
+            and self.imagery_type in ["RGB", "ASSUMED_RGB"]
             else self.imagery_type
         )
 
@@ -289,8 +299,11 @@ class ArcgisData(object):
         Get the imagery Type = (RGB or MultiSpectral) from EMD or input kwargs
         """
         input_imagery_type = self.kwargs.get("imagery_type", "ASSUMED_RGB")
-        input_imagery_type = (input_imagery_type.upper()
-                              if input_imagery_type in ['ms', 'rgb'] else input_imagery_type)
+        input_imagery_type = (
+            input_imagery_type.upper()
+            if input_imagery_type in ["ms", "rgb"]
+            else input_imagery_type
+        )
         # Multispectral support from EMD Not Implemented Yet
         # And it will give imagery type from kwargs = "imagery_type"
         _imagery_type = self.emd.get("imagery_type", input_imagery_type)
@@ -336,9 +349,9 @@ class ArcgisData(object):
         3. esri_accumulated_stats.json
         """
         return (
-                Path.joinpath(path, ESRI_MODEL_DEFINITION).exists()
-                and Path.joinpath(path, ESRI_MAP).exists()
-                and Path.joinpath(path, ESRI_STATS).exists()
+            Path.joinpath(path, ESRI_MODEL_DEFINITION).exists()
+            and Path.joinpath(path, ESRI_MAP).exists()
+            and Path.joinpath(path, ESRI_STATS).exists()
         )
 
     @staticmethod
@@ -354,30 +367,45 @@ class ArcgisData(object):
     @staticmethod
     def _imagery_type_lib():
         imagery_type_lib = {
-            'landsat8': {
-                "bands": ['ca', 'b', 'g', 'r', 'nir', 'swir', 'swir', 'c', 'qa', 'tir', 'tir'],
-                "bands_info": {}  # incomplete
+            "landsat8": {
+                "bands": [
+                    "ca",
+                    "b",
+                    "g",
+                    "r",
+                    "nir",
+                    "swir",
+                    "swir",
+                    "c",
+                    "qa",
+                    "tir",
+                    "tir",
+                ],
+                "bands_info": {},  # incomplete
             },
-            "naip": {
-                "bands": ['r', 'g', 'b', 'nir'],
-                "bands_info": {}  # incomplete
-            },
-            'sentinel2': {
-                "bands": ['ca', 'b', 'g', 'r', 'vre', 'vre', 'vre', 'nir', 'nnir', 'wv', 'swirc', 'swir', 'swir'],
+            "naip": {"bands": ["r", "g", "b", "nir"], "bands_info": {}},  # incomplete
+            "sentinel2": {
+                "bands": [
+                    "ca",
+                    "b",
+                    "g",
+                    "r",
+                    "vre",
+                    "vre",
+                    "vre",
+                    "nir",
+                    "nnir",
+                    "wv",
+                    "swirc",
+                    "swir",
+                    "swir",
+                ],
                 "bands_info": {  # incomplete
-                    "b1": {
-                        "Name": "costal",
-                        "max": 10000,
-                        "min": 10000
-                    },
-                    "b2": {
-                        "Name": "blue",
-                        "max": 10000,
-                        "min": 10000
-                    }
-                }
+                    "b1": {"Name": "costal", "max": 10000, "min": 10000},
+                    "b2": {"Name": "blue", "max": 10000, "min": 10000},
+                },
             },
-            "MS": {}
+            "MS": {},
         }
 
         return imagery_type_lib

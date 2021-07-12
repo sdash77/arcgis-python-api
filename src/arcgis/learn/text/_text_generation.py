@@ -1,17 +1,28 @@
 import traceback
 from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
+
 HAS_TRANSFORMER = True
 
 try:
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
-    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_CAUSAL_LM_MAPPING.keys()]
+
+    try:
+        # For version 3.3.0
+        from transformers.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
+    except ModuleNotFoundError as e:
+        # For version 4.5.1
+        from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
+    EXPECTED_MODEL_TYPES = [
+        x.__name__.replace("Config", "") for x in MODEL_FOR_CAUSAL_LM_MAPPING.keys()
+    ]
 
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMER = False
     EXPECTED_MODEL_TYPES = []
 
@@ -39,13 +50,13 @@ class TextGenerator(InferenceOnlyModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
-                            model files are saved. 
+                            model files are saved.
                             If pretrained_path is provided, the model is
                             loaded from that path on the local disk.
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
-                            This directory is used as the location to save the 
+                            This directory is used as the location to save the
                             model.
     =====================   ===========================================
 
@@ -117,8 +128,10 @@ class TextGenerator(InferenceOnlyModel):
         num_return_sequences = kwargs.get("num_return_sequences", 1)
         min_length, max_length = kwargs.get("min_length"), kwargs.get("max_length")
         if min_length and max_length and min_length > max_length:
-            error_message = (f"Value of `min_length` parameter({min_length}) cannot be "
-                             f"greater than the value of `max_length` parameter({max_length}).")
+            error_message = (
+                f"Value of `min_length` parameter({min_length}) cannot be "
+                f"greater than the value of `max_length` parameter({max_length})."
+            )
             raise Exception(error_message)
 
         if not isinstance(text_or_list, (list, tuple)):
@@ -126,6 +139,7 @@ class TextGenerator(InferenceOnlyModel):
 
         for i in progress_bar(range(len(text_or_list)), display=show_progress):
             result = self.model(text_or_list[i], **kwargs)
-            if num_return_sequences == 1: result = result[0]
+            if num_return_sequences == 1:
+                result = result[0]
             results.append(result)
         return results

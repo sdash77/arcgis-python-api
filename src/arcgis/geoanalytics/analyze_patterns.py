@@ -338,6 +338,7 @@ def forest(
     )
 
     try:
+        params["future"] = True
         gpjob = tbx.forest_based_classification_and_regression(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
@@ -949,6 +950,7 @@ def find_point_clusters(
     params = inspect_function_inputs(tbx.find_point_clusters, **params)
 
     try:
+        params["future"] = True
         gpjob = tbx.find_point_clusters(**params)
         if future:
 

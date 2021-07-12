@@ -1465,6 +1465,22 @@ class _DeepCloner:
                 resources=item.resources.export(),
                 preserve_item_id=self._preserve_item_id,
             )
+        elif item["type"] == "Web Experience":
+            from arcgis._impl.common._itemdef._expbuilder import _WebExperience
+
+            return _WebExperience(
+                self.target,
+                self._clone_mapping,
+                dict(item),
+                data=None,
+                thumbnail=None,
+                portal_item=item,
+                folder=self.folder,
+                search_existing=self._search_existing_items,
+                owner=self.owner,
+                preserve_item_id=self._preserve_item_id,
+            )
+
         # For all other types get the corresponding definition
         else:
             if item["type"] in _TEXT_BASED_ITEM_TYPES:

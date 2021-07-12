@@ -4,6 +4,7 @@ Contains the base class that all server object inherit from.
 from __future__ import absolute_import
 import json
 from collections import OrderedDict
+from typing import Optional, Dict, Any, Tuple, Generator
 from urllib.request import HTTPError
 from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
@@ -19,7 +20,13 @@ class _BaseKube(object):
     _json = None
     _properties = None
 
-    def __init__(self, url, gis=None, initialize=True, **kwargs):
+    def __init__(
+        self,
+        url: str,
+        gis: Optional[GIS] = None,
+        initialize: Optional[bool] = True,
+        **kwargs: Optional[Any],
+    ) -> None:
         """class initializer"""
         if gis is None and "connection" in kwargs:
             connection = kwargs["connection"]
@@ -41,7 +48,7 @@ class _BaseKube(object):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection=None):
+    def _init(self, connection: Optional[Connection] = None) -> None:
         """loads the properties into the class"""
         if connection is None:
             connection = self._con
@@ -61,16 +68,16 @@ class _BaseKube(object):
             self._properties = PropertyMap({})
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> Dict[str, Any]:
         """
         returns the object properties
         """
@@ -112,13 +119,13 @@ class _BaseKube(object):
 
     # ----------------------------------------------------------------------
     @property
-    def url(self):
+    def url(self) -> str:
         """gets/sets the service url"""
         return self._url
 
     # ----------------------------------------------------------------------
     @url.setter
-    def url(self, value):
+    def url(self, value) -> None:
         """gets/sets the service url"""
         self._url = value
         self.refresh()
@@ -130,6 +137,6 @@ class _BaseKube(object):
             yield k, v
 
     # ----------------------------------------------------------------------
-    def _refresh(self):
+    def _refresh(self) -> None:
         """reloads all the properties of a given service"""
         self._init()

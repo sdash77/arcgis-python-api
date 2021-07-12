@@ -7,6 +7,7 @@ import arcgis.env
 import logging
 from ..features import FeatureSet
 from ..geometry import Geometry
+from arcgis._impl.common._utils import _validate_url, chunks
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,8 +57,8 @@ class Geocoder(_GISResource):
             raise TypeError(
                 "item must be a type of Geocoding Service, not " + item.type
             )
-
-        return cls(item.url, item._gis)
+        url = _validate_url(item.url, item._gis)
+        return cls(url, item._gis)
 
     def _geocode(
         self,
@@ -380,6 +381,13 @@ class Geocoder(_GISResource):
             valid WKID values, see Projected coordinate systems and
             Geographic coordinate systems.
         """
+        if (
+            "locatorProperties" in self.properties
+            and "MaxBatchSize" in self.properties.locatorProperties
+        ):
+            max_batch_size = self.properties.locatorProperties.MaxBatchSize
+        else:
+            max_batch_size = 1000
         params = {"f": "json"}
         url = self.url + "/geocodeAddresses"
         if out_sr is not None:
@@ -390,55 +398,88 @@ class Geocoder(_GISResource):
             params["category"] = category
 
         addr_recordset = []
+        if len(addresses) <= max_batch_size:
+            for index in range(len(addresses)):
+                address = addresses[index]
 
-        for index in range(len(addresses)):
-            address = addresses[index]
+                attributes = {"OBJECTID": index}
+                if isinstance(address, str):
+                    attributes[self._address_field] = address
+                elif isinstance(address, dict):
+                    attributes.update(address)
+                else:
+                    print("Unsupported address: " + str(address))
+                    print(
+                        "address should be a string (single line address) or dictionary "
+                        "(with address fields as keys)"
+                    )
 
-            attributes = {"OBJECTID": index}
-            if isinstance(address, str):
-                attributes[self._address_field] = address
-            elif isinstance(address, dict):
-                attributes.update(address)
+                addr_rec = {"attributes": attributes}
+                addr_recordset.append(addr_rec)
+
+            params["addresses"] = {"records": addr_recordset}
+            params["matchOutOfRange"] = match_out_of_range
+            params["locationType"] = location_type
+            if search_extent is not None:
+                params["searchExtent"] = search_extent
+            params["langCode"] = lang_code
+            if preferred_label_values is not None:
+                params["preferredLabelValues"] = preferred_label_values
+
+            resp = self._con.post(url, params)
+            if resp is not None and as_featureset:
+                sr = resp["spatialReference"]
+
+                matches = [None] * len(addresses)
+                locations = resp["locations"]
+                for idx, location in enumerate(locations):
+                    geom = copy.copy(location["location"])
+                    if "spatialReference" not in geom:
+                        geom["spatialReference"] = sr
+                    att = location["attributes"]
+                    matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                return FeatureSet(features=matches, spatial_reference=sr)
+            elif resp is not None and as_featureset == False:
+                matches = [None] * len(addresses)
+                locations = resp["locations"]
+                for idx, location in enumerate(locations):
+                    matches[idx] = location
+                return matches
             else:
-                print("Unsupported address: " + str(address))
-                print(
-                    "address should be a string (single line address) or dictionary "
-                    "(with address fields as keys)"
-                )
-
-            addr_rec = {"attributes": attributes}
-            addr_recordset.append(addr_rec)
-
-        params["addresses"] = {"records": addr_recordset}
-        params["matchOutOfRange"] = match_out_of_range
-        params["locationType"] = location_type
-        if search_extent is not None:
-            params["searchExtent"] = search_extent
-        params["langCode"] = lang_code
-        if preferred_label_values is not None:
-            params["preferredLabelValues"] = preferred_label_values
-
-        resp = self._con.post(url, params)
-        if resp is not None and as_featureset:
-            sr = resp["spatialReference"]
-
-            matches = [None] * len(addresses)
-            locations = resp["locations"]
-            for idx, location in enumerate(locations):
-                geom = copy.copy(location["location"])
-                if "spatialReference" not in geom:
-                    geom["spatialReference"] = sr
-                att = location["attributes"]
-                matches[idx] = {"geometry": Geometry(geom), "attributes": att}
-            return FeatureSet(features=matches, spatial_reference=sr)
-        elif resp is not None and as_featureset == False:
-            matches = [None] * len(addresses)
-            locations = resp["locations"]
-            for idx, location in enumerate(locations):
-                matches[idx] = location
-            return matches
+                return []
         else:
-            return []
+            result = [
+                self._batch_geocode(
+                    addresses=chunk,
+                    source_country=source_country,
+                    category=category,
+                    out_sr=out_sr,
+                    as_featureset=as_featureset,
+                    match_out_of_range=match_out_of_range,
+                    location_type=location_type,
+                    search_extent=search_extent,
+                    lang_code=lang_code,
+                    preferred_label_values=preferred_label_values,
+                )
+                for chunk in chunks(addresses, max_batch_size)
+            ]
+            if len(result) == 0:
+                result = [[]]
+            if as_featureset:
+                if len(result) > 1:
+                    parent = result[0]
+                    for fs in result[1:]:
+                        parent.features.extend(fs.features)
+                    return parent
+                elif len(result) == 1:
+                    return result[0]
+                else:
+                    return None
+            else:
+                try:
+                    return [y for x in result for y in x]
+                except:
+                    return []
 
     def _find_best_match(
         self,
@@ -571,7 +612,8 @@ def get_geocoders(gis):
         geocode_services = gis.properties["helperServices"]["geocode"]
         for geocode_service in geocode_services:
             try:
-                geocoders.append(Geocoder(geocode_service["url"], gis))
+                url = _validate_url(geocode_service["url"], gis=gis)
+                geocoders.append(Geocoder(url, gis))
             except RuntimeError as runtime_error:
                 _LOGGER.warning("Unable to use Geocoder at " + geocode_service["url"])
                 _LOGGER.warning(str(runtime_error))

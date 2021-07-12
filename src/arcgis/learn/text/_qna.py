@@ -1,16 +1,30 @@
 import traceback
 from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
+
 HAS_TRANSFORMER = True
 
 try:
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
-    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys()]
+
+    try:
+        # For version 3.3.0
+        from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
+    except ModuleNotFoundError as e:
+        # For version 4.5.1
+        from transformers.models.auto.modeling_auto import (
+            MODEL_FOR_QUESTION_ANSWERING_MAPPING,
+        )
+    EXPECTED_MODEL_TYPES = [
+        x.__name__.replace("Config", "")
+        for x in MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys()
+    ]
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMER = False
     EXPECTED_MODEL_TYPES = []
 
@@ -38,13 +52,13 @@ class QuestionAnswering(InferenceOnlyModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
-                            model files are saved. 
+                            model files are saved.
                             If pretrained_path is provided, the model is
                             loaded from that path on the local disk.
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
-                            This directory is used as the location to save the 
+                            This directory is used as the location to save the
                             model.
     =====================   ===========================================
 
@@ -113,7 +127,9 @@ class QuestionAnswering(InferenceOnlyModel):
             text_or_list = [text_or_list]
 
         for i in progress_bar(range(len(text_or_list)), display=show_progress):
-            results.append(self.model(question=text_or_list[i], context=context, **kwargs_dict))
+            results.append(
+                self.model(question=text_or_list[i], context=context, **kwargs_dict)
+            )
 
         return self._process_result(results, text_or_list)
 
@@ -122,11 +138,21 @@ class QuestionAnswering(InferenceOnlyModel):
         processed_results = []
         for result, question in zip(result_list, question_list):
             if isinstance(result, dict):
-                tmp_dict = {"question": question, "answer": result["answer"], "score": result["score"]}
+                tmp_dict = {
+                    "question": question,
+                    "answer": result["answer"],
+                    "score": result["score"],
+                }
                 processed_results.append(tmp_dict)
             elif isinstance(result, list):
-                item_list = [{"question": question, "answer": item["answer"], "score": item["score"]} for item in result]
+                item_list = [
+                    {
+                        "question": question,
+                        "answer": item["answer"],
+                        "score": item["score"],
+                    }
+                    for item in result
+                ]
                 processed_results.append(item_list)
 
         return processed_results
-

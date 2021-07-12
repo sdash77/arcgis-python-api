@@ -5,6 +5,7 @@ import logging
 try:
     from ._ner_spacy import _SpacyEntityRecognizer
     from .._utils._ner_utils import spaCyNERDatabunch
+
     HAS_SPACY = True
 except Exception as e:
     spacy_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -15,25 +16,33 @@ try:
     from .._utils.text_data import TextDataObject
     from .._utils.common import _get_emd_path
     from transformers import AutoConfig
+
     HAS_TRANSFORMERS = True
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMERS = False
+
     class _TransformerEntityRecognizer:
         supported_backbones = []
 
 
 def _raise_spacy_import_error():
-    error_message = (f"{spacy_exception}\n\n\n"
-                     "This module requires spacy version 2.1.8 or above and fastprogress." 
-                     "Install it using 'pip install spacy==2.1.8 fastprogress pandas'")
+    error_message = (
+        f"{spacy_exception}\n\n\n"
+        "This module requires spacy version 2.1.8 or above and fastprogress."
+        "Install it using 'pip install spacy==2.1.8 fastprogress pandas'"
+    )
     raise Exception(error_message)
 
 
 def _raise_transformers_import_error():
-    error_message = (f"{transformer_exception}\n\n\n"
-                     "This module requires transformers version 3.3.0, " 
-                     "install it using 'pip install transformers==3.3.0'")
+    error_message = (
+        f"{transformer_exception}\n\n\n"
+        "This module requires transformers version 3.3.0, "
+        "install it using 'pip install transformers==3.3.0'"
+    )
     raise Exception(error_message)
 
 
@@ -118,29 +127,38 @@ class EntityRecognizer:
                 self._model = model._model
                 self.entities = self._model.entities
             elif data and backbone == "spacy":
-                if not HAS_SPACY: _raise_spacy_import_error()
+                if not HAS_SPACY:
+                    _raise_spacy_import_error()
                 if data.backbone != "spacy":
                     logging.info("Preparing data for spacy backbone!")
                     data.prepare_data_for_spacy()
                 data_obj = data.get_data_object()
                 self._model = _SpacyEntityRecognizer(data_obj, lang=lang, **kwargs)
             elif data:
-                if not HAS_TRANSFORMERS: _raise_transformers_import_error()
+                if not HAS_TRANSFORMERS:
+                    _raise_transformers_import_error()
                 model_config = AutoConfig.from_pretrained(backbone)
                 if data.backbone == "spacy":
                     logging.info("Preparing data for transformer backbone!")
-                    if model_config.id2label != {0: 'LABEL_0', 1: 'LABEL_1'}:
-                        label2id, id2label = model_config.label2id, model_config.id2label
+                    if model_config.id2label != {0: "LABEL_0", 1: "LABEL_1"}:
+                        label2id, id2label = (
+                            model_config.label2id,
+                            model_config.id2label,
+                        )
                         # sci-bert has `label2id` mapping as {"LABEL_0": 0, "LABEL_1": 1, "LABEL_10": 10...} and
                         # `id2label` mapping as {"0": "I-cell_type", "1": "B-DNA", "2": "O"...}, hence this hack
-                        if label2id != {y:x for x, y in id2label.items()} and not any(["-" in x for x in label2id.keys()]):
-                            label2id = {y:x for x, y in id2label.items()}
+                        if label2id != {y: x for x, y in id2label.items()} and not any(
+                            ["-" in x for x in label2id.keys()]
+                        ):
+                            label2id = {y: x for x, y in id2label.items()}
                         labels = list(label2id.keys())
                     else:
                         labels, label2id = [], None
                     logging.info(f"Labels - {labels}\n\tlabel2id mappings - {label2id}")
                     ignore_tag_order = not any(["-" in label for label in labels])
-                    data.prepare_data_for_transformer(ignore_tag_order=ignore_tag_order, label2id=label2id)
+                    data.prepare_data_for_transformer(
+                        ignore_tag_order=ignore_tag_order, label2id=label2id
+                    )
                 data_obj = data.get_data_object()
                 kwargs.update({"model_config": model_config})
                 self._model = _TransformerEntityRecognizer(data_obj, backbone, **kwargs)
@@ -149,6 +167,10 @@ class EntityRecognizer:
             self.train_ds = self._model.train_ds
             self.valid_ds = self._model.val_ds
 
+    @staticmethod
+    def _available_metrics():
+        return ["valid_loss", "precision_score", "recall_score", "f1_score"]
+
     @property
     def available_metrics(self):
         """
@@ -156,7 +178,7 @@ class EntityRecognizer:
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        return ['valid_loss', 'precision', 'recall', 'f1']
+        return ["valid_loss", "precision_score", "recall_score", "f1_score"]
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -177,14 +199,23 @@ class EntityRecognizer:
         """
 
         if architecture == "spacy":
-            return ("spacy", )
+            return ("spacy",)
         else:
             return _TransformerEntityRecognizer.available_backbone_models(architecture)
 
     def lr_find(self, allow_plot=True):
         """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
-        Helps in choosing the optimum learning rate for training the model.
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
         """
         return self._model.lr_find(allow_plot=allow_plot)
 
@@ -194,7 +225,21 @@ class EntityRecognizer:
         """
         self._model.unfreeze()
 
-    def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
+    def freeze(self):
+        """
+        Freeze up to last layer group to train only the last layer group of the model.
+        """
+        self._model.freeze()
+
+    def fit(
+        self,
+        epochs=20,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,
+        **kwargs,
+    ):
         """
         Train the model for the specified number of epochs and using the
         specified learning rates
@@ -208,7 +253,7 @@ class EntityRecognizer:
         lr                      Optional float or slice of floats. Learning rate
                                 to be used for training the model. If ``lr=None``,
                                 an optimal learning rate is automatically deduced
-                                for training the model. 
+                                for training the model.
                                 **Note - Passing slice of floats as `lr` value
                                 is not supported for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
@@ -250,8 +295,14 @@ class EntityRecognizer:
         =====================   ===========================================
         """
 
-        self._model.fit(epochs=epochs, lr=lr, one_cycle=one_cycle, early_stopping=early_stopping,
-                        checkpoint=checkpoint, **kwargs)
+        self._model.fit(
+            epochs=epochs,
+            lr=lr,
+            one_cycle=one_cycle,
+            early_stopping=early_stopping,
+            checkpoint=checkpoint,
+            **kwargs,
+        )
         self.entities = self._model.entities
 
     def save(self, name_or_path, **kwargs):
@@ -340,25 +391,33 @@ class EntityRecognizer:
         """
 
         if "spacy" in backbone:
-            error_message = (f"Wrong backbone - `{backbone}` supplied. Only HuggingFace model names fine-tuned on "
-                             "`TokenClassification` tasks are allowed to be passed as `backbone` in the method.")
+            error_message = (
+                f"Wrong backbone - `{backbone}` supplied. Only HuggingFace model names fine-tuned on "
+                "`TokenClassification` tasks are allowed to be passed as `backbone` in the method."
+            )
             raise Exception(error_message)
 
         model_config = AutoConfig.from_pretrained(backbone)
-        if model_config.id2label == {0: 'LABEL_0', 1: 'LABEL_1'}:
-            error_message = (f"Wrong backbone - `{backbone}` supplied. This backbone is not fine-tuned on a"
-                             "`TokenClassification` task. Kindly choose an appropriate backbone to call this method."
-                             "Visit:- https://huggingface.co/models?pipeline_tag=token-classification to find models"
-                             " for `NamedEntityRecognition` or `TokenClassification` tasks.")
+        if model_config.id2label == {0: "LABEL_0", 1: "LABEL_1"}:
+            error_message = (
+                f"Wrong backbone - `{backbone}` supplied. This backbone is not fine-tuned on a"
+                "`TokenClassification` task. Kindly choose an appropriate backbone to call this method."
+                "Visit:- https://huggingface.co/models?pipeline_tag=token-classification to find models"
+                " for `NamedEntityRecognition` or `TokenClassification` tasks."
+            )
             raise Exception(error_message)
 
         label2id, id2label = model_config.label2id, model_config.id2label
         # sci-bert has `label2id` mapping as {"LABEL_0": 0, "LABEL_1": 1, "LABEL_10": 10...} and
         # `id2label` mapping as {"0": "I-cell_type", "1": "B-DNA", "2": "O"...}, hence this hack
-        if label2id != {y: x for x, y in id2label.items()} and not any(["-" in x for x in label2id.keys()]):
+        if label2id != {y: x for x, y in id2label.items()} and not any(
+            ["-" in x for x in label2id.keys()]
+        ):
             label2id = {y: x for x, y in id2label.items()}
 
-        model = _TransformerEntityRecognizer._from_pretrained(backbone, label2id, **kwargs)
+        model = _TransformerEntityRecognizer._from_pretrained(
+            backbone, label2id, **kwargs
+        )
 
         clas_object = cls(data=None, backbone=backbone, create_empty=True)
 
@@ -399,7 +458,8 @@ class EntityRecognizer:
             if data and data.backbone != "spacy":
                 logging.info("Preparing data for spacy backbone!")
                 data.prepare_data_for_spacy()
-            if data: data_obj = data.get_data_object()
+            if data:
+                data_obj = data.get_data_object()
             model = _SpacyEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
         else:
             if data and data.backbone == "spacy":
@@ -408,9 +468,14 @@ class EntityRecognizer:
                 label2id = emd_json["Label2Id"]
                 logging.info(f"Labels - {labels}\n\tlabel2id mappings - {label2id}")
                 ignore_tag_order = not any(["-" in label for label in labels])
-                data.prepare_data_for_transformer(ignore_tag_order=ignore_tag_order, label2id=label2id)
-            if data: data_obj = data.get_data_object()
-            model = _TransformerEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
+                data.prepare_data_for_transformer(
+                    ignore_tag_order=ignore_tag_order, label2id=label2id
+                )
+            if data:
+                data_obj = data.get_data_object()
+            model = _TransformerEntityRecognizer.from_model(
+                emd_path=emd_path, data=data_obj
+            )
 
         clas_object = cls(data=None, backbone=backbone, create_empty=True)
 
@@ -421,7 +486,7 @@ class EntityRecognizer:
 
         return clas_object
 
-    def extract_entities(self, text_list, drop=True, batch_size=4):
+    def extract_entities(self, text_list, drop=True, batch_size=4, show_progress=True):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -445,14 +510,20 @@ class EntityRecognizer:
                                 at once. (Reduce it if getting CUDA Out of Memory
                                 Errors). Default is set to 4.
                                 Not applicable for models with `spaCy` backbone.
+        ---------------------   -------------------------------------------
+        show_progress           optional Bool. If set to True, will display a
+                                progress bar depicting the items processed so far.
+                                Applicable only when a list of text is passed
         =====================   ===========================================
 
         :returns: Pandas DataFrame
         """
 
-        return self._model.extract_entities(text_list, drop=drop, batch_size=batch_size)
+        return self._model.extract_entities(
+            text_list, drop=drop, batch_size=batch_size, show_progress=show_progress
+        )
 
-    def show_results(self, ds_type='valid'):
+    def show_results(self, ds_type="valid"):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 

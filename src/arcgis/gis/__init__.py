@@ -19,7 +19,7 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-from typing import Tuple, Any, Dict
+from typing import Tuple, Any, Dict, List
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 import concurrent.futures
@@ -29,6 +29,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._utils import chunks as _chunks
 from ._impl import _portalpy
 
 from ._impl._jb import StatusJob
@@ -411,6 +412,7 @@ class GIS(object):
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
+                proxy=kwargs.get("proxy", None),
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -430,6 +432,7 @@ class GIS(object):
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -480,26 +483,28 @@ class GIS(object):
                     props["urlKey"],
                     props["customBaseUrl"],
                 )
-                self._url = url
-                pp = _portalpy.Portal(
-                    url,
-                    self._username,
-                    self._password,
-                    self._key_file,
-                    self._cert_file,
-                    verify_cert=self._verify_cert,
-                    client_id=self._client_id,
-                    proxy_port=self._proxy_port,
-                    proxy_host=self._proxy_host,
-                    expiration=self._expiration,
-                    referer=self._referer,
-                    custom_auth=custom_auth,
-                    # token=self._utoken,
-                    trust_env=kwargs.get("trust_env", None),
-                    client_secret=client_secret,
-                    timeout=self._timeout,
-                )
-                self._portal = pp
+                if self._url != url:
+                    self._url = url
+                    pp = _portalpy.Portal(
+                        url,
+                        self._username,
+                        self._password,
+                        self._key_file,
+                        self._cert_file,
+                        verify_cert=self._verify_cert,
+                        client_id=self._client_id,
+                        proxy_port=self._proxy_port,
+                        proxy_host=self._proxy_host,
+                        expiration=self._expiration,
+                        referer=self._referer,
+                        custom_auth=custom_auth,
+                        # token=self._utoken,
+                        trust_env=kwargs.get("trust_env", None),
+                        client_secret=client_secret,
+                        timeout=self._timeout,
+                        proxy=kwargs.get("proxy", None),
+                    )
+                    self._portal = pp
         except:
             pass
 
@@ -645,6 +650,30 @@ class GIS(object):
 
             return APIKeyManager(self)
         return None
+
+    # ----------------------------------------------------------------------
+    @_lazy_property
+    def languages(self) -> List[Dict[str, Any]]:
+        """
+        Lists the available languages.
+
+        :returns: List[Dict[str, Any]]
+        """
+        url = f"{self._portal.resturl}portals/languages"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @_lazy_property
+    def regions(self) -> List[Dict[str, Any]]:
+        """
+        Lists the available regions.
+
+        :returns: List[Dict[str, Any]]
+        """
+        url = f"{self._portal.resturl}portals/regions"
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def _private_service_url(self, service_url):
@@ -826,6 +855,31 @@ class GIS(object):
         The resource manager for GIS content. See :class:`~arcgis.gis.ContentManager`.
         """
         return ContentManager(self)
+
+    @_lazy_property
+    def velocity(self):
+        """
+        The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
+        :return: :class:`~arcgis.realtime.velocity.Velocity`
+        """
+        if self._portal.is_arcgisonline and self._subscription_information is not None:
+            _velocity_url = None
+            org_capabilities = self._subscription_information["orgCapabilities"]
+            for capabilities in org_capabilities:
+                if capabilities["id"] == "velocity":
+                    _velocity_url = capabilities["velocityUrl"]
+                    if "/iot" not in _velocity_url:
+                        _velocity_url += "/iot/"
+
+            if _velocity_url is not None:
+                velocity = arcgis.realtime.velocity.Velocity(
+                    url=_velocity_url, gis=self
+                )
+                return velocity
+            else:
+                raise Exception("Velocity is not available on this organizaiton.")
+        else:
+            raise Exception("ArcGIS Enterprise does not support Velocity")
 
     @_lazy_property
     def hub(self):
@@ -3130,7 +3184,7 @@ class UserManager(object):
                             "email": email,
                             "role": role,
                             "userLicenseType": user_type,
-                            "groups": ",".join(groups),
+                            "groups": ",".join([g for g in groups if g]),
                             "userCreditAssignment": credits,
                         }
                     ],
@@ -3417,9 +3471,12 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -3452,9 +3509,13 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
+
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -8732,6 +8793,7 @@ class User(dict):
         last_name=None,
         security_question=None,
         security_answer=None,
+        culture_format=None,
     ):
         """Updates this user's properties.
 
@@ -8801,12 +8863,25 @@ class User(dict):
                             Usage example:
 
                             security_answer="Working on the Python API"
+        ------------------  ----------------------------------------------------------
+        culture_format      Optional String. Specifies user-preferred number and date format
         ==================  ==========================================================
 
         :return:
            A boolean indicating success (True) or failure (False).
 
         """
+        culture_check = [
+            lang["culture"].lower() for lang in self._gis.languages if lang
+        ]
+        if culture and not culture.lower() in culture_check:
+            raise ValueError(
+                f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
+            )
+        if region and not region.upper() in [g["region"] for g in self._gis.regions]:
+            raise ValueError(
+                f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
+            )
         user_type = None
         if tags is not None and isinstance(tags, list):
             tags = ",".join(tags)
@@ -8828,6 +8903,8 @@ class User(dict):
             "firstName": first_name,
             "lastName": last_name,
             "clearEmptyFields": True,
+            "cultureFormat": culture_format,
+            "region": region,
         }
         if security_answer and security_question:
             params["securityQuestionIdx"] = security_question
@@ -9674,6 +9751,22 @@ class Item(dict):
             if not self._hydrated and not k.startswith("_"):
                 self._hydrate()
             return dict.__getitem__(self, k)
+
+    # ----------------------------------------------------------------------
+    @property
+    def can_delete(self) -> bool:
+        """
+        Checks if the Item can be removed from the system.
+
+        :returns: bool
+        """
+        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        params = {"f": "json"}
+        try:
+            return self._gis._con.get(url, params).get("success", False)
+        except Exception as e:
+            _log.warning(e)
+            return False
 
     # ----------------------------------------------------------------------
     @property
@@ -13242,16 +13335,33 @@ class _GISResource(object):
 
     @classmethod
     def fromitem(cls, item):
+        """
+        The ``fromitem`` method is used to create a :class:`~arcgis.features.FeatureLayerCollection` from a
+        :class:`~arcgis.gis.Item` class.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        item                       A required :class:`~arcgis.gis.Item` object. The item needed to convert to
+                                   a :class:`~arcgis.features.FeatureLayerCollection` object.
+        ======================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.features.FeatureLayerCollection` object.
+
+        """
         if not item.type.lower().endswith("service"):
             raise TypeError("item must be a type of service, not " + item.type)
         return cls(item.url, item._gis)
 
     def _refresh(self):
         params = {"f": "json"}
+        is_raster = False
         if (
             type(self).__name__ == "ImageryLayer"
             or type(self).__name__ == "_ImageServerRaster"
         ):
+            is_raster = True
             if self._fn is not None:
                 params["renderingRule"] = self._fn
             if hasattr(self, "_uri"):
@@ -13264,7 +13374,12 @@ class _GISResource(object):
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
-                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+                if is_raster:
+                    dictdata = self._con.post(
+                        self.url, params, token=self._lazy_token, timeout=None
+                    )
+                else:
+                    dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, "msg") and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
@@ -13277,7 +13392,9 @@ class _GISResource(object):
 
     @property
     def properties(self):
-        """The properties of this object"""
+        """
+        The ``properties`` method retrieves and set properties of this object.
+        """
         if self._hydrated:
             return self._lazy_properties
         else:

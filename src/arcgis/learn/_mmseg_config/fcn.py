@@ -14,12 +14,12 @@
 
 
 # model settings
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type='EncoderDecoder',
-    pretrained='torchvision://resnet101',
+    type="EncoderDecoder",
+    pretrained="torchvision://resnet101",
     backbone=dict(
-        type='ResNet',
+        type="ResNet",
         depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -27,10 +27,11 @@ model = dict(
         strides=(1, 2, 1, 1),
         norm_cfg=norm_cfg,
         norm_eval=False,
-        style='pytorch',
-        contract_dilation=True),
+        style="pytorch",
+        contract_dilation=True,
+    ),
     decode_head=dict(
-        type='FCNHead',
+        type="FCNHead",
         in_channels=2048,
         in_index=3,
         channels=512,
@@ -40,10 +41,10 @@ model = dict(
         num_classes=19,
         norm_cfg=norm_cfg,
         align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+    ),
     auxiliary_head=dict(
-        type='FCNHead',
+        type="FCNHead",
         in_channels=1024,
         in_index=2,
         channels=256,
@@ -53,10 +54,11 @@ model = dict(
         num_classes=19,
         norm_cfg=norm_cfg,
         align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=0.4),
+    ),
     # model training and testing settings
     train_cfg=dict(),
-    test_cfg=dict(mode='whole'))
-    
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/fcn/fcn_r101b-d8_512x1024_80k_cityscapes/fcn_r101b-d8_512x1024_80k_cityscapes_20201226_160213-4543858f.pth'
+    test_cfg=dict(mode="whole"),
+)
+
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/fcn/fcn_r101b-d8_512x1024_80k_cityscapes/fcn_r101b-d8_512x1024_80k_cityscapes_20201226_160213-4543858f.pth"

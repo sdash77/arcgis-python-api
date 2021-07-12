@@ -2,8 +2,9 @@ try:
     import ujson as json
 except ImportError:
     import json
-
+from functools import lru_cache
 from arcgis._impl.common._mixins import PropertyMap
+from typing import Dict, Any, Optional, List
 
 ###########################################################################
 class KubeService(object):
@@ -126,6 +127,52 @@ class KubeService(object):
         """
         self.stop()
         return self.start()
+
+    # ----------------------------------------------------------------------
+    @property
+    def scaling(self) -> Dict[str, Any]:
+        """
+        This resource returns the scaling and resource allocation for a
+        specific GIS service microservice. When used to update the service,
+        it updates the scaling (replicas min and max) and resource allocation
+        (cpuMin, cpuMax, memoryMin, memoryMax).
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required Dict[str, Any]. The service scaling properties.
+        ===============     ====================================================================
+
+        :return: Dict[str, Any]
+
+        """
+        url = f"{self._url}/scaling"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @scaling.setter
+    def scaling(self, value: Dict[str, Any]):
+        """
+        This resource returns the scaling and resource allocation for a
+        specific GIS service microservice. When used to update the service,
+        it updates the scaling (replicas min and max) and resource allocation
+        (cpuMin, cpuMax, memoryMin, memoryMax).
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required Dict[str, Any]. The service scaling properties.
+        ===============     ====================================================================
+
+        :return: Dict[str, Any]
+        """
+        url = f"{self._url}/scaling/edit"
+        params = {
+            "f": "json",
+            "serviceScalingSpec": value,
+        }
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property

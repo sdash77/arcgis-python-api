@@ -432,7 +432,7 @@ class GPJob(object):
             elif isinstance(value, dict) and "url" in value:
                 return value["url"]
             elif isinstance(value, dict) and "contentList" in value:
-                if value is "":
+                if value == "":
                     return None
                 elif isinstance(value["contentList"], str):
                     return json.loads(value["contentList"])
@@ -484,6 +484,7 @@ class GPJob(object):
                         }
                     }
                     item.update(item_properties=_item_properties)
+                return item
         return result
 
     def _process_fa(self, result):

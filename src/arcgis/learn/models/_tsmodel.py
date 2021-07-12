@@ -8,7 +8,7 @@ import math
 from pathlib import Path
 
 HAS_FASTAI = True
-import_exception=None
+import_exception = None
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -27,15 +27,18 @@ try:
     from ._tsmodel_archs._FCN import _TSFCN
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
+
     _model_arch = {
-        'inceptiontime': _TSInceptionTime,
-        'resnet': _TSResNet,
-        'rescnn': _TSResCNN,
-        'fcn': _TSFCN,
-        'lstm': _TSLSTM
+        "inceptiontime": _TSInceptionTime,
+        "resnet": _TSResNet,
+        "rescnn": _TSResCNN,
+        "fcn": _TSFCN,
+        "lstm": _TSLSTM,
     }
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
     _model_arch = {}
 
@@ -57,8 +60,8 @@ except:
 def _get_model_from_path(pretrained_path):
     learn = load_learner(
         os.path.dirname(pretrained_path),
-        os.path.basename(pretrained_path).split('.')[0] + "_exported.pth",
-        no_check=True
+        os.path.basename(pretrained_path).split(".")[0] + "_exported.pth",
+        no_check=True,
     )
 
     return learn
@@ -89,7 +92,7 @@ class TimeSeriesModel(ArcGISModel):
     :returns: `TimeSeriesModel` Object
     """
 
-    def __init__(self, data, seq_len, model_arch='InceptionTime', **kwargs):
+    def __init__(self, data, seq_len, model_arch="InceptionTime", **kwargs):
 
         data_bunch = None
 
@@ -99,30 +102,34 @@ class TimeSeriesModel(ArcGISModel):
         super().__init__(data, None)
 
         if not data_bunch:
-            self.learn = _get_model_from_path(kwargs.get('pretrained_path'))
-        elif kwargs.get('pretrained_path'):
-            self.learn = _get_model_from_path(kwargs.get('pretrained_path'))
+            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
+        elif kwargs.get("pretrained_path"):
+            self.learn = _get_model_from_path(kwargs.get("pretrained_path"))
             self.learn.data = data_bunch
         else:
             if not _model_arch.get(model_arch.lower()):
                 raise Exception("Invalid model architecture")
 
             model_arch_ob = _model_arch.get(model_arch.lower())
-            if model_arch.lower() == 'lstm':
-                model = model_arch_ob(data_bunch.features, data_bunch.c, self._device, **kwargs).to(self._device)
+            if model_arch.lower() == "lstm":
+                model = model_arch_ob(
+                    data_bunch.features, data_bunch.c, self._device, **kwargs
+                ).to(self._device)
             else:
-                if model_arch.lower() in ['resnet', 'fcn']:
-                    kwargs['device'] = self._device
-                model = model_arch_ob(data_bunch.features, data_bunch.c, **kwargs).to(self._device)
-                if model_arch.lower() in ['resnet', 'fcn']:
-                    del kwargs['device']
+                if model_arch.lower() in ["resnet", "fcn"]:
+                    kwargs["device"] = self._device
+                model = model_arch_ob(data_bunch.features, data_bunch.c, **kwargs).to(
+                    self._device
+                )
+                if model_arch.lower() in ["resnet", "fcn"]:
+                    del kwargs["device"]
             self.learn = Learner(data_bunch, model, path=data.path)
             self.learn.data = data_bunch
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [1])
         self._model_arch = model_arch.lower()
-        if kwargs.get('pretrained_path'):
-            del kwargs['pretrained_path']
+        if kwargs.get("pretrained_path"):
+            del kwargs["pretrained_path"]
         self._kwargs = kwargs
         self._seq_len = seq_len
 
@@ -130,7 +137,11 @@ class TimeSeriesModel(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
+
+    @staticmethod
+    def _available_metrics():
+        return ["valid_loss"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -157,23 +168,25 @@ class TimeSeriesModel(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        dependent_variable = emd['dependent_variable']
-        categorical_variables = emd['categorical_variables']
-        continuous_variables = emd['continuous_variables']
+        dependent_variable = emd["dependent_variable"]
+        categorical_variables = emd["categorical_variables"]
+        continuous_variables = emd["continuous_variables"]
 
         _is_classification = False
-        if emd['_is_classification'] == "classification":
+        if emd["_is_classification"] == "classification":
             _is_classification = True
 
-        model_params = emd['model_params']
-        model_arch = emd['model_arch']
-        seq_len = emd['seq_len']
-        index_field = emd.get('index_field', None)
+        model_params = emd["model_params"]
+        model_arch = emd["model_arch"]
+        seq_len = emd["seq_len"]
+        index_field = emd.get("index_field", None)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
-        scaler_path = os.path.join(os.path.dirname(emd_path),
-                                    os.path.basename(emd_path).split('.')[0] + '_scaler.pkl')
+        scaler_path = os.path.join(
+            os.path.dirname(emd_path),
+            os.path.basename(emd_path).split(".")[0] + "_scaler.pkl",
+        )
 
         encoder_mapping = None
         scaler = None
@@ -183,25 +196,50 @@ class TimeSeriesModel(ArcGISModel):
         #         encoder_mapping = pickle.loads(f.read())
 
         if os.path.exists(scaler_path):
-            with open(scaler_path, 'rb') as f:
+            with open(scaler_path, "rb") as f:
                 scaler = pickle.loads(f.read())
 
         if data is None:
-            data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, encoder_mapping)
+            data = TabularDataObject._empty(
+                categorical_variables,
+                continuous_variables,
+                dependent_variable,
+                encoder_mapping,
+            )
             data._is_classification = _is_classification
             data._column_transforms_mapping = scaler
 
             if index_field is not None:
                 data._index_field = index_field
 
-            class_object = cls(data, seq_len, model_arch=model_arch, pretrained_path=emd_path, **model_params)
+            class_object = cls(
+                data,
+                seq_len,
+                model_arch=model_arch,
+                pretrained_path=emd_path,
+                **model_params,
+            )
             class_object._data.emd = emd
             class_object._data.emd_path = emd_path
             return class_object
 
-        return cls(data, seq_len, model_arch=model_arch, pretrained_path=emd_path, **model_params)
+        return cls(
+            data,
+            seq_len,
+            model_arch=model_arch,
+            pretrained_path=emd_path,
+            **model_params,
+        )
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, save_optimizer=False, **kwargs):
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        save_optimizer=False,
+        **kwargs,
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -232,10 +270,10 @@ class TimeSeriesModel(ArcGISModel):
         =====================   ===========================================
         """
 
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = os.path.abspath(name_or_path)
         else:
-            path = os.path.join(self._data.path, 'models', name_or_path)
+            path = os.path.join(self._data.path, "models", name_or_path)
             if not os.path.exists(os.path.dirname(path)):
                 os.mkdir(os.path.dirname(path))
 
@@ -244,11 +282,16 @@ class TimeSeriesModel(ArcGISModel):
 
         base_file_name = os.path.basename(path)
 
-        TimeSeriesModel._save_encoders(self._data._column_transforms_mapping, path, base_file_name)
-        self.learn.export(os.path.join(path, os.path.basename(path) + '_exported.pth'))
+        TimeSeriesModel._save_encoders(
+            self._data._column_transforms_mapping, path, base_file_name
+        )
+        self.learn.export(os.path.join(path, os.path.basename(path) + "_exported.pth"))
         from IPython.utils import io
+
         with io.capture_output() as captured:
-            super().save(path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs)
+            super().save(
+                path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+            )
 
         return Path(path)
 
@@ -261,8 +304,8 @@ class TimeSeriesModel(ArcGISModel):
         # with open(encoder_file, 'wb') as f:
         #     f.write(pickle.dumps(encoder_mapping, protocol=_PROTOCOL_LEVEL))
 
-        scaler_file = os.path.join(path, base_file_name + '_scaler.pkl')
-        with open(scaler_file, 'wb') as f:
+        scaler_file = os.path.join(path, base_file_name + "_scaler.pkl")
+        with open(scaler_file, "wb") as f:
             f.write(pickle.dumps(scaler, protocol=_PROTOCOL_LEVEL))
 
     @property
@@ -271,31 +314,35 @@ class TimeSeriesModel(ArcGISModel):
         # with io.capture_output() as captured:
         #     score = self.score()
 
-        return {'score': self.score()}
+        return {"score": self.score()}
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["ModelType"] = "TimeSeriesModel"
         _emd_template["model_arch"] = self._model_arch
-        _emd_template['model_params'] = self._kwargs
-        _emd_template['seq_len'] = self._seq_len
+        _emd_template["model_params"] = self._kwargs
+        _emd_template["seq_len"] = self._seq_len
         _emd_template["dependent_variable"] = self._data._dependent_variable
         _emd_template["categorical_variables"] = self._data._categorical_variables
         _emd_template["continuous_variables"] = self._data._continuous_variables
 
         if self._data._index_field:
-            _emd_template['index_field'] = self._data._index_field
+            _emd_template["index_field"] = self._data._index_field
 
-        _emd_template['_is_classification'] = "classification" if self._data._is_classification else "regression"
+        _emd_template["_is_classification"] = (
+            "classification" if self._data._is_classification else "regression"
+        )
 
         return _emd_template
 
     def _predict(self, orig_sequence):
-        sequence = np.array(orig_sequence, dtype='float32')
+        sequence = np.array(orig_sequence, dtype="float32")
         if sequence.shape[0] == 1:
             seq_arr = To3dTensor(orig_sequence).to(self._device)
         else:
-            seq_arr = ToTensor(np.expand_dims(np.array(sequence, dtype='float32'), axis=0)).to(self._device)
+            seq_arr = ToTensor(
+                np.expand_dims(np.array(sequence, dtype="float32"), axis=0)
+            ).to(self._device)
         model = self.learn.model
         model.eval()
 
@@ -305,17 +352,17 @@ class TimeSeriesModel(ArcGISModel):
         return output
 
     def predict(
-            self,
-            input_features=None,
-            explanatory_rasters=None,
-            datefield=None,
-            distance_features=None,
-            output_layer_name="Prediction Layer",
-            gis=None,
-            prediction_type='features',
-            output_raster_path=None,
-            match_field_names=None,
-            number_of_predictions=None
+        self,
+        input_features=None,
+        explanatory_rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name="Prediction Layer",
+        gis=None,
+        prediction_type="features",
+        output_raster_path=None,
+        match_field_names=None,
+        number_of_predictions=None,
     ):
         """
 
@@ -375,20 +422,31 @@ class TimeSeriesModel(ArcGISModel):
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
-        if prediction_type in ['features', 'dataframe']:
+        if prediction_type in ["features", "dataframe"]:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis,
-                                          match_field_names, number_of_predictions, prediction_type)
+            return self._predict_features(
+                input_features,
+                rasters,
+                datefield,
+                distance_features,
+                output_layer_name,
+                gis,
+                match_field_names,
+                number_of_predictions,
+                prediction_type,
+            )
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
 
             if not output_raster_path:
-                raise Exception("Please specify output_raster_folder_path to save the output.")
+                raise Exception(
+                    "Please specify output_raster_folder_path to save the output."
+                )
 
             return self._predict_rasters(output_raster_path, rasters, match_field_names)
 
@@ -412,32 +470,56 @@ class TimeSeriesModel(ArcGISModel):
         except:
             raise Exception("This function requires pandas.")
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
 
         try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkt"
+            ]
         except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkid"
+            ]
 
-        xmin = rasters[0].extent['xmin']
-        xmax = rasters[0].extent['xmax']
-        ymin = rasters[0].extent['ymin']
-        ymax = rasters[0].extent['ymax']
+        xmin = rasters[0].extent["xmin"]
+        xmax = rasters[0].extent["xmax"]
+        ymin = rasters[0].extent["ymin"]
+        ymax = rasters[0].extent["ymax"]
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent['spatialReference']
+        default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
             point_upper = arcgis.geometry.Point(
-                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmin"],
+                    "y": raster.extent["ymax"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             point_lower = arcgis.geometry.Point(
-                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmax"],
+                    "y": raster.extent["ymin"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             cell_size = arcgis.geometry.Point(
-                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.mean_cell_width,
+                    "y": raster.mean_cell_height,
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
 
-            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
-                                             default_sr)
+            points = arcgis.geometry.project(
+                [point_upper, point_lower, cell_size],
+                raster.extent["spatialReference"],
+                default_sr,
+            )
             point_upper = points[0]
             point_lower = points[1]
             cell_size = points[2]
@@ -460,20 +542,30 @@ class TimeSeriesModel(ArcGISModel):
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
-        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
+        cell_size = arcgis.geometry.Point(
+            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = \
-            arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
-            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[
-                0]
+            point_upper_translated = arcgis.geometry.project(
+                [point_upper], default_sr, raster.extent["spatialReference"]
+            )[0]
+            cell_size_translated = arcgis.geometry.project(
+                [cell_size], default_sr, raster.extent["spatialReference"]
+            )[0]
             if field_name in fields_needed:
                 raster_read = raster.read(
-                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
-                    nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -481,7 +573,7 @@ class TimeSeriesModel(ArcGISModel):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
                             index = index + 1
@@ -489,8 +581,14 @@ class TimeSeriesModel(ArcGISModel):
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(
-                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
-                    nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -498,7 +596,7 @@ class TimeSeriesModel(ArcGISModel):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
 
@@ -508,7 +606,11 @@ class TimeSeriesModel(ArcGISModel):
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
+            if (
+                field not in list(raster_data.keys())
+                and match_field_names
+                and match_field_names.get(field, None) is None
+            ):
                 raise Exception(f"Field missing {field}")
 
         length_values = len(raster_data[list(raster_data.keys())[0]])
@@ -519,15 +621,30 @@ class TimeSeriesModel(ArcGISModel):
                 processed_row.append(raster_data[raster_name][i])
             processed_output.append(self._predict([processed_row]))
 
-        processed_numpy = np.array(processed_output, dtype='float64')
+        processed_numpy = np.array(processed_output, dtype="float64")
         processed_numpy = processed_numpy.reshape([max_raster_rows, max_raster_columns])
-        processed_raster = arcpy.NumPyArrayToRaster(processed_numpy, arcpy.Point(xmin, ymin),
-                                                    x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
+        processed_raster = arcpy.NumPyArrayToRaster(
+            processed_numpy,
+            arcpy.Point(xmin, ymin),
+            x_cell_size=min_cell_size_x,
+            y_cell_size=min_cell_size_y,
+        )
         processed_raster.save(output_raster_path)
 
         return True
 
-    def _predict_features(self, input_features, rasters=None, datefield=None, distance_features=None, output_layer_name='Prediction Layer', gis=None, match_field_names=None, number_of_predictions=None, prediction_type='features'):
+    def _predict_features(
+        self,
+        input_features,
+        rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name="Prediction Layer",
+        gis=None,
+        match_field_names=None,
+        number_of_predictions=None,
+        prediction_type="features",
+    ):
         if not HAS_PANDAS:
             raise Exception("This function requires pandas library")
 
@@ -546,26 +663,43 @@ class TimeSeriesModel(ArcGISModel):
             index_field_name = None
             end_value = None
             if self._data._index_field is not None:
-                index_field_name = match_field_names.get(self._data._index_field, self._data._index_field)
-                if index_field_name in list(orig_dataframe.columns) and is_datetime(orig_dataframe[index_field_name]):
-                    delta = orig_dataframe[index_field_name].iloc[1] - orig_dataframe[index_field_name].iloc[0]
+                index_field_name = match_field_names.get(
+                    self._data._index_field, self._data._index_field
+                )
+                if index_field_name in list(orig_dataframe.columns) and is_datetime(
+                    orig_dataframe[index_field_name]
+                ):
+                    delta = (
+                        orig_dataframe[index_field_name].iloc[1]
+                        - orig_dataframe[index_field_name].iloc[0]
+                    )
                     end_value = None
                     if delta is not None:
-                        end_value = orig_dataframe[index_field_name].iloc[len(orig_dataframe)-1]
+                        end_value = orig_dataframe[index_field_name].iloc[
+                            len(orig_dataframe) - 1
+                        ]
             for i in range(number_of_predictions):
                 orig_dataframe = orig_dataframe.append(pd.Series(), ignore_index=True)
                 if delta is not None:
-                    orig_dataframe.loc[len(orig_dataframe)-1, index_field_name] = end_value + delta.to_timedelta64()
+                    orig_dataframe.loc[len(orig_dataframe) - 1, index_field_name] = (
+                        end_value + delta.to_timedelta64()
+                    )
                     end_value = end_value + delta.to_timedelta64()
 
         if match_field_names and match_field_names.get(self._data._dependent_variable):
-            prediction_sequence_orig = orig_dataframe[match_field_names.get(self._data._dependent_variable)]
+            prediction_sequence_orig = orig_dataframe[
+                match_field_names.get(self._data._dependent_variable)
+            ]
         else:
             prediction_sequence_orig = orig_dataframe[self._data._dependent_variable]
 
         dataframe = orig_dataframe.copy()
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables + [self._data._dependent_variable]
+        fields_needed = (
+            self._data._categorical_variables
+            + self._data._continuous_variables
+            + [self._data._dependent_variable]
+        )
         distance_feature_layers = distance_features if distance_features else []
 
         continuous_variables = self._data._continuous_variables
@@ -604,13 +738,16 @@ class TimeSeriesModel(ArcGISModel):
                 raster_columns.append((raster, categorical))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            processed_dataframe, fields_mapping = TabularDataObject._prepare_dataframe_from_features(
+            (
+                processed_dataframe,
+                fields_mapping,
+            ) = TabularDataObject._prepare_dataframe_from_features(
                 orig_dataframe,
                 self._data._dependent_variable,
                 feature_layer_columns,
                 raster_columns,
                 datefield,
-                distance_feature_layers
+                distance_feature_layers,
             )
 
         if match_field_names:
@@ -624,10 +761,14 @@ class TimeSeriesModel(ArcGISModel):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_dataframe = processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1)
+        processed_dataframe = processed_dataframe.reindex(
+            sorted(processed_dataframe.columns), axis=1
+        )
 
         index = self._seq_len
-        processed_dataframe[self._data._dependent_variable] = processed_dataframe[self._data._dependent_variable].replace(r'^\s*$', np.nan, regex=True)
+        processed_dataframe[self._data._dependent_variable] = processed_dataframe[
+            self._data._dependent_variable
+        ].replace(r"^\s*$", np.nan, regex=True)
 
         processed_dataframe_transform = processed_dataframe.copy()
 
@@ -635,9 +776,14 @@ class TimeSeriesModel(ArcGISModel):
             transformed_data = processed_dataframe[col]
             for transform in self._data._column_transforms_mapping.get(col, []):
                 transformed_data = transform.fit_transform(
-                    np.array(transformed_data, dtype=processed_dataframe[col].dtype).reshape(-1, 1))
+                    np.array(
+                        transformed_data, dtype=processed_dataframe[col].dtype
+                    ).reshape(-1, 1)
+                )
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col] = np.array(transformed_data, dtype=processed_dataframe[col].dtype)
+            processed_dataframe_transform[col] = np.array(
+                transformed_data, dtype=processed_dataframe[col].dtype
+            )
 
         big_bunch = []
         prediction_sequence_list = None
@@ -646,18 +792,32 @@ class TimeSeriesModel(ArcGISModel):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for col in range(len(processed_dataframe.columns.values)):
-                if list(processed_dataframe.columns.values)[col] == self._data._dependent_variable:
+                if (
+                    list(processed_dataframe.columns.values)[col]
+                    == self._data._dependent_variable
+                ):
                     # big_bunch.append(prediction_sequence_list[index - self._seq_len:(index - self._seq_len + self._seq_len)])
                     prediction_sequence_list = processed_dataframe_transform[:, col]
-                    big_bunch.append(prediction_sequence_list[0:self._seq_len])
+                    big_bunch.append(prediction_sequence_list[0 : self._seq_len])
                 else:
-                    big_bunch.append(processed_dataframe_transform[:, col][0:self._seq_len])
+                    big_bunch.append(
+                        processed_dataframe_transform[:, col][0 : self._seq_len]
+                    )
 
         if len(prediction_sequence_list) < self._seq_len:
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if prediction_sequence_list[index] in ["", None, "null", "None"] or np.isnan(prediction_sequence_list[index]):
+            if (
+                prediction_sequence_list[index]
+                in [
+                    "",
+                    None,
+                    "null",
+                    "None",
+                ]
+                or np.isnan(prediction_sequence_list[index])
+            ):
                 value = self._predict(np.array(big_bunch))
                 prediction_sequence_list[index] = value
 
@@ -666,29 +826,55 @@ class TimeSeriesModel(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 for col in range(len(processed_dataframe.columns.values)):
-                    if list(processed_dataframe.columns.values)[col] == self._data._dependent_variable:
-                        big_bunch.append(prediction_sequence_list[index - self._seq_len:(index - self._seq_len+self._seq_len)])
+                    if (
+                        list(processed_dataframe.columns.values)[col]
+                        == self._data._dependent_variable
+                    ):
+                        big_bunch.append(
+                            prediction_sequence_list[
+                                index
+                                - self._seq_len : (
+                                    index - self._seq_len + self._seq_len
+                                )
+                            ]
+                        )
                     else:
-                        big_bunch.append(processed_dataframe_transform[:, col][index - self._seq_len:(index - self._seq_len+self._seq_len)])
+                        big_bunch.append(
+                            processed_dataframe_transform[:, col][
+                                index
+                                - self._seq_len : (
+                                    index - self._seq_len + self._seq_len
+                                )
+                            ]
+                        )
 
         transformed_results = prediction_sequence_list
         if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(self._data._dependent_variable):
-                transformed_results = transform.inverse_transform(np.array(transformed_results).reshape(-1, 1))
+            for transform in self._data._column_transforms_mapping.get(
+                self._data._dependent_variable
+            ):
+                transformed_results = transform.inverse_transform(
+                    np.array(transformed_results).reshape(-1, 1)
+                )
                 transformed_results = transformed_results.squeeze(1)
 
-        orig_dataframe[self._data._dependent_variable + "_results"] = transformed_results
+        orig_dataframe[
+            self._data._dependent_variable + "_results"
+        ] = transformed_results
         if prediction_type == "dataframe":
             return orig_dataframe
 
-        if 'SHAPE' in list(orig_dataframe.columns):
+        if "SHAPE" in list(orig_dataframe.columns):
             orig_dataframe.spatial.to_featurelayer(output_layer_name, gis)
         else:
             import tempfile
+
             with tempfile.TemporaryDirectory() as tmpdir:
-                table_file = os.path.join(tmpdir, output_layer_name + '.xlsx')
+                table_file = os.path.join(tmpdir, output_layer_name + ".xlsx")
                 orig_dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                online_table = gis.content.add(
+                    {"type": "Microsoft Excel", "overwrite": True}, table_file
+                )
                 return online_table.publish(overwrite=True)
 
     def score(self):
@@ -716,23 +902,33 @@ class TimeSeriesModel(ArcGISModel):
 
         transformed_results = targets
         if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(self._data._dependent_variable):
-                transformed_results = transform.inverse_transform(np.array(transformed_results).reshape(-1, 1))
+            for transform in self._data._column_transforms_mapping.get(
+                self._data._dependent_variable
+            ):
+                transformed_results = transform.inverse_transform(
+                    np.array(transformed_results).reshape(-1, 1)
+                )
                 transformed_results = transformed_results.squeeze(1)
         targets = transformed_results
 
         transformed_results = predictions
         if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(self._data._dependent_variable):
-                transformed_results = transform.inverse_transform(np.array(transformed_results).reshape(-1, 1))
+            for transform in self._data._column_transforms_mapping.get(
+                self._data._dependent_variable
+            ):
+                transformed_results = transform.inverse_transform(
+                    np.array(transformed_results).reshape(-1, 1)
+                )
                 transformed_results = transformed_results.squeeze(1)
         predictions = transformed_results
 
         if self._data._is_classification:
-            return (np.array(predictions)==np.array(targets)).mean()
+            return (np.array(predictions) == np.array(targets)).mean()
         else:
-            targets = torch.tensor(np.array(targets, dtype='float64')).to(self._device)
-            predictions = torch.tensor(np.array(predictions, dtype='float64')).to(self._device)
+            targets = torch.tensor(np.array(targets, dtype="float64")).to(self._device)
+            predictions = torch.tensor(np.array(predictions, dtype="float64")).to(
+                self._device
+            )
             return float(r2_score(predictions, targets))
 
     def show_results(self, rows=5):
@@ -767,21 +963,29 @@ class TimeSeriesModel(ArcGISModel):
             predictions.append(prediction)
             sequence.append(dl.x.items[i])
 
-        targets = np.array(targets, dtype='float64')
-        predictions = np.array(predictions, dtype='float64')
+        targets = np.array(targets, dtype="float64")
+        predictions = np.array(predictions, dtype="float64")
 
         transformed_results = targets
         if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(self._data._dependent_variable):
-                transformed_results = transform.inverse_transform(np.array(transformed_results).reshape(-1, 1))
+            for transform in self._data._column_transforms_mapping.get(
+                self._data._dependent_variable
+            ):
+                transformed_results = transform.inverse_transform(
+                    np.array(transformed_results).reshape(-1, 1)
+                )
                 transformed_results = transformed_results.squeeze(1)
 
         targets_inversed = transformed_results
 
         transformed_results = predictions
         if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(self._data._dependent_variable):
-                transformed_results = transform.inverse_transform(np.array(transformed_results).reshape(-1, 1))
+            for transform in self._data._column_transforms_mapping.get(
+                self._data._dependent_variable
+            ):
+                transformed_results = transform.inverse_transform(
+                    np.array(transformed_results).reshape(-1, 1)
+                )
                 transformed_results = transformed_results.squeeze(1)
 
         predictions_inversed = transformed_results
@@ -797,7 +1001,9 @@ class TimeSeriesModel(ArcGISModel):
                 transformed_data = col_data
                 if len(keys) > index:
                     for transform in column_transforms_mapping.get(keys[index]):
-                        transformed_data = transform.inverse_transform(np.array(transformed_data).reshape(-1, 1))
+                        transformed_data = transform.inverse_transform(
+                            np.array(transformed_data).reshape(-1, 1)
+                        )
                         transformed_data = transformed_data.squeeze(1)
 
                 seq_inverse.append(transformed_data)
@@ -806,11 +1012,14 @@ class TimeSeriesModel(ArcGISModel):
             sequence_inversed.append(seq_inverse)
 
         if self._data._index_seq is not None:
-            validation_index_seq = self._data._index_seq.take(self._data._validation_indexes_ts, axis=0)
+            validation_index_seq = self._data._index_seq.take(
+                self._data._validation_indexes_ts, axis=0
+            )
         else:
             validation_index_seq = None
 
         import matplotlib.pyplot as plt
+
         n_items = rows
         if n_items > len(targets_inversed):
             n_items = len(targets_inversed)
@@ -818,7 +1027,7 @@ class TimeSeriesModel(ArcGISModel):
         rows = int(n_items)
 
         fig, axs = plt.subplots(rows, 2, figsize=(10, 10))
-        fig.suptitle('Ground truth vs Predictions\n\n', fontsize=16)
+        fig.suptitle("Ground truth vs Predictions\n\n", fontsize=16)
 
         for i in range(rows):
             for seq_plot in sequence_inversed[i]:

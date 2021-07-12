@@ -9,7 +9,8 @@ from typing import Tuple
 
 import numpy as np
 import torch
-#from arcgis.learn._utils.segmentation_loss_functions import mIoULoss
+
+# from arcgis.learn._utils.segmentation_loss_functions import mIoULoss
 from arcgis.learn.models._deeplab_utils import mask_iou
 from fastai.callbacks.hooks import hook_outputs, model_sizes
 from fastprogress.fastprogress import progress_bar
@@ -50,7 +51,7 @@ class DecoderBlock(nn.Module):
         # B, C/4, H, W -> B, C, H, W
         self.conv3 = nn.Conv2d(in_channels // 4, out_channels, 1, groups=group)
         self.norm3 = nn.BatchNorm2d(out_channels)
-        #self.up    = nn.Upsample(upsample_size)
+        # self.up    = nn.Upsample(upsample_size)
         self.relu3 = nn.ReLU(inplace=True)
 
         for m in self.modules():
@@ -87,6 +88,7 @@ class LinkNetModel(nn.Module):
     Implements LinkNet model.
     Reference: https://arxiv.org/pdf/1707.03718.pdf
     """
+
     def __init__(self, encoder, n_classes, chip_size, n_bands=3):
         super(LinkNetModel, self).__init__()
 
@@ -187,7 +189,12 @@ class LinkNetMultiTaskModel(nn.Module):
         self.o_finalrelu2 = nn.LeakyReLU(0.2, inplace=True)
         self.o_finalconv3 = nn.Conv2d(32, task2_classes, 2, padding=1)
 
-        for m in [self.finaldeconv1, self.finalconv2, self.o_finaldeconv1, self.o_finalconv2]:
+        for m in [
+            self.finaldeconv1,
+            self.finalconv2,
+            self.o_finaldeconv1,
+            self.o_finalconv2,
+        ]:
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2.0 / n))
@@ -240,6 +247,7 @@ class road_orient_loss(nn.Module):
     In current version it only supports Mean-IoU for Road Segmentation and
     Cross-Entropy for Road Orientations.
     """
+
     def __init__(self, n_classes: int = 2, loss_weights: Tuple = (1.0, 1.0)):
         super().__init__()
         self.n_classes = n_classes
@@ -251,11 +259,16 @@ class road_orient_loss(nn.Module):
         if isinstance(predictions, (list, tuple)):
             if len(target) > 1:
                 seg_target, orient_target = target
-                return self.loss_weights[0] * self.road_loss(predictions[0], seg_target.squeeze(1).long()) + \
-                       self.loss_weights[1] * self.orient_loss(predictions[1], orient_target.squeeze(1).long())
+                return self.loss_weights[0] * self.road_loss(
+                    predictions[0], seg_target.squeeze(1).long()
+                ) + self.loss_weights[1] * self.orient_loss(
+                    predictions[1], orient_target.squeeze(1).long()
+                )
             else:
                 seg_target = target[0]
-                return self.loss_weights[0] * self.road_loss(predictions[0], seg_target.squeeze(1).long())
+                return self.loss_weights[0] * self.road_loss(
+                    predictions[0], seg_target.squeeze(1).long()
+                )
         else:
             return self.road_loss(predictions, target[0].squeeze(1).long())
 
@@ -331,12 +344,15 @@ def miou(prediction, *target, ignore_mapped_class=[], smooth=1e-8):
             return 0
         return torch.tensor(sum / mean_classes)
 
+
 def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
-    ious=[]
+    ious = []
     model.learn.model.eval()
+
     def fast_hist(a, b, n):
         k = (a >= 0) & (a < n)
         return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
             pred = model.learn.model(input)
@@ -354,8 +370,14 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
             mask1 = []
             mask2 = []
             for i in range(pred.shape[0]):
-                mask1.append(pred[i].to(model._device) == num_classes[:, None, None].to(model._device))
-                mask2.append(target[i].to(model._device) == num_classes[:, None, None].to(model._device))
+                mask1.append(
+                    pred[i].to(model._device)
+                    == num_classes[:, None, None].to(model._device)
+                )
+                mask2.append(
+                    target[i].to(model._device)
+                    == num_classes[:, None, None].to(model._device)
+                )
             mask1 = torch.stack(mask1)
             mask2 = torch.stack(mask2)
             iou = mask_iou(mask1, mask2)

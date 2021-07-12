@@ -7,6 +7,9 @@ from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import import_toolbox
+from arcgis._impl.common._utils import _validate_url
+from arcgis.network import _utils
+from ._routing_utils import _create_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -885,7 +888,7 @@ def edit_vehicle_routing_problem(
     populate_directions=False,
     directions_language=None,
     directions_style_name=None,
-    travel_mode=None,
+    travel_mode="Custom",
     impedance=None,
     time_zone_usage_for_time_fields=None,
     save_output_layer=False,
@@ -1089,12 +1092,23 @@ def edit_vehicle_routing_problem(
     :returns: Named Tuple
 
     """
+    if travel_mode is None:
+        travel_mode = "Custom"
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.syncVRP.url[
         : -len("/EditVehicleRoutingProblem")
     ]
-    tbx = import_toolbox(url, gis=gis)
+    if isinstance(travel_mode, str):
+        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+    elif isinstance(travel_mode, dict):
+        params["travel_mode"] = json.dumps(travel_mode)
+    else:
+        travel_mode = _utils.find_travel_mode(
+            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
+        )
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.edit_vehicle_routing_problem.__annotations__.keys(),
@@ -3179,7 +3193,8 @@ def solve_vehicle_routing_problem(
     url = gis.properties.helperServices.asyncVRP.url[
         : -len("/SolveVehicleRoutingProblem")
     ]
-    tbx = import_toolbox(url, gis=gis)
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
         zip(
             tbx.solve_vehicle_routing_problem.__annotations__.keys(),

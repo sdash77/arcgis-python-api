@@ -196,6 +196,12 @@ SiamMask
     :members:
     :inherited-members:
 
+DeepSort
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.DeepSort
+    :members:
+    :inherited-members:
+
 ObjectTracker
 ^^^^^^^^^^
 .. autoclass:: arcgis.learn.ObjectTracker
@@ -235,6 +241,13 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
     :members:
     :inherited-members:
     :undoc-members:
