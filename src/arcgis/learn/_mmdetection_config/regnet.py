@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco.py, box AP=42.2
+# faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco.py, box AP=42.2
 
-_base_ = './_base_/models/faster_rcnn_r50_fpn.py'
+_base_ = "./_base_/models/faster_rcnn_r50_fpn.py"
 model = dict(
-    pretrained='open-mmlab://regnetx_3.2gf',
+    pretrained="open-mmlab://regnetx_3.2gf",
     backbone=dict(
         _delete_=True,
-        type='RegNet',
-        arch='regnetx_3.2gf',
+        type="RegNet",
+        arch="regnetx_3.2gf",
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_cfg=dict(type="BN", requires_grad=True),
         norm_eval=True,
-        style='pytorch'),
+        style="pytorch",
+    ),
     neck=dict(
-        type='FPN',
-        in_channels=[96, 192, 432, 1008],
-        out_channels=256,
-        num_outs=5))
+        type="FPN", in_channels=[96, 192, 432, 1008], out_channels=256, num_outs=5
+    ),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/regnet/faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco/faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco_20200520_224253-bf85ae3e.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/regnet/faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco/faster_rcnn_regnetx-3.2GF_fpn_mstrain_3x_coco_20200520_224253-bf85ae3e.pth"

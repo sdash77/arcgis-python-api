@@ -84,9 +84,9 @@ class ModelExtension(ArcGISModel):
     model_conf              A class definition contains the following methods:
 
                                 * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
-                                
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for 
-                                  feeding input to the model during training, 
+
+                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for
+                                  feeding input to the model during training,
 
                                 * ``transform_input(self, xb)``: for feeding input to the model during
                                   inferencing/validation,
@@ -94,13 +94,13 @@ class ModelExtension(ArcGISModel):
                                 * ``transform_input_multispectral(self, xb)``: for feeding input to the
                                   model during inferencing/validation in case of multispectral data,
 
-                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and 
+                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and
 
                                 * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
                                   the output of the object-detection model.
 
                                 * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
-                                  
+
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
@@ -113,41 +113,41 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
-        self._learn_version = kwargs.get('ArcGISLearnVersion', "1.9.1")
+        self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
 
         if self._learn_version >= "1.9.0":
             if pretrained_path is not None:
                 pretrained_backbone = False
             else:
                 pretrained_backbone = True
-            kwargs['pretrained_backbone'] = pretrained_backbone
+            kwargs["pretrained_backbone"] = pretrained_backbone
         else:
-            del kwargs['ArcGISLearnVersion']
+            del kwargs["ArcGISLearnVersion"]
 
         super().__init__(data, backbone, **kwargs)
         self._model_conf = model_conf()
         self._model_conf_class = model_conf
-        self._backend = 'pytorch'
+        self._backend = "pytorch"
         self._kwargs = kwargs
         model = self._model_conf.get_model(data, backbone, **kwargs)
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
-            if model_conf.__name__ == 'MyFasterRCNN' and backbone_name in [
-                'resnet18',
-                'resnet34',
+            if model_conf.__name__ == "MyFasterRCNN" and backbone_name in [
+                "resnet18",
+                "resnet34",
             ]:
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
                 )
         if self._is_multispectral:
             model = _change_tail(model, data)
-        if not _isnotebook() and os.name == 'posix':
+        if not _isnotebook() and os.name == "posix":
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(
                     data, model, loss_func=self._model_conf.loss
                 ).to_distributed(self._rank_distributed)
-                self._map_location = {'cuda:%d' % 0: 'cuda:%d' % self._rank_distributed}
+                self._map_location = {"cuda:%d" % 0: "cuda:%d" % self._rank_distributed}
             else:
                 self.learn = Learner(data, model, loss_func=self._model_conf.loss)
         else:
@@ -156,7 +156,7 @@ class ModelExtension(ArcGISModel):
             self._train_callback(self.learn, self._model_conf.on_batch_begin)
         )
         self.learn._learn_version = self._learn_version
-        if self._data.dataset_type == 'Classified_Tiles':
+        if self._data.dataset_type == "Classified_Tiles":
             if getattr(self, "_is_edge_detection", False):
                 from ._hed_utils import accuracy, f1_score
 
@@ -191,7 +191,7 @@ class ModelExtension(ArcGISModel):
                         self.learn, last_input, last_target
                     )
 
-                return {'last_input': last_input, 'last_target': last_target}
+                return {"last_input": last_input, "last_target": last_target}
 
     def _analyze_pred(
         self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None
@@ -205,7 +205,7 @@ class ModelExtension(ArcGISModel):
 
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        if self._data.dataset_type == 'Classified_Tiles':
+        if self._data.dataset_type == "Classified_Tiles":
             _emd_template["ModelType"] = "ImageClassification"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
@@ -213,7 +213,7 @@ class ModelExtension(ArcGISModel):
                 _emd_template[
                     "InferenceFunction"
                 ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
-            _emd_template['IsEdgeDetection'] = getattr(
+            _emd_template["IsEdgeDetection"] = getattr(
                 self, "_is_edge_detection", False
             )
         else:
@@ -226,11 +226,11 @@ class ModelExtension(ArcGISModel):
                 ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template['Classes'] = []
-        _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
-        _emd_template['ModelFileConfigurationClass'] = type(self._model_conf).__name__
-        _emd_template['DatasetType'] = self._data.dataset_type
-        _emd_template['Kwargs'] = self._kwargs
+        _emd_template["Classes"] = []
+        _emd_template["ModelConfigurationFile"] = "ModelConfiguration.py"
+        _emd_template["ModelFileConfigurationClass"] = type(self._model_conf).__name__
+        _emd_template["DatasetType"] = self._data.dataset_type
+        _emd_template["Kwargs"] = self._kwargs
 
         class_data = {}
         for i, class_name in enumerate(
@@ -241,7 +241,7 @@ class ModelExtension(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
 
@@ -274,45 +274,45 @@ class ModelExtension(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        modelconf = Path(emd['ModelConfigurationFile'])
+        modelconf = Path(emd["ModelConfigurationFile"])
 
         if not modelconf.is_absolute():
             modelconf = emd_path.parent / modelconf
 
-        modelconfclass = emd['ModelFileConfigurationClass']
+        modelconfclass = emd["ModelFileConfigurationClass"]
 
         sys.path.append(os.path.dirname(modelconf))
         model_configuration = getattr(
-            importlib.import_module('{}'.format(modelconf.name[0:-3])), modelconfclass
+            importlib.import_module("{}".format(modelconf.name[0:-3])), modelconfclass
         )
 
-        backbone = emd['ModelParameters'].get('backbone', None)
+        backbone = emd["ModelParameters"].get("backbone", None)
 
-        dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
+        dataset_type = emd.get("DatasetType", "PASCAL_VOC_rectangles")
         chip_size = emd["ImageWidth"]
-        resize_to = emd.get('resize_to', None)
-        kwargs = emd.get('Kwargs', {})
+        resize_to = emd.get("resize_to", None)
+        kwargs = emd.get("Kwargs", {})
         kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
         try:
-            class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
+            color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
-            color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
         data_passed = True
         if data is None:
 
             data_passed = False
-            if dataset_type == 'PASCAL_VOC_rectangles':
+            if dataset_type == "PASCAL_VOC_rectangles":
                 train_tfms = []
                 val_tfms = []
                 ds_tfms = (train_tfms, val_tfms)
@@ -336,13 +336,13 @@ class ModelExtension(ArcGISModel):
                     path=emd_path.parent.parent,
                     loss_func=None,
                     c=len(class_mapping) + 1,
-                    chip_size=emd['ImageHeight'],
+                    chip_size=emd["ImageHeight"],
                 )
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
-            data.classes = ['background'] + list(class_mapping.values())
+            data.classes = ["background"] + list(class_mapping.values())
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
@@ -358,7 +358,7 @@ class ModelExtension(ArcGISModel):
             **kwargs,
         )
 
-        if not data_passed and dataset_type == 'PASCAL_VOC_rectangles':
+        if not data_passed and dataset_type == "PASCAL_VOC_rectangles":
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
             mextnsn.learn.data.single_ds.y.classes = mextnsn._data.classes
 
@@ -366,18 +366,18 @@ class ModelExtension(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        if self._data.dataset_type == 'Classified_Tiles':
-            return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
+        if self._data.dataset_type == "Classified_Tiles":
+            return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
         else:
             return {
-                'average_precision_score': self.average_precision_score(
+                "average_precision_score": self.average_precision_score(
                     show_progress=False
                 )
             }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get('checkpoint', True)
-        if not hasattr(self.learn, 'recorder'):
+        checkpoint = kwargs.get("checkpoint", True)
+        if not hasattr(self.learn, "recorder"):
             return 0.0
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
@@ -410,7 +410,7 @@ class ModelExtension(ArcGISModel):
 
     def _bind_dataset_methods(self):
 
-        if self._data.dataset_type == 'Classified_Tiles':
+        if self._data.dataset_type == "Classified_Tiles":
             if getattr(self, "_is_edge_detection", False):
                 self.show_results = self._show_results_edge_detection
                 self.compute_precision_recall = self._edge_detection_accuracies
@@ -435,7 +435,7 @@ class ModelExtension(ArcGISModel):
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
-            accuracy = self._data.emd.get('accuracy')
+            accuracy = self._data.emd.get("accuracy")
             if accuracy:
                 return accuracy
             else:
@@ -454,9 +454,9 @@ class ModelExtension(ArcGISModel):
                                 classes combined.
         ---------------------   -------------------------------------------
         show_progress           Optional bool. Displays the progress bar if
-                                True.                                         
+                                True.
         =====================   ===========================================
-        
+
         :returns: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
@@ -464,7 +464,7 @@ class ModelExtension(ArcGISModel):
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
         if mean:
             return np.mean(miou)
-        return dict(zip(['0'] + self._data.classes[1:], miou))
+        return dict(zip(["0"] + self._data.classes[1:], miou))
 
     def _per_class_metrics(self):
         """
@@ -477,7 +477,7 @@ class ModelExtension(ArcGISModel):
         except:
             import pandas as pd
 
-            return pd.read_json(self._data.emd['per_class_metrics'])
+            return pd.read_json(self._data.emd["per_class_metrics"])
 
     def _show_results_object_detection(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
@@ -494,11 +494,11 @@ class ModelExtension(ArcGISModel):
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
-                                threshold with other predicted bounding 
+                                threshold with other predicted bounding
                                 boxes, above which the box with the highest
                                 score will be considered a true positive.
         =====================   ===========================================
-        
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -521,7 +521,7 @@ class ModelExtension(ArcGISModel):
         thresh                  Optional Float. The probability above which
                                 a detection will be considered valid.
         =====================   ===========================================
-        
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -553,7 +553,7 @@ class ModelExtension(ArcGISModel):
             alpha=alpha,
             **kwargs,
         )
-        if kwargs.get('return_fig', False):
+        if kwargs.get("return_fig", False):
             fig, ax = ret_val
             return fig
 
@@ -569,14 +569,14 @@ class ModelExtension(ArcGISModel):
         rows                    Optional Integer. Number of rows of results
                                 to be displayed.
         ---------------------   -------------------------------------------
-        alpha                   Optional Float. 
+        alpha                   Optional Float.
                                 Opacity of the lables for the corresponding
                                 images. Values range between 0 and 1, where
                                 1 means opaque.
         =====================   ===========================================
-        
+
         """
-        return_fig = kwargs.get('return_fig', False)
+        return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral_segmentation(
             self, nrows=rows, alpha=alpha, **kwargs
         )
@@ -609,24 +609,24 @@ class ModelExtension(ArcGISModel):
                 preds = []
                 for _ in range(xb.shape[0]):
                     res = {}
-                    res['boxes'] = torch.empty(0, 4)
-                    res['scores'] = torch.tensor([])
-                    res['labels'] = torch.tensor([])
+                    res["boxes"] = torch.empty(0, 4)
+                    res["scores"] = torch.tensor([])
+                    res["labels"] = torch.tensor([])
                     preds.append(res)
             else:
                 raise e
 
         x, y = to_cpu(xb), to_cpu(yb)
-        norm = getattr(self.learn.data, 'norm', False)
+        norm = getattr(self.learn.data, "norm", False)
         if norm:
             x = self.learn.data.denorm(x)
-            if norm.keywords.get('do_y', False):
+            if norm.keywords.get("do_y", False):
                 y = self.learn.data.denorm(y, do_x=True)
                 preds = self.learn.data.denorm(preds, do_x=True)
         analyze_kwargs, kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         preds = ds.y.analyze_pred(preds, **analyze_kwargs)
         xs = [ds.x.reconstruct(grab_idx(x, i)) for i in range(n_items)]
-        if has_arg(ds.y.reconstruct, 'x'):
+        if has_arg(ds.y.reconstruct, "x"):
             ys = [ds.y.reconstruct(grab_idx(y, i), x=x) for i, x in enumerate(xs)]
             zs = [ds.y.reconstruct(z, x=x) for z, x in zip(preds, xs)]
         else:
@@ -653,9 +653,9 @@ class ModelExtension(ArcGISModel):
                 pred = []
                 for _ in range(batch[0].shape[0]):
                     res = {}
-                    res['boxes'] = torch.empty(0, 4)
-                    res['scores'] = torch.tensor([])
-                    res['labels'] = torch.tensor([])
+                    res["boxes"] = torch.empty(0, 4)
+                    res["scores"] = torch.tensor([])
+                    res["labels"] = torch.tensor([])
                     pred.append(res)
             else:
                 raise e
@@ -663,13 +663,13 @@ class ModelExtension(ArcGISModel):
         analyze_kwargs, kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)
         x = batch[0]
-        norm = getattr(self.learn.data, 'norm', False)
+        norm = getattr(self.learn.data, "norm", False)
         if norm:
             x = self.learn.data.denorm(x)
         x = ds.x.reconstruct(grab_idx(x, 0))
         y = (
             ds.y.reconstruct(pred[0], x)
-            if has_arg(ds.y.reconstruct, 'x')
+            if has_arg(ds.y.reconstruct, "x")
             else ds.y.reconstruct(pred[0])
         )
         return y
@@ -733,7 +733,7 @@ class ModelExtension(ArcGISModel):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict` 
+        :returns: `dict`
         """
         self._check_requisites()
         acc = accuracies(
@@ -786,10 +786,10 @@ class ModelExtension(ArcGISModel):
 
                                 By default, this parameter is false and the detections are
                                 run in a sliding window fashion by applying the model on
-                                cropped sections of the image (of the same size as the 
+                                cropped sections of the image (of the same size as the
                                 model was trained on).
         =====================   ===========================================
-        
+
         :returns:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
                    of lists containing the  xmin, ymin, width and height of each predicted
@@ -826,12 +826,12 @@ class ModelExtension(ArcGISModel):
         else:
             chips = [
                 {
-                    'width': width,
-                    'height': height,
-                    'xmin': 0,
-                    'ymin': 0,
-                    'chip': image,
-                    'predictions': [],
+                    "width": width,
+                    "height": height,
+                    "xmin": 0,
+                    "ymin": 0,
+                    "chip": image,
+                    "predictions": [],
                 }
             ]
 
@@ -853,7 +853,7 @@ class ModelExtension(ArcGISModel):
                 frame = Image(
                     pil2tensor(
                         PIL.Image.fromarray(
-                            cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)
+                            cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
                         ),
                         dtype=np.float32,
                     ).div_(255)
@@ -871,10 +871,10 @@ class ModelExtension(ArcGISModel):
                     bboxes.add_(1).mul_(
                         torch.tensor(
                             [
-                                chip['height'] / 2,
-                                chip['width'] / 2,
-                                chip['height'] / 2,
-                                chip['width'] / 2,
+                                chip["height"] / 2,
+                                chip["width"] / 2,
+                                chip["height"] / 2,
+                                chip["width"] / 2,
                             ]
                         )
                     ).long()
@@ -882,22 +882,22 @@ class ModelExtension(ArcGISModel):
                         if lbls is not None:
                             label = lbls[index]
                         else:
-                            label = 'Default'
+                            label = "Default"
 
                         data = bb2hw(bbox)
                         if include_pad_detections or not _exclude_detection(
                             (data[0], data[1], data[2], data[3]),
-                            chip['width'],
-                            chip['height'],
+                            chip["width"],
+                            chip["height"],
                         ):
-                            chip['predictions'].append(
+                            chip["predictions"].append(
                                 {
-                                    'xmin': data[0],
-                                    'ymin': data[1],
-                                    'width': data[2],
-                                    'height': data[3],
-                                    'score': float(scores[index]),
-                                    'label': label,
+                                    "xmin": data[0],
+                                    "ymin": data[1],
+                                    "width": data[2],
+                                    "height": data[3],
+                                    "score": float(scores[index]),
+                                    "label": label,
                                 }
                             )
         finally:
@@ -967,86 +967,86 @@ class ModelExtension(ArcGISModel):
         multiplex=False,
         multiplex_file_path=None,
         tracker_options={
-            'assignment_iou_thrd': 0.3,
-            'vanish_frames': 40,
-            'detect_frames': 10,
+            "assignment_iou_thrd": 0.3,
+            "vanish_frames": 40,
+            "detect_frames": 10,
         },
         visual_options={
-            'show_scores': True,
-            'show_labels': True,
-            'thickness': 2,
-            'fontface': 0,
-            'color': (255, 255, 255),
+            "show_scores": True,
+            "show_labels": True,
+            "thickness": 2,
+            "fontface": 0,
+            "color": (255, 255, 255),
         },
         resize=False,
     ):
 
         """
-            Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
 
-            =====================   ===========================================
-            **Argument**            **Description**
-            ---------------------   -------------------------------------------
-            input_video_path        Required. Path to the video file to make the
-                                    predictions on.
-            ---------------------   -------------------------------------------
-            metadata_file           Required. Path to the metadata csv file where
-                                    the predictions will be saved in VMTI format.
-            ---------------------   -------------------------------------------
-            threshold               Optional float. The probability above which
-                                    a detection will be considered.
-            ---------------------   -------------------------------------------
-            nms_overlap             Optional float. The intersection over union
-                                    threshold with other predicted bounding
-                                    boxes, above which the box with the highest
-                                    score will be considered a true positive.
-            ---------------------   -------------------------------------------
-            track                   Optional bool. Set this parameter as True to
-                                    enable object tracking. 
-            ---------------------   -------------------------------------------
-            visualize               Optional boolean. If True a video is saved
-                                    with prediction results.
-            ---------------------   -------------------------------------------
-            output_file_path        Optional path. Path of the final video to be saved.
-                                    If not supplied, video will be saved at path
-                                    input_video_path appended with _prediction.
-            ---------------------   -------------------------------------------
-            multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
-            ---------------------   -------------------------------------------
-            multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
-                                    By default a new file with _multiplex.MOV extension is saved
-                                    in the same folder.
-            ---------------------   -------------------------------------------
-            tracking_options        Optional dictionary. Set different parameters for
-                                    object tracking. assignment_iou_thrd parameter is used
-                                    to assign threshold for assignment of trackers, 
-                                    vanish_frames is the number of frames the object should
-                                    be absent to consider it as vanished, detect_frames 
-                                    is the number of frames an object should be detected
-                                    to track it.
-            ---------------------   -------------------------------------------
-            visual_options          Optional dictionary. Set different parameters for
-                                    visualization.
-                                    show_scores boolean, to view scores on predictions,
-                                    show_labels boolean, to view labels on predictions,
-                                    thickness integer, to set the thickness level of box,
-                                    fontface integer, fontface value from opencv values,
-                                    color tuple (B, G, R), tuple containing values between
-                                    0-255.
-            ---------------------   -------------------------------------------
-            resize                  Optional boolean. Resizes the video frames to the same size
-                                    (chip_size parameter in prepare_data) that the model was
-                                    trained on, before detecting objects.
-                                    Note that if resize_to parameter was used in prepare_data,
-                                    the video frames are resized to that size instead.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        input_video_path        Required. Path to the video file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        metadata_file           Required. Path to the metadata csv file where
+                                the predictions will be saved in VMTI format.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        track                   Optional bool. Set this parameter as True to
+                                enable object tracking.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. If True a video is saved
+                                with prediction results.
+        ---------------------   -------------------------------------------
+        output_file_path        Optional path. Path of the final video to be saved.
+                                If not supplied, video will be saved at path
+                                input_video_path appended with _prediction.
+        ---------------------   -------------------------------------------
+        multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
+        ---------------------   -------------------------------------------
+        multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
+                                By default a new file with _multiplex.MOV extension is saved
+                                in the same folder.
+        ---------------------   -------------------------------------------
+        tracking_options        Optional dictionary. Set different parameters for
+                                object tracking. assignment_iou_thrd parameter is used
+                                to assign threshold for assignment of trackers,
+                                vanish_frames is the number of frames the object should
+                                be absent to consider it as vanished, detect_frames
+                                is the number of frames an object should be detected
+                                to track it.
+        ---------------------   -------------------------------------------
+        visual_options          Optional dictionary. Set different parameters for
+                                visualization.
+                                show_scores boolean, to view scores on predictions,
+                                show_labels boolean, to view labels on predictions,
+                                thickness integer, to set the thickness level of box,
+                                fontface integer, fontface value from opencv values,
+                                color tuple (B, G, R), tuple containing values between
+                                0-255.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the video frames to the same size
+                                (chip_size parameter in prepare_data) that the model was
+                                trained on, before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the video frames are resized to that size instead.
 
-                                    By default, this parameter is false and the detections are run
-                                    in a sliding window fashion by applying the model on cropped
-                                    sections of the frame (of the same size as the model was
-                                    trained on).
-            =====================   ===========================================
-            
-            """
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped
+                                sections of the frame (of the same size as the model was
+                                trained on).
+        =====================   ===========================================
+
+        """
 
         VideoUtils.predict_video(
             self,

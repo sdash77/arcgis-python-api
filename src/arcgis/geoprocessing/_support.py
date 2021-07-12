@@ -252,7 +252,7 @@ def _analysis_job_status(gptool, task_url, job_info):
                 else:
                     retry_counter = 0
                     while retry_counter < 5:
-                        time.sleep(retry_counter+1)
+                        time.sleep(retry_counter + 1)
                         try:
                             job_response = gptool._con.post(
                                 job_url, params, token=gptool._token

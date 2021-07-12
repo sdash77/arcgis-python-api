@@ -15,7 +15,12 @@ from ._PointRend import (
     StandardPointHead,
 )
 
-from torchvision.models.detection.roi_heads import RoIHeads, fastrcnn_loss, maskrcnn_loss, maskrcnn_inference
+from torchvision.models.detection.roi_heads import (
+    RoIHeads,
+    fastrcnn_loss,
+    maskrcnn_loss,
+    maskrcnn_inference,
+)
 from torchvision.models.detection import _utils as det_utils
 import torchvision
 
@@ -28,36 +33,37 @@ from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import roi_align
 from torch.jit.annotations import Optional, List, Dict, Tuple
 
+
 def create_pointrend(model, num_class):
-    
-    #get model parameter to create modified RoI head
-    y={}
-    y['box_roi_pool']         = model.roi_heads.box_roi_pool
-    y['box_head']             = model.roi_heads.box_head
-    y['box_predictor']        = model.roi_heads.box_predictor
-    y['fg_iou_thresh']        = model.roi_heads.proposal_matcher.high_threshold
-    y['bg_iou_thresh']        = model.roi_heads.proposal_matcher.low_threshold
-    y['batch_size_per_image'] = model.roi_heads.fg_bg_sampler.batch_size_per_image
-    y['positive_fraction']    = model.roi_heads.fg_bg_sampler.positive_fraction
-    y['bbox_reg_weights']     = model.roi_heads.box_coder.weights
-    y['score_thresh']         = model.roi_heads.score_thresh
-    y['nms_thresh']           = model.roi_heads.nms_thresh
-    y['detections_per_img']   = model.roi_heads.detections_per_img
-    
+
+    # get model parameter to create modified RoI head
+    y = {}
+    y["box_roi_pool"] = model.roi_heads.box_roi_pool
+    y["box_head"] = model.roi_heads.box_head
+    y["box_predictor"] = model.roi_heads.box_predictor
+    y["fg_iou_thresh"] = model.roi_heads.proposal_matcher.high_threshold
+    y["bg_iou_thresh"] = model.roi_heads.proposal_matcher.low_threshold
+    y["batch_size_per_image"] = model.roi_heads.fg_bg_sampler.batch_size_per_image
+    y["positive_fraction"] = model.roi_heads.fg_bg_sampler.positive_fraction
+    y["bbox_reg_weights"] = model.roi_heads.box_coder.weights
+    y["score_thresh"] = model.roi_heads.score_thresh
+    y["nms_thresh"] = model.roi_heads.nms_thresh
+    y["detections_per_img"] = model.roi_heads.detections_per_img
+
     # change mask head to pointrend mask head
-    
-    y['mask_roi_pool']        = MaskRoIPoolHead(num_class)
-    y['mask_head']            = CoarseMaskHead(num_class, 256)
-    y['mask_predictor']       = PointRendHeads(num_class)
-    
+
+    y["mask_roi_pool"] = MaskRoIPoolHead(num_class)
+    y["mask_head"] = CoarseMaskHead(num_class, 256)
+    y["mask_predictor"] = PointRendHeads(num_class)
+
     model.roi_heads = PointRendROIHeads(**y)
-    
+
     return model
 
+
 class PointRendROIHeads(RoIHeads):
-    
     def forward(self, features, proposals, image_shapes, targets=None):
-        
+
         """
         Arguments:
             features (List[Tensor])
@@ -67,13 +73,22 @@ class PointRendROIHeads(RoIHeads):
         """
         if targets is not None:
             for t in targets:
-                
+
                 floating_point_types = (torch.float, torch.double, torch.half)
-                assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
-                assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
+                assert (
+                    t["boxes"].dtype in floating_point_types
+                ), "target boxes must of float type"
+                assert (
+                    t["labels"].dtype == torch.int64
+                ), "target labels must of int64 type"
 
         if self.training:
-            proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+            (
+                proposals,
+                matched_idxs,
+                labels,
+                regression_targets,
+            ) = self.select_training_samples(proposals, targets)
         else:
             labels = None
             regression_targets = None
@@ -88,13 +103,13 @@ class PointRendROIHeads(RoIHeads):
         if self.training:
             assert labels is not None and regression_targets is not None
             loss_classifier, loss_box_reg = fastrcnn_loss(
-                class_logits, box_regression, labels, regression_targets)
-            losses = {
-                "loss_classifier": loss_classifier,
-                "loss_box_reg": loss_box_reg
-            }
+                class_logits, box_regression, labels, regression_targets
+            )
+            losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
         else:
-            boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, proposals, image_shapes)
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, proposals, image_shapes
+            )
             num_images = len(boxes)
             for i in range(num_images):
                 result.append(
@@ -152,14 +167,10 @@ class PointRendROIHeads(RoIHeads):
                 assert mask_logits is not None
 
                 rcnn_loss_mask = maskrcnn_loss(
-                    mask_features, mask_proposals,
-                    gt_masks, gt_labels, pos_matched_idxs)
-                loss_mask = {
-                    "loss_mask": rcnn_loss_mask
-                }
-                loss_mask_point = {
-                    "loss_mask_point": mask_logits
-                }
+                    mask_features, mask_proposals, gt_masks, gt_labels, pos_matched_idxs
+                )
+                loss_mask = {"loss_mask": rcnn_loss_mask}
+                loss_mask_point = {"loss_mask_point": mask_logits}
             else:
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
@@ -168,11 +179,12 @@ class PointRendROIHeads(RoIHeads):
 
             losses.update(loss_mask)
             losses.update(loss_mask_point)
-            
+
         return result, losses
 
+
 def calculate_uncertainty(logits, classes):
-    #This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+    # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     """
     We estimate uncerainty as L1 distance between 0.0 and the logit prediction in 'logits' for the
         foreground class in `classes`.
@@ -196,27 +208,35 @@ def calculate_uncertainty(logits, classes):
         ].unsqueeze(1)
     return -(torch.abs(gt_class_logits))
 
+
 class MaskRoIPoolHead(nn.Module):
-    #This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+    # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class):
-        
+
         super().__init__()
-        self.mask_coarse_in_features = ['0']
-        self.mask_coarse_side_size   = 14
-        self._feature_scales         = {'0': 1.0/4, '1': 1.0/8, '2': 1.0/16, '3': 1.0/32}#FPN block 1/stride
+        self.mask_coarse_in_features = ["0"]
+        self.mask_coarse_side_size = 14
+        self._feature_scales = {
+            "0": 1.0 / 4,
+            "1": 1.0 / 8,
+            "2": 1.0 / 16,
+            "3": 1.0 / 32,
+        }  # FPN block 1/stride
 
     def forward(self, features, proposals):
-        
+
         if self.training:
-            boxes = [x['proposal_boxes'] for x in proposals]
+            boxes = [x["proposal_boxes"] for x in proposals]
         else:
-            boxes = [x['pred_boxes'] for x in proposals]
+            boxes = [x["pred_boxes"] for x in proposals]
 
         point_coords = generate_regular_grid_point_coords(
             sum(len(x) for x in boxes), self.mask_coarse_side_size, boxes[0].device
         )
         mask_coarse_features_list = [features[k] for k in self.mask_coarse_in_features]
-        features_scales = [self._feature_scales[k] for k in self.mask_coarse_in_features]
+        features_scales = [
+            self._feature_scales[k] for k in self.mask_coarse_in_features
+        ]
         # For regular grids of points, this function is equivalent to `len(features_list)' calls
         # of `ROIAlign` (with `SAMPLING_RATIO=2`), and concat the results.
         mask_features, _ = point_sample_fine_grained_features(
@@ -225,8 +245,9 @@ class MaskRoIPoolHead(nn.Module):
 
         return mask_features
 
+
 class CoarseMaskHead(nn.Module):
-    #This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+    # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     """
     A mask head with fully connected layers. Given pooled features it first reduces channels and
     spatial dimensions with conv layers and then uses FC layers to predict coarse masks analogously
@@ -262,12 +283,13 @@ class CoarseMaskHead(nn.Module):
                 kernel_size=1,
                 stride=1,
                 padding=0,
-                bias=True
+                bias=True,
             )
             self.conv_layers.append(self.reduce_channel_dim_conv)
 
         self.reduce_spatial_dim_conv = nn.Conv2d(
-            conv_dim, conv_dim, kernel_size=2, stride=2, padding=0, bias=True)
+            conv_dim, conv_dim, kernel_size=2, stride=2, padding=0, bias=True
+        )
         self.conv_layers.append(self.reduce_spatial_dim_conv)
 
         input_dim = conv_dim * self.input_h * self.input_w
@@ -280,7 +302,9 @@ class CoarseMaskHead(nn.Module):
             self.fcs.append(fc)
             input_dim = self.fc_dim
 
-        output_dim = self.num_classes * self.output_side_resolution * self.output_side_resolution
+        output_dim = (
+            self.num_classes * self.output_side_resolution * self.output_side_resolution
+        )
 
         self.prediction = nn.Linear(self.fc_dim, output_dim)
         # use normal distribution initialization for mask prediction layer
@@ -303,25 +327,36 @@ class CoarseMaskHead(nn.Module):
         for layer in self.fcs:
             x = F.relu(layer(x))
         return self.prediction(x).view(
-            N, self.num_classes, self.output_side_resolution, self.output_side_resolution
+            N,
+            self.num_classes,
+            self.output_side_resolution,
+            self.output_side_resolution,
         )
 
+
 class PointRendHeads(torch.nn.Module):
-    #This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+    # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class):
-        
+
         super().__init__()
-        self._feature_scales         = {'0': 1.0/4, '1': 1.0/8, '2': 1.0/16, '3': 1.0/32}#FPN block 1/stride
-        self.mask_point_in_features             = ['0']
-        self.mask_point_train_num_points        = 14 * 14
-        self.mask_point_oversample_ratio        = 3
+        self._feature_scales = {
+            "0": 1.0 / 4,
+            "1": 1.0 / 8,
+            "2": 1.0 / 16,
+            "3": 1.0 / 32,
+        }  # FPN block 1/stride
+        self.mask_point_in_features = ["0"]
+        self.mask_point_train_num_points = 14 * 14
+        self.mask_point_oversample_ratio = 3
         self.mask_point_importance_sample_ratio = 0.75
         # next two parameters are use in the adaptive subdivions inference procedure
-        self.mask_point_subdivision_steps       = 5
-        self.mask_point_subdivision_num_points  = 28 * 28
+        self.mask_point_subdivision_steps = 5
+        self.mask_point_subdivision_num_points = 28 * 28
 
         in_channels = np.sum([256 for f in self.mask_point_in_features])
-        self.mask_point_head = StandardPointHead(num_class, in_channels, coarse_pred_each_layer=True)
+        self.mask_point_head = StandardPointHead(
+            num_class, in_channels, coarse_pred_each_layer=True
+        )
 
     def forward(self, features, mask_coarse_logits, instances):
         """
@@ -342,8 +377,8 @@ class PointRendHeads(torch.nn.Module):
         features_scales = [self._feature_scales[k] for k in self.mask_point_in_features]
 
         if self.training:
-            proposal_boxes = [x['proposal_boxes'] for x in instances]
-            gt_classes = torch.cat([x['gt_classes'] for x in instances])
+            proposal_boxes = [x["proposal_boxes"] for x in instances]
+            gt_classes = torch.cat([x["gt_classes"] for x in instances])
             with torch.no_grad():
                 point_coords = get_uncertain_point_coords_with_randomness(
                     mask_coarse_logits,
@@ -353,18 +388,23 @@ class PointRendHeads(torch.nn.Module):
                     self.mask_point_importance_sample_ratio,
                 )
 
-            fine_grained_features, point_coords_wrt_image = point_sample_fine_grained_features(
+            (
+                fine_grained_features,
+                point_coords_wrt_image,
+            ) = point_sample_fine_grained_features(
                 mask_features_list, features_scales, proposal_boxes, point_coords
             )
-            coarse_features = point_sample(mask_coarse_logits, point_coords, align_corners=False)
+            coarse_features = point_sample(
+                mask_coarse_logits, point_coords, align_corners=False
+            )
             point_logits = self.mask_point_head(fine_grained_features, coarse_features)
             loss_mask_point = roi_mask_point_loss(
-                                point_logits, instances, point_coords_wrt_image
-                             )
+                point_logits, instances, point_coords_wrt_image
+            )
             return loss_mask_point
         else:
-            pred_boxes = [x['pred_boxes'] for x in instances]
-            pred_classes = torch.cat([x['pred_classes'] for x in instances])
+            pred_boxes = [x["pred_boxes"] for x in instances]
+            pred_classes = torch.cat([x["pred_classes"] for x in instances])
             # The subdivision code will fail with the empty list of boxes
             if len(pred_classes) == 0:
                 return mask_coarse_logits
@@ -394,7 +434,9 @@ class PointRendHeads(torch.nn.Module):
                 coarse_features = point_sample(
                     mask_coarse_logits, point_coords, align_corners=False
                 )
-                point_logits = self.mask_point_head(fine_grained_features, coarse_features)
+                point_logits = self.mask_point_head(
+                    fine_grained_features, coarse_features
+                )
 
                 # put mask point predictions to the right places on the upsampled grid.
                 R, C, H, W = mask_logits.shape
@@ -404,5 +446,5 @@ class PointRendHeads(torch.nn.Module):
                     .scatter_(2, point_indices, point_logits)
                     .view(R, C, H, W)
                 )
-                
+
             return mask_logits

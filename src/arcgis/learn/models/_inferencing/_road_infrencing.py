@@ -31,7 +31,9 @@ def split_tensor(tensor, tile_size, stride):
     mask_p = unfold(softmax_mask)
     patches = unfold(tensor)
 
-    patches = patches.reshape(number_of_bands, tile_size, tile_size, -1).permute(3, 0, 1, 2)
+    patches = patches.reshape(number_of_bands, tile_size, tile_size, -1).permute(
+        3, 0, 1, 2
+    )
     if tensor.is_cuda:
         patches_base = torch.zeros(patches.size(), device=tensor.get_device())
     else:
@@ -41,8 +43,14 @@ def split_tensor(tensor, tile_size, stride):
 
 
 def rebuild_tensor(input_tensor, mask_t, t_size, tile_size, stride):
-    input_tensor_permuted = input_tensor.permute(1, 2, 3, 0).reshape(-1, input_tensor.size(0)).unsqueeze(0)
-    fold = nn.Fold(output_size=(t_size[0], t_size[1]), kernel_size=(tile_size, tile_size), stride=stride)
+    input_tensor_permuted = (
+        input_tensor.permute(1, 2, 3, 0).reshape(-1, input_tensor.size(0)).unsqueeze(0)
+    )
+    fold = nn.Fold(
+        output_size=(t_size[0], t_size[1]),
+        kernel_size=(tile_size, tile_size),
+        stride=stride,
+    )
     output_tensor = fold(input_tensor_permuted) / fold(mask_t)
     return output_tensor
 
@@ -94,7 +102,7 @@ def get_tile_size(model_height, model_width, padding, batch_height, batch_width)
 
 
 def tile_to_batch(
-        pixel_block, model_height, model_width, padding, fixed_tile_size=True, **kwargs
+    pixel_block, model_height, model_width, padding, fixed_tile_size=True, **kwargs
 ):
     inner_width = model_width - 2 * padding
     inner_height = model_height - 2 * padding
@@ -119,13 +127,13 @@ def tile_to_batch(
 
         # pixel block might not be the shape (band_count, model_height, model_width)
         sub_pixel_block = pixel_block[
-                          :,
-                          y * inner_height: y * inner_height + model_height,
-                          x * inner_width: x * inner_width + model_width,
-                          ]
+            :,
+            y * inner_height : y * inner_height + model_height,
+            x * inner_width : x * inner_width + model_width,
+        ]
         sub_pixel_block_shape = sub_pixel_block.shape
         batch[
-        b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
+            b, :, : sub_pixel_block_shape[1], : sub_pixel_block_shape[2]
         ] = sub_pixel_block
 
     return batch, batch_height, batch_width
@@ -143,9 +151,9 @@ def batch_to_tile(batch, batch_height, batch_width):
         x = int(b % batch_width)
 
         tile[
-        :,
-        y * inner_height: (y + 1) * inner_height,
-        x * inner_width: (x + 1) * inner_width,
+            :,
+            y * inner_height : (y + 1) * inner_height,
+            x * inner_width : (x + 1) * inner_width,
         ] = batch[b]
 
     return tile
@@ -210,11 +218,13 @@ class ChildImageClassifier:
                     "value": "True",
                     "displayName": "Predict Background",
                     "description": "If False, will never predict the background/NoData Class.",
-                }
+                },
             ]
-
         )
-        if self.json_info.get('ArcGISLearnVersion', False) and self.json_info["ArcGISLearnVersion"] > "1.8.4":
+        if (
+            self.json_info.get("ArcGISLearnVersion", False)
+            and self.json_info["ArcGISLearnVersion"] > "1.8.4"
+        ):
             required_parameters.extend(
                 [
                     {
@@ -226,23 +236,29 @@ class ChildImageClassifier:
                         "description": "If True, will return the probability surface of the result.",
                     },
                     {
-                        'name': 'threshold',
-                        'dataType': 'numeric',
-                        'value': 0.5,
-                        'required': False,
-                        'displayName': 'Confidence Score Threshold [0.0, 1.0]',
-                        'description': 'Confidence score threshold value [0.0, 1.0]'
-                    }
-                ])
-        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
+                        "name": "threshold",
+                        "dataType": "numeric",
+                        "value": 0.5,
+                        "required": False,
+                        "displayName": "Confidence Score Threshold [0.0, 1.0]",
+                        "description": "Confidence score threshold value [0.0, 1.0]",
+                    },
+                ]
+            )
+        required_parameters = variable_tile_size_check(
+            self.json_info, required_parameters
+        )
         return required_parameters
 
     def getConfiguration(self, **scalars):
 
-        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
+        self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
-            scalars.get("padding", self.json_info["ImageHeight"] // 4))  # Default padding Imageheight//4.
-        self.batch_size = int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2  # Default 4 batch_size
+            scalars.get("padding", self.json_info["ImageHeight"] // 4)
+        )  # Default padding Imageheight//4.
+        self.batch_size = (
+            int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2
+        )  # Default 4 batch_size
         self.predict_background = scalars.get("predict_background", "true").lower() in [
             "true",
             "1",
@@ -250,17 +266,28 @@ class ChildImageClassifier:
             "y",
             "yes",
         ]  # Default value True
-        self.probability_raster = scalars.get("return_probability_raster", "false").lower() in [
+        self.probability_raster = scalars.get(
+            "return_probability_raster", "false"
+        ).lower() in [
             "true",
             "1",
             "t",
             "y",
-            "yes"
+            "yes",
         ]  # Default value False
-        self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
-        ty, tx = get_tile_size(self.tytx, self.tytx, self.padding, self.rectangle_height, self.rectangle_width)
+        (
+            self.rectangle_height,
+            self.rectangle_width,
+        ) = calculate_rectangle_size_from_batch_size(self.batch_size)
+        ty, tx = get_tile_size(
+            self.tytx,
+            self.tytx,
+            self.padding,
+            self.rectangle_height,
+            self.rectangle_width,
+        )
 
-        self.thres = float(scalars.get('threshold', 0.5))  ## Default 0.5 threshold.
+        self.thres = float(scalars.get("threshold", 0.5))  ## Default 0.5 threshold.
 
         return {
             "extractBands": tuple(self.json_info["ExtractBands"]),
@@ -271,7 +298,9 @@ class ChildImageClassifier:
             "fixedTileSize": 1,
         }
 
-    def pixel_classify_image(self, model, tiles, device, classes, predict_bg, model_info):
+    def pixel_classify_image(
+        self, model, tiles, device, classes, predict_bg, model_info
+    ):
         model = model.to(device).eval()
         # logger.info("Tiles length is ", len(tiles))
         normed_batch_tensor = tensor(tiles).to(device).float()
@@ -326,23 +355,29 @@ class ChildImageClassifier:
         model_arch = self.json_info["ModelParameters"]["mtl_model"]
         kernel_size = self.tytx  # json_info["ImageHeight"]
         stride = 2 * self.padding
-        if model_arch == 'hourglass':
-            kernel_size = (math.ceil(kernel_size/2))*2
+        if model_arch == "hourglass":
+            kernel_size = (math.ceil(kernel_size / 2)) * 2
         # Split image into overlapping tiles
-        mask_t, base_tensor, t_size, patches = split_tensor(input_image_tensor.unsqueeze(0), kernel_size, stride)
+        mask_t, base_tensor, t_size, patches = split_tensor(
+            input_image_tensor.unsqueeze(0), kernel_size, stride
+        )
 
         # predict
         with torch.no_grad():
             output, _ = self.model(patches)
 
         # get probablity of roads - class 1
-        softmax_output = output.softmax(dim=1)[:, [1], :, :]  # probability of road (class 1)
+        softmax_output = output.softmax(dim=1)[
+            :, [1], :, :
+        ]  # probability of road (class 1)
 
         # merge predictions from overlapping chips
-        softmax_surface = rebuild_tensor(softmax_output, mask_t, t_size, kernel_size, stride)
+        softmax_surface = rebuild_tensor(
+            softmax_output, mask_t, t_size, kernel_size, stride
+        )
         if self.probability_raster:
-            predictions = (softmax_surface * tensor(1.))
+            predictions = softmax_surface * tensor(1.0)
         else:
-            predictions = (softmax_surface.gt(self.thres) * tensor(1.))
+            predictions = softmax_surface.gt(self.thres) * tensor(1.0)
         pad = self.padding
         return predictions[0][0][pad:-pad, pad:-pad].unsqueeze(0).cpu().numpy()

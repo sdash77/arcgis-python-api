@@ -12,31 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#training work but not infrencing due to transforms
+# training work but not infrencing due to transforms
 
 model = dict(
-    type='CornerNet',
+    type="CornerNet",
     backbone=dict(
-        type='HourglassNet',
+        type="HourglassNet",
         downsample_times=5,
         num_stacks=2,
         stage_channels=[256, 256, 384, 384, 384, 512],
         stage_blocks=[2, 2, 2, 2, 2, 4],
-        norm_cfg=dict(type='BN', requires_grad=True)),
+        norm_cfg=dict(type="BN", requires_grad=True),
+    ),
     neck=None,
     bbox_head=dict(
-        type='CornerHead',
+        type="CornerHead",
         num_classes=80,
         in_channels=256,
         num_feat_levels=2,
         corner_emb_channels=1,
         loss_heatmap=dict(
-            type='GaussianFocalLoss', alpha=2.0, gamma=4.0, loss_weight=1),
+            type="GaussianFocalLoss", alpha=2.0, gamma=4.0, loss_weight=1
+        ),
         loss_embedding=dict(
-            type='AssociativeEmbeddingLoss',
-            pull_weight=0.10,
-            push_weight=0.10),
-        loss_offset=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1)),
+            type="AssociativeEmbeddingLoss", pull_weight=0.10, push_weight=0.10
+        ),
+        loss_offset=dict(type="SmoothL1Loss", beta=1.0, loss_weight=1),
+    ),
     # training and testing settings
     train_cfg=None,
     test_cfg=dict(
@@ -45,6 +47,8 @@ model = dict(
         distance_threshold=0.5,
         score_thr=0.05,
         max_per_img=100,
-        nms_cfg=dict(type='soft_nms', iou_threshold=0.5, method='gaussian')))
+        nms_cfg=dict(type="soft_nms", iou_threshold=0.5, method="gaussian"),
+    ),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/cornernet/cornernet_hourglass104_mstest_8x6_210e_coco/cornernet_hourglass104_mstest_8x6_210e_coco_20200825_150618-79b44c30.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/cornernet/cornernet_hourglass104_mstest_8x6_210e_coco/cornernet_hourglass104_mstest_8x6_210e_coco_20200825_150618-79b44c30.pth"

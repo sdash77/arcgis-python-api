@@ -18,27 +18,41 @@ try:
     from arcgis.learn.models._unet_utils import ArcGISSegmentationItemList
     from fastai.vision.data import imagenet_stats
     from fastai.vision.transform import ResizeMethod, get_transforms
+
     # from fastai.vision.transform import brightness as brightness_tfm
     # from fastai.vision.transform import contrast as contrast_tfm
     # from fastai.vision.transform import crop as crop_tfm
     # from fastai.vision.transform import dihedral_affine as dihedral_affine_tfm
     # from fastai.vision.transform import rotate as rotate_tfm
 except ImportError as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
 
 class ClassifiedTilesData(ArcgisData):
     def __init__(
-        self, path: Path, class_mapping: Dict, val_split_pct: float, batch_size: Union[int, Tuple[int]],
-        transforms: List = [], seed: int = 42, **kwargs,
+        self,
+        path: Path,
+        class_mapping: Dict,
+        val_split_pct: float,
+        batch_size: Union[int, Tuple[int]],
+        transforms: List = [],
+        seed: int = 42,
+        **kwargs,
     ):
         """
         This class create data object based on classified tiles with data format of pixel classification.
         """
         super().__init__(
-            path=path, class_mapping=class_mapping, batch_size=batch_size,
-            val_split_pct=val_split_pct, transforms=transforms, seed=seed, **kwargs
+            path=path,
+            class_mapping=class_mapping,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            transforms=transforms,
+            seed=seed,
+            **kwargs,
         )
         self.class_mapping = self._get_class_mapping(class_mapping)
         self.color_mapping = {
@@ -71,11 +85,16 @@ class ClassifiedTilesData(ArcgisData):
             else:
                 data.show_batch = types.MethodType(
                     types.FunctionType(
-                        data.show_batch.__code__, data.show_batch.__globals__, data.show_batch.__name__,
-                        (min(int(math.sqrt(data.batch_size)), 5), *data.show_batch.__defaults__[1:]),
-                        data.show_batch.__closure__
+                        data.show_batch.__code__,
+                        data.show_batch.__globals__,
+                        data.show_batch.__name__,
+                        (
+                            min(int(math.sqrt(data.batch_size)), 5),
+                            *data.show_batch.__defaults__[1:],
+                        ),
+                        data.show_batch.__closure__,
                     ),
-                    data
+                    data,
                 )
 
         if data is None:
@@ -120,7 +139,9 @@ class ClassifiedTilesData(ArcgisData):
 
         def image_without_label(imagefile, not_label_count=[0], ext=self.extension):
             xmlfile = (
-                imagefile.parents[1] / self.labels_folder / (imagefile.stem + ".{}".format(ext))
+                imagefile.parents[1]
+                / self.labels_folder
+                / (imagefile.stem + ".{}".format(ext))
             )
             if not os.path.exists(xmlfile):
                 not_label_count[0] += 1
@@ -152,18 +173,19 @@ class ClassifiedTilesData(ArcgisData):
         #         crop_tfm(size=self.chip_size, p=1.0, row_pct=0.5, col_pct=0.5)
         #     )
         kwargs_transforms = {}
-        kwargs_transforms['tfm_y'] = True
-        kwargs_transforms['size'] = self.chip_size
+        kwargs_transforms["tfm_y"] = True
+        kwargs_transforms["size"] = self.chip_size
         data = (
-            data.transform(self.transforms, **kwargs_transforms)
-            .databunch(**self.databunch_kwargs)
-            #.normalize(imagenet_stats)
+            data.transform(self.transforms, **kwargs_transforms).databunch(
+                **self.databunch_kwargs
+            )
+            # .normalize(imagenet_stats)
         )
         if not self.imagery_is_multispectral:
             data = data.normalize(imagenet_stats)
 
-        data.train_ds.x._div = 255.
-        data.valid_ds.x._div = 255.
+        data.train_ds.x._div = 255.0
+        data.valid_ds.x._div = 255.0
         # # First Apply transforms and then resize to given resize_to
         # data = data.transform(self.transforms, **kwargs_transforms)
         # if self.resize_to:
@@ -176,16 +198,10 @@ class ClassifiedTilesData(ArcgisData):
     def _get_common_transforms(self):
         if self._image_space_used == MAP_SPACE:
             base_transforms = get_transforms(
-                    flip_vert=True,
-                    max_rotate=90.,
-                    max_zoom=3.0,
-                    max_lighting=0.5
-                )
+                flip_vert=True, max_rotate=90.0, max_zoom=3.0, max_lighting=0.5
+            )
         else:
-            base_transforms = get_transforms(
-                    max_zoom=3.0,
-                    max_lighting=0.5
-                )
+            base_transforms = get_transforms(max_zoom=3.0, max_lighting=0.5)
 
         return base_transforms
 

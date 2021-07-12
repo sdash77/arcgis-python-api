@@ -20,9 +20,7 @@ except:
 class TestRealTimeAnalyticsMethods(unittest.TestCase):
     velocity = gis.velocity
     realtime_analytics = velocity.realtime_analytics
-    realtime_analytics_item = realtime_analytics.get(
-        "3dbe9e68d3d0466194571d1f804da7e4"
-    )
+    realtime_analytics_item = realtime_analytics.get("3dbe9e68d3d0466194571d1f804da7e4")
 
     # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_realtime_analytics skipping")
@@ -49,9 +47,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
         print("\n ---- test_get_realtime_analytics ----")
 
         try:
-            response = self.realtime_analytics.get(
-                "3dbe9e68d3d0466194571d1f804da7e4"
-            )
+            response = self.realtime_analytics.get("3dbe9e68d3d0466194571d1f804da7e4")
             assert isinstance(response, RealTimeAnalytics)
 
         except AssertionError as assertErrorException:

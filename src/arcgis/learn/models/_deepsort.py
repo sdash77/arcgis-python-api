@@ -29,14 +29,22 @@ try:
     from .._utils.env import raise_fastai_import_error
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from ._siammask import Track  # TODO: need to move from Siammask to _tracking_utils
-    from ._deepsort_train_utils import get_learner, check_data_sanity, \
-        get_default_backbone, get_default_imgsize, load_for_prediction, get_fake_data
+    from ._deepsort_train_utils import (
+        get_learner,
+        check_data_sanity,
+        get_default_backbone,
+        get_default_imgsize,
+        load_for_prediction,
+        get_fake_data,
+    )
     from ._deepsort_predict_utils import DeepSortPredictor, get_corrected_labels_scores
     from ._tracker_util import TrackStatus
+
     HAS_FASTAI = True
 except Exception as e:
-    import_exception = \
-        "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
 from ._arcgis_model import ArcGISModel
@@ -58,6 +66,7 @@ class DeepSort(ArcGISModel):
 
     :returns: `DeepSort` Object
     """
+
     # TODO: kwargs description
 
     def __init__(self, data, **kwargs):
@@ -68,8 +77,8 @@ class DeepSort(ArcGISModel):
         if not check_data_sanity(data, self.supported_datasets):
             raise Exception("\nInvalid data format\n")
 
-        if 'backbone' not in kwargs:
-            kwargs['backbone'] = None
+        if "backbone" not in kwargs:
+            kwargs["backbone"] = None
         if data is None:
             data = get_fake_data()
 
@@ -77,18 +86,17 @@ class DeepSort(ArcGISModel):
 
         self._backend = "pytorch"
         self._is_multispectral = False
-        self._num_classes = kwargs.get('num_classes',
-                                       len(self._data.class_mapping.items()))
+        self._num_classes = kwargs.get(
+            "num_classes", len(self._data.class_mapping.items())
+        )
         self._img_size = kwargs.get("img_size", get_default_imgsize())
-        self._pretrained_path = kwargs.get('pretrained_path')
-        self._infer_config = kwargs.get('infer_config',
-                                        DeepSort._get_default_config())
+        self._pretrained_path = kwargs.get("pretrained_path")
+        self._infer_config = kwargs.get("infer_config", DeepSort._get_default_config())
 
-        if not hasattr(self._data, 'resize_to') \
-                or not self._data.resize_to:
+        if not hasattr(self._data, "resize_to") or not self._data.resize_to:
             self._data.resize_to = get_default_imgsize()
 
-        class ReID():
+        class ReID:
             def __init__(self, name=None):
                 if name is None:
                     name = get_default_backbone()
@@ -97,13 +105,11 @@ class DeepSort(ArcGISModel):
             def get_name(self):
                 return self.__name__
 
-        self._backbone = ReID(kwargs.get('backbone'))
+        self._backbone = ReID(kwargs.get("backbone"))
         self._device = _get_device()
         self.learn = get_learner(
-            data,
-            self._num_classes,
-            self._backbone.get_name(),
-            self._device)
+            data, self._num_classes, self._backbone.get_name(), self._device
+        )
 
         self._arcgis_init_callback()
 
@@ -120,7 +126,7 @@ class DeepSort(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @classmethod
     def _get_default_label(cls):
@@ -136,13 +142,13 @@ class DeepSort(ArcGISModel):
         Returns default config for inference.
         """
         infer_config = dict()
-        infer_config['max_dist'] = 0.2
-        infer_config['min_confidence'] = 0.1
-        infer_config['nms_max_overlap'] = 0.9
-        infer_config['max_iou_distance'] = 0.7
-        infer_config['max_age'] = 70
-        infer_config['n_init'] = 0
-        infer_config['nn_budget'] = 100
+        infer_config["max_dist"] = 0.2
+        infer_config["min_confidence"] = 0.1
+        infer_config["nms_max_overlap"] = 0.9
+        infer_config["max_iou_distance"] = 0.7
+        infer_config["max_age"] = 70
+        infer_config["n_init"] = 0
+        infer_config["nn_budget"] = 100
 
         return infer_config
 
@@ -156,12 +162,12 @@ class DeepSort(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """
+        """Supported torchvision backbones for this model."""
         return DeepSort._supported_backbones()
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return DeepSort._supported_datasets()
 
     # TODO: bug crash on larger dataset, write custom show_results
@@ -185,16 +191,15 @@ class DeepSort(ArcGISModel):
         for k, v in self._infer_config.items():
             _emd_template["InferConfig"][k] = v
 
-        _emd_template['Classes'] = []
-        inverse_class_mapping = {
-            v: k for k, v in self._data.class_mapping.items()}
+        _emd_template["Classes"] = []
+        inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
         class_data = {}
         for i, class_name in enumerate(self._data.classes):
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
 
@@ -230,11 +235,11 @@ class DeepSort(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        model_params = emd['ModelParameters']
+        model_params = emd["ModelParameters"]
         num_classes = int(emd["NumClasses"])
         pretrained_path = str(model_file)
         chip_size = emd["ImageWidth"]
@@ -243,10 +248,9 @@ class DeepSort(ArcGISModel):
             infer_config[k] = v
 
         try:
-            class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue']: i['ClassName']
-                             for i in emd['Classes']}
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
 
         if data is None:
             train_tfms = [rotate(degrees=30, p=0.5)]
@@ -257,12 +261,14 @@ class DeepSort(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 kwargs_transforms = {}
-                resize_to = emd.get('resize_to')
-                kwargs_transforms['size'] = (resize_to[0], resize_to[1])
-                kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
+                resize_to = emd.get("resize_to")
+                kwargs_transforms["size"] = (resize_to[0], resize_to[1])
+                kwargs_transforms["resize_method"] = ResizeMethod.SQUISH
                 data = ImageDataBunch.single_from_classes(
-                    emd_path.parent.parent, sorted(list(class_mapping.values())),
-                    ds_tfms=transforms).normalize(imagenet_stats)
+                    emd_path.parent.parent,
+                    sorted(list(class_mapping.values())),
+                    ds_tfms=transforms,
+                ).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -272,18 +278,14 @@ class DeepSort(ArcGISModel):
             data.emd = emd
             data._dataset_type = "Imagenet"
         return cls(
-            data, **model_params,
+            data,
+            **model_params,
             pretrained_path=pretrained_path,
             num_classes=num_classes,
-            infer_config=infer_config)
+            infer_config=infer_config
+        )
 
-    def update(
-            self,
-            frame,
-            detections=None,
-            labels=None,
-            scores=None,
-            **kwargs):
+    def update(self, frame, detections=None, labels=None, scores=None, **kwargs):
         """
         Updates the DeepSort tracker.
 
@@ -316,18 +318,20 @@ class DeepSort(ArcGISModel):
         cls_names = np.asarray(labels)
         cls_conf = np.asarray(scores)
 
-        if (bbox_xywh is None or bbox_xywh.size == 0):
+        if bbox_xywh is None or bbox_xywh.size == 0:
             bbox_xywh = np.array([]).reshape(0, 4)
             cls_conf = np.array([])
             labels = np.array([])
 
         outputs = np.array([])
         if self._predictor is not None and frame is not None:
-            outputs, track_labels = \
-                self._predictor.update(bbox_xywh, cls_conf, cls_names, frame)
+            outputs, track_labels = self._predictor.update(
+                bbox_xywh, cls_conf, cls_names, frame
+            )
         else:
             print(
-                "\nDeepSort predictor Not initialized. Please call init() before update()\n")
+                "\nDeepSort predictor Not initialized. Please call init() before update()\n"
+            )
 
         # TODO: if detect_interval == 1, check for track_status
         if np.size(outputs) > 0:
@@ -361,7 +365,7 @@ class DeepSort(ArcGISModel):
 
         delete_indices = []
         for i in range(0, len(self.track_list)):
-            if (self.track_list[i].status == TrackStatus.lost.value):
+            if self.track_list[i].status == TrackStatus.lost.value:
                 delete_indices.append(i)
 
         delete_indices = sorted(delete_indices, reverse=True)
@@ -392,12 +396,10 @@ class DeepSort(ArcGISModel):
         :returns: Track list
         """
         self.track_list = []
-        self._update_interval = kwargs.get('update_interval',
-                                           self._update_interval)
+        self._update_interval = kwargs.get("update_interval", self._update_interval)
         deepsort = None
         learn_model = None
-        if self._pretrained_path is None \
-                or not os.path.isfile(self._pretrained_path):
+        if self._pretrained_path is None or not os.path.isfile(self._pretrained_path):
             if self.learn is not None:
                 learn_model = self.learn.model
             else:
@@ -408,7 +410,7 @@ class DeepSort(ArcGISModel):
                 self._pretrained_path,
                 self._num_classes,
                 self._backbone.get_name(),
-                learn_model
+                learn_model,
             )
         except Exception:
             raise Exception("\nError loading model\n")
@@ -416,10 +418,8 @@ class DeepSort(ArcGISModel):
         if deepsort is not None:
             # TODO: separate predictor for each label
             self._predictor = DeepSortPredictor(
-                deepsort,
-                self._infer_config,
-                self._device,
-                self._update_interval)
+                deepsort, self._infer_config, self._device, self._update_interval
+            )
         else:
             raise Exception("\nFailed Initialization\n")
 

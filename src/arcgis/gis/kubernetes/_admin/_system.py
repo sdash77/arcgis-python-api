@@ -90,7 +90,7 @@ class ServerManager(_BaseKube):
 
         """
         servers = []
-        if 'servers' in self.properties:
+        if "servers" in self.properties:
             for server in self.properties.servers:
                 url = f"{self._url}/{server.id}"
                 servers.append(Server(url, self._gis))
@@ -273,7 +273,7 @@ class SystemManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def _architecture_profiles(self) -> ArchitectureManager:
-        """Not Implemented in 1.9.0 """
+        """Not Implemented in 1.9.0"""
         # architecture profiles
         raise NotImplemented("Not Implemented in 1.9.0")
 

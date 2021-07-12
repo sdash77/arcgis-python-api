@@ -45,6 +45,7 @@ from ._PointRend import PointRendSemSegHead
 from ._arcgis_model import _get_backbone_meta, _set_ddp_multigpu, _isnotebook
 import os as arcgis_os
 
+
 def initialize_weights(*models):
     for model in models:
         for module in model.modules():
@@ -62,21 +63,24 @@ class _PyramidPoolingModule(nn.Module):
     Creates the pyramid pooling module as in https://arxiv.org/abs/1612.01105
     Takes a feature map from the backbone and pools it at different scales
     according to the given pyramid sizes and upsamples it to original feature
-    map size and concatenates it with the feature map. 
+    map size and concatenates it with the feature map.
     Code from https://github.com/hszhao/semseg.
     """
+
     def __init__(self, in_dim, reduction_dim, setting):
         super(_PyramidPoolingModule, self).__init__()
         self.features = []
 
         ## Creating modules for different pyramid sizes
         for s in setting:
-            self.features.append(nn.Sequential(
-                nn.AdaptiveAvgPool2d(s),
-                nn.Conv2d(in_dim, reduction_dim, kernel_size=1, bias=False),
-                nn.BatchNorm2d(reduction_dim, momentum=.95),
-                nn.ReLU(inplace=True)
-            ))
+            self.features.append(
+                nn.Sequential(
+                    nn.AdaptiveAvgPool2d(s),
+                    nn.Conv2d(in_dim, reduction_dim, kernel_size=1, bias=False),
+                    nn.BatchNorm2d(reduction_dim, momentum=0.95),
+                    nn.ReLU(inplace=True),
+                )
+            )
         self.features = nn.ModuleList(self.features)
 
     def forward(self, x):
@@ -84,20 +88,28 @@ class _PyramidPoolingModule(nn.Module):
         out = [x]
         for f in self.features:
             ## Pass through the module which reduces its spatial size and then upsamples it.
-            out.append(F.interpolate(f(x), x_size[2:], mode='bilinear', align_corners=True))
+            out.append(
+                F.interpolate(f(x), x_size[2:], mode="bilinear", align_corners=True)
+            )
         out = torch.cat(out, 1)
         return out
 
 
-def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
+def _pspnet_unet(
+    num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True
+):
     """
     Function which returns PPM module attached to backbone which is then used to form the Unet.
-    """      
-    if getattr(backbone_fn, '_is_multispectral', False):
-        backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+    """
+    if getattr(backbone_fn, "_is_multispectral", False):
+        backbone = create_body(
+            backbone_fn,
+            pretrained=pretrained,
+            cut=_get_backbone_meta(backbone_fn.__name__)["cut"],
+        )
     else:
         backbone = create_body(backbone_fn, pretrained=pretrained)
-    
+
     backbone_name = backbone_fn.__name__
 
     ## Support for different backbones
@@ -105,35 +117,43 @@ def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3
         hookable_modules = list(backbone.children())[0]
     else:
         hookable_modules = list(backbone.children())
-    
+
     if "vgg" in backbone_name:
         modify_dilation_index = -5
     else:
         modify_dilation_index = -2
-        
-    if backbone_name == 'resnet18' or backbone_name == 'resnet34':
-        module_to_check = 'conv' 
+
+    if backbone_name == "resnet18" or backbone_name == "resnet34":
+        module_to_check = "conv"
     else:
-        module_to_check = 'conv2'
-    
+        module_to_check = "conv2"
+
     custom_idx = 0
-    for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
+    for i, module in enumerate(hookable_modules[modify_dilation_index:]):
         dilation = 2 * (i + 1)
         padding = 2 * (i + 1)
         # padding = 1
         for n, m in module.named_modules():
             if module_to_check in n:
-                m.dilation, m.padding, m.stride = (dilation, dilation), (padding, padding), (1, 1)
-            elif 'downsample.0' in n:
-                m.stride = (1, 1)                    
-                
+                m.dilation, m.padding, m.stride = (
+                    (dilation, dilation),
+                    (padding, padding),
+                    (1, 1),
+                )
+            elif "downsample.0" in n:
+                m.stride = (1, 1)
+
         if "vgg" in backbone_fn.__name__:
             if isinstance(module, nn.Conv2d):
                 dilation = 2 * (custom_idx + 1)
                 padding = 2 * (custom_idx + 1)
-                module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
+                module.dilation, module.padding, module.stride = (
+                    (dilation, dilation),
+                    (padding, padding),
+                    (1, 1),
+                )
                 custom_idx += 1
-    
+
     ## returns the size of various activations
     feature_sizes = model_sizes(backbone, size=(chip_size, chip_size))
 
@@ -146,7 +166,9 @@ def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3
     in_final = int(penultimate_channels) * len(pyramid_sizes) + num_channels
 
     # Reduce channel size after pyramid pooling module to avoid CUDA OOM error.
-    final_conv = nn.Conv2d(in_channels=in_final, out_channels=512, kernel_size=3, padding=1)
+    final_conv = nn.Conv2d(
+        in_channels=in_final, out_channels=512, kernel_size=3, padding=1
+    )
 
     ## To make Dynamic Unet work as it expects a backbone which can be indexed.
     if "densenet" in backbone_name or "vgg" in backbone_name:
@@ -154,20 +176,22 @@ def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3
     layers = [*backbone, ppm, final_conv]
     return nn.Sequential(*layers)
 
+
 class AuxPSUnet(nn.Module):
     """
     Adds auxillary loss to PSUnet.
     """
+
     def __init__(self, model, chip_size, num_classes):
-        super(AuxPSUnet, self).__init__()      
+        super(AuxPSUnet, self).__init__()
         self.model = model
 
         for idx, i in enumerate(flatten_model(self.model)):
-            if hasattr(i, 'dilation'):
+            if hasattr(i, "dilation"):
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
                 if dilation > 1:
-                    break   
+                    break
 
         self.hook = hook_output(flatten_model(model)[idx - 1])
 
@@ -176,49 +200,69 @@ class AuxPSUnet(nn.Module):
 
         ## Geting the stored parameters inside of the hook
         aux_in_channels = self.hook.stored.shape[1]
-        del self.hook.stored                     
-        self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)       
+        del self.hook.stored
+        self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)
 
-    def forward(self, x):  
-        out = self.model(x) 
-        out = F.interpolate(out, x.shape[2:], mode='bilinear', align_corners=True)
+    def forward(self, x):
+        out = self.model(x)
+        out = F.interpolate(out, x.shape[2:], mode="bilinear", align_corners=True)
         if self.training:
             aux_l = self.aux_logits(self.hook.stored)
             ## Remove hook to free up memory
             self.hook.remove()
-            return out, F.interpolate(aux_l, x.shape[2:], mode='bilinear', align_corners=True)
+            return out, F.interpolate(
+                aux_l, x.shape[2:], mode="bilinear", align_corners=True
+            )
         else:
             return out
 
+
 def _add_auxillary_branch_to_psunet(model, chip_size, num_classes):
     return AuxPSUnet(model, chip_size, num_classes)
+
 
 class PSPUnet(nn.Module):
     """
     Keep model output and input size same.
     """
+
     def __init__(self, model):
         super(PSPUnet, self).__init__()
         self.model = model
 
     def forward(self, x):
         out = self.model(x)
-        out = F.interpolate(out, x.shape[2:], mode='bilinear', align_corners=True)
+        out = F.interpolate(out, x.shape[2:], mode="bilinear", align_corners=True)
         return out
+
 
 class PSPNet(nn.Module):
     """
     Vanilla PSPNet
     """
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False):
-        super(PSPNet, self).__init__()        
+
+    def __init__(
+        self,
+        num_classes,
+        backbone_fn,
+        chip_size=224,
+        pyramid_sizes=(1, 2, 3, 6),
+        pretrained=True,
+        pointrend=False,
+        keep_dilation=False,
+    ):
+        super(PSPNet, self).__init__()
         self.pointrend = pointrend
         self.vgg = False
-        if getattr(backbone_fn, '_is_multispectral', False):
-            self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+        if getattr(backbone_fn, "_is_multispectral", False):
+            self.backbone = create_body(
+                backbone_fn,
+                pretrained=pretrained,
+                cut=_get_backbone_meta(backbone_fn.__name__)["cut"],
+            )
         else:
             self.backbone = create_body(backbone_fn, pretrained=pretrained)
-        
+
         backbone_name = backbone_fn.__name__
 
         ## Support for different backbones
@@ -226,7 +270,7 @@ class PSPNet(nn.Module):
             hookable_modules = list(self.backbone.children())[0]
         else:
             hookable_modules = list(self.backbone.children())
-        
+
         if "vgg" in backbone_name:
             modify_dilation_index = -5
             self.vgg = True
@@ -235,36 +279,48 @@ class PSPNet(nn.Module):
                 modify_dilation_index = -1
             else:
                 modify_dilation_index = -2
-            
-        if backbone_name == 'resnet18' or backbone_name == 'resnet34':
-            module_to_check = 'conv' 
+
+        if backbone_name == "resnet18" or backbone_name == "resnet34":
+            module_to_check = "conv"
         else:
-            module_to_check = 'conv2'
+            module_to_check = "conv2"
 
         if "vgg" in backbone_name:
-            hooks = [hookable_modules[i-1] for i, module in enumerate(hookable_modules) if isinstance(module, nn.MaxPool2d)]
+            hooks = [
+                hookable_modules[i - 1]
+                for i, module in enumerate(hookable_modules)
+                if isinstance(module, nn.MaxPool2d)
+            ]
 
         else:
             hooks = [hookable_modules[-2], hookable_modules[-4]]
 
         custom_idx = 0
-        for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
+        for i, module in enumerate(hookable_modules[modify_dilation_index:]):
             dilation = 2 * (i + 1)
             padding = 2 * (i + 1)
             for n, m in module.named_modules():
                 if module_to_check in n:
-                    m.dilation, m.padding, m.stride = (dilation, dilation), (padding, padding), (1, 1)
-                elif 'downsample.0' in n:
-                    m.stride = (1, 1)                    
-                    
+                    m.dilation, m.padding, m.stride = (
+                        (dilation, dilation),
+                        (padding, padding),
+                        (1, 1),
+                    )
+                elif "downsample.0" in n:
+                    m.stride = (1, 1)
+
             if "vgg" in backbone_fn.__name__:
                 if isinstance(module, nn.Conv2d):
                     dilation = 2 * (custom_idx + 1)
                     padding = 2 * (custom_idx + 1)
-                    module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
+                    module.dilation, module.padding, module.stride = (
+                        (dilation, dilation),
+                        (padding, padding),
+                        (1, 1),
+                    )
                     custom_idx += 1
-        
-        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features 
+
+        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
         self.hook = hook_outputs(hooks)
 
         ## returns the size of various activations
@@ -280,35 +336,47 @@ class PSPNet(nn.Module):
             num_channels = self.hook[-1].stored.shape[1]
 
         penultimate_channels = num_channels / len(pyramid_sizes)
-        self.ppm = _PyramidPoolingModule(num_channels, int(penultimate_channels), pyramid_sizes)
-        
+        self.ppm = _PyramidPoolingModule(
+            num_channels, int(penultimate_channels), pyramid_sizes
+        )
+
         self.final = nn.Sequential(
             ## To handle case when the length of pyramid_sizes is odd
-            nn.Conv2d(int(penultimate_channels) * len(pyramid_sizes) + num_channels, math.ceil(penultimate_channels), kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(
+                int(penultimate_channels) * len(pyramid_sizes) + num_channels,
+                math.ceil(penultimate_channels),
+                kernel_size=3,
+                padding=1,
+                bias=False,
+            ),
             nn.BatchNorm2d(math.ceil(penultimate_channels)),
             nn.ReLU(inplace=True),
             nn.Dropout(0.1),
-            nn.Conv2d(math.ceil(penultimate_channels), num_classes, kernel_size=1)
+            nn.Conv2d(math.ceil(penultimate_channels), num_classes, kernel_size=1),
         )
-        
+
         self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)
 
         if self.pointrend:
 
             if self.vgg:
-                point_num_channels = self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
-                stride = chip_size / self.hook[-1].stored.shape[2]  
+                point_num_channels = (
+                    self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
+                )
+                stride = chip_size / self.hook[-1].stored.shape[2]
             else:
                 point_num_channels = self.hook[1].stored.shape[1]
                 stride = chip_size / feature_sizes[-1][2]
 
             subdivision_steps = math.log(stride, 2)
-            self.pointrend_head = PointRendSemSegHead(num_classes,
-                                                    point_num_channels,
-                                                    train_num_points=(chip_size/stride)**2,
-                                                    subdivision_num_points=(chip_size/(stride/2))**2,
-                                                    subdivision_steps=subdivision_steps)
-        
+            self.pointrend_head = PointRendSemSegHead(
+                num_classes,
+                point_num_channels,
+                train_num_points=(chip_size / stride) ** 2,
+                subdivision_num_points=(chip_size / (stride / 2)) ** 2,
+                subdivision_steps=subdivision_steps,
+            )
+
         initialize_weights(self.aux_logits)
         initialize_weights(self.ppm, self.final)
 
@@ -325,22 +393,22 @@ class PSPNet(nn.Module):
             x = self.final(x)
 
         if self.pointrend:
-            
+
             if self.vgg:
                 pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
             else:
                 pointrend_out = self.pointrend_head(x, [features[1]])
 
-        result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)        
+        result = F.interpolate(x, x_size[2:], mode="bilinear", align_corners=True)
 
         if self.training:
-            
+
             if self.vgg:
                 x = self.aux_logits(features[-2])
             else:
                 x = self.aux_logits(features[0])
 
-            x = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)
+            x = F.interpolate(x, x_size[2:], mode="bilinear", align_corners=True)
 
             if self.pointrend:
                 return result, x, pointrend_out
@@ -357,53 +425,101 @@ class PSPNet(nn.Module):
 
 class DummyDistributed:
     "Dummy class to create a Learner since learner is created from fuction not a class. It will be used in case of multigpu training."
-    def __getitem__(self, item):
-        return eval('self.' + item)
 
-def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False, **kwargs):
+    def __getitem__(self, item):
+        return eval("self." + item)
+
+
+def _pspnet_learner(
+    data,
+    backbone,
+    chip_size=224,
+    pyramid_sizes=(1, 2, 3, 6),
+    pretrained=True,
+    pointrend=False,
+    keep_dilation=False,
+    **kwargs
+):
     "Build psp_net learner from `data` and `arch`."
-    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend, keep_dilation), data.device)
-    if not _isnotebook() and arcgis_os.name=='posix':
+    model = to_device(
+        PSPNet(
+            data.c,
+            backbone,
+            chip_size,
+            pyramid_sizes,
+            pretrained,
+            pointrend,
+            keep_dilation,
+        ),
+        data.device,
+    )
+    if not _isnotebook() and arcgis_os.name == "posix":
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:
-            learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
-            learn._map_location_multi_gpu = {'cuda:%d' % 0: 'cuda:%d' % distributed_prep._rank_distributed}
+            learn = Learner(data, model, **kwargs).to_distributed(
+                distributed_prep._rank_distributed
+            )
+            learn._map_location_multi_gpu = {
+                "cuda:%d" % 0: "cuda:%d" % distributed_prep._rank_distributed
+            }
         else:
             learn = Learner(data, model, **kwargs)
     else:
         learn = Learner(data, model, **kwargs)
     return learn
 
-def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, vggv2=True, **kwargs):
+
+def _pspnet_learner_with_unet(
+    data,
+    backbone,
+    chip_size=224,
+    pyramid_sizes=(1, 2, 3, 6),
+    pretrained=True,
+    unet_aux_loss=False,
+    vggv2=True,
+    **kwargs
+):
     "Build psunet learner from `data` and `arch`."
-    model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
+    model = unet.DynamicUnet(
+        encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained),
+        n_classes=data.c,
+        last_cross=False,
+    )
 
     if unet_aux_loss:
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
     elif vggv2:
         model = PSPUnet(model)
-    if not _isnotebook() and arcgis_os.name=='posix':
+    if not _isnotebook() and arcgis_os.name == "posix":
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
         if distributed_prep._multigpu_training:
-            learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
-            learn._map_location_multi_gpu = {'cuda:%d' % 0: 'cuda:%d' % distributed_prep._rank_distributed}
+            learn = Learner(data, model, **kwargs).to_distributed(
+                distributed_prep._rank_distributed
+            )
+            learn._map_location_multi_gpu = {
+                "cuda:%d" % 0: "cuda:%d" % distributed_prep._rank_distributed
+            }
         else:
             learn = Learner(data, model, **kwargs)
     else:
         learn = Learner(data, model, **kwargs)
     return learn
 
+
 def isin(target, keep_indices):
     # import pdb; pdb.set_trace();
     old_shape = target.shape
-    mask = torch.cat([(target.view(-1) == k)[:, None] for k in keep_indices], dim=1).any(1)
+    mask = torch.cat(
+        [(target.view(-1) == k)[:, None] for k in keep_indices], dim=1
+    ).any(1)
     mask = mask.view(old_shape).contiguous()
     return mask
 
-def accuracy(input, target, ignore_mapped_class=[]): 
-    if isinstance(input, tuple): # while training
+
+def accuracy(input, target, ignore_mapped_class=[]):
+    if isinstance(input, tuple):  # while training
         input = input[0]
     if ignore_mapped_class == []:
         target = target.squeeze(1)
@@ -415,4 +531,4 @@ def accuracy(input, target, ignore_mapped_class=[]):
         for k in ignore_mapped_class:
             input[:, k] = -1
         targ_mask = isin(target, keep_indices)
-        return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()        
+        return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()
