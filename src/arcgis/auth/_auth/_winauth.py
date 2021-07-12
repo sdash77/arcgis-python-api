@@ -114,7 +114,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
     # ----------------------------------------------------------------------
     def __call__(self, r):
-        if self.auth:        
+        if self.auth:
             self.auth.__call__(r)
             r.register_hook("response", self.generate_portal_server_token)
         return r

@@ -62,7 +62,6 @@ def validate_url(url: str):
 def _normalize_url(url, charset="utf-8"):
     """Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
 
-
     def _clean(string):
         string = str(unquote(string), "utf-8", "replace")
         return unicodedata.normalize("NFC", string).encode("utf-8")

@@ -6,7 +6,7 @@ from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
 from requests.auth import AuthBase
-import lxml.html 
+import lxml.html
 
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
@@ -176,7 +176,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             pattern = re.compile("var oAuthInfo = ({.*?});", re.DOTALL)
             if len(pattern.findall(content)) == 0:
                 pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
-            
+
             soup = lxml.html.fromstring(content)
             for script in soup.xpath("//script/text()"):
                 script_code = str(script).strip()
@@ -199,11 +199,14 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "%s/oauth2/signin" % self.baseurl, data=parameters
             ).text
             soup = lxml.html.fromstring(content)
-            codes = [t[len("SUCCESS code=") :] \
-                     for t in soup.xpath("//title//text()") if t.find("SUCCESS") > -1]
+            codes = [
+                t[len("SUCCESS code=") :]
+                for t in soup.xpath("//title//text()")
+                if t.find("SUCCESS") > -1
+            ]
             if len(codes) > 0:
                 code = codes[0]
-                
+
             oauth = OAuth2Session(
                 self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
             )
