@@ -863,11 +863,12 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer , The table, point, line or polygon features.
+    input_layer       required FeatureLayer , The table, point, line or
+                      polygon features.
     ----------------  ---------------------------------------------------------------
-    append_layer      required FeatureLayer. The table, point, line, or polygon features
-                      to be appended to the input_layer. To append geometry, the
-                      append_layer must have the same geometry type as the
+    append_layer      required FeatureLayer. The table, point, line, or polygon
+                      features to be appended to the input_layer. To append geometry,
+                      the append_layer must have the same geometry type as the
                       input_layer. If the geometry types are not the same, the
                       append_layer geometry will be removed and all other matching
                       fields will be appended. The geometry of the input_layer will
@@ -878,20 +879,55 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
                       The following are set by default:
 
-                        - All append_layer fields that match input_layer schema will be appended.
-                        - Fields that exist in the input_layer and not in the append_layer will be appended with null values.
-                        - Fields that exist in the append_layer and not in the input_layer will not be appended.
+                        - All append_layer fields that match input_layer schema
+                        will be appended.
+                        - Fields that exist in the input_layer and not in the
+                        append_layer will be appended with null values.
+                        - Fields that exist in the append_layer and not in the
+                        input_layer will not be appended.
 
-                      Optionally choose how input_layer fields will be appended from the following:
+                      Optionally choose how input_layer fields will be appended
+                      from the following:
 
-                      - AppendField - Matches the input_layer field with an append_layer field of a different name. Field types must match.
-                      - Expression - Calculates values for the resulting field. Values are calculated using Arcade expressions. To assign null values, use 'null'.
+                        - AppendField - Matches the input_layer field with an
+                        append_layer field of a different name. Field types must
+                        match.
+                        - Expression - Calculates values for the resulting field.
+                        Values are calculated using Arcade expressions. To assign
+                        null values, use 'null'.
+
+                      The following example appends Average_Sales to Mean_Sales,
+                      calculates an expression of WeeklyRate multiplied by 1.5 to
+                      append the values for Bonus, and sets a value of null for
+                      appended features in Errors.
+
+                      .. code-block:: python
+
+                        #Usage Example:
+
+                        >>> from arcgis.geoanalytics.manage_data import append_data
+
+                        >>> resp = append_data(input_layer=flyr_base,
+                                               append_layer=flyr_append,
+                                               field_mapping= [
+                                                {"inputLayerField": "Mean_Sales",
+                                                 "mappingType": "AppendField",
+                                                 "mappingValue": "Average_Sales"},
+                                                {"inputLayerField": "Bonus",
+                                                 "mappingType": "Expression",
+                                                 "mappingValue": "$feature['WeeklyRate'] * 1.5"},
+                                                {"inputLayerField": "Errors",
+                                                 "mappingType": "Expression",
+                                                 "mappingValue": "null"}
+                                               ]
+                                              )
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
     future            optional Boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
+                      results. The GPJob can be queried on the status of the
+                      execution.
     ================  ===============================================================
 
     :returns: boolean

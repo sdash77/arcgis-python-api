@@ -481,7 +481,7 @@ class ImageryLayer(Layer):
     """
 
     _ilm = None
-    rendering_service_object = None
+    _rendering_service_object = None
 
     def __init__(self, url, gis=None):
         self._datastore_raster = False
@@ -510,23 +510,26 @@ class ImageryLayer(Layer):
                     self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
-                    if ImageryLayer.rendering_service_object is None or (
+                    if ImageryLayer._rendering_service_object is None or (
                         (
-                            (ImageryLayer.rendering_service_object is not None)
-                            and ImageryLayer.rendering_service_object.gis is not None
+                            (ImageryLayer._rendering_service_object is not None)
+                            and ImageryLayer._rendering_service_object.gis is not None
                         )
-                        and ImageryLayer.rendering_service_object.gis.url != gis.url
+                        and ImageryLayer._rendering_service_object.gis.url != gis.url
                     ):
-                        ImageryLayer.rendering_service_object = _RasterRenderingService(
-                            gis
+                        ImageryLayer._rendering_service_object = (
+                            _RasterRenderingService(gis)
                         )
-                        url = ImageryLayer.rendering_service_object.url
+                        url = ImageryLayer._rendering_service_object.url
                     else:
-                        if ImageryLayer.rendering_service_object.gis is not None:
-                            if ImageryLayer.rendering_service_object.gis.url == gis.url:
-                                url = ImageryLayer.rendering_service_object.url
+                        if ImageryLayer._rendering_service_object.gis is not None:
+                            if (
+                                ImageryLayer._rendering_service_object.gis.url
+                                == gis.url
+                            ):
+                                url = ImageryLayer._rendering_service_object.url
                                 self._lazy_token = (
-                                    ImageryLayer.rendering_service_object.token
+                                    ImageryLayer._rendering_service_object.token
                                 )
 
         super(ImageryLayer, self).__init__(url, gis)
@@ -4147,8 +4150,7 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
 
-                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating
-                                                 Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
+                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
                                                  Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
         ====================================     ====================================================================
@@ -7610,6 +7612,14 @@ class Raster:
                                                  results will be returned asynchronously. Keyword only parameter.
 
                                                  (Available only when image_server engine is used)
+        ------------------------------------     --------------------------------------------------------------------
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
+
+                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
+
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
+
+                                                 (Available only when image_server engine is used)
         ====================================     ====================================================================
 
         :return: String representing the location of the output data
@@ -9053,6 +9063,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             build_transpose=build_transpose,
             gis=gis,
             future=future,
+            **kwargs,
         )
 
     def _repr_png_(self):
@@ -12142,12 +12153,12 @@ class RasterCollection:
 
             rc_local = RasterCollection(r"./data/rasters.gdb/rasters")
 
-            def grayscale(item):
+            def apply_grayscale(item):
                 raster = item["Raster"]
                 gray = grayscale(raster)
-                return {"Raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
+                return {"raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
 
-            gray_rc = rc_local.map(grayscale)
+            gray_rc = rc_local.map(func=apply_grayscale)
 
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)

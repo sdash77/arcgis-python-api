@@ -1,4 +1,5 @@
 import traceback
+
 HAS_DEPS = True
 try:
     from pandas import DataFrame
@@ -16,28 +17,30 @@ try:
     from arcgis.geometry import Polygon
     from IPython.display import clear_output
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_DEPS = False
 
 
 def generate_kernel(k_size, k_type):
     """
-        Generates kernel for morphological operations.
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        k_size                  List that determines the size of the kernel.
+    Generates kernel for morphological operations.
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    k_size                  List that determines the size of the kernel.
 
-        ---------------------   -------------------------------------------
-        k_type                  String that determines type of the kernel.
-                                values can be "rect", "elliptical", "cross"
-        =====================   ===========================================
+    ---------------------   -------------------------------------------
+    k_type                  String that determines type of the kernel.
+                            values can be "rect", "elliptical", "cross"
+    =====================   ===========================================
 
-        return:
-        closing_kernel: Closing kernel object
-        opening_kernel: Opening kernel object
+    return:
+    closing_kernel: Closing kernel object
+    opening_kernel: Opening kernel object
 
-     """
+    """
     closing_kernel, opening_kernel, kernel_object = None, None, None
     if k_type == "rect":
         kernel_object = cv2.MORPH_RECT
@@ -47,32 +50,36 @@ def generate_kernel(k_size, k_type):
         kernel_object = cv2.MORPH_CROSS
 
     if k_size[0] is not None:
-        closing_kernel = cv2.getStructuringElement(kernel_object, (k_size[0], k_size[0]))
+        closing_kernel = cv2.getStructuringElement(
+            kernel_object, (k_size[0], k_size[0])
+        )
 
     if k_size[1] is not None:
-        opening_kernel = cv2.getStructuringElement(kernel_object, (k_size[1], k_size[1]))
+        opening_kernel = cv2.getStructuringElement(
+            kernel_object, (k_size[1], k_size[1])
+        )
 
     return closing_kernel, opening_kernel
 
 
 def fill_mask_pixels(image, masked_path, land_color):
     """
-        Fill the extracted mask region with the color of land region.
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        image                   Input image.
+    Fill the extracted mask region with the color of land region.
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    image                   Input image.
 
-        ---------------------   -------------------------------------------
-        masked_path             Path of extracted masked region image
+    ---------------------   -------------------------------------------
+    masked_path             Path of extracted masked region image
 
-        ---------------------   -------------------------------------------
-        land_color              Land color to be filled at masked region
+    ---------------------   -------------------------------------------
+    land_color              Land color to be filled at masked region
 
-        =====================   ===========================================
-        return:
-        image: Image with colored masked replaced by land color
-     """
+    =====================   ===========================================
+    return:
+    image: Image with colored masked replaced by land color
+    """
 
     masked_image = cv2.imread(os.path.join(masked_path))
     mask = cv2.inRange(masked_image, np.array([0, 0, 0]), np.array([50, 50, 50]))
@@ -88,48 +95,54 @@ def fill_mask_pixels(image, masked_path, land_color):
 
 def detect_template(template, search_img, start_scale, end_scale, num_scales):
     """
-        Performs multi-scale template matching to locate the template on the
-        bigger search region
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        template                Template image which needs to be matched on
-                                the bigger search region image
+    Performs multi-scale template matching to locate the template on the
+    bigger search region
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    template                Template image which needs to be matched on
+                            the bigger search region image
 
-        ---------------------   -------------------------------------------
-        search_img              Search region image in which template
-                                needs to be searched
+    ---------------------   -------------------------------------------
+    search_img              Search region image in which template
+                            needs to be searched
 
-        ---------------------   -------------------------------------------
-        start_scale             Starting value of scale interval
+    ---------------------   -------------------------------------------
+    start_scale             Starting value of scale interval
 
-        ---------------------   -------------------------------------------
-        end_scale               Ending value of scale interval
+    ---------------------   -------------------------------------------
+    end_scale               Ending value of scale interval
 
-        ---------------------   -------------------------------------------
-        num_scales              Number of scales within the scale interval
+    ---------------------   -------------------------------------------
+    num_scales              Number of scales within the scale interval
 
 
-        =====================   ===========================================
+    =====================   ===========================================
 
-        returns:
-            start_x: Starting X co-ordinate of detected bounding box
-            start_y: Starting Y co-ordinate of detected bounding box
-            end_x: Ending X co-ordinate of detected bounding box
-            end_y: Ending Y co-ordinate of detected bounding box
-            max_val: Value of template match score for the detected bounding box
-            scale_factor: Scale at which the match was found for the template
+    returns:
+        start_x: Starting X co-ordinate of detected bounding box
+        start_y: Starting Y co-ordinate of detected bounding box
+        end_x: Ending X co-ordinate of detected bounding box
+        end_y: Ending Y co-ordinate of detected bounding box
+        max_val: Value of template match score for the detected bounding box
+        scale_factor: Scale at which the match was found for the template
     """
 
     template_height = template.shape[0]
     template_width = template.shape[1]
 
-    unittest.TestCase().assertGreaterEqual(search_img.shape[0], template_height,
-                                           '''Height of the search image should be \
-                                           greater then the height of template image''')
-    unittest.TestCase().assertGreaterEqual(search_img.shape[1], template_width,
-                                           '''Width of the search image should be \
-                                           greater then the width of template image''')
+    unittest.TestCase().assertGreaterEqual(
+        search_img.shape[0],
+        template_height,
+        """Height of the search image should be \
+                                           greater then the height of template image""",
+    )
+    unittest.TestCase().assertGreaterEqual(
+        search_img.shape[1],
+        template_width,
+        """Width of the search image should be \
+                                           greater then the width of template image""",
+    )
 
     start_x = 0
     start_y = 0
@@ -138,11 +151,11 @@ def detect_template(template, search_img, start_scale, end_scale, num_scales):
     scale_factor = -1
     found = None
     for scale in np.linspace(start_scale, end_scale, num_scales)[::-1]:
-        resize_width, resize_height = search_img.shape[1] * scale, \
-                                      search_img.shape[0] * scale
-        resized = cv2.resize(search_img,
-                             (int(resize_width),
-                              int(resize_height)))
+        resize_width, resize_height = (
+            search_img.shape[1] * scale,
+            search_img.shape[0] * scale,
+        )
+        resized = cv2.resize(search_img, (int(resize_width), int(resize_height)))
         scale_factor = search_img.shape[1] / float(resized.shape[1])
         if resized.shape[0] < template_height or resized.shape[1] < template_width:
             break
@@ -153,20 +166,30 @@ def detect_template(template, search_img, start_scale, end_scale, num_scales):
 
     if found is not None:
         (max_val, max_loc, scale_factor) = found
-        (start_x, start_y) = (int(max_loc[0] * scale_factor),
-                              int(max_loc[1] * scale_factor))
-        (end_x, end_y) = (int((max_loc[0] + template_width) * scale_factor),
-                          int((max_loc[1] + template_height) * scale_factor))
+        (start_x, start_y) = (
+            int(max_loc[0] * scale_factor),
+            int(max_loc[1] * scale_factor),
+        )
+        (end_x, end_y) = (
+            int((max_loc[0] + template_width) * scale_factor),
+            int((max_loc[1] + template_height) * scale_factor),
+        )
     else:
         max_val = -1
 
     return start_x, start_y, end_x, end_y, max_val, scale_factor
 
 
-def compute_reference_homography(bb_start_x, bb_start_y,
-                                 bb_end_x, bb_end_y,
-                                 search_region_height, search_region_width,
-                                 template_height, template_width):
+def compute_reference_homography(
+    bb_start_x,
+    bb_start_y,
+    bb_end_x,
+    bb_end_y,
+    search_region_height,
+    search_region_width,
+    template_height,
+    template_width,
+):
     """
     Computes the homography transform using matched location of scanned map on
     search region
@@ -194,17 +217,25 @@ def compute_reference_homography(bb_start_x, bb_start_y,
         homography_matrix : Computed transformation matrix
     """
 
-    src_points = np.array([[0, 0],
-                           [template_width - 1, 0],
-                           [template_width - 1, template_height - 1],
-                           [0, template_height - 1]],
-                          dtype=np.float32)
+    src_points = np.array(
+        [
+            [0, 0],
+            [template_width - 1, 0],
+            [template_width - 1, template_height - 1],
+            [0, template_height - 1],
+        ],
+        dtype=np.float32,
+    )
 
-    dst_points = np.array([[bb_start_x, bb_start_y],
-                           [bb_end_x, bb_start_y],
-                           [bb_end_x, bb_end_y],
-                           [bb_start_x, bb_end_y]],
-                          dtype=np.float32)
+    dst_points = np.array(
+        [
+            [bb_start_x, bb_start_y],
+            [bb_end_x, bb_start_y],
+            [bb_end_x, bb_end_y],
+            [bb_start_x, bb_end_y],
+        ],
+        dtype=np.float32,
+    )
     homography_matrix = cv2.getPerspectiveTransform(src_points, dst_points)
 
     return homography_matrix
@@ -212,35 +243,34 @@ def compute_reference_homography(bb_start_x, bb_start_y,
 
 def apply_homography(query_img, search_region, homography_matrix):
     """
-        Creates warped scanned map on search region using estimated homography
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        query_img               Image to be processed
+    Creates warped scanned map on search region using estimated homography
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    query_img               Image to be processed
 
-        ---------------------   -------------------------------------------
-        search_region           Image for search region
+    ---------------------   -------------------------------------------
+    search_region           Image for search region
 
-        ---------------------   -------------------------------------------
-        homography_matrix       Transformed matrix to be used
-        =====================   ===========================================
+    ---------------------   -------------------------------------------
+    homography_matrix       Transformed matrix to be used
+    =====================   ===========================================
 
-        returns:
-            warped_query_img: Modified world search region image
+    returns:
+        warped_query_img: Modified world search region image
     """
 
     search_region_height = search_region.shape[0]
     search_region_width = search_region.shape[1]
 
-    warped_query_img = cv2.warpPerspective(query_img, homography_matrix,
-                                           (search_region_width, search_region_height))
+    warped_query_img = cv2.warpPerspective(
+        query_img, homography_matrix, (search_region_width, search_region_height)
+    )
 
     return warped_query_img
 
 
-def check_bb_boundary(bb_start_x, bb_start_y,
-                      bb_end_x, bb_end_y,
-                      height, width):
+def check_bb_boundary(bb_start_x, bb_start_y, bb_end_x, bb_end_y, height, width):
     """
     Checks the boundary and modifies the values if necessary
         =====================   ===========================================
@@ -288,17 +318,17 @@ def check_bb_boundary(bb_start_x, bb_start_y,
 
 def detect_contours(input_img):
     """
-        Detects contours in the input image
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        input_img               Input image for which contours need to be
-                                computed
+    Detects contours in the input image
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    input_img               Input image for which contours need to be
+                            computed
 
-        =====================   ===========================================
+    =====================   ===========================================
 
-        returns:
-            contours: List of computed contours for the input image
+    returns:
+        contours: List of computed contours for the input image
     """
 
     if input_img.ndim != 2:
@@ -306,28 +336,30 @@ def detect_contours(input_img):
     else:
         input_img_gray = input_img
 
-    ret, input_img_gray_thresh = cv2.threshold(input_img_gray, 127,
-                                               255, cv2.THRESH_BINARY)
+    ret, input_img_gray_thresh = cv2.threshold(
+        input_img_gray, 127, 255, cv2.THRESH_BINARY
+    )
 
-    contours, hierarchy = cv2.findContours(input_img_gray_thresh, cv2.RETR_EXTERNAL,
-                                           cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(
+        input_img_gray_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
 
     return contours
 
 
 def calculate_diagonal_length(length, height):
     """
-        Find the length of diagonal of a rectangle
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        length                  Length of rectangle
-        ---------------------   -------------------------------------------
-        height                  Height of rectangle
-        =====================   ===========================================
+    Find the length of diagonal of a rectangle
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    length                  Length of rectangle
+    ---------------------   -------------------------------------------
+    height                  Height of rectangle
+    =====================   ===========================================
 
-        returns:
-            length_diag: Length of the diagonal
+    returns:
+        length_diag: Length of the diagonal
     """
 
     length_diag = math.sqrt(length ** 2 + height ** 2)
@@ -337,16 +369,16 @@ def calculate_diagonal_length(length, height):
 
 def calculate_nonzero_ratio(input_img):
     """
-        Calculates the ratio of non-zero pixels area w.r.t entire area of image
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        input_img               Image for which ratio needs to be computed
+    Calculates the ratio of non-zero pixels area w.r.t entire area of image
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    input_img               Image for which ratio needs to be computed
 
-        =====================   ===========================================
+    =====================   ===========================================
 
-        returns:
-            ratio: Non-zero area ratio
+    returns:
+        ratio: Non-zero area ratio
     """
 
     non_zero_area = cv2.countNonZero(input_img)
@@ -357,35 +389,35 @@ def calculate_nonzero_ratio(input_img):
     return ratio
 
 
-def calculate_distance_ratios(bb_start_x, bb_start_y,
-                              bb_end_x, bb_end_y,
-                              point_x, point_y):
+def calculate_distance_ratios(
+    bb_start_x, bb_start_y, bb_end_x, bb_end_y, point_x, point_y
+):
     """
-        Calculates the distance ratio w.r.t X and Y co-ordinate of a point
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        bb_start_x              X co-ordinate of left top corner of bounding
-                                box
-        ---------------------   -------------------------------------------
-        bb_start_y              Y co-ordinate of left top corner of bounding
-                                box
-        ---------------------   -------------------------------------------
-        bb_end_x                X co-ordinate of right bottom corner of
-                                bounding box
-        ---------------------   -------------------------------------------
-        bb_end_y                Y co-ordinate of right bottom corner of
-                                bounding box
-        ---------------------   -------------------------------------------
-        point_x                 X co-ordinate of point
+    Calculates the distance ratio w.r.t X and Y co-ordinate of a point
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    bb_start_x              X co-ordinate of left top corner of bounding
+                            box
+    ---------------------   -------------------------------------------
+    bb_start_y              Y co-ordinate of left top corner of bounding
+                            box
+    ---------------------   -------------------------------------------
+    bb_end_x                X co-ordinate of right bottom corner of
+                            bounding box
+    ---------------------   -------------------------------------------
+    bb_end_y                Y co-ordinate of right bottom corner of
+                            bounding box
+    ---------------------   -------------------------------------------
+    point_x                 X co-ordinate of point
 
-        ---------------------   -------------------------------------------
-        point_y                 Y co-ordinate of point
-        =====================   ===========================================
+    ---------------------   -------------------------------------------
+    point_y                 Y co-ordinate of point
+    =====================   ===========================================
 
-        returns:
-            ratio_x : X co-ordinate ratio
-            ratio_y : Y co-ordinate ratio
+    returns:
+        ratio_x : X co-ordinate ratio
+        ratio_y : Y co-ordinate ratio
     """
 
     epsilon = 0.00001
@@ -396,17 +428,14 @@ def calculate_distance_ratios(bb_start_x, bb_start_y,
     distance_point_y_start_y = point_y - bb_start_y
     distance_point_y_end_y = bb_end_y - point_y
 
-    ratio_x = (distance_point_x_start_x
-               / (distance_point_x_end_x + epsilon))
+    ratio_x = distance_point_x_start_x / (distance_point_x_end_x + epsilon)
 
-    ratio_y = (distance_point_y_start_y
-               / (distance_point_y_end_y + epsilon))
+    ratio_y = distance_point_y_start_y / (distance_point_y_end_y + epsilon)
 
     return ratio_x, ratio_y
 
 
-def find_distance(point1_x, point1_y,
-                  point2_x, point2_y):
+def find_distance(point1_x, point1_y, point2_x, point2_y):
     """
     Find distance between two points
         =====================   ===========================================
@@ -426,8 +455,7 @@ def find_distance(point1_x, point1_y,
         distance: distance between two points
     """
 
-    distance = math.sqrt((point1_x - point2_x) ** 2 +
-                         (point1_y - point2_y) ** 2)
+    distance = math.sqrt((point1_x - point2_x) ** 2 + (point1_y - point2_y) ** 2)
     return distance
 
 
@@ -519,11 +547,13 @@ def annotate_control_pts(query_image, search_region, control_pts):
         color = colors[i]
         color = tuple([int(x) for x in color])
 
-        query_image_copy = cv2.drawMarker(query_image_copy,
-                                          (control_pt[0], -1 * control_pt[1]), color)
+        query_image_copy = cv2.drawMarker(
+            query_image_copy, (control_pt[0], -1 * control_pt[1]), color
+        )
 
-        search_region_img_copy = cv2.drawMarker(search_region_img_copy,
-                                                (int(control_pt[5]), int(-1 * control_pt[6])), color)
+        search_region_img_copy = cv2.drawMarker(
+            search_region_img_copy, (int(control_pt[5]), int(-1 * control_pt[6])), color
+        )
 
     return search_region_img_copy, query_image_copy
 
@@ -558,8 +588,9 @@ def compute_refined_homography_outlier_mask(control_pts):
         dst_points[i, 0] = control_pt[5]
         dst_points[i, 1] = -1 * control_pt[6]
 
-    homography_matrix, outlier_mask = cv2.findHomography(src_points, dst_points,
-                                                         cv2.RANSAC, 3)
+    homography_matrix, outlier_mask = cv2.findHomography(
+        src_points, dst_points, cv2.RANSAC, 3
+    )
 
     return homography_matrix, outlier_mask
 
@@ -591,10 +622,16 @@ def filter_control_pts(control_pts, outlier_mask):
     return filtered_control_pts
 
 
-def estimate_control_points(search_reg_roi, template,
-                            search_reg_roi_offset_x, search_reg_roi_offset_y,
-                            search_reg_roi_start_x, search_reg_roi_start_y,
-                            search_region_img, extent):
+def estimate_control_points(
+    search_reg_roi,
+    template,
+    search_reg_roi_offset_x,
+    search_reg_roi_offset_y,
+    search_reg_roi_start_x,
+    search_reg_roi_start_y,
+    search_region_img,
+    extent,
+):
     """
     Detects contours in template image and finds correspondences
     in processed search region image ROI
@@ -630,19 +667,18 @@ def estimate_control_points(search_reg_roi, template,
         corresponding points in search image
     """
 
-    degree_per_pixel_x = (extent["xmax"] - extent["xmin"]) \
-                         / search_region_img.shape[1]
+    degree_per_pixel_x = (extent["xmax"] - extent["xmin"]) / search_region_img.shape[1]
 
-    degree_per_pixel_y = (extent["ymin"] - extent["ymax"]) \
-                         / search_region_img.shape[0]
+    degree_per_pixel_y = (extent["ymin"] - extent["ymax"]) / search_region_img.shape[0]
 
     template_contours = detect_contours(template)
     biggest_template_contour = max(template_contours, key=cv2.contourArea)
 
     contour_pts = []
 
-    bb_cnt_xmin, bb_cnt_ymin, \
-    bb_cnt_width, bb_cnt_height = cv2.boundingRect(biggest_template_contour)
+    bb_cnt_xmin, bb_cnt_ymin, bb_cnt_width, bb_cnt_height = cv2.boundingRect(
+        biggest_template_contour
+    )
 
     bb_cnt_area = bb_cnt_width * bb_cnt_height
     template_area = template.shape[0] * template.shape[1]
@@ -657,15 +693,15 @@ def estimate_control_points(search_reg_roi, template,
     else:
         contour_pts = biggest_template_contour
 
-    length_diagonal_template_img = calculate_diagonal_length(template.shape[1],
-                                                             template.shape[0])
-    contour_patch_win = int(length_diagonal_template_img
-                            / 8)
+    length_diagonal_template_img = calculate_diagonal_length(
+        template.shape[1], template.shape[0]
+    )
+    contour_patch_win = int(length_diagonal_template_img / 8)
 
     delta_contour_patch_win = contour_patch_win / 2
 
     search_reg_patch_win = int(contour_patch_win * 1.5)
-    delta_search_patch_win = (search_reg_patch_win / 2)
+    delta_search_patch_win = search_reg_patch_win / 2
 
     mapped_control_pts = []
 
@@ -677,60 +713,92 @@ def estimate_control_points(search_reg_roi, template,
         cont_patch_start_x = contour_pt_x - delta_contour_patch_win
         cont_patch_end_x = contour_pt_x + delta_contour_patch_win
 
-        cont_patch_start_x, cont_patch_start_y, \
-        cont_patch_end_x, cont_patch_end_y = check_bb_boundary(cont_patch_start_x,
-                                                               cont_patch_start_y,
-                                                               cont_patch_end_x,
-                                                               cont_patch_end_y,
-                                                               template.shape[0],
-                                                               template.shape[1])
+        (
+            cont_patch_start_x,
+            cont_patch_start_y,
+            cont_patch_end_x,
+            cont_patch_end_y,
+        ) = check_bb_boundary(
+            cont_patch_start_x,
+            cont_patch_start_y,
+            cont_patch_end_x,
+            cont_patch_end_y,
+            template.shape[0],
+            template.shape[1],
+        )
 
-        cont_patch = template[int(cont_patch_start_y): int(cont_patch_end_y), \
-                     int(cont_patch_start_x): int(cont_patch_end_x)]
+        cont_patch = template[
+            int(cont_patch_start_y) : int(cont_patch_end_y),
+            int(cont_patch_start_x) : int(cont_patch_end_x),
+        ]
 
-        search_reg_start_y = contour_pt_y - delta_search_patch_win + search_reg_roi_offset_y
-        search_reg_end_y = contour_pt_y + delta_search_patch_win + search_reg_roi_offset_y
-        search_reg_start_x = contour_pt_x - delta_search_patch_win + search_reg_roi_offset_x
-        search_reg_end_x = contour_pt_x + delta_search_patch_win + search_reg_roi_offset_x
+        search_reg_start_y = (
+            contour_pt_y - delta_search_patch_win + search_reg_roi_offset_y
+        )
+        search_reg_end_y = (
+            contour_pt_y + delta_search_patch_win + search_reg_roi_offset_y
+        )
+        search_reg_start_x = (
+            contour_pt_x - delta_search_patch_win + search_reg_roi_offset_x
+        )
+        search_reg_end_x = (
+            contour_pt_x + delta_search_patch_win + search_reg_roi_offset_x
+        )
 
-        (search_reg_start_x, search_reg_start_y,
-         search_reg_end_x, search_reg_end_y) = check_bb_boundary(search_reg_start_x, search_reg_start_y,
-                                                                 search_reg_end_x, search_reg_end_y,
-                                                                 search_reg_roi.shape[0], search_reg_roi.shape[1])
+        (
+            search_reg_start_x,
+            search_reg_start_y,
+            search_reg_end_x,
+            search_reg_end_y,
+        ) = check_bb_boundary(
+            search_reg_start_x,
+            search_reg_start_y,
+            search_reg_end_x,
+            search_reg_end_y,
+            search_reg_roi.shape[0],
+            search_reg_roi.shape[1],
+        )
 
-        search_reg = search_reg_roi[int(search_reg_start_y):int(search_reg_end_y),
-                     int(search_reg_start_x):int(search_reg_end_x)]
+        search_reg = search_reg_roi[
+            int(search_reg_start_y) : int(search_reg_end_y),
+            int(search_reg_start_x) : int(search_reg_end_x),
+        ]
 
-        (detection_start_x, detection_start_y,
-         detection_end_x, detection_end_y,
-         detection_val, scale_factor) = detect_template(cont_patch, search_reg,
-                                                        1.0, 1.0,
-                                                        1)
+        (
+            detection_start_x,
+            detection_start_y,
+            detection_end_x,
+            detection_end_y,
+            detection_val,
+            scale_factor,
+        ) = detect_template(cont_patch, search_reg, 1.0, 1.0, 1)
         search_reg_contours = detect_contours(search_reg)
 
         if detection_val > 0:
-            ratio_x, ratio_y = calculate_distance_ratios(cont_patch_start_x,
-                                                         cont_patch_start_y,
-                                                         cont_patch_end_x,
-                                                         cont_patch_end_y,
-                                                         contour_pt_x,
-                                                         contour_pt_y)
+            ratio_x, ratio_y = calculate_distance_ratios(
+                cont_patch_start_x,
+                cont_patch_start_y,
+                cont_patch_end_x,
+                cont_patch_end_y,
+                contour_pt_x,
+                contour_pt_y,
+            )
 
-            search_reg_centroid_x = ((ratio_x * detection_end_x)
-                                     + detection_start_x) / (ratio_x + 1)
-            search_reg_centroid_y = ((ratio_y * detection_end_y) +
-                                     detection_start_y) / (ratio_y + 1)
+            search_reg_centroid_x = (
+                (ratio_x * detection_end_x) + detection_start_x
+            ) / (ratio_x + 1)
+            search_reg_centroid_y = (
+                (ratio_y * detection_end_y) + detection_start_y
+            ) / (ratio_y + 1)
 
             search_reg_contour_min_x = float("inf")
             search_reg_contour_min_y = float("inf")
             search_reg_min_distance = float("inf")
 
             for search_reg_contour in search_reg_contours:
-                (min_x, min_y,
-                 min_index, min_distance) = find_nearest_contour_point(
-                    search_reg_contour,
-                    search_reg_centroid_x,
-                    search_reg_centroid_y)
+                (min_x, min_y, min_index, min_distance) = find_nearest_contour_point(
+                    search_reg_contour, search_reg_centroid_x, search_reg_centroid_y
+                )
 
                 if min_distance < search_reg_min_distance:
                     search_reg_min_distance = min_distance
@@ -740,21 +808,31 @@ def estimate_control_points(search_reg_roi, template,
             search_reg_centroid_x = search_reg_contour_min_x
             search_reg_centroid_y = search_reg_contour_min_y
 
-            centroid_search_reg_detection_x = search_reg_centroid_x + search_reg_start_x + \
-                                              search_reg_roi_start_x
-            centroid_search_reg_detection_y = search_reg_centroid_y + search_reg_start_y + \
-                                              search_reg_roi_start_y
+            centroid_search_reg_detection_x = (
+                search_reg_centroid_x + search_reg_start_x + search_reg_roi_start_x
+            )
+            centroid_search_reg_detection_y = (
+                search_reg_centroid_y + search_reg_start_y + search_reg_roi_start_y
+            )
 
-            centroid_search_reg_detection_x_long = extent["xmin"] + (degree_per_pixel_x *
-                                                                     centroid_search_reg_detection_x)
-            centroid_search_reg_detection_y_lat = extent["ymax"] + (degree_per_pixel_y *
-                                                                    centroid_search_reg_detection_y)
+            centroid_search_reg_detection_x_long = extent["xmin"] + (
+                degree_per_pixel_x * centroid_search_reg_detection_x
+            )
+            centroid_search_reg_detection_y_lat = extent["ymax"] + (
+                degree_per_pixel_y * centroid_search_reg_detection_y
+            )
 
-            mapped_control_pts.append([contour_pt_x, -1 * contour_pt_y,
-                                       centroid_search_reg_detection_x_long,
-                                       centroid_search_reg_detection_y_lat,
-                                       detection_val, centroid_search_reg_detection_x,
-                                       -1 * centroid_search_reg_detection_y])
+            mapped_control_pts.append(
+                [
+                    contour_pt_x,
+                    -1 * contour_pt_y,
+                    centroid_search_reg_detection_x_long,
+                    centroid_search_reg_detection_y_lat,
+                    detection_val,
+                    centroid_search_reg_detection_x,
+                    -1 * centroid_search_reg_detection_y,
+                ]
+            )
 
     return mapped_control_pts
 
@@ -834,11 +912,12 @@ def compare_homography_matrices(reference_img, refined_img, template, control_pt
     reference_img_gray = cv2.cvtColor(reference_img, cv2.COLOR_BGR2GRAY)
     refined_img_gray = cv2.cvtColor(refined_img, cv2.COLOR_BGR2GRAY)
 
-    ret, reference_img_mask = cv2.threshold(reference_img_gray, 0, 255, cv2.THRESH_BINARY)
+    ret, reference_img_mask = cv2.threshold(
+        reference_img_gray, 0, 255, cv2.THRESH_BINARY
+    )
     ret, refined_img_mask = cv2.threshold(refined_img_gray, 0, 255, cv2.THRESH_BINARY)
 
-    iou = calculate_iou_binary_images(reference_img_mask,
-                                      refined_img_mask)
+    iou = calculate_iou_binary_images(reference_img_mask, refined_img_mask)
 
     if area_ratio > 0.35 and iou > 0.70:
         return 1
@@ -846,84 +925,107 @@ def compare_homography_matrices(reference_img, refined_img, template, control_pt
         return 0
 
 
-def map_species_region(region_mask_img, search_region,
-                       reference_homography, refined_homography,
-                       selected_index, detection_start_x,
-                       detection_start_y, detection_end_x,
-                       detection_end_y, color, output_path,
-                       image_name, extent, idx, region):
+def map_species_region(
+    region_mask_img,
+    search_region,
+    reference_homography,
+    refined_homography,
+    selected_index,
+    detection_start_x,
+    detection_start_y,
+    detection_end_x,
+    detection_end_y,
+    color,
+    output_path,
+    image_name,
+    extent,
+    idx,
+    region,
+):
     """
-        Maps the species region masks on the search region using the computed
-        homography matrices
-        =====================   ===================================================
-        **Argument**            **Description**
-        ---------------------   ----------------------------------------------------
-        region_mask_img          Species region mask depicting species distribution
-        ---------------------   ----------------------------------------------------
-        search_region            Color image of search region
-        ---------------------   ----------------------------------------------------
-        reference_homography     Computed reference homography
-        ---------------------   ----------------------------------------------------
-        refined_homography       Computed refined homography
-        ---------------------   ----------------------------------------------------
-        selected_index           Index indicating which transformed matrix is the
-                                 final computed homography
-        ---------------------   ----------------------------------------------------
-        detection_start_x        X co-ordinate of the top left corner of detected
-                                 bounding box
-        ---------------------   ----------------------------------------------------
-        detection_start_y        Y co-ordinate of the top left corner of detected
-                                 bounding box
-        ---------------------   ----------------------------------------------------
-        detection_end_x          X co-ordinate of the bottom right corner of
-                                 detected bounding box
-        ---------------------   ----------------------------------------------------
-        detection_end_y          Y co-ordinate of the bottom right corner of
-                                 detected bounding box
-        ---------------------   ----------------------------------------------------
-        color                    Color of the current masked region to be mapped
-        ---------------------   ----------------------------------------------------
-        output_path              Path to generate shapefile output
-        ---------------------   ----------------------------------------------------
-        image_name               Name of the image
-        ---------------------   ----------------------------------------------------
-        extent                   Selected extent for search region
-        ---------------------   ----------------------------------------------------
-        idx                      Index of the current scanned map in the folder
-        ---------------------   ----------------------------------------------------
-        region                   Index of the current masked region
+    Maps the species region masks on the search region using the computed
+    homography matrices
+    =====================   ===================================================
+    **Argument**            **Description**
+    ---------------------   ----------------------------------------------------
+    region_mask_img          Species region mask depicting species distribution
+    ---------------------   ----------------------------------------------------
+    search_region            Color image of search region
+    ---------------------   ----------------------------------------------------
+    reference_homography     Computed reference homography
+    ---------------------   ----------------------------------------------------
+    refined_homography       Computed refined homography
+    ---------------------   ----------------------------------------------------
+    selected_index           Index indicating which transformed matrix is the
+                             final computed homography
+    ---------------------   ----------------------------------------------------
+    detection_start_x        X co-ordinate of the top left corner of detected
+                             bounding box
+    ---------------------   ----------------------------------------------------
+    detection_start_y        Y co-ordinate of the top left corner of detected
+                             bounding box
+    ---------------------   ----------------------------------------------------
+    detection_end_x          X co-ordinate of the bottom right corner of
+                             detected bounding box
+    ---------------------   ----------------------------------------------------
+    detection_end_y          Y co-ordinate of the bottom right corner of
+                             detected bounding box
+    ---------------------   ----------------------------------------------------
+    color                    Color of the current masked region to be mapped
+    ---------------------   ----------------------------------------------------
+    output_path              Path to generate shapefile output
+    ---------------------   ----------------------------------------------------
+    image_name               Name of the image
+    ---------------------   ----------------------------------------------------
+    extent                   Selected extent for search region
+    ---------------------   ----------------------------------------------------
+    idx                      Index of the current scanned map in the folder
+    ---------------------   ----------------------------------------------------
+    region                   Index of the current masked region
 
-        =====================   ====================================================
+    =====================   ====================================================
 
-        returns:
-            mapped_species_region: Search region with species region mapped
+    returns:
+        mapped_species_region: Search region with species region mapped
     """
 
     search_region_height = search_region.shape[0]
     search_region_width = search_region.shape[1]
 
-    warped_img = cv2.warpPerspective(region_mask_img, reference_homography,
-                                     (search_region_width, search_region_height))
+    warped_img = cv2.warpPerspective(
+        region_mask_img,
+        reference_homography,
+        (search_region_width, search_region_height),
+    )
 
     if selected_index == 1:
-        img_to_warp = warped_img[detection_start_y: detection_end_y, \
-                      detection_start_x: detection_end_x]
-        warped_img = cv2.warpPerspective(img_to_warp, refined_homography,
-                                         (search_region_width, search_region_height))
+        img_to_warp = warped_img[
+            detection_start_y:detection_end_y, detection_start_x:detection_end_x
+        ]
+        warped_img = cv2.warpPerspective(
+            img_to_warp, refined_homography, (search_region_width, search_region_height)
+        )
 
     warped_img_contours = detect_contours(warped_img)
-    data = write_shapefile(warped_img_contours, output_path,
-                           image_name, extent, search_region_height,
-                           search_region_width, idx,
-                           region)
+    data = write_shapefile(
+        warped_img_contours,
+        output_path,
+        image_name,
+        extent,
+        search_region_height,
+        search_region_width,
+        idx,
+        region,
+    )
 
     modified_search_region = search_region.copy()
-    modified_search_region = cv2.drawContours(modified_search_region,
-                                              warped_img_contours,
-                                              -1, (int(color[2]),
-                                                   int(color[1]),
-                                                   int(color[0])),
-                                              cv2.FILLED)
+    modified_search_region = cv2.drawContours(
+        modified_search_region,
+        warped_img_contours,
+        -1,
+        (int(color[2]), int(color[1]), int(color[0])),
+        cv2.FILLED,
+    )
 
     return modified_search_region, data
 
@@ -958,10 +1060,10 @@ def process_contour(input_contour):
 
 def find_current_timestamp():
     """
-        Creates a string representing the current timestamp
+    Creates a string representing the current timestamp
 
-        :returns:
-            timestamp_str: Current timestamp string in the format "%H_%M_%S_%f"
+    :returns:
+        timestamp_str: Current timestamp string in the format "%H_%M_%S_%f"
     """
     datetime_obj = datetime.now()
     timestamp_str = datetime_obj.strftime("%Y_%m_%d_%H_%M_%S_%f")
@@ -971,82 +1073,87 @@ def find_current_timestamp():
 
 def combine_shapefiles(output_dir, file_name, data, extent):
     """
-        Combines shapefile outputs in a particular folder
-        =====================   ==================================================
-        **Argument**            **Description**
-        ---------------------   --------------------------------------------------
-        output_dir               Output directory where combined shapefile needs
-                                 to be dumped
-        ---------------------   --------------------------------------------------
-        file_name                Filename of the combined shapefile
-        ---------------------   --------------------------------------------------
-        data                     Data to generate the shapefile
-        ---------------------   --------------------------------------------------
-        extent                   Selected extent for search region
+    Combines shapefile outputs in a particular folder
+    =====================   ==================================================
+    **Argument**            **Description**
+    ---------------------   --------------------------------------------------
+    output_dir               Output directory where combined shapefile needs
+                             to be dumped
+    ---------------------   --------------------------------------------------
+    file_name                Filename of the combined shapefile
+    ---------------------   --------------------------------------------------
+    data                     Data to generate the shapefile
+    ---------------------   --------------------------------------------------
+    extent                   Selected extent for search region
 
-        =====================   ==================================================
+    =====================   ==================================================
 
-        returns:
-            None
+    returns:
+        None
     """
-    data_frame = DataFrame(data, columns=['FID', 'SHAPE', 'SPECIES', 'SCANNED'])
+    data_frame = DataFrame(data, columns=["FID", "SHAPE", "SPECIES", "SCANNED"])
 
-    data_frame['SHAPE'] = data_frame['SHAPE'].apply(Polygon)
-    data_frame.spatial.set_geometry('SHAPE', extent["spatialReference"]["wkid"])
+    data_frame["SHAPE"] = data_frame["SHAPE"].apply(Polygon)
+    data_frame.spatial.set_geometry("SHAPE", extent["spatialReference"]["wkid"])
 
     file_path = os.path.join(output_dir, file_name + ".shp")
 
     data_frame.spatial.to_featureclass(file_path)
 
 
-def write_shapefile(input_contours, output_dir,
-                    file_name, extent,
-                    search_region_height, search_region_width,
-                    idx, region):
+def write_shapefile(
+    input_contours,
+    output_dir,
+    file_name,
+    extent,
+    search_region_height,
+    search_region_width,
+    idx,
+    region,
+):
     """
-        Creates data frame using input contours for feature layer creation
-        =====================   ===================================================
-        **Argument**            **Description**
-        ---------------------   ----------------------------------------------------
-        input_contours           Contours which need to be transformed to lat-long
-                                 co-ordinates
-        ---------------------   ----------------------------------------------------
-        output_dir               Output directory where combined shapefile needs
-                                 to be dumped
-        ---------------------   ----------------------------------------------------
-        file_name                Filename of the combined shapefile
-        ---------------------   ----------------------------------------------------
-        extent                   Selected extent for search region
-        ---------------------   ----------------------------------------------------
-        search_region_height     Height of search region image
-        ---------------------   ----------------------------------------------------
-        search_region_width      Width of search region image
-        ---------------------   ----------------------------------------------------
-        idx                      Index of the current scanned map in the folder
-        ---------------------   ----------------------------------------------------
-        region                   Index of the current masked region
+    Creates data frame using input contours for feature layer creation
+    =====================   ===================================================
+    **Argument**            **Description**
+    ---------------------   ----------------------------------------------------
+    input_contours           Contours which need to be transformed to lat-long
+                             co-ordinates
+    ---------------------   ----------------------------------------------------
+    output_dir               Output directory where combined shapefile needs
+                             to be dumped
+    ---------------------   ----------------------------------------------------
+    file_name                Filename of the combined shapefile
+    ---------------------   ----------------------------------------------------
+    extent                   Selected extent for search region
+    ---------------------   ----------------------------------------------------
+    search_region_height     Height of search region image
+    ---------------------   ----------------------------------------------------
+    search_region_width      Width of search region image
+    ---------------------   ----------------------------------------------------
+    idx                      Index of the current scanned map in the folder
+    ---------------------   ----------------------------------------------------
+    region                   Index of the current masked region
 
-        =====================   ====================================================
+    =====================   ====================================================
 
-        returns:
-            None
+    returns:
+        None
     """
 
     if len(input_contours) == 0:
         return
     shape = dict()
-    shape['rings'] = []
+    shape["rings"] = []
     data_temp = []
 
     for index, contour in enumerate(input_contours):
         contour = process_contour(contour)
-        list_long_lat = calculate_contour_lat_long(contour,
-                                                   extent,
-                                                   search_region_height,
-                                                   search_region_width)
-        shape['rings'].append(list_long_lat)
+        list_long_lat = calculate_contour_lat_long(
+            contour, extent, search_region_height, search_region_width
+        )
+        shape["rings"].append(list_long_lat)
 
-    shape['spatialReference'] = {'wkid': extent["spatialReference"]["wkid"]}
+    shape["spatialReference"] = {"wkid": extent["spatialReference"]["wkid"]}
     shape["hasZ"] = False
     shape["hasM"] = False
 
@@ -1054,10 +1161,10 @@ def write_shapefile(input_contours, output_dir,
     scanned_img = file_name + ".jpg"
     data_temp.append([idx, shape, species_name, scanned_img])
 
-    data_frame = DataFrame(data_temp, columns=['FID', 'SHAPE', 'SPECIES', 'SCANNED'])
+    data_frame = DataFrame(data_temp, columns=["FID", "SHAPE", "SPECIES", "SCANNED"])
 
-    data_frame['SHAPE'] = data_frame['SHAPE'].apply(Polygon)
-    data_frame.spatial.set_geometry('SHAPE', extent["spatialReference"]["wkid"])
+    data_frame["SHAPE"] = data_frame["SHAPE"].apply(Polygon)
+    data_frame.spatial.set_geometry("SHAPE", extent["spatialReference"]["wkid"])
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -1070,28 +1177,29 @@ def write_shapefile(input_contours, output_dir,
     return [idx, shape, species_name, scanned_img]
 
 
-def calculate_contour_lat_long(input_contour, extent,
-                               search_region_height, search_region_width):
+def calculate_contour_lat_long(
+    input_contour, extent, search_region_height, search_region_width
+):
     """
-        Calculates latitude and longitude co-ordinates for x and y image
-        co-ordinates of contour points
-        =====================   =============================================
-        **Argument**            **Description**
-        ---------------------   ---------------------------------------------
-        input_contours           Contours which need to be transformed
-                                 to lat-long co-ordinates
-        ---------------------   ---------------------------------------------
-        extent                   Selected extent for search region
-        ---------------------   ---------------------------------------------
-        search_region_height     Height of search region image
-        ---------------------   ---------------------------------------------
-        search_region_width      Width of search region image
+    Calculates latitude and longitude co-ordinates for x and y image
+    co-ordinates of contour points
+    =====================   =============================================
+    **Argument**            **Description**
+    ---------------------   ---------------------------------------------
+    input_contours           Contours which need to be transformed
+                             to lat-long co-ordinates
+    ---------------------   ---------------------------------------------
+    extent                   Selected extent for search region
+    ---------------------   ---------------------------------------------
+    search_region_height     Height of search region image
+    ---------------------   ---------------------------------------------
+    search_region_width      Width of search region image
 
-        =====================   =============================================
+    =====================   =============================================
 
-        returns:
-            list_long_lat: List of latitude and longitude co-ordinates
-             corresponding to x and y image co-ordinates of contour points
+    returns:
+        list_long_lat: List of latitude and longitude co-ordinates
+         corresponding to x and y image co-ordinates of contour points
 
     """
     degree_per_pixel_x = (extent["xmax"] - extent["xmin"]) / search_region_width
@@ -1110,25 +1218,26 @@ def calculate_contour_lat_long(input_contour, extent,
 
 def write_georeference_xml_file(control_point, path, image_name, extent):
     """
-        Writes XML file used to geo-reference the image on the search image
-        =====================   ===================================================
-        **Argument**            **Description**
-        ---------------------   ----------------------------------------------------
-        control_point            Calculated control points for corresponding scanned
-                                 map
-        ---------------------   ----------------------------------------------------
-        path                     Path to dump XML file
-        ---------------------   ----------------------------------------------------
-        image_name               Name of scanned map
+    Writes XML file used to geo-reference the image on the search image
+    =====================   ===================================================
+    **Argument**            **Description**
+    ---------------------   ----------------------------------------------------
+    control_point            Calculated control points for corresponding scanned
+                             map
+    ---------------------   ----------------------------------------------------
+    path                     Path to dump XML file
+    ---------------------   ----------------------------------------------------
+    image_name               Name of scanned map
 
-        =====================   ====================================================
+    =====================   ====================================================
 
-        returns:
-            None
+    returns:
+        None
     """
 
     cps = control_point
-    aux_template = """
+    aux_template = (
+        """
     <PAMDataset>
       <Metadata domain="IMAGE_STRUCTURE">
         <MDI key="INTERLEAVE">PIXEL</MDI>
@@ -1150,9 +1259,15 @@ def write_georeference_xml_file(control_point, path, image_name, extent):
             <ZTolerance>0.001</ZTolerance>
             <MTolerance>0.001</MTolerance>
             <HighPrecision>true</HighPrecision>
-            <LeftLongitude>""" + str(extent["xmin"]) + """</LeftLongitude>
-            <WKID>""" + str(extent["spatialReference"]["wkid"]) + """</WKID>
-            <LatestWKID>""" + str(extent["spatialReference"]["wkid"]) + """</LatestWKID>
+            <LeftLongitude>"""
+        + str(extent["xmin"])
+        + """</LeftLongitude>
+            <WKID>"""
+        + str(extent["spatialReference"]["wkid"])
+        + """</WKID>
+            <LatestWKID>"""
+        + str(extent["spatialReference"]["wkid"])
+        + """</LatestWKID>
           </SpatialReference>
           <SourceGCPs xsi:type="typens:ArrayOfDouble">
             <Double>201.77370325693613</Double>
@@ -1179,16 +1294,17 @@ def write_georeference_xml_file(control_point, path, image_name, extent):
       </Metadata>
     </PAMDataset>
     """.strip()
+    )
 
     aux = ET.ElementTree(ET.fromstring(aux_template))
-    gf = aux.findall('Metadata')[1].find('GeodataXform')
-    source_gcps = gf.find('SourceGCPs')
-    target_gcps = gf.find('TargetGCPs')
+    gf = aux.findall("Metadata")[1].find("GeodataXform")
+    source_gcps = gf.find("SourceGCPs")
+    target_gcps = gf.find("TargetGCPs")
 
-    for child in source_gcps.findall('Double'):
+    for child in source_gcps.findall("Double"):
         source_gcps.remove(child)
 
-    for child in target_gcps.findall('Double'):
+    for child in target_gcps.findall("Double"):
         target_gcps.remove(child)
 
     for cp in cps:
@@ -1201,16 +1317,18 @@ def write_georeference_xml_file(control_point, path, image_name, extent):
         map_y = ET.SubElement(target_gcps, "Double")
         map_y.text = str(cp[3])
 
-    gf.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-    gf.set('xmlns:xs', 'http://www.w3.org/2001/XMLSchema')
-    gf.set('xmlns:typens', 'http://www.esri.com/schemas/ArcGIS/2.5.0')
+    gf.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+    gf.set("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
+    gf.set("xmlns:typens", "http://www.esri.com/schemas/ArcGIS/2.5.0")
 
-    aux_file_out = os.path.join(path, os.path.basename(image_name) + '.jpg.aux.xml')
-    aux.write(aux_file_out, encoding='utf-8', )
+    aux_file_out = os.path.join(path, os.path.basename(image_name) + ".jpg.aux.xml")
+    aux.write(
+        aux_file_out,
+        encoding="utf-8",
+    )
 
 
-def convert_to_xy(lat_val, long_val, extent,
-                  degree_per_pixel_x, degree_per_pixel_y):
+def convert_to_xy(lat_val, long_val, extent, degree_per_pixel_x, degree_per_pixel_y):
     """
     Converts latitude and longitude to image x and y co-ordinates
         =====================   ====================================
@@ -1241,8 +1359,7 @@ def convert_to_xy(lat_val, long_val, extent,
     return [int(x_val), int(y_val)]
 
 
-def calculate_contour_xy(list_lat_long, extent,
-                         degree_per_pixel_x, degree_per_pixel_y):
+def calculate_contour_xy(list_lat_long, extent, degree_per_pixel_x, degree_per_pixel_y):
     """
         Calculates image x and y co-ordinates for all points corresponding to
         latitude and longitude co-ordinates
@@ -1264,15 +1381,23 @@ def calculate_contour_xy(list_lat_long, extent,
     """
     contour_xy = []
     for point in list_lat_long:
-        xy = convert_to_xy(point[1], point[0], extent, degree_per_pixel_x, degree_per_pixel_y)
+        xy = convert_to_xy(
+            point[1], point[0], extent, degree_per_pixel_x, degree_per_pixel_y
+        )
         contour_xy.append([xy])
 
     return contour_xy
 
 
-def make_world_map_from_shapefile(image_path, image_height,
-                                  image_width, extent, degree_per_pixel_x,
-                                  degree_per_pixel_y, color):
+def make_world_map_from_shapefile(
+    image_path,
+    image_height,
+    image_width,
+    extent,
+    degree_per_pixel_x,
+    degree_per_pixel_y,
+    color,
+):
     """
         Creates search image using shapefile
         =====================   =========================================
@@ -1302,8 +1427,12 @@ def make_world_map_from_shapefile(image_path, image_height,
     contours = []
     max_length = -1
     for index in data_frame.index:
-        contour = calculate_contour_xy(data_frame['SHAPE'][index]['rings'][0], extent, degree_per_pixel_x,
-                                       degree_per_pixel_y)
+        contour = calculate_contour_xy(
+            data_frame["SHAPE"][index]["rings"][0],
+            extent,
+            degree_per_pixel_x,
+            degree_per_pixel_y,
+        )
         length = len(contour)
         if length > max_length:
             max_length = length
@@ -1314,8 +1443,9 @@ def make_world_map_from_shapefile(image_path, image_height,
     world_map_img[:, :, 0] = color[2]
     world_map_img[:, :, 1] = color[1]
     world_map_img[:, :, 2] = color[0]
-    world_map_img = cv2.drawContours(world_map_img, contours,
-                                     -1, (255, 255, 255), cv2.FILLED)
+    world_map_img = cv2.drawContours(
+        world_map_img, contours, -1, (255, 255, 255), cv2.FILLED
+    )
 
     return world_map_img
 
@@ -1354,8 +1484,9 @@ def generate_search_template(search_image, process_folder, x1, y1, x2, y2):
     else:
         image_gray = image
 
-    transformed_img = np.zeros((image_gray.shape[0],
-                                image_gray.shape[1]), dtype=np.uint8)
+    transformed_img = np.zeros(
+        (image_gray.shape[0], image_gray.shape[1]), dtype=np.uint8
+    )
 
     image_height = image_gray.shape[0]
     image_width = image_gray.shape[1]
@@ -1377,10 +1508,15 @@ def generate_search_template(search_image, process_folder, x1, y1, x2, y2):
     return transformed_img
 
 
-def generate_search_coordinate(extent, bigger_extreme_left,
-                               bigger_extreme_top, bigger_extreme_right,
-                               bigger_extreme_bottom, degree_per_pixel_x,
-                               degree_per_pixel_y):
+def generate_search_coordinate(
+    extent,
+    bigger_extreme_left,
+    bigger_extreme_top,
+    bigger_extreme_right,
+    bigger_extreme_bottom,
+    degree_per_pixel_x,
+    degree_per_pixel_y,
+):
     """
         Generates co-ordinate for search region
         =====================   ============================================
@@ -1413,8 +1549,12 @@ def generate_search_coordinate(extent, bigger_extreme_left,
 
     x1 = int(((abs(bigger_extreme_left) - abs(extreme_left)) / abs(degree_per_pixel_x)))
     y1 = int(((abs(bigger_extreme_top) - abs(extreme_top)) / abs(degree_per_pixel_y)))
-    y2 = int(((abs(bigger_extreme_bottom) + abs(extreme_bottom)) / abs(degree_per_pixel_y)))
-    x2 = int(((abs(bigger_extreme_right) + abs(extreme_right)) / abs(degree_per_pixel_x)))
+    y2 = int(
+        ((abs(bigger_extreme_bottom) + abs(extreme_bottom)) / abs(degree_per_pixel_y))
+    )
+    x2 = int(
+        ((abs(bigger_extreme_right) + abs(extreme_right)) / abs(degree_per_pixel_x))
+    )
     return x1, y1, x2, y2
 
 
@@ -1435,12 +1575,10 @@ def plot_image(*images):
     fig, ax = plt.subplots(1, len(all_images), figsize=(size, size))
 
     for i, img in enumerate(all_images):
-        ax[i].axis('off')
-        font_dict = {
-            'fontsize': 10
-        }
+        ax[i].axis("off")
+        font_dict = {"fontsize": 10}
         ax[i].set_aspect(aspect=0.5)
-        ax[i].title.set_position([.5, -0.07 * len(all_images)])
+        ax[i].title.set_position([0.5, -0.07 * len(all_images)])
         ax[i].set_title(all_names[i], fontdict=font_dict)
         ax[i].imshow(img)
 
@@ -1463,7 +1601,7 @@ def display_progress_bar(i, max_images, postText):
     """
     n_bar = 50
     j = i / max_images
-    sys.stdout.write('\r Status: ')
+    sys.stdout.write("\r Status: ")
     sys.stdout.write(f"[{'=' * int(n_bar * j):{n_bar}s}] {int(100 * j)}%  {postText}")
     sys.stdout.flush()
 
@@ -1484,6 +1622,7 @@ class ScannedMapDigitizer:
     =====================   ============================================
 
     """
+
     input_path = None
     process_path = None
     all_images_path = []
@@ -1494,7 +1633,8 @@ class ScannedMapDigitizer:
             print("**Environment fails**")
             raise Exception(
                 f"""{import_exception} \n\nThis module requires opencv, pandas,
-                                        numpy and matplotlib as its dependencies.""")
+                                        numpy and matplotlib as its dependencies."""
+            )
         else:
             self.initialize_variables(input_folder, output_folder)
 
@@ -1505,14 +1645,16 @@ class ScannedMapDigitizer:
         """
         try:
             extent = {
-                'spatialReference': {'wkid': cls.wkid},
-                'xmin': cls.logitude_extreme_left,
-                'ymax': cls.latitude_extreme_top,
-                'xmax': cls.logitude_extreme_right,
-                'ymin': cls.latitude_extreme_bottom
+                "spatialReference": {"wkid": cls.wkid},
+                "xmin": cls.logitude_extreme_left,
+                "ymax": cls.latitude_extreme_top,
+                "xmax": cls.logitude_extreme_right,
+                "ymin": cls.latitude_extreme_bottom,
             }
         except AttributeError:
-            print("Search region extent is not set, please use set_search_region_extent() to set the search extent. ")
+            print(
+                "Search region extent is not set, please use set_search_region_extent() to set the search extent. "
+            )
             extent = {}
         return extent
 
@@ -1546,9 +1688,14 @@ class ScannedMapDigitizer:
         cls.all_images_path = []
 
     @classmethod
-    def create_mask(cls, color_list, color_delta=60,
-                    kernel_size=None, kernel_type="rect",
-                    show_result=True):
+    def create_mask(
+        cls,
+        color_list,
+        color_delta=60,
+        kernel_size=None,
+        kernel_type="rect",
+        show_result=True,
+    ):
         """
         Generates the binary masked images
 
@@ -1556,12 +1703,13 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         color_list              A list containing different color inputs
-                                (r, g, b).
+                                in list/tuple format [(r, g, b)].
+                                For eg: [[110,10,200], [210,108,11]].
         ---------------------   -------------------------------------------
         color_delta             A value which defines the range around the
                                 threshold value for a specific color used
                                 for creating the mask images.
-                                Default value is 60
+                                Default value is 60.
         ---------------------   -------------------------------------------
         kernel_size             A list of 2 integers corresponding to size
                                 of the morphological filter operations
@@ -1573,7 +1721,7 @@ class ScannedMapDigitizer:
                                 Default value is "rect".
         ---------------------   -------------------------------------------
         show_result             A boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ===========================================
         """
 
@@ -1586,8 +1734,12 @@ class ScannedMapDigitizer:
             os.mkdir(output_folder)
 
         if kernel_size is not None:
-            unittest.TestCase().assertEqual(len(kernel_size), 2, '''Expected length of \
-                                                                    kernel_size is 2''')
+            unittest.TestCase().assertEqual(
+                len(kernel_size),
+                2,
+                """Expected length of \
+                                                                    kernel_size is 2""",
+            )
             closing, opening = generate_kernel(kernel_size, kernel_type)
         else:
             closing, opening = [None, None]
@@ -1604,8 +1756,12 @@ class ScannedMapDigitizer:
 
             image = cv2.imread(os.path.join(input_folder, image_path))
             rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            hf = h5py.File(os.path.join(output_folder, image_name,
-                                        "mask", "mask_color_details.h5"), 'w')
+            hf = h5py.File(
+                os.path.join(
+                    output_folder, image_name, "mask", "mask_color_details.h5"
+                ),
+                "w",
+            )
             img_masks = [rgb_img]
             img_name = ["Scanned Map"]
             for i, color in enumerate(color_list):
@@ -1614,13 +1770,19 @@ class ScannedMapDigitizer:
                 background = np.full(rgb_img.shape, 255, dtype=np.uint8)
                 image_output = cv2.bitwise_or(background, background, mask=mask)
                 if closing is not None:
-                    image_output = cv2.morphologyEx(image_output, cv2.MORPH_CLOSE, closing)
+                    image_output = cv2.morphologyEx(
+                        image_output, cv2.MORPH_CLOSE, closing
+                    )
                 if opening is not None:
-                    image_output = cv2.morphologyEx(image_output, cv2.MORPH_OPEN, opening)
+                    image_output = cv2.morphologyEx(
+                        image_output, cv2.MORPH_OPEN, opening
+                    )
 
                 cv2.imwrite(os.path.join(output_folder, image_name, "input.jpg"), image)
-                cv2.imwrite(os.path.join(image_folder, "region_mask_" + str(i) + ".jpg"),
-                            image_output)
+                cv2.imwrite(
+                    os.path.join(image_folder, "region_mask_" + str(i) + ".jpg"),
+                    image_output,
+                )
                 hf.create_dataset("region_mask_" + str(i) + ".jpg", data=color)
                 img_masks.append(image_output)
                 img_name.append("Region Binary Mask")
@@ -1634,32 +1796,31 @@ class ScannedMapDigitizer:
         print("Output generated at ", output_folder)
 
     @classmethod
-    def create_template_image(cls, color,
-                              color_delta=10, kernel_size=2,
-                              show_result=True):
+    def create_template_image(
+        cls, color, color_delta=10, kernel_size=2, show_result=True
+    ):
         """
-       This method generates templates and color masks from scanned maps which
-       are used in the subsequent step of template matching.
+        This method generates templates and color masks from scanned maps which
+        are used in the subsequent step of template matching.
 
-        =====================   ===============================================
-        **Argument**            **Description**
-        ---------------------   -----------------------------------------------
-        color                   r, g, b value representing land color.
-                                The color parameter is required for extracting
-                                the land region and generating the binary mask
-        ---------------------   -----------------------------------------------
-        color_delta             A value which defines the range around the
-                                threshold value for a specific color used for
-                                creating the mask images.
-                                 Default value is 60
-        ---------------------   -----------------------------------------------
-        kernel_size             A list of 2 integers corresponding to size of
-                                the morphological filter operations closing
-                                and opening respectively.
-        ---------------------   -----------------------------------------------
-        show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
-        =====================   ===============================================
+         =====================   ===============================================
+         **Argument**            **Description**
+         ---------------------   -----------------------------------------------
+         color                   A list containing r, g, b value representing land color.
+                                 The color parameter is required for extracting
+                                 the land region and generating the binary mask.
+         ---------------------   -----------------------------------------------
+         color_delta             A value which defines the range around the
+                                 threshold value for a specific color used for
+                                 creating the mask images.
+                                  Default value is 60.
+         ---------------------   -----------------------------------------------
+         kernel_size             An integer corresponding to size of kernel
+                                 used for dilation(morphological operation).
+         ---------------------   -----------------------------------------------
+         show_result             A Boolean value. Set to "True" to visualize
+                                 results and set to "False" otherwise.
+         =====================   ===============================================
 
         """
         process_folder = cls.process_path
@@ -1670,11 +1831,16 @@ class ScannedMapDigitizer:
             rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             display_images = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB)]
             image_name = ["Scanned Map"]
-            all_masked_images = os.listdir(os.path.join(process_folder, image_path, "mask"))
-            all_masked_images = [img_name for img_name in all_masked_images \
-                                 if "region_mask_" in img_name]
+            all_masked_images = os.listdir(
+                os.path.join(process_folder, image_path, "mask")
+            )
+            all_masked_images = [
+                img_name for img_name in all_masked_images if "region_mask_" in img_name
+            ]
             for masked_image in all_masked_images:
-                masked_path = os.path.join(process_folder, image_path, "mask", masked_image)
+                masked_path = os.path.join(
+                    process_folder, image_path, "mask", masked_image
+                )
                 mask_filled_image = fill_mask_pixels(rgb_img, masked_path, color)
                 if kernel_size is not None:
                     kernel = np.ones((kernel_size, kernel_size), np.uint8)
@@ -1685,10 +1851,14 @@ class ScannedMapDigitizer:
             black_mask = cv2.inRange(rgb_img, clr - color_delta, clr + color_delta)
             background = np.full(rgb_img.shape, 255, dtype=np.uint8)
             image_output = cv2.bitwise_or(background, background, mask=black_mask)
-            template_image_path = os.path.join(process_folder, image_path, "template_image")
+            template_image_path = os.path.join(
+                process_folder, image_path, "template_image"
+            )
             if not os.path.isdir(template_image_path):
                 os.mkdir(template_image_path)
-            cv2.imwrite(os.path.join(template_image_path, "masked_template.jpg"), image_output)
+            cv2.imwrite(
+                os.path.join(template_image_path, "masked_template.jpg"), image_output
+            )
             display_images.append(image_output)
             image_name.append("Binary Template")
             clear_output(wait=True)
@@ -1699,10 +1869,9 @@ class ScannedMapDigitizer:
         print("Output generated at:", process_folder)
 
     @classmethod
-    def prepare_search_region(cls, search_image,
-                              color, extent,
-                              image_height, image_width,
-                              show_result=True):
+    def prepare_search_region(
+        cls, search_image, color, extent, image_height, image_width, show_result=True
+    ):
         """
         This method prepares the search region in which the prepared templates are
         to be searched.
@@ -1710,9 +1879,10 @@ class ScannedMapDigitizer:
         =====================   ==================================================
         **Argument**            **Description**
         ---------------------   --------------------------------------------------
-        color                   r, g, b value representing water color
-        ---------------------   --------------------------------------------------
         search_image            Path to the bigger image/shapefile.
+        ---------------------   --------------------------------------------------
+        color                   A list containing r, g, b value representing water color.
+                                For Eg: [173, 217, 219].
         ---------------------   --------------------------------------------------
         extent                  Extent defines the extreme longitude/latitude
                                 of the search region.
@@ -1722,7 +1892,7 @@ class ScannedMapDigitizer:
         image_width             Width of the search region.
         ---------------------   --------------------------------------------------
         show_result             A boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ==================================================
         """
 
@@ -1743,57 +1913,69 @@ class ScannedMapDigitizer:
             "xmin": bigger_extreme_left,
             "ymax": bigger_extreme_top,
             "xmax": bigger_extreme_right,
-            "ymin": bigger_extreme_bottom
+            "ymin": bigger_extreme_bottom,
         }
 
         degree_per_pixel_x = (bigger_extreme_right - bigger_extreme_left) / image_width
         degree_per_pixel_y = (bigger_extreme_bottom - bigger_extreme_top) / image_height
 
-        if search_image.lower().endswith(('.png', '.jpg',
-                                          '.jpeg', '.tiff',
-                                          '.tif', '.bmp',
-                                          '.gif')):
+        if search_image.lower().endswith(
+            (".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".gif")
+        ):
             image = cv2.imread(os.path.join(search_image))
             image = cv2.resize(image, (image_width, image_height))
 
-        elif search_image.lower().endswith('.shp'):
+        elif search_image.lower().endswith(".shp"):
             print("Processing Shape file...")
-            image = make_world_map_from_shapefile(search_image, image_height,
-                                                  image_width, bigger_extent,
-                                                  degree_per_pixel_x, degree_per_pixel_y,
-                                                  color)
+            image = make_world_map_from_shapefile(
+                search_image,
+                image_height,
+                image_width,
+                bigger_extent,
+                degree_per_pixel_x,
+                degree_per_pixel_y,
+                color,
+            )
             print("Done.")
         else:
-            raise NameError('Invalid input image or file extention!!')
+            raise NameError("Invalid input image or file extention!!")
 
         print("Extracting given extent from the world imagery...")
         process_folder = cls.process_path
-        x1, y1, x2, y2 = generate_search_coordinate(extent, bigger_extreme_left,
-                                                    bigger_extreme_top, bigger_extreme_right,
-                                                    bigger_extreme_bottom, degree_per_pixel_x,
-                                                    degree_per_pixel_y)
-        processed_image = generate_search_template(image, process_folder,
-                                                   x1, y1,
-                                                   x2, y2)
+        x1, y1, x2, y2 = generate_search_coordinate(
+            extent,
+            bigger_extreme_left,
+            bigger_extreme_top,
+            bigger_extreme_right,
+            bigger_extreme_bottom,
+            degree_per_pixel_x,
+            degree_per_pixel_y,
+        )
+        processed_image = generate_search_template(
+            image, process_folder, x1, y1, x2, y2
+        )
 
         path = os.path.join(process_folder, "search_region")
         if not os.path.isdir(path):
             os.mkdir(path)
         print("Done.")
-        cv2.imwrite(os.path.join(path, "search_template.jpg"),
-                    processed_image)
-        cv2.imwrite(os.path.join(path, "search_rgb.jpg"),
-                    image)
+        cv2.imwrite(os.path.join(path, "search_template.jpg"), processed_image)
+        cv2.imwrite(os.path.join(path, "search_rgb.jpg"), image)
         title = ["Search Region", "Binary Search Region"]
         if show_result:
-            plot_image([cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
-                        cv2.cvtColor(processed_image, cv2.COLOR_GRAY2RGB)],
-                       title, 13)
+            plot_image(
+                [
+                    cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
+                    cv2.cvtColor(processed_image, cv2.COLOR_GRAY2RGB),
+                ],
+                title,
+                13,
+            )
 
     @classmethod
-    def match_template_multiscale(cls, min_scale,
-                                  max_scale, num_scales,
-                                  show_result=True):
+    def match_template_multiscale(
+        cls, min_scale, max_scale, num_scales, show_result=True
+    ):
         """
         This method finds the location of the best match of a smaller image
         (template) in a larger image(search image) assuming it exists in the
@@ -1803,17 +1985,17 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   --------------------------------------------
         min_scale               An integer representing the minimum scale
-                                at which template matching is performed
+                                at which template matching is performed.
         ---------------------   --------------------------------------------
         max_scale               An integer representing maximum scale at
-                                which template matching is performed
+                                which template matching is performed.
         ---------------------   --------------------------------------------
         num_scales              An integer representing the number
                                 of scales at which template matching is
                                 performed.
         ---------------------   --------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   ============================================
 
         """
@@ -1828,54 +2010,83 @@ class ScannedMapDigitizer:
             image = cv2.imread(os.path.join(process_folder, image_path, "input.jpg"))
             display_images = [cv2.cvtColor(image, cv2.COLOR_BGR2RGB)]
             image_template = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "template_image", "masked_template.jpg"), 0)
+                os.path.join(
+                    process_folder, image_path, "template_image", "masked_template.jpg"
+                ),
+                0,
+            )
             search_image = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "search_region", "search_region_rgb.jpg"))
+                os.path.join(
+                    process_folder, image_path, "search_region", "search_region_rgb.jpg"
+                )
+            )
             search_image_template = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "search_region", "search_region_template.jpg"), 0)
-            detection_start_x, detection_start_y, \
-            detection_end_x, detection_end_y, \
-            max_val, scale_factor = detect_template(image_template, search_image_template,
-                                                    min_scale, max_scale,
-                                                    num_scales)
+                os.path.join(
+                    process_folder,
+                    image_path,
+                    "search_region",
+                    "search_region_template.jpg",
+                ),
+                0,
+            )
+            (
+                detection_start_x,
+                detection_start_y,
+                detection_end_x,
+                detection_end_y,
+                max_val,
+                scale_factor,
+            ) = detect_template(
+                image_template, search_image_template, min_scale, max_scale, num_scales
+            )
 
             region_name.append(image_path)
             region_accuracy.append(round(max_val, 2))
-            reference_homography = compute_reference_homography(detection_start_x,
-                                                                detection_start_y,
-                                                                detection_end_x,
-                                                                detection_end_y,
-                                                                search_image_template.shape[0],
-                                                                search_image_template.shape[1],
-                                                                image_template.shape[0],
-                                                                image_template.shape[1]
-                                                                )
+            reference_homography = compute_reference_homography(
+                detection_start_x,
+                detection_start_y,
+                detection_end_x,
+                detection_end_y,
+                search_image_template.shape[0],
+                search_image_template.shape[1],
+                image_template.shape[0],
+                image_template.shape[1],
+            )
             path = os.path.join(process_folder, image_path, "template_match")
             if not os.path.isdir(path):
                 os.mkdir(path)
 
-            hf = h5py.File(os.path.join(path, "reference_homography.h5"), 'w')
-            hf.create_dataset('detection_points',
-                              data=(detection_start_x, detection_start_y,
-                                    detection_end_x, detection_end_y))
-            hf.create_dataset('reference_homography', data=reference_homography)
+            hf = h5py.File(os.path.join(path, "reference_homography.h5"), "w")
+            hf.create_dataset(
+                "detection_points",
+                data=(
+                    detection_start_x,
+                    detection_start_y,
+                    detection_end_x,
+                    detection_end_y,
+                ),
+            )
+            hf.create_dataset("reference_homography", data=reference_homography)
             hf.close()
-            reference_image = apply_homography(image, search_image, reference_homography)
+            reference_image = apply_homography(
+                image, search_image, reference_homography
+            )
 
             cv2.imwrite(os.path.join(path, "reference_image.jpg"), reference_image)
 
-            reference_world_image = cv2.addWeighted(search_image,
-                                                    0.5,
-                                                    reference_image,
-                                                    0.5, 0)
-            cv2.imwrite(os.path.join(path, "reference_world_image.jpg"),
-                        reference_world_image)
-            display_images.append(cv2.cvtColor(reference_world_image,
-                                               cv2.COLOR_BGR2RGB))
-            title = ["Scanned Map", "Match Accuracy: " + str(round(max_val, 3) * 100) + " %"]
+            reference_world_image = cv2.addWeighted(
+                search_image, 0.5, reference_image, 0.5, 0
+            )
+            cv2.imwrite(
+                os.path.join(path, "reference_world_image.jpg"), reference_world_image
+            )
+            display_images.append(
+                cv2.cvtColor(reference_world_image, cv2.COLOR_BGR2RGB)
+            )
+            title = [
+                "Scanned Map",
+                "Match Accuracy: " + str(round(max_val, 3) * 100) + " %",
+            ]
             clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
@@ -1896,11 +2107,11 @@ class ScannedMapDigitizer:
         ---------------------   ----------------------------------------
         padding_param           A tuple that contains x-padding
                                 and y-padding at 0th and 1st index
-                                respectively
+                                respectively.
         ---------------------   ----------------------------------------
         show_result             A Boolean value. Set to "True" to
                                 visualize results and set to "False"
-                                otherwise
+                                otherwise.
         =====================   ========================================
         """
 
@@ -1912,29 +2123,48 @@ class ScannedMapDigitizer:
         for idx, image_path in enumerate(all_images):
             image = cv2.imread(os.path.join(process_folder, image_path, "input.jpg"))
             image_template = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "template_image",
-                             "masked_template.jpg"), 0)
+                os.path.join(
+                    process_folder, image_path, "template_image", "masked_template.jpg"
+                ),
+                0,
+            )
             search_image = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "search_region",
-                             "search_region_rgb.jpg"))
+                os.path.join(
+                    process_folder, image_path, "search_region", "search_region_rgb.jpg"
+                )
+            )
             search_image_template = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "search_region",
-                             "search_region_template.jpg"), 0)
+                os.path.join(
+                    process_folder,
+                    image_path,
+                    "search_region",
+                    "search_region_template.jpg",
+                ),
+                0,
+            )
             reference_image = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "template_match", "reference_image.jpg"))
+                os.path.join(
+                    process_folder, image_path, "template_match", "reference_image.jpg"
+                )
+            )
 
-            hf = h5py.File(os.path.join(process_folder,
-                                        image_path,
-                                        "template_match",
-                                        "reference_homography.h5"), 'r')
-            detection = hf.get('detection_points')
-            (detection_start_x, detection_start_y,
-             detection_end_x, detection_end_y) = np.array(detection)
-            homography = hf.get('reference_homography')
+            hf = h5py.File(
+                os.path.join(
+                    process_folder,
+                    image_path,
+                    "template_match",
+                    "reference_homography.h5",
+                ),
+                "r",
+            )
+            detection = hf.get("detection_points")
+            (
+                detection_start_x,
+                detection_start_y,
+                detection_end_x,
+                detection_end_y,
+            ) = np.array(detection)
+            homography = hf.get("reference_homography")
             reference_homography = np.array(homography)
             hf.close()
 
@@ -1943,87 +2173,116 @@ class ScannedMapDigitizer:
             search_image_roi_margin_x = padding_param[0]
             search_image_roi_margin_y = padding_param[1]
 
-            warped_processed_image = cv2.warpPerspective(image_template, reference_homography,
-                                                         (search_image_width, search_image_height))
-            warped_original_image = cv2.warpPerspective(image, reference_homography,
-                                                        (search_image_width, search_image_height))
+            warped_processed_image = cv2.warpPerspective(
+                image_template,
+                reference_homography,
+                (search_image_width, search_image_height),
+            )
+            warped_original_image = cv2.warpPerspective(
+                image, reference_homography, (search_image_width, search_image_height)
+            )
 
-            warped_image = warped_original_image[detection_start_y: detection_end_y, \
-                           detection_start_x: detection_end_x]
-            warped_template = warped_processed_image[detection_start_y: detection_end_y, \
-                              detection_start_x: detection_end_x]
+            warped_image = warped_original_image[
+                detection_start_y:detection_end_y, detection_start_x:detection_end_x
+            ]
+            warped_template = warped_processed_image[
+                detection_start_y:detection_end_y, detection_start_x:detection_end_x
+            ]
 
             search_image_roi_start_x = detection_start_x - search_image_roi_margin_x
             search_image_roi_end_x = detection_end_x + search_image_roi_margin_x
             search_image_roi_start_y = detection_start_y - search_image_roi_margin_y
             search_image_roi_end_y = detection_end_y + search_image_roi_margin_y
 
-            (search_image_roi_start_x,
-             search_image_roi_start_y,
-             search_image_roi_end_x,
-             search_image_roi_end_y) = check_bb_boundary(
+            (
+                search_image_roi_start_x,
+                search_image_roi_start_y,
+                search_image_roi_end_x,
+                search_image_roi_end_y,
+            ) = check_bb_boundary(
                 search_image_roi_start_x,
                 search_image_roi_start_y,
                 search_image_roi_end_x,
                 search_image_roi_end_y,
                 search_image_template.shape[0],
-                search_image_template.shape[1])
+                search_image_template.shape[1],
+            )
 
             search_image_offset_start_x = detection_start_x - search_image_roi_start_x
             search_image_offset_start_y = detection_start_y - search_image_roi_start_y
 
             search_image_roi_processed = search_image_template[
-                                         int(search_image_roi_start_y): \
-                                         int(search_image_roi_end_y),
-                                         int(search_image_roi_start_x): \
-                                         int(search_image_roi_end_x)]
+                int(search_image_roi_start_y) : int(search_image_roi_end_y),
+                int(search_image_roi_start_x) : int(search_image_roi_end_x),
+            ]
 
-            control_pts = estimate_control_points(search_image_roi_processed, warped_template,
-                                                  search_image_offset_start_x, search_image_offset_start_y,
-                                                  search_image_roi_start_x, search_image_roi_start_y,
-                                                  search_image, extent)
+            control_pts = estimate_control_points(
+                search_image_roi_processed,
+                warped_template,
+                search_image_offset_start_x,
+                search_image_offset_start_y,
+                search_image_roi_start_x,
+                search_image_roi_start_y,
+                search_image,
+                extent,
+            )
 
             path = os.path.join(process_folder, image_path, "georeference_image")
 
-            refined_homography, outlier_mask = \
-                compute_refined_homography_outlier_mask(control_pts)
+            refined_homography, outlier_mask = compute_refined_homography_outlier_mask(
+                control_pts
+            )
 
             filtered_control_pts = filter_control_pts(control_pts, outlier_mask)
-            search_image_filtered_control_pts, \
-            input_image_filtered_control_pts = annotate_control_pts(warped_image, search_image,
-                                                                    filtered_control_pts)
+            (
+                search_image_filtered_control_pts,
+                input_image_filtered_control_pts,
+            ) = annotate_control_pts(warped_image, search_image, filtered_control_pts)
 
-            refined_image = apply_homography(warped_image, search_image,
-                                             refined_homography)
-            refined_search_image = cv2.addWeighted(search_image, 0.5,
-                                                   refined_image, 0.5, 0)
-            selected_index = compare_homography_matrices(reference_image, refined_image,
-                                                         warped_template, control_pts)
+            refined_image = apply_homography(
+                warped_image, search_image, refined_homography
+            )
+            refined_search_image = cv2.addWeighted(
+                search_image, 0.5, refined_image, 0.5, 0
+            )
+            selected_index = compare_homography_matrices(
+                reference_image, refined_image, warped_template, control_pts
+            )
 
             if not os.path.isdir(path):
                 os.mkdir(path)
             write_georeference_xml_file(filtered_control_pts, path, image_path, extent)
-            hf = h5py.File(os.path.join(path, "refined_homography.h5"), 'w')
-            hf.create_dataset('refined_homography', data=refined_homography)
-            hf.create_dataset('selected_index', data=[selected_index])
+            hf = h5py.File(os.path.join(path, "refined_homography.h5"), "w")
+            hf.create_dataset("refined_homography", data=refined_homography)
+            hf.create_dataset("selected_index", data=[selected_index])
             hf.close()
-            cv2.imwrite(os.path.join(path, "filtered_control_pts.jpg"),
-                        input_image_filtered_control_pts)
-            cv2.imwrite(os.path.join(path, "warped_image.jpg"),
-                        warped_image)
-            cv2.imwrite(os.path.join(path, image_path + ".jpg"),
-                        warped_image)
-            title = ["Control Points on Scanned Map", "Control Points on Search Region", \
-                     "Transformed Image"]
+            cv2.imwrite(
+                os.path.join(path, "filtered_control_pts.jpg"),
+                input_image_filtered_control_pts,
+            )
+            cv2.imwrite(os.path.join(path, "warped_image.jpg"), warped_image)
+            cv2.imwrite(os.path.join(path, image_path + ".jpg"), warped_image)
+            title = [
+                "Control Points on Scanned Map",
+                "Control Points on Search Region",
+                "Transformed Image",
+            ]
             clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
-                plot_image([cv2.cvtColor(input_image_filtered_control_pts,
-                                         cv2.COLOR_BGR2RGB),
-                            cv2.cvtColor(search_image_filtered_control_pts,
-                                         cv2.COLOR_BGR2RGB),
-                            cv2.cvtColor(refined_search_image,
-                                         cv2.COLOR_BGR2RGB)], title, 15)
+                plot_image(
+                    [
+                        cv2.cvtColor(
+                            input_image_filtered_control_pts, cv2.COLOR_BGR2RGB
+                        ),
+                        cv2.cvtColor(
+                            search_image_filtered_control_pts, cv2.COLOR_BGR2RGB
+                        ),
+                        cv2.cvtColor(refined_search_image, cv2.COLOR_BGR2RGB),
+                    ],
+                    title,
+                    15,
+                )
 
         print("Output generated at: ", process_folder)
 
@@ -2041,7 +2300,7 @@ class ScannedMapDigitizer:
         **Argument**            **Description**
         ---------------------   ---------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
-                                results and set to "False" otherwise
+                                results and set to "False" otherwise.
         =====================   =============================================
 
         """
@@ -2053,24 +2312,43 @@ class ScannedMapDigitizer:
         for idx, image_path in enumerate(all_images):
             data = []
             color_counter = 0
-            image = cv2.imread(os.path.join(process_folder, image_path,
-                                            "input.jpg"))
+            image = cv2.imread(os.path.join(process_folder, image_path, "input.jpg"))
             search_image = cv2.imread(
-                os.path.join(process_folder, image_path,
-                             "search_region", "search_region_rgb.jpg"))
+                os.path.join(
+                    process_folder, image_path, "search_region", "search_region_rgb.jpg"
+                )
+            )
 
-            hf = h5py.File(os.path.join(process_folder, image_path,
-                                        "template_match", "reference_homography.h5"), 'r')
-            detection = hf.get('detection_points')
-            (detection_start_x, detection_start_y,
-             detection_end_x, detection_end_y) = np.array(detection)
-            homography = hf.get('reference_homography')
+            hf = h5py.File(
+                os.path.join(
+                    process_folder,
+                    image_path,
+                    "template_match",
+                    "reference_homography.h5",
+                ),
+                "r",
+            )
+            detection = hf.get("detection_points")
+            (
+                detection_start_x,
+                detection_start_y,
+                detection_end_x,
+                detection_end_y,
+            ) = np.array(detection)
+            homography = hf.get("reference_homography")
             reference_homography = np.array(homography)
             hf.close()
 
-            hf = h5py.File(os.path.join(process_folder, image_path,
-                                        "georeference_image", "refined_homography.h5"), 'r')
-            homography = hf.get('refined_homography')
+            hf = h5py.File(
+                os.path.join(
+                    process_folder,
+                    image_path,
+                    "georeference_image",
+                    "refined_homography.h5",
+                ),
+                "r",
+            )
+            homography = hf.get("refined_homography")
             refined_homography = np.array(homography)
             index = hf.get("selected_index")
             selected_index = int(np.array(index)[0])
@@ -2081,28 +2359,43 @@ class ScannedMapDigitizer:
                 os.mkdir(path)
 
             mapped_species_region_img = search_image
-            hf = h5py.File(os.path.join(process_folder, image_path,
-                                        "mask", "mask_color_details.h5"), 'r')
-            all_masked_images = os.listdir(os.path.join(process_folder, image_path,
-                                                        "mask"))
-            all_masked_images = [img_name for img_name in all_masked_images \
-                                 if "region_mask_" in img_name]
+            hf = h5py.File(
+                os.path.join(
+                    process_folder, image_path, "mask", "mask_color_details.h5"
+                ),
+                "r",
+            )
+            all_masked_images = os.listdir(
+                os.path.join(process_folder, image_path, "mask")
+            )
+            all_masked_images = [
+                img_name for img_name in all_masked_images if "region_mask_" in img_name
+            ]
 
             for region, masked_image in enumerate(all_masked_images):
                 color_counter += 1
-                masked_path = os.path.join(process_folder, image_path,
-                                           "mask", masked_image)
+                masked_path = os.path.join(
+                    process_folder, image_path, "mask", masked_image
+                )
                 region_mask_img = cv2.imread(masked_path)
                 color = np.array(hf.get(masked_image), dtype="int64")
-                (mapped_species_region_img,
-                 shape_file_details) = map_species_region(region_mask_img, mapped_species_region_img,
-                                                          reference_homography, refined_homography,
-                                                          selected_index, detection_start_x,
-                                                          detection_start_y, detection_end_x,
-                                                          detection_end_y, color,
-                                                          path, image_path,
-                                                          extent, idx,
-                                                          region)
+                (mapped_species_region_img, shape_file_details) = map_species_region(
+                    region_mask_img,
+                    mapped_species_region_img,
+                    reference_homography,
+                    refined_homography,
+                    selected_index,
+                    detection_start_x,
+                    detection_start_y,
+                    detection_end_x,
+                    detection_end_y,
+                    color,
+                    path,
+                    image_path,
+                    extent,
+                    idx,
+                    region,
+                )
                 data.append(shape_file_details)
                 if idx == 0:
                     all_combined[str(region)] = [shape_file_details]
@@ -2111,21 +2404,34 @@ class ScannedMapDigitizer:
 
             hf.close()
 
-            cv2.imwrite(os.path.join(path, "map_with_specie_region.jpg"),
-                        mapped_species_region_img)
+            cv2.imwrite(
+                os.path.join(path, "map_with_specie_region.jpg"),
+                mapped_species_region_img,
+            )
             title = ["Scanned Map", "Transformed Region Mask"]
             clear_output(wait=True)
             display_progress_bar(idx + 1, len(all_images), "Completed \n\n\r")
             if show_result:
-                plot_image([cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
-                            cv2.cvtColor(mapped_species_region_img,
-                                         cv2.COLOR_BGR2RGB)], title, 12)
+                plot_image(
+                    [
+                        cv2.cvtColor(image, cv2.COLOR_BGR2RGB),
+                        cv2.cvtColor(mapped_species_region_img, cv2.COLOR_BGR2RGB),
+                    ],
+                    title,
+                    12,
+                )
 
         combined_folder = os.path.join(process_folder, "combined_shapefiles")
         if not os.path.isdir(combined_folder):
             os.mkdir(combined_folder)
         for key, val in all_combined.items():
-            if not os.path.isdir(os.path.join(combined_folder, "combined_region_" + str(key))):
+            if not os.path.isdir(
+                os.path.join(combined_folder, "combined_region_" + str(key))
+            ):
                 os.mkdir(os.path.join(combined_folder, "combined_region_" + str(key)))
-            combine_shapefiles(os.path.join(combined_folder, "combined_region_" + str(key)),
-                               "combined_region", val, extent)
+            combine_shapefiles(
+                os.path.join(combined_folder, "combined_region_" + str(key)),
+                "combined_region",
+                val,
+                extent,
+            )

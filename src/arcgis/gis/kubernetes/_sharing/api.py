@@ -17,7 +17,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 
 _log = logging.getLogger(__name__)
 
@@ -131,6 +131,7 @@ class KbertnetesPy(object):
                     client_secret=client_secret,
                     token=token,
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
             else:
                 self.con = Connection(
@@ -152,6 +153,7 @@ class KbertnetesPy(object):
                     custom_auth=custom_auth,
                     token=token,
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
         # self.get_version(True)
         self.get_properties(True)

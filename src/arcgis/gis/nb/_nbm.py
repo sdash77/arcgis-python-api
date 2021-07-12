@@ -56,7 +56,7 @@ class NotebookManager(object):
         """
         Returns a list of notebook instances on the Notebook Server
 
-        :returns: List of Notebook Objects
+        :returns: List of :class:`~arcgis.gis.nb.Notebook` objects
 
         """
         return [
@@ -88,7 +88,7 @@ class NotebookManager(object):
         """
         Provides access to managing Notebook's snapshots
 
-        :return: SnapshotManager
+        :return: :class:`~arcgis.gis.nb.SnapshotManager`
         """
         if self._snapshot is None:
             from ._snapshot import SnapshotManager
@@ -151,9 +151,9 @@ class NotebookManager(object):
         machines, you can use the Task Scheduler app.
 
         :Note: To run this operation, you must be logged in with an ArcGIS
-               Enterprise portal account. You cannot execute notebooks from
-               the ArcGIS Notebook Server primary site administrator
-               account.
+            Enterprise portal account. You cannot execute notebooks from
+            the ArcGIS Notebook Server primary site administrator
+            account.
 
         You can specify parameters to be used in the notebook at execution
         time. If you've specified one or more parameters, they'll be
@@ -161,19 +161,34 @@ class NotebookManager(object):
         at the beginning of the notebook, unless you have added the tag
         parameters to a cell.
 
-        ====================     ====================================================================
-        **Argument**           **Description**
-        --------------------     --------------------------------------------------------------------
-        item                     Required Item. Opens an existing portal item.
-        --------------------     --------------------------------------------------------------------
-        update_portal_item       Optional Boolean. Specifies whether you want to update the notebook's portal item after execution. The default is true. You may want to specify true when the notebook you're executing contains information that needs to be updated, such as a workflow that collects the most recent version of a dataset. It may not be important to update the portal item if the notebook won't store any new information after executing, such as an administrative notebook that emails reminders to inactive users.
-        --------------------     --------------------------------------------------------------------
-        parameters               Optional Array. An optional array of parameters to add to the notebook for this execution. The parameters will be inserted as a new cell directly after the cell you have tagged "parameters." Separate parameters with a comma. Use the format "x":1 when defining parameters with numbers, and "y":"text" when defining parameters with text strings.
-        --------------------     --------------------------------------------------------------------
-        save_parameters          Optional Boolean.  Specifies whether the notebookParameters cell should be saved in the notebook for future use. The default is false.
-        --------------------     --------------------------------------------------------------------
-        future                   Optional Boolean.  The default is false.  When True, the operation returns a notebook job that will let you view the results as needed.
-        ====================     ====================================================================
+        ====================    ====================================================================
+        **Argument**            **Description**
+        --------------------    --------------------------------------------------------------------
+        item                    Required :class:`~arcgis.gis.Item`. Opens an existing portal item.
+        --------------------    --------------------------------------------------------------------
+        update_portal_item      Optional Boolean. Specifies whether you want to update the
+                                notebook's portal item after execution. The default is true. You may
+                                want to specify true when the notebook you're executing contains
+                                information that needs to be updated, such as a workflow that
+                                collects the most recent version of a dataset. It may not be
+                                important to update the portal item if the notebook won't store any
+                                new information after executing, such as an administrative notebook
+                                that emails reminders to inactive users.
+        --------------------    --------------------------------------------------------------------
+        parameters              Optional List. An optional array of parameters to add to the
+                                notebook for this execution. The parameters will be inserted as a
+                                new cell directly after the cell you have tagged ``parameters``.
+                                Separate parameters with a comma. Use the format "x":1 when
+                                defining parameters with numbers, and "y":"text" when defining
+                                parameters with text strings.
+        --------------------    --------------------------------------------------------------------
+        save_parameters         Optional Boolean.  Specifies whether the notebook parameters cell
+                                should be saved in the notebook for future use. The default is
+                                false.
+        --------------------    --------------------------------------------------------------------
+        future                  Optional Boolean.  The default is false.  When True, the operation
+                                returns a notebook job that will let you view the results as needed.
+        ====================    ====================================================================
 
         :returns: Boolean
 
@@ -234,26 +249,26 @@ class NotebookManager(object):
 
         Opens a notebook on the notebook server
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        itemid                 Required String. Opens an existing portal item.
-        ------------------     --------------------------------------------------------------------
-        templateid             Optional String. The id of the portal notebook template. To get the
-                               system templates, look at the sample notebooks group:
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        itemid                  Required String. Opens an existing portal item.
+        ------------------      --------------------------------------------------------------------
+        templateid              Optional String. The id of the portal notebook template. To get the
+                                system templates, look at the sample notebooks group:
 
-                               ```
-                               from arcgis.gis import GIS
-                               gis = GIS()
-                               grp = gis.groups.search("title:(esri sample notebooks) AND owner:\"esri_notebook\")[0]
-                               grp.content
+                                .. code-block:: python
 
-                               ```
-        ------------------     --------------------------------------------------------------------
-        nb_runtimeid           Optional String. The runtime to use to generate a new notebook.
-        ------------------     --------------------------------------------------------------------
-        template_nb            Optional String. The start up template for the notebook.
-        ==================     ====================================================================
+                                    >>> from arcgis.gis import GIS
+                                    >>> gis = GIS()
+                                    >>> grp = gis.groups.search("title:(esri sample notebooks) AND
+                                    >>>                                 owner:\"esri_notebook\")[0]
+                                    >>> grp.content
+        ------------------      --------------------------------------------------------------------
+        nb_runtimeid            Optional String. The runtime to use to generate a new notebook.
+        ------------------      --------------------------------------------------------------------
+        template_nb             Optional String. The start up template for the notebook.
+        ==================      ====================================================================
 
         :return: dict
 

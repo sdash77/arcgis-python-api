@@ -17,6 +17,8 @@ class LanguageManager(_BaseKube):
 
     def __init__(self, url: str, gis: GIS):
         super()
+        if url.lower().endswith("/languages") == False:
+            url += "/languages"
         self._url = url
         self._gis = gis
         self._con = gis._con
@@ -39,9 +41,9 @@ class LanguageManager(_BaseKube):
         :return: Dict[str, bool]
         """
         params = {"f": "json"}
-        return self._con.get(url, params)
+        return self._con.get(self._url, params)
 
-    @lanaguages.setter
+    @languages.setter
     def languages(self, languages: Dict[str, bool]):
         """
         This resource returns a list of all Esri supported languages and

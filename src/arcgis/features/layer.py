@@ -29,14 +29,17 @@ from arcgis.gis import Layer, _GISResource
 
 class FeatureLayer(Layer):
     """
-    The feature layer is the primary concept for working with features in a GIS.
+    The ``FeatureLayer`` class is the primary concept for working with :class:`~arcgis.features.Feature` objects
+    in a :class:`~arcgis.gis.GIS`.
 
-    Users create, import, export, analyze, edit, and visualize features, i.e. entities in space as feature layers.
+    :class:`~arcgis.gis.User` objects create, import, export, analyze, edit, and visualize features,
+    i.e. entities in space as feature layers.
 
-    Feature layers can be added to and visualized using maps. They act as inputs to and outputs from feature analysis
-    tools.
+    ``Feature layers`` can be added to and visualized using maps. They act as inputs to and outputs from feature
+    analysis tools.
 
-    Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
+    Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource
+    (:class:`~arcgis.gis.Item`) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
 
@@ -66,10 +69,13 @@ class FeatureLayer(Layer):
     @property
     def time_filter(self):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
+        The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
         service layers or time-enabled feature service layers, a time filter
         can be specified. Time can be filtered as a single instant or by
         separating the two ends of a time extent with a comma.
+
+        .. note::
+            The ``time_filter`` method is supported starting at Enterprise 10.7.1+.
 
         ================     =================================================
         **Input**            **Description**
@@ -78,17 +84,22 @@ class FeatureLayer(Layer):
                              or list of start/stop date.
         ================     =================================================
 
-        :returns: String of datetime values as milliseconds from epoch
+        :returns:
+            A string of datetime values as milliseconds from epoch
+
         """
         return self._time_filter
 
     @time_filter.setter
     def time_filter(self, value):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
-        service layers or time-enabled feature service layers, a time filter
+        The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
+        service layers or time-enabled :class:`~arcgis.features.FeatureLayer`, a time filter
         can be specified. Time can be filtered as a single instant or by
         separating the two ends of a time extent with a comma.
+
+        .. note::
+            The ``time_filter`` method is supported starting at Enterprise 10.7.1+.
 
         ================     =================================================
         **Input**            **Description**
@@ -97,7 +108,8 @@ class FeatureLayer(Layer):
                              or list of start/stop date.
         ================     =================================================
 
-        :returns: String of datetime values as milliseconds from epoch
+        :returns:
+            A string of datetime values as milliseconds from epoch
         """
         import datetime as _dt
 
@@ -139,9 +151,13 @@ class FeatureLayer(Layer):
     @renderer.setter
     def renderer(self, value):
         """
-        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        The ``renderer`` property gets and sets the Renderer of the :class:`~arcgis.features.FeatureLayer`.
 
-        :returns: InsensitiveDict
+        .. note::
+            This overrides the default symbology when displaying it on a webmap.
+
+        :returns:
+            InsensitiveDict
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -158,16 +174,44 @@ class FeatureLayer(Layer):
     @classmethod
     def fromitem(cls, item, layer_id=0):
         """
-        Creates a feature layer from a GIS Item.
-        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
-        The layer_id is the id of the layer in feature layer collection (feature service).
+        The ``fromitem`` method creates a :class:`~arcgis.features.FeatureLayer` from a :class:`~arcgis.gis.Item`
+        object.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
+                                            ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
+        -------------------------------     --------------------------------------------------------------------
+        layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
+                                            The default for ``layer_id`` is 0.
+        ===============================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> buck_1.type
+            'Feature Service'
+            >>> new_layer= FeatureLayer.fromitem(item = buck_1)
+            >>> type(new_layer)
+            <class 'arcgis.features.layer.FeatureLayer'>
+
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` object
         """
         return FeatureLayerCollection.fromitem(item).layers[layer_id]
 
     @property
     def manager(self):
         """
-        Helper object to manage the feature layer, update it's definition, etc
+        The ``manager`` property is a helper object to manage the :class:`~arcgis.features.FeatureLayer`, such as
+        updating its definition.
         """
         url = self._url
         res = search("/rest/", url).span()
@@ -182,9 +226,12 @@ class FeatureLayer(Layer):
     @property
     def metadata(self):
         """
-        The `metadata` property allows for the setting and downloading of the
-        Feature Layer's metadata.  If metadata is disabled on the GIS or the
-        layer does not support metdata, None value will be returned.
+        The ``metadata`` property allows for the setting and downloading of the
+        Feature Layer's metadata.
+
+        .. note::
+            If metadata is disabled on the GIS or the
+            layer does not support metadata, ``None`` will be returned.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -229,7 +276,7 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def update_metadata(self, file_path):
         """
-        Updates a Layer's metadata from an xml file.
+        The ``update_metadata`` updates a :class:`~arcgis.features.FeatureLayer` metadata from an xml file.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -237,7 +284,9 @@ class FeatureLayer(Layer):
         file_path             Required String.  The path to the .xml file that contains the metadata.
         =================     ====================================================================
 
-        :returns: boolean
+        :returns:
+            A boolean indicating success (True), or failure (False)
+
         """
         if "hasMetadata" not in self.properties:
             return None
@@ -282,20 +331,23 @@ class FeatureLayer(Layer):
     @property
     def container(self):
         """
-        The feature layer collection to which this layer belongs.
+        The ``container`` property gets and sets the :class:`~arcgis.features.FeatureLayerCollection` to which this
+        layer belongs.
         """
         return self._storage
 
     @container.setter
     def container(self, value):
         """
-        The feature layer collection to which this layer belongs.
+        The ``container`` property gets and sets the :class:`~arcgis.features.FeatureLayerCollection` to which this
+        layer belongs.
         """
         self._storage = value
 
     def export_attachments(self, output_folder, label_field=None):
         """
-        Exports attachments from the feature layer in Imagenet format using the output_label_field.
+        The ``exports_attachments`` exports attachments from the :class:`~arcgis.features.FeatureLayer` in Imagenet
+        format using the ``output_label_field``.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -380,12 +432,15 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):
         """
-        This operation groups data using the supplied definition
+        The ``generate_renderer`` operation groups data using the supplied definition
         (classification definition) and an optional where clause. The
-        result is a renderer object. Use baseSymbol and colorRamp to define
-        the symbols assigned to each class. If the operation is performed
-        on a table, the result is a renderer object containing the data
-        classes and no symbols.
+        result is a renderer object.
+
+        .. note::
+            Use baseSymbol and colorRamp to define
+            the symbols assigned to each class. If the operation is performed
+            on a table, the result is a renderer object containing the data
+            classes and no symbols.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -399,7 +454,8 @@ class FeatureLayer(Layer):
                               the dynamic layer/table is allowed.
         =================     ====================================================================
 
-        :returns: dictionary
+        :returns:
+            A dictionary
 
         """
         if self._dynamic_layer:
@@ -522,7 +578,10 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def get_unique_values(self, attribute, query_string="1=1"):
-        """Return a list of unique values for a given attribute
+        """
+        The ``get_unique_values`` method retrieves a list of unique values for a given attribute in the
+        :class:`~arcgis.features.FeatureLayer`.
+
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -533,6 +592,23 @@ class FeatureLayer(Layer):
                                             before unique values are returned.
                                             ex. "name_2 like '%K%'"
         ===============================     ====================================================================
+
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> lay = buck_1.layers[0]
+            >>> layer = lay.get_unique_values(attribute = "COUNTY")
+            >>> layer
+            ['PITKIN', 'PLATTE', 'TWIN FALLS']
+
+        :returns:
+            A List
         """
 
         result = self.query(
@@ -567,20 +643,23 @@ class FeatureLayer(Layer):
         as_df=True,
     ):
         """
-        The `query_top_features` is performed on a feature layer. This operation returns a feature set or
-        spatially enabled dataframe based on the top features by order within a group. For example, when
+        The ``query_top_features`` is performed on a :class:`~arcgis.features.FeatureLayer`. This operation returns a
+        feature set or spatially enabled dataframe based on the top features by order within a group. For example, when
         querying counties in the United States, you want to return the top five counties by population in
-        each state. To do this, you can use `query_top_feaures` to group by state name, order by desc on
+        each state. To do this, you can use ``query_top_features`` to group by state name, order by desc on
         the population and return the first five rows from each group (state).
 
-        The top_filter parameter is used to set the group by, order by, and count criteria used in
+        The ``top_filter`` parameter is used to set the group by, order by, and count criteria used in
         generating the result. The operation also has many of the same parameters (for example, where
         and geometry) as the layer query operation. However, unlike the layer query operation,
-        `query_top_feaures` does not support parameters such as outStatistics and its related parameters
-        or return distinct values. Consult the advancedQueryCapabilities layer property for more details.
+        ``query_top_feaures`` does not support parameters such as outStatistics and its related parameters
+        or return distinct values. Consult the ``advancedQueryCapabilities`` layer property for more details.
 
         If the feature layer collection supports the `query_top_feaures` operation, it will include
-        "supportsTopFeaturesQuery": true, in the advancedQueryCapabilities layer property.
+        `"supportsTopFeaturesQuery": True`, in the ``advancedQueryCapabilities`` layer property.
+
+        .. note::
+            See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ================================     ====================================================================
         **Argument**                         **Description**
@@ -588,13 +667,13 @@ class FeatureLayer(Layer):
         top_filter                           Required Dict. The `top_filter` define the aggregation of the data.
 
                                                - groupByFields define the field or fields used to aggregate
-                                                               your data.
+                                                your data.
                                                - topCount defines the number of features returned from the top
-                                                          features query and is a numeric value.
+                                                features query and is a numeric value.
                                                - orderByFields defines the order in which the top features will
-                                                               be returned. orderByFields can be specified in
-                                                               either ascending (asc) or descending (desc)
-                                                               order, ascending being the default.
+                                                be returned. orderByFields can be specified in
+                                                either ascending (asc) or descending (desc)
+                                                order, ascending being the default.
 
                                              Example: {"groupByFields": "worker", "topCount": 1,
                                                        "orderByFields": "employeeNumber"}
@@ -937,13 +1016,16 @@ class FeatureLayer(Layer):
         **kwargs,
     ):
         """
-        `query_analytics` exposes the standard SQL windows functions that compute
+        The ``query_analytics`` exposes the standard ``SQL`` windows functions that compute
         aggregate and ranking values based on a group of rows called window
         partition. The window function is applied to the rows after the
-        partitioning and ordering of the rows. `query_analytics` defines a
+        partitioning and ordering of the rows. ``query_analytics`` defines a
         window or user-specified set of rows within a query result set.
-        `query_analytics` can be used to compute aggregated values such as moving
+        ``query_analytics`` can be used to compute aggregated values such as moving
         averages, cumulative aggregates, or running totals.
+
+        .. note::
+            See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         **SQL Windows Function**
 
@@ -954,7 +1036,7 @@ class FeatureLayer(Layer):
         rows as a new field value. The window function can access more than just
         the current row of the query result.
 
-        `query_analytics` currently supports the following windows functions:
+        ``query_analytics`` currently supports the following windows functions:
              - Aggregate functions
              - Analytic functions
              - Ranking functions
@@ -964,7 +1046,7 @@ class FeatureLayer(Layer):
         Aggregate functions are deterministic function that perform a calculation on
         a set of values and return a single value. They are used in the select list
         with optional HAVING clause. GROUP BY clause can also be used to calculate
-        the aggregation on categories of rows. `query_analytics` can be used to
+        the aggregation on categories of rows. ``query_analytics`` can be used to
         calculate the aggregation on a specific range of value. Supported aggregate
         functions are:
              - Min
@@ -1008,7 +1090,7 @@ class FeatureLayer(Layer):
         example, you can add partition by to your window specification to look at
         different groups of rows individually.
 
-        'partitionBy' clause divides the query result set into partitions and the sql
+        ``partitionBy`` clause divides the query result set into partitions and the sql
         window function is applied to each partition.
         The 'partitionBy' clause normally refers to the column by which the result is
         partitioned. 'partitionBy' can also be a value expression (column expression or
@@ -1129,14 +1211,15 @@ class FeatureLayer(Layer):
                                             SQL92 standard or it can use the native SQL of the underlying
                                             datastore native. The default is none which means the sql_format
                                             depends on useStandardizedQuery parameter.
-                                            Values: none | standard | native
+                                            Values: `none | standard | native`
         -------------------------------     --------------------------------------------------------------------
         future                              Optional Boolean. This determines if a `Future` object is returned
                                             (True) the method returns the results directly (False).
         ===============================     ====================================================================
 
 
-        :returns: pd.DataFrame
+        :returns:
+            A Pandas DataFrame (pd.DataFrame)
 
         """
 
@@ -1234,7 +1317,7 @@ class FeatureLayer(Layer):
         **kwargs,
     ):
         """
-        Queries a feature layer based on a sql statement
+        The ``query`` method queries a :class:`~arcgis.features.FeatureLayer` based on a ``sql`` statement.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -1258,9 +1341,9 @@ class FeatureLayer(Layer):
                                             reference. If the geometry spatial reference is not specified, the
                                             unit is derived from the feature service data spatial reference.
                                             This parameter only applies if supportsQueryWithDistance is true.
-                                            Values: esriSRUnit_Meter | esriSRUnit_StatuteMile |
+                                            Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
                                                     esriSRUnit_Foot | esriSRUnit_Kilometer |
-                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile
+                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
         -------------------------------     --------------------------------------------------------------------
         time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
                                             datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -1446,7 +1529,49 @@ class FeatureLayer(Layer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A FeatureSet containing the features matching the query unless another return type is specified, such as count
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> feat_set = feature_layer.query(where = "OBJECTID= 1")
+            >>> type(feat_set)
+            <arcgis.Features.FeatureSet>
+            >>> feat_set[0]
+            <Feature 1>
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the object IDs instead of Features
+
+            >>> id_set = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_ids_only = True)
+
+            >>> type(id_set)
+            <Array>
+            >>> id_set[0]
+            <"Item_id1">
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> search_count = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_count_only = True)
+
+            >>> type(search_count)
+            <Integer>
+            >>> search_count
+            <149>
+
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
+            is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -1570,7 +1695,12 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
+        if where == "1=1":
+            params["where"] = f"{self.properties.objectIdField} > 0"
+            record_count = self._query(url, params, raw=as_raw)
+            params["where"] = "1=1"
+        else:
+            record_count = self._query(url, params, raw=as_raw)
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -1741,15 +1871,17 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def validate_sql(self, sql, sql_type="where"):
         """
-        The validate_sql operation validates an SQL-92 expression or WHERE
+        The ``validate_sql`` operation validates an ``SQL-92`` expression or WHERE
         clause.
-        The validate_sql operation ensures that an SQL-92 expression, such
+        The ``validate_sql`` operation ensures that an ``SQL-92`` expression, such
         as one written by a user through a user interface, is correct
-        before performing another operation that uses the expression. For
-        example, validateSQL can be used to validate information that is
-        subsequently passed in as part of the where parameter of the
-        calculate operation.
-        validate_sql also prevents SQL injection. In addition, all table
+        before performing another operation that uses the expression.
+
+        .. note::
+            For example, ``validateSQL`` can be used to validate information that is
+            subsequently passed in as part of the where parameter of the calculate operation.
+
+        ``validate_sql`` also prevents SQL injection. In addition, all table
         and field names used in the SQL expression or WHERE clause are
         validated to ensure they are valid tables and fields.
 
@@ -1761,20 +1893,21 @@ class FeatureLayer(Layer):
                                             Example: "Population > 300000"
         -------------------------------     --------------------------------------------------------------------
         sql_type                            Optional String. Three SQL types are supported in validate_sql
-                                                - where (default) - Represents the custom WHERE clause the user
+                                                - ``where (default)`` - Represents the custom WHERE clause the user
                                                   can compose when querying a layer or using calculate.
-                                                - expression - Represents an SQL-92 expression. Currently,
+                                                - ``expression`` - Represents an SQL-92 expression. Currently,
                                                   expression is used as a default value expression when adding a
                                                   new field or using the calculate API.
-                                                - statement - Represents the full SQL-92 statement that can be
+                                                - ``statement`` - Represents the full SQL-92 statement that can be
                                                   passed directly to the database. No current ArcGIS REST API
                                                   resource or operation supports using the full SQL-92 SELECT
                                                   statement directly. It has been added to the validateSQL for
                                                   completeness.
-                                                  Values: where | expression | statement
+                                                  Values: `where | expression | statement`
         ===============================     ====================================================================
 
-        :returns: dict
+        :returns:
+            A dictionary
         """
         params = {"f": "json"}
         if not isinstance(sql, str):
@@ -1812,7 +1945,7 @@ class FeatureLayer(Layer):
         return_true_curve=False,
     ):
         """
-        The Query operation is performed on a feature service layer
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.features.FeatureLayer`
         resource. The result of this operation are feature sets grouped
         by source layer/table object IDs. Each feature set contains
         Feature objects including the values for the fields requested by
@@ -1820,6 +1953,9 @@ class FeatureLayer(Layer):
         information, the geometry of each feature is also returned in
         the feature set. For related tables, the feature set does not
         include geometries.
+
+        .. note::
+            See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ======================     ====================================================================
         **Argument**               **Description**
@@ -1878,7 +2014,8 @@ class FeatureLayer(Layer):
         ----------------------     --------------------------------------------------------------------
         return_true_curves         Optional boolean. Optional parameter that is false by default. When
                                    set to true, returns true curves in output geometries; otherwise,
-                                   curves are converted to densified polylines or polygons.
+                                   curves are converted to densified :class:`~arcgis.geometry.Polyline` or
+                                   :class:`~arcgis.features.Polygon` objects.
         ======================     ====================================================================
 
 
@@ -1925,8 +2062,8 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
-        The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS Pro or ArcGIS Desktop.
+        The ``get_html_popup`` method provides details about the HTML pop-up
+        authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1934,8 +2071,8 @@ class FeatureLayer(Layer):
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
 
-
-        :return: string
+        :returns:
+            A string
 
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
@@ -1968,10 +2105,12 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
+        The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
+        See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
+        page in the ArcGIS REST API documentation for more informatin.
 
-        Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
-        details: `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
+        .. note::
+            The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         ========================   ====================================================================
         **Argument**               **Description**
@@ -2056,13 +2195,26 @@ class FeatureLayer(Layer):
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
         future                     Optional Boolean.  When true, the response is returned as a
-                                   `concurrent.futures.Future` object.
+                                   :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
 
+        .. code-block:: python
 
-        :return: boolean (True when successful, False when failed). When `return_messages` is True, the
-                 response messages will be return in addition to the boolean as a `tuple`.
-                 If future=True, then the result is a `Future` object. Call `result()` to get the response.
+            # Usage Example
+
+            >>> feature_layer.append(source_table_name= "Building",
+                                    field_Mappings=[{"name" : "CountyID",
+                                                    "sourceName" : "GEOID10"}],
+                                    upsert = True,
+                                    append_fields = ["fieldName1", "fieldName2",...., fieldname22],
+                                    return_messages = False)
+            <True>
+
+
+        :returns:
+            A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
+            response messages will be return in addition to the boolean as a `tuple`.
+            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
 
         """
         import copy
@@ -2156,23 +2308,24 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        This operation deletes features in a feature layer or table
+        The ``delete_features`` deletes features in a :class:`~arcgis.features.FeatureLayer` or
+        :class:`~arcgis.features.Table`
 
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
-        deletes                    Optional string. A comma seperated string of OIDs to remove from the
+        deletes                    Optional string. A comma separated string of OIDs to remove from the
                                    service.
         ----------------------     --------------------------------------------------------------------
         where                      Optional string.  A where clause for the query filter. Any legal SQL
                                    where clause operating on the fields in the layer is allowed.
                                    Features conforming to the specified where clause will be deleted.
         ----------------------     --------------------------------------------------------------------
-        geometry_filter            Optional SpatialFilter. A spatial filter from
+        geometry_filter            Optional :class:`~arcgis.geometry.filters.SpatialFilter`. A spatial filter from
                                    arcgis.geometry.filters module to filter results by a spatial
                                    relationship with another geometry.
         ----------------------     --------------------------------------------------------------------
-        gdb_version                Optional string. A Geodatabase version to apply the edits.
+        gdb_version                Optional string. A ``Geodatabase`` version to apply the edits.
         ----------------------     --------------------------------------------------------------------
         rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
                                    be applied only if all submitted edits succeed. If false, the server
@@ -2189,8 +2342,39 @@ class FeatureLayer(Layer):
                                    is the default.
         ======================     ====================================================================
 
+        .. code-block:: python
 
-        :return: Dict if future=False (default), else a concurrent.Future class.
+            # Usage Example with only a "where" sql statement
+
+            >>> from arcgis.features import FeatureLayer
+
+            >>> gis = GIS("pro")
+            >>> buck = gis.content.search("owner:"+ gis.users.me.username)
+            >>> buck_1 =buck[1]
+            >>> lay = buck_1.layers[0]
+
+            >>> la_df = lay.delete_features(where = "OBJECTID > 15")
+            >>> la_df
+            {'deleteResults': [
+            {'objectId': 1, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 2, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 3, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 4, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 5, 'uniqueId': 5, 'globalId': None, 'success': True},
+            {'objectId': 6, 'uniqueId': 6, 'globalId': None, 'success': True},
+            {'objectId': 7, 'uniqueId': 7, 'globalId': None, 'success': True},
+            {'objectId': 8, 'uniqueId': 8, 'globalId': None, 'success': True},
+            {'objectId': 9, 'uniqueId': 9, 'globalId': None, 'success': True},
+            {'objectId': 10, 'uniqueId': 10, 'globalId': None, 'success': True},
+            {'objectId': 11, 'uniqueId': 11, 'globalId': None, 'success': True},
+            {'objectId': 12, 'uniqueId': 12, 'globalId': None, 'success': True},
+            {'objectId': 13, 'uniqueId': 13, 'globalId': None, 'success': True},
+            {'objectId': 14, 'uniqueId': 14, 'globalId': None, 'success': True},
+            {'objectId': 15, 'uniqueId': 15, 'globalId': None, 'success': True}]}
+
+
+        :returns:
+            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
 
 
         """
@@ -2305,29 +2489,30 @@ class FeatureLayer(Layer):
         datum_transformation=None,
     ):
         """
-        This operation adds, updates, and deletes features to the
-        associated feature layer or table in a single call.
+        The ``edit_features`` operation adds, updates, and deletes features to the
+        associated :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.Table` in a single call.
 
 
-        When making large number (250+ records at once) of edits,
-        `append` should be used over `edit_features` to improve
-        performance and ensure service stability.
+        .. note::
+            When making large number (250+ records at once) of edits,
+            :attr:`~arcgis.features.FeatureLayer.append` should be used over ``edit_features`` to improve
+            performance and ensure service stability.
 
 
         =====================   ======================================================================================
         **Inputs**              **Description**
         ---------------------   --------------------------------------------------------------------------------------
-        adds                    Optional FeatureSet/List. The array of features to be added.
+        adds                    Optional :class:`~arcgis.features.FeatureSet`/List. The array of features to be added.
         ---------------------   --------------------------------------------------------------------------------------
-        updates                 Optional FeatureSet/List. The array of features to be updated.
+        updates                 Optional :class:`~arcgis.features.FeatureSet`/List. The array of features to be updated.
         ---------------------   --------------------------------------------------------------------------------------
-        deletes                 Optional FeatureSet/List. string of OIDs to remove from service
+        deletes                 Optional :class:`~arcgis.features.FeatureSet`/List. string of OIDs to remove from service
         ---------------------   --------------------------------------------------------------------------------------
         use_global_ids          Optional boolean. Instead of referencing the default Object ID field, the service
                                 will look at a GUID field to track changes. This means the GUIDs will be passed
                                 instead of OIDs for delete, update or add features.
         ---------------------   --------------------------------------------------------------------------------------
-        gdb_version             Optional boolean. Geodatabase version to apply the edits.
+        gdb_version             Optional boolean. `Geodatabase` version to apply the edits.
         ---------------------   --------------------------------------------------------------------------------------
         rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
                                 if all submitted edits succeed. If false, the server will apply the edits that succeed
@@ -2361,8 +2546,8 @@ class FeatureLayer(Layer):
                                     deletes      List of attachments to delete
                                     ========     ================================
 
-                                Additional attachment information `here <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_.
-
+                                See the `Apply Edits to a Feature Service layer <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_
+                                in the ArcGIS REST API for more information.
         ---------------------   --------------------------------------------------------------------------------------
         true_curve_client       Optional boolean. Introduced at 10.5. Indicates to the server whether the client is
                                 true curve capable. When set to true, this indicates to the server that true curve
@@ -2398,7 +2583,6 @@ class FeatureLayer(Layer):
 
                                 **Examples**
 
-
                                     ===========     ===================================
                                     Inputs          Description
                                     -----------     -----------------------------------
@@ -2412,7 +2596,8 @@ class FeatureLayer(Layer):
 
         =====================   ======================================================================================
 
-        Output: dictionary
+        :returns:
+            A dictionary
 
 
         """
@@ -2477,7 +2662,7 @@ class FeatureLayer(Layer):
                     return d
 
                 params["adds"] = json.dumps(
-                    [_handle_feature(f.as_dict) for f in adds], default=_date_handler
+                    [_handle_feature(f) for f in adds], default=_date_handler
                 )
             else:
                 print("pass in features as list of Features, dicts or PropertyMap")
@@ -2592,14 +2777,13 @@ class FeatureLayer(Layer):
         future=False,
     ):
         """
-        The calculate operation is performed on a feature layer
-        resource. It updates the values of one or more fields in an
+        The ``calculate`` operation is performed on a :class:`~arcgis.features.FeatureLayer`
+        resource. ``calculate`` updates the values of one or more fields in an
         existing feature service layer based on SQL expressions or scalar
-        values. The calculate operation can only be used if the
-        supportsCalculate property of the layer is true.
+        values. The ``calculate`` operation can only be used if the
+        ``supportsCalculate`` property of the layer is `True`.
         Neither the Shape field nor system fields can be updated using
-        calculate. System fields include ObjectId and GlobalId.
-        See Calculate a field for more information on supported expressions
+        ``calculate``. System fields include ``ObjectId`` and ``GlobalId``.
 
         =====================   ====================================================
         **Inputs**              **Description**
@@ -2669,7 +2853,12 @@ class FeatureLayer(Layer):
             print(fl.calculate(where="OBJECTID < 2001",
                                calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
 
-        Output: dictionary with format {'updatedFeatureCount': 1, 'success': True}
+        :returns:
+            A dictionary with the following format:
+             {
+             'updatedFeatureCount': 1,
+             'success': True
+             }
         """
         url = self._url + "/calculate"
         params = {
@@ -2963,19 +3152,33 @@ class FeatureLayer(Layer):
 
 class Table(FeatureLayer):
     """
-    Tables represent entity classes with uniform properties. In addition to working with "entities with location" as
-    features, the GIS can also work with non-spatial entities as rows in tables.
+    ``Table`` objects represent entity classes with uniform properties. In addition to working with
+    "entities with location" as :class:`~arcgis.features.Feature` objects, the :class:`~arcgis.gis.GIS` can also work
+    with non-spatial entities as rows in tables.
 
-    Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
-    have a geometry, and tables ignore any geometry related operation.
+    .. note::
+        Working with tables is similar to working with :class:`~arcgis.features.FeatureLayer`objects, except that the
+        rows (Features) in a table do not have a geometry, and tables ignore any geometry related operation.
     """
 
     @classmethod
     def fromitem(cls, item, table_id=0):
         """
-        Creates a Table from a GIS Item.
-        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
+        The ``fromitem`` method creates a :class:`~arcgis.features.Table` from a :class:`~arcgis.gis.Item` object.
         The layer_id is the id of the layer in feature layer collection (feature service).
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
+                                            ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
+        -------------------------------     --------------------------------------------------------------------
+        layer_id                            Required Integer. the id of the layer in feature layer collection (feature service).
+                                            The default for ``layer_id`` is 0.
+        ===============================     ====================================================================
+
+        :returns:
+            A :class:`~arcgis.features.Table` object
         """
         return item.tables[table_id]
 
@@ -3004,7 +3207,7 @@ class Table(FeatureLayer):
         **kwargs,
     ):
         """
-        Queries a Table Layer based on a set of criteria.
+        The ``query`` method queries a :class:`~arcgis.features.Table` Layer based on a set of criteria.
 
         ===============================     ====================================================================
         **Argument**                        **Description**
@@ -3126,7 +3329,49 @@ class Table(FeatureLayer):
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
 
-        :returns: A FeatureSet or Panda's DataFrame containing the features matching the query unless another return type is specified, such as count
+        .. code-block:: python
+
+            # Usage Example with only a "where" sql statement
+
+            >>> feat_set = feature_layer.query(where = "OBJECTID1")
+            >>> type(feat_set)
+            <arcgis.Features.FeatureSet>
+            >>> feat_set[0]
+            <Feature 1>
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the object IDs instead of Features
+
+            >>> id_set = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_ids_only = True)
+
+            >>> type(id_set)
+            <Array>
+            >>> id_set[0]
+            <"Item_id1">
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> search_count = feature_layer.query(where = "OBJECTID1",
+                                               out_fields = ["FieldName1, FieldName2"],
+                                               distance = 100,
+                                               units = 'esriSRUnit_Meter',
+                                               return_count_only = True)
+
+            >>> type(search_count)
+            <Integer>
+            >>> search_count
+            <149>
+
+        :returns:
+            A :class:`~arcgis.features.FeatureSet` object or Panda's DataFrame containing the features
+            matching the query unless another return type is specified, such as ``count``
         """
         as_raw = as_df
         if self._dynamic_layer is None:
@@ -3216,7 +3461,12 @@ class Table(FeatureLayer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
+        if where == "1=1":
+            params["where"] = f"{self.properties.objectIdField} > 0"
+            record_count = self._query(url, params, raw=as_raw)
+            params["where"] = "1=1"
+        else:
+            record_count = self._query(url, params, raw=as_raw)
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -3379,21 +3629,23 @@ class Table(FeatureLayer):
 
 class FeatureLayerCollection(_GISResource):
     """
-    A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
+    A ``FeatureLayerCollection`` is a collection of :class:`~arcgis.features.FeatureLayer` and
+    :class:`~arcgis.features.Table`, with the associated relationships among the entities.
 
     In a web GIS, a feature layer collection is exposed as a feature service with multiple feature layers.
 
-    Instances of FeatureDatasets can be obtained from feature service Items in the GIS using
-    `FeatureLayerCollection.fromitem(item)`, from feature service endpoints using the constructor, or by accessing the `dataset`
-    attribute of feature layer objects.
+    Instances of`` FeatureDatasets`` can be obtained from feature service Items in the GIS using
+    :attr:`~arcgis.features.FeatureLayerCollection.fromitem`, from feature service endpoints using the constructor,
+    or by accessing the ``dataset`` attribute of :class:`~arcgis.features.FeatureLayer` objects.
 
-    FeatureDatasets can be configured and managed using their `manager` helper object.
+    ``FeatureDatasets`` can be configured and managed using their `manager` helper object.
 
     If the dataset supports the sync operation, the `replicas` helper object allows management and synchronization of
     replicas for disconnected editing of the feature layer collection.
 
-    Note: You can use the `layers` and `tables` property to get to the individual layers and tables in this
-    feature layer collection.
+    .. note::
+        You can use the ``layers`` and ``tables`` property to get to the individual layers and tables in this
+        feature layer collection.
     """
 
     _vermgr = None
@@ -3446,7 +3698,10 @@ class FeatureLayerCollection(_GISResource):
 
     @property
     def manager(self):
-        """helper object to manage the feature layer collection, update it's definition, etc"""
+        """
+        The ``manager`` property is a helper object to manage the :class:`~arcgis.features.FeatureLayerCollection`,
+        for example updating its definition.
+        """
         if self._admin is None:
             url = self._url
             res = search("/rest/", url).span()
@@ -3461,13 +3716,13 @@ class FeatureLayerCollection(_GISResource):
     @property
     def relationships(self):
         """
-        The `relationships` property provides relationship information for
-        the layers and tables in the feature layer collection.
+        The ``relationships`` property provides relationship information for
+        the layers and tables in the :class:`~arcgis.features.FeatureLayerCollection` object.
 
         The relationships resource includes information about relationship
         rules from the back-end relationship classes, in addition to the
-        relationship information already found in the individual layers and
-        tables.
+        relationship information already found in the individual :class:`~arcgis.features.FeatureLayer` and
+        :class:`~arcgis.features.Table`.
 
         Feature layer collections that support the relationships resource
         will have the "supportsRelationshipsResource": true property on
@@ -3491,8 +3746,11 @@ class FeatureLayerCollection(_GISResource):
     @property
     def versions(self):
         """
-        Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
-        If versioning is not enabled on the service, None is returned.
+        The ``version`` property creates a ``VersionManager`` to create, update and use versions on a
+        :class:`~arcgis.features.FeatureLayerCollection`.
+
+        .. note::
+            If versioning is not enabled on the service, None is returned.
         """
         if (
             "hasVersionedData" in self.properties
@@ -3510,11 +3768,14 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def query_domains(self, layers):
         """
-        The query_domains returns full domain information for the domains
-        referenced by the layers in the feature layer collection. This
+        The ``query_domains`` returns full domain information for the domains
+        referenced by the layers in the :class:`~arcgis.features.FeatureLayerCollection`. This
         operation is performed on a feature layer collection. The operation
         takes an array of layer IDs and returns the set of domains referenced
         by the layers.
+
+        .. note::
+            See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ================================     ====================================================================
         **Argument**                         **Description**
@@ -3523,7 +3784,8 @@ class FeatureLayerCollection(_GISResource):
                                              based on the domains referenced by these layers. Example: [1,2,3,4]
         ================================     ====================================================================
 
-        :returns: list of dictionaries
+        :returns:
+            List of dictionaries
 
         """
         if not isinstance(layers, (tuple, list)):
@@ -3558,16 +3820,20 @@ class FeatureLayerCollection(_GISResource):
         return_geometry_updates=None,
     ):
         """
-        Feature service change tracking is an efficient change tracking
-        mechanism for applications. Applications can use change tracking to
+        The ``extract_changes`` is an efficient change tracking
+        mechanism for applications. Applications can use ``extract_changes`` to
         query changes that have been made to the layers and tables in the
-        service. For enterprise geodatabase based feature services published
-        from ArcGIS Pro 2.2 or higher, the ChangeTracking capability
-        requires all layers and tables to be either archive enabled or
-        branch versioned and have globalid columns. Change tracking can also
-        be enabled for ArcGIS Online hosted feature services. If all layers
+        service.
+
+        .. note::
+            For enterprise geodatabase based feature services published
+            from ArcGIS Pro 2.2 or higher, the ``ChangeTracking`` capability
+            requires all layers and tables to be either archive enabled or
+            branch versioned and have globalid columns.
+
+        Change tracking can also be enabled for ArcGIS Online hosted feature services. If all layers
         and tables in the service have the ChangeTracking capability, the
-        `extract_changes` operation can be used to get changes.
+        ``extract_changes`` operation can be used to get changes.
 
         ================================     ====================================================================
         **Argument**                         **Description**
@@ -3705,8 +3971,6 @@ class FeatureLayerCollection(_GISResource):
                                              `hasGeometryUpdates` to be set as true.
         ================================     ====================================================================
 
-        :returns: dictionary containing the layerServerGens and an array of edits
-
         .. code-block:: python
 
            #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
@@ -3741,6 +4005,9 @@ class FeatureLayerCollection(_GISResource):
            {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
+
+        :returns:
+            A dictionary containing the layerServerGens and an array of edits
         """
         url = "%s/extractChanges" % self._url
         params = {
@@ -3793,7 +4060,50 @@ class FeatureLayerCollection(_GISResource):
         out_sr=None,
     ):
         """
-        queries the feature layer collection
+         The ``query`` method queries the current :class:`~arcgis.features.FeatureLayerCollection` based on ``sql``
+         statement.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of `[<startTime>, <endTime>]` using
+                                            datetime.date, datetime.datetime or timestamp in milliseconds.
+                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                                    datetime.date, datetime.datetime or timestamp in
+                                                    milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        layer_defs_filter                   Optional Layer Definition Filter.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If true, geometry is returned with the query.
+                                            Default is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+                                            includes an array of object IDs. Otherwise, the response is a
+                                            feature set.
+        -------------------------------     --------------------------------------------------------------------
+        return_count_only                   Optional boolean. If true, the response only includes the count
+                                            (number of features/records) that would be returned by a query.
+                                            Otherwise, the response is a feature set. The default is false. This
+                                            option supersedes the returnIdsOnly parameter. If
+                                            returnCountOnly = true, the response will return both the count and
+                                            the extent.
+        -------------------------------     --------------------------------------------------------------------
+        return_z                            Optional boolean. If true, Z values are included in the results if
+                                            the features have Z values. Otherwise, Z values are not returned.
+                                            The default is False.
+        -------------------------------     --------------------------------------------------------------------
+        return_m                            Optional boolean. If true, M values are included in the results if
+                                            the features have M values. Otherwise, M values are not returned.
+                                            The default is false.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer. The ``WKID`` for the spatial reference of the returned
+                                            geometry.
+        ===============================     ====================================================================
+
+
         """
         qurl = self._url + "/query"
         params = {
@@ -3856,14 +4166,17 @@ class FeatureLayerCollection(_GISResource):
         return_m=False,
     ):
         """
-        The Query operation is performed on a feature service layer
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.features.FeatureLayerCollection`
         resource. The result of this operation are feature sets grouped
-        by source layer/table object IDs. Each feature set contains
-        Feature objects including the values for the fields requested by
-        the user. For related layers, if you request geometry
+        by source :class:`~arcgis.features.FeatureLayer`/:class:`~arcgis.features.Table` object IDs.
+        Each feature set contains :class:`~arcgis.features.Feature` objects including the values for the fields
+        requested by the :class:`~arcgis.gis.User`. For related layers, if you request geometry
         information, the geometry of each feature is also returned in
         the feature set. For related tables, the feature set does not
         include geometries.
+
+        .. note::
+            See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ======================     ====================================================================
         **Argument**               **Description**
@@ -4504,9 +4817,11 @@ class FeatureLayerCollection(_GISResource):
     # ----------------------------------------------------------------------
     def upload(self, path, description=None):
         """
-        Uploads a new item to the server. Once the operation is completed
-        successfully, the following is returned as a 2 element tuple:
-        the success Boolean, and the JSON structure of the uploaded item
+        The ``uploads`` method uploads a new item to the server.
+
+        .. note::
+            Once the operation is completed successfully, the following is returned as a 2 element tuple:
+            the success Boolean, and the JSON structure of the uploaded item
 
         ===============     ====================================================================
         **Argument**        **Description**

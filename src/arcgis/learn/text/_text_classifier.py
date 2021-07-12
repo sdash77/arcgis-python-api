@@ -18,33 +18,52 @@ try:
     from fastai.basic_train import Learner, DatasetType
     from fastai.train import to_fp16
     from fastai.metrics import accuracy, error_rate, accuracy_thresh
+
     # from transformers import AdamW
     from transformers import AutoTokenizer, AutoConfig
-    from .._utils.env  import _LAMBDA_TEXT_CLASSIFICATION
+    from .._utils.env import _LAMBDA_TEXT_CLASSIFICATION
+
     if not _LAMBDA_TEXT_CLASSIFICATION:
         from sklearn.metrics import classification_report
     from ._arcgis_transformer import ModelBackbone, infer_model_type
     from .._utils.common import _get_emd_path
-    from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html, copy_metrics
+    from .._utils.text_data import (
+        TextDataObject,
+        save_data_in_model_metrics_html,
+        copy_metrics,
+    )
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
-    from ._transformer_text_classifier import TransformerForTextClassification, backbone_models_reverse_map, \
-        transformer_architectures, transformer_seq_length
+    from ._transformer_text_classifier import (
+        TransformerForTextClassification,
+        backbone_models_reverse_map,
+        transformer_architectures,
+        transformer_seq_length,
+    )
     from transformers import logging
-    logging.get_logger('filelock').setLevel(logging.ERROR)
+
+    logging.get_logger("filelock").setLevel(logging.ERROR)
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
-    from ._transformer_text_classifier import transformer_architectures, transformer_seq_length
+    from ._transformer_text_classifier import (
+        transformer_architectures,
+        transformer_seq_length,
+    )
 
     class TransformerForTextClassification:
         _supported_backbones = transformer_architectures
+
+
 else:
-    warnings.filterwarnings("ignore", category=UserWarning, module='fastai')
+    warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
 
 try:
     import numpy as np
-    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
+
+    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 except:
     HAS_NUMPY = False
 
@@ -115,75 +134,99 @@ class TextClassifier(ArcGISModel):
     def __init__(self, data, backbone="bert-base-cased", **kwargs):
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
 
         self.logger = logging.get_logger()
-        if kwargs.get('verbose', None):
-            self.logger.setLevel(kwargs.get('verbose').upper())
+        if kwargs.get("verbose", None):
+            self.logger.setLevel(kwargs.get("verbose").upper())
         else:
             self.logger.setLevel(logging.ERROR)
 
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
         self.is_multilabel_problem = False
-        self.thresh = kwargs.get('thresh', 0.25)
-        self._mixed_precision = kwargs.get('mixed_precision', False)
-        self._seq_len = kwargs.get('seq_len', transformer_seq_length)
+        self.thresh = kwargs.get("thresh", 0.25)
+        self._mixed_precision = kwargs.get("mixed_precision", False)
+        self._seq_len = kwargs.get("seq_len", transformer_seq_length)
         model_config = kwargs.get("model_config", None)
         if data is None:
             model = TextClassifier.from_pretrained(backbone, **kwargs)
             self.learn = model.learn
             self._data = model._data
         else:
-            self._create_text_learner_object(data, backbone, kwargs.get('pretrained_path', None), config=model_config,
-                                             mixed_precision=self._mixed_precision, seq_len=self._seq_len)
+            self._create_text_learner_object(
+                data,
+                backbone,
+                kwargs.get("pretrained_path", None),
+                config=model_config,
+                mixed_precision=self._mixed_precision,
+                seq_len=self._seq_len,
+            )
 
             self.learn.model = self.learn.model.to(self._device)
             layer_groups = self.learn.model.get_layer_groups()
             self.learn.split(layer_groups)
             # self._freeze()
 
-    def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
-                                    seq_len=transformer_seq_length, config=None):
+    def _create_text_learner_object(
+        self,
+        data,
+        backbone,
+        pretrained_path=None,
+        mixed_precision=False,
+        seq_len=transformer_seq_length,
+        config=None,
+    ):
         model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
-        if not config: config = AutoConfig.from_pretrained(pretrained_model_name)
-        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config)
+        if not config:
+            config = AutoConfig.from_pretrained(pretrained_model_name)
+        transformer_tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name, config=config
+        )
 
         # pad_first = bool(model_type in ['xlnet'])
-        pad_first = True if transformer_tokenizer.padding_side == 'left' else False
+        pad_first = True if transformer_tokenizer.padding_side == "left" else False
         pad_idx = transformer_tokenizer.pad_token_id
 
-        base_tokenizer = TransformersBaseTokenizer(pretrained_tokenizer=transformer_tokenizer, seq_len=seq_len)
+        base_tokenizer = TransformersBaseTokenizer(
+            pretrained_tokenizer=transformer_tokenizer, seq_len=seq_len
+        )
         tokenizer = Tokenizer(tok_func=base_tokenizer, pre_rules=[], post_rules=[])
-        if sys.platform == 'win32': tokenizer.n_cpus = 1
+        if sys.platform == "win32":
+            tokenizer.n_cpus = 1
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
 
         if data._is_empty or data._backbone != backbone:
-            self.logger.info('Creating DataBunch')
+            self.logger.info("Creating DataBunch")
             classes = None
-            label2id, id2label = config.label2id, config.id2label
-            if id2label != {0: 'LABEL_0', 1: 'LABEL_1'}:
-                classes = [id2label[i] for i in sorted(id2label.keys())]
-
-            data._prepare_databunch(tokenizer=tokenizer, vocab=vocab, pad_first=pad_first,
-                                    pad_idx=pad_idx, backbone=backbone, classes=classes, logger=self.logger)
+            data._prepare_databunch(
+                tokenizer=tokenizer,
+                vocab=vocab,
+                pad_first=pad_first,
+                pad_idx=pad_idx,
+                backbone=backbone,
+                classes=classes,
+                logger=self.logger,
+            )
 
         databunch = data.get_databunch()
         if config.label2id != databunch.train_ds.c2i:
             config.label2id = databunch.train_ds.c2i
             config.id2label = {y: x for x, y in config.label2id.items()}
 
-        if pretrained_path is not None: pretrained_path = str(_get_emd_path(pretrained_path))
+        if pretrained_path is not None:
+            pretrained_path = str(_get_emd_path(pretrained_path))
 
         model = TransformerForTextClassification(
             architecture=model_type,
             pretrained_model_name=pretrained_model_name,
             config=config,
             pretrained_model_path=pretrained_path,
-            seq_len=seq_len
+            seq_len=seq_len,
         )
         model.init_model()
         # opt_func = partial(AdamW, correct_bias=False)
@@ -195,7 +238,9 @@ class TextClassifier(ArcGISModel):
             metrics = [accuracy_multi]
             loss_func = nn.BCEWithLogitsLoss()
             # self.learn = Learner(databunch, model, opt_func=opt_func, loss_func=loss_func, metrics=metrics)
-            self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics, path=data.path)
+            self.learn = Learner(
+                databunch, model, loss_func=loss_func, metrics=metrics, path=data.path
+            )
         else:
             metrics = [accuracy, error_rate]
 
@@ -210,7 +255,8 @@ class TextClassifier(ArcGISModel):
                 error_message = (
                     f"Mixed precision training is not supported for transformer model - {model_type.upper()}."
                     "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
-                    f" or choose a different transformer architectures from - {transformer_architectures}")
+                    f" or choose a different transformer architectures from - {transformer_architectures}"
+                )
                 raise Exception(error_message)
             self.logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
@@ -219,11 +265,11 @@ class TextClassifier(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'accuracy', 'error_rate']
+        return ["valid_loss", "accuracy", "error_rate"]
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -244,6 +290,7 @@ class TextClassifier(ArcGISModel):
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
@@ -275,6 +322,7 @@ class TextClassifier(ArcGISModel):
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
 
         model_config = AutoConfig.from_pretrained(backbone)
@@ -309,6 +357,7 @@ class TextClassifier(ArcGISModel):
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
 
         emd_path = _get_emd_path(emd_path)
@@ -329,11 +378,20 @@ class TextClassifier(ArcGISModel):
             data_is_none = True
             data = TextDataObject(task="classification")
             data._backbone = pretrained_model
-            data.create_empty_object_for_classification(text_cols, label_cols, class_labels, is_multilabel_problem)
+            data.create_empty_object_for_classification(
+                text_cols, label_cols, class_labels, is_multilabel_problem
+            )
             data.emd, data.emd_path = emd, emd_path.parent
-        cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path),
-                         mixed_precision=mixed_precision, thresh=thresh, seq_len=seq_len)
-        if data_is_none: cls_object._data._is_empty = True
+        cls_object = cls(
+            data,
+            pretrained_model,
+            pretrained_path=str(emd_path),
+            mixed_precision=mixed_precision,
+            thresh=thresh,
+            seq_len=seq_len,
+        )
+        if data_is_none:
+            cls_object._data._is_empty = True
         return cls_object
 
     def load(self, name_or_path):
@@ -347,15 +405,23 @@ class TextClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-        if '\\' in str(name_or_path) or '/' in str(name_or_path):
+        if "\\" in str(name_or_path) or "/" in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
         else:
-            name_or_path = Path('models') / name_or_path
+            name_or_path = Path("models") / name_or_path
             name_or_path = str(_get_emd_path(name_or_path))
         return super().load(name_or_path)
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
-             save_optimizer=False, **kwargs):
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        **kwargs,
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment.
@@ -393,10 +459,19 @@ class TextClassifier(ArcGISModel):
         :returns: the qualified path at which the model is saved
         """
         from ..models._arcgis_model import _create_zip
-        zip_files = kwargs.pop('zip_files', True)
-        overwrite = kwargs.pop('overwrite', False)
-        path = super().save(name_or_path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
-                            save_optimizer=save_optimizer, zip_files=False, **kwargs)
+
+        zip_files = kwargs.pop("zip_files", True)
+        overwrite = kwargs.pop("overwrite", False)
+        path = super().save(
+            name_or_path,
+            framework,
+            publish=False,
+            gis=None,
+            compute_metrics=compute_metrics,
+            save_optimizer=save_optimizer,
+            zip_files=False,
+            **kwargs,
+        )
 
         self._save_df_to_html(path)
 
@@ -404,31 +479,39 @@ class TextClassifier(ArcGISModel):
             _create_zip(path.name, str(path))
 
         if publish:
-            self._publish_dlpk((path/path.stem).with_suffix('.dlpk'), gis=gis, overwrite=overwrite)
+            self._publish_dlpk(
+                (path / path.stem).with_suffix(".dlpk"), gis=gis, overwrite=overwrite
+            )
 
         return Path(path)
 
     @property
     def _model_metrics(self):
         from IPython.utils import io
+
         with io.capture_output() as captured:
             metrics = {"Accuracy": self.accuracy()}
             per_class_metric_df = self.metrics_per_label()
-            metrics["MetricsPerLabel"] = json.dumps(per_class_metric_df.transpose().to_dict())
+            metrics["MetricsPerLabel"] = json.dumps(
+                per_class_metric_df.transpose().to_dict()
+            )
         return metrics
 
     def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
-        _emd_template["Architecture"]= self.learn.model._transformer_architecture
-        _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name
+        _emd_template["Architecture"] = self.learn.model._transformer_architecture
+        _emd_template[
+            "PretrainedModel"
+        ] = self.learn.model._transformer_pretrained_model_name
         _emd_template["ModelType"] = "Transformer"
         _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols
         _emd_template["LabelColumns"] = self._data._label_cols
         _emd_template["Label2Id"] = self.learn.model._config.label2id
         _emd_template["SequenceLength"] = self._seq_len
-        if is_multilabel_problem: _emd_template["Threshold"] = self.thresh
+        if is_multilabel_problem:
+            _emd_template["Threshold"] = self.thresh
         _emd_template["IsMultilabelClassificationProblem"] = is_multilabel_problem
         return _emd_template
 
@@ -460,18 +543,23 @@ class TextClassifier(ArcGISModel):
         try:
             self._check_requisites()
         except Exception as e:
-            acc = self._data.emd.get('Accuracy')
-            if acc: return acc
-            else:   self.logger.error("Metric not found in the loaded model")
+            acc = self._data.emd.get("Accuracy")
+            if acc:
+                return acc
+            else:
+                self.logger.error("Metric not found in the loaded model")
         else:
             if not HAS_NUMPY:
                 self.logger.error("This function requires numpy.")
                 return
-            if hasattr(self.learn, 'recorder'):
+            if hasattr(self.learn, "recorder"):
                 metrics_names = self.learn.recorder.metrics_names
                 metrics_values = self.learn.recorder.metrics
                 if len(metrics_names) > 0 and len(metrics_values) > 0:
-                    metrics = {x: round(metrics_values[-1][i].item(), 4) for i, x in enumerate(metrics_names)}
+                    metrics = {
+                        x: round(metrics_values[-1][i].item(), 4)
+                        for i, x in enumerate(metrics_names)
+                    }
                     metric = metrics["accuracy"]
                 else:
                     metric = self._calculate_model_metric()
@@ -484,22 +572,41 @@ class TextClassifier(ArcGISModel):
         validation_dataframe = self._data._valid_df
 
         if self.is_multilabel_problem:
-            predictions = [x[2] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-            labels = [[int(getattr(item, column)) for column in self._data._label_cols]
-                      for idx, item in validation_dataframe.iterrows()]
+            predictions = [
+                x[2]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist()
+                )
+            ]
+            labels = [
+                [int(getattr(item, column)) for column in self._data._label_cols]
+                for idx, item in validation_dataframe.iterrows()
+            ]
 
-            metric = accuracy_thresh \
-                (torch.tensor(predictions), torch.tensor(labels), thresh=self.thresh, sigmoid=False).item()
+            metric = accuracy_thresh(
+                torch.tensor(predictions),
+                torch.tensor(labels),
+                thresh=self.thresh,
+                sigmoid=False,
+            ).item()
         else:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
+            predictions = [
+                x[1]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist()
+                )
+            ]
             labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
             metric = round((np.sum(np.array(predictions) == labels) / len(labels)), 4)
 
         return metric
 
     def _predict(self, text, thresh=None):
-        if thresh is None: thresh = self.thresh
-        result = self.learn.model.predict_class(text, self._device, self.is_multilabel_problem, thresh)
+        if thresh is None:
+            thresh = self.thresh
+        result = self.learn.model.predict_class(
+            text, self._device, self.is_multilabel_problem, thresh
+        )
         return result
 
     def predict(self, text_or_list, show_progress=True, thresh=None):
@@ -520,7 +627,7 @@ class TextClassifier(ArcGISModel):
                                 the class label(s). Applicable only for multi-label
                                 classification task. Default is the value set
                                 during the model creation time, otherwise the value
-                                of 0.25 is set. 
+                                of 0.25 is set.
         =====================   ===========================================
 
         :returns: * In case of single label classification problem, a tuple containing
@@ -531,8 +638,10 @@ class TextClassifier(ArcGISModel):
                   predicted labels, 0's otherwise and list containing a score for each label
         """
         if self.is_multilabel_problem is False and thresh is not None:
-            self.logger.error("Passing a threshold value for non multi-label classification task "
-                           "will not have any affect on the predicting the class label")
+            self.logger.error(
+                "Passing a threshold value for non multi-label classification task "
+                "will not have any affect on the predicting the class label"
+            )
 
         if isinstance(text_or_list, (list, tuple, np.ndarray)):
             if show_progress:
@@ -551,29 +660,47 @@ class TextClassifier(ArcGISModel):
             return (text_or_list, *preds)
 
     def _save_df_to_html(self, path):
-        if getattr(self._data, '_is_empty', False):
+        if getattr(self._data, "_is_empty", False):
             if self._data.emd_path:
                 copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return
         validation_dataframe = self._data._valid_df.sample(n=5)
         if self.is_multilabel_problem:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist(),
-                                                          show_progress=False)]
-            labels = [";".join([column for column in self._data._label_cols if int(getattr(item, column))])
-                      for idx, item in validation_dataframe.iterrows()]
+            predictions = [
+                x[1]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist(),
+                    show_progress=False,
+                )
+            ]
+            labels = [
+                ";".join(
+                    [
+                        column
+                        for column in self._data._label_cols
+                        if int(getattr(item, column))
+                    ]
+                )
+                for idx, item in validation_dataframe.iterrows()
+            ]
 
         else:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist(),
-                                                          show_progress=False)]
+            predictions = [
+                x[1]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist(),
+                    show_progress=False,
+                )
+            ]
             labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
 
-
-
-        new_df = pd.DataFrame(validation_dataframe[self._data._text_cols].values, columns=["source"])
+        new_df = pd.DataFrame(
+            validation_dataframe[self._data._text_cols].values, columns=["source"]
+        )
         new_df["target"] = labels
         new_df["predictions"] = predictions
 
-        df_str = new_df.to_html(index=False, justify='left').replace(">\n", ">")
+        df_str = new_df.to_html(index=False, justify="left").replace(">\n", ">")
 
         msg = "<p><b>Sample Results</b></p>"
 
@@ -588,26 +715,51 @@ class TextClassifier(ArcGISModel):
         try:
             self._check_requisites()
         except Exception as e:
-            metrics_per_label = self._data.emd.get('MetricsPerLabel')
+            metrics_per_label = self._data.emd.get("MetricsPerLabel")
             if metrics_per_label:
                 metrics_per_label = json.loads(metrics_per_label)
                 return self._create_dataframe_from_dict(metrics_per_label)
-            else: self.logger.error("Metric not found in the loaded model")
+            else:
+                self.logger.error("Metric not found in the loaded model")
         else:
             validation_dataframe = self._data._valid_df
             if self.is_multilabel_problem:
-                predictions = [x[2] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-                labels = [[int(getattr(item, column)) for column in self._data._label_cols] for idx, item in
-                          validation_dataframe.iterrows()]
+                predictions = [
+                    x[2]
+                    for x in self.predict(
+                        validation_dataframe[self._data._text_cols].tolist()
+                    )
+                ]
+                labels = [
+                    [int(getattr(item, column)) for column in self._data._label_cols]
+                    for idx, item in validation_dataframe.iterrows()
+                ]
                 target_names = self._data._label_cols
-                output_dict = classification_report(labels, predictions, target_names=target_names,
-                                               zero_division=1, output_dict=True)
+                output_dict = classification_report(
+                    labels,
+                    predictions,
+                    target_names=target_names,
+                    zero_division=1,
+                    output_dict=True,
+                )
             else:
-                predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-                labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
+                predictions = [
+                    x[1]
+                    for x in self.predict(
+                        validation_dataframe[self._data._text_cols].tolist()
+                    )
+                ]
+                labels = [
+                    x[0] for x in validation_dataframe[self._data._label_cols].values
+                ]
                 target_names = self.learn.model._config.label2id.keys()
-                output_dict = classification_report(labels, predictions, target_names=target_names,
-                                               zero_division=1, output_dict=True)
+                output_dict = classification_report(
+                    labels,
+                    predictions,
+                    target_names=target_names,
+                    zero_division=1,
+                    output_dict=True,
+                )
 
             return self._create_dataframe_from_dict(output_dict)
 
@@ -621,8 +773,12 @@ class TextClassifier(ArcGISModel):
         df = pd.DataFrame(out_dict)
         # df.drop("support", inplace=True)
         dataframe = df.T.round(4)
-        column_mappings = {'precision': 'Precision_score', 'recall': 'Recall_score',
-                           'f1-score': 'F1_score', 'support': 'Support'}
+        column_mappings = {
+            "precision": "Precision_score",
+            "recall": "Recall_score",
+            "f1-score": "F1_score",
+            "support": "Support",
+        }
         dataframe.rename(columns=column_mappings, inplace=True)
         return dataframe
 
@@ -632,21 +788,47 @@ class TextClassifier(ArcGISModel):
         """
         self._check_requisites()
         validation_dataframe = self._data._valid_df
-        misclassified_records, text_col, label_col = [], self._data._text_cols, self._data._label_cols
+        misclassified_records, text_col, label_col = (
+            [],
+            self._data._text_cols,
+            self._data._label_cols,
+        )
         if self.is_multilabel_problem:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-            labels = [";".join([column for column in self._data._label_cols if int(getattr(item, column))])
-                      for idx, item in validation_dataframe.iterrows()]
+            predictions = [
+                x[1]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist()
+                )
+            ]
+            labels = [
+                ";".join(
+                    [
+                        column
+                        for column in self._data._label_cols
+                        if int(getattr(item, column))
+                    ]
+                )
+                for idx, item in validation_dataframe.iterrows()
+            ]
             for index, row in validation_dataframe.iterrows():
                 label, prediction = labels[index], predictions[index]
                 if label != prediction:
                     misclassified_records.append((row[text_col], label, prediction))
         else:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-            label_col = label_col if isinstance(label_col, (str, bytes)) else label_col[0]
+            predictions = [
+                x[1]
+                for x in self.predict(
+                    validation_dataframe[self._data._text_cols].tolist()
+                )
+            ]
+            label_col = (
+                label_col if isinstance(label_col, (str, bytes)) else label_col[0]
+            )
             for index, row in validation_dataframe.iterrows():
-                label, prediction =  row[label_col], predictions[index]
+                label, prediction = row[label_col], predictions[index]
                 if label != prediction:
                     misclassified_records.append((row[text_col], label, prediction))
 
-        return pd.DataFrame(misclassified_records, columns=[text_col, "Target", "Prediction"])
+        return pd.DataFrame(
+            misclassified_records, columns=[text_col, "Target", "Prediction"]
+        )

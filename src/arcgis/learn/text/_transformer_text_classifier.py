@@ -9,45 +9,103 @@ try:
     from transformers import AutoModelForSequenceClassification
     from ._arcgis_transformer import ArcGISTransformer, transformer_seq_length
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMER = False
     transformer_seq_length = 512
+
     class ArcGISTransformer:
         pass
 
+
 backbone_models_map = {
-    'bert': ('bert-base-cased', 'bert-base-uncased', 'bert-large-cased', 'bert-large-uncased'),
-    'albert': ('albert-base-v1', 'albert-base-v2', 'albert-large-v1', 'albert-large-v2',
-               'albert-xlarge-v1', 'albert-xlarge-v2', 'albert-xxlarge-v1', 'albert-xxlarge-v2'),
-    'roberta': ('roberta-base', 'roberta-large', 'distilroberta-base'),
-    'distilbert': ('distilbert-base-cased', 'distilbert-base-uncased'),
-    'xlnet': ('xlnet-base-cased', 'xlnet-large-cased'),
-    'xlm': ('xlm-mlm-ende-1024', 'xlm-mlm-enfr-1024', 'xlm-mlm-xnli15-1024', 'xlm-mlm-en-2048'),
-    'flaubert': ('flaubert/flaubert_small_cased', 'flaubert/flaubert_base_cased', 'flaubert/flaubert_base_uncased',
-                 'flaubert/flaubert_large_cased'),
-    'xlm-roberta': ('xlm-roberta-base', 'xlm-roberta-large'),
-    'longformer': ('allenai/longformer-base-4096',),
-    'mobilebert': ('google/mobilebert-uncased',),
-    'electra': ('google/electra-base-discriminator', 'google/electra-base-generator'),
-    'bart': ('facebook/bart-base', 'facebook/bart-large'),
-    'camembert': ('camembert-base',),
-    'funnel': ('funnel-transformer/small', 'funnel-transformer/small-base', 'funnel-transformer/medium',
-               'funnel-transformer/medium-base')
+    "bert": (
+        "bert-base-cased",
+        "bert-base-uncased",
+        "bert-large-cased",
+        "bert-large-uncased",
+    ),
+    "albert": (
+        "albert-base-v1",
+        "albert-base-v2",
+        "albert-large-v1",
+        "albert-large-v2",
+        "albert-xlarge-v1",
+        "albert-xlarge-v2",
+        "albert-xxlarge-v1",
+        "albert-xxlarge-v2",
+    ),
+    "roberta": ("roberta-base", "roberta-large", "distilroberta-base"),
+    "distilbert": ("distilbert-base-cased", "distilbert-base-uncased"),
+    "xlnet": ("xlnet-base-cased", "xlnet-large-cased"),
+    "xlm": (
+        "xlm-mlm-ende-1024",
+        "xlm-mlm-enfr-1024",
+        "xlm-mlm-xnli15-1024",
+        "xlm-mlm-en-2048",
+    ),
+    "flaubert": (
+        "flaubert/flaubert_small_cased",
+        "flaubert/flaubert_base_cased",
+        "flaubert/flaubert_base_uncased",
+        "flaubert/flaubert_large_cased",
+    ),
+    "xlm-roberta": ("xlm-roberta-base", "xlm-roberta-large"),
+    "longformer": ("allenai/longformer-base-4096",),
+    "mobilebert": ("google/mobilebert-uncased",),
+    "electra": ("google/electra-base-discriminator", "google/electra-base-generator"),
+    "bart": ("facebook/bart-base", "facebook/bart-large"),
+    "camembert": ("camembert-base",),
+    "funnel": (
+        "funnel-transformer/small",
+        "funnel-transformer/small-base",
+        "funnel-transformer/medium",
+        "funnel-transformer/medium-base",
+    ),
 }
 
-transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'FlauBERT', 'CamemBERT', 'XLNet',
-                             'XLM', 'XLM-RoBERTa', 'Bart', 'ELECTRA', 'Longformer', 'MobileBERT', 'Funnel']
+transformer_architectures = [
+    "BERT",
+    "RoBERTa",
+    "DistilBERT",
+    "ALBERT",
+    "FlauBERT",
+    "CamemBERT",
+    "XLNet",
+    "XLM",
+    "XLM-RoBERTa",
+    "Bart",
+    "ELECTRA",
+    "Longformer",
+    "MobileBERT",
+    "Funnel",
+]
 
-backbone_models_reverse_map = {x:key for key, val in backbone_models_map.items() for x in val}
+backbone_models_reverse_map = {
+    x: key for key, val in backbone_models_map.items() for x in val
+}
 
 
 class TransformerForTextClassification(ArcGISTransformer):
 
     _supported_backbones = transformer_architectures
 
-    def __init__(self, architecture, pretrained_model_name, config=None, pretrained_model_path=None,
-                 seq_len=transformer_seq_length):
-        super().__init__(architecture, pretrained_model_name, config, pretrained_model_path, task="classification")
+    def __init__(
+        self,
+        architecture,
+        pretrained_model_name,
+        config=None,
+        pretrained_model_path=None,
+        seq_len=transformer_seq_length,
+    ):
+        super().__init__(
+            architecture,
+            pretrained_model_name,
+            config,
+            pretrained_model_path,
+            task="classification",
+        )
         self._seq_len = seq_len
         self._max_seq_len = None
 
@@ -55,7 +113,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % type(self).__name__
+        return "<%s>" % type(self).__name__
 
     def _process_config(self):
         """
@@ -69,7 +127,8 @@ class TransformerForTextClassification(ArcGISTransformer):
         on twitter dataset, we were getting errors while training the model. Seems like a bug in the 
         library. Hence using the `factorized` attention type here.
         """
-        if 'funnel' in self._transformer_pretrained_model_name: self._config.attention_type = "factorized"
+        if "funnel" in self._transformer_pretrained_model_name:
+            self._config.attention_type = "factorized"
 
     def _set_max_seq_length(self):
         """
@@ -94,8 +153,10 @@ class TransformerForTextClassification(ArcGISTransformer):
         if architecture.lower() in backbone_models_map:
             return backbone_models_map[architecture.lower()]
         else:
-            return f"Error, wrong architecture name - {architecture} supplied. " \
-                   f"Please choose from {cls._supported_backbones}"
+            return (
+                f"Error, wrong architecture name - {architecture} supplied. "
+                f"Please choose from {cls._supported_backbones}"
+            )
 
     def save(self, model_path):
         """
@@ -110,8 +171,10 @@ class TransformerForTextClassification(ArcGISTransformer):
         """
         if not os.path.exists(model_path):
             os.mkdir(model_path)
-        model_params = {"architecture": self._transformer_architecture,
-                        "pretrained_model": self._transformer_pretrained_model_name}
+        model_params = {
+            "architecture": self._transformer_architecture,
+            "pretrained_model": self._transformer_pretrained_model_name,
+        }
         file_path = os.path.join(model_path, self._outfile)
         out_file = open(file_path, "w")
         json.dump(model_params, out_file)
@@ -136,7 +199,9 @@ class TransformerForTextClassification(ArcGISTransformer):
                 data = json.load(f)
             architecture = data.get("architecture")
             pretrained_model_name = data.get("pretrained_model")
-            obj = TransformerForTextClassification(architecture, pretrained_model_name, pretrained_model_path=path)
+            obj = TransformerForTextClassification(
+                architecture, pretrained_model_name, pretrained_model_path=path
+            )
             obj.init_model()
             return obj
         else:
@@ -168,12 +233,17 @@ class TransformerForTextClassification(ArcGISTransformer):
             base_path, extension = os.path.splitext(self._pretrained_model_path)
             path = base_path + ".pth"
             if extension == ".emd" and os.path.exists(path):
-                self._transformer = AutoModelForSequenceClassification.from_pretrained(path, config=self._config)
+                self._transformer = AutoModelForSequenceClassification.from_pretrained(
+                    path, config=self._config
+                )
             else:
-                self._transformer = AutoModelForSequenceClassification.from_pretrained(self._pretrained_model_path)
+                self._transformer = AutoModelForSequenceClassification.from_pretrained(
+                    self._pretrained_model_path
+                )
         else:
-            self._transformer = AutoModelForSequenceClassification.\
-                from_pretrained(self._transformer_pretrained_model_name, config=self._config)
+            self._transformer = AutoModelForSequenceClassification.from_pretrained(
+                self._transformer_pretrained_model_name, config=self._config
+            )
 
     def predict_class(self, text, device, is_multilabel_problem=False, thresh=None):
         """
@@ -190,7 +260,13 @@ class TransformerForTextClassification(ArcGISTransformer):
         """
         # device_type = next(self._transformer.parameters()).device.type
         # device = torch.device("cuda:0" if device_type == "cuda" else "cpu")
-        sequence = torch.tensor([self._tokenizer.encode(text, max_length=self._max_seq_len, truncation=True)]).to(device)
+        sequence = torch.tensor(
+            [
+                self._tokenizer.encode(
+                    text, max_length=self._max_seq_len, truncation=True
+                )
+            ]
+        ).to(device)
         logits = self._transformer(sequence)[0]
         if is_multilabel_problem:
             results = torch.sigmoid(logits)[0]

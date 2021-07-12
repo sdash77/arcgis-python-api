@@ -8,7 +8,7 @@ from pathlib import Path
 
 HAS_FASTAI = True
 HAS_SHAP = True
-import_exception=None
+import_exception = None
 
 try:
     import shap
@@ -20,17 +20,24 @@ from arcgis.features import FeatureLayer
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from fastai.tabular import tabular_learner, TabularDataBunch, TabularList, TabularModel
+    from fastai.tabular import (
+        tabular_learner,
+        TabularDataBunch,
+        TabularList,
+        TabularModel,
+    )
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
-    from .._utils.tabular_data import TabularDataObject,explain_prediction
+    from .._utils.tabular_data import TabularDataObject, explain_prediction
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
 HAS_NUMPY = True
@@ -43,8 +50,10 @@ except:
 def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
 
     if pretrained_path:
-        learn = load_learner(os.path.dirname(pretrained_path),
-                             os.path.basename(pretrained_path).split('.')[0] + "_exported.pth")
+        learn = load_learner(
+            os.path.dirname(pretrained_path),
+            os.path.basename(pretrained_path).split(".")[0] + "_exported.pth",
+        )
         learn.path = data.path
         if not data._is_empty:
             learn.data = data._databunch
@@ -53,8 +62,16 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
         if not emb_szs or isinstance(emb_szs, dict):
             emb_szs = databunch.get_emb_szs({} if not emb_szs else emb_szs)
 
-        model = TabularModel(emb_szs, len(databunch.cont_names), out_sz=databunch.c, layers=layers, ps=ps, emb_drop=emb_drop,
-                             y_range=None, use_bn=False)
+        model = TabularModel(
+            emb_szs,
+            len(databunch.cont_names),
+            out_sz=databunch.c,
+            layers=layers,
+            ps=ps,
+            emb_drop=emb_drop,
+            y_range=None,
+            use_bn=False,
+        )
         learn = Learner(databunch, model, path=data.path)
 
     return learn
@@ -94,10 +111,12 @@ class FullyConnectedNetwork(ArcGISModel):
         if layers is None:
             layers = [500, 100]
 
-        ps = kwargs.get('ps', None)
-        emb_drop = kwargs.get('emb_drop', 0)
+        ps = kwargs.get("ps", None)
+        emb_drop = kwargs.get("emb_drop", 0)
 
-        self.learn = _get_learner_object(data, layers, emb_szs, ps, emb_drop, kwargs.get('pretrained_path', None))
+        self.learn = _get_learner_object(
+            data, layers, emb_szs, ps, emb_drop, kwargs.get("pretrained_path", None)
+        )
         self._layers = layers
         self.learn.model = self.learn.model.to(self._device)
         idx = 1
@@ -108,11 +127,11 @@ class FullyConnectedNetwork(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss']
+        return ["valid_loss"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -139,17 +158,19 @@ class FullyConnectedNetwork(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        dependent_variable = emd['dependent_variable']
-        categorical_variables = emd['categorical_variables']
-        continuous_variables = emd['continuous_variables']
+        dependent_variable = emd["dependent_variable"]
+        categorical_variables = emd["categorical_variables"]
+        continuous_variables = emd["continuous_variables"]
         _is_classification = False
-        if emd['_is_classification'] == "classification":
+        if emd["_is_classification"] == "classification":
             _is_classification = True
 
-        layers = emd['layers']
+        layers = emd["layers"]
         if data is None:
 
-            data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, None)
+            data = TabularDataObject._empty(
+                categorical_variables, continuous_variables, dependent_variable, None
+            )
             data._is_classification = _is_classification
             class_object = cls(data, pretrained_path=emd_path)
             class_object._data.emd = emd
@@ -158,7 +179,15 @@ class FullyConnectedNetwork(ArcGISModel):
 
         return cls(data, layers=layers, pretrained_path=str(emd_path))
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, save_optimizer=False, **kwargs):
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        save_optimizer=False,
+        **kwargs,
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -189,30 +218,34 @@ class FullyConnectedNetwork(ArcGISModel):
         =====================   ===========================================
         """
 
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = os.path.abspath(name_or_path)
         else:
-            path = os.path.join(self._data.path, 'models', name_or_path)
+            path = os.path.join(self._data.path, "models", name_or_path)
             if not os.path.exists(os.path.dirname(path)):
                 os.mkdir(os.path.dirname(path))
 
         if not os.path.exists(path):
             os.mkdir(path)
 
-        self.learn.export(os.path.join(path, os.path.basename(path) + '_exported.pth'))
+        self.learn.export(os.path.join(path, os.path.basename(path) + "_exported.pth"))
         from IPython.utils import io
+
         with io.capture_output() as captured:
-            super().save(path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs)
+            super().save(
+                path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+            )
 
         return Path(path)
 
     @property
     def _model_metrics(self):
         from IPython.utils import io
+
         with io.capture_output() as captured:
             score = self.score()
 
-        return {'score': score}
+        return {"score": score}
 
     @property
     def feature_importances_(self):
@@ -223,11 +256,15 @@ class FullyConnectedNetwork(ArcGISModel):
         processed_dataframe = None
         explain_index = None
         random_index = None
-        explain_prediction(self, processed_dataframe, index=explain_index, random_index=random_index,
-                               predictor=None,
-                               global_pred=True)
+        explain_prediction(
+            self,
+            processed_dataframe,
+            index=explain_index,
+            random_index=random_index,
+            predictor=None,
+            global_pred=True,
+        )
         return
-
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -236,7 +273,9 @@ class FullyConnectedNetwork(ArcGISModel):
         _emd_template["dependent_variable"] = self._data._dependent_variable
         _emd_template["categorical_variables"] = self._data._categorical_variables
         _emd_template["continuous_variables"] = self._data._continuous_variables
-        _emd_template['_is_classification'] = "classification" if self._data._is_classification else "regression"
+        _emd_template["_is_classification"] = (
+            "classification" if self._data._is_classification else "regression"
+        )
 
         return _emd_template
 
@@ -276,19 +315,19 @@ class FullyConnectedNetwork(ArcGISModel):
         return preds
 
     def predict(
-            self,
-            input_features=None,
-            explanatory_rasters=None,
-            datefield=None,
-            distance_features=None,
-            output_layer_name="Prediction Layer",
-            gis=None,
-            prediction_type='features',
-            output_raster_path=None,
-            match_field_names=None,
-            explain=False,
-            explain_index=None
-            ):
+        self,
+        input_features=None,
+        explanatory_rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name="Prediction Layer",
+        gis=None,
+        prediction_type="features",
+        output_raster_path=None,
+        match_field_names=None,
+        explain=False,
+        explain_index=None,
+    ):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -360,45 +399,66 @@ class FullyConnectedNetwork(ArcGISModel):
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
             if not HAS_SHAP:
-                warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
+                warnings.warn(
+                    "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
+                )
                 explain = False
                 explain_index = None
-        if prediction_type in ['features', 'dataframe']:
+        if prediction_type in ["features", "dataframe"]:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type,explain,explain_index)
+            return self._predict_features(
+                input_features,
+                rasters,
+                datefield,
+                distance_features,
+                output_layer_name,
+                gis,
+                match_field_names,
+                prediction_type,
+                explain,
+                explain_index,
+            )
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
 
             if not output_raster_path:
-                raise Exception("Please specify output_raster_folder_path to save the output.")
+                raise Exception(
+                    "Please specify output_raster_folder_path to save the output."
+                )
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index)
+            return self._predict_rasters(
+                output_raster_path, rasters, match_field_names, explain, explain_index
+            )
 
     def _predict_features(
-            self,
-            input_features,
-            rasters=None,
-            datefield=None,
-            distance_feature_layers=None,
-            output_name="Prediction Layer",
-            gis=None,
-            match_field_names=None,
-            prediction_type="features",
-            explain=False,
-            explain_index=None
+        self,
+        input_features,
+        rasters=None,
+        datefield=None,
+        distance_feature_layers=None,
+        output_name="Prediction Layer",
+        gis=None,
+        match_field_names=None,
+        prediction_type="features",
+        explain=False,
+        explain_index=None,
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
-        distance_feature_layers = distance_feature_layers if distance_feature_layers else []
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
+        distance_feature_layers = (
+            distance_feature_layers if distance_feature_layers else []
+        )
 
         continuous_variables = self._data._continuous_variables
 
@@ -436,13 +496,16 @@ class FullyConnectedNetwork(ArcGISModel):
                 raster_columns.append((raster, categorical))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            processed_dataframe, fields_mapping = TabularDataObject._prepare_dataframe_from_features(
+            (
+                processed_dataframe,
+                fields_mapping,
+            ) = TabularDataObject._prepare_dataframe_from_features(
                 input_features,
                 self._data._dependent_variable,
                 feature_layer_columns,
                 raster_columns,
                 datefield,
-                distance_feature_layers
+                distance_feature_layers,
             )
 
         if match_field_names:
@@ -456,23 +519,39 @@ class FullyConnectedNetwork(ArcGISModel):
                 random_index = True
             else:
                 random_index = False
-            explain_prediction(self,processed_dataframe,index=explain_index,random_index=random_index,predictor=None)
+            explain_prediction(
+                self,
+                processed_dataframe,
+                index=explain_index,
+                random_index=random_index,
+                predictor=None,
+            )
 
         dataframe["prediction_results"] = self._df_predict(processed_dataframe.copy())
         if prediction_type == "dataframe":
             return dataframe
 
-        if 'SHAPE' in list(dataframe.columns):
+        if "SHAPE" in list(dataframe.columns):
             return dataframe.spatial.to_featurelayer(output_name, gis)
         else:
             import tempfile
+
             with tempfile.TemporaryDirectory() as tmpdir:
-                table_file = os.path.join(tmpdir, output_name + '.xlsx')
+                table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                online_table = gis.content.add(
+                    {"type": "Microsoft Excel", "overwrite": True}, table_file
+                )
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None):
+    def _predict_rasters(
+        self,
+        output_folder_path,
+        rasters,
+        match_field_names=None,
+        explain=False,
+        explain_index=None,
+    ):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -493,32 +572,56 @@ class FullyConnectedNetwork(ArcGISModel):
         except:
             raise Exception("This function requires pandas.")
 
-        fields_needed = self._data._continuous_variables + self._data._categorical_variables
+        fields_needed = (
+            self._data._continuous_variables + self._data._categorical_variables
+        )
 
         try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkt"
+            ]
         except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkid"
+            ]
 
-        xmin = rasters[0].extent['xmin']
-        xmax = rasters[0].extent['xmax']
-        ymin = rasters[0].extent['ymin']
-        ymax = rasters[0].extent['ymax']
+        xmin = rasters[0].extent["xmin"]
+        xmax = rasters[0].extent["xmax"]
+        ymin = rasters[0].extent["ymin"]
+        ymax = rasters[0].extent["ymax"]
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent['spatialReference']
+        default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
             point_upper = arcgis.geometry.Point(
-                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmin"],
+                    "y": raster.extent["ymax"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             point_lower = arcgis.geometry.Point(
-                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmax"],
+                    "y": raster.extent["ymin"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             cell_size = arcgis.geometry.Point(
-                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.mean_cell_width,
+                    "y": raster.mean_cell_height,
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
 
-            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
-                                             default_sr)
+            points = arcgis.geometry.project(
+                [point_upper, point_lower, cell_size],
+                raster.extent["spatialReference"],
+                default_sr,
+            )
             point_upper = points[0]
             point_lower = points[1]
             cell_size = points[2]
@@ -541,16 +644,30 @@ class FullyConnectedNetwork(ArcGISModel):
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
-        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
+        cell_size = arcgis.geometry.Point(
+            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
-            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
+            point_upper_translated = arcgis.geometry.project(
+                [point_upper], default_sr, raster.extent["spatialReference"]
+            )[0]
+            cell_size_translated = arcgis.geometry.project(
+                [cell_size], default_sr, raster.extent["spatialReference"]
+            )[0]
             if field_name in fields_needed:
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -558,14 +675,22 @@ class FullyConnectedNetwork(ArcGISModel):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
                             index = index + 1
                             raster_data[key].append(value)
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -573,7 +698,7 @@ class FullyConnectedNetwork(ArcGISModel):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
                             index = index + 1
@@ -582,7 +707,11 @@ class FullyConnectedNetwork(ArcGISModel):
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
+            if (
+                field not in list(raster_data.keys())
+                and match_field_names
+                and match_field_names.get(field, None) is None
+            ):
                 raise Exception(f"Field missing {field}")
 
         processed_data = []
@@ -598,12 +727,29 @@ class FullyConnectedNetwork(ArcGISModel):
                 random_index = True
             else:
                 random_index = False
-            explain_prediction(self, pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data)),
-                               index=explain_index, random_index=random_index,predictor=None)
+            explain_prediction(
+                self,
+                pd.DataFrame(
+                    data=np.array(processed_data), columns=sorted(raster_data)
+                ),
+                index=explain_index,
+                random_index=random_index,
+                predictor=None,
+            )
 
-        processed_numpy = np.array(self._df_predict(pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))), dtype='float64')
+        processed_numpy = np.array(
+            self._df_predict(
+                pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
+            ),
+            dtype="float64",
+        )
         processed_numpy = processed_numpy.reshape([max_raster_rows, max_raster_columns])
-        processed_raster = arcpy.NumPyArrayToRaster(processed_numpy, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
+        processed_raster = arcpy.NumPyArrayToRaster(
+            processed_numpy,
+            arcpy.Point(xmin, ymin),
+            x_cell_size=min_cell_size_x,
+            y_cell_size=min_cell_size_y,
+        )
         processed_raster.save(output_folder_path)
 
         return True
@@ -623,7 +769,9 @@ class FullyConnectedNetwork(ArcGISModel):
         """
         self._check_requisites()
 
-        validation_dataframe = self._data._dataframe.loc[self._data._validation_indexes].reset_index(drop=True)
+        validation_dataframe = self._data._dataframe.loc[
+            self._data._validation_indexes
+        ].reset_index(drop=True)
 
         if rows > len(validation_dataframe):
             rows = len(validation_dataframe)
@@ -631,7 +779,7 @@ class FullyConnectedNetwork(ArcGISModel):
         rows_df = validation_dataframe.loc[:rows].copy()
 
         predictions = self._df_predict(rows_df)
-        rows_df['prediction_results'] = predictions
+        rows_df["prediction_results"] = predictions
 
         return rows_df
 
@@ -644,12 +792,19 @@ class FullyConnectedNetwork(ArcGISModel):
         if not HAS_NUMPY:
             raise Exception("This function requires numpy.")
 
-        validation_dataframe = self._data._dataframe.loc[self._data._validation_indexes].reset_index(drop=True)
+        validation_dataframe = self._data._dataframe.loc[
+            self._data._validation_indexes
+        ].reset_index(drop=True)
 
         predictions = np.array(self._df_predict(validation_dataframe))
         labels = validation_dataframe[self._data._dependent_variable]
 
         if self._data._is_classification:
-            return (np.array(predictions)==labels).mean()
+            return (np.array(predictions) == labels).mean()
         else:
-            return float(r2_score(torch.tensor(np.array(predictions, dtype='float64')), torch.tensor(np.array(labels, dtype='float64'))))
+            return float(
+                r2_score(
+                    torch.tensor(np.array(predictions, dtype="float64")),
+                    torch.tensor(np.array(labels, dtype="float64")),
+                )
+            )

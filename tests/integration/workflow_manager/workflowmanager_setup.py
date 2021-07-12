@@ -21,11 +21,11 @@ class WorkflowManagerSetup:
         custom_testing = False
 
         if custom_testing:
-            self.portal_url = "https://ps0008227.esri.com/portal"
+            self.portal_url = "https://ps0010886.esri.com/portal"
             self.portal_username = "admin"
-            self.portal_password = "esri.agp"
+            self.portal_password = "..."
             self.item_name = "Testing Item"
-            self.workflow_item_id = "29673015106c44fdbb30d04c9cc60ef0"
+            self.workflow_item_id = "45af313c6b054fea88c620afa46b0538"
 
             self._gis = GIS(
                 url=self.portal_url,
@@ -36,6 +36,7 @@ class WorkflowManagerSetup:
 
             self.workflow_item = self._gis.content.get(self.workflow_item_id)
             self.workflow_manager = WorkflowManager(self.workflow_item)
+            self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
         else:
             _conf_reader = ConfigParser()

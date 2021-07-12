@@ -25,12 +25,13 @@ import types
 sample_random = random.Random()
 sample_random.seed(123456)
 
-Corner = namedtuple('Corner', 'x1 y1 x2 y2')
+Corner = namedtuple("Corner", "x1 y1 x2 y2")
 BBox = Corner
-Center = namedtuple('Center', 'x y w h')
+Center = namedtuple("Center", "x y w h")
 image_name_len = 0
 
 sep = os.sep
+
 
 def corner2center(corner):
     """
@@ -79,7 +80,9 @@ def get_axis_aligned_bbox(region):
         x2 = max(region[0::2])
         y1 = min(region[1::2])
         y2 = max(region[1::2])
-        A1 = np.linalg.norm(region[0:2] - region[2:4]) * np.linalg.norm(region[2:4] - region[4:6])
+        A1 = np.linalg.norm(region[0:2] - region[2:4]) * np.linalg.norm(
+            region[2:4] - region[4:6]
+        )
         A2 = (x2 - x1) * (y2 - y1)
         s = np.sqrt(A1 / A2)
         w = s * (x2 - x1) + 1
@@ -112,8 +115,8 @@ def aug_apply(bbox, param, shape, inv=False, rd=False):
         original_center = center
 
         real_param = {}
-        if 'scale' in param:
-            scale_x, scale_y = param['scale']
+        if "scale" in param:
+            scale_x, scale_y = param["scale"]
             imh, imw = shape[:2]
             h, w = center.h, center.w
 
@@ -123,8 +126,8 @@ def aug_apply(bbox, param, shape, inv=False, rd=False):
 
         bbox = center2corner(center)
 
-        if 'shift' in param:
-            tx, ty = param['shift']
+        if "shift" in param:
+            tx, ty = param["shift"]
             x1, y1, x2, y2 = bbox
             imh, imw = shape[:2]
 
@@ -138,24 +141,32 @@ def aug_apply(bbox, param, shape, inv=False, rd=False):
 
         current_center = corner2center(bbox)
 
-        real_param['scale'] = current_center.w / original_center.w, current_center.h / original_center.h
-        real_param['shift'] = current_center.x - original_center.x, current_center.y - original_center.y
+        real_param["scale"] = (
+            current_center.w / original_center.w,
+            current_center.h / original_center.h,
+        )
+        real_param["shift"] = (
+            current_center.x - original_center.x,
+            current_center.y - original_center.y,
+        )
 
         return bbox, real_param
     else:
-        if 'scale' in param:
-            scale_x, scale_y = param['scale']
+        if "scale" in param:
+            scale_x, scale_y = param["scale"]
         else:
-            scale_x, scale_y = 1., 1.
+            scale_x, scale_y = 1.0, 1.0
 
-        if 'shift' in param:
-            tx, ty = param['shift']
+        if "shift" in param:
+            tx, ty = param["shift"]
         else:
             tx, ty = 0, 0
 
         center = corner2center(bbox)
 
-        center = Center(center.x - tx, center.y - ty, center.w / scale_x, center.h / scale_y)
+        center = Center(
+            center.x - tx, center.y - ty, center.w / scale_x, center.h / scale_y
+        )
 
         return center2corner(center)
 
@@ -195,7 +206,9 @@ class Anchors:
 
         self.__dict__.update(cfg)
 
-        self.anchor_num = len(self.scales) * len(self.ratios) * (self.anchor_density ** 2)
+        self.anchor_num = (
+            len(self.scales) * len(self.ratios) * (self.anchor_density ** 2)
+        )
         self.anchors = None
         self.all_anchors = None
         self.generate_anchors()
@@ -213,17 +226,21 @@ class Anchors:
         for x_offset, y_offset in zip(x_offsets.flatten(), y_offsets.flatten()):
             for r in self.ratios:
                 if self.round_dight > 0:
-                    ws = round(math.sqrt(size * 1. / r), self.round_dight)
+                    ws = round(math.sqrt(size * 1.0 / r), self.round_dight)
                     hs = round(ws * r, self.round_dight)
                 else:
-                    ws = int(math.sqrt(size * 1. / r))
+                    ws = int(math.sqrt(size * 1.0 / r))
                     hs = int(ws * r)
 
                 for s in self.scales:
                     w = ws * s
                     h = hs * s
-                    self.anchors[count][:] = [-w * 0.5 + x_offset, -h * 0.5 + y_offset, w * 0.5 + x_offset,
-                                              h * 0.5 + y_offset][:]
+                    self.anchors[count][:] = [
+                        -w * 0.5 + x_offset,
+                        -h * 0.5 + y_offset,
+                        w * 0.5 + x_offset,
+                        h * 0.5 + y_offset,
+                    ][:]
                     count += 1
 
     def generate_all_anchors(self, im_c, size):
@@ -241,7 +258,9 @@ class Anchors:
         x2 = zero_anchors[:, 2]
         y2 = zero_anchors[:, 3]
 
-        x1, y1, x2, y2 = map(lambda x: x.reshape(self.anchor_num, 1, 1), [x1, y1, x2, y2])
+        x1, y1, x2, y2 = map(
+            lambda x: x.reshape(self.anchor_num, 1, 1), [x1, y1, x2, y2]
+        )
         cx, cy, w, h = corner2center([x1, y1, x2, y2])
 
         disp_x = np.arange(0, size).reshape(1, 1, -1) * self.stride
@@ -260,11 +279,11 @@ class Anchors:
 
 class SubDataSet(object):
     def __init__(self, cfg):
-        for string in ['root', 'anno']:
+        for string in ["root", "anno"]:
             if string not in cfg:
                 raise Exception('SubDataSet need "{}"'.format(string))
 
-        self.labels = self.filter_zero(cfg['anno'], cfg)
+        self.labels = self.filter_zero(cfg["anno"], cfg)
 
         def isint(x):
             try:
@@ -279,7 +298,7 @@ class SubDataSet(object):
                 frames = self.labels[video][track]
                 frames = list(map(int, filter(lambda x: isint(x), frames.keys())))
                 frames.sort()
-                self.labels[video][track]['frames'] = frames
+                self.labels[video][track]["frames"] = frames
                 if len(frames) <= 0:
                     to_del.append((video, track))
 
@@ -314,7 +333,7 @@ class SubDataSet(object):
         self.shuffle()
 
     def filter_zero(self, anno, cfg):
-        name = cfg.get('mark', '')
+        name = cfg.get("mark", "")
 
         out = {}
         tot = 0
@@ -356,12 +375,12 @@ class SubDataSet(object):
             pick += lists
             m += self.num
 
-        self.pick = pick[:self.num_use]
+        self.pick = pick[: self.num_use]
         return self.pick
 
     def get_image_anno(self, video, track, frame):
         frame = "{:06d}".format(frame)
-        image_path = join(self.root, video, self.path_format.format(frame, track, 'x'))
+        image_path = join(self.root, video, self.path_format.format(frame, track, "x"))
         image_anno = self.labels[video][track][frame]
 
         mask_path = join(self.root, video, self.mask_format.format(frame, track))
@@ -374,9 +393,9 @@ class SubDataSet(object):
         track = random.choice(list(video.keys()))
         track_info = video[track]
 
-        frames = track_info['frames']
+        frames = track_info["frames"]
 
-        if 'hard' not in track_info:
+        if "hard" not in track_info:
             template_frame = random.randint(0, len(frames) - 1)
 
             left = max(template_frame - self.frame_range, 0)
@@ -385,15 +404,16 @@ class SubDataSet(object):
             template_frame = frames[template_frame]
             search_frame = random.choice(search_range)
         else:
-            search_frame = random.choice(track_info['hard'])
+            search_frame = random.choice(track_info["hard"])
             left = max(search_frame - self.frame_range, 0)
             right = min(search_frame + self.frame_range, len(frames) - 1) + 1
             template_range = frames[left:right]
             template_frame = random.choice(template_range)
             search_frame = frames[search_frame]
 
-        return self.get_image_anno(video_name, track, template_frame), \
-               self.get_image_anno(video_name, track, search_frame)
+        return self.get_image_anno(
+            video_name, track, template_frame
+        ), self.get_image_anno(video_name, track, search_frame)
 
     def get_random_target(self, index=-1):
         if index == -1:
@@ -403,7 +423,7 @@ class SubDataSet(object):
         track = random.choice(list(video.keys()))
         track_info = video[track]
 
-        frames = track_info['frames']
+        frames = track_info["frames"]
         frame = random.choice(frames)
 
         return self.get_image_anno(video_name, track, frame)
@@ -415,9 +435,14 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     b = (out_sz - 1) / (bbox[3] - bbox[1])
     c = -a * bbox[0]
     d = -b * bbox[1]
-    mapping = np.array([[a, 0, c],
-                        [0, b, d]]).astype(np.float)
-    crop = cv2.warpAffine(image, mapping, (out_sz, out_sz), borderMode=cv2.BORDER_CONSTANT, borderValue=padding)
+    mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+    crop = cv2.warpAffine(
+        image,
+        mapping,
+        (out_sz, out_sz),
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=padding,
+    )
     return crop
 
 
@@ -427,16 +452,24 @@ class Augmentation:
         self.scale = 0
         self.blur = 0  # False
         self.resize = False
-        self.rgbVar = np.array([[-0.55919361, 0.98062831, - 0.41940627],
-                                [1.72091413, 0.19879334, - 1.82968581],
-                                [4.64467907, 4.73710203, 4.88324118]], dtype=np.float32)
+        self.rgbVar = np.array(
+            [
+                [-0.55919361, 0.98062831, -0.41940627],
+                [1.72091413, 0.19879334, -1.82968581],
+                [4.64467907, 4.73710203, 4.88324118],
+            ],
+            dtype=np.float32,
+        )
         self.flip = 0
 
-        self.eig_vec = np.array([
-            [0.4009, 0.7192, -0.5675],
-            [-0.8140, -0.0045, -0.5808],
-            [0.4203, -0.6948, -0.5836],
-        ], dtype=np.float32)
+        self.eig_vec = np.array(
+            [
+                [0.4009, 0.7192, -0.5675],
+                [-0.8140, -0.0045, -0.5808],
+                [0.4203, -0.6948, -0.5836],
+            ],
+            dtype=np.float32,
+        )
 
         self.eig_val = np.array([[0.2175, 0.0188, 0.0045]], np.float32)
 
@@ -450,14 +483,16 @@ class Augmentation:
         def rand_kernel():
             size = np.random.randn(1)
             size = int(np.round(size)) * 2 + 1
-            if size < 0: return None
-            if random.random() < 0.5: return None
+            if size < 0:
+                return None
+            if random.random() < 0.5:
+                return None
             size = min(size, 45)
             kernel = np.zeros((size, size))
             c = int(size / 2)
             wx = random.random()
-            kernel[:, c] += 1. / size * wx
-            kernel[c, :] += 1. / size * (1 - wx)
+            kernel[:, c] += 1.0 / size * wx
+            kernel[c, :] += 1.0 / size * (1 - wx)
             return kernel
 
         kernel = rand_kernel()
@@ -478,22 +513,32 @@ class Augmentation:
 
         param = {}
         if self.shift:
-            param['shift'] = (Augmentation.random() * self.shift, Augmentation.random() * self.shift)
+            param["shift"] = (
+                Augmentation.random() * self.shift,
+                Augmentation.random() * self.shift,
+            )
 
         if self.scale:
-            param['scale'] = ((1.0 + Augmentation.random() * self.scale), (1.0 + Augmentation.random() * self.scale))
+            param["scale"] = (
+                (1.0 + Augmentation.random() * self.scale),
+                (1.0 + Augmentation.random() * self.scale),
+            )
 
         crop_bbox, _ = aug_apply(Corner(*crop_bbox), param, shape)
 
         x1 = crop_bbox.x1
         y1 = crop_bbox.y1
 
-        bbox = BBox(bbox.x1 - x1, bbox.y1 - y1,
-                    bbox.x2 - x1, bbox.y2 - y1)
+        bbox = BBox(bbox.x1 - x1, bbox.y1 - y1, bbox.x2 - x1, bbox.y2 - y1)
 
         if self.scale:
-            scale_x, scale_y = param['scale']
-            bbox = Corner(bbox.x1 / scale_x, bbox.y1 / scale_y, bbox.x2 / scale_x, bbox.y2 / scale_y)
+            scale_x, scale_y = param["scale"]
+            bbox = Corner(
+                bbox.x1 / scale_x,
+                bbox.y1 / scale_y,
+                bbox.x2 / scale_x,
+                bbox.y2 / scale_y,
+            )
 
         image = crop_hwc(image, crop_bbox, size)
         if not mask is None:
@@ -510,7 +555,10 @@ class Augmentation:
         if self.resize:
             imageSize = image.shape[:2]
             ratio = max(math.pow(random.random(), 0.5), 0.2)  # 25 ~ 255
-            rand_size = (int(round(ratio * imageSize[0])), int(round(ratio * imageSize[1])))
+            rand_size = (
+                int(round(ratio * imageSize[0])),
+                int(round(ratio * imageSize[1])),
+            )
             image = cv2.resize(image, rand_size)
             image = cv2.resize(image, tuple(imageSize))
 
@@ -571,7 +619,12 @@ class AnchorTargetLayer:
         anchor_box = anchor.all_anchors[0]
         anchor_center = anchor.all_anchors[1]
         x1, y1, x2, y2 = anchor_box[0], anchor_box[1], anchor_box[2], anchor_box[3]
-        cx, cy, w, h = anchor_center[0], anchor_center[1], anchor_center[2], anchor_center[3]
+        cx, cy, w, h = (
+            anchor_center[0],
+            anchor_center[1],
+            anchor_center[2],
+            anchor_center[3],
+        )
 
         delta[0] = (tcx - cx) / w
         delta[1] = (tcy - cy) / h
@@ -587,7 +640,7 @@ class AnchorTargetLayer:
         neg, neg_num = select(neg, self.rpn_batch - pos_num)
 
         cls[pos] = 1
-        delta_weight[pos] = 1. / (pos_num + 1e-6)
+        delta_weight[pos] = 1.0 / (pos_num + 1e-6)
 
         cls[neg] = 0
 
@@ -598,14 +651,22 @@ class AnchorTargetLayer:
 
 
 class DataSets(Dataset):
-    def __init__(self, data_path, annotation, num, num_epoch=1, image_name_len=6, annotations=None):
+    def __init__(
+        self,
+        data_path,
+        annotation,
+        num,
+        num_epoch=1,
+        image_name_len=6,
+        annotations=None,
+    ):
         super(DataSets, self).__init__()
 
         anchor = {
             "stride": 8,
             "ratios": [0.33, 0.5, 1, 2, 3],
             "scales": [8],
-            "round_dight": 0
+            "round_dight": 0,
         }
         self.anchors = Anchors(anchor)
 
@@ -621,7 +682,9 @@ class DataSets(Dataset):
         self.chip_size = 127
         self._is_multispectral = False
 
-        if (self.search_size - self.template_size) / self.anchors.stride + 1 + self.base_size != self.size:
+        if (
+            self.search_size - self.template_size
+        ) / self.anchors.stride + 1 + self.base_size != self.size:
             raise Exception("size not match!")
 
         self.template_small = False
@@ -630,11 +693,14 @@ class DataSets(Dataset):
 
         self.anchor_target = AnchorTargetLayer({})
 
-        datasets = {'siammask_data': {"root": os.path.join(data_path, "crop"),
-                                      "anno": annotation,
-                                      "num_use": 200000,
-                                      "frame_range": 20}
-                    }
+        datasets = {
+            "siammask_data": {
+                "root": os.path.join(data_path, "crop"),
+                "anno": annotation,
+                "num_use": 200000,
+                "frame_range": 20,
+            }
+        }
 
         self.all_data = []
         start = 0
@@ -642,8 +708,8 @@ class DataSets(Dataset):
         self.show_batch_data = annotation
         for name in datasets:
             dataset = datasets[name]
-            dataset['mark'] = name
-            dataset['start'] = start
+            dataset["mark"] = name
+            dataset["start"] = start
 
             dataset = SubDataSet(dataset)
             self.all_data.append(dataset)
@@ -652,15 +718,16 @@ class DataSets(Dataset):
             self.num += dataset.num_use
 
         aug_cfg = {
-            'template': {'shift': 4, 'scale': 0.05},
-            'search': {'shift': 64, 'scale': 0.18, 'blur': 0.18},
-            'neg': 0.2, 'gray': 0.25
+            "template": {"shift": 4, "scale": 0.05},
+            "search": {"shift": 64, "scale": 0.18, "blur": 0.18},
+            "neg": 0.2,
+            "gray": 0.25,
         }
-        self.template_aug = Augmentation(aug_cfg['template'])
-        self.search_aug = Augmentation(aug_cfg['search'])
-        self.gray = aug_cfg['gray']
-        self.neg = aug_cfg['neg']
-        self.inner_neg = 0 if 'inner_neg' not in aug_cfg else aug_cfg['inner_neg']
+        self.template_aug = Augmentation(aug_cfg["template"])
+        self.search_aug = Augmentation(aug_cfg["search"])
+        self.gray = aug_cfg["gray"]
+        self.neg = aug_cfg["neg"]
+        self.inner_neg = 0 if "inner_neg" not in aug_cfg else aug_cfg["inner_neg"]
 
         self.pick = None
         self.num = int(num)
@@ -668,15 +735,15 @@ class DataSets(Dataset):
         self.shuffle()
 
         self.infos = {
-            'template': self.template_size,
-            'search': self.search_size,
-            'template_small': self.template_small,
-            'gray': self.gray,
-            'neg': self.neg,
-            'inner_neg': self.inner_neg,
-            'crop_size': self.crop_size,
-            'anchor_target': self.anchor_target.__dict__,
-            'num': self.num // num_epoch
+            "template": self.template_size,
+            "search": self.search_size,
+            "template_small": self.template_small,
+            "gray": self.gray,
+            "neg": self.neg,
+            "inner_neg": self.inner_neg,
+            "crop_size": self.crop_size,
+            "anchor_target": self.anchor_target.__dict__,
+            "num": self.num // num_epoch,
         }
 
     def imread(self, path):
@@ -737,7 +804,8 @@ class DataSets(Dataset):
 
         def center_crop(img, size):
             shape = img.shape[1]
-            if shape == size: return img
+            if shape == size:
+                return img
             c = shape // 2
             l = c - size // 2
             r = c + size // 2 + 1
@@ -779,8 +847,12 @@ class DataSets(Dataset):
         template_box = toBBox(template_image, template[1])
         search_box = toBBox(search_image, search[1])
 
-        template, _, _ = self.template_aug(template_image, template_box, self.template_size, gray=gray)
-        search, bbox, mask = self.search_aug(search_image, search_box, self.search_size, gray=gray, mask=search_mask)
+        template, _, _ = self.template_aug(
+            template_image, template_box, self.template_size, gray=gray
+        )
+        search, bbox, mask = self.search_aug(
+            search_image, search_box, self.search_size, gray=gray, mask=search_mask
+        )
 
         if show_batch:
             return display_image, self.image_name_len, self.annotations
@@ -788,18 +860,30 @@ class DataSets(Dataset):
         if show_results:
             return display_image
 
-        cls, delta, delta_weight = self.anchor_target(self.anchors, bbox, self.size, neg)
+        cls, delta, delta_weight = self.anchor_target(
+            self.anchors, bbox, self.size, neg
+        )
         if dataset.has_mask and not neg:
             mask_weight = cls.max(axis=0, keepdims=True)
         else:
             mask_weight = np.zeros([1, cls.shape[1], cls.shape[2]], dtype=np.float32)
 
-        template, search = map(lambda x: np.transpose(x, (2, 0, 1)).astype(np.float32), [template, search])
+        template, search = map(
+            lambda x: np.transpose(x, (2, 0, 1)).astype(np.float32), [template, search]
+        )
 
         mask = (np.expand_dims(mask, axis=0) > 0.5) * 2 - 1
 
-        return [template, search, cls, delta, delta_weight, np.array(bbox, np.float32), \
-                np.array(mask, np.float32), np.array(mask_weight, np.float32)], [[]]
+        return [
+            template,
+            search,
+            cls,
+            delta,
+            delta_weight,
+            np.array(bbox, np.float32),
+            np.array(mask, np.float32),
+            np.array(mask_weight, np.float32),
+        ], [[]]
 
     def show(self, idx, axes=None):
         global image_name_len
@@ -814,7 +898,7 @@ class DataSets(Dataset):
             folder_name = data[0].split(sep)[-2]
             frame_id = data[0].split(sep)[-1].split(".")[1]
             frame_number = data[0].split(sep)[-1].split(".")[0]
-            mask_name = folder_name+ sep + str(frame_number)[6 - img_len:]
+            mask_name = folder_name + sep + str(frame_number)[6 - img_len :]
             # key = list(ann[folder_name].keys())[-1]
             for key in list(ann[folder_name].keys()):
                 for cnt in ann[folder_name][key]:
@@ -822,13 +906,23 @@ class DataSets(Dataset):
                         display_data = (cnt["display_mask"], cnt["bbox"])
                         break
 
-            img_path = os.path.join(base_folder, "JPEGImages", folder_name, str(frame_number)[6 - img_len:] + ".jpg")
+            img_path = os.path.join(
+                base_folder,
+                "JPEGImages",
+                folder_name,
+                str(frame_number)[6 - img_len :] + ".jpg",
+            )
             image = cv2.imread(img_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             # print(display_data)
             bbox = display_data[1]
-            cv2.rectangle(image, (int(bbox[0]), int(bbox[1])),
-                          (int(bbox[2]) - int(bbox[0]), int(bbox[3] - int(bbox[1]))), (255, 0, 0), 2)
+            cv2.rectangle(
+                image,
+                (int(bbox[0]), int(bbox[1])),
+                (int(bbox[2]) - int(bbox[0]), int(bbox[3] - int(bbox[1]))),
+                (255, 0, 0),
+                2,
+            )
 
             overlay = image.copy()
             cv2.drawContours(overlay, display_data[0], -1, (0, 0, 255), -1)
@@ -850,7 +944,7 @@ def xyxy_to_xywh(xyxy):
     elif isinstance(xyxy, np.ndarray):
         return np.hstack((xyxy[:, 0:2], xyxy[:, 2:4] - xyxy[:, 0:2] + 1))
     else:
-        raise TypeError('Argument xyxy must be a list, tuple, or numpy array.')
+        raise TypeError("Argument xyxy must be a list, tuple, or numpy array.")
 
 
 def polys_to_boxes(polys):
@@ -871,9 +965,14 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     b = (out_sz - 1) / (bbox[3] - bbox[1])
     c = -a * bbox[0]
     d = -b * bbox[1]
-    mapping = np.array([[a, 0, c],
-                        [0, b, d]]).astype(np.float)
-    crop = cv2.warpAffine(image, mapping, (out_sz, out_sz), borderMode=cv2.BORDER_CONSTANT, borderValue=padding)
+    mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+    crop = cv2.warpAffine(
+        image,
+        mapping,
+        (out_sz, out_sz),
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=padding,
+    )
     return crop
 
 
@@ -881,8 +980,15 @@ def pos_s_2_bbox(pos, s):
     return [pos[0] - s / 2, pos[1] - s / 2, pos[0] + s / 2, pos[1] + s / 2]
 
 
-def crop_like_SiamFC(image, bbox, context_amount=0.5, exemplar_size=127, instanc_size=255, padding=(0, 0, 0)):
-    target_pos = [(bbox[2] + bbox[0]) / 2., (bbox[3] + bbox[1]) / 2.]
+def crop_like_SiamFC(
+    image,
+    bbox,
+    context_amount=0.5,
+    exemplar_size=127,
+    instanc_size=255,
+    padding=(0, 0, 0),
+):
+    target_pos = [(bbox[2] + bbox[0]) / 2.0, (bbox[3] + bbox[1]) / 2.0]
     target_size = [bbox[2] - bbox[0], bbox[3] - bbox[1]]
     wc_z = target_size[1] + context_amount * sum(target_size)
     hc_z = target_size[0] + context_amount * sum(target_size)
@@ -897,8 +1003,15 @@ def crop_like_SiamFC(image, bbox, context_amount=0.5, exemplar_size=127, instanc
     return z, x
 
 
-def crop_like_SiamFCx(image, bbox, context_amount=0.5, exemplar_size=127, instanc_size=255, padding=(0, 0, 0)):
-    target_pos = [(bbox[2] + bbox[0]) / 2., (bbox[3] + bbox[1]) / 2.]
+def crop_like_SiamFCx(
+    image,
+    bbox,
+    context_amount=0.5,
+    exemplar_size=127,
+    instanc_size=255,
+    padding=(0, 0, 0),
+):
+    target_pos = [(bbox[2] + bbox[0]) / 2.0, (bbox[3] + bbox[1]) / 2.0]
     target_size = [bbox[2] - bbox[0], bbox[3] - bbox[1]]
     wc_z = target_size[1] + context_amount * sum(target_size)
     hc_z = target_size[0] + context_amount * sum(target_size)
@@ -914,34 +1027,53 @@ def crop_like_SiamFCx(image, bbox, context_amount=0.5, exemplar_size=127, instan
 
 def crop_video(video, v, crop_path, data_path, instanc_size):
     video_crop_base_path = join(crop_path, video)
-    if not isdir(video_crop_base_path): makedirs(video_crop_base_path)
+    if not isdir(video_crop_base_path):
+        makedirs(video_crop_base_path)
 
-    anno_base_path = join(data_path, 'Annotations')
-    img_base_path = join(data_path, 'JPEGImages')
+    anno_base_path = join(data_path, "Annotations")
+    img_base_path = join(data_path, "JPEGImages")
 
     for trackid, o in enumerate(list(v)):
         obj = v[o]
         for frame in obj:
-            file_name = frame['file_name']
-            ann_path = join(anno_base_path, file_name + '.png')
-            img_path = join(img_base_path, file_name + '.jpg')
+            file_name = frame["file_name"]
+            ann_path = join(anno_base_path, file_name + ".png")
+            img_path = join(img_base_path, file_name + ".jpg")
             im = cv2.imread(img_path)
             label = cv2.imread(ann_path, 0)
             avg_chans = np.mean(im, axis=(0, 1))
-            bbox = frame['bbox']
+            bbox = frame["bbox"]
             bbox[2] += bbox[0]
             bbox[3] += bbox[1]
-            x = crop_like_SiamFCx(im, bbox, instanc_size=instanc_size, padding=avg_chans)
+            x = crop_like_SiamFCx(
+                im, bbox, instanc_size=instanc_size, padding=avg_chans
+            )
             cv2.imwrite(
-                join(video_crop_base_path, '{:06d}.{:02d}.x.jpg'.format(int(file_name.split(sep)[-1]), trackid)),
-                x)
-            mask = crop_like_SiamFCx((label == int(o)).astype(np.float32), bbox, instanc_size=instanc_size,
-                                     padding=0)
+                join(
+                    video_crop_base_path,
+                    "{:06d}.{:02d}.x.jpg".format(
+                        int(file_name.split(sep)[-1]), trackid
+                    ),
+                ),
+                x,
+            )
+            mask = crop_like_SiamFCx(
+                (label == int(o)).astype(np.float32),
+                bbox,
+                instanc_size=instanc_size,
+                padding=0,
+            )
             mask = ((mask > 0.2) * 255).astype(np.uint8)
             x[:, :, 0] = mask + (mask == 0) * x[:, :, 0]
             cv2.imwrite(
-                join(video_crop_base_path, '{:06d}.{:02d}.m.png'.format(int(file_name.split(sep)[-1]), trackid)),
-                mask)
+                join(
+                    video_crop_base_path,
+                    "{:06d}.{:02d}.m.png".format(
+                        int(file_name.split(sep)[-1]), trackid
+                    ),
+                ),
+                mask,
+            )
 
 
 class Instance(object):
@@ -949,7 +1081,7 @@ class Instance(object):
     pixelCount = 0
 
     def __init__(self, imgNp, instID):
-        if (instID == 0):
+        if instID == 0:
             return
         self.instID = int(instID)
         self.pixelCount = int(self.getInstancePixels(imgNp, instID))
@@ -976,9 +1108,9 @@ def train_val_split(dataset):
             snippet = dict()
             trackid = "{:02d}".format(i)
             for frame in obj:
-                file_name = frame['file_name']
-                frame_name = '{:06d}'.format(int(file_name.split(sep)[-1]))
-                bbox = frame['bbox']
+                file_name = frame["file_name"]
+                frame_name = "{:06d}".format(int(file_name.split(sep)[-1]))
+                bbox = frame["bbox"]
                 bbox[2] += bbox[0]
                 bbox[3] += bbox[1]
                 snippet[frame_name] = bbox
@@ -991,96 +1123,148 @@ def train_val_split(dataset):
 def printProgressBar(i, max):
     n_bar = 50
     j = i / max
-    sys.stdout.write('\r')
+    sys.stdout.write("\r")
     sys.stdout.write(f"[{'=' * int(n_bar * j):{n_bar}s}] {int(100 * j)}%  completed")
     sys.stdout.flush()
 
 
-def prepare_object_tracking_data(path,
-                                 batch_size, val_split_pct,
-                                 **kwargs):
+def check_data_sanity(path):
+    if not os.path.isdir(path):
+        raise Exception(f"Invalid directory. Please check the path {path}")
+
+    ann_dir_path = os.path.join(path, "Annotations")
+    if not os.path.isdir(ann_dir_path):
+        raise Exception(
+            f"Invalid directory. Please check the "
+            f"annotation folder path {ann_dir_path}. "
+            "Please make sure the folder name is Annotations"
+        )
+
+    ann_dirs = os.listdir(ann_dir_path)
+    img_dir_path = os.path.join(path, "JPEGImages")
+    if not os.path.isdir(img_dir_path):
+        raise Exception(
+            f"Invalid directory. Please check the "
+            f"images folder path {img_dir_path}. "
+            "Please make sure the folder name is JPEGImages"
+        )
+
+    img_dirs = os.listdir(img_dir_path)
+    json_file_path = os.path.join(path, "meta.json")
+    if not os.path.isfile(json_file_path):
+        raise Exception(
+            f"Invalid file. Please check the "
+            f"meta.json file path {json_file_path}. "
+            "Please make sure the name of json is meta.json"
+        )
+    json_ann = json.load(open(json_file_path))
+    total = 0
+    for _, video in enumerate(json_ann["videos"]):
+        if video in ann_dirs and video in img_dirs:
+            total += 1
+    if total <= 1:
+        raise Exception(
+            f"Please input at least two sequences in the {path.name}"
+            " directory namely 'Annotations' and 'JPEGImages'."
+            "Also, please provide at least two sequences "
+            "in meta.json"
+        )
+
+
+def prepare_object_tracking_data(path, batch_size, val_split_pct, **kwargs):
+    check_data_sanity(path)
     global image_name_len
     data_dir = path
-    ann_dirs = [os.path.join(path, "Annotations")]
+    ann_dir = os.path.join(path, "Annotations")
     num_obj = 0
     num_ann = 0
     all_objects = 0
     print("Extracting info")
-    for ann_dir in ann_dirs:
-        ann_dict = {}
-        json_ann = json.load(open(os.path.join(data_dir, 'meta.json')))
-        total = len(json_ann['videos'])
-        for vid, video in enumerate(json_ann['videos']):
-            if video not in os.listdir(ann_dir):
+    ann_dict = {}
+    json_ann = json.load(open(os.path.join(data_dir, "meta.json")))
+    total = len(json_ann["videos"])
+    for vid, video in enumerate(json_ann["videos"]):
+        if video not in os.listdir(ann_dir):
+            continue
+        v = json_ann["videos"][video]
+        frames = []
+        for obj in v["objects"]:
+            o = v["objects"][obj]
+            frames.extend(o["frames"])
+        frames = sorted(set(frames))
+        annotations = []
+        instanceIds = []
+        for frame in frames:
+            file_name = os.path.join(video, frame)
+            mask_name = video + os.sep + frame
+            mask_filename = os.path.join(ann_dir, file_name + ".png")
+            image_name_len = len(frame)
+            img = cv2.imread(mask_filename, 0)
+            if img is None:
                 continue
-            v = json_ann['videos'][video]
-            frames = []
-            for obj in v['objects']:
-                o = v['objects'][obj]
-                frames.extend(o['frames'])
-            frames = sorted(set(frames))
-            annotations = []
-            instanceIds = []
-            for frame in frames:
-                file_name = os.path.join(video, frame)
-                mask_name = video + os.sep + frame
-                fullname = os.path.join(ann_dir, file_name + '.png')
-                image_name_len = len(frame)
-                img = cv2.imread(fullname, 0)
-                h, w = img.shape[:2]
-                objects = dict()
-                for instanceId in np.unique(img):
-                    if instanceId == 0:
-                        continue
-                    instanceObj = Instance(img, instanceId)
-                    instanceObj_dict = instanceObj.toDict()
-                    mask = (img == instanceId).astype(np.uint8)
-                    contour, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                    polygons = [c.reshape(-1).tolist() for c in contour]
-                    instanceObj_dict['contours'] = [p for p in polygons if len(p) > 4]
-                    if len(instanceObj_dict['contours']) and instanceObj_dict['pixelCount'] > 1000:
-                        objects[instanceId] = instanceObj_dict
+            h, w = img.shape[:2]
+            objects = dict()
+            for instanceId in np.unique(img):
+                if instanceId == 0:
+                    continue
+                instance_obj = Instance(img, instanceId)
+                instance_obj_dict = instance_obj.toDict()
+                mask = (img == instanceId).astype(np.uint8)
+                contour, _ = cv2.findContours(
+                    mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
+                )
+                polygons = [c.reshape(-1).tolist() for c in contour]
+                instance_obj_dict["display_mask"] = contour
+                instance_obj_dict["contours"] = [p for p in polygons if len(p) > 4]
+                if (
+                    len(instance_obj_dict["contours"])
+                    and instance_obj_dict["pixelCount"] > 1000
+                ):
+                    objects[instanceId] = instance_obj_dict
 
-                for objId in objects:
-                    if len(objects[objId]) == 0:
-                        continue
-                    obj = objects[objId]
-                    len_p = [len(p) for p in obj['contours']]
-                    if min(len_p) <= 4:
-                        print('Warning: invalid contours.')
-                        continue
+            for objId in objects:
+                if len(objects[objId]) == 0:
+                    continue
+                obj = objects[objId]
+                len_p = [len(p) for p in obj["contours"]]
+                if min(len_p) <= 4:
+                    print("Warning: invalid contours.")
+                    continue
 
-                    ann = dict()
-                    ann['h'] = h
-                    ann['w'] = w
-                    ann['file_name'] = file_name
-                    ann['id'] = int(objId)
-                    ann['segmentation'] = obj['contours']
-                    ann['iscrowd'] = 0
-                    ann["display_mask"] = contour
-                    ann['area'] = obj['pixelCount']
-                    ann['bbox'] = xyxy_to_xywh(polys_to_boxes([obj['contours']])).tolist()[0]
-                    ann["mask_name"] = mask_name
+                ann = dict()
+                ann["h"] = h
+                ann["w"] = w
+                ann["file_name"] = file_name
+                ann["id"] = int(objId)
+                ann["segmentation"] = obj["contours"]
+                ann["iscrowd"] = 0
+                ann["display_mask"] = obj["display_mask"]
+                ann["area"] = obj["pixelCount"]
+                ann["bbox"] = xyxy_to_xywh(polys_to_boxes([obj["contours"]])).tolist()[
+                    0
+                ]
+                ann["mask_name"] = mask_name
 
-                    annotations.append(ann)
-                    all_objects += 1
-                    instanceIds.append(objId)
-                    num_ann += 1
-            instanceIds = sorted(set(instanceIds))
-            num_obj += len(instanceIds)
-            video_ann = {str(iId): [] for iId in instanceIds}
-            for ann in annotations:
-                video_ann[str(ann['id'])].append(ann)
+                annotations.append(ann)
+                all_objects += 1
+                instanceIds.append(objId)
+                num_ann += 1
+        instanceIds = sorted(set(instanceIds))
+        num_obj += len(instanceIds)
+        video_ann = {str(iId): [] for iId in instanceIds}
+        for ann in annotations:
+            video_ann[str(ann["id"])].append(ann)
 
-            ann_dict[video] = video_ann
-            printProgressBar(vid, total)
+        ann_dict[video] = video_ann
+        printProgressBar(vid, total)
 
-        items = list(ann_dict.items())
-        train_dict = dict(items)
+    items = list(ann_dict.items())
+    train_dict = dict(items)
 
     clear_output()
     crop_path = os.path.join(path, "crop")
-    if not isdir(crop_path): mkdir(crop_path)
+    if not isdir(crop_path):
+        mkdir(crop_path)
     set_crop_base_path = join(crop_path)
     set_img_base_path = data_dir
     n_video = len(train_dict)
@@ -1100,6 +1284,15 @@ def prepare_object_tracking_data(path,
     val_all_obj = int(((all_objects * (val_split_pct * 10)) / 100) * 10)
     if val_set == 0:
         val_set = 1
+
+    def num_anns(elem):
+        ann_dict = elem[1]
+        val = 0
+        for k, v in ann_dict.items():
+            val = val + len(v)
+        return val
+
+    items = sorted(items, key=num_anns, reverse=True)
     train_dict = dict(items[:-val_set])
 
     snippets = train_val_split(train_dict)
@@ -1114,18 +1307,30 @@ def prepare_object_tracking_data(path,
     train_set.shuffle()
     val_set.shuffle()
     init_kwargs = {}
-    train_dl = DataLoader(train_set, batch_size=batch_size, num_workers=0,
-                          pin_memory=True, sampler=None, **init_kwargs)
+    train_dl = DataLoader(
+        train_set,
+        batch_size=batch_size,
+        num_workers=0,
+        pin_memory=True,
+        sampler=None,
+        **init_kwargs,
+    )
 
-    valid_dl = DataLoader(val_set, batch_size=batch_size, num_workers=0,
-                          pin_memory=True, sampler=None, **init_kwargs)
+    valid_dl = DataLoader(
+        val_set,
+        batch_size=batch_size,
+        num_workers=0,
+        pin_memory=True,
+        sampler=None,
+        **init_kwargs,
+    )
 
     device = get_device()
     data = DataBunch(train_dl, valid_dl, device=device)
     data.path = path
     data.infos = data.train_ds.infos
     data.show_batch = types.MethodType(show_batch, data)
-    data._dataset_type = 'ObjectTracking'
+    data._dataset_type = "ObjectTracking"
     data.train_folders = train
     data.val_folders = val
     clear_output()
@@ -1134,10 +1339,7 @@ def prepare_object_tracking_data(path,
 
 def show_batch(self, rows=4, **kwargs):
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows * 2)]
-    fig, axes = plt.subplots(nrows=rows,
-                             ncols=2,
-                             squeeze=False,
-                             figsize=(20, rows * 5))
+    fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     ind = 0
     for idx in range(0, len(img_idxs), 2):
         self.train_ds.show([img_idxs[idx], img_idxs[idx + 1]], axes[ind])

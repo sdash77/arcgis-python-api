@@ -5568,15 +5568,20 @@ def _raster_item(raster, raster_id=None):
 
     if raster is not None and isinstance(raster, ImageryLayer):
         url = raster.url
-        if "arcgis.com" in url:
-            if (
-                (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
-            ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                    serverUrl=url
-                )
-            if isinstance(raster._lazy_token, str):
-                url = url + "?token=" + raster._lazy_token
+        if "arcgis.com" in url and (
+            hasattr(raster, "_gis") and raster._gis is not None
+        ):
+            try:
+                if (
+                    (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
+                ) or not hasattr(raster, "_lazy_token"):
+                    raster._lazy_token = raster._gis._con.generate_portal_server_token(
+                        serverUrl=url
+                    )
+                if isinstance(raster._lazy_token, str):
+                    url = url + "?token=" + raster._lazy_token
+            except:
+                url = raster.url
             template_dict["rasterFunctionArguments"]["URL"] = url
         else:
             template_dict["rasterFunctionArguments"]["URL"] = raster.url

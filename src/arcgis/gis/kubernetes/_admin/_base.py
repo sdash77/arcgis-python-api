@@ -131,7 +131,7 @@ class _BaseKube(object):
         self.refresh()
 
     # ----------------------------------------------------------------------
-    def __iter__(self) -> Generator[Tuple[Any]]:
+    def __iter__(self):
         """creates iterable for classes properties"""
         for k, v in self._json_dict.items():
             yield k, v
