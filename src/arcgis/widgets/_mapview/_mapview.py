@@ -380,23 +380,23 @@ class MapView(widgets.DOMWidget):
     @property
     def heading(self):
         """
-        The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
-        zero when north is the top of the screen. It increases as the view rotates
-        clockwise. The angles are always normalized between 0 and 360 degrees.
+         The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
+         zero when north is the top of the screen. It increases as the view rotates
+         clockwise. The angles are always normalized between 0 and 360 degrees.
 
-       .. note::
-            ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
-            property.
+        .. note::
+             ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
+             property.
 
-        .. code-block:: python
+         .. code-block:: python
 
-            #Usage Example in 3D mode
+             #Usage Example in 3D mode
 
-            >>> from arcgis.gis import GIS, Item
-            >>> from arcgis.widgets import MapView
-            >>> map3d = gis.map("California", mode ="3D")
-            >>> map3d.heading
-            <225.82433689241765>
+             >>> from arcgis.gis import GIS, Item
+             >>> from arcgis.widgets import MapView
+             >>> map3d = gis.map("California", mode ="3D")
+             >>> map3d.heading
+             <225.82433689241765>
         """
         return self._readonly_heading
 

@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco.py, box AP=45.0
+# cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco.py, box AP=45.0
 
-_base_ = './_base_/models/cascade_rcnn_r50_fpn.py'
+_base_ = "./_base_/models/cascade_rcnn_r50_fpn.py"
 
 model = dict(
-    pretrained='torchvision://resnet101',
+    pretrained="torchvision://resnet101",
     backbone=dict(
-        dcn=dict(type='DCN', deform_groups=1, fallback_on_stride=False),
-        stage_with_dcn=(False, True, True, True)))
+        dcn=dict(type="DCN", deform_groups=1, fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True),
+    ),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/dcn/cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco/cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco_20200203-3b2f0594.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/dcn/cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco/cascade_rcnn_r101_fpn_dconv_c3-c5_1x_coco_20200203-3b2f0594.pth"

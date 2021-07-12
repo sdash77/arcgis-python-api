@@ -3514,8 +3514,8 @@ class UserManager(object):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
-                return any(results)                
-                
+                return any(results)
+
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False

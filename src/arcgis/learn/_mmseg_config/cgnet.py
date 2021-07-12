@@ -14,19 +14,20 @@
 
 
 # model settings
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type='EncoderDecoder',
+    type="EncoderDecoder",
     backbone=dict(
-        type='CGNet',
+        type="CGNet",
         norm_cfg=norm_cfg,
         in_channels=3,
         num_channels=(32, 64, 128),
         num_blocks=(3, 21),
         dilations=(2, 4),
-        reductions=(8, 16)),
+        reductions=(8, 16),
+    ),
     decode_head=dict(
-        type='FCNHead',
+        type="FCNHead",
         in_channels=256,
         in_index=2,
         channels=256,
@@ -35,13 +36,11 @@ model = dict(
         dropout_ratio=0,
         num_classes=19,
         norm_cfg=norm_cfg,
-        loss_decode=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=False,
-            loss_weight=1.0
-            )),
+        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+    ),
     # model training and testing settings
     train_cfg=dict(sampler=None),
-    test_cfg=dict(mode='whole'))
+    test_cfg=dict(mode="whole"),
+)
 
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/cgnet/cgnet_512x1024_60k_cityscapes/cgnet_512x1024_60k_cityscapes_20201101_110254-124ea03b.pth'
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/cgnet/cgnet_512x1024_60k_cityscapes/cgnet_512x1024_60k_cityscapes_20201101_110254-124ea03b.pth"

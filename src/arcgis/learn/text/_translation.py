@@ -1,18 +1,21 @@
 import traceback
 from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
+
 HAS_TRANSFORMER = True
 
 try:
     from pathlib import Path
     import json
-    import os    
+    import os
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMER = False
 
 
@@ -22,7 +25,7 @@ class TextTranslator(InferenceOnlyModel):
     Based on the Hugging Face transformers library
     To learn more about the available models for translation task,
     kindly visit:- https://huggingface.co/models?pipeline_tag=translation&search=Helsinki
-    
+
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -32,7 +35,7 @@ class TextTranslator(InferenceOnlyModel):
     ---------------------   -------------------------------------------
     target_language         Optional string. The language into which one
                             wishes to translate the input text.
-                            Default value is 'en' (English)                         
+                            Default value is 'en' (English)
     =====================   ===========================================
 
     **kwargs**
@@ -41,13 +44,13 @@ class TextTranslator(InferenceOnlyModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
-                            model files are saved. 
+                            model files are saved.
                             If pretrained_path is provided, the model is
                             loaded from that path on the local disk.
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
-                            This directory is used as the location to save the 
+                            This directory is used as the location to save the
                             model.
     =====================   ===========================================
 
@@ -72,11 +75,15 @@ class TextTranslator(InferenceOnlyModel):
             self.model = AutoModelForSeq2SeqLM.from_pretrained(pretrained_path)
         else:
             self._tokenizer = AutoTokenizer.from_pretrained(
-                f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang}")
+                f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang}"
+            )
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
-                f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang}")
+                f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang}"
+            )
 
-        device = torch.device("cpu" if self._device < 0 else "cuda:{}".format(self._device))
+        device = torch.device(
+            "cpu" if self._device < 0 else "cuda:{}".format(self._device)
+        )
         self.model.to(device)
 
     def translate(self, text_or_list, show_progress=True, **kwargs):
@@ -136,32 +143,36 @@ class TextTranslator(InferenceOnlyModel):
         num_return_sequences = kwargs.get("num_return_sequences", 1)
         min_length, max_length = kwargs.get("min_length"), kwargs.get("max_length")
         if min_length and max_length and min_length > max_length:
-            error_message = (f"Value of `min_length` parameter({min_length}) cannot be "
-                             f"greater than the value of `max_length` parameter({max_length}).")
+            error_message = (
+                f"Value of `min_length` parameter({min_length}) cannot be "
+                f"greater than the value of `max_length` parameter({max_length})."
+            )
             raise Exception(error_message)
 
         if not isinstance(text_or_list, (list, tuple)):
             text_or_list = [text_or_list]
 
         for i in progress_bar(range(len(text_or_list)), display=show_progress):
-            inputs = self._tokenizer.encode(f"{text_or_list[i]} {self._tokenizer.eos_token}", return_tensors="pt").\
-                to(self._device)
+            inputs = self._tokenizer.encode(
+                f"{text_or_list[i]} {self._tokenizer.eos_token}", return_tensors="pt"
+            ).to(self._device)
             outputs = self.model.generate(inputs, **kwargs)
             result = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
             result = [{"translated_text": x} for x in result]
-            if num_return_sequences == 1: result = result[0]
+            if num_return_sequences == 1:
+                result = result[0]
             results.append(result)
         return results
 
     def _create_emd(self, name_or_path):
         emd_template = {}
-        emd_template.update({'ModelName': self.__class__.__name__})
-        emd_template.update({'architectures': self.model.config.architectures})
-        emd_template.update({'source_lang': self._source_lang})
-        emd_template.update({'target_lang': self._target_lang})
+        emd_template.update({"ModelName": self.__class__.__name__})
+        emd_template.update({"architectures": self.model.config.architectures})
+        emd_template.update({"source_lang": self._source_lang})
+        emd_template.update({"target_lang": self._target_lang})
         path = Path(name_or_path)
         name = path.parts[-1]
-        with open(os.path.join(path, f'{name}.emd'), 'w') as f:
+        with open(os.path.join(path, f"{name}.emd"), "w") as f:
             f.write(json.dumps(emd_template))
 
     def save(self, name_or_path):
@@ -177,10 +188,10 @@ class TextTranslator(InferenceOnlyModel):
 
         :returns: Absolute path for the saved model
         """
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = name_or_path
         else:
-            path = os.path.join(self.working_dir, 'models', name_or_path)
+            path = os.path.join(self.working_dir, "models", name_or_path)
         self.model.save_pretrained(path)
         self.model.config.save_pretrained(path)
         self._tokenizer.save_pretrained(path)

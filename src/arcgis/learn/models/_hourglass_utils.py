@@ -157,7 +157,13 @@ class HourglassModuleMTL(nn.Module):
 
 class StackHourglassMultiTaskModel(nn.Module):
     def __init__(
-        self, encoder=None, task1_classes=2, task2_classes=37, chip_size=None, n_bands=3, **kwargs
+        self,
+        encoder=None,
+        task1_classes=2,
+        task2_classes=37,
+        chip_size=None,
+        n_bands=3,
+        **kwargs
     ):
         super(StackHourglassMultiTaskModel, self).__init__()
 
@@ -244,8 +250,11 @@ class StackHourglassMultiTaskModel(nn.Module):
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(
-                    self.inplanes, planes * block.expansion,
-                    kernel_size=1, stride=stride, bias=True,
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=True,
                 )
             )
 
@@ -306,11 +315,10 @@ class StackHourglassMultiTaskModel(nn.Module):
         f5 = self.finalconv3(f4)
         # out_1.append(f5)
 
-
-            # Final Classification
+        # Final Classification
         a_d1 = self.angle_decoder1(y2)[
-                :, :, : int(math.ceil(rows / 2.0)), : int(math.ceil(cols / 2.0))
-               ]
+            :, :, : int(math.ceil(rows / 2.0)), : int(math.ceil(cols / 2.0))
+        ]
         # a_d1_score = self.angle_decoder1_score(a_d1)
         # out_2.append(a_d1_score)
         a_f1 = self.angle_finaldeconv1(a_d1)
@@ -321,5 +329,5 @@ class StackHourglassMultiTaskModel(nn.Module):
         # out_2.append(a_f5)
 
         return f5, a_f5
-        #else:
+        # else:
         #    return f5
