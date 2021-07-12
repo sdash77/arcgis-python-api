@@ -1,10 +1,12 @@
 from ._base import BasePortalAdmin
+
 ########################################################################
 class Site(BasePortalAdmin):
     """
     Site is the root resources used after a local GIS is installed. Here
     administrators can create, export, import, and join sites.
     """
+
     _url = None
     _con = None
     _pa = None
@@ -12,31 +14,34 @@ class Site(BasePortalAdmin):
     _properties = None
     _json = None
     _json_dict = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, portaladmin, **kwargs):
         """Constructor"""
         super(Site, self).__init__(url=url, gis=portaladmin._gis)
-        initialize = kwargs.pop('initialize', False)
+        initialize = kwargs.pop("initialize", False)
         self._url = url
         self._pa = portaladmin
         self._gis = portaladmin._gis
         self._con = portaladmin._con
         if initialize:
             self._init()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
-    def create(con,
-               url,
-               username,
-               password,
-               full_name,
-               email,
-               content_store,
-               description="",
-               question_idx=None,
-               question_ans=None,
-               license_file=None,
-               user_license=None):
+    def create(
+        con,
+        url,
+        username,
+        password,
+        full_name,
+        email,
+        content_store,
+        description="",
+        question_idx=None,
+        question_ans=None,
+        license_file=None,
+        user_license=None,
+    ):
         """
         The create site operation initializes and configures Portal for
         ArcGIS for use. It must be the first operation invoked after
@@ -97,22 +102,25 @@ class Site(BasePortalAdmin):
 
         """
         url = "%s/createNewSite" % url
-        params = {"f": "json",
-                  "username" : username,
-                  "password" : password,
-                  "fullName" : full_name,
-                  "email" : email,
-                  "description" : description,
-                  "contentStore" : content_store}
+        params = {
+            "f": "json",
+            "username": username,
+            "password": password,
+            "fullName": full_name,
+            "email": email,
+            "description": description,
+            "contentStore": content_store,
+        }
         if question_idx and question_ans:
-            params['securityQuestionIdx'] = question_idx
-            params['securityQuestionAns'] = question_ans
+            params["securityQuestionIdx"] = question_idx
+            params["securityQuestionAns"] = question_ans
         if user_license:
-            params['userLicenseTypeId'] = user_license
+            params["userLicenseTypeId"] = user_license
         if license_file:
-            license_file = {'file' : license_file}
+            license_file = {"file": license_file}
         return con.post(url, params, files=license_file)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export_site(self, location):
         """
         This operation exports the portal site configuration to a location
@@ -149,11 +157,10 @@ class Site(BasePortalAdmin):
 
         """
         url = "%s/exportSite" % self._url
-        params = {'f' : 'json',
-                  'location' : location}
-        return self._con.post(path=url,
-                              postdata=params)
-    #----------------------------------------------------------------------
+        params = {"f": "json", "location": location}
+        return self._con.post(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
     def import_site(self, location):
         """
         The importSite operation lets you restore your site from a backup
@@ -180,14 +187,13 @@ class Site(BasePortalAdmin):
             raise ValueError(
                 "You must access portal not using the web adaptor (port 7443)"
             )
-        params = {'f' : 'json',
-                  'location' : location}
-        res =  self._con.post(path=url,
-                              postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        params = {"f": "json", "location": location}
+        res = self._con.post(path=url, postdata=params)
+        if "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def join(self, admin_url, username, password):
         """
         The joinSite operation connects a portal machine to an existing
@@ -228,13 +234,10 @@ class Site(BasePortalAdmin):
 
         """
         url = "%s/joinSite" % self._url
-        params = {'f' : 'json',
-                  'machineAdminUrl' : admin_url,
-                  'username' : username,
-                  'password' : password}
-        return self._con.post(path=url,
-                              postdata=params)
-
-
-
-
+        params = {
+            "f": "json",
+            "machineAdminUrl": admin_url,
+            "username": username,
+            "password": password,
+        }
+        return self._con.post(path=url, postdata=params)

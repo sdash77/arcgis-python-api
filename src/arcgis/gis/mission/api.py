@@ -4,33 +4,40 @@ from arcgis.gis import Item
 from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
+from typing import Union
+
 ###########################################################################
 class MissionJob(object):
     """Represents a Single `Job` operation for Mission Server"""
+
     _properties = None
     _url = None
     _con = None
     _gis = None
     # ---------------------------------------------------------------------
-    def __init__(self, url:str, gis:"GIS", **kwargs) -> "MissionJob":
+    def __init__(self, url: str, gis: "GIS", **kwargs) -> "MissionJob":
         self._url = url
         self._gis = gis
         self._con = gis._con
+
     # ---------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
         if self._properties is None:
             try:
-                self._properties = PropertyMap(self._con.get(self._url, {'f' : 'json'}))
+                self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
             except:
-                self._properties = PropertyMap(self._con.post(self._url, {'f' : 'json'}))
+                self._properties = PropertyMap(self._con.post(self._url, {"f": "json"}))
         return self._properties
+
     # ---------------------------------------------------------------------
     @property
     def status(self) -> object:
@@ -40,36 +47,41 @@ class MissionJob(object):
 
         :returns: string
         """
-        resp = self._con.get(self._url, {'f' : 'json'})
+        resp = self._con.get(self._url, {"f": "json"})
         try:
-            return resp['status']
+            return resp["status"]
         except:
             return "UNKNOWN"
+
     # ---------------------------------------------------------------------
     def result(self) -> "Mission":
         """Returns the results of the process"""
-        if self.status.upper() == 'COMPLETED':
-            resp = self._con.get(self._url, {'f' : 'json'})
-            if self.properties['type'] == "addMission":
+        if self.status.upper() == "COMPLETED":
+            resp = self._con.get(self._url, {"f": "json"})
+            if self.properties["type"] == "addMission":
                 url = f"{self._url.split('/jobs/')[0]}/missions/{resp['customAttributes']['missionId']}"
                 return Mission(url=url, gis=self._gis)
             else:
                 return self.properties
         return None
+
+
 ###########################################################################
 class Mission(object):
     """
     A single registered `Mission` on the Enterprise.
     """
+
     _properties = None
     _url = None
     _con = None
     _gis = None
     # ---------------------------------------------------------------------
-    def __init__(self, url:str, gis:"GIS", **kwargs) -> "Mission":
+    def __init__(self, url: str, gis: "GIS", **kwargs) -> "Mission":
         self._url = url
         self._gis = gis
         self._con = gis._con
+
     # ---------------------------------------------------------------------
     def _dictionary_check(self, i):
         """
@@ -77,32 +89,38 @@ class Mission(object):
         Then prints the keys leading into this
         * could be reversed to be more useful, I guess
         """
-        for key,value in i.items():
+        for key, value in i.items():
             if isinstance(value, dict):
                 self._dictionary_check(value)
             else:
-                if isinstance(value, str) and \
-                   value.lower().find('/featureserver/') > -1:
+                if (
+                    isinstance(value, str)
+                    and value.lower().find("/featureserver/") > -1
+                ):
                     i[key] = Service(url=value, server=self._gis)
+
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
         if self._properties is None:
             try:
-                r = self._con.get(self._url, {'f' : 'json'})
+                r = self._con.get(self._url, {"f": "json"})
                 self._dictionary_check(r)
                 self._properties = r
             except:
-                r = self._con.post(self._url, {'f' : 'json'})
+                r = self._con.post(self._url, {"f": "json"})
                 self._dictionary_check(r)
                 self._properties = r
         return self._properties
+
     # ---------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
@@ -110,41 +128,25 @@ class Mission(object):
 
         :return: Boolean
         """
-        params = {
-            'f' : 'json',
-            'async' : False
-        }
+        params = {"f": "json", "async": False}
         url = f"{self._url}/delete"
         res = self._con.post(url, params)
-        if res.get('status') or res.get('success'):
-            return res.get('status') or res.get('success')
+        if res.get("status") or res.get("success"):
+            return res.get("status") or res.get("success")
         return res
-    # ---------------------------------------------------------------------
-    def add_message(self, message:dict):
-        """
-        Adds a message to the current `Mission`
 
-        :return: bool
-        """
-        url = f"{self._url}/addMessages"
-        params = {
-            'f' : 'json',
-            'features' : message
-        }
-        res = self._con.post(url, params)
-        if res.get('status') or res.get('success'):
-            return res.get('status') or res.get('success')
-        return res
     # ---------------------------------------------------------------------
-    def add_report(self,
-                    title:str,
-                    description:str=None,
-                    tags:str=None,
-                    questions:dict=None,
-                    display_field:str=None,
-                    drawing_info:dict=None,
-                    locale:str='en',
-                    share_as_template:bool=False) -> dict:
+    def add_report(
+        self,
+        title: str,
+        description: str = None,
+        tags: str = None,
+        questions: dict = None,
+        display_field: str = None,
+        drawing_info: dict = None,
+        locale: str = "en",
+        share_as_template: bool = False,
+    ) -> dict:
         """
         ==================     ====================================================================
         **Argument**           **Description**
@@ -173,18 +175,19 @@ class Mission(object):
         :returns: Dict
         """
         params = {
-            "title" : title,
-            "description" : description or "",
-            "tags" : tags or "report",
-            "questions" : questions or [],
-            "displayField" : display_field or "",
-            "drawingInfo" : drawing_info or "",
+            "title": title,
+            "description": description or "",
+            "tags": tags or "report",
+            "questions": questions or [],
+            "displayField": display_field or "",
+            "drawingInfo": drawing_info or "",
             "shareAsTemplate": share_as_template,
-            "locale" : locale,
-            'f' : 'json'
+            "locale": locale,
+            "f": "json",
         }
         url = f"{self._url}/reports/add"
         return self._con.post(url, params)
+
     # ---------------------------------------------------------------------
     @property
     def reports(self) -> list:
@@ -195,33 +198,35 @@ class Mission(object):
 
         """
         url = f"{self._url}/reports"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.get(url, params)
-        return [Item(gis=self._gis, itemid=r['itemId']) \
-                for r in res['reports'] if r.get('itemId')]
+        return [
+            Item(gis=self._gis, itemid=r["itemId"])
+            for r in res["reports"]
+            if r.get("itemId")
+        ]
+
+
 ###########################################################################
-class MissionCatalog():
+class MissionCatalog:
     """
     The ArcGIS Mission Server catalog.
 
     """
+
     _con = None
     _gis = None
     _url = None
     _properties = None
     # ---------------------------------------------------------------------
-    def __init__(self, gis:"GIS") -> "MissionCatalog":
+    def __init__(self, gis: "GIS") -> "MissionCatalog":
         url = None
-        urls = {
-            'admin' : None,
-            'url' : None
-        }
-        for rs in gis._registered_servers()['servers']:
-            if rs['serverType'] == "ARCGIS_MISSION_SERVER":
+        urls = {"admin": None, "url": None}
+        for rs in gis._registered_servers()["servers"]:
+            if rs["serverType"] == "ARCGIS_MISSION_SERVER":
                 url = f"{rs['url']}/rest"
-                urls['url'] = url
-                urls['admin'] = f"{rs['adminUrl']}/admin"
-
+                urls["url"] = url
+                urls["admin"] = f"{rs['adminUrl']}/admin"
 
         if url is None:
             raise Exception("No registered mission server found.")
@@ -231,36 +236,44 @@ class MissionCatalog():
         self._con = gis._con
         try:
             from arcgis.gis.mission import MissionServer
-            self.admin = MissionServer(url=urls['admin'], gis=gis)
+
+            self.admin = MissionServer(url=urls["admin"], gis=gis)
         except:
             pass
+
     # ---------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
+
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
         if self._properties is None:
             try:
-                self._properties = PropertyMap(self._con.get(self._url, {'f' : 'json'}))
+                self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
             except:
-                self._properties = PropertyMap(self._con.post(self._url, {'f' : 'json'}))
+                self._properties = PropertyMap(self._con.post(self._url, {"f": "json"}))
         return self._properties
+
     # ---------------------------------------------------------------------
-    def create_mission(self,
-                       title:str,
-                       snippet:str=None,
-                       description:str=None,
-                       license_info:str=None,
-                       tags:str=None,
-                       extent:list=None,
-                       template_item:"Item"=None,
-                       locale:str='en',
-                       base_map:dict=None,
-                       wm_description:str=None) -> MissionJob:
+    def create_mission(
+        self,
+        title: str,
+        snippet: str = None,
+        description: str = None,
+        license_info: str = None,
+        tags: str = None,
+        extent: list = None,
+        template_item: "Item" = None,
+        locale: str = "en",
+        base_map: dict = None,
+        wm_description: str = None,
+        webmap_id: Union[str, Item] = None,
+    ) -> MissionJob:
         """
 
         Creates a new `Mission` on the enterprise.
@@ -285,11 +298,11 @@ class MissionCatalog():
 
                                **Format: <xmin>, <ymin>, <xmax>, <ymax>**
         ------------------     --------------------------------------------------------------------
-        templateWebMapId	   Optional. String. The portal item id of the web map to use as a template for the mission.
+        webmap_id	       Optional String. The portal item id of the web map to use as a template for the mission.
         ------------------     --------------------------------------------------------------------
-        locale	               Optional. String. The locale in which to generate Mission assets with. Must be a valid IETF BCP 47 language tag. Defaults to en
+        locale	               Optional String. The locale in which to generate Mission assets with. Must be a valid IETF BCP 47 language tag. Defaults to en
         ------------------     --------------------------------------------------------------------
-        base_map               Optional. JSON Object. The basemap to add to the mission.
+        base_map               Optional JSON Object. The basemap to add to the mission.
                                See: https://developers.arcgis.com/documentation/common-data-types/basemap.htm
         ------------------     --------------------------------------------------------------------
         wm_description         Optional string. The description of the web map added to the mission.
@@ -300,31 +313,35 @@ class MissionCatalog():
 
 
         """
-
+        if isinstance(webmap_id, Item):
+            webmap_id = webmap_id.itemid
         url = f"{self._url}/missions/add"
         params = {
-            'title' : title,
-            'snippet' : snippet or "",
-            'description' : description or "",
-            "licenseInfo" : license_info or "",
-            "async" : True,
-            "tags" : tags or "",
-            "extent" : extent or "-180,-90,180,90",
-            "locale" : locale or "en",
-            "baseMap" : base_map or "",
-            "webMapDescription" : wm_description,
-            "f" : "json"
+            "title": title,
+            "snippet": snippet or "",
+            "description": description or "",
+            "licenseInfo": license_info or "",
+            "async": True,
+            "tags": tags or "",
+            "extent": extent or "-180,-90,180,90",
+            "locale": locale or "en",
+            "baseMap": base_map or "",
+            "webMapDescription": wm_description,
+            "templateWebMapId": webmap_id,
+            "f": "json",
         }
         resp = self._con.post(url, params)
         return MissionJob(url=f"{self._url}/jobs/{resp.get('jobId')}", gis=self._gis)
+
     # ---------------------------------------------------------------------
     @property
     def jobs(self) -> list:
         """returns a list of jobs on the server"""
         url = f"{self._url}/jobs"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         resp = self._con.get(url, params)
         return [MissionJob(url=f"{url}/{j}", gis=self._gis) for j in resp["asyncJobs"]]
+
     # ---------------------------------------------------------------------
     @property
     def missions(self) -> list:
@@ -334,8 +351,6 @@ class MissionCatalog():
         :returns: List
         """
         url = f"{self._url}/missions"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         resp = self._con.get(url, params)
         return [Mission(url=f"{url}/{j['id']}", gis=self._gis) for j in resp["results"]]
-
-

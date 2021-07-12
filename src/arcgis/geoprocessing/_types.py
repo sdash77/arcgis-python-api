@@ -19,12 +19,13 @@ class LinearUnit(object):
                           "Decimeters"
         ================  ========================================================
     """
+
     def __init__(self, distance, units):
         self.distance = distance
-        if units.startswith('esri'):
+        if units.startswith("esri"):
             self.units = units.title()
         else:
-            self.units = 'esri' + units.title()
+            self.units = "esri" + units.title()
 
     def to_dict(self):
         """Converts an instance of this class to its dict representation."""
@@ -39,8 +40,8 @@ class LinearUnit(object):
     @classmethod
     def from_dict(cls, datadict):
         """Creates an instance of this class from its dict representation."""
-        distance = datadict.get('distance', None)
-        units = datadict.get('units', None)
+        distance = datadict.get("distance", None)
+        units = datadict.get("units", None)
 
         return cls(distance, units)
 
@@ -63,11 +64,12 @@ class DataFile(object):
         ----------------  --------------------------------------------------------
         item_id           optional string,  The id of the uploaded file returned
                           as a result of the upload operation.
-                          
+
         ----------------  --------------------------------------------------------
         portal_item       optional Item. A data type item used for GP tool.
         ================  ========================================================
     """
+
     def __init__(self, url=None, item_id=None, portal_item=None):
         self.url = url
         self.item_id = item_id
@@ -77,14 +79,14 @@ class DataFile(object):
         """Converts an instance of this class to its dict representation."""
         datafile = {}
         if self.url is not None:
-            datafile['url'] = self.url
+            datafile["url"] = self.url
         if self.item_id is not None:
-            datafile['itemID'] = self.item_id
+            datafile["itemID"] = self.item_id
         if self.portal_item is not None and isinstance(self.portal_item, str):
             datafile["portalItemID"] = self.portal_item
         elif self.portal_item is not None and hasattr(self.portal_item, "itemid"):
             datafile["portalItemID"] = self.portal_item.itemid
-            
+
         return datafile
 
     def __repr__(self):
@@ -96,17 +98,15 @@ class DataFile(object):
     @classmethod
     def from_dict(cls, datadict):
         """Creates an instance of this class from its dict representation."""
-        url = datadict.get('url', None)
-        item_id = datadict.get('item_id', None)
+        url = datadict.get("url", None)
+        item_id = datadict.get("item_id", None)
 
         return cls(url, item_id)
-
 
     @classmethod
     def from_str(cls, url):
         """Creates a data file from a url."""
         return cls(url, None)
-
 
     def download(self, save_path=None):
         """Downloads the data to the specified folder or a temporary folder if a folder isn't provided"""
@@ -114,9 +114,14 @@ class DataFile(object):
         if not save_path:
             save_path = tempfile.gettempdir()
         if data_path:
-            filename = data_path.split('/')[-1]
-            return self._con.get(path=data_path, file_name=filename,
-                                        out_folder=save_path, try_json=False, token=self._token)
+            filename = data_path.split("/")[-1]
+            return self._con.get(
+                path=data_path,
+                file_name=filename,
+                out_folder=save_path,
+                try_json=False,
+                token=self._token,
+            )
 
 
 class RasterData(object):
@@ -137,6 +142,7 @@ class RasterData(object):
                           data, such as "jpg", "tif", etc.
         ================  ========================================================
     """
+
     def __init__(self, url=None, format=None, item_id=None):
         self.url = url
         self.format = format
@@ -146,11 +152,11 @@ class RasterData(object):
         """Converts an instance of this class to its dict representation."""
         rasterdata = {}
         if self.url is not None:
-            rasterdata['url'] = self.url
+            rasterdata["url"] = self.url
         if self.item_id is not None:
-            rasterdata['itemID'] = self.item_id
+            rasterdata["itemID"] = self.item_id
         if self.format is not None:
-            rasterdata['format'] = self.format
+            rasterdata["format"] = self.format
 
         return rasterdata
 
@@ -163,10 +169,8 @@ class RasterData(object):
     @classmethod
     def from_dict(cls, datadict):
         """Creates an instance of this class from its dict representation."""
-        url = datadict.get('url', None)
-        item_id = datadict.get('item_id', None)
-        format = datadict.get('format', None)
+        url = datadict.get("url", None)
+        item_id = datadict.get("item_id", None)
+        format = datadict.get("format", None)
 
         return cls(url, format, item_id)
-
-

@@ -2,17 +2,19 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
+
 ########################################################################
 class NotebookManager(object):
     """
     Provides access to managing a site's notebooks
     """
+
     _url = None
     _gis = None
     _properties = None
     _nbs = None
     _snapshot = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis, nbs):
         """Constructor"""
         self._url = url
@@ -22,29 +24,34 @@ class NotebookManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<NotebookManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<NotebookManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """
         Returns a list of notebook instances on the Notebook Server
@@ -52,10 +59,12 @@ class NotebookManager(object):
         :returns: List of Notebook Objects
 
         """
-        return [Notebook(url=self._url,
-                         item_id=nbs['id'],
-                         properties=nbs) for nbs in self.properties.notebooks]
-    #----------------------------------------------------------------------
+        return [
+            Notebook(url=self._url, item_id=nbs["id"], properties=nbs)
+            for nbs in self.properties.notebooks
+        ]
+
+    # ----------------------------------------------------------------------
     @property
     def runtimes(self):
         """
@@ -64,14 +73,16 @@ class NotebookManager(object):
         :return: List
         """
         url = self._url + "/runtimes"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.get(url, params)
         if "runtimes" in res:
-            return [Runtime(url=url + "/{rid}".format(rid=r["id"]),
-                            gis=self._gis) \
-                    for r in res["runtimes"]]
+            return [
+                Runtime(url=url + "/{rid}".format(rid=r["id"]), gis=self._gis)
+                for r in res["runtimes"]
+            ]
         return []
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def snapshots(self):
         """
@@ -81,10 +92,12 @@ class NotebookManager(object):
         """
         if self._snapshot is None:
             from ._snapshot import SnapshotManager
+
             url = self._url + "/snapshots"
             self._snapshot = SnapshotManager(url=url, gis=self._gis)
         return self._snapshot
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def restore_runtime(self):
         """
         This operation restores the two default notebook runtimes in ArcGIS
@@ -92,37 +105,38 @@ class NotebookManager(object):
         Notebook Python 3 Advanced - to their original settings.
         """
         url = self._url + "/runtimes/restore"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @staticmethod
-    def _future_job(fn,
-                    task_name,
-                    jobid=None,
-                    task_url=None,
-                    notify=False,
-                    gis=None,
-                    **kwargs):
+    def _future_job(
+        fn, task_name, jobid=None, task_url=None, notify=False, gis=None, **kwargs
+    ):
         """
         runs the job asynchronously
 
         :returns: Job object
         """
         from arcgis._impl._async.jobs import Job
+
         tp = concurrent.futures.ThreadPoolExecutor(1)
         future = tp.submit(fn=fn, **kwargs)
         tp.shutdown(False)
         return Job(future, task_name, jobid, task_url, notify, gis=gis)
-    #----------------------------------------------------------------------
-    def execute_notebook(self,
-                         item,
-                         update_portal_item=True,
-                         parameters=None,
-                         save_parameters=False,
-                         future=False):
+
+    # ----------------------------------------------------------------------
+    def execute_notebook(
+        self,
+        item,
+        update_portal_item=True,
+        parameters=None,
+        save_parameters=False,
+        future=False,
+    ):
         """
 
         The Execute Notebook operation allows administrators to remotely
@@ -165,6 +179,7 @@ class NotebookManager(object):
 
         """
         from arcgis.gis import Item
+
         url = self._url + "/executeNotebook"
         itemid = None
         if isinstance(item, str):
@@ -172,44 +187,49 @@ class NotebookManager(object):
         elif isinstance(item, Item):
             itemid = item.itemid
         params = {
-            'f' : 'json',
-            'itemId' : itemid,
-            'updatePortalItem' : update_portal_item,
-            'saveInjectedParameters' : save_parameters
+            "f": "json",
+            "itemId": itemid,
+            "updatePortalItem": update_portal_item,
+            "saveInjectedParameters": save_parameters,
         }
         if parameters:
-            params['notebookParameters'] = parameters
+            params["notebookParameters"] = parameters
         if future:
+
             def _fn(url, params, nbs):
                 import time
+
                 resp = self._gis._con.post(url, params)
-                if 'status' in resp and \
-                   resp['status'] == 'success':
-                    job_id = resp['jobId']
+                if "status" in resp and resp["status"] == "success":
+                    job_id = resp["jobId"]
                     status = nbs.system.job_details(job_id)
                     i = 0
-                    while (status['status'].lower() != 'completed'):
-                        time.sleep(.3)
-                        if status['status'].lower() == 'failed':
+                    while status["status"].lower() != "completed":
+                        time.sleep(0.3)
+                        if status["status"].lower() == "failed":
                             return status
-                        elif status['status'].lower().find('fail') > -1 or\
-                             status['status'].lower().find('error') > -1:
+                        elif (
+                            status["status"].lower().find("fail") > -1
+                            or status["status"].lower().find("error") > -1
+                        ):
                             raise Exception(f"Job Fail {jobstatus}")
                         status = nbs.system.job_details(job_id)
                     return status
                 return resp
-            return NotebookManager._future_job(fn=_fn,
-                                               task_name='Execute Notebook',
-                                               gis=self._gis,
-                                               **{'url' : url, 'params' : params, 'nbs' : self._nbs})
+
+            return NotebookManager._future_job(
+                fn=_fn,
+                task_name="Execute Notebook",
+                gis=self._gis,
+                **{"url": url, "params": params, "nbs": self._nbs},
+            )
         res = self._gis._con.post(url, params)
         return res
-    #----------------------------------------------------------------------
-    def open_notebook(self,
-                      itemid,
-                      templateid=None,
-                      nb_runtimeid=None,
-                      template_nb=None):
+
+    # ----------------------------------------------------------------------
+    def open_notebook(
+        self, itemid, templateid=None, nb_runtimeid=None, template_nb=None
+    ):
         """
 
         Opens a notebook on the notebook server
@@ -239,42 +259,45 @@ class NotebookManager(object):
 
         """
         params = {
-            "itemId" : itemid,
-            "templateId" : templateid,
-            'notebookRuntimeId' : nb_runtimeid,
-            'templateNotebook' : template_nb,
-            'async' : True,
-            'f' : 'json'
+            "itemId": itemid,
+            "templateId": templateid,
+            "notebookRuntimeId": nb_runtimeid,
+            "templateNotebook": template_nb,
+            "async": True,
+            "f": "json",
         }
         url = self._url + "/openNotebook"
         res = self._con.post(url, params)
-        if 'jobUrl' in res:
-            job_url = res['jobUrl']
-            params = {'f' : 'json'}
+        if "jobUrl" in res:
+            job_url = res["jobUrl"]
+            params = {"f": "json"}
             job_res = self._con.get(job_url, params)
-            while job_res["status"] != 'COMPLETED':
+            while job_res["status"] != "COMPLETED":
                 job_res = self._con.get(job_url, params)
                 if job_res["status"].lower().find("fail") > -1:
                     return job_res
             return job_res
         return res
-    #----------------------------------------------------------------------
-    def _add_runtime(self,
-                     name,
-                     image_id,
-                     version="10.7",
-                     container_type='docker',
-                     image_pull_string="",
-                     max_cpu=1.0,
-                     max_memory=4.0,
-                     max_memory_unit='g',
-                     max_swap_memory="",
-                     max_swap_unit='g',
-                     shared_memory=None,
-                     shared_memory_unit='m',
-                     docker_runtime="",
-                     manifest=None,
-                     **kwargs):
+
+    # ----------------------------------------------------------------------
+    def _add_runtime(
+        self,
+        name,
+        image_id,
+        version="10.7",
+        container_type="docker",
+        image_pull_string="",
+        max_cpu=1.0,
+        max_memory=4.0,
+        max_memory_unit="g",
+        max_swap_memory="",
+        max_swap_unit="g",
+        shared_memory=None,
+        shared_memory_unit="m",
+        docker_runtime="",
+        manifest=None,
+        **kwargs,
+    ):
         """
         **WARNING: private method, this will change in future releases**
 
@@ -282,12 +305,12 @@ class NotebookManager(object):
         """
         url = self._url + "/runtimes/register"
         params = {
-            'f' : 'json',
-            "name" : name,
-            "version" : version,
-            "imageId" :  image_id,
+            "f": "json",
+            "name": name,
+            "version": version,
+            "imageId": image_id,
             "containerType": container_type,
-            "imagePullString" : image_pull_string,
+            "imagePullString": image_pull_string,
             "maxCpu": float(max_cpu),
             "maxMemory": float(max_memory),
             "maxMemoryUnit": max_memory_unit,
@@ -296,28 +319,32 @@ class NotebookManager(object):
             "sharedMemory": shared_memory,
             "sharedMemoryUnit": shared_memory_unit,
             "dockerRuntime": docker_runtime,
-            "f": "json"
+            "f": "json",
         }
 
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             params[k] = v
-        res = self._con.post(url,
-                             params,
-                             files={'manifestFile' : manifest},
-                             add_headers=[('X-Esri-Authorization',
-                                          "bearer {token}".format(token=self._con.token))]
-                             )
+        res = self._con.post(
+            url,
+            params,
+            files={"manifestFile": manifest},
+            add_headers=[
+                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
+            ],
+        )
         return res
+
 
 ########################################################################
 class Runtime(object):
     """
     Provides information about the properties of a specific notebook runtime in your ArcGIS Notebook Server site
     """
+
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -326,29 +353,34 @@ class Runtime(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<Runtime @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<Runtime @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Deletes the current runtime from the ArcGIS Notebook Server
@@ -357,28 +389,31 @@ class Runtime(object):
 
         """
         url = self._url + "/unregister"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
-    def update(self,
-               name=None,
-               image_id=None,
-               max_cpu=None,
-               max_memory=None,
-               memory_unit=None,
-               max_swap_memory=None,
-               swap_memory_unit=None,
-               shared_memory=None,
-               docker_runtime=None,
-               shared_unit=None,
-               version=None,
-               container_type=None,
-               pull_string=None,
-               require_advanced_priv=None,
-               manifest=None):
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        name=None,
+        image_id=None,
+        max_cpu=None,
+        max_memory=None,
+        memory_unit=None,
+        max_swap_memory=None,
+        swap_memory_unit=None,
+        shared_memory=None,
+        docker_runtime=None,
+        shared_unit=None,
+        version=None,
+        container_type=None,
+        pull_string=None,
+        require_advanced_priv=None,
+        manifest=None,
+    ):
         """
         This operation allows you to update the properties of a notebook
         runtime in ArcGIS Notebook Server. These settings will be applied
@@ -398,30 +433,30 @@ class Runtime(object):
         if manifest is None:
             manifest = ""
         if manifest:
-            file = {'manifestFile' : manifest}
+            file = {"manifestFile": manifest}
 
         params = {
             "name": name,
-            "version" : version,
-            "imageId" : image_id,
+            "version": version,
+            "imageId": image_id,
             "containerType": container_type,
-            "imagePullString" : pull_string,
+            "imagePullString": pull_string,
             "requiresAdvancedPrivileges": require_advanced_priv,
-            "maxCpu" : max_cpu or float(self.properties.maxCpu),
-            "maxMemory" : max_memory or float(self.properties.maxMemory),
-            "maxMemoryUnit" : memory_unit or "g",
-            "maxSwapMemory" : max_swap_memory or "",
-            "maxSwapMemoryUnit" : swap_memory_unit or "g",
-            "sharedMemory" : shared_memory or "",
-            "sharedMemoryUnit" : shared_unit or "m",
+            "maxCpu": max_cpu or float(self.properties.maxCpu),
+            "maxMemory": max_memory or float(self.properties.maxMemory),
+            "maxMemoryUnit": memory_unit or "g",
+            "maxSwapMemory": max_swap_memory or "",
+            "maxSwapMemoryUnit": swap_memory_unit or "g",
+            "sharedMemory": shared_memory or "",
+            "sharedMemoryUnit": shared_unit or "m",
             "dockerRuntime": docker_runtime,
-            'f' : 'json'
+            "f": "json",
         }
         import json
+
         for k in list(params.keys()):
 
-            if params[k] is None and \
-               k in self.properties:
+            if params[k] is None and k in self.properties:
                 params[k] = self.properties[k]
             elif params[k] is None:
                 params[k] = ""
@@ -432,16 +467,19 @@ class Runtime(object):
 
         if len(params) == 1:
             return False
-        res = self._con.post(url,
-                             params,
-                             files={'manifestFile' : manifest},
-                             add_headers=[('X-Esri-Authorization',
-                                          "bearer {token}".format(token=self._con.token))]
-                             )
-        if 'status' in res:
-            return res['status'] == 'success'
+        res = self._con.post(
+            url,
+            params,
+            files={"manifestFile": manifest},
+            add_headers=[
+                ("X-Esri-Authorization", "bearer {token}".format(token=self._con.token))
+            ],
+        )
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def manifest(self):
         """
@@ -454,21 +492,24 @@ class Runtime(object):
 
         """
         url = self._url + "/manifest"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         res = self._con.get(url, params)
         if "libraries" in res:
             return res["libraries"]
         return res
+
+
 ###########################################################################
 class Notebook(object):
     """
     This represents an individual notebook resource in the notebook server.
     """
+
     _url = None
     _item_id = None
     _properties = None
     _gis = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, item_id, properties=None, gis=None):
         self._url = url + "/%s" % item_id
         self._item_id = item_id
@@ -476,31 +517,37 @@ class Notebook(object):
             self._properties = properties
         if gis is None:
             from arcgis.env import active_gis
+
             gis = active_gis
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<Notebook @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<Notebook @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def close(self):
         """
         This operation stops a running notebook. You can use it to free up
@@ -512,9 +559,9 @@ class Notebook(object):
         :returns: Boolean
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         url = self._url + "/closeNotebook"
         res = self._gis._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res

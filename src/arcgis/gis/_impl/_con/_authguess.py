@@ -8,6 +8,7 @@ from requests import cookies
 try:
     from arcgis.auth import EsriWindowsAuth
 
+
     HAS_SSPI = True
 except ImportError:
     HAS_SSPI = False
@@ -15,6 +16,7 @@ except ImportError:
 try:
 
     from arcgis.auth import EsriKerberosAuth
+
 
     HAS_KERBEROS = True
 except ImportError:

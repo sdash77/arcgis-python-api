@@ -45,7 +45,7 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         nms_overlap = 0.1
         obj_det_models = ['FeatureClassifier', 'SingleShotDetector', 'RetinaNet']
         img_to_img_models = ['UnetClassifier', 'SuperResolution', 'PSPNetClassifier', 'DeepLab']
-        other_models = ['ImageCaptioner', 'PointCNN', 'MaskRCNN','MultiTaskRoadExtractor','ConnectNet']
+        other_models = ['ImageCaptioner','MaskRCNN','MultiTaskRoadExtractor','ConnectNet']
         text_models = ['TextClassifier']
         if (type(self._arcgis_model).__name__) in obj_det_models:
             fig1 = self.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self._arcgis_model)
@@ -56,7 +56,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         # elif (type(self._arcgis_model).__name__) in text_models:
         # txt= self._arcgis_model.show_results(return_text=True)
         elif (type(self._arcgis_model).__name__) == 'FasterRCNN':
-            fig1 = self._show_results_modified(2, return_fig=True)
+            if self.data._is_multispectral:
+                fig1 = self._arcgis_model._show_results_multispectral(return_fig=True)
+            else:
+                fig1 = self._show_results_modified(2, return_fig=True)
         elif (type(self._arcgis_model).__name__) == 'CycleGAN':
             self._arcgis_model.learn.model.arcgis_results = True
             fig1 = self.show_results(rows=rows)
@@ -68,15 +71,16 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         else:
             return
 
-        if (type(self._arcgis_model).__name__) == 'PointCNN':
-            fig1.write_image("fig1_pcnn.jpeg")
-            image = Image.open("fig1_pcnn.jpeg")
-            image = ToTensor()(image)
-            self.tbwriter.add_image(tag=tag, img_tensor=image, global_step=iteration)
+        # Removing the support for Point CNN due to plotly orca dependency
+        #if (type(self._arcgis_model).__name__) == 'PointCNN':
+        #    fig1.write_image("fig1_pcnn.jpeg")
+        #    image = Image.open("fig1_pcnn.jpeg")
+        #    image = ToTensor()(image)
+        #    self.tbwriter.add_image(tag=tag, img_tensor=image, global_step=iteration)
         # elif (type(self._arcgis_model).__name__) in text_models:
         # self.tbwriter.add_text(tag=tag, text_string =txt, global_step=iteration)
-        else:
-            self.tbwriter.add_figure(tag=tag, figure=fig1, global_step=iteration, close=True)
+        #else:
+        self.tbwriter.add_figure(tag=tag, figure=fig1, global_step=iteration, close=True)
 
     def show_results(self, ds_type=DatasetType.Valid, rows: int = 5, **kwargs):
         "Show `rows` result of predictions on `ds_type` dataset."
@@ -226,9 +230,9 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         if self._arcgis_model.learn.dl(ds_type).batch_size < n_items: n_items = self._arcgis_model.learn.dl(
             ds_type).batch_size
         self._arcgis_model.learn.model.eval()
-        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model.model_conf.transform_input)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model._model_conf.transform_input)
         try:
-            preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb, transform_kwargs))
+            preds = self._arcgis_model.learn.model(self._arcgis_model._model_conf.transform_input(xb, transform_kwargs))
         except Exception as e:
 
             if getattr(self._arcgis_model, "_is_fasterrcnn", False):

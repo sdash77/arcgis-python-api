@@ -30,10 +30,10 @@ import fasttext.util
 
 
 class EncoderAttention(nn.Module):
-    def __init__(self, backbone, cut=None):
+    def __init__(self, backbone, cut=None, pretrained=True):
         """Load the pretrained backbone and replace top fc layer."""
         super().__init__()
-        self.backbone = create_body(backbone, cut=cut)
+        self.backbone = create_body(backbone, cut=cut, pretrained=pretrained)
         # Get number of channels of backbone.
         self.feature_size = model_sizes(self.backbone, size=(200, 200))[-1][1]
 
@@ -146,7 +146,7 @@ class DecoderAttention(nn.Module):
         # import pdb; pdb.set_trace();
         embeddings = self.embed(captions)
         # we will not process xxeos token.
-        packed = pack_padded_sequence(embeddings, lengths - 1, batch_first=True)
+        packed = pack_padded_sequence(embeddings, lengths.cpu() - 1, batch_first=True)
         self.init_hidden(features)
         hx, cx = self.hx, self.cx
         outputs = []
@@ -297,7 +297,7 @@ class EncoderDecoder(nn.Module):
 def loss_function_attention(inputs, captions, lengths):
     # skipping xxbos because that is going as input
     # and we need to predict next indexes onwards
-    packed = pack_padded_sequence(captions[:, 1:], lengths-1, batch_first=True)
+    packed = pack_padded_sequence(captions[:, 1:], lengths.cpu()-1, batch_first=True)
     return F.cross_entropy(inputs[0], packed[0])
 
 
@@ -323,7 +323,7 @@ def load_fasttext_embeddings(language='en'):
     return ft
 
 
-def image_captioner_learner(data, backbone, attention=True, decoder_params=None, metrics=None):
+def image_captioner_learner(data, backbone, attention=True, decoder_params=None, metrics=None, pretrained=True):
     if attention:
         pretrained_embeddings = decoder_params.get('pretrained_embeddings', False)
 
@@ -346,7 +346,7 @@ def image_captioner_learner(data, backbone, attention=True, decoder_params=None,
         decoder_params['vocab'] = data.vocab
         decoder_params['vocab_size'] = len(data.vocab.itos)
         # create ecoder using backbone
-        encoder = EncoderAttention(backbone)
+        encoder = EncoderAttention(backbone, pretrained=pretrained)
         # get channels from encoder which were computed during init.
         decoder_params['feature_size'] = encoder.feature_size
         # create LSTM decoder
@@ -405,7 +405,7 @@ class ReduceTeacherForcing(LearnerCallback):
 def accuracy(inputs, captions, lengths):
     # skipping xxbos because that is going as input
     # and we need to predict next indexes onwards
-    packed = pack_padded_sequence(captions[:, 1:], lengths-1, batch_first=True)
+    packed = pack_padded_sequence(captions[:, 1:], lengths.cpu()-1, batch_first=True)
     return (inputs[0].argmax(dim=-1) == packed[0]).float().mean()
 
 

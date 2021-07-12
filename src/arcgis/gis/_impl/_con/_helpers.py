@@ -7,7 +7,6 @@ import unicodedata
 from urllib.parse import urlparse, urlsplit, urljoin
 from urllib.parse import urlunsplit, unquote, quote
 
-
 # Check https://regex101.com/r/A326u1/5 for reference
 DOMAIN_FORMAT = re.compile(
     r"(?:^(\w{1,255}):(.{1,255})@|^)"  # http basic authentication [optional]
@@ -61,7 +60,8 @@ def validate_url(url: str):
 
 # --------------------------------------------------------------------------
 def _normalize_url(url, charset="utf-8"):
-    """ Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
+    """Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
+
 
     def _clean(string):
         string = str(unquote(string), "utf-8", "replace")
@@ -162,7 +162,7 @@ def _normalize_url(url, charset="utf-8"):
 
 # --------------------------------------------------------------------------
 def _parse_hostname(url, include_port=False):
-    """ Parses the hostname out of a URL."""
+    """Parses the hostname out of a URL."""
     parsed_url = urlparse((url))
     return parsed_url.netloc if include_port else parsed_url.hostname
 
@@ -176,7 +176,7 @@ def _is_http_url(url):
 
 # --------------------------------------------------------------------------
 def _unpack(obj_or_seq, key=None, flatten=False):
-    """ Turns a list of single item dicts in a list of the dict's values."""
+    """Turns a list of single item dicts in a list of the dict's values."""
 
     # The trivial case (passed in None, return None)
     if not obj_or_seq:
@@ -232,9 +232,31 @@ def _filename_from_url(url):
 
 
 # --------------------------------------------------------------------------
-def _filename_from_headers(headers):
-    """Detect filename from Content-Disposition headers if present.
-    http://greenbytes.de/tech/tc2231/
+def _get_file_name(s: dict) -> str:
+    """stips the filename from content-disposition using regex"""
+    fname = re.findall("filename\*=([^;]+)", s, flags=re.IGNORECASE)
+    if not fname:
+        fname = re.findall("filename=([^;]+)", s, flags=re.IGNORECASE)
+    if "utf-8''" in fname[0].lower():
+        fname = re.sub("utf-8''", "", fname[0], flags=re.IGNORECASE)
+        try:
+            if type(fname) == str:
+                fname = unquote(fname)
+            else:
+                fname = unquote(fname).decode("utf-8")
+        except:
+            fname = unquote(fname).encode("utf-8")
+    else:
+        fname = fname[0]
+    # clean space and double quotes
+    return fname.strip().strip('"')
+
+
+# --------------------------------------------------------------------------
+def _filename_from_headers(headers: dict) -> str:
+    """
+    Detect filename from Content-Disposition headers if present.
+
 
     :param: headers as dict, list or string
     :return: filename from content-disposition header or None
@@ -246,17 +268,4 @@ def _filename_from_headers(headers):
     cdisp = headers.get("Content-Disposition")
     if not cdisp:
         return None
-    cdtype = cdisp.split(";")
-    if len(cdtype) == 1:
-        return None
-    if cdtype[0].strip().lower() not in ("inline", "attachment"):
-        return None
-    # several filename params is illegal, but just in case
-    fnames = [x for x in cdtype[1:] if x.strip().startswith("filename=")]
-    if len(fnames) > 1:
-        return None
-    name = fnames[0].split("=")[1].strip(' \t"')
-    name = os.path.basename(name)
-    if not name:
-        return None
-    return name
+    return _get_file_name(cdisp)

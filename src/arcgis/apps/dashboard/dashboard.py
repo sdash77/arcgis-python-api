@@ -13,10 +13,11 @@ class Dashboard(object):
 
     :return Dashboard object
     """
+
     def __init__(self):
         self.elements = []
 
-        self._theme = 'light'
+        self._theme = "light"
 
         self._header = None
         self._side_panel = None
@@ -25,8 +26,10 @@ class Dashboard(object):
 
         # if item is not None:
         #     return _from_dashboard(item)
-        
-    def save(self, title, description='', summary='', tags=None, gis=None, overwrite=False):
+
+    def save(
+        self, title, description="", summary="", tags=None, gis=None, overwrite=False
+    ):
         """
         Publishes a Dashboard Object.
 
@@ -56,7 +59,7 @@ class Dashboard(object):
         self.description = description
 
         self.summary = summary
-        self.tags = tags if tags else ''
+        self.tags = tags if tags else ""
         return self._publish(gis=gis, overwrite=overwrite)
 
     @property
@@ -100,34 +103,23 @@ class Dashboard(object):
     def _convert_to_json(self):
         json_data = {
             "version": _DASHBOARD_VERSION,
-            "widgets":
-                [
-                    element._convert_to_json()
-                    for element in self.elements
-                ],
-            "settings":
-                {
-                    "maxPaginationRecords": 50000,
-                    "allowElementResizing": False
-                },
-            "mapOverrides":
-                {
-                    "trackedFeatureRadius": 60
-                },
+            "widgets": [element._convert_to_json() for element in self.elements],
+            "settings": {"maxPaginationRecords": 50000, "allowElementResizing": False},
+            "mapOverrides": {"trackedFeatureRadius": 60},
             "theme": self.theme,
             "themeOverrides": {},
             "numberPrefixOverrides": [],
             "layout": self._layout,
             "authoringApp": "ArcGIS API for Python",
             "authoringAppVersion": arcgis.__version__,
-            "typeKeywords": "Python"
+            "typeKeywords": "Python",
         }
 
         if self.header:
-            json_data['headerPanel'] = self.header._convert_to_json()
+            json_data["headerPanel"] = self.header._convert_to_json()
 
         if self.side_panel:
-            json_data['leftPanel'] = self.side_panel._convert_to_json()
+            json_data["leftPanel"] = self.side_panel._convert_to_json()
 
         # print(json_data)
         return json_data
@@ -144,9 +136,9 @@ class Dashboard(object):
         """
         Set the layout of the dashboard, using add_row and add_column functions.
         """
-        self.elements = value['widgets']
-        del value['widgets']
-        self._layout = {"rootElement" : value}
+        self.elements = value["widgets"]
+        del value["widgets"]
+        self._layout = {"rootElement": value}
 
     # @property
     # def widgets(self):
@@ -154,7 +146,7 @@ class Dashboard(object):
     #     :return: widgets of the dashboard
     #     """
     #     return self._widgets
-    
+
     def _repr_html_(self):
         url = self._dash_publish()
         return f"""<iframe src={url} width=900 height=300>"""
@@ -165,22 +157,22 @@ class Dashboard(object):
         import string
 
         letters = string.ascii_lowercase
-        title = ''.join(random.choice(letters) for i in range(10))
-        summary = ''.join(random.choice(letters) for i in range(10))
+        title = "".join(random.choice(letters) for i in range(10))
+        summary = "".join(random.choice(letters) for i in range(10))
 
         db = Dashboard()
 
         db.title = title
         db.summary = summary
-        db.description = ''
+        db.description = ""
         db.summary = summary
-        db.tags = ''
+        db.tags = ""
 
         db._layout = self._layout
         db.elements = self.elements
         db = db._publish(gis)
         _created_dashboards.append((gis, db))
-        url = f'{gis.url}/apps/opsdashboard/index.html#/{db.itemid}'
+        url = f"{gis.url}/apps/opsdashboard/index.html#/{db.itemid}"
 
         return url
 
@@ -188,19 +180,23 @@ class Dashboard(object):
         if gis is None:
             gis = arcgis.env.active_gis
 
-        items = gis.content.search(f'title:{self.title}', 'Dashboard')
+        items = gis.content.search(f"title:{self.title}", "Dashboard")
         for item in items:
             if item.title.lower() == self.title.lower() and overwrite is False:
-                raise Exception("A dashboard with same name already exists, to continue set `overwrite` = True")
+                raise Exception(
+                    "A dashboard with same name already exists, to continue set `overwrite` = True"
+                )
             elif item.title.lower() == self.title.lower():
                 item.delete(force=True)
 
-        return gis.content.add({
-            'type': 'Dashboard',
-            'description': self.description,
-            'title': self.title,
-            'overwrite': str(overwrite).lower(),
-            'text': json.dumps(self._convert_to_json())}
+        return gis.content.add(
+            {
+                "type": "Dashboard",
+                "description": self.description,
+                "title": self.title,
+                "overwrite": str(overwrite).lower(),
+                "text": json.dumps(self._convert_to_json()),
+            }
         )
 
     def _from_dashboard(self, dashboard_item):
@@ -213,7 +209,7 @@ class Dashboard(object):
             "richTextWidget": arcgis.apps.dashboard.RichText,
             "listWidget": arcgis.apps.dashboard.List,
             "embeddedContentWidget": arcgis.apps.dashboard.EmbeddedContent,
-            "legendWidget": arcgis.apps.dashboard.MapLegend
+            "legendWidget": arcgis.apps.dashboard.MapLegend,
         }
         item_json = dashboard_item.get_data()
         for widget_json in item_json["widgets"]:
@@ -225,33 +221,37 @@ class Dashboard(object):
     @staticmethod
     def _publish_random(widget):
         from arcgis.apps.dashboard import add_row
+
         gis = arcgis.env.active_gis
         import random
         import string
 
         letters = string.ascii_lowercase
-        title = ''.join(random.choice(letters) for i in range(10))
-        summary = ''.join(random.choice(letters) for i in range(10))
+        title = "".join(random.choice(letters) for i in range(10))
+        summary = "".join(random.choice(letters) for i in range(10))
         db = Dashboard()
 
-        if widget.type == 'headerPanel':
+        if widget.type == "headerPanel":
             db.header = widget
-        elif widget.type == 'leftPanel':
+        elif widget.type == "leftPanel":
             db.side_panel = widget
-        elif widget.type == 'legendWidget':
+        elif widget.type == "legendWidget":
             map_widget_width = widget._map_widget.width
             widget._map_widget.width = 0.5
             db.layout = add_row([widget._map_widget, widget])
             widget._map_widget.width = map_widget_width
         else:
-            if hasattr(widget, 'item') and getattr(widget.item, 'type', None) == 'mapWidget':
+            if (
+                hasattr(widget, "item")
+                and getattr(widget.item, "type", None) == "mapWidget"
+            ):
                 db.layout = add_row([widget.item, widget])
             else:
                 db.layout = add_row([widget])
 
         db = db.save(title, summary, gis=gis, overwrite=True)
         _created_dashboards.append((gis, db))
-        url = f'{gis.url}/apps/opsdashboard/index.html#/{db.itemid}'
+        url = f"{gis.url}/apps/opsdashboard/index.html#/{db.itemid}"
 
         return url
 

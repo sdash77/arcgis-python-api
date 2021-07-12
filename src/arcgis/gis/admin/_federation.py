@@ -3,17 +3,19 @@ Updates the Federation Settings to Portal
 """
 from .. import GIS
 from ._base import BasePortalAdmin
+
 ########################################################################
 class Federation(BasePortalAdmin):
     """
     This resource returns information about the ArcGIS Servers registered
     with Portal for ArcGIS.
     """
+
     _gis = None
     _url = None
     _con = None
     _portal = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         if isinstance(gis, GIS):
@@ -24,12 +26,9 @@ class Federation(BasePortalAdmin):
             self._con = gis._con
         else:
             raise ValueError("gis object must be of type GIS")
-    #----------------------------------------------------------------------
-    def federate(self,
-                 url,
-                 admin_url,
-                 username,
-                 password):
+
+    # ----------------------------------------------------------------------
+    def federate(self, url, admin_url, username, password):
         """
         This operation enables ArcGIS Servers to be federated with Portal
         for ArcGIS.
@@ -65,18 +64,18 @@ class Federation(BasePortalAdmin):
         """
         fedurl = "%s/servers/federate" % self._url
         params = {
-            "f" : "json",
-            "url" : url,
-            "adminUrl" : admin_url,
-            "username" : username,
-            "password" : password
+            "f": "json",
+            "url": url,
+            "adminUrl": admin_url,
+            "username": username,
+            "password": password,
         }
-        res = self._con.post(path=fedurl,
-                             postdata=params)
-        if 'status' in res:
-            return res['status']
+        res = self._con.post(path=fedurl, postdata=params)
+        if "status" in res:
+            return res["status"]
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def servers(self):
         """
@@ -86,9 +85,10 @@ class Federation(BasePortalAdmin):
         if the server is set as a hosting server.
         """
         url = "%s/servers" % self._url
-        params = {"f" : "json"}
+        params = {"f": "json"}
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unfederate(self, server_id):
         """
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
@@ -105,12 +105,13 @@ class Federation(BasePortalAdmin):
 
         """
         url = "%s/servers/%s/unfederate" % (self._url, server_id)
-        params = {"f" : "json"}
+        params = {"f": "json"}
         res = self._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def update(self, server_id, role, function=None):
         """
         This operation allows you to set an ArcGIS Server federated with
@@ -139,31 +140,35 @@ class Federation(BasePortalAdmin):
         :returns: boolean
 
         """
-        role_allow = ["FEDERATED_SERVER",
-                      "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
-                      "HOSTING_SERVER"]
-        function_allow = ["GeoAnalytics",
-                          "RasterAnalytics",
-                          "ImageHosting",
-                          "NotebookServer",
-                          "MissionServer",
-                          "WorkflowManager"]
+        role_allow = [
+            "FEDERATED_SERVER",
+            "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
+            "HOSTING_SERVER",
+        ]
+        function_allow = [
+            "GeoAnalytics",
+            "RasterAnalytics",
+            "ImageHosting",
+            "NotebookServer",
+            "MissionServer",
+            "WorkflowManager",
+        ]
         if role.upper() in role_allow:
             role = role.upper()
         else:
             raise ValueError("Invalid role type")
-        if function and \
-           function not in function_allow:
+        if function and function not in function_allow:
             raise ValueError("Invalid function")
         params = {
-            "f" : "json",
-            "serverRole" : role,
+            "f": "json",
+            "serverRole": role,
         }
         if function:
             params["serverFunction"] = function
         url = "%s/servers/%s/update" % (self._url, server_id)
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate(self, server_id):
         """
         This operation provides status information about a specific ArcGIS
@@ -178,15 +183,16 @@ class Federation(BasePortalAdmin):
         :returns: dict
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         url = "%s/servers/%s/validate" % (self._url, server_id)
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate_all(self):
         """
         This operation returns information on the status of ArcGIS Servers
         registered with Portal for ArcGIS.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         url = "%s/servers/validate" % (self._url)
         return self._con.get(path=url, params=params)

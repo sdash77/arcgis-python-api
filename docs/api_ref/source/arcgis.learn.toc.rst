@@ -71,6 +71,13 @@ MaskRCNN
     :inherited-members:
     :undoc-members:
 
+MMDetection
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMDetection
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Pixel Classification Models
 ---------------------------
 UnetClassifier
@@ -125,6 +132,13 @@ ConnectNet
 ChangeDetector
 ^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.ChangeDetector
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+MMSegmentation
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.MMSegmentation
     :members:
     :inherited-members:
     :undoc-members:
@@ -221,6 +235,13 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+AutoML
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.AutoML
     :members:
     :inherited-members:
     :undoc-members:

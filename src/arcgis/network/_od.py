@@ -5,121 +5,193 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
+from arcgis._impl.common._utils import _validate_url
+from ._routing_utils import _create_toolbox
 
-_log=_logging.getLogger(__name__)
+_log = _logging.getLogger(__name__)
 
-_use_async=True
+_use_async = True
 
-default_origins={
-    'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-               {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
-               {'alias': 'Target Destination Count', 'name': 'TargetDestinationCount', 'type': 'esriFieldTypeInteger'},
-               {'alias': 'Cutoff', 'name': 'Cutoff', 'type': 'esriFieldTypeDouble'},
-               {'alias': 'Curb Approach', 'name': 'CurbApproach', 'type': 'esriFieldTypeSmallInteger'}],
-    'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
-    'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+default_origins = {
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Target Destination Count",
+            "name": "TargetDestinationCount",
+            "type": "esriFieldTypeInteger",
+        },
+        {"alias": "Cutoff", "name": "Cutoff", "type": "esriFieldTypeDouble"},
+        {
+            "alias": "Curb Approach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
-default_destinations={'fields': [
-                                                {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                                 'length': 128}, {'alias': 'Curb Approach', 'name': 'CurbApproach',
-                                                                  'type': 'esriFieldTypeSmallInteger'}],
-                                                                        'geometryType': 'esriGeometryPoint',
-                                                                        'displayFieldName': '',
-                                                                        'exceededTransferLimit': False,
-                                                                        'spatialReference': {'latestWkid': 4326,
-                                                                                             'wkid': 4326},
-                                                                        'features': []}
+default_destinations = {
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Curb Approach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
-default_point_barriers={'fields': [
-                                                {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                                 'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
-                                                                  'type': 'esriFieldTypeInteger'},
-                                                {'alias': 'Additional Time', 'name': 'Additional_Time',
-                                                 'type': 'esriFieldTypeDouble'},
-                                                {'alias': 'Additional Distance', 'name': 'Additional_Distance',
-                                                 'type': 'esriFieldTypeDouble'},
-                                                {'alias': 'CurbApproach', 'name': 'CurbApproach',
-                                                 'type': 'esriFieldTypeSmallInteger'}],
-                                                                          'geometryType': 'esriGeometryPoint',
-                                                                          'displayFieldName': '',
-                                                                          'exceededTransferLimit': False,
-                                                                          'spatialReference': {'latestWkid': 4326,
-                                                                                               'wkid': 4326},
-                                                                          'features': []}
+default_point_barriers = {
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Barrier Type",
+            "name": "BarrierType",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Additional Time",
+            "name": "Additional_Time",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Additional Distance",
+            "name": "Additional_Distance",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "CurbApproach",
+            "name": "CurbApproach",
+            "type": "esriFieldTypeSmallInteger",
+        },
+    ],
+    "geometryType": "esriGeometryPoint",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
-default_line_barriers={'fields': [
-                                                {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                                 'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
-                                                                  'type': 'esriFieldTypeDouble'}],
-                                                                         'geometryType': 'esriGeometryPolyline',
-                                                                         'displayFieldName': '',
-                                                                         'exceededTransferLimit': False,
-                                                                         'spatialReference': {'latestWkid': 4326,
-                                                                                              'wkid': 4326},
-                                                                         'features': []}
+default_line_barriers = {
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "SHAPE_Length",
+            "name": "SHAPE_Length",
+            "type": "esriFieldTypeDouble",
+        },
+    ],
+    "geometryType": "esriGeometryPolyline",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
-default_polygon_barriers={'fields': [
-                                                {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
-                                                 'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
-                                                                  'type': 'esriFieldTypeInteger'},
-                                                {'alias': 'Scaled Time Factor', 'name': 'ScaledTimeFactor',
-                                                 'type': 'esriFieldTypeDouble'},
-                                                {'alias': 'Scaled Distance Factor', 'name': 'ScaledDistanceFactor',
-                                                 'type': 'esriFieldTypeDouble'},
-                                                {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
-                                                 'type': 'esriFieldTypeDouble'},
-                                                {'alias': 'SHAPE_Area', 'name': 'SHAPE_Area',
-                                                 'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPolygon',
-                                                                            'displayFieldName': '',
-                                                                            'exceededTransferLimit': False,
-                                                                            'spatialReference': {'latestWkid': 4326,
-                                                                                                 'wkid': 4326},
-                                                                            'features': []}
+default_polygon_barriers = {
+    "fields": [
+        {"alias": "OBJECTID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {"alias": "Name", "name": "Name", "type": "esriFieldTypeString", "length": 128},
+        {
+            "alias": "Barrier Type",
+            "name": "BarrierType",
+            "type": "esriFieldTypeInteger",
+        },
+        {
+            "alias": "Scaled Time Factor",
+            "name": "ScaledTimeFactor",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "Scaled Distance Factor",
+            "name": "ScaledDistanceFactor",
+            "type": "esriFieldTypeDouble",
+        },
+        {
+            "alias": "SHAPE_Length",
+            "name": "SHAPE_Length",
+            "type": "esriFieldTypeDouble",
+        },
+        {"alias": "SHAPE_Area", "name": "SHAPE_Area", "type": "esriFieldTypeDouble"},
+    ],
+    "geometryType": "esriGeometryPolygon",
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+    "spatialReference": {"latestWkid": 4326, "wkid": 4326},
+    "features": [],
+}
 
-default_restrictions="""['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
+default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
 
-default_attributes={'fields': [
-                                                {'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
-                                                {'alias': 'AttributeName', 'name': 'AttributeName',
-                                                 'type': 'esriFieldTypeString', 'length': 255},
-                                                {'alias': 'ParameterName', 'name': 'ParameterName',
-                                                 'type': 'esriFieldTypeString', 'length': 255},
-                                                {'alias': 'ParameterValue', 'name': 'ParameterValue',
-                                                 'type': 'esriFieldTypeString', 'length': 25}], 'features': [],
-                                                                                      'displayFieldName': '',
-                                                                                      'exceededTransferLimit': False}
+default_attributes = {
+    "fields": [
+        {"alias": "ObjectID", "name": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "alias": "AttributeName",
+            "name": "AttributeName",
+            "type": "esriFieldTypeString",
+            "length": 255,
+        },
+        {
+            "alias": "ParameterName",
+            "name": "ParameterName",
+            "type": "esriFieldTypeString",
+            "length": 255,
+        },
+        {
+            "alias": "ParameterValue",
+            "name": "ParameterValue",
+            "type": "esriFieldTypeString",
+            "length": 25,
+        },
+    ],
+    "features": [],
+    "displayFieldName": "",
+    "exceededTransferLimit": False,
+}
 
 
-def generate_origin_destination_cost_matrix(origins,
-                                            destinations,
-                                            travel_mode='Custom',
-                                            time_units='Minutes',
-                                            distance_units='Kilometers',
-                                            analysis_region=None,
-                                            number_of_destinations_to_find=None,
-                                            cutoff=None,
-                                            time_of_day=None,
-                                            time_zone_for_time_of_day='Geographically Local',
-                                            point_barriers=None,
-                                            line_barriers=None,
-                                            polygon_barriers=None,
-                                            uturn_at_junctions='Allowed Only at Intersections and Dead Ends',
-                                            use_hierarchy=True,
-                                            restrictions=None,
-                                            attribute_parameter_values=None,
-                                            impedance='Drive Time',
-                                            origin_destination_line_shape='None',
-                                            save_output_network_analysis_layer=False,
-                                            overrides=None,
-                                            time_impedance=None,
-                                            distance_impedance=None,
-                                            output_format=None,
-                                            gis=None,
-                                            future=False):
+def generate_origin_destination_cost_matrix(
+    origins,
+    destinations,
+    travel_mode="Custom",
+    time_units="Minutes",
+    distance_units="Kilometers",
+    analysis_region=None,
+    number_of_destinations_to_find=None,
+    cutoff=None,
+    time_of_day=None,
+    time_zone_for_time_of_day="Geographically Local",
+    point_barriers=None,
+    line_barriers=None,
+    polygon_barriers=None,
+    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
+    use_hierarchy=True,
+    restrictions=None,
+    attribute_parameter_values=None,
+    impedance="Drive Time",
+    origin_destination_line_shape="None",
+    save_output_network_analysis_layer=False,
+    overrides=None,
+    time_impedance=None,
+    distance_impedance=None,
+    output_format=None,
+    gis=None,
+    future=False,
+):
     """
 
     The ``generate_origin_destination_cost_matrix`` tool creates an origin-destination (OD) cost matrix from multiple origins to multiple destinations.
@@ -845,84 +917,94 @@ def generate_origin_destination_cost_matrix(origins,
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncODCostMatrix.url
-    tbx = import_toolbox(url, gis=gis)
-    defaults = dict(zip(tbx.generate_origin_destination_cost_matrix.__annotations__.keys(),
-                        tbx.generate_origin_destination_cost_matrix.__defaults__))
+    url = _validate_url(url, gis)
+    tbx = _create_toolbox(url, gis=gis)
+    defaults = dict(
+        zip(
+            tbx.generate_origin_destination_cost_matrix.__annotations__.keys(),
+            tbx.generate_origin_destination_cost_matrix.__defaults__,
+        )
+    )
     if origins is None:
-        origins = defaults['origins']
+        origins = defaults["origins"]
     if destinations is None:
-        destinations = defaults['destinations']
+        destinations = defaults["destinations"]
     if point_barriers is None:
-        point_barriers = defaults['point_barriers']
+        point_barriers = defaults["point_barriers"]
     if line_barriers is None:
-        line_barriers = defaults['line_barriers']
+        line_barriers = defaults["line_barriers"]
     if polygon_barriers is None:
-        polygon_barriers = defaults['polygon_barriers']
+        polygon_barriers = defaults["polygon_barriers"]
     if restrictions is None:
-        restrictions = defaults['restrictions']
+        restrictions = defaults["restrictions"]
     if attribute_parameter_values is None:
-        attribute_parameter_values = defaults['attribute_parameter_values']
+        attribute_parameter_values = defaults["attribute_parameter_values"]
     if overrides is None:
-        overrides = defaults['overrides']
-    if time_impedance is None and 'time_impedance' in defaults:
-        time_impedance = defaults['time_impedance']
-    if distance_impedance is None and 'distance_impedance' in defaults:
-        distance_impedance = defaults['distance_impedance']
-    if output_format is None and 'output_format' in defaults:
-        output_format = defaults['output_format']
+        overrides = defaults["overrides"]
+    if time_impedance is None and "time_impedance" in defaults:
+        time_impedance = defaults["time_impedance"]
+    if distance_impedance is None and "distance_impedance" in defaults:
+        distance_impedance = defaults["distance_impedance"]
+    if output_format is None and "output_format" in defaults:
+        output_format = defaults["output_format"]
     from arcgis._impl.common._utils import inspect_function_inputs
+
     params = {
-        "origins" : origins,
-        "destinations" : destinations,
-        "travel_mode" : travel_mode,
-        "distance_units" : distance_units,
-        "analysis_region" : analysis_region,
-        "number_of_destinations_to_find" : number_of_destinations_to_find,
-        "cutoff" : cutoff,
-        "time_of_day" : time_of_day,
-        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-        "point_barriers" : point_barriers,
-        "line_barriers" : line_barriers,
-        "polygon_barriers" : polygon_barriers,
-        "uturn_at_junctions" : uturn_at_junctions,
-        "use_hierarchy" : use_hierarchy,
-        "restrictions" : restrictions,
-        "attribute_parameter_values" : attribute_parameter_values,
-        "impedance" : impedance,
-        "origin_destination_line_shape" : origin_destination_line_shape,
-        "save_output_network_analysis_layer" : save_output_network_analysis_layer,
-        "overrides" : overrides,
-        "time_impedance" : time_impedance,
-        "distance_impedance" : distance_impedance,
-        "output_format" : output_format,
-        "gis" : gis,
-        "future" : True
+        "origins": origins,
+        "destinations": destinations,
+        "travel_mode": travel_mode,
+        "distance_units": distance_units,
+        "analysis_region": analysis_region,
+        "number_of_destinations_to_find": number_of_destinations_to_find,
+        "cutoff": cutoff,
+        "time_of_day": time_of_day,
+        "time_zone_for_time_of_day": time_zone_for_time_of_day,
+        "point_barriers": point_barriers,
+        "line_barriers": line_barriers,
+        "polygon_barriers": polygon_barriers,
+        "uturn_at_junctions": uturn_at_junctions,
+        "use_hierarchy": use_hierarchy,
+        "restrictions": restrictions,
+        "attribute_parameter_values": attribute_parameter_values,
+        "impedance": impedance,
+        "origin_destination_line_shape": origin_destination_line_shape,
+        "save_output_network_analysis_layer": save_output_network_analysis_layer,
+        "overrides": overrides,
+        "time_impedance": time_impedance,
+        "distance_impedance": distance_impedance,
+        "output_format": output_format,
+        "gis": gis,
+        "future": True,
     }
-    params = inspect_function_inputs(tbx.generate_origin_destination_cost_matrix, **params)
-    params['future'] = True
+    params = inspect_function_inputs(
+        tbx.generate_origin_destination_cost_matrix, **params
+    )
+    params["future"] = True
     job = tbx.generate_origin_destination_cost_matrix(**params)
     if future:
         return job
     return job.result()
 
-generate_origin_destination_cost_matrix.__annotations__={
-    'origins': FeatureSet,
-    'destinations': FeatureSet,
-    'travel_mode': str,
-    'time_units': str,
-    'distance_units': str,
-    'analysis_region': str,
-    'number_of_destinations_to_find': int,
-    'cutoff': float,
-    'time_of_day': datetime,
-    'time_zone_for_time_of_day': str,
-    'point_barriers': FeatureSet,
-    'line_barriers': FeatureSet,
-    'polygon_barriers': FeatureSet,
-    'uturn_at_junctions': str,
-    'use_hierarchy': bool,
-    'restrictions': str,
-    'attribute_parameter_values': FeatureSet,
-    'impedance': str,
-    'origin_destination_line_shape': str,
-    'return': tuple}
+
+generate_origin_destination_cost_matrix.__annotations__ = {
+    "origins": FeatureSet,
+    "destinations": FeatureSet,
+    "travel_mode": str,
+    "time_units": str,
+    "distance_units": str,
+    "analysis_region": str,
+    "number_of_destinations_to_find": int,
+    "cutoff": float,
+    "time_of_day": datetime,
+    "time_zone_for_time_of_day": str,
+    "point_barriers": FeatureSet,
+    "line_barriers": FeatureSet,
+    "polygon_barriers": FeatureSet,
+    "uturn_at_junctions": str,
+    "use_hierarchy": bool,
+    "restrictions": str,
+    "attribute_parameter_values": FeatureSet,
+    "impedance": str,
+    "origin_destination_line_shape": str,
+    "return": tuple,
+}

@@ -3,6 +3,7 @@ import json
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 
+
 class WebhookManager(object):
     """
     Creates and manages ArcGIS Enterprise webhooks.  Webhooks allow you to be
@@ -10,36 +11,44 @@ class WebhookManager(object):
     users occur. Once a webhook has been triggered, an HTTP request is
     made to a user-defined URL to provide information regarding the event.
     """
+
     _con = None
     _gis = None
     _url = None
     _properties = None
+
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
         isinstance(self._gis, GIS)
         self._con = self._gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """initializer"""
-        params = {'f':'json'}
+        params = {"f": "json"}
         res = self._con.get(self._url, params)
         self._properties = PropertyMap(res)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         from urllib.parse import urlparse
+
         return "<WebhookManager @ {id}>".format(id=urlparse(self._url).netloc)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the Webhook properties"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def settings(self):
         """
@@ -70,9 +79,10 @@ class WebhookManager(object):
 
         """
         url = "%s/settings" % self._url
-        params = {'f':'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @settings.setter
     def settings(self, value):
         """
@@ -102,18 +112,19 @@ class WebhookManager(object):
 
         """
         url = "%s/settings/update" % self._url
-        params = {'f':'json'}
+        params = {"f": "json"}
 
         params = {
             "notificationAttempts": 4,
             "notificationTimeOutInSeconds": 11,
             "notificationElapsedTimeInSeconds": 6,
-            "f": "json"
+            "f": "json",
         }
-        for k,v in value.items():
+        for k, v in value.items():
             params[k] = v
         self._con.post(url, params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def get(self, name):
         """finds a single instance of a webhook by name"""
         for wh in self.list():
@@ -121,14 +132,11 @@ class WebhookManager(object):
                 return wh
             del wh
         return
-    #----------------------------------------------------------------------
-    def create(self,
-               name,
-               url,
-               events="ALL",
-               number_of_failures=5,
-               days_in_past=5,
-               secret=None):
+
+    # ----------------------------------------------------------------------
+    def create(
+        self, name, url, events="ALL", number_of_failures=5, days_in_past=5, secret=None
+    ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
 
@@ -240,7 +248,7 @@ class WebhookManager(object):
                                url="https://hooks.zapier.com/hooks/catch/6694048/odqj9o3/",
                                events=["/items/981e98b949d9432ebf26433f40948cec/move",
                                        "/items/981e98b949d9432ebf26433f40948cec/update"]
-        
+
         See `Webhook Blog Post <https://www.esri.com/arcgis-blog/products/arcgis-enterprise/administration/webhooks-dev-summit-2019/>`_ for a detailed explanation.
 
         """
@@ -248,71 +256,79 @@ class WebhookManager(object):
             secret = ""
         purl = "%s/createWebhook" % self._url
         params = {
-            'f': 'json',
-            'name' : name,
-            'url' : url,
-            'secret' : secret,
-            'configuration' : {
-                "numberOfFailures" : number_of_failures,
-                "daysInPast" : days_in_past
-            }
+            "f": "json",
+            "name": name,
+            "url": url,
+            "secret": secret,
+            "configuration": {
+                "numberOfFailures": number_of_failures,
+                "daysInPast": days_in_past,
+            },
         }
         if str(events).lower() == "all":
-            params['changes'] = "allChanges"
+            params["changes"] = "allChanges"
             res = self._con.post(purl, params)
 
         elif isinstance(events, list):
-            params['changes'] =  'manualChanges'
-            params['events'] = ",".join(events)
+            params["changes"] = "manualChanges"
+            params["events"] = ",".join(events)
             res = self._con.post(purl, params)
-        if 'success' in res and \
-           res['success']:
+        if "success" in res and res["success"]:
             return self.get(name=name)
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """Returns a list of WebHook objects"""
         hooks = []
         self._properties = None
         for wh in self.properties.webhooks:
             try:
-                url = "%s/%s" % (self._url, wh['id'])
+                url = "%s/%s" % (self._url, wh["id"])
                 hooks.append(Webhook(url=url, gis=self._gis))
-            except: pass
+            except:
+                pass
         return hooks
+
+
 ########################################################################
 class Webhook(object):
     """a single webhook"""
+
     _con = None
     _gis = None
-    _url =  None
+    _url = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
         self._gis = gis
         self._con = gis._con
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<WebHook @ {name}>".format(name=self.properties.name)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """Constructor"""
         if self._properties is None:
-            self._properties = PropertyMap(
-                self._con.get(self._url, {'f': 'json'}))
-    #----------------------------------------------------------------------
+            self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
-        """"""
+        """ """
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Removes the current webhook from the system.
@@ -321,9 +337,10 @@ class Webhook(object):
 
         """
         url = self._url + "/delete"
-        params = {'f' : 'json'}
-        return self._con.post(url, params)['success']
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._con.post(url, params)["success"]
+
+    # ----------------------------------------------------------------------
     @property
     def notifications(self):
         """
@@ -338,22 +355,19 @@ class Webhook(object):
         """
         url = "%s/notificationStatus" % self._url
         messages = []
-        params = {
-            "num" : 100,
-            "start" : 1,
-            'f' : 'json'
-        }
+        params = {"num": 100, "start": 1, "f": "json"}
         res = self._con.post(url, params)
-        if len(res['WebhookStatus']) > 0:
-            messages += res['WebhookStatus']
-        while res['nextStart'] != -1:
-            params['start'] = res['nextStart']
+        if len(res["WebhookStatus"]) > 0:
+            messages += res["WebhookStatus"]
+        while res["nextStart"] != -1:
+            params["start"] = res["nextStart"]
             res = self._con.post(url, params)
             messages += res["WebhookStatus"]
-            if res['nextStart'] == -1:
+            if res["nextStart"] == -1:
                 return messages
         return messages
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def deactivate(self):
         """
         Temporarily pause the webhook. This will stop the webhook from
@@ -363,30 +377,34 @@ class Webhook(object):
         :returns: boolean
         """
         url = self._url + "/deactivate"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
         self._properties = None
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def activate(self):
-        """"""
+        """ """
         url = self._url + "/activate"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         res = self._con.post(url, params)
         self._properties = None
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return False
-    #----------------------------------------------------------------------
-    def update(self,
-               name=None,
-               url=None,
-               events=None,
-               number_of_failures=None,
-               days_in_past=None,
-               secret=None):
+
+    # ----------------------------------------------------------------------
+    def update(
+        self,
+        name=None,
+        url=None,
+        events=None,
+        number_of_failures=None,
+        days_in_past=None,
+        secret=None,
+    ):
         """
         The Update Webhook operation allows administrators to update any of
         the parameters of their webhook.
@@ -494,7 +512,9 @@ class Webhook(object):
         if url is None:
             url = self.properties.payloadUrl
         if number_of_failures is None:
-            number_of_failures = self.properties.config.deactivationPolicy.numberOfFailures
+            number_of_failures = (
+                self.properties.config.deactivationPolicy.numberOfFailures
+            )
         if days_in_past is None:
             days_in_past = self.properties.config.deactivationPolicy.daysInPast
         if events is None:
@@ -502,57 +522,57 @@ class Webhook(object):
         purl = self._url + "/update"
         self._properties = None
         params = {
-            'f': 'json',
-            'name' : name,
-            'url' : url,
-            'secret' : secret,
-            'configuration' : {
-                "numberOfFailures" : number_of_failures,
-                "daysInPast" : days_in_past
-            }
+            "f": "json",
+            "name": name,
+            "url": url,
+            "secret": secret,
+            "configuration": {
+                "numberOfFailures": number_of_failures,
+                "daysInPast": days_in_past,
+            },
         }
 
-        params['events'] = events
+        params["events"] = events
         res = self._con.post(purl, params)
 
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return False
 
-#if __name__ == "__main__":
-    #from arcgis.gis import GIS
-    #gis = GIS(url="https://dev0005215.esri.com/portal")
-    #print(gis)
-    #url = "{baseurl}portals/self/webhooks".format(baseurl=gis._portal.resturl)
-    #whm = WebhookManager(url=url, gis=gis)
-    #hook1 = whm.create(name="update_test", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
-    #hook1.update(name='thisisupdated')
-    #hook1.update(events='/users')
-    #hook1.delete()
-    #print(hook1.properties.name)
 
-    #hook2 = whm.get("update_test")
-    #isinstance(hook, Webhook)
-    #assert hook.update(name="update_test", url="https://JJEYARAJAH.esri.com:8001", events="/users")
-    #print(hook.properties)
-    #print(hook.delete())
-    ##assert isinstance(whm, WebhookManager)
-    ##assert isinstance(whm.list(), list)
-    ##assert isinstance(whm.properties, PropertyMap)
+# if __name__ == "__main__":
+# from arcgis.gis import GIS
+# gis = GIS(url="https://dev0005215.esri.com/portal")
+# print(gis)
+# url = "{baseurl}portals/self/webhooks".format(baseurl=gis._portal.resturl)
+# whm = WebhookManager(url=url, gis=gis)
+# hook1 = whm.create(name="update_test", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
+# hook1.update(name='thisisupdated')
+# hook1.update(events='/users')
+# hook1.delete()
+# print(hook1.properties.name)
 
-    ##wh = whm.get("Users Webhook")
-    ##assert isinstance(wh, Webhook)
-    ##assert isinstance(wh.notifications, list)
-    ###assert whm.create(name="AmazingWebHook", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
-    ##wh = whm.get("AmazingWebHook")
-    ##assert wh.deactivate()
-    ##assert wh.properties.isActive == False
-    ##assert wh.activate()
-    ##assert wh.properties.isActive == True
+# hook2 = whm.get("update_test")
+# isinstance(hook, Webhook)
+# assert hook.update(name="update_test", url="https://JJEYARAJAH.esri.com:8001", events="/users")
+# print(hook.properties)
+# print(hook.delete())
+##assert isinstance(whm, WebhookManager)
+##assert isinstance(whm.list(), list)
+##assert isinstance(whm.properties, PropertyMap)
 
-    ##assert wh.delete()
+##wh = whm.get("Users Webhook")
+##assert isinstance(wh, Webhook)
+##assert isinstance(wh.notifications, list)
+###assert whm.create(name="AmazingWebHook", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
+##wh = whm.get("AmazingWebHook")
+##assert wh.deactivate()
+##assert wh.properties.isActive == False
+##assert wh.activate()
+##assert wh.properties.isActive == True
+
+##assert wh.delete()
 
 
-
-    ##print(whm.properties)
-    #print()
+##print(whm.properties)
+# print()

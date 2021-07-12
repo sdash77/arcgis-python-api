@@ -18,6 +18,7 @@ class LocationTrackingManager:
                            tracking for.
     ==================     ====================================================================
     """
+
     def __init__(self, gis):
         self._gis = gis
 
@@ -25,17 +26,36 @@ class LocationTrackingManager:
         if self._gis is None:
             raise LocationTrackingError("You must use a valid GIS")
         if float(self._gis.properties.get("currentVersion", "0")) < 7.1:
-            raise LocationTrackingError("Location Tracking requires ArcGIS Enterprise 10.7+ or ArcGIS Online")
+            raise LocationTrackingError(
+                "Location Tracking requires ArcGIS Enterprise 10.7+ or ArcGIS Online"
+            )
         if self._gis.users.me.role != "org_admin":
-            raise LocationTrackingError("You must be an administrator to configure Location Tracking")
-        if self._gis.properties.get("isPortal", False) and not self._gis.properties.get("hasSpatioTemporalArcGISDataStore", False):
-            raise LocationTrackingError("Location Tracking requires the Spatiotemporal Big Data Store")
-        if location_tracking_enabled and "locationTracking" not in self._gis.properties.helperServices:
+            raise LocationTrackingError(
+                "You must be an administrator to configure Location Tracking"
+            )
+        if self._gis.properties.get("isPortal", False) and not self._gis.properties.get(
+            "hasSpatioTemporalArcGISDataStore", False
+        ):
+            raise LocationTrackingError(
+                "Location Tracking requires the Spatiotemporal Big Data Store"
+            )
+        if (
+            location_tracking_enabled
+            and "locationTracking" not in self._gis.properties.helperServices
+        ):
             raise LocationTrackingError("Location Tracking is not enabled.")
-        if not location_tracking_enabled and "locationTracking" in self._gis.properties.helperServices:
+        if (
+            not location_tracking_enabled
+            and "locationTracking" in self._gis.properties.helperServices
+        ):
             raise LocationTrackingError("Location Tracking is already enabled.")
 
-    def enable(self, tracks_layer_shards=6, lkl_layer_shards=3, tracks_layer_rolling_index_strategy="Monthly"):
+    def enable(
+        self,
+        tracks_layer_shards=6,
+        lkl_layer_shards=3,
+        tracks_layer_rolling_index_strategy="Monthly",
+    ):
         """
         Enables location tracking for the organization.
 
@@ -58,17 +78,32 @@ class LocationTrackingManager:
         if self.status == "enabled":
             return False
         self._validate_environment(location_tracking_enabled=False)
-        if tracks_layer_rolling_index_strategy not in ["Daily", "Weekly", "Monthly", "Yearly", "Decade", "Century"]:
-            raise ValueError(f"Invalid rolling index strategy '{tracks_layer_rolling_index_strategy}'")
-        if float(self._gis.properties.get("currentVersion", "0")) <= 7.3 and tracks_layer_rolling_index_strategy in ["Century", "Decade"]:
-            raise ValueError(f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise")
+        if tracks_layer_rolling_index_strategy not in [
+            "Daily",
+            "Weekly",
+            "Monthly",
+            "Yearly",
+            "Decade",
+            "Century",
+        ]:
+            raise ValueError(
+                f"Invalid rolling index strategy '{tracks_layer_rolling_index_strategy}'"
+            )
+        if float(
+            self._gis.properties.get("currentVersion", "0")
+        ) <= 7.3 and tracks_layer_rolling_index_strategy in ["Century", "Decade"]:
+            raise ValueError(
+                f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise"
+            )
         for folder in self._gis.users.me.folders:
             if folder["title"] == "Location Tracking":
                 break
         else:
             self._gis.content.create_folder("Location Tracking")
         service_name = "location_tracking"
-        if not self._gis.content.is_service_name_available(service_name, service_type="featureService"):
+        if not self._gis.content.is_service_name_available(
+            service_name, service_type="featureService"
+        ):
             service_name = f"{service_name}{int(_dt.datetime.now().timestamp())}"
         create_params = {
             "name": f"{service_name}",
@@ -80,7 +115,7 @@ class LocationTrackingManager:
                             "rollingIndexStrategy": f"{tracks_layer_rolling_index_strategy}",
                             "dataRetentionStrategy": "30",
                             "dataRetentionStrategyUnits": "DAYS",
-                            "dataRetention": "true"
+                            "dataRetention": "true",
                         }
                     }
                 },
@@ -91,37 +126,38 @@ class LocationTrackingManager:
                             "rollingIndexStrategy": "Yearly",
                             "dataRetentionStrategy": "30",
                             "dataRetentionStrategyUnits": "DAYS",
-                            "dataRetention": "false"
+                            "dataRetention": "false",
                         }
                     }
-                }
+                },
             ],
             "description": "Location Tracking Service",
-            "snippet": "Location Tracking Service"
+            "snippet": "Location Tracking Service",
         }
         # Use a longer rolling index strategy if 10.8.1 or later
         if float(self._gis.properties.get("currentVersion", "0")) > 7.3:
-            create_params["layers"][1]["adminLayerInfo"]["tableMetadata"]["rollingIndexStrategy"] = "Century"
+            create_params["layers"][1]["adminLayerInfo"]["tableMetadata"][
+                "rollingIndexStrategy"
+            ] = "Century"
         item = self._gis.content.create_service(
             "location_tracking",
             create_params=create_params,
             folder="Location Tracking",
-            service_type="locationTrackingService"
+            service_type="locationTrackingService",
         )
         item.protect(True)
-        item.update({
-            "description": "The location tracking service stores the last known location of each mobile user, "
-                           "as well as full historical tracks of where the mobile user has been. It is part of an "
-                           "organization-wide capability that is managed by an administrator.",
-            "snippet": "Location Tracking Service"
-        })
-        item.share(org=True)
-        self._gis.update_properties({
-            "locationTrackingService": {
-                "url": item.url,
-                "id": item.itemid
+        item.update(
+            {
+                "description": "The location tracking service stores the last known location of each mobile user, "
+                "as well as full historical tracks of where the mobile user has been. It is part of an "
+                "organization-wide capability that is managed by an administrator.",
+                "snippet": "Location Tracking Service",
             }
-        })
+        )
+        item.share(org=True)
+        self._gis.update_properties(
+            {"locationTrackingService": {"url": item.url, "id": item.itemid}}
+        )
         return True
 
     def pause(self):
@@ -132,7 +168,11 @@ class LocationTrackingManager:
         """
         self._validate_environment()
         if self.status == "enabled":
-            return bool(self._service.manager.update_definition({"capabilities": "Query"})["success"])
+            return bool(
+                self._service.manager.update_definition({"capabilities": "Query"})[
+                    "success"
+                ]
+            )
         else:
             return False
 
@@ -144,7 +184,11 @@ class LocationTrackingManager:
         """
         self._validate_environment()
         if self.status == "paused":
-            return bool(self._service.manager.update_definition({"capabilities": "Query,Create,Update"})["success"])
+            return bool(
+                self._service.manager.update_definition(
+                    {"capabilities": "Query,Create,Update"}
+                )["success"]
+            )
         else:
             return False
 
@@ -158,7 +202,9 @@ class LocationTrackingManager:
         """
         item = self.item
         if self.status == "disabled":
-            possible_lts = self._gis.content.search(query='typekeywords:"Location Tracking Service" NOT typekeywords:"Location Tracking View"')
+            possible_lts = self._gis.content.search(
+                query='typekeywords:"Location Tracking Service" NOT typekeywords:"Location Tracking View"'
+            )
             if len(possible_lts) == 0:
                 return False
             else:
@@ -166,7 +212,11 @@ class LocationTrackingManager:
         folder_id = item.ownerFolder
         views = item.related_items("Service2Service", "forward")
         for view in views:
-            if hasattr(view, "properties") and view.properties is not None and "trackViewGroup" in view.properties:
+            if (
+                hasattr(view, "properties")
+                and view.properties is not None
+                and "trackViewGroup" in view.properties
+            ):
                 group = self._gis.groups.get(view.properties["trackViewGroup"])
                 if group:
                     group.protected = False
@@ -175,10 +225,15 @@ class LocationTrackingManager:
             view.delete()
         item.protect(False)
         item.delete()
-        self._gis.update_properties({
-            "locationTrackingService": "null"
-        })
-        if len(self._gis.content.search("""owner:"{}" ownerfolder:{}""".format(item.owner, folder_id))) == 0:
+        self._gis.update_properties({"locationTrackingService": "null"})
+        if (
+            len(
+                self._gis.content.search(
+                    """owner:"{}" ownerfolder:{}""".format(item.owner, folder_id)
+                )
+            )
+            == 0
+        ):
             for folder in self._gis.users.get(item.owner).folders:
                 if folder["title"] == "Location Tracking":
                     self._gis.content.delete_folder(folder["title"], owner=item.owner)
@@ -204,33 +259,27 @@ class LocationTrackingManager:
                 if f["id"] == self.item.ownerFolder:
                     folder = f["title"]
                     break
-        group = self._gis.groups.create(title,
-                                  "Location Tracking Group",
-                                        is_view_only=True,
-                                        is_invitation_only=True,
-                                        access="private")
+        group = self._gis.groups.create(
+            title,
+            "Location Tracking Group",
+            is_view_only=True,
+            is_invitation_only=True,
+            access="private",
+        )
         group.protected = True
         item = self._gis.content.create_service(
             "{}_Track_View".format(group.id),
-            create_params={
-                "name": "{}_Track_View".format(group.id),
-                "isView": True
-            },
+            create_params={"name": "{}_Track_View".format(group.id), "isView": True},
             folder=folder,
             service_type="locationTrackingService",
             is_view=True,
-            owner=self.item.owner
+            owner=self.item.owner,
         )
         item.protect(True)
-        item.update({
-            "title": title,
-            "properties": {
-                "trackViewGroup": group.id
-            }
-        })
+        item.update({"title": title, "properties": {"trackViewGroup": group.id}})
         definition = {"viewDefinitionQuery": "created_user in ('')"}
         # Workaround for 10.7 bug where time wasn't enabled
-        if self._gis.properties.isPortal and self._gis.version <= [7,1]:
+        if self._gis.properties.isPortal and self._gis.version <= [7, 1]:
             definition["timeInfo"] = {"startTimeField": "location_timestamp"}
         item.layers[0].manager.update_definition(definition)
         item.layers[1].manager.update_definition(definition)
@@ -239,14 +288,16 @@ class LocationTrackingManager:
             item.layers[2].manager.update_definition(definition)
         if self._gis.properties.isPortal:
             # Set allowOthersToQuery to True - workaround for missing feature in Enterprise 10.7/10.7.1
-            arcgis.features.FeatureLayerCollection(item.url, self._gis).manager.update_definition(
+            arcgis.features.FeatureLayerCollection(
+                item.url, self._gis
+            ).manager.update_definition(
                 {
                     "editorTrackingInfo": {
                         "enableOwnershipAccessControl": True,
                         "enableEditorTracking": True,
                         "allowOthersToQuery": True,
                         "allowOthersToUpdate": False,
-                        "allowOthersToDelete": False
+                        "allowOthersToDelete": False,
                     }
                 }
             )
@@ -263,7 +314,11 @@ class LocationTrackingManager:
         This is a positive integer whose units are defined by :py:attr:`~arcgis.gis.admin.location_tracking.retention_period_units`
         """
         try:
-            return int(self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"]["dataRetentionStrategy"])
+            return int(
+                self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"][
+                    "dataRetentionStrategy"
+                ]
+            )
         except:
             return None
 
@@ -272,23 +327,35 @@ class LocationTrackingManager:
         self._validate_environment()
         if isinstance(value, str):
             if not value.isdigit():
-                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
+                raise LocationTrackingError(
+                    "Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(
+                        value
+                    )
+                )
         elif isinstance(value, int):
             if value < 0:
-                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
+                raise LocationTrackingError(
+                    "Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(
+                        value
+                    )
+                )
         else:
-            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
-        self.tracks_layer.manager.update_definition({
-            "tableMetadata": {
-                "dataRetentionStrategy": "{}".format(value)
-            }
-        })
+            raise LocationTrackingError(
+                "Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(
+                    value
+                )
+            )
+        self.tracks_layer.manager.update_definition(
+            {"tableMetadata": {"dataRetentionStrategy": "{}".format(value)}}
+        )
 
     @property
     def retention_period_units(self):
         """The retention period units ("HOURS", "DAYS", "MONTHS", "YEARS") of the Location Tracking Tracks Layer"""
         try:
-            return self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"]["dataRetentionStrategyUnits"]
+            return self.tracks_layer.manager.properties["adminLayerInfo"][
+                "tableMetadata"
+            ]["dataRetentionStrategyUnits"]
         except:
             return None
 
@@ -296,20 +363,31 @@ class LocationTrackingManager:
     def retention_period_units(self, value):
         self._validate_environment()
         if not isinstance(value, str):
-            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected HOURS, DAYS, MONTHS, or YEARS".format(value))
+            raise LocationTrackingError(
+                "Invalid Retention Policy Setting: '{}' expected HOURS, DAYS, MONTHS, or YEARS".format(
+                    value
+                )
+            )
         elif value.upper() not in ("HOURS", "DAYS", "MONTHS", "YEARS"):
-            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected HOURS, DAYS, MONTHS, or YEARS".format(value))
-        self.tracks_layer.manager.update_definition({
-            "tableMetadata": {
-                "dataRetentionStrategyUnits": "{}".format(value)
-            }
-        })
+            raise LocationTrackingError(
+                "Invalid Retention Policy Setting: '{}' expected HOURS, DAYS, MONTHS, or YEARS".format(
+                    value
+                )
+            )
+        self.tracks_layer.manager.update_definition(
+            {"tableMetadata": {"dataRetentionStrategyUnits": "{}".format(value)}}
+        )
 
     @property
     def retention_period_enabled(self):
         """A boolean indicating if the retention period is enabled"""
         try:
-            return self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"]["dataRetention"].lower() == "true"
+            return (
+                self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"][
+                    "dataRetention"
+                ].lower()
+                == "true"
+            )
         except:
             return None
 
@@ -318,20 +396,28 @@ class LocationTrackingManager:
         self._validate_environment()
         if isinstance(value, str):
             if value.lower() not in ("false", "true"):
-                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected True or False".format(value))
+                raise LocationTrackingError(
+                    "Invalid Retention Policy Setting: '{}' expected True or False".format(
+                        value
+                    )
+                )
         elif not isinstance(value, bool):
-            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected True or False".format(value))
-        self.tracks_layer.manager.update_definition({
-            "tableMetadata": {
-                "dataRetention": "{}".format(str(value).lower())
-            }
-        })
+            raise LocationTrackingError(
+                "Invalid Retention Policy Setting: '{}' expected True or False".format(
+                    value
+                )
+            )
+        self.tracks_layer.manager.update_definition(
+            {"tableMetadata": {"dataRetention": "{}".format(str(value).lower())}}
+        )
 
     @_lazy_property
     def item(self):
         """The Location Tracking :class:`~arcgis.gis.Item`"""
         try:
-            return self._gis.content.get(self._gis.properties.helperServices["locationTracking"]["id"])
+            return self._gis.content.get(
+                self._gis.properties.helperServices["locationTracking"]["id"]
+            )
         except:
             return None
 
@@ -375,6 +461,9 @@ class LocationTrackingManager:
     @_lazy_property
     def _service(self):
         try:
-            return arcgis.features.FeatureLayerCollection(self._gis.properties.helperServices["locationTracking"]["url"], self._gis)
+            return arcgis.features.FeatureLayerCollection(
+                self._gis.properties.helperServices["locationTracking"]["url"],
+                self._gis,
+            )
         except:
             return None

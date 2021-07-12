@@ -8,10 +8,11 @@ class MachineManager(object):
     This resource provides the name and URL of the ArcGIS Mission
     Server machine in the site.
     """
+
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -20,29 +21,34 @@ class MachineManager(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<MachineManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<MachineManager @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def list(self):
         """returns all machine instances"""
         res = []
@@ -50,6 +56,8 @@ class MachineManager(object):
             url = self._url + "/{m}".format(m=m.machineName)
             res.append(Machine(url=url, gis=self._gis))
         return res
+
+
 ########################################################################
 class Machine(object):
     """
@@ -57,10 +65,11 @@ class Machine(object):
     Mission Server site.  You can update some of these properties
     using the Edit Machine operation.
     """
+
     _url = None
     _gis = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
         self._url = url
@@ -69,29 +78,34 @@ class Machine(object):
             self._con = self._gis._con
         else:
             raise ValueError("Invalid GIS object")
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _init(self):
         """loads the properties"""
         try:
-            params = {'f': 'json'}
+            params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
             self._properties = PropertyMap(res)
         except:
             self._properties = PropertyMap({})
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         return "<Machine @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return "<Machine @ {url}>".format(url=self._url)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties of the resource"""
         if self._properties is None:
             self._init()
         return self._properties
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
         """
@@ -105,8 +119,9 @@ class Machine(object):
 
         """
         import json
+
         url = self._url + "/edit"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         params.update(dict(self.properties))
         if isinstance(value, dict):
             params.update(value)
@@ -117,7 +132,7 @@ class Machine(object):
         except json.JSONDecodeError:
             pass
 
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     @property
     def hardware(self):
         """
@@ -129,22 +144,25 @@ class Machine(object):
         :return: dict
         """
         url = self._url + "/hardware"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         return self._con.get(url, params)
-    #----------------------------------------------------------------------
-    def create_self_signed_cert(self,
-                                alias,
-                                keysize,
-                                common_name,
-                                org_unit,
-                                organization,
-                                city,
-                                state,
-                                country,
-                                keyalg="RSA",
-                                sigalg="SHA1withRSA",
-                                validity=90,
-                                san=None):
+
+    # ----------------------------------------------------------------------
+    def create_self_signed_cert(
+        self,
+        alias,
+        keysize,
+        common_name,
+        org_unit,
+        organization,
+        city,
+        state,
+        country,
+        keyalg="RSA",
+        sigalg="SHA1withRSA",
+        validity=90,
+        san=None,
+    ):
         """
         Use this operation to create a self-signed certificate or as a
         starting point for getting a production-ready CA-signed certificate.
@@ -217,31 +235,33 @@ class Machine(object):
         """
         url = self._url + "/sslCertificates/generate"
         params = {
-            'f' : 'json',
-            "alias" : alias,
-            "keyalg" : keyalg,
-            "keysize" : keysize,
-            "sigalg" : sigalg,
-            "commonName" : common_name,
-            "organizationalUnit" : org_unit,
-            "organization" : organization,
-            "city" : city,
-            "state" : state,
-            "country" : country,
-            "validity" : validity,
-            "san" : san
+            "f": "json",
+            "alias": alias,
+            "keyalg": keyalg,
+            "keysize": keysize,
+            "sigalg": sigalg,
+            "commonName": common_name,
+            "organizationalUnit": org_unit,
+            "organization": organization,
+            "city": city,
+            "state": state,
+            "country": country,
+            "validity": validity,
+            "san": san,
         }
         for k in list(params.keys()):
             if params[k] is None:
                 del params[k]
         import json
+
         res = False
         try:
             res = self._con.post(url, params, try_json=False)
         except json.JSONDecodeError:
             return True
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def unregister(self):
         """
         Removes this machine from the site.  This server machine will no
@@ -260,15 +280,14 @@ class Machine(object):
            A boolean indicating success (True) or failure (False).
 
         """
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         uURL = self._url + "/unregister"
         res = self._con.post(path=uURL, postdata=params)
-        if 'status' in res:
-            return res['status'] == 'success'
+        if "status" in res:
+            return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def ssl_certificates(self):
         """
@@ -276,11 +295,11 @@ class Machine(object):
         created for the server machine. The server securely stores these
         certificates inside a key store within the configuration store.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         url = self._url + "/sslCertificates"
-        return self._con.get(path=url,
-                             params=params)
-    #----------------------------------------------------------------------
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
     def ssl_certificate(self, certificate):
         """
         Provides the self-signed certificate object.
@@ -304,7 +323,8 @@ class Machine(object):
         params = {"f": "json"}
         url = self._url + "/sslCertificates/{cert}".format(cert=certificate)
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete_certificate(self, certificate):
         """
         Deletes a SSL certificate using the certificate alias.
@@ -318,15 +338,15 @@ class Machine(object):
         :return: boolean
 
         """
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         url = self._url + "/sslCertificates/{cert}/delete".format(cert=certificate)
-        res = self._con.get(path=url,
-                            params=params)
-        if isinstance(res, dict) and 'status' in res:
-            return res['status']
+        res = self._con.get(path=url, params=params)
+        if isinstance(res, dict) and "status" in res:
+            return res["status"]
         else:
             return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def export_certificate(self, certificate):
         """
         Downloads an SSL certificate. The file returned by the
@@ -347,7 +367,8 @@ class Machine(object):
         params = {"f": "json"}
         url = self._url + "/sslCertificates/%s/export" % certificate
         return self._con.get(path=url, params=params)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def generate_CSR(self, certificate):
         """
         Generates a certificate signing request (CSR) for a
@@ -364,13 +385,12 @@ class Machine(object):
         :return:
            The CSR.
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         url = self._url + "/sslCertificates/{cert}/generateCSR".format(cert=certificate)
         return self._con.post(path=url, postdata=params)
-    #----------------------------------------------------------------------
-    def import_CA_signed_certificate(self,
-                                     certificate,
-                                     ca_signed_certificate):
+
+    # ----------------------------------------------------------------------
+    def import_CA_signed_certificate(self, certificate, ca_signed_certificate):
         """
         Imports a certificate authority (CA)-signed SSL certificate into the key store.
 
@@ -388,16 +408,15 @@ class Machine(object):
             A boolean indicating success (True) or failure (False).
 
         """
-        params = {"f" : "json"}
+        params = {"f": "json"}
         url = self._url + "/sslCertificates/{cert}/importCASignedCertificate".format(
-            cert=certificate)
-        files = {"caSignedCertificate" : ca_signed_certificate}
+            cert=certificate
+        )
+        files = {"caSignedCertificate": ca_signed_certificate}
         return self._con.post(path=url, postdata=params, files=files)
-    #----------------------------------------------------------------------
-    def import_existing_server_certificate(self,
-                                           alias,
-                                           cert_password,
-                                           cert_file):
+
+    # ----------------------------------------------------------------------
+    def import_existing_server_certificate(self, alias, cert_password, cert_file):
         """
         Imports an existing server certificate, stored in
         the PKCS #12 format, into the keystore.
@@ -422,20 +441,12 @@ class Machine(object):
 
         """
         url = self._url + "/sslCertificates/importExistingServerCertificate"
-        params = {
-            "f" : "json",
-            "alias" : alias,
-            "certPassword" : cert_password
-        }
-        files = {
-            "certFile" : cert_file}
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
-    #----------------------------------------------------------------------
-    def import_root_certificate(self,
-                                alias,
-                                root_CA_certificate):
+        params = {"f": "json", "alias": alias, "certPassword": cert_password}
+        files = {"certFile": cert_file}
+        return self._con.post(path=url, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
+    def import_root_certificate(self, alias, root_CA_certificate):
         """
         Imports a certificate authority's (CA) root and intermediate
         certificates into the keystore.
@@ -461,14 +472,6 @@ class Machine(object):
 
         """
         url = self._url + "/sslCertificates/importRootOrIntermediate"
-        params = {
-            "f" : "json",
-            "alias" : alias
-        }
-        files = {
-            'rootCACertificate' : root_CA_certificate
-        }
-        return self._con.post(path=url,
-                              postdata=params,
-                              files=files)
-
+        params = {"f": "json", "alias": alias}
+        files = {"rootCACertificate": root_CA_certificate}
+        return self._con.post(path=url, postdata=params, files=files)

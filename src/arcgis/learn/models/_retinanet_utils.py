@@ -54,6 +54,8 @@ import math
 import matplotlib.pyplot as plt
 import warnings
 import logging
+from fastai.basic_train import Callback
+from fastai.torch_core import add_metrics
 
 from fastprogress.fastprogress import progress_bar
 
@@ -375,15 +377,27 @@ def _get_y(bbox, clas):
     bb_keep = ((bbox[:,2]-bbox[:,0])>0).nonzero()[:,0]
     return bbox[bb_keep],clas[bb_keep]
 
-def compute_ap(precision, recall):
-    "Compute the average precision for `precision` and `recall` curve."
-    recall = np.concatenate(([0.], list(recall), [1.]))
-    precision = np.concatenate(([0.], list(precision), [0.]))
-    for i in range(len(precision) - 1, 0, -1):
-        precision[i - 1] = np.maximum(precision[i - 1], precision[i])
-    idx = np.where(recall[1:] != recall[:-1])[0]
-    ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
-    return ap
+class AveragePrecision(Callback):
+
+    def __init__(self, model, n_classes):
+        self.model = model
+        self.n_classes = n_classes
+
+    def on_epoch_begin(self, **kwargs):
+        self.tps, self.clas, self.p_scores = [], [], []
+        self.classes, self.n_gts = LongTensor(range(self.n_classes)), torch.zeros(self.n_classes).long()
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+
+        tps, p_scores, clas, self.n_gts = compute_cm(self.model, last_output, last_target, self.n_gts, self.classes)
+        self.tps.extend(tps)
+        self.p_scores.extend(p_scores)
+        self.clas.extend(clas)
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        aps = compute_ap_score(self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes)
+        aps = torch.mean(torch.tensor(aps))
+        return add_metrics(last_metrics, aps)
 
 def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.5, num_keep=100):
 
@@ -397,38 +411,51 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect
             # target - 2(regression,classification), 4(batch-size), 3/4/2(max no of detections in the batch), 4/1(bbox,class)  
             output = model.learn.pred_batch(batch=(input, target))
 
-            for i in range(target[0].size(0)): # range batch-size
-                #output[0] - classpreds, output[1] - bbox preds
-                op = model._data.y.analyze_pred((output[0][i], output[1][i]), model=model, thresh=detect_thresh, nms_overlap=iou_thresh, ret_scores=True, device=model._device)
-                #op - bbox preds, class preds, scores
+            tps1, p_scores1, clas1, n_gts = compute_cm(model, output, target, n_gts, classes, iou_thresh, detect_thresh)
+            tps.extend(tps1)
+            p_scores.extend(p_scores1)
+            clas.extend(clas1)
+
+        aps = compute_ap_score(tps, p_scores, clas, n_gts, n_classes)
+        return aps
+
+def compute_cm(model, output, target, n_gts, classes, iou_thresh=0.1, detect_thresh=0.5):
+    tps, clas, p_scores = [], [], []
+    for i in range(target[0].size(0)): # range batch-size
+        #output[0] - classpreds, output[1] - bbox preds
+        op = model._data.y.analyze_pred((output[0][i], output[1][i]), model=model, thresh=detect_thresh, nms_overlap=iou_thresh, ret_scores=True, device=model._device)
+        #op - bbox preds, class preds, scores
+        
+        # Unpad the targets
+        tgt_bbox, tgt_clas = _get_y(target[0][i], target[1][i])
+        
+        try:
+            bbox_pred, preds, scores = op
+            if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
                 
-                # Unpad the targets
-                tgt_bbox, tgt_clas = _get_y(target[0][i], target[1][i])
+                bbox_pred = bbox_pred.to(model._device)
+                preds = preds.to(model._device)
+                tgt_bbox = tgt_bbox.to(model._device)
                 
-                try:
-                    bbox_pred, preds, scores = op
-                    if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
-                        
-                        bbox_pred = bbox_pred.to(model._device)
-                        preds = preds.to(model._device)
-                        tgt_bbox = tgt_bbox.to(model._device)
-                        
-                        # Convert the bbox coordinates to center-height-width(cthw) before calculating Intersection Over Union
-                        ious = IoU_values(tlbr2cthw(bbox_pred), tlbr2cthw(tgt_bbox))
-                        max_iou, matches = ious.max(1)
-                        detected = []
-                    
-                        for i in range(len(preds)):
-                            if max_iou[i] >= iou_thresh and matches[i] not in detected and tgt_clas[matches[i]] == preds[i]:
-                                detected.append(matches[i])
-                                tps.append(1)
-                            else: tps.append(0)
-                        clas.append(preds.cpu())
-                        p_scores.append(scores.cpu())
-                except:
-                    pass
-                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)             
-    
+                # Convert the bbox coordinates to center-height-width(cthw) before calculating Intersection Over Union
+                ious = IoU_values(tlbr2cthw(bbox_pred), tlbr2cthw(tgt_bbox))
+                max_iou, matches = ious.max(1)
+                detected = []
+            
+                for i in range(len(preds)):
+                    if max_iou[i] >= iou_thresh and matches[i] not in detected and tgt_clas[matches[i]] == preds[i]:
+                        detected.append(matches[i])
+                        tps.append(1)
+                    else: tps.append(0)
+                clas.append(preds.cpu())
+                p_scores.append(scores.cpu())
+        except:
+            pass
+        n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)
+
+    return tps, p_scores, clas, n_gts
+
+def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     # If no true positives are found return an average precision score of 0.
     if len(tps) == 0: return [0. for cls in range(1,n_classes+1)] 
 
@@ -446,3 +473,13 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect
             aps.append(compute_ap(precision, recall))
         else: aps.append(0.)
     return aps
+
+def compute_ap(precision, recall):
+    "Compute the average precision for `precision` and `recall` curve."
+    recall = np.concatenate(([0.], list(recall), [1.]))
+    precision = np.concatenate(([0.], list(precision), [0.]))
+    for i in range(len(precision) - 1, 0, -1):
+        precision[i - 1] = np.maximum(precision[i - 1], precision[i])
+    idx = np.where(recall[1:] != recall[:-1])[0]
+    ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
+    return ap

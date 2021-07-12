@@ -12,7 +12,10 @@ from typing import Tuple
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
 import concurrent.futures as _cf
+from typing import Optional, Dict, List, Any
+
 # pylint: disable=protected-access
+
 
 class AttachmentManager(object):
     """
@@ -25,9 +28,21 @@ class AttachmentManager(object):
     def __init__(self, layer):
         self._layer = layer
 
-    def search(self, where='1=1', object_ids=None, global_ids=None,
-              attachment_types=None, size=None, keywords=None,
-              show_images=False, as_df=False):
+    def search(
+        self,
+        where="1=1",
+        object_ids=None,
+        global_ids=None,
+        attachment_types=None,
+        size=None,
+        keywords=None,
+        show_images=False,
+        as_df=False,
+        return_metadata=False,
+        return_url=False,
+        max_records=None,
+        offset=0,
+    ):
         """
 
         The `search` method allows querying the layer for its attachments and returns the results as
@@ -97,132 +112,199 @@ class AttachmentManager(object):
         as_df                       optional bool. Default is False, if True, the results will be
                                     a Pandas' DataFrame.  If False, the values will be a list of
                                     dictionary values.
+        -------------------------   ---------------------------------------------------------------
+        return_metadata             Optional Boolean. If true, metadata stored in the `exifInfo`
+                                    column will be returned for attachments that have `exifInfo`.
+                                    This option is supported only when "name": "exifInfo" in the
+                                    layer's attachmentProperties includes "isEnabled": true. When
+                                    set to false, or not set, None is returned for `exifInfo`.
+        -------------------------   ---------------------------------------------------------------
+        return_url                  Optional Boolean. Specifies whether to return the attachment
+                                    URL. The default is false. This parameter is supported if the
+                                    `supportsQueryAttachmentsWithReturnUrl` property is true on the
+                                    layer. Applications can use this URL to download the attachment
+                                    image.
+        -------------------------   ---------------------------------------------------------------
+        max_records                 Optional Integer. This option fetches query results up to the
+                                    `resultRecordCount` specified. When `resultOffset` is specified
+                                    and this parameter is not, the feature service defaults to the
+                                    `maxRecordCount`. The maximum value for this parameter is the
+                                    value of the layer's `maxRecordCount` property. This parameter
+                                    only applies if `supportPagination` is true.
+        -------------------------   ---------------------------------------------------------------
+        offset                      Optional Integer. This parameter is designed to be used in
+                                    conjunction with `max_records` to page through a long list of
+                                    attachments, one request at a time. This option fetches query
+                                    results by skipping a specified number of records. The query
+                                    results start from the next record (i.e., resultOffset + 1).
+                                    The default value is 0. This parameter only applies when
+                                    `supportPagination` is true. You can use this option to fetch
+                                    records that are beyond `maxRecordCount` property.
         =========================   ===============================================================
 
         :returns: list of downloaded files
 
         """
         import copy
-        columns = [col.upper() for col in ['ParentObjectid', 'ParentGlobalId', 'Id',
-                                           'Name', 'GlobalId', 'ContentType',
-                                           'Size','KeyWords', 'URL', 'IMAGE_PREVIEW']]
+
+        columns = [
+            col.upper()
+            for col in [
+                "ParentObjectid",
+                "ParentGlobalId",
+                "Id",
+                "Name",
+                "GlobalId",
+                "ContentType",
+                "Size",
+                "KeyWords",
+                "URL",
+                "IMAGE_PREVIEW",
+            ]
+        ]
         result_offset = 0
         if keywords is None:
             keywords = []
         elif isinstance(keywords, str):
-            keywords = keywords.split(',')
+            keywords = keywords.split(",")
         if object_ids is None:
             object_ids = []
         elif isinstance(object_ids, str):
-            object_ids = object_ids.split(',')
+            object_ids = object_ids.split(",")
         if global_ids is None:
             global_ids = []
         elif isinstance(global_ids, str):
-            global_ids = global_ids.split(',')
+            global_ids = global_ids.split(",")
         if attachment_types is None:
             attachment_types = []
         elif isinstance(attachment_types, str):
-            attachment_types = attachment_types.split(',')
+            attachment_types = attachment_types.split(",")
         if isinstance(size, (tuple, list)):
             size = ",".join(list([str(s) for s in size]))
         elif size is None:
             size = None
-        if self._layer._gis._portal.is_arcgisonline == False and \
-           self._layer.properties.hasAttachments:
+        if (
+            self._layer._gis._portal.is_arcgisonline == False
+            and self._layer.properties.hasAttachments
+        ):
             rows = []
 
-            query = self._layer.query(where=where,
-                                      object_ids=",".join(object_ids),
-                                      global_ids=",".join(global_ids),
-                                      return_ids_only=True)
-            if 'objectIds' in query:
+            query = self._layer.query(
+                where=where,
+                object_ids=",".join(object_ids),
+                global_ids=",".join(global_ids),
+                return_ids_only=True,
+            )
+            if "objectIds" in query:
                 token = self._layer._con.token
-                for i in query['objectIds']:
+                for i in query["objectIds"]:
                     attachments = self.get_list(oid=i)
                     for att in attachments:
                         if not token is None:
-                            att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, i, att['id'], self._layer._con.token)
+                            att_path = "{}/{}/attachments/{}?token={}".format(
+                                self._layer.url, i, att["id"], self._layer._con.token
+                            )
                         else:
-                            att_path = '{}/{}/attachments/{}'.format(self._layer.url, i, att['id'])
+                            att_path = "{}/{}/attachments/{}".format(
+                                self._layer.url, i, att["id"]
+                            )
                         preview = None
-                        if att['contentType'].find("image") > -1:
-                            preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
+                        if att["contentType"].find("image") > -1:
+                            preview = (
+                                '<img src="' + att_path + '" width=150 height=150 />'
+                            )
 
                         row = {
-                            "PARENTOBJECTID" : i,
-                            "PARENTGLOBALID" : "N/A",
-                            "ID" : att['id'],
-                            "NAME" : att['name'],
-                            "CONTENTTYPE" : att['contentType'],
-                            "SIZE" : att['size'],
-                            "KEYWORDS" : "",
-                            "IMAGE_PREVIEW" : preview
+                            "PARENTOBJECTID": i,
+                            "PARENTGLOBALID": "N/A",
+                            "ID": att["id"],
+                            "NAME": att["name"],
+                            "CONTENTTYPE": att["contentType"],
+                            "SIZE": att["size"],
+                            "KEYWORDS": "",
+                            "IMAGE_PREVIEW": preview,
                         }
-                        if 'globalId' in att:
-                            row["GLOBALID"] = att['globalId']
+                        if "globalId" in att:
+                            row["GLOBALID"] = att["globalId"]
                         if as_df and show_images:
-                            row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
+                            row["DOWNLOAD_URL"] = (
+                                '<a href="%s" target="_blank">DATA</a>' % att_path
+                            )
                         else:
                             row["DOWNLOAD_URL"] = "%s" % att_path
                         rows.append(row)
 
-                if attachment_types is not None and \
-                   len(attachment_types) > 0: # performs contenttype search
+                if (
+                    attachment_types is not None and len(attachment_types) > 0
+                ):  # performs contenttype search
                     if isinstance(attachment_types, str):
-                        attachment_types= attachment_types.split(',')
-                    rows = [row for row in rows \
-                            if os.path.splitext(row['NAME'])[1][1:] in attachment_types or \
-                            row['CONTENTTYPE'] in attachment_types]
+                        attachment_types = attachment_types.split(",")
+                    rows = [
+                        row
+                        for row in rows
+                        if os.path.splitext(row["NAME"])[1][1:] in attachment_types
+                        or row["CONTENTTYPE"] in attachment_types
+                    ]
         else:
-            url = '{}/{}'.format(self._layer.url, 'queryAttachments')
+            url = "{}/{}".format(self._layer.url, "queryAttachments")
             params = {
-                'f' : 'json',
-                "attachmentTypes" : ",".join(attachment_types),
-                'objectIds' : ",".join([str(v) for v in object_ids]),
-                'globalIds' : ",".join([str(v) for v in global_ids]),
-                "definitionExpression" : where,
-                'keywords' : ",".join([str(v) for v in keywords]),
-                'size' : None,
+                "f": "json",
+                "attachmentTypes": ",".join(attachment_types),
+                "objectIds": ",".join([str(v) for v in object_ids]),
+                "globalIds": ",".join([str(v) for v in global_ids]),
+                "definitionExpression": where,
+                "keywords": ",".join([str(v) for v in keywords]),
+                "size": size,
+                "returnMetadata": return_metadata,
+                "returnUrl": return_url,
+                "resultRecordCount": max_records,
+                "resultOffset": offset,
             }
             iterparams = copy.copy(params)
-            for k,v in iterparams.items():
-                if k in ['objectIds', 'globalIds',
-                         'attachmentTypes'] and \
-                   v == "":
+            for k, v in iterparams.items():
+                if k in ["objectIds", "globalIds", "attachmentTypes"] and v == "":
                     del params[k]
-                elif k == 'size' and \
-                     v is None:
+                elif k == "size" and v is None:
                     del params[k]
 
-            results = self._layer._con.post(url,params)
+            results = self._layer._con.post(url, params)
             rows = []
-            if 'attachmentGroups' not in results:
+            if "attachmentGroups" not in results:
                 return []
-            for result in results['attachmentGroups']:
-                for data in result['attachmentInfos']:
+            for result in results["attachmentGroups"]:
+                for data in result["attachmentInfos"]:
                     token = self._layer._con.token
                     if not token is None:
-                        att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, result['parentObjectId'], data['id'], self._layer._con.token)
+                        att_path = "{}/{}/attachments/{}?token={}".format(
+                            self._layer.url,
+                            result["parentObjectId"],
+                            data["id"],
+                            self._layer._con.token,
+                        )
                     else:
-                        att_path = '{}/{}/attachments/{}'.format(self._layer.url, result['parentObjectId'], data['id'])
+                        att_path = "{}/{}/attachments/{}".format(
+                            self._layer.url, result["parentObjectId"], data["id"]
+                        )
                     preview = None
-                    if data['contentType'].find("image") > -1:
-                        preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
+                    if data["contentType"].find("image") > -1:
+                        preview = '<img src="' + att_path + '" width=150 height=150 />'
 
                     row = {
-                        "PARENTOBJECTID" : result['parentObjectId'],
-                        "PARENTGLOBALID" : result['parentGlobalId'],
-                        "ID" : data['id'],
-                        "NAME" : data['name'],
-                        "CONTENTTYPE" : data['contentType'],
-                        "SIZE" : data['size'],
-                        "KEYWORDS" : data['keywords'],
-                        "IMAGE_PREVIEW" : preview
+                        "PARENTOBJECTID": result["parentObjectId"],
+                        "PARENTGLOBALID": result["parentGlobalId"],
+                        "ID": data["id"],
+                        "NAME": data["name"],
+                        "CONTENTTYPE": data["contentType"],
+                        "SIZE": data["size"],
+                        "KEYWORDS": data["keywords"],
+                        "IMAGE_PREVIEW": preview,
                     }
-                    if 'globalId' in data:
-                        row["GLOBALID"] = data['globalId']
+                    if "globalId" in data:
+                        row["GLOBALID"] = data["globalId"]
                     if as_df and show_images:
-                        row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
+                        row["DOWNLOAD_URL"] = (
+                            '<a href="%s" target="_blank">DATA</a>' % att_path
+                        )
                     else:
                         row["DOWNLOAD_URL"] = "%s" % att_path
                     rows.append(row)
@@ -230,13 +312,15 @@ class AttachmentManager(object):
 
         if as_df == True:
             import pandas as pd
+
             if show_images:
                 from IPython.display import HTML
-                pd.set_option('display.max_colwidth', -1)
+
+                pd.set_option("display.max_colwidth", -1)
                 return HTML(pd.DataFrame.from_dict(rows).to_html(escape=False))
             else:
                 df = pd.DataFrame.from_dict(rows)
-                df.drop(['DOWNLOAD_URL', "IMAGE_PREVIEW"], axis=1, inplace=True)
+                df.drop(["DOWNLOAD_URL", "IMAGE_PREVIEW"], axis=1, inplace=True)
                 return df
         else:
             return rows
@@ -264,22 +348,30 @@ class AttachmentManager(object):
         """
         results = []
         if save_folder is None:
-            save_folder = os.path.join(tempfile.gettempdir(), 'attachment_download')
+            save_folder = os.path.join(tempfile.gettempdir(), "attachment_download")
         if not os.path.isdir(save_folder):
             os.makedirs(save_folder)
-        attachments = self.search(object_ids=object_ids, attachment_types=attachment_types, as_df=True)
-        for row in attachments.to_dict(orient='records') :
-            dlpath = os.path.join(save_folder, "%s" % int(row['PARENTOBJECTID']), "%s" % int(row['ID']))
+        attachments = self.search(
+            object_ids=object_ids, attachment_types=attachment_types, as_df=True
+        )
+        for row in attachments.to_dict(orient="records"):
+            dlpath = os.path.join(
+                save_folder, "%s" % int(row["PARENTOBJECTID"]), "%s" % int(row["ID"])
+            )
             if os.path.isdir(dlpath) == False:
                 os.makedirs(dlpath)
-            path = self.download(oid=int(row['PARENTOBJECTID']), attachment_id=int(row['ID']), save_path=dlpath)
+            path = self.download(
+                oid=int(row["PARENTOBJECTID"]),
+                attachment_id=int(row["ID"]),
+                save_path=dlpath,
+            )
             results.append(path[0])
             del row
         return results
 
     def get_list(self, oid):
-        """ returns the list of attachements for a given OBJECT ID """
-        return self._layer._list_attachments(oid)['attachmentInfos']
+        """returns the list of attachements for a given OBJECT ID"""
+        return self._layer._list_attachments(oid)["attachmentInfos"]
 
     def download(self, oid=None, attachment_id=None, save_path=None):
         """
@@ -312,10 +404,10 @@ class AttachmentManager(object):
         """
         return_all = False
         if isinstance(oid, str):
-            oid = oid.split(',')
+            oid = oid.split(",")
             oid_len = len(oid)
         elif isinstance(oid, int):
-            oid = str(oid).split(',')
+            oid = str(oid).split(",")
             oid_len = 1
         elif isinstance(oid, (tuple, list)):
             oid_len = len(oid)
@@ -324,10 +416,10 @@ class AttachmentManager(object):
         else:
             raise ValueError("oid must be of type list or string")
         if isinstance(attachment_id, str):
-            attachment_id = [int(att) for att in attachment_id.split(',')]
+            attachment_id = [int(att) for att in attachment_id.split(",")]
             att_len = len(attachment_id)
         elif isinstance(attachment_id, int):
-            attachment_id = str(attachment_id).split(',')
+            attachment_id = str(attachment_id).split(",")
             att_len = 1
         elif isinstance(attachment_id, (tuple, list)):
             att_len = len(attachment_id)
@@ -338,7 +430,9 @@ class AttachmentManager(object):
         if oid_len == 1 and att_len > 0:
             return_all = False
         elif oid_len > 1 and att_len > 0:
-            raise ValueError("You cannot provide more than one oid when providing attachment_id values.")
+            raise ValueError(
+                "You cannot provide more than one oid when providing attachment_id values."
+            )
         else:
             return_all = True
 
@@ -346,58 +440,63 @@ class AttachmentManager(object):
             oid = oid[0]
             paths = []
             for att in attachment_id:
-                att_path = '{}/{}/attachments/{}'.format(self._layer.url, oid, att)
+                att_path = "{}/{}/attachments/{}".format(self._layer.url, oid, att)
                 att_list = self.get_list(int(oid))
 
-                #get attachment file name
-                desired_att = [att2 for att2 in att_list if att2['id'] == int(att)]
-                if len(desired_att) == 0: #bad attachment id
+                # get attachment file name
+                desired_att = [att2 for att2 in att_list if att2["id"] == int(att)]
+                if len(desired_att) == 0:  # bad attachment id
                     raise RuntimeError
                 else:
-                    att_name = desired_att[0]['name']
+                    att_name = desired_att[0]["name"]
 
                 if not save_path:
                     save_path = tempfile.gettempdir()
                 if not os.path.isdir(save_path):
                     os.makedirs(save_path)
 
-                path = self._layer._con.get(path=att_path, try_json=False, out_folder=save_path,
-                                            file_name=att_name, token=self._layer._token, force_bytes=False)
+                path = self._layer._con.get(
+                    path=att_path,
+                    try_json=False,
+                    out_folder=save_path,
+                    file_name=att_name,
+                    token=self._layer._token,
+                    force_bytes=False,
+                )
                 paths.append(path)
             return paths
         else:
-            return self._download_all(object_ids=oid,
-                                      save_folder=save_path)
+            return self._download_all(object_ids=oid, save_folder=save_path)
 
     def add(self, oid, file_path, keywords=None):
-        """ Adds an attachment to a feature layer
-            Input:
-              oid - string - OBJECTID value to add attachment to
-              file_path - string - path to file
-              keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
-            Output:
-              JSON Repsonse
+        """Adds an attachment to a feature layer
+        Input:
+          oid - string - OBJECTID value to add attachment to
+          file_path - string - path to file
+          keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
+        Output:
+          JSON Repsonse
         """
         return self._layer._add_attachment(oid, file_path, keywords=keywords)
 
     def delete(self, oid, attachment_id):
-        """ removes an attachment from a feature
-            Input:
-              oid - integer or string - id of feature
-              attachment_id - integer - id of attachment to erase
-            Output:
-               JSON response
+        """removes an attachment from a feature
+        Input:
+          oid - integer or string - id of feature
+          attachment_id - integer - id of attachment to erase
+        Output:
+           JSON response
         """
         return self._layer._delete_attachment(oid, attachment_id)
 
     def update(self, oid, attachment_id, file_path):
-        """ updates an existing attachment with a new file
-            Inputs:
-               oid - string/integer - Unique record ID
-               attachment_id - integer - Unique attachment identifier
-               file_path - string - path to new attachment
-            Output:
-               JSON response
+        """updates an existing attachment with a new file
+        Inputs:
+           oid - string/integer - Unique record ID
+           attachment_id - integer - Unique attachment identifier
+           file_path - string - path to new attachment
+        Output:
+           JSON response
         """
         return self._layer._update_attachment(oid, attachment_id, file_path)
 
@@ -416,49 +515,51 @@ class SyncManager(object):
         self._fs = featsvc
 
     def get_list(self):
-        """ returns all the replicas for the feature layer collection """
+        """returns all the replicas for the feature layer collection"""
         return self._fs._replicas
 
     # ----------------------------------------------------------------------
     def unregister(self, replica_id):
         """
-           unregisters a replica from a feature layer collection
-           Inputs:
-             replica_id - The replicaID returned by the feature service
-                          when the replica was created.
+        unregisters a replica from a feature layer collection
+        Inputs:
+          replica_id - The replicaID returned by the feature service
+                       when the replica was created.
         """
         return self._fs._unregister_replica(replica_id)
 
     # ----------------------------------------------------------------------
     def get(self, replica_id):
         """
-           returns replica metadata for a specific replica.
-           Inputs:
-              replica_id - The replicaID returned by the feature service
-                           when the replica was created.
+        returns replica metadata for a specific replica.
+        Inputs:
+           replica_id - The replicaID returned by the feature service
+                        when the replica was created.
         """
         return self._fs._replica_info(replica_id)
 
     # ----------------------------------------------------------------------
-    def create(self,
-               replica_name,
-               layers,
-               layer_queries=None,
-               geometry_filter=None,
-               replica_sr=None,
-               transport_type="esriTransportTypeUrl",
-               return_attachments=False,
-               return_attachments_databy_url=False,
-               asynchronous=False,
-               attachments_sync_direction="none",
-               sync_model="none",
-               data_format="json",
-               replica_options=None,
-               wait=False,
-               out_path=None,
-               sync_direction=None,
-               target_type="client",
-               transformations=None):
+    def create(
+        self,
+        replica_name,
+        layers,
+        layer_queries=None,
+        geometry_filter=None,
+        replica_sr=None,
+        transport_type="esriTransportTypeUrl",
+        return_attachments=False,
+        return_attachments_databy_url=False,
+        asynchronous=False,
+        attachments_sync_direction="none",
+        sync_model="none",
+        data_format="json",
+        replica_options=None,
+        wait=False,
+        out_path=None,
+        sync_direction=None,
+        target_type="client",
+        transformations=None,
+    ):
         """
             The create operation is performed on a feature layer collection resource. This operation
             creates the replica between the feature dataset and a client based on a client-supplied
@@ -607,38 +708,50 @@ class SyncManager(object):
 
         """
         if geometry_filter is None:
-            extents = self._fs.properties['fullExtent']
-            extents_str = ",".join(format(x, "10.3f") for x in
-                                   [extents['xmin'], extents['ymin'], extents['xmax'], extents['ymax']])
-            geometry_filter = {'geometryType': 'esriGeometryEnvelope'}
-            geometry_filter.update({'geometry': extents_str})
+            extents = self._fs.properties["fullExtent"]
+            extents_str = ",".join(
+                format(x, "10.3f")
+                for x in [
+                    extents["xmin"],
+                    extents["ymin"],
+                    extents["xmax"],
+                    extents["ymax"],
+                ]
+            )
+            geometry_filter = {"geometryType": "esriGeometryEnvelope"}
+            geometry_filter.update({"geometry": extents_str})
 
-        return self._fs._create_replica(replica_name=replica_name,
-                                        layers=layers,
-                                        layer_queries=layer_queries,
-                                        geometry_filter=geometry_filter,
-                                        replica_sr=replica_sr,
-                                        transport_type=transport_type,
-                                        return_attachments=return_attachments,
-                                        return_attachments_data_by_url=return_attachments_databy_url,
-                                        asynchronous=asynchronous,
-                                        sync_direction=sync_direction,
-                                        target_type=target_type,
-                                        attachments_sync_direction=attachments_sync_direction,
-                                        sync_model=sync_model,
-                                        data_format=data_format,
-                                        replica_options=replica_options,
-                                        wait=wait,
-                                        out_path=out_path,
-                                        transformations=transformations)
+        return self._fs._create_replica(
+            replica_name=replica_name,
+            layers=layers,
+            layer_queries=layer_queries,
+            geometry_filter=geometry_filter,
+            replica_sr=replica_sr,
+            transport_type=transport_type,
+            return_attachments=return_attachments,
+            return_attachments_data_by_url=return_attachments_databy_url,
+            asynchronous=asynchronous,
+            sync_direction=sync_direction,
+            target_type=target_type,
+            attachments_sync_direction=attachments_sync_direction,
+            sync_model=sync_model,
+            data_format=data_format,
+            replica_options=replica_options,
+            wait=wait,
+            out_path=out_path,
+            transformations=transformations,
+        )
+
     # ----------------------------------------------------------------------
-    def cleanup_change_tracking(self,
-                                layers,
-                                retention_period,
-                                period_unit='days',
-                                min_server_gen=None,
-                                replica_id=None,
-                                future=False):
+    def cleanup_change_tracking(
+        self,
+        layers,
+        retention_period,
+        period_unit="days",
+        min_server_gen=None,
+        replica_id=None,
+        future=False,
+    ):
         """
 
         Change tracking information stored in each feature service layer
@@ -683,97 +796,112 @@ class SyncManager(object):
         :returns: Boolean when future is False and Future object when future is True
 
         """
-        return self._fs._cleanup_change_tracking(layers=layers,
-                                                 retention_period=retention_period,
-                                                 period_unit=period_unit,
-                                                 min_server_gen=min_server_gen,
-                                                 replica_id=replica_id,
-                                                 future=future)
+        return self._fs._cleanup_change_tracking(
+            layers=layers,
+            retention_period=retention_period,
+            period_unit=period_unit,
+            min_server_gen=min_server_gen,
+            replica_id=replica_id,
+            future=future,
+        )
+
     # ----------------------------------------------------------------------
-    def synchronize(self,
-                    replica_id,
-                    transport_type="esriTransportTypeUrl",
-                    replica_server_gen=None,
-                    return_ids_for_adds=False,
-                    edits=None,
-                    return_attachment_databy_url=False,
-                    asynchronous=False,
-                    sync_direction="snapshot",
-                    sync_layers="perReplica",
-                    edits_upload_id=None,
-                    edits_upload_format=None,
-                    data_format="json",
-                    rollback_on_failure=True):
+    def synchronize(
+        self,
+        replica_id,
+        transport_type="esriTransportTypeUrl",
+        replica_server_gen=None,
+        return_ids_for_adds=False,
+        edits=None,
+        return_attachment_databy_url=False,
+        asynchronous=False,
+        sync_direction="snapshot",
+        sync_layers="perReplica",
+        edits_upload_id=None,
+        edits_upload_format=None,
+        data_format="json",
+        rollback_on_failure=True,
+    ):
         """
         synchronizes replica with feature layer collection
         https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm
         """
         # TODO:
-        return self._fs._synchronize_replica(replica_id=replica_id,
-                                             transport_type=transport_type,
-                                             replica_server_gen=replica_server_gen,
-                                             return_ids_for_adds=return_ids_for_adds,
-                                             edits=edits,
-                                             return_attachment_databy_url=return_attachment_databy_url,
-                                             asynchronous=asynchronous,
-                                             sync_direction=sync_direction,
-                                             sync_layers=sync_layers,
-                                             edits_upload_id=edits_upload_id,
-                                             edits_upload_format=edits_upload_format,
-                                             data_format=data_format,
-                                             rollback_on_failure=rollback_on_failure,
-                                             close_replica=False,
-                                             out_path=None)
-    def create_replica_item(self,
-                            replica_name,
-                            item,
-                            destination_gis,
-                            layers=None,
-                            extent=None):
+        return self._fs._synchronize_replica(
+            replica_id=replica_id,
+            transport_type=transport_type,
+            replica_server_gen=replica_server_gen,
+            return_ids_for_adds=return_ids_for_adds,
+            edits=edits,
+            return_attachment_databy_url=return_attachment_databy_url,
+            asynchronous=asynchronous,
+            sync_direction=sync_direction,
+            sync_layers=sync_layers,
+            edits_upload_id=edits_upload_id,
+            edits_upload_format=edits_upload_format,
+            data_format=data_format,
+            rollback_on_failure=rollback_on_failure,
+            close_replica=False,
+            out_path=None,
+        )
+
+    def create_replica_item(
+        self, replica_name, item, destination_gis, layers=None, extent=None
+    ):
         """creates a replicated service from a parent to another GIS"""
         import tempfile
         import os
         from ..gis import Item
+
         fs = item.layers[0].container
         if layers is None:
-            ls = fs.properties['layers']
-            ts = fs.properties['tables']
+            ls = fs.properties["layers"]
+            ts = fs.properties["tables"]
             layers = ""
             for i in ls + ts:
-                layers += str(i['id'])
+                layers += str(i["id"])
         if extent is None:
-            extent = fs.properties['fullExtent']
-            if 'spatialReference' in extent:
-                del extent['spatialReference']
-        extents_str = ",".join(format(x, "10.3f") for x in
-                               [extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']])
-        geom_filter = {'geometryType': 'esriGeometryEnvelope'}
-        geom_filter.update({'geometry': extents_str})
+            extent = fs.properties["fullExtent"]
+            if "spatialReference" in extent:
+                del extent["spatialReference"]
+        extents_str = ",".join(
+            format(x, "10.3f")
+            for x in [extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"]]
+        )
+        geom_filter = {"geometryType": "esriGeometryEnvelope"}
+        geom_filter.update({"geometry": extents_str})
 
         out_path = tempfile.gettempdir()
         from . import FeatureLayerCollection
+
         isinstance(fs, FeatureLayerCollection)
-        db = fs._create_replica(replica_name=replica_name,
-                            layers=layers,
-                            geometry_filter=geom_filter,
-                            attachments_sync_direction=None,
-                            transport_type="esriTransportTypeUrl",
-                            return_attachments=True,
-                            return_attachments_data_by_url=True,
-                            asynchronous=True,
-                            sync_model="perLayer",
-                            target_type="server",
-                            data_format="sqlite",
-                            #target_type="server",
-                            out_path=out_path,
-                            wait=True)
+        db = fs._create_replica(
+            replica_name=replica_name,
+            layers=layers,
+            geometry_filter=geom_filter,
+            attachments_sync_direction=None,
+            transport_type="esriTransportTypeUrl",
+            return_attachments=True,
+            return_attachments_data_by_url=True,
+            asynchronous=True,
+            sync_model="perLayer",
+            target_type="server",
+            data_format="sqlite",
+            # target_type="server",
+            out_path=out_path,
+            wait=True,
+        )
         if os.path.isfile(db) == False:
             raise Exception("Could not create the replica")
         destination_content = destination_gis.content
-        item = destination_content.add(item_properties= {"type" : "SQLite Geodatabase",
-                                                    "tags" : "replication",
-                                                    "title" : replica_name},
-                                  data=db)
+        item = destination_content.add(
+            item_properties={
+                "type": "SQLite Geodatabase",
+                "tags": "replication",
+                "title": replica_name,
+            },
+            data=db,
+        )
         published = item.publish()
         return published
 
@@ -793,6 +921,7 @@ class SyncManager(object):
 
         """
         from ..gis import Item
+
         if isinstance(parent, Item) == False:
             raise ValueError("parent must be an Item")
         if isinstance(child, Item) == False:
@@ -801,86 +930,100 @@ class SyncManager(object):
         parent_fs = parent.layers[0].container
         child_replicas = child_fs.replicas
         parent_replicas = parent_fs.replicas
-        if child_replicas and \
-           parent_replicas:
+        if child_replicas and parent_replicas:
             child_replica_id = None
             parent_replica_id = None
             child_replica = None
             parent_replica = None
             for replica in child_replicas.get_list():
-                if replica['replicaName'].lower() == replica_name.lower():
-                    child_replica_id = replica['replicaID']
+                if replica["replicaName"].lower() == replica_name.lower():
+                    child_replica_id = replica["replicaID"]
                     break
             for replica in parent_replicas.get_list():
-                if replica['replicaName'].lower() == replica_name.lower():
-                    parent_replica_id = replica['replicaID']
+                if replica["replicaName"].lower() == replica_name.lower():
+                    parent_replica_id = replica["replicaID"]
                     break
-            if child_replica_id and \
-               parent_replica_id:
+            if child_replica_id and parent_replica_id:
                 import tempfile, os
+
                 child_replica = child_replicas.get(replica_id=child_replica_id)
                 parent_replica = parent_replicas.get(replica_id=parent_replica_id)
-                delta = parent_fs._synchronize_replica(replica_id=parent_replica_id,
-                                                       transport_type="esriTransportTypeUrl",
-                                                       close_replica=False,
-                                                       return_ids_for_adds=False,
-                                                       return_attachment_databy_url=True,
-                                                       asynchronous=False,
-                                                       sync_direction="download",
-                                                       sync_layers=parent_replica['layerServerGens'],
-                                                       edits_upload_format="sqlite",
-                                                       data_format="sqlite",
-                                                       rollback_on_failure=False,
-                                                       out_path=tempfile.gettempdir())
+                delta = parent_fs._synchronize_replica(
+                    replica_id=parent_replica_id,
+                    transport_type="esriTransportTypeUrl",
+                    close_replica=False,
+                    return_ids_for_adds=False,
+                    return_attachment_databy_url=True,
+                    asynchronous=False,
+                    sync_direction="download",
+                    sync_layers=parent_replica["layerServerGens"],
+                    edits_upload_format="sqlite",
+                    data_format="sqlite",
+                    rollback_on_failure=False,
+                    out_path=tempfile.gettempdir(),
+                )
                 if os.path.isfile(delta) == False:
                     return True
                 work, message = child_fs.upload(path=delta)
-                if isinstance(message, dict) and \
-                   'item' in message and \
-                   'itemID' in message['item']:
-                    syncLayers_child = child_replica['layerServerGens']
-                    syncLayers_parent = parent_replica['layerServerGens']
+                if (
+                    isinstance(message, dict)
+                    and "item" in message
+                    and "itemID" in message["item"]
+                ):
+                    syncLayers_child = child_replica["layerServerGens"]
+                    syncLayers_parent = parent_replica["layerServerGens"]
                     for i in range(len(syncLayers_parent)):
-                        syncLayers_child[i]['serverSibGen'] = syncLayers_parent[i]['serverGen']
-                        syncLayers_child[i]['syncDirection'] = "upload"
+                        syncLayers_child[i]["serverSibGen"] = syncLayers_parent[i][
+                            "serverGen"
+                        ]
+                        syncLayers_child[i]["syncDirection"] = "upload"
                     child_fs._synchronize_replica(
                         replica_id=child_replica_id,
                         sync_layers=syncLayers_child,
                         sync_direction=None,
-                        edits_upload_id=message['item']['itemID'],
+                        edits_upload_id=message["item"]["itemID"],
                         return_ids_for_adds=False,
                         data_format="sqlite",
                         asynchronous=False,
                         edits_upload_format="sqlite",
-                        rollback_on_failure=False)
+                        rollback_on_failure=False,
+                    )
                     return True
                 else:
                     return False
             else:
-                raise ValueError("Could not find replica name %s in both services" % replica_name)
+                raise ValueError(
+                    "Could not find replica name %s in both services" % replica_name
+                )
         else:
             return False
         return False
+
+
 ###########################################################################
 class WebHook(object):
     """
     The Webhook represents a single hook instance.
     """
+
     _properties = None
     _url = None
     _gis = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         """returns the class as a string"""
         return f"<WebHook @ {self._url}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
         """
@@ -889,17 +1032,22 @@ class WebHook(object):
         :returns: PropertyMap
         """
         if self._properties is None:
-            self._properties = PropertyMap(self._gis._con.post(self._url, {'f' : 'json'}))
+            self._properties = PropertyMap(
+                self._gis._con.post(self._url, {"f": "json"})
+            )
         return self._properties
-    #----------------------------------------------------------------------
-    def edit(self,
-             name:str=None,
-             change_types:str=None,
-             hook_url:str=None,
-             signature_key:str=None,
-             active:bool=None,
-             schedule_info:dict=None,
-             payload_format:str=None) -> dict:
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        name: str = None,
+        change_types: str = None,
+        hook_url: str = None,
+        signature_key: str = None,
+        active: bool = None,
+        schedule_info: dict = None,
+        payload_format: str = None,
+    ) -> dict:
         """
         Updates the existing WebHook's Properties.
 
@@ -978,14 +1126,14 @@ class WebHook(object):
         if isinstance(change_types, list):
             change_types = ",".join(change_types)
         params = {
-            'f' : 'json',
-            "name" : name,
-            "changeTypes" : change_types,
-            "signatureKey" : signature_key,
-            "hookUrl" : hook_url,
-            "active" : active,
-            "scheduleInfo" : schedule_info,
-            "payloadFormat" : payload_format
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
         }
         for k in list(params.keys()):
             if params[k] is None:
@@ -995,7 +1143,8 @@ class WebHook(object):
         resp = self._gis._con.post(url, props)
         self._properties = PropertyMap(resp)
         return resp
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
         Deletes the current webhook from the system
@@ -1003,54 +1152,66 @@ class WebHook(object):
         :returns: bool
         """
         url = f"{self._url}/delete"
-        params = {'f' : 'json'}
+        params = {"f": "json"}
         resp = self._gis._con.post(url, params)
-        return resp['status'] == 'success'
+        return resp["status"] == "success"
+
+
 ###########################################################################
 class WebHookServiceManager(object):
     """
     The `WebHookServiceManager` allows owners and administrators wire feature
     service specific events to feature layer collections.
     """
+
     _fc = None
     _url = None
     _gis = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def __init__(self, url, fc, gis) -> None:
         self._url = url
         self._fc = fc
         self._gis = gis
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __str__(self):
         """returns the class as a string"""
         return f"<WebHookServiceManager @ {self._url}>"
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
         """returns the properties for the WebHook Service Manager"""
-        return PropertyMap(self._gis._con.post(self._url, {'f' : 'json'}))
-    #----------------------------------------------------------------------
+        return PropertyMap(self._gis._con.post(self._url, {"f": "json"}))
+
+    # ----------------------------------------------------------------------
     @property
     def list(self) -> tuple:
         """Returns a list of web hooks on the Feature Layer Collection
 
         :returns: tuple[WebHook]
         """
-        resp = self._gis._con.post(self._url, {'f' : 'json'})
-        ret = [WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis) for d in resp]
+        resp = self._gis._con.post(self._url, {"f": "json"})
+        ret = [
+            WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis) for d in resp
+        ]
         return ret
-    #----------------------------------------------------------------------
-    def create(self,
-               name:str,
-               hook_url:str,
-               change_types:str="*",
-               signature_key:str=None,
-               active:bool=False,
-               schedule_info:dict=None,
-               payload_format:str="json") -> WebHook:
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        hook_url: str,
+        change_types: str = "*",
+        signature_key: str = None,
+        active: bool = False,
+        schedule_info: dict = None,
+        payload_format: str = "json",
+    ) -> WebHook:
         """
 
         Creates a New Feature Collection Web Hook
@@ -1128,24 +1289,24 @@ class WebHookServiceManager(object):
         if isinstance(change_types, list):
             change_types = ",".join(change_types)
         params = {
-            'f' : 'json',
-            "name" : name,
-            "changeTypes" : change_types,
-            "signatureKey" : signature_key,
-            "hookUrl" : hook_url,
-            "active" : active,
-            "scheduleInfo" : schedule_info,
-            "payloadFormat" : payload_format
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
         }
         resp = self._gis._con.post(url, params)
-        if not 'url' in resp:
+        if not "url" in resp:
             hook_url = self._url + f"/{resp['globalId']}"
-            return WebHook(url=hook_url,
-                           gis=self._gis)
+            return WebHook(url=hook_url, gis=self._gis)
         else:
 
-            return WebHook(url=resp['url'], gis=self._gis)
-    #----------------------------------------------------------------------
+            return WebHook(url=resp["url"], gis=self._gis)
+
+    # ----------------------------------------------------------------------
     def enable_hooks(self) -> bool:
         """
         The `enable_hooks` operation restarts a deactivated webhook. When
@@ -1156,9 +1317,10 @@ class WebHookServiceManager(object):
 
         """
         url = f"{self._url}/activateAll"
-        params = {'f' : 'json'}
-        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._gis._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
     def disable_hooks(self) -> bool:
         """
         The `disable_hooks` will turn off all web hooks for the current service.
@@ -1167,9 +1329,10 @@ class WebHookServiceManager(object):
 
         """
         url = f"{self._url}/deactivateAll"
-        params = {'f' : 'json'}
-        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
-    #----------------------------------------------------------------------
+        params = {"f": "json"}
+        return self._gis._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
     def delete_all_hooks(self) -> bool:
         """
         The `delete_all_hooks` operation will permanently remove the specified webhook.
@@ -1178,8 +1341,10 @@ class WebHookServiceManager(object):
 
         """
         url = f"{self._url}/deleteAll"
-        params = {'f' : 'json'}
-        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
+        params = {"f": "json"}
+        return self._gis._con.post(url, params).get("status", "failed") == "success"
+
+
 ###########################################################################
 class FeatureLayerCollectionManager(_GISResource):
     """
@@ -1206,31 +1371,37 @@ class FeatureLayerCollectionManager(_GISResource):
 
         try:
             for layer in self.properties.layers:
-                layers.append(FeatureLayerManager(self.url + '/' + str(layer['id']), self._gis))
+                layers.append(
+                    FeatureLayerManager(self.url + "/" + str(layer["id"]), self._gis)
+                )
         except:
             pass
 
         try:
             for table in self.properties.tables:
-                tables.append(FeatureLayerManager(self.url + '/' + str(table['id']), self._gis))
+                tables.append(
+                    FeatureLayerManager(self.url + "/" + str(table["id"]), self._gis)
+                )
         except:
             pass
 
         self.layers = layers
         self.tables = tables
+
     @property
     def webhook_manager(self) -> WebHookServiceManager:
-        """
-        """
-        if self._gis.version >= [8,2] and self._gis._portal.is_arcgisonline:
+        """ """
+        if self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline:
             if self._wh is None:
-                self._wh = WebHookServiceManager(url=self._url + "/WebHooks", fc=self._fs, gis=self._gis)
+                self._wh = WebHookServiceManager(
+                    url=self._url + "/WebHooks", fc=self._fs, gis=self._gis
+                )
             return self._wh
         return None
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a feature layer collection """
+        """refreshes a feature layer collection"""
         params = {"f": "json"}
         refresh_url = self._url + "/refresh"
         res = self._con.post(refresh_url, params)
@@ -1242,7 +1413,8 @@ class FeatureLayerCollectionManager(_GISResource):
         self._fs._populate_layers()
 
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     @property
     def generate_service_definition(self):
         """
@@ -1252,7 +1424,8 @@ class FeatureLayerCollectionManager(_GISResource):
 
         """
         return self._generate_mapservice_definition()
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _generate_mapservice_definition(self):
         """
         This operation returns a map service JSON that can be used to
@@ -1264,7 +1437,7 @@ class FeatureLayerCollectionManager(_GISResource):
            dictionary
         """
         params = {
-            'f' : 'json',
+            "f": "json",
         }
         url = "%s/generateMapServiceDefinition" % self._url
         try:
@@ -1272,22 +1445,25 @@ class FeatureLayerCollectionManager(_GISResource):
         except:
             res = None
         return res
+
     # ----------------------------------------------------------------------
-    def create_view(self,
-                    name,
-                    spatial_reference=None,
-                    extent=None,
-                    allow_schema_changes=True,
-                    updateable=True,
-                    capabilities="Query",
-                    view_layers=None,
-                    view_tables=None,
-                    *,
-                    description=None,
-                    tags=None,
-                    snippet=None,
-                    overwrite=None,
-                    set_item_id=None):
+    def create_view(
+        self,
+        name,
+        spatial_reference=None,
+        extent=None,
+        allow_schema_changes=True,
+        updateable=True,
+        capabilities="Query",
+        view_layers=None,
+        view_tables=None,
+        *,
+        description=None,
+        tags=None,
+        snippet=None,
+        overwrite=None,
+        set_item_id=None,
+    ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
         represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
@@ -1366,11 +1542,14 @@ class FeatureLayerCollectionManager(_GISResource):
 
         import os
         from . import FeatureLayerCollection
+
         gis = self._gis
         content = gis.content
-        if 'serviceItemId' not in self.properties:
-            raise Exception("A registered hosted feature service is required to use create_view")
-        item_id = self.properties['serviceItemId']
+        if "serviceItemId" not in self.properties:
+            raise Exception(
+                "A registered hosted feature service is required to use create_view"
+            )
+        item_id = self.properties["serviceItemId"]
         item = content.get(itemid=item_id)
         url = item.url
         fs = FeatureLayerCollection(url=url, gis=gis)
@@ -1379,41 +1558,43 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             url = gis._url
 
-        if 'id' in gis.properties.user:
+        if "id" in gis.properties.user:
             me = gis.users.me.username
-            #me = gis.properties.user.id
+            # me = gis.properties.user.id
         else:
             me = gis.users.me.username
         url = "%s/content/users/%s/createService" % (url, me)
         params = {
-            "f" : "json",
-            "isView" : True,
-            "createParameters" :json.dumps({"name": name,
-                                            "isView":True,
-                                            "sourceSchemaChangesAllowed": allow_schema_changes,
-                                            "isUpdatableView": updateable,
-                                            "spatialReference":spatial_reference or fs.properties['spatialReference'],
-                                            "initialExtent": extent or fs.properties['initialExtent'],
-                                            "capabilities":capabilities or fs.properties['capabilties']}),
-            "outputType" : "featureService"
+            "f": "json",
+            "isView": True,
+            "createParameters": json.dumps(
+                {
+                    "name": name,
+                    "isView": True,
+                    "sourceSchemaChangesAllowed": allow_schema_changes,
+                    "isUpdatableView": updateable,
+                    "spatialReference": spatial_reference
+                    or fs.properties["spatialReference"],
+                    "initialExtent": extent or fs.properties["initialExtent"],
+                    "capabilities": capabilities or fs.properties["capabilties"],
+                }
+            ),
+            "outputType": "featureService",
         }
         if set_item_id:
-            params['itemIdToCreate'] = set_item_id
+            params["itemIdToCreate"] = set_item_id
         if tags:
-            params['tags'] = tags
+            params["tags"] = tags
         if snippet:
-            params['snippet'] = snippet
+            params["snippet"] = snippet
         if not overwrite is None:
-            params['overwrite'] = overwrite
+            params["overwrite"] = overwrite
         if description:
-            params['description'] = description
+            params["description"] = description
         res = gis._con.post(path=url, postdata=params)
-        view = content.get(res['itemId'])
+        view = content.get(res["itemId"])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
-        add_def = {
-            "layers" : [],
-            "tables" : []
-        }
+        add_def = {"layers": [], "tables": []}
 
         def is_none_or_empty(view_param):
             if not view_param:
@@ -1421,7 +1602,7 @@ class FeatureLayerCollectionManager(_GISResource):
             if isinstance(view_param, list) and len(view_param) == 0:
                 return True
             if isinstance(view_param, dict):
-                for k,v in view_param.items():
+                for k, v in view_param.items():
                     if view_param[k] is not None:
                         return False
                 return True
@@ -1430,134 +1611,182 @@ class FeatureLayerCollectionManager(_GISResource):
         if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
-                add_def['layers'].append(
+                add_def["layers"].append(
                     {
-                        "adminLayerInfo" : {
-                            "viewLayerDefinition" :
-                        {
-                            "sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
-                            "sourceLayerId" : lyr.manager.properties['id'],
-                            "sourceLayerFields" :  "*"
-                        }
+                        "adminLayerInfo": {
+                            "viewLayerDefinition": {
+                                "sourceServiceName": os.path.basename(
+                                    os.path.dirname(fs.url)
+                                ),
+                                "sourceLayerId": lyr.manager.properties["id"],
+                                "sourceLayerFields": "*",
+                            }
                         },
-                        "name" : lyr.manager.properties['name']
-                    })
+                        "name": lyr.manager.properties["name"],
+                    }
+                )
             for tbl in fs.tables:
-                add_def['tables'].append(
+                add_def["tables"].append(
                     {
-                        "adminLayerInfo" : {"viewLayerDefinition" :
-                                                {"sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
-                                                 "sourceLayerId" : tbl.manager.properties['id'],
-                                                 "sourceLayerFields" :  "*"}
-                                            },
-                        "id": tbl.manager.properties['id'],
-                        "name" : tbl.manager.properties['name'],
-                        "type": "Table"
-                    })
+                        "adminLayerInfo": {
+                            "viewLayerDefinition": {
+                                "sourceServiceName": os.path.basename(
+                                    os.path.dirname(fs.url)
+                                ),
+                                "sourceLayerId": tbl.manager.properties["id"],
+                                "sourceLayerFields": "*",
+                            }
+                        },
+                        "id": tbl.manager.properties["id"],
+                        "name": tbl.manager.properties["name"],
+                        "type": "Table",
+                    }
+                )
         else:
             # when view_layers is specified
             if view_layers:
                 if isinstance(view_layers, list):
                     for lyr in view_layers:
-                            add_def['layers'].append(
-                                {
-                                    "adminLayerInfo": {"viewLayerDefinition":
-                                                        {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                                                        "sourceLayerId": lyr.manager.properties['id'],
-                                                        "sourceLayerFields": "*"}
-                                                    },
-                                    "name": lyr.manager.properties['name']
-                                })
+                        add_def["layers"].append(
+                            {
+                                "adminLayerInfo": {
+                                    "viewLayerDefinition": {
+                                        "sourceServiceName": os.path.basename(
+                                            os.path.dirname(fs.url)
+                                        ),
+                                        "sourceLayerId": lyr.manager.properties["id"],
+                                        "sourceLayerFields": "*",
+                                    }
+                                },
+                                "name": lyr.manager.properties["name"],
+                            }
+                        )
                 else:
                     import logging
+
                     _log = logging.getLogger(__name__)
                     from arcgis.features.layer import Layer
-                    if isinstance(view_layers, dict):
-                        if 'layers' in view_layers:
-                            add_def['layers'] = view_layers['layers']
-                        else:
-                            add_def['layers'].append(view_layers)
-                    elif isinstance(view_layers, Layer):
-                        add_def['layers'].append(
-                            {
-                                "adminLayerInfo": {"viewLayerDefinition":
-                                                    {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                                                    "sourceLayerId": view_layers.manager.properties['id'],
-                                                    "sourceLayerFields": "*"}
-                                                },
-                                "name": view_layers.manager.properties['name']
-                            })
-                    else:
-                        _log.error('Unable to parse the view_layers parameter')
 
+                    if isinstance(view_layers, dict):
+                        if "layers" in view_layers:
+                            add_def["layers"] = view_layers["layers"]
+                        else:
+                            add_def["layers"].append(view_layers)
+                    elif isinstance(view_layers, Layer):
+                        add_def["layers"].append(
+                            {
+                                "adminLayerInfo": {
+                                    "viewLayerDefinition": {
+                                        "sourceServiceName": os.path.basename(
+                                            os.path.dirname(fs.url)
+                                        ),
+                                        "sourceLayerId": view_layers.manager.properties[
+                                            "id"
+                                        ],
+                                        "sourceLayerFields": "*",
+                                    }
+                                },
+                                "name": view_layers.manager.properties["name"],
+                            }
+                        )
+                    else:
+                        _log.error("Unable to parse the view_layers parameter")
 
             # when view_tables is specified
             if view_tables:
                 if isinstance(view_tables, list):
                     for tbl in view_tables:
-                        add_def['tables'].append(
+                        add_def["tables"].append(
                             {
-                                "adminLayerInfo" : {"viewLayerDefinition" :
-                                                        {"sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
-                                                        "sourceLayerId" : tbl.manager.properties['id'],
-                                                        "sourceLayerFields" :  "*"}
-                                                    },
-                                "id": tbl.manager.properties['id'],
-                                "name" : tbl.manager.properties['name'],
-                                "type": "Table"
-                            })
+                                "adminLayerInfo": {
+                                    "viewLayerDefinition": {
+                                        "sourceServiceName": os.path.basename(
+                                            os.path.dirname(fs.url)
+                                        ),
+                                        "sourceLayerId": tbl.manager.properties["id"],
+                                        "sourceLayerFields": "*",
+                                    }
+                                },
+                                "id": tbl.manager.properties["id"],
+                                "name": tbl.manager.properties["name"],
+                                "type": "Table",
+                            }
+                        )
                 else:
                     import logging
+
                     _log = logging.getLogger(__name__)
 
                     from arcgis.features.layer import Table
+
                     if isinstance(view_tables, dict):
-                        if 'tables' in view_tables:
-                            add_def['tables'] = view_tables['tables']
+                        if "tables" in view_tables:
+                            add_def["tables"] = view_tables["tables"]
                         else:
-                            add_def['tables'].append(view_tables)
+                            add_def["tables"].append(view_tables)
                     elif isinstance(view_tables, Table):
-                        add_def['tables'].append(
+                        add_def["tables"].append(
                             {
-                                "adminLayerInfo": {"viewLayerDefinition":
-                                                    {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                                                    "sourceLayerId": view_tables.manager.properties['id'],
-                                                    "sourceLayerFields": "*"}
-                                                },
-                                "name": view_tables.manager.properties['name']
-                            })
+                                "adminLayerInfo": {
+                                    "viewLayerDefinition": {
+                                        "sourceServiceName": os.path.basename(
+                                            os.path.dirname(fs.url)
+                                        ),
+                                        "sourceLayerId": view_tables.manager.properties[
+                                            "id"
+                                        ],
+                                        "sourceLayerFields": "*",
+                                    }
+                                },
+                                "name": view_tables.manager.properties["name"],
+                            }
+                        )
                     else:
-                        _log.error('Unable to parse the view_tables parameter')
+                        _log.error("Unable to parse the view_tables parameter")
 
         fs_view.manager.add_to_definition(add_def)
         if extent and fs_view.layers:
             for vw_lyr in fs_view.layers:
-                vw_lyr.manager.update_definition({"viewLayerDefinition": {"filter":
-                                                                          {"operator": "esriSpatialRelIntersects",
-                                                                           "value": {
-                                                                                "geometryType": "esriGeometryEnvelope",
-                                                                                "geometry": extent}}}})
+                vw_lyr.manager.update_definition(
+                    {
+                        "viewLayerDefinition": {
+                            "filter": {
+                                "operator": "esriSpatialRelIntersects",
+                                "value": {
+                                    "geometryType": "esriGeometryEnvelope",
+                                    "geometry": extent,
+                                },
+                            }
+                        }
+                    }
+                )
 
         if view_layers:
             data = item.get_data()
-            if 'layers' in data:
+            if "layers" in data:
                 item_upd_dict = {
-                    'layers': [ilyr
-                               for ilyr in item.get_data()['layers']
-                               for lyr in view_layers
-                               if int(lyr.url[-1]) == ilyr['id']]}
+                    "layers": [
+                        ilyr
+                        for ilyr in item.get_data()["layers"]
+                        for lyr in view_layers
+                        if int(lyr.url[-1]) == ilyr["id"]
+                    ]
+                }
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-        view.update({
-            "tags" : ",".join(item.tags),
-            "description" : item.description or "",
-            "snippet" : item.snippet or ""
-        })
-        return content.get(res['itemId'])
+        view.update(
+            {
+                "tags": ",".join(item.tags),
+                "description": item.description or "",
+                "snippet": item.snippet or "",
+            }
+        )
+        return content.get(res["itemId"])
+
     # ----------------------------------------------------------------------
-    def _check_status(self, url:str) -> dict:
-        """ Internal method to check the status of the definition change.
+    def _check_status(self, url: str) -> dict:
+        """Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================
@@ -1573,20 +1802,22 @@ class FeatureLayerCollectionManager(_GISResource):
         sleep_time = 1
         count = 1
 
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while 'status' in job_response and \
-                  not job_response.get("status") in ["completed", 'Completed']:
+            while "status" in job_response and not job_response.get("status") in [
+                "completed",
+                "Completed",
+            ]:
                 time.sleep(sleep_time * count)
                 job_response = con.post(url, params)
-                if job_response.get("status") in ("esriJobFailed","failed") or \
-                   job_response.get('status').lower().find('error') > -1:
-                    if 'error' in job_response:
-                        raise Exception(job_response['error'])
+                if (
+                    job_response.get("status") in ("esriJobFailed", "failed")
+                    or job_response.get("status").lower().find("error") > -1
+                ):
+                    if "error" in job_response:
+                        raise Exception(job_response["error"])
                     else:
                         raise Exception(f"Job failed: {job_response}")
                 elif job_response.get("status") == "esriJobCancelled":
@@ -1598,6 +1829,7 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             raise Exception("No job results.")
         return job_response
+
     # ----------------------------------------------------------------------
     def _refresh_callback(self, *args, **kwargs):
         """function to refresh the service post add or update definition for async operations"""
@@ -1606,25 +1838,26 @@ class FeatureLayerCollectionManager(_GISResource):
             self.refresh()
         except:
             self._hydrated = False
+
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict, future=False):
         """
-           The add_to_definition operation supports adding a definition
-           property to a hosted feature layer collection service. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The add_to_definition operation supports adding a definition
+        property to a hosted feature layer collection service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           This function will allow users to change or add additional values
-           to an already published service.
+        This function will allow users to change or add additional values
+        to an already published service.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the properties property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON message as dictionary
-              when `future=True`, concurrent.futures.Future is returned.
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the properties property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON message as dictionary
+           when `future=True`, concurrent.futures.Future is returned.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -1633,13 +1866,15 @@ class FeatureLayerCollectionManager(_GISResource):
         params = {
             "f": "json",
             "addToDefinition": json.dumps(json_dict),
-            "async": json.dumps(future)
+            "async": json.dumps(future),
         }
         adddefn_url = self._url + "/addToDefinition"
         res = self._con.post(adddefn_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -1649,18 +1884,18 @@ class FeatureLayerCollectionManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict, future=False):
         """
-           The update_definition operation supports updating a definition
-           property in a hosted feature layer collection service. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The update_definition operation supports updating a definition
+        property in a hosted feature layer collection service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the properties property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON Message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the properties property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON Message as dictionary
         """
         definition = None
         if json_dict is not None:
@@ -1672,37 +1907,49 @@ class FeatureLayerCollectionManager(_GISResource):
             else:
 
                 definition = collections.OrderedDict()
-                if 'hasStaticData' in json_dict:
-                    definition['hasStaticData'] = json_dict['hasStaticData']
-                if 'allowGeometryUpdates' in json_dict:
-                    definition['allowGeometryUpdates'] = json_dict['allowGeometryUpdates']
-                if 'capabilities' in json_dict:
-                    definition['capabilities'] = json_dict['capabilities']
-                if 'editorTrackingInfo' in json_dict:
-                    definition['editorTrackingInfo'] = collections.OrderedDict()
-                    if 'enableEditorTracking' in json_dict['editorTrackingInfo']:
-                        definition['editorTrackingInfo']['enableEditorTracking'] = json_dict['editorTrackingInfo'][
-                            'enableEditorTracking']
+                if "hasStaticData" in json_dict:
+                    definition["hasStaticData"] = json_dict["hasStaticData"]
+                if "allowGeometryUpdates" in json_dict:
+                    definition["allowGeometryUpdates"] = json_dict[
+                        "allowGeometryUpdates"
+                    ]
+                if "capabilities" in json_dict:
+                    definition["capabilities"] = json_dict["capabilities"]
+                if "editorTrackingInfo" in json_dict:
+                    definition["editorTrackingInfo"] = collections.OrderedDict()
+                    if "enableEditorTracking" in json_dict["editorTrackingInfo"]:
+                        definition["editorTrackingInfo"][
+                            "enableEditorTracking"
+                        ] = json_dict["editorTrackingInfo"]["enableEditorTracking"]
 
-                    if 'enableOwnershipAccessControl' in json_dict['editorTrackingInfo']:
-                        definition['editorTrackingInfo']['enableOwnershipAccessControl'] = \
-                            json_dict['editorTrackingInfo']['enableOwnershipAccessControl']
+                    if (
+                        "enableOwnershipAccessControl"
+                        in json_dict["editorTrackingInfo"]
+                    ):
+                        definition["editorTrackingInfo"][
+                            "enableOwnershipAccessControl"
+                        ] = json_dict["editorTrackingInfo"][
+                            "enableOwnershipAccessControl"
+                        ]
 
-                    if 'allowOthersToUpdate' in json_dict['editorTrackingInfo']:
-                        definition['editorTrackingInfo']['allowOthersToUpdate'] = json_dict['editorTrackingInfo'][
-                            'allowOthersToUpdate']
+                    if "allowOthersToUpdate" in json_dict["editorTrackingInfo"]:
+                        definition["editorTrackingInfo"][
+                            "allowOthersToUpdate"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToUpdate"]
 
-                    if 'allowOthersToDelete' in json_dict['editorTrackingInfo']:
-                        definition['editorTrackingInfo']['allowOthersToDelete'] = json_dict['editorTrackingInfo'][
-                            'allowOthersToDelete']
+                    if "allowOthersToDelete" in json_dict["editorTrackingInfo"]:
+                        definition["editorTrackingInfo"][
+                            "allowOthersToDelete"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToDelete"]
 
-                    if 'allowOthersToQuery' in json_dict['editorTrackingInfo']:
-                        definition['editorTrackingInfo']['allowOthersToQuery'] = json_dict['editorTrackingInfo'][
-                            'allowOthersToQuery']
-                    if isinstance(json_dict['editorTrackingInfo'], dict):
-                        for key, val in json_dict['editorTrackingInfo'].items():
-                            if key not in definition['editorTrackingInfo']:
-                                definition['editorTrackingInfo'][key] = val
+                    if "allowOthersToQuery" in json_dict["editorTrackingInfo"]:
+                        definition["editorTrackingInfo"][
+                            "allowOthersToQuery"
+                        ] = json_dict["editorTrackingInfo"]["allowOthersToQuery"]
+                    if isinstance(json_dict["editorTrackingInfo"], dict):
+                        for key, val in json_dict["editorTrackingInfo"].items():
+                            if key not in definition["editorTrackingInfo"]:
+                                definition["editorTrackingInfo"][key] = val
                 if isinstance(json_dict, dict):
                     for key, val in json_dict.items():
                         if key not in definition:
@@ -1710,14 +1957,16 @@ class FeatureLayerCollectionManager(_GISResource):
 
         params = {
             "f": "json",
-            "updateDefinition": json.dumps(obj=definition, separators=(',', ':')),
-            "async": json.dumps(future)
+            "updateDefinition": json.dumps(obj=definition, separators=(",", ":")),
+            "async": json.dumps(future),
         }
         u_url = self._url + "/updateDefinition"
         res = self._con.post(u_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -1748,14 +1997,16 @@ class FeatureLayerCollectionManager(_GISResource):
         params = {
             "f": "json",
             "deleteFromDefinition": json.dumps(json_dict),
-            "async": json.dumps(future)
+            "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -1783,68 +2034,89 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         # check for outstanding replicas
         if bool(self._fs.replicas.get_list()):
-           raise Exception("Service cannot be overwritten if Sync is enabled and replicas exist.")
+            raise Exception(
+                "Service cannot be overwritten if Sync is enabled and replicas exist."
+            )
 
         # region Get Item associated with the service
-        if 'serviceItemId' in self.properties.keys():
-            feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
+        if "serviceItemId" in self.properties.keys():
+            feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
         else:
-            return {'error': 'Can only overwrite a hosted feature layer collection'}
+            return {"error": "Can only overwrite a hosted feature layer collection"}
         # endregion
 
         # region find data item related to this hosted feature layer
-        related_data_items = feature_layer_item.related_items('Service2Data', 'forward')
+        related_data_items = feature_layer_item.related_items("Service2Data", "forward")
         if len(related_data_items) > 0:
             related_data_item = related_data_items[0]
         else:
-            return {'error': 'Cannot find related data item used to publish this feature layer'}
+            return {
+                "error": "Cannot find related data item used to publish this feature layer"
+            }
 
         # endregion
         params = None
-        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
-           self._gis._portal.is_arcgisonline == False:
+        if (
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            and self._gis._portal.is_arcgisonline == False
+        ):
             params = {
-                "name" : related_data_item.name,
-                "title" : related_data_item.title,
-                "tags" : related_data_item.tags,
-                "type" : related_data_item.type,
-                "overwrite" : True,
-                "overwriteService" : "on",
-                "useDescription" : "on"
+                "name": related_data_item.name,
+                "title": related_data_item.title,
+                "tags": related_data_item.tags,
+                "type": related_data_item.type,
+                "overwrite": True,
+                "overwriteService": "on",
+                "useDescription": "on",
             }
             lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
             fs_url = "%s" % feature_layer_item.layers[0].container._url
-            layer_info = self._gis._con.get(lyr_url_info, {'f' : 'json'})
-            [lyr.pop('fields') for lyr in layer_info['layers']]
-            [lyr.pop('fields') for lyr in layer_info['tables']]
-            feature_service_def = self._gis._con.get(fs_url, {'f' : 'json'})
-            feature_service_def['tables'] = []
-            feature_service_def['layers'] = []
+            layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
+            [lyr.pop("fields") for lyr in layer_info["layers"]]
+            [lyr.pop("fields") for lyr in layer_info["tables"]]
+            feature_service_def = self._gis._con.get(fs_url, {"f": "json"})
+            feature_service_def["tables"] = []
+            feature_service_def["layers"] = []
             feature_service_def.update(layer_info)
             publish_parameters = feature_service_def
-            publish_parameters['name'] = feature_layer_item.title
-            publish_parameters['_ssl'] = False
-            for idx, lyr in enumerate(publish_parameters['layers']):
-                lyr['parentLayerId'] = -1
-                for k in {'sourceSpatialReference', 'isCoGoEnabled',
-                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+            publish_parameters["name"] = feature_layer_item.title
+            publish_parameters["_ssl"] = False
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
                     lyr.pop(k, None)
-            for idx, lyr in enumerate(publish_parameters['tables']):
-                lyr['parentLayerId'] = -1
-                for k in {'sourceSpatialReference', 'isCoGoEnabled',
-                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+            for idx, lyr in enumerate(publish_parameters["tables"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
                     lyr.pop(k, None)
-
 
         # region construct publishParameters dictionary
-        elif related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
-           self._gis._portal.is_arcgisonline:
+        elif (
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            and self._gis._portal.is_arcgisonline
+        ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time
 
             # get old publishParameters.json
-            path = "content/items/" + feature_layer_item.itemid + "/info/publishParameters.json"
-            postdata = {'f': 'json'}
+            path = (
+                "content/items/"
+                + feature_layer_item.itemid
+                + "/info/publishParameters.json"
+            )
+            postdata = {"f": "json"}
 
             old_publish_parameters = self._gis._con.post(path, postdata)
 
@@ -1856,22 +2128,23 @@ class FeatureLayerCollectionManager(_GISResource):
             tables_dict = []
             for layer in self.layers:
                 layer_def = dict(layer.properties)
-                if 'fields' in layer_def.keys():
+                if "fields" in layer_def.keys():
                     dump = layer_def.pop("fields")
                 layers_dict.append(layer_def)
 
             for table in self.tables:
                 table_def = dict(table.properties)
-                if 'fields' in table_def.keys():
-                    dump = table_def.pop('fields')
+                if "fields" in table_def.keys():
+                    dump = table_def.pop("fields")
                 tables_dict.append(table_def)
 
             # Splice the detailed table and layer def with FeatuerServer def
-            feature_service_def['layers'] = layers_dict
-            feature_service_def['tables'] = tables_dict
+            feature_service_def["layers"] = layers_dict
+            feature_service_def["tables"] = tables_dict
             from pathlib import Path
+
             service_name = Path(self.url).parts[-2]  # get service name from url
-            feature_service_def['name'] = service_name
+            feature_service_def["name"] = service_name
 
             # combine both old publish params and full feature service definition
             publish_parameters = feature_service_def
@@ -1882,15 +2155,19 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # endregion
 
-        #region Perform overwriting
+        # region Perform overwriting
         if related_data_item.update(item_properties=params, data=data_file):
-            published_item = related_data_item.publish(publish_parameters, overwrite=True)
+            published_item = related_data_item.publish(
+                publish_parameters, overwrite=True
+            )
             if published_item is not None:
-                return {'success': True}
+                return {"success": True}
             else:
-                return {'error': 'Unable to overwrite the hosted feature layer collection'}
+                return {
+                    "error": "Unable to overwrite the hosted feature layer collection"
+                }
         else:
-            return {'error': 'Unable to update related data item with new data'}
+            return {"error": "Unable to update related data item with new data"}
 
     # ----------------------------------------------------------------------
 
@@ -1905,67 +2182,87 @@ class FeatureLayerCollectionManager(_GISResource):
         """
 
         # region Get Item associated with the service
-        if 'serviceItemId' in self.properties.keys():
-            feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
+        if "serviceItemId" in self.properties.keys():
+            feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
         else:
-            return {'error': 'Can only overwrite a hosted feature layer collection'}
+            return {"error": "Can only overwrite a hosted feature layer collection"}
         # endregion
 
         # region find data item related to this hosted feature layer
-        related_data_items = feature_layer_item.related_items('Service2Data', 'forward')
+        related_data_items = feature_layer_item.related_items("Service2Data", "forward")
         if len(related_data_items) > 0:
             related_data_item = related_data_items[0]
         else:
-            return {'error': 'Cannot find related data item used to publish this feature layer'}
+            return {
+                "error": "Cannot find related data item used to publish this feature layer"
+            }
 
         # endregion
 
         # region Construct publish parameters for Portal / Enterprise
         params = None
-        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
-           self._gis._portal.is_arcgisonline == False:
+        if (
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            and self._gis._portal.is_arcgisonline == False
+        ):
             params = {
-                "name" : related_data_item.name,
-                "title" : related_data_item.title,
-                "tags" : related_data_item.tags,
-                "type" : related_data_item.type,
-                "overwrite" : True,
-                "overwriteService" : "on",
-                "useDescription" : "on"
+                "name": related_data_item.name,
+                "title": related_data_item.title,
+                "tags": related_data_item.tags,
+                "type": related_data_item.type,
+                "overwrite": True,
+                "overwriteService": "on",
+                "useDescription": "on",
             }
             lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
             fs_url = "%s" % feature_layer_item.layers[0].container._url
-            layer_info = self._gis._con.get(lyr_url_info, {'f' : 'json'})
-            [lyr.pop('fields') for lyr in layer_info['layers']]
-            [lyr.pop('fields') for lyr in layer_info['tables']]
-            feature_service_def = self._gis._con.get(fs_url, {'f' : 'json'})
-            feature_service_def['tables'] = []
-            feature_service_def['layers'] = []
+            layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
+            [lyr.pop("fields") for lyr in layer_info["layers"]]
+            [lyr.pop("fields") for lyr in layer_info["tables"]]
+            feature_service_def = self._gis._con.get(fs_url, {"f": "json"})
+            feature_service_def["tables"] = []
+            feature_service_def["layers"] = []
             feature_service_def.update(layer_info)
             publish_parameters = feature_service_def
-            publish_parameters['name'] = feature_layer_item.title
-            publish_parameters['_ssl'] = False
-            for idx, lyr in enumerate(publish_parameters['layers']):
-                lyr['parentLayerId'] = -1
-                for k in {'sourceSpatialReference', 'isCoGoEnabled',
-                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+            publish_parameters["name"] = feature_layer_item.title
+            publish_parameters["_ssl"] = False
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
                     lyr.pop(k, None)
-            for idx, lyr in enumerate(publish_parameters['tables']):
-                lyr['parentLayerId'] = -1
-                for k in {'sourceSpatialReference', 'isCoGoEnabled',
-                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+            for idx, lyr in enumerate(publish_parameters["tables"]):
+                lyr["parentLayerId"] = -1
+                for k in {
+                    "sourceSpatialReference",
+                    "isCoGoEnabled",
+                    "parentLayer",
+                    "isDataArchived",
+                    "cimVersion",
+                }:
                     lyr.pop(k, None)
         # endregion
 
         # region Construct publish parameters for AGO
-        elif related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
-           self._gis._portal.is_arcgisonline:
+        elif (
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            and self._gis._portal.is_arcgisonline
+        ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time
 
             # get old publishParameters.json
-            path = "content/items/" + feature_layer_item.itemid + "/info/publishParameters.json"
-            postdata = {'f': 'json'}
+            path = (
+                "content/items/"
+                + feature_layer_item.itemid
+                + "/info/publishParameters.json"
+            )
+            postdata = {"f": "json"}
 
             old_publish_parameters = self._gis._con.post(path, postdata)
 
@@ -1977,22 +2274,23 @@ class FeatureLayerCollectionManager(_GISResource):
             tables_dict = []
             for layer in self.layers:
                 layer_def = dict(layer.properties)
-                if 'fields' in layer_def.keys():
+                if "fields" in layer_def.keys():
                     dump = layer_def.pop("fields")
                 layers_dict.append(layer_def)
 
             for table in self.tables:
                 table_def = dict(table.properties)
-                if 'fields' in table_def.keys():
-                    dump = table_def.pop('fields')
+                if "fields" in table_def.keys():
+                    dump = table_def.pop("fields")
                 tables_dict.append(table_def)
 
             # Splice the detailed table and layer def with FeatuerServer def
-            feature_service_def['layers'] = layers_dict
-            feature_service_def['tables'] = tables_dict
+            feature_service_def["layers"] = layers_dict
+            feature_service_def["tables"] = tables_dict
             from pathlib import Path
+
             service_name = Path(self.url).parts[-2]  # get service name from url
-            feature_service_def['name'] = service_name
+            feature_service_def["name"] = service_name
 
             # combine both old publish params and full feature service definition
             publish_parameters = feature_service_def
@@ -2003,6 +2301,7 @@ class FeatureLayerCollectionManager(_GISResource):
         # endregion
 
         return (publish_parameters, params)
+
 
 class FeatureLayerManager(_GISResource):
     """
@@ -2028,11 +2327,12 @@ class FeatureLayerManager(_GISResource):
         if item.type != "Feature Service":
             raise TypeError("item must be a of type Feature Service, not " + item.type)
         from arcgis.features import FeatureLayer
+
         return FeatureLayer.fromitem(item, layer_id).manager
 
     # ----------------------------------------------------------------------
     def refresh(self):
-        """ refreshes a service """
+        """refreshes a service"""
         params = {"f": "json"}
         u_url = self._url + "/refresh"
         res = self._con.post(u_url, params)
@@ -2044,21 +2344,21 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict, future=False):
         """
-           The addToDefinition operation supports adding a definition
-           property to a hosted feature layer. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The addToDefinition operation supports adding a definition
+        property to a hosted feature layer. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           This function will allow users to change add additional values
-           to an already published service.
+        This function will allow users to change add additional values
+        to an already published service.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON message as dictionary
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2067,14 +2367,16 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "addToDefinition": json.dumps(json_dict),
-            "async" : json.dumps(future)
+            "async": json.dumps(future),
         }
         u_url = self._url + "/addToDefinition"
 
         res = self._con.post(u_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -2084,18 +2386,18 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_definition(self, json_dict, future=False):
         """
-           The updateDefinition operation supports updating a definition
-           property in a hosted feature layer. The result of this
-           operation is a response indicating success or failure with error
-           code and description.
+        The updateDefinition operation supports updating a definition
+        property in a hosted feature layer. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
 
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.
-           Output:
-              JSON Message as dictionary
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.
+        Output:
+           JSON Message as dictionary
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2104,15 +2406,17 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "updateDefinition": json.dumps(json_dict),
-            "async": json.dumps(future)
+            "async": json.dumps(future),
         }
 
         u_url = self._url + "/updateDefinition"
 
         res = self._con.post(u_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -2122,22 +2426,22 @@ class FeatureLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict, future=False):
         """
-           The deleteFromDefinition operation supports deleting a
-           definition property from a hosted feature layer. The result of
-           this operation is a response indicating success or failure with
-           error code and description.
-           See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
-           for additional information on this function.
-           Input:
-              json_dict - part to add to host service.  The part format can
-                          be derived from the asDictionary property.  For
-                          layer level modifications, run updates on each
-                          individual feature service layer object.  Only
-                          include the items you want to remove from the
-                          FeatureService or layer.
+        The deleteFromDefinition operation supports deleting a
+        definition property from a hosted feature layer. The result of
+        this operation is a response indicating success or failure with
+        error code and description.
+        See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
+        for additional information on this function.
+        Input:
+           json_dict - part to add to host service.  The part format can
+                       be derived from the asDictionary property.  For
+                       layer level modifications, run updates on each
+                       individual feature service layer object.  Only
+                       include the items you want to remove from the
+                       FeatureService or layer.
 
-           Output:
-              JSON Message as dictionary
+        Output:
+           JSON Message as dictionary
 
         """
 
@@ -2147,14 +2451,16 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "deleteFromDefinition": json.dumps(json_dict),
-            'async' : json.dumps(future)
+            "async": json.dumps(future),
         }
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
-        if future and 'statusURL' in res:
+        if future and "statusURL" in res:
             executor = _cf.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj = executor.submit(
+                self._check_status, **{"url": res.get("statusURL")}
+            )
             futureobj.add_done_callback(self._refresh_callback)
             executor.shutdown(False)
             return futureobj
@@ -2162,45 +2468,42 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def truncate(self,
-                 attachment_only=False,
-                 asynchronous=False,
-                 wait=True):
+    def truncate(self, attachment_only=False, asynchronous=False, wait=True):
         """
-           The truncate operation supports deleting all features or attachments
-           in a hosted feature service layer. The result of this operation is a
-           response indicating success or failure with error code and description.
-           See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
-           for additional information on this function.
-           Input:
-              attachment_only - Deletes all the attachments for this layer.
-                                None of the layer features will be deleted
-                                when attachmentOnly=true.
-              asynchronous - Supports options for asynchronous processing. The
-                      default format is false. It is recommended to set
-                      async=true for larger datasets.
-              wait - if async, wait to pause the process until the async
-                     operation is completed.
+        The truncate operation supports deleting all features or attachments
+        in a hosted feature service layer. The result of this operation is a
+        response indicating success or failure with error code and description.
+        See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
+        for additional information on this function.
+        Input:
+           attachment_only - Deletes all the attachments for this layer.
+                             None of the layer features will be deleted
+                             when attachmentOnly=true.
+           asynchronous - Supports options for asynchronous processing. The
+                   default format is false. It is recommended to set
+                   async=true for larger datasets.
+           wait - if async, wait to pause the process until the async
+                  operation is completed.
 
-           Output:
-              JSON Message as dictionary
+        Output:
+           JSON Message as dictionary
 
         """
-        params = {
-            "f": "json",
-            "attachmentOnly": attachment_only,
-            "async": asynchronous
-        }
+        params = {"f": "json", "attachmentOnly": attachment_only, "async": asynchronous}
         u_url = self._url + "/truncate"
 
         if asynchronous:
             if wait:
                 job = self._con.post(u_url, params)
-                status = self._get_status(url=job['statusURL'])
-                while status['status'] not in ("Completed", "CompletedWithErrors", "Failed"):
+                status = self._get_status(url=job["statusURL"])
+                while status["status"] not in (
+                    "Completed",
+                    "CompletedWithErrors",
+                    "Failed",
+                ):
                     # wait before checking again
                     time.sleep(2)
-                    status = self._get_status(url=job['statusURL'])
+                    status = self._get_status(url=job["statusURL"])
 
                 res = status
                 self.refresh()
@@ -2211,9 +2514,10 @@ class FeatureLayerManager(_GISResource):
             res = self._con.post(u_url, params)
             self.refresh()
         return res
+
     # ----------------------------------------------------------------------
-    def _check_status(self, url:str) -> dict:
-        """ Internal method to check the status of the definition change.
+    def _check_status(self, url: str) -> dict:
+        """Internal method to check the status of the definition change.
 
 
         ===============     ====================================================================
@@ -2229,21 +2533,21 @@ class FeatureLayerManager(_GISResource):
         sleep_time = 1
         count = 1
 
-        params = {
-            "f" : "json"
-        }
+        params = {"f": "json"}
         con = self._gis._con
         job_response = con.post(url, params)
         if "status" in job_response:
-            while 'status' in job_response and \
-                  not job_response.get("status") in ["completed", "Completed"]:
+            while "status" in job_response and not job_response.get("status") in [
+                "completed",
+                "Completed",
+            ]:
                 if count > 10:
                     count = 10
                 time.sleep(sleep_time * count)
                 job_response = con.post(url, params)
-                if job_response.get("status") in ("esriJobFailed","failed"):
-                    if 'error' in job_response:
-                        raise Exception(job_response['error'])
+                if job_response.get("status") in ("esriJobFailed", "failed"):
+                    if "error" in job_response:
+                        raise Exception(job_response["error"])
                     else:
                         raise Exception("Job failed.")
                 elif job_response.get("status") == "esriJobCancelled":
@@ -2255,6 +2559,7 @@ class FeatureLayerManager(_GISResource):
         else:
             raise Exception("No job results.")
         return job_response
+
     # ----------------------------------------------------------------------
     def _refresh_callback(self, *args, **kwargs):
         """function to refresh the service post add or update definition for async operations"""
@@ -2263,6 +2568,7 @@ class FeatureLayerManager(_GISResource):
             self.refresh()
         except:
             self._hydrated = False
+
     # ----------------------------------------------------------------------
     def _get_status(self, url):
         """gets the status when exported async set to True"""
