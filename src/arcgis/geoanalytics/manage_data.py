@@ -868,7 +868,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     ----------------  ---------------------------------------------------------------
     append_layer      required FeatureLayer. The table, point, line, or polygon
                       features to be appended to the input_layer. To append geometry,
-                      the append_layer must have the same geometry type as the 
+                      the append_layer must have the same geometry type as the
                       input_layer. If the geometry types are not the same, the
                       append_layer geometry will be removed and all other matching
                       fields will be appended. The geometry of the input_layer will
@@ -902,12 +902,12 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                       appended features in Errors.
 
                       .. code-block:: python
-                    
+
                         #Usage Example:
-                        
+
                         >>> from arcgis.geoanalytics.manage_data import append_data
-                        
-                        >>> resp = append_data(input_layer=flyr_base, 
+
+                        >>> resp = append_data(input_layer=flyr_base,
                                                append_layer=flyr_append,
                                                field_mapping= [
                                                 {"inputLayerField": "Mean_Sales",
@@ -920,7 +920,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                                                  "mappingType": "Expression",
                                                  "mappingValue": "null"}
                                                ]
-                                              )                                                                        
+                                              )
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.

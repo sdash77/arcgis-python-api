@@ -2,11 +2,13 @@ try:
     from ._data import _raise_fastai_import_error
     from ._tracking.track_processor import TrackProcessor, get_default_tracker_options
     import traceback
+
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
-    
+
+
 class ObjectTracker:
     """
     Creates ObjectTracker Object.
@@ -94,23 +96,28 @@ class ObjectTracker:
     :returns: `ObjectTracker` Object
     """
 
-    def __init__(self, tracker, detector=None, tracker_options={
-        "enable_post_processing": True,
-        "detection_interval": 5,
-        "detection_threshold": 0.3,
-        "detect_track_failure": True,
-        "recover_track": True,
-        "stab_period": 6,
-        "detect_fail_interval": 5,
-        "min_obj_size": 10,
-        "template_history": 25,
-        "status_history": 60,
-        "status_fail_threshold": 0.6,
-        "search_period": 60,
-        "knn_distance_ratio": 0.75,
-        "recover_conf_threshold": 0.1,
-        "recover_iou_threshold": 0.1
-    }):
+    def __init__(
+        self,
+        tracker,
+        detector=None,
+        tracker_options={
+            "enable_post_processing": True,
+            "detection_interval": 5,
+            "detection_threshold": 0.3,
+            "detect_track_failure": True,
+            "recover_track": True,
+            "stab_period": 6,
+            "detect_fail_interval": 5,
+            "min_obj_size": 10,
+            "template_history": 25,
+            "status_history": 60,
+            "status_fail_threshold": 0.6,
+            "search_period": 60,
+            "knn_distance_ratio": 0.75,
+            "recover_conf_threshold": 0.1,
+            "recover_iou_threshold": 0.1,
+        },
+    ):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
@@ -120,42 +127,47 @@ class ObjectTracker:
         self.tracker = tracker
         self.detector = detector
         self.tracks = []
-        self.detect_interval = tracker_options.get('detection_interval', 10)
-        self.detect_threshold = tracker_options.get('detection_threshold', 0.3)
+        self.detect_interval = tracker_options.get("detection_interval", 10)
+        self.detect_threshold = tracker_options.get("detection_threshold", 0.3)
         self.enable_post_processing = tracker_options.get(
-            'enable_post_processing', True)
+            "enable_post_processing", True
+        )
         processor_options = {}
         processor_options["detect_track_failure"] = tracker_options.get(
-            'detect_track_failure', True)
-        processor_options["recover_track"] = tracker_options.get(
-            'recover_track', True)
-        processor_options["stab_period"] = tracker_options.get(
-            'stab_period', 6)
+            "detect_track_failure", True
+        )
+        processor_options["recover_track"] = tracker_options.get("recover_track", True)
+        processor_options["stab_period"] = tracker_options.get("stab_period", 6)
         processor_options["detect_fail_interval"] = tracker_options.get(
-            'detect_fail_interval', 5)
-        processor_options["min_obj_size"] = tracker_options.get(
-            'min_obj_size', 10)
+            "detect_fail_interval", 5
+        )
+        processor_options["min_obj_size"] = tracker_options.get("min_obj_size", 10)
         processor_options["template_history"] = tracker_options.get(
-            'template_history', 25)
-        processor_options["status_history"] = tracker_options.get(
-            'status_history', 60)
+            "template_history", 25
+        )
+        processor_options["status_history"] = tracker_options.get("status_history", 60)
         processor_options["status_fail_threshold"] = tracker_options.get(
-            'status_fail_threshold', 0.6)
-        processor_options["search_period"] = tracker_options.get(
-            'search_period', 60)
+            "status_fail_threshold", 0.6
+        )
+        processor_options["search_period"] = tracker_options.get("search_period", 60)
         processor_options["knn_distance_ratio"] = tracker_options.get(
-            'knn_distance_ratio', 0.75)
+            "knn_distance_ratio", 0.75
+        )
         processor_options["recover_conf_threshold"] = tracker_options.get(
-            'recover_conf_threshold', 0.1)
+            "recover_conf_threshold", 0.1
+        )
         processor_options["recover_iou_threshold"] = tracker_options.get(
-            'recover_iou_threshold', 0.1)
+            "recover_iou_threshold", 0.1
+        )
 
         self.processor = None
         if self.enable_post_processing:
             TrackProcessor(processor_options)
         self.frames_processed = 0
 
-    def init(self, frame, detections=None, labels=None, reset=True):  # TODO: pass scores
+    def init(
+        self, frame, detections=None, labels=None, reset=True
+    ):  # TODO: pass scores
         """
         Initializes tracks based on the detections returned by detector/
         manually fed to the function.
@@ -182,13 +194,15 @@ class ObjectTracker:
         if detections is None:
             if self.detector is not None:
                 predictions, labels, scores = self.detector.predict(
-                    frame, return_scores=True)
+                    frame, return_scores=True
+                )
                 detections, labels, scores = self._filter_dets(
-                    predictions, labels, scores)
+                    predictions, labels, scores
+                )
         else:
             # TODO: see deepsort get_corrected_labels_scores
             if labels is None or len(labels) != len(detections):
-                labels = ['Object'] * len(detections)
+                labels = ["Object"] * len(detections)
 
         self.tracks = self.tracker.init(
             frame,
@@ -196,11 +210,14 @@ class ObjectTracker:
             labels=labels,
             reset=reset,
             scores=scores,
-            update_interval=self.detect_interval)
+            update_interval=self.detect_interval,
+        )
 
-        if self.enable_post_processing is True \
-                and self.processor is not None \
-                and not detections is None:
+        if (
+            self.enable_post_processing is True
+            and self.processor is not None
+            and not detections is None
+        ):
             track_list = self._convert_tracks_to_list(self.tracks)
             self.processor.init(frame, track_list, reset)
 
@@ -221,22 +238,23 @@ class ObjectTracker:
 
         :returns: list of active track objects
         """
-        if self.frames_processed % self.detect_interval == 0 \
-                and self.detector is not None:
+        if (
+            self.frames_processed % self.detect_interval == 0
+            and self.detector is not None
+        ):
             predictions, labels, scores = self.detector.predict(
-                frame, return_scores=True)
-            detections, labels, scores = self._filter_dets(
-                predictions, labels, scores)
+                frame, return_scores=True
+            )
+            detections, labels, scores = self._filter_dets(predictions, labels, scores)
             self.tracks = self.tracker.update(
-                frame, detections=detections, labels=labels, scores=scores)
-            if self.enable_post_processing is True \
-                    and self.processor is not None:
+                frame, detections=detections, labels=labels, scores=scores
+            )
+            if self.enable_post_processing is True and self.processor is not None:
                 tracks_list = self._convert_tracks_to_list(self.tracks)
                 self.processor.init(frame, tracks_list, False)
         else:
             self.tracks = self.tracker.update(frame)
-            if self.enable_post_processing is True \
-                    and self.processor is not None:
+            if self.enable_post_processing is True and self.processor is not None:
                 tracks_list = self._convert_tracks_to_list(self.tracks)
                 tracks_list = self.processor.update(frame, tracks_list)
                 self.tracks = self._update_processed_tracks(tracks_list)
@@ -257,8 +275,7 @@ class ObjectTracker:
 
         """
         self.tracks = self.tracker.remove(tracks_ids)
-        if self.enable_post_processing is True \
-                and self.processor is not None:
+        if self.enable_post_processing is True and self.processor is not None:
             self.processor.remove(tracks_ids)
 
         return self.tracks
@@ -292,15 +309,13 @@ class ObjectTracker:
         offset = 0
         max_objects = 1000
 
-        for index in range(
-            offset, min(
-                max_objects, len(predictions) - offset)):
+        for index in range(offset, min(max_objects, len(predictions) - offset)):
             prediction = predictions[index]
-            label = 'Object'
-            score = 0.
-            if (labels is not None and index < len(labels)):
+            label = "Object"
+            score = 0.0
+            if labels is not None and index < len(labels):
                 label = labels[index]
-            if (scores is not None and index < len(scores)):
+            if scores is not None and index < len(scores):
                 score = scores[index]
 
             if score > self.detect_threshold:
@@ -399,5 +414,6 @@ class ObjectTracker:
         # TODO: 16
         active_tracks = list(filter(lambda track: track.status == 16, tracks))
         return active_tracks
+
 
 # TODO: Implement predict_video

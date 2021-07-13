@@ -208,19 +208,36 @@ from functools import partial
 from fastai.basic_train import LearnerCallback
 import numpy as np
 import torch
-from arcgis.learn._utils.classified_tiles import calculate_intersection, calculate_union, confusion_matrix, calculate_precision, calculate_recall, calculate_f1, calculate_metrics
+from arcgis.learn._utils.classified_tiles import (
+    calculate_intersection,
+    calculate_union,
+    confusion_matrix,
+    calculate_precision,
+    calculate_recall,
+    calculate_f1,
+    calculate_metrics,
+)
 
 
-
-def expand_outputs(preds,trues):
+def expand_outputs(preds, trues):
     if preds.shape == trues.shape:
         return trues
-    encoded_trues=preds.detach()*0
+    encoded_trues = preds.detach() * 0
     encoded_trues.scatter_(1, trues, 1)
     return encoded_trues
 
 
-def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False, average ='micro', **kwargs, ):
+def dice(
+    preds,
+    *targs,
+    eps=1e-8,
+    iou=False,
+    soft=False,
+    ignore_classes=[0],
+    weighted=False,
+    average="micro",
+    **kwargs,
+):
     """
     Calculates dice coefficient over a batch.
     =====================   ===========================================
@@ -253,14 +270,14 @@ def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], wei
     average='micro'         Optional str.
                             'micro': micro dice coefficient is calculate.
                             'macro': macro dice coefficient is calculate.
-                            Default 'micro'.                            
+                            Default 'micro'.
     =====================   ===========================================
     :returns: Dice Coefficient->Rank 0 torch.tensor
     """
     if (
-            isinstance(preds, (List, Tuple))
-            and isinstance(targs, (List, Tuple))
-            and len(preds) == len(targs)
+        isinstance(preds, (List, Tuple))
+        and isinstance(targs, (List, Tuple))
+        and len(preds) == len(targs)
     ):
         return torch.FloatTensor(
             [
@@ -288,43 +305,58 @@ def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], wei
         preds = preds.argmax(dim=1)
         preds = torch.nn.functional.one_hot(preds, classes).permute(0, 3, 1, 2)
 
-    if average == 'macro':
-        preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:]
-        encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:]
-        intersection = calculate_intersection(preds, encoded_targs, mode='per_class')
-        union = calculate_union(preds, encoded_targs, intersection, mode='per_class')
-        if not iou: score = 2. * intersection / (union + intersection + eps)
-        else: score = intersection / (union + eps)
-        return (score.sum(1)/((union!=0).sum(1).float()+1e-08)).mean()
-        
-    if average == 'micro':
-        preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
-        encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
-        intersection = calculate_intersection(preds, encoded_targs, mode='mean')
-        union = calculate_union(preds, encoded_targs, intersection, mode='mean')
-        if not iou: score = 2. * intersection / (union + intersection + eps)
-        else: score = intersection / (union + eps)
-        score = score[union != 0.]
+    if average == "macro":
+        preds = preds.contiguous().float().view(num, classes, -1)[:, keep_classes, :]
+        encoded_targs = encoded_targs.float().view(num, classes, -1)[:, keep_classes, :]
+        intersection = calculate_intersection(preds, encoded_targs, mode="per_class")
+        union = calculate_union(preds, encoded_targs, intersection, mode="per_class")
+        if not iou:
+            score = 2.0 * intersection / (union + intersection + eps)
+        else:
+            score = intersection / (union + eps)
+        return (score.sum(1) / ((union != 0).sum(1).float() + 1e-08)).mean()
+
+    if average == "micro":
+        preds = (
+            preds.contiguous()
+            .float()
+            .view(num, classes, -1)[:, keep_classes, :]
+            .view(num, -1)
+        )
+        encoded_targs = (
+            encoded_targs.float()
+            .view(num, classes, -1)[:, keep_classes, :]
+            .view(num, -1)
+        )
+        intersection = calculate_intersection(preds, encoded_targs, mode="mean")
+        union = calculate_union(preds, encoded_targs, intersection, mode="mean")
+        if not iou:
+            score = 2.0 * intersection / (union + intersection + eps)
+        else:
+            score = intersection / (union + eps)
+        score = score[union != 0.0]
         mean_per_img = score.mean(dim=0)
         return mean_per_img
 
-# Below loss functions are implementations from https://github.com/simongrest/farm-pin-crop-detection-challenge 
+
+# Below loss functions are implementations from https://github.com/simongrest/farm-pin-crop-detection-challenge
 class FocalLoss(nn.Module):
     def __init__(self, crit, alpha=1, gamma=2):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.crit = crit
-    
-    def forward(self, inputs, targets, reduction='mean'):
+
+    def forward(self, inputs, targets, reduction="mean"):
         loss = self.crit(inputs, targets)
         pt = torch.exp(-loss)
-        F_loss = self.alpha * (1-pt)**self.gamma * loss
+        F_loss = self.alpha * (1 - pt) ** self.gamma * loss
 
         if reduction is None:
             return F_loss
         else:
             return torch.mean(F_loss)
+
 
 class DiceLoss(nn.Module):
     def __init__(self, crit, pct, weighted_dice, dice_average):
@@ -333,89 +365,113 @@ class DiceLoss(nn.Module):
         self.pct = pct
         self.weighted_dice = weighted_dice
         self.dice_average = dice_average
-    
+
     def forward(self, inputs, targets, **kwargs):
         weighted = self.weighted_dice
         if weighted:
-            ignore_mapped_class = kwargs.get('ignore_mapped_class', [])
+            ignore_mapped_class = kwargs.get("ignore_mapped_class", [])
         else:
-            ignore_mapped_class = kwargs.get('ignore_mapped_class', [0])
+            ignore_mapped_class = kwargs.get("ignore_mapped_class", [0])
 
         dice_complement = self.crit(inputs, targets)
-        if isinstance(inputs, tuple): # handling for aux_loss=True 
-            inputs=inputs[0]
-        dice_c=dice(inputs, targets, soft=True, weighted=weighted, ignore_classes=ignore_mapped_class, average=self.dice_average)
-        
-        dice_loss = torch.clamp(1 - dice_c,0,1)
-        loss = (1-self.pct) * dice_complement + self.pct * dice_loss
+        if isinstance(inputs, tuple):  # handling for aux_loss=True
+            inputs = inputs[0]
+        dice_c = dice(
+            inputs,
+            targets,
+            soft=True,
+            weighted=weighted,
+            ignore_classes=ignore_mapped_class,
+            average=self.dice_average,
+        )
+
+        dice_loss = torch.clamp(1 - dice_c, 0, 1)
+        loss = (1 - self.pct) * dice_complement + self.pct * dice_loss
         return loss
+
 
 class MixUpCallback(LearnerCallback):
     "Callback that creates the mixed-up input and target."
+
     def __init__(self, learn, alpha=0.4, stack_x=False, stack_y=True):
         super().__init__(learn)
-        self.alpha,self.stack_x,self.stack_y = alpha,stack_x,stack_y
-    
+        self.alpha, self.stack_x, self.stack_y = alpha, stack_x, stack_y
+
     def on_train_begin(self, **kwargs):
-        if self.stack_y: self.learn.loss_func = MixUpLoss(self.learn.loss_func)
-        
+        if self.stack_y:
+            self.learn.loss_func = MixUpLoss(self.learn.loss_func)
+
     def on_batch_begin(self, last_input, last_target, train, **kwargs):
         "Applies mixup to `last_input` and `last_target` if `train`."
-        if not train: return
+        if not train:
+            return
         lambd = np.random.beta(self.alpha, self.alpha, last_target.size(0))
-        lambd = np.concatenate([lambd[:,None], 1-lambd[:,None]], 1).max(1)
+        lambd = np.concatenate([lambd[:, None], 1 - lambd[:, None]], 1).max(1)
         lambd = last_input.new(lambd)
 
         shuffle = torch.randperm(last_target.size(0)).to(last_input.device)
         x1, y1 = last_input[shuffle], last_target[shuffle]
         if self.stack_x:
             new_input = [last_input, last_input[shuffle], lambd]
-        else: 
+        else:
             out_shape = [lambd.size(0)] + [1 for _ in range(len(x1.shape) - 1)]
-            new_input = (last_input * lambd.view(out_shape) + x1 * (1-lambd).view(out_shape))
+            new_input = last_input * lambd.view(out_shape) + x1 * (1 - lambd).view(
+                out_shape
+            )
         if self.stack_y:
-            
-            new_lambd = torch.distributions.utils.broadcast_all(lambd[:,None,None,None], last_target)[0]
-            
-            #new_target = torch.cat([last_target[:,None].float(), y1[:,None].float(), new_lambd[:,None].float()], 1)
-            new_target = torch.stack([last_target.float(), y1.float(), new_lambd.float()], 1)
+
+            new_lambd = torch.distributions.utils.broadcast_all(
+                lambd[:, None, None, None], last_target
+            )[0]
+
+            # new_target = torch.cat([last_target[:,None].float(), y1[:,None].float(), new_lambd[:,None].float()], 1)
+            new_target = torch.stack(
+                [last_target.float(), y1.float(), new_lambd.float()], 1
+            )
         else:
             if len(last_target.shape) == 2:
                 lambd = lambd.unsqueeze(1).float()
-            new_target = last_target.float() * lambd + y1.float() * (1-lambd)
-            
-        return {'last_input': new_input, 'last_target': new_target}  
-    
+            new_target = last_target.float() * lambd + y1.float() * (1 - lambd)
+
+        return {"last_input": new_input, "last_target": new_target}
+
     def on_train_end(self, **kwargs):
-        if self.stack_y: self.learn.loss_func = self.learn.loss_func.get_old()
-        
+        if self.stack_y:
+            self.learn.loss_func = self.learn.loss_func.get_old()
+
 
 class MixUpLoss(nn.Module):
     "Adapt the loss function `crit` to go with mixup."
-    
-    def __init__(self, crit, reduction='mean'):
+
+    def __init__(self, crit, reduction="mean"):
         super().__init__()
-        if hasattr(crit, 'reduction'): 
+        if hasattr(crit, "reduction"):
             self.crit = crit
             self.old_red = crit.reduction
-            setattr(self.crit, 'reduction', 'none')
-        else: 
-            self.crit = partial(crit, reduction='none')
+            setattr(self.crit, "reduction", "none")
+        else:
+            self.crit = partial(crit, reduction="none")
             self.old_crit = crit
         self.reduction = reduction
-        
+
     def forward(self, output, target):
         if len(target.size()) >= 5:
-            loss1, loss2 = self.crit(output,target[:,0].long()), self.crit(output,target[:,1].long())
-            lambd = target[:,2].contiguous().view(-1)
-            d = (loss1 * lambd  + loss2 * (1-lambd)).mean()
-        else:  d = self.crit(output, target)
-        if self.reduction == 'mean': return d.mean()
-        elif self.reduction == 'sum':            return d.sum()
+            loss1, loss2 = self.crit(output, target[:, 0].long()), self.crit(
+                output, target[:, 1].long()
+            )
+            lambd = target[:, 2].contiguous().view(-1)
+            d = (loss1 * lambd + loss2 * (1 - lambd)).mean()
+        else:
+            d = self.crit(output, target)
+        if self.reduction == "mean":
+            return d.mean()
+        elif self.reduction == "sum":
+            return d.sum()
         return d
-    
+
     def get_old(self):
-        if hasattr(self, 'old_crit'):  return self.old_crit
-        elif hasattr(self, 'old_red'): 
-            setattr(self.crit, 'reduction', self.old_red)
+        if hasattr(self, "old_crit"):
+            return self.old_crit
+        elif hasattr(self, "old_red"):
+            setattr(self.crit, "reduction", self.old_red)
             return self.crit

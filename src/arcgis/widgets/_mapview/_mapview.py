@@ -250,12 +250,19 @@ class MapView(widgets.DOMWidget):
     .. note::
         If the Jupyter Notebook server is running over http, you need to
         configure your portal/organization to allow your host and port; or else
-        you will run into ``CORs`` issues.
+        you will run into ``CORS`` issues.
 
-        This can be accomplished by signing into your portal/organization in a
-        browser, then navigating to:
-
-        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+        This can be accomplished programmatically by signing into your organization 
+        and running this code:
+        
+        .. code-block:: python
+        
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_admin_profile")
+            
+            >>> more_origins = {"allowedOrigins":"http://localhost:8888"} #replace your port
+            
+            >>> gis.update_properties(more_origins)
 
     """
 
@@ -380,23 +387,23 @@ class MapView(widgets.DOMWidget):
     @property
     def heading(self):
         """
-        The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
-        zero when north is the top of the screen. It increases as the view rotates
-        clockwise. The angles are always normalized between 0 and 360 degrees.
+         The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
+         zero when north is the top of the screen. It increases as the view rotates
+         clockwise. The angles are always normalized between 0 and 360 degrees.
 
-       .. note::
-            ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
-            property.
+        .. note::
+             ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
+             property.
 
-        .. code-block:: python
+         .. code-block:: python
 
-            #Usage Example in 3D mode
+             #Usage Example in 3D mode
 
-            >>> from arcgis.gis import GIS, Item
-            >>> from arcgis.widgets import MapView
-            >>> map3d = gis.map("California", mode ="3D")
-            >>> map3d.heading
-            <225.82433689241765>
+             >>> from arcgis.gis import GIS, Item
+             >>> from arcgis.widgets import MapView
+             >>> map3d = gis.map("California", mode ="3D")
+             >>> map3d.heading
+             <225.82433689241765>
         """
         return self._readonly_heading
 

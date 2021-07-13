@@ -10,22 +10,27 @@ try:
     import torch.nn as nn
     from transformers import AutoConfig, AutoTokenizer
 except Exception as e:
-    transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    transformer_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_TRANSFORMER = False
 
 transformer_seq_length = 512
 
+
 def infer_model_type(model_name, transformer_architectures):
-        model_type = 'Others'
-        model_name = model_name.split('/')[-1]
-        for architecture in sorted(transformer_architectures, key=len, reverse=True):
-            if model_name.startswith(architecture.lower()) or model_name.endswith(architecture.lower()):
-                model_type = architecture.lower()
-                break
-            elif model_name.startswith('opus-mt'):
-                model_type = 'marian'
-                break
-        return model_type
+    model_type = "Others"
+    model_name = model_name.split("/")[-1]
+    for architecture in sorted(transformer_architectures, key=len, reverse=True):
+        if model_name.startswith(architecture.lower()) or model_name.endswith(
+            architecture.lower()
+        ):
+            model_type = architecture.lower()
+            break
+        elif model_name.startswith("opus-mt"):
+            model_type = "marian"
+            break
+    return model_type
 
 
 class ModelBackbone:
@@ -41,7 +46,14 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
 
     _outfile = "model_architecture.json"
 
-    def __init__(self, architecture, pretrained_model_name, config=None, pretrained_model_path=None, task=None):
+    def __init__(
+        self,
+        architecture,
+        pretrained_model_name,
+        config=None,
+        pretrained_model_path=None,
+        task=None,
+    ):
         super(ArcGISTransformer, self).__init__()
         self._transformer_architecture = architecture
         self._transformer_pretrained_model_name = pretrained_model_name
@@ -59,14 +71,20 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         """
         if self._config is None:
             if self._pretrained_model_path is None:
-                raise Exception("Error, either provide model config while initializing the object or "
-                                "provide pretrained-model-path containing config.json")
+                raise Exception(
+                    "Error, either provide model config while initializing the object or "
+                    "provide pretrained-model-path containing config.json"
+                )
             else:
-                config_file_path = os.path.join(self._pretrained_model_path, "config.json")
+                config_file_path = os.path.join(
+                    self._pretrained_model_path, "config.json"
+                )
                 if os.path.exists(config_file_path):
                     self._config = AutoConfig.from_pretrained(config_file_path)
                 else:
-                    raise Exception(f"Error, config.json not present at {config_file_path}")
+                    raise Exception(
+                        f"Error, config.json not present at {config_file_path}"
+                    )
         self._process_config()
 
     def _load_layer_groups(self):
@@ -75,7 +93,9 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         will be called to split the model into different layers depending
         on the model architecture and the task selected
         """
-        self._layer_groups = split_into_layer_groups(self._transformer, self._transformer_architecture, self._task)
+        self._layer_groups = split_into_layer_groups(
+            self._transformer, self._transformer_architecture, self._task
+        )
 
     def get_layer_groups(self):
         """
@@ -91,8 +111,11 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         """
         # FastTokenizer not working for EntityRecognizer in transformers library version 4.5.1
         use_fast = False if self._task == "ner" else True
-        self._tokenizer = AutoTokenizer.from_pretrained(self._transformer_pretrained_model_name,
-                                                        config=self._config, use_fast=use_fast)
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            self._transformer_pretrained_model_name,
+            config=self._config,
+            use_fast=use_fast,
+        )
         self._set_max_seq_length()
 
     def init_model(self):

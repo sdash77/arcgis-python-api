@@ -412,6 +412,7 @@ class GIS(object):
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
+                proxy=kwargs.get("proxy", None),
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -431,6 +432,7 @@ class GIS(object):
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -500,6 +502,7 @@ class GIS(object):
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
+                        proxy=kwargs.get("proxy", None),
                     )
                     self._portal = pp
         except:
@@ -3511,8 +3514,8 @@ class UserManager(object):
                     params["users"] = ",".join(chunk)
                     res = self._portal.con.post(url, params)
                     results.extend([r["status"] for r in res["results"]])
-                return any(results)                
-                
+                return any(results)
+
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False

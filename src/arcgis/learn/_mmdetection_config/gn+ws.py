@@ -12,30 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco.py , box AP=42.1
+# faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco.py , box AP=42.1
 
-_base_ = './_base_/models/faster_rcnn_r50_fpn.py'
-conv_cfg = dict(type='ConvWS')
-norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+_base_ = "./_base_/models/faster_rcnn_r50_fpn.py"
+conv_cfg = dict(type="ConvWS")
+norm_cfg = dict(type="GN", num_groups=32, requires_grad=True)
 model = dict(
-    pretrained='open-mmlab://jhu/resnext101_32x4d_gn_ws',
+    pretrained="open-mmlab://jhu/resnext101_32x4d_gn_ws",
     backbone=dict(
-        type='ResNeXt',
+        type="ResNeXt",
         depth=101,
         groups=32,
         base_width=4,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        style='pytorch',
+        style="pytorch",
         conv_cfg=conv_cfg,
-        norm_cfg=norm_cfg),
+        norm_cfg=norm_cfg,
+    ),
     neck=dict(conv_cfg=conv_cfg, norm_cfg=norm_cfg),
     roi_head=dict(
         bbox_head=dict(
-            type='Shared4Conv1FCBBoxHead',
+            type="Shared4Conv1FCBBoxHead",
             conv_out_channels=256,
             conv_cfg=conv_cfg,
-            norm_cfg=norm_cfg)))
+            norm_cfg=norm_cfg,
+        )
+    ),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/gn%2Bws/faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco/faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco_20200212-27da1bc2.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/gn%2Bws/faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco/faster_rcnn_x101_32x4d_fpn_gn_ws-all_1x_coco_20200212-27da1bc2.pth"

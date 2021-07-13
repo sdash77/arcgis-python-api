@@ -12153,12 +12153,12 @@ class RasterCollection:
 
             rc_local = RasterCollection(r"./data/rasters.gdb/rasters")
 
-            def grayscale(item):
+            def apply_grayscale(item):
                 raster = item["Raster"]
                 gray = grayscale(raster)
-                return {"Raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
+                return {"raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
 
-            gray_rc = rc_local.map(grayscale)
+            gray_rc = rc_local.map(func=apply_grayscale)
 
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)

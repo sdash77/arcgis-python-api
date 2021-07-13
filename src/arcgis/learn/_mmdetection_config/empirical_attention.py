@@ -12,22 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#box AP=42.1
-_base_ = './_base_/models/faster_rcnn_r50_fpn.py'
+# box AP=42.1
+_base_ = "./_base_/models/faster_rcnn_r50_fpn.py"
 model = dict(
     backbone=dict(
         plugins=[
             dict(
                 cfg=dict(
-                    type='GeneralizedAttention',
+                    type="GeneralizedAttention",
                     spatial_range=-1,
                     num_heads=8,
-                    attention_type='1111',
-                    kv_stride=2),
+                    attention_type="1111",
+                    kv_stride=2,
+                ),
                 stages=(False, False, True, True),
-                position='after_conv2')
+                position="after_conv2",
+            )
         ],
-        dcn=dict(type='DCN', deform_groups=1, fallback_on_stride=False),
-        stage_with_dcn=(False, True, True, True)))
+        dcn=dict(type="DCN", deform_groups=1, fallback_on_stride=False),
+        stage_with_dcn=(False, True, True, True),
+    )
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/empirical_attention/faster_rcnn_r50_fpn_attention_0010_dcn_1x_coco/faster_rcnn_r50_fpn_attention_0010_dcn_1x_coco_20200130-1a2e831d.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/empirical_attention/faster_rcnn_r50_fpn_attention_0010_dcn_1x_coco/faster_rcnn_r50_fpn_attention_0010_dcn_1x_coco_20200130-1a2e831d.pth"

@@ -48,7 +48,7 @@ def simplify_edge(ps, max_distance=1):
     res_points = []
     cur_idx = 0
     for i in range(1, len(ps) - 1):
-        segment = ps[cur_idx: i + 1, :] - ps[cur_idx, :]
+        segment = ps[cur_idx : i + 1, :] - ps[cur_idx, :]
         angle = -math.atan2(segment[-1, 1], segment[-1, 0])
         ca = math.cos(angle)
         sa = math.sin(angle)

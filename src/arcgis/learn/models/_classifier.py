@@ -34,10 +34,22 @@ try:
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
-    from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
+    from fastai.vision.learner import (
+        cnn_learner,
+        ClassificationInterpretation,
+        cnn_config,
+    )
     from ._arcgis_model import _set_multigpu_callback, _resnet_family
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, \
-        get_transforms
+    from fastai.vision.transform import (
+        crop,
+        rotate,
+        dihedral_affine,
+        brightness,
+        contrast,
+        skew,
+        rand_zoom,
+        get_transforms,
+    )
     import torch.nn.functional as functional
     import glob
     import time
@@ -45,7 +57,11 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
+    from .._utils.common import (
+        get_multispectral_data_params_from_emd,
+        _get_emd_path,
+        image_batch_stretcher,
+    )
     from .._utils.env import _IS_ARCGISPRONOTEBOOK
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
@@ -53,12 +69,12 @@ try:
 
     HAS_FASTAI = True
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
 
-
-    class NnModule():
+    class NnModule:
         pass
-
 
     HAS_FASTAI = False
 
@@ -69,7 +85,8 @@ except Exception:
     HAS_ARCPY = False
 
 
-def _mobilenet_split(m: NnModule): return m[0][0][0], m[1]
+def _mobilenet_split(m: NnModule):
+    return m[0][0][0], m[1]
 
 
 def _prediction_function(predictions):
@@ -86,6 +103,7 @@ def _prediction_function(predictions):
             max_prediction_class = prediction[0]
 
     return max_prediction_class, max_prediction_value
+
 
 class FeatureClassifier(ArcGISModel):
     """
@@ -123,51 +141,68 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        data,
+        backbone=None,
+        pretrained_path=None,
+        mixup=False,
+        oversample=False,
+        backend="pytorch",
+        *args,
+        **kwargs,
+    ):
 
         # condition when databunch is from fastai
         # it will not contain class_mapping
-        if not hasattr(data, 'class_mapping'):
+        if not hasattr(data, "class_mapping"):
             data = adapt_fastai_databunch(data)
 
         self._backend = backend
-        if self._backend == 'tensorflow':
+        if self._backend == "tensorflow":
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-    
+
             super().__init__(data, backbone, **kwargs)
 
             backbone_cut = None
             backbone_split = None
 
             _backbone = self._backbone
-            if hasattr(self, '_orig_backbone'):
+            if hasattr(self, "_orig_backbone"):
                 _backbone = self._orig_backbone
                 _backbone_meta = cnn_config(self._orig_backbone)
-                backbone_cut = _backbone_meta['cut']
-                backbone_split = _backbone_meta['split']
+                backbone_cut = _backbone_meta["cut"]
+                backbone_split = _backbone_meta["split"]
 
             if _backbone == models.mobilenet_v2:
                 backbone_cut = -1
                 backbone_split = _mobilenet_split
 
             if not self._check_backbone_support(_backbone):
-                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
 
             self._check_dataset_support(self._data)
 
             self._code = feature_classifier_prf
 
-            if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+            if getattr(data, "_dataset_type", "Labeled_Tiles") == "MultiLabeled_Tiles":
                 # ToDo: allow option to change `thresh` parameter by user
                 accuracy_multi.__name__ = "accuracy"
                 metrics = [accuracy_multi, MultiLabelFbeta()]
             else:
                 metrics = accuracy
 
-            self.learn = cnn_learner(data, self._backbone, metrics=metrics, cut=backbone_cut, split_on=backbone_split)
+            self.learn = cnn_learner(
+                data,
+                self._backbone,
+                metrics=metrics,
+                cut=backbone_cut,
+                split_on=backbone_split,
+            )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback()  # make first conv weights learnable
@@ -175,9 +210,15 @@ class FeatureClassifier(ArcGISModel):
             # Add Mixup data augmentation
             if mixup:
                 # For mixup to work with multilabel call it with parameter stack_y=False
-                stack_y = getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles'
-                if ((getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles') or
-                        (getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles')):
+                stack_y = (
+                    getattr(data, "_dataset_type", "Labeled_Tiles") == "Labeled_Tiles"
+                )
+                if (
+                    getattr(data, "_dataset_type", "Labeled_Tiles") == "Labeled_Tiles"
+                ) or (
+                    getattr(data, "_dataset_type", "Labeled_Tiles")
+                    == "MultiLabeled_Tiles"
+                ):
                     self.learn = self.learn.mixup(stack_y=stack_y)
                 else:
                     self.learn = self.learn.mixup()
@@ -192,15 +233,15 @@ class FeatureClassifier(ArcGISModel):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'accuracy']
+        return ["valid_loss", "accuracy"]
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """
+        """Supported torchvision backbones for this model."""
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
@@ -209,12 +250,12 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return FeatureClassifier._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
-        return ['Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet']
+        return ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -225,15 +266,11 @@ class FeatureClassifier(ArcGISModel):
         if _IS_ARCGISPRONOTEBOOK:
             plt.show()
 
-
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results
-        return_fig = kwargs.get('return_fig', False)
-        fig = IC_show_results(
-            self,
-            nrows=rows,
-            **kwargs
-        )
+
+        return_fig = kwargs.get("return_fig", False)
+        fig = IC_show_results(self, nrows=rows, **kwargs)
         if return_fig:
             fig1, axs = fig
             return fig1
@@ -260,12 +297,14 @@ class FeatureClassifier(ArcGISModel):
         """
         img = open_image(img_path)
         pred = self.learn.predict(img)
-        if (visualize == True):
+        if visualize == True:
             gradCam = self.gradCAM(img, pred[0], grad_vis=gradcam)
         return pred
 
     def _predict_batch(self, imagetensor_batch):
-        predictions = self.learn.model.eval()(imagetensor_batch.to(self._device)).detach().cpu()
+        predictions = (
+            self.learn.model.eval()(imagetensor_batch.to(self._device)).detach().cpu()
+        )
         predictions_conf, predicted_classes = torch.max(predictions, dim=-1)
         predicted_classes = predicted_classes.tolist()
         predictions_conf = (predictions_conf * 100).tolist()
@@ -273,9 +312,10 @@ class FeatureClassifier(ArcGISModel):
 
     def _save_confusion_matrix(self, path):
         from IPython.utils import io
+
         with io.capture_output() as captured:
             self.plot_confusion_matrix()
-            plt.savefig(os.path.join(path, 'confusion_matrix.png'))
+            plt.savefig(os.path.join(path, "confusion_matrix.png"))
             plt.close()
 
     @property
@@ -291,16 +331,17 @@ class FeatureClassifier(ArcGISModel):
             _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         else:
             _emd_template[
-                "InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template['CropSizeFixed'] = 1  # hardcoded
-        _emd_template['BlackenAroundFeature'] = 0  # hardcoded
-        _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
-        _emd_template['Classes'] = []
+        _emd_template["CropSizeFixed"] = 1  # hardcoded
+        _emd_template["BlackenAroundFeature"] = 0  # hardcoded
+        _emd_template["ImageSpaceUsed"] = "MAP_SPACE"
+        _emd_template["Classes"] = []
         class_data = {}
 
-        if self._data._dataset_type == 'MultiLabeled_Tiles':
+        if self._data._dataset_type == "MultiLabeled_Tiles":
             self._data.class_mapping = {k: v for k, v in enumerate(self._data.classes)}
         inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
 
@@ -309,7 +350,7 @@ class FeatureClassifier(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         # if getattr(self, '_is_multispectral', False):
         #     _emd_template["Framework"] = "arcgis.learn.models._inferencing"
@@ -346,44 +387,61 @@ class FeatureClassifier(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        model_params = emd['ModelParameters']
+        model_params = emd["ModelParameters"]
         chip_size = emd["ImageWidth"]
 
         try:
-            class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
+            color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
-            color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
         if data is None:
             ranges = (0, 1)
-            train_tfms = [rotate(degrees=30, p=0.5),
-                          crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                          dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
-                          # rand_zoom(scale=(0.75, 1.5))
-                          ]
+            train_tfms = [
+                rotate(degrees=30, p=0.5),
+                crop(size=chip_size, p=1.0, row_pct=ranges, col_pct=ranges),
+                dihedral_affine(),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5)),
+                # rand_zoom(scale=(0.75, 1.5))
+            ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                if ("MetaDataMode" in emd) and (emd["MetaDataMode"] == "MultiLabeled_Tiles"):
-                    img_list = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                    data = img_list.label_const(0, label_cls=MultiCategoryList,
-                                                classes=list(class_mapping.values())).transform(
-                        transforms).databunch().normalize(imagenet_stats)
-                    data._dataset_type = 'MultiLabeled_Tiles'
+                if ("MetaDataMode" in emd) and (
+                    emd["MetaDataMode"] == "MultiLabeled_Tiles"
+                ):
+                    img_list = ImageList([], path=emd_path.parent.parent).split_by_idx(
+                        []
+                    )
+                    data = (
+                        img_list.label_const(
+                            0,
+                            label_cls=MultiCategoryList,
+                            classes=list(class_mapping.values()),
+                        )
+                        .transform(transforms)
+                        .databunch()
+                        .normalize(imagenet_stats)
+                    )
+                    data._dataset_type = "MultiLabeled_Tiles"
                 else:
                     data = ImageDataBunch.single_from_classes(
-                        emd_path.parent.parent, sorted(list(class_mapping.values())),
-                        ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
+                        emd_path.parent.parent,
+                        sorted(list(class_mapping.values())),
+                        ds_tfms=transforms,
+                        size=chip_size,
+                    ).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -393,7 +451,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
-        resize_to = emd.get('resize_to')
+        resize_to = emd.get("resize_to")
         data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))
@@ -404,77 +462,93 @@ class FeatureClassifier(ArcGISModel):
         kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
         """
         self._check_requisites()
-        if self._data._dataset_type == 'MultiLabeled_Tiles':
+        if self._data._dataset_type == "MultiLabeled_Tiles":
             # Get x, y from validation dataset
             data_loader = self._data.valid_dl
             nbatches = math.ceil(len(self._data.valid_ds) / self._data.batch_size)
             from .._utils.common import get_nbatches
+
             x_batch, y_batch = get_nbatches(data_loader, nbatches)
             x_batch = torch.cat(x_batch)
             y_batch = torch.cat(y_batch)
-            score_thresh = kwargs.get('thresh', 0.5)
+            score_thresh = kwargs.get("thresh", 0.5)
 
             # Get predictions
             predictions = []
             learn_temp = copy.copy(self.learn)
             for i in range(0, x_batch.shape[0], self._data.batch_size):
                 batch_preds = learn_temp.pred_batch(
-                    batch=(x_batch[i:i + self._data.batch_size], y_batch[i:i + self._data.batch_size]))
+                    batch=(
+                        x_batch[i : i + self._data.batch_size],
+                        y_batch[i : i + self._data.batch_size],
+                    )
+                )
                 predictions.append(batch_preds)
             predictions = torch.cat(predictions)
-            one_hot_preds = (predictions >= score_thresh)
+            one_hot_preds = predictions >= score_thresh
 
             # Use Scikit-learn multilabel confusion matrix
             from sklearn.metrics import multilabel_confusion_matrix
-            y_true = y_batch.to('cpu').numpy()
-            y_pred = one_hot_preds.to('cpu').numpy()
+
+            y_true = y_batch.to("cpu").numpy()
+            y_pred = one_hot_preds.to("cpu").numpy()
             confusion_matrix = multilabel_confusion_matrix(y_true, y_pred)
 
             # Plot the classwise confusion matrix
             nrows = self._data.c
             plt_size = 4
             fig, axs = plt.subplots(nrows=nrows, figsize=(plt_size, (nrows) * plt_size))
-            fig.suptitle('Confusion Matrix', fontsize=16)
+            fig.suptitle("Confusion Matrix", fontsize=16)
             top = 1 - (math.sqrt(16) / math.sqrt(100 * nrows * plt_size))
             fig.subplots_adjust(top=top, hspace=0.5)
 
-            for i, (classname, matrix) in enumerate(zip(self._data.classes, confusion_matrix)):
+            for i, (classname, matrix) in enumerate(
+                zip(self._data.classes, confusion_matrix)
+            ):
                 cm = np.fliplr(np.flipud(matrix))
                 axi = axs[i]
                 cmap = "Blues"
-                axi.imshow(cm, interpolation='nearest', cmap=cmap)
+                axi.imshow(cm, interpolation="nearest", cmap=cmap)
                 title = classname
                 axi.set_title(title)
                 tick_marks = np.arange(2)
                 axi.set_xticks(ticks=tick_marks)
-                axi.set_xticklabels([classname, 'Rest'])
+                axi.set_xticklabels([classname, "Rest"])
                 axi.set_yticks(ticks=tick_marks)
-                axi.set_yticklabels([classname, 'Rest'])
-                axi.set_ylabel('Actual')
-                axi.set_xlabel('Predicted')
+                axi.set_yticklabels([classname, "Rest"])
+                axi.set_ylabel("Actual")
+                axi.set_xlabel("Predicted")
                 axi.grid(False)
 
                 import itertools
-                thresh = cm.max() / 2.
+
+                thresh = cm.max() / 2.0
                 for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-                    coeff = f'{cm[i, j]}'
-                    axi.text(j, i, coeff, horizontalalignment="center", verticalalignment="center",
-                             color="white" if cm[i, j] > thresh else "black")
+                    coeff = f"{cm[i, j]}"
+                    axi.text(
+                        j,
+                        i,
+                        coeff,
+                        horizontalalignment="center",
+                        verticalalignment="center",
+                        color="white" if cm[i, j] > thresh else "black",
+                    )
 
         # For single label classification
         else:
             self._check_requisites()
             learn_temp = copy.copy(self.learn)
-            
+
             # Reassigning the function from vision.learner because fastai sets it from tabular.learner
             from fastai.vision.learner import _cl_int_from_learner
+
             ClassificationInterpretation.from_learner = _cl_int_from_learner
             interp = ClassificationInterpretation.from_learner(learn_temp)
-            
+
             nrows = self._data.c
             # figsize range: 4 <= (no. of classes + 15)/4 <=20
-            fs = min(max(4, (nrows+15)/4), 20)
-            interp.plot_confusion_matrix(figsize=(fs,fs))
+            fs = min(max(4, (nrows + 15) / 4), 20)
+            interp.plot_confusion_matrix(figsize=(fs, fs))
 
     def plot_hard_examples(self, num_examples):
         """
@@ -494,17 +568,20 @@ class FeatureClassifier(ArcGISModel):
         learn_temp = copy.copy(self.learn)
         interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
-        if self._backend == 'tensorflow':
+        if self._backend == "tensorflow":
             heatmap = False
-        if self._data._dataset_type == 'MultiLabeled_Tiles':
+        if self._data._dataset_type == "MultiLabeled_Tiles":
             try:
                 interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
             except IndexError:
                 from IPython.display import clear_output
+
                 clear_output(wait=True)
                 print("No mismatches found.")
             return
-        fig = interp.plot_top_losses(num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True)
+        fig = interp.plot_top_losses(
+            num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True
+        )
         # fastai way of calculating num nrows and ncols
         cols = math.ceil(math.sqrt(num_examples))
         rows = math.ceil(num_examples / cols)
@@ -536,8 +613,14 @@ class FeatureClassifier(ArcGISModel):
 
         return degrees
 
-    def predict_folder_and_create_layer(self, folder, feature_layer_name, gis=None, prediction_field='predict',
-                                        confidence_field='confidence'):
+    def predict_folder_and_create_layer(
+        self,
+        folder,
+        feature_layer_name,
+        gis=None,
+        prediction_field="predict",
+        confidence_field="confidence",
+    ):
         """
         Predicts on images present in the given folder and creates a feature layer.
         The images stored in the folder contain GPS information as part of EXIF metadata.
@@ -565,16 +648,16 @@ class FeatureClassifier(ArcGISModel):
             _arcgis.env.active_gis if gis is None else gis,
             feature_layer_name,
             prediction_field,
-            confidence_field
+            confidence_field,
         )
 
     def _extract_images_geo_data(self, folder):
-        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
+        ALLOWED_FILE_FORMATS = ["tif", "jpg", "png"]
 
         files = []
 
         for ext in ALLOWED_FILE_FORMATS:
-            files.extend(glob.glob(os.path.join(folder, '*.' + ext)))
+            files.extend(glob.glob(os.path.join(folder, "*." + ext)))
 
         images_data = []
 
@@ -588,54 +671,74 @@ class FeatureClassifier(ArcGISModel):
 
             images_data.append(
                 {
-                    'image_path': file,
-                    'y': FeatureClassifier._convert_to_degrees(exif['GPSInfo'][2], exif['GPSInfo'][1]),
-                    'x': FeatureClassifier._convert_to_degrees(exif['GPSInfo'][4], exif['GPSInfo'][3])
+                    "image_path": file,
+                    "y": FeatureClassifier._convert_to_degrees(
+                        exif["GPSInfo"][2], exif["GPSInfo"][1]
+                    ),
+                    "x": FeatureClassifier._convert_to_degrees(
+                        exif["GPSInfo"][4], exif["GPSInfo"][3]
+                    ),
                 }
             )
 
         return images_data
 
-    def _create_feature_layer(self, images_data, gis_user, feature_layer_name, prediction_field, confidence_field):
+    def _create_feature_layer(
+        self,
+        images_data,
+        gis_user,
+        feature_layer_name,
+        prediction_field,
+        confidence_field,
+    ):
         data = []
         images = {}
         for image_data in images_data:
-            prediction = self.predict(image_data['image_path'])
-            images[os.path.basename(image_data['image_path'])] = image_data['image_path']
+            prediction = self.predict(image_data["image_path"])
+            images[os.path.basename(image_data["image_path"])] = image_data[
+                "image_path"
+            ]
             data.append(
                 [
-                    os.path.basename(image_data['image_path']),
+                    os.path.basename(image_data["image_path"]),
                     prediction[0].obj,
                     prediction[2].data.max().tolist(),
-                    image_data['x'],
-                    image_data['y']
+                    image_data["x"],
+                    image_data["y"],
                 ]
             )
 
-        dataframe = pandas.DataFrame(data, columns=['image_name', prediction_field, confidence_field, 'X', 'Y'])
-        spatial_dataframe = dataframe.spatial.from_xy(df=dataframe, sr=4326, x_column='X', y_column='Y')
+        dataframe = pandas.DataFrame(
+            data, columns=["image_name", prediction_field, confidence_field, "X", "Y"]
+        )
+        spatial_dataframe = dataframe.spatial.from_xy(
+            df=dataframe, sr=4326, x_column="X", y_column="Y"
+        )
 
-        feature_collection = gis_user.content.import_data(spatial_dataframe, title=feature_layer_name)
+        feature_collection = gis_user.content.import_data(
+            spatial_dataframe, title=feature_layer_name
+        )
 
         feature_layer = feature_collection.layers[0]
         feature_layer.manager.add_to_definition({"hasAttachments": True})
 
         df = feature_layer.query(as_df=True)
-        object_field = feature_layer.properties['objectIdField']
+        object_field = feature_layer.properties["objectIdField"]
 
         for image_name, image_path in images.items():
-            object_id = df.loc[df['image_name'] == image_name, object_field].values[0]  # assuming image_name is unique
+            object_id = df.loc[df["image_name"] == image_name, object_field].values[
+                0
+            ]  # assuming image_name is unique
             if np.isnan(object_id):
                 continue  # skipping those values which are not present.
-            feature_layer.attachments.add(
-                object_id,
-                image_path
-            )
+            feature_layer.attachments.add(object_id, image_path)
 
         return feature_collection
 
     @staticmethod
-    def _update_predictions_layer(feature_layer, features_to_update, output_label_field, confidence_field=None):
+    def _update_predictions_layer(
+        feature_layer, features_to_update, output_label_field, confidence_field=None
+    ):
         field_template = {
             "name": output_label_field,
             "type": "esriFieldTypeString",
@@ -646,7 +749,7 @@ class FeatureClassifier(ArcGISModel):
             "editable": True,
             "visible": True,
             "domain": None,
-            "defaultValue": ''
+            "defaultValue": "",
         }
 
         confidence_field_template = {
@@ -659,13 +762,15 @@ class FeatureClassifier(ArcGISModel):
             "editable": True,
             "visible": True,
             "domain": None,
-            "defaultValue": ''
+            "defaultValue": "",
         }
 
-        feature_layer.manager.add_to_definition({'fields': [field_template]})
+        feature_layer.manager.add_to_definition({"fields": [field_template]})
 
         if confidence_field:
-            feature_layer.manager.add_to_definition({'fields': [confidence_field_template]})
+            feature_layer.manager.add_to_definition(
+                {"fields": [confidence_field_template]}
+            )
 
         try:
             start = 0
@@ -675,8 +780,8 @@ class FeatureClassifier(ArcGISModel):
             features_updated = features_to_update[start:stop]
             response = feature_layer.edit_features(updates=features_updated)
 
-            for resp in response.get('updateResults', []):
-                if resp.get('success', False):
+            for resp in response.get("updateResults", []):
+                if resp.get("success", False):
                     continue
                 warnings.warn(f"Something went wrong for data {resp}")
 
@@ -686,44 +791,51 @@ class FeatureClassifier(ArcGISModel):
                 stop = stop + 100
                 features_updated = features_to_update[start:stop]
                 response = feature_layer.edit_features(updates=features_updated)
-                for resp in response.get('updateResults', []):
-                    if resp.get('success', False):
+                for resp in response.get("updateResults", []):
+                    if resp.get("success", False):
                         continue
                     warnings.warn(f"Something went wrong for data {resp}")
                 time.sleep(2)
         except Exception:
-            feature_layer.manager.delete_from_definition({'fields': [field_template]})
+            feature_layer.manager.delete_from_definition({"fields": [field_template]})
             if confidence_field:
-                feature_layer.manager.delete_from_definition({'fields': [confidence_field_template]})
+                feature_layer.manager.delete_from_definition(
+                    {"fields": [confidence_field_template]}
+                )
 
             return False
 
         return True
 
     def _classify_attachments(
-            self,
-            feature_layer,
-            data_folder,
-            feature_attachments_mapping,
-            input_label_field,
-            output_label_field,
-            confidence_field=None,
-            predict_function=_prediction_function
+        self,
+        feature_layer,
+        data_folder,
+        feature_attachments_mapping,
+        input_label_field,
+        output_label_field,
+        confidence_field=None,
+        predict_function=_prediction_function,
     ):
 
         features = feature_layer.query().features
         features_to_update = []
 
         for feature in features:
-            feature_attachments = (feature_attachments_mapping.get(str(feature.attributes[input_label_field])) or \
-                                   feature_attachments_mapping.get(int(feature.attributes[input_label_field])))
+            feature_attachments = feature_attachments_mapping.get(
+                str(feature.attributes[input_label_field])
+            ) or feature_attachments_mapping.get(
+                int(feature.attributes[input_label_field])
+            )
             if not feature_attachments:
                 continue
 
             predictions = []
             for attachment in feature_attachments:
                 prediction = self.predict(os.path.join(data_folder, attachment))
-                predictions.append((prediction[0].obj, prediction[2].data.max().tolist()))
+                predictions.append(
+                    (prediction[0].obj, prediction[2].data.max().tolist())
+                )
 
             final_prediction = predict_function(predictions)
 
@@ -736,26 +848,34 @@ class FeatureClassifier(ArcGISModel):
         return features_to_update
 
     def _classify_labeled_tiles(
-            self,
-            feature_layer,
-            labeled_tiles_directory,
-            input_label_field,
-            output_label_field,
-            confidence_field=None
+        self,
+        feature_layer,
+        labeled_tiles_directory,
+        input_label_field,
+        output_label_field,
+        confidence_field=None,
     ):
-        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
-        IMAGES_FOLDER = 'images/'
-        LABELS_FOLDER = 'labels/'
+        ALLOWED_FILE_FORMATS = ["tif", "jpg", "png"]
+        IMAGES_FOLDER = "images/"
+        LABELS_FOLDER = "labels/"
 
         files = []
 
         for ext in ALLOWED_FILE_FORMATS:
-            files.extend(glob.glob(os.path.join(labeled_tiles_directory, IMAGES_FOLDER + '*.' + ext)))
+            files.extend(
+                glob.glob(
+                    os.path.join(labeled_tiles_directory, IMAGES_FOLDER + "*." + ext)
+                )
+            )
 
         predictions = {}
         for file in files:
-            xml_path = os.path.join(os.path.dirname(os.path.dirname(file)),
-                                    os.path.join(LABELS_FOLDER, os.path.basename(file).split('.')[0] + '.xml'))
+            xml_path = os.path.join(
+                os.path.dirname(os.path.dirname(file)),
+                os.path.join(
+                    LABELS_FOLDER, os.path.basename(file).split(".")[0] + ".xml"
+                ),
+            )
 
             if not os.path.exists(xml_path):
                 continue
@@ -763,39 +883,41 @@ class FeatureClassifier(ArcGISModel):
             tree = ElementTree.parse(xml_path)
             root = tree.getroot()
 
-            name_field = root.findall('object/name')
+            name_field = root.findall("object/name")
             if len(name_field) != 1:
                 continue
 
             file_prediction = self.predict(file)
 
             predictions[name_field[0].text] = {
-                'prediction': file_prediction[0].obj,
-                'score': str(file_prediction[2].data.max().tolist())
+                "prediction": file_prediction[0].obj,
+                "score": str(file_prediction[2].data.max().tolist()),
             }
 
         features = feature_layer.query(output_fields=[input_label_field]).features
         features_to_update = []
         for feature in features:
             if predictions.get(str(feature.attributes[input_label_field])):
-                feature.attributes[output_label_field] = predictions.get(str(feature.attributes[input_label_field]))[
-                    'prediction']
+                feature.attributes[output_label_field] = predictions.get(
+                    str(feature.attributes[input_label_field])
+                )["prediction"]
                 if confidence_field:
-                    feature.attributes[confidence_field] = predictions.get(str(feature.attributes[input_label_field]))[
-                        'score']
+                    feature.attributes[confidence_field] = predictions.get(
+                        str(feature.attributes[input_label_field])
+                    )["score"]
 
                 features_to_update.append(feature)
 
         return features_to_update
 
     def classify_features(
-            self,
-            feature_layer,
-            labeled_tiles_directory,
-            input_label_field,
-            output_label_field,
-            confidence_field=None,
-            predict_function=None
+        self,
+        feature_layer,
+        labeled_tiles_directory,
+        input_label_field,
+        output_label_field,
+        confidence_field=None,
+        predict_function=None,
     ):
 
         """
@@ -840,10 +962,10 @@ class FeatureClassifier(ArcGISModel):
                 labeled_tiles_directory,
                 input_label_field,
                 output_label_field,
-                confidence_field
+                confidence_field,
             )
-        elif os.path.exists(os.path.join(labeled_tiles_directory, 'mapping.txt')):
-            json_file = os.path.join(labeled_tiles_directory, 'mapping.txt')
+        elif os.path.exists(os.path.join(labeled_tiles_directory, "mapping.txt")):
+            json_file = os.path.join(labeled_tiles_directory, "mapping.txt")
             with open(json_file) as file:
                 feature_attachments_mapping = json.load(file)
 
@@ -851,33 +973,30 @@ class FeatureClassifier(ArcGISModel):
                 feature_layer,
                 labeled_tiles_directory,
                 feature_attachments_mapping,
-                feature_layer.properties['objectIdField'],
+                feature_layer.properties["objectIdField"],
                 output_label_field,
                 confidence_field,
-                predict_function
+                predict_function,
             )
         else:
             return False
 
         return FeatureClassifier._update_predictions_layer(
-            feature_layer,
-            features_to_update,
-            output_label_field,
-            confidence_field
+            feature_layer, features_to_update, output_label_field, confidence_field
         )
 
     def _categorize_feature_layer(
-            self,
-            feature_layer,
-            raster,
-            class_value_field,
-            class_name_field,
-            confidence_field,
-            cell_size,
-            coordinate_system,
-            predict_function,
-            batch_size,
-            overwrite
+        self,
+        feature_layer,
+        raster,
+        class_value_field,
+        class_name_field,
+        confidence_field,
+        cell_size,
+        coordinate_system,
+        predict_function,
+        batch_size,
+        overwrite,
     ):
         # class values
         class_values = list(self._data.class_mapping.keys())
@@ -897,7 +1016,7 @@ class FeatureClassifier(ArcGISModel):
             "editable": True,
             "visible": True,
             "domain": None,
-            "defaultValue": ''
+            "defaultValue": "",
         }
 
         class_value_field_template = {
@@ -909,30 +1028,38 @@ class FeatureClassifier(ArcGISModel):
             "editable": True,
             "visible": True,
             "domain": None,
-            "defaultValue": -999
+            "defaultValue": -999,
         }
 
         to_delete = []
         to_create = []
 
-        feature_layer_fields = {f['name'].lower(): f for f in feature_layer.properties["fields"]}
-        oid_field = feature_layer.properties['objectIdField']
+        feature_layer_fields = {
+            f["name"].lower(): f for f in feature_layer.properties["fields"]
+        }
+        oid_field = feature_layer.properties["objectIdField"]
 
-        if class_value_field_template['name'] in feature_layer_fields:
+        if class_value_field_template["name"] in feature_layer_fields:
             if overwrite:
-                to_delete.append(feature_layer_fields[class_value_field_template['name']])
+                to_delete.append(
+                    feature_layer_fields[class_value_field_template["name"]]
+                )
             else:
                 e = Exception(
-                    f"The specified class_value_field '{class_value_field}' already exists, please specify a different name or set `overwrite=True`")
+                    f"The specified class_value_field '{class_value_field}' already exists, please specify a different name or set `overwrite=True`"
+                )
                 raise (e)
         to_create.append(class_value_field_template)
 
-        if class_name_field_template['name'] in feature_layer_fields:
+        if class_name_field_template["name"] in feature_layer_fields:
             if overwrite:
-                to_delete.append(feature_layer_fields[class_name_field_template['name']])
+                to_delete.append(
+                    feature_layer_fields[class_name_field_template["name"]]
+                )
             else:
                 e = Exception(
-                    f"The specified class_name_field '{class_name_field}' already exists, please specify a different name or set `overwrite=True`")
+                    f"The specified class_name_field '{class_name_field}' already exists, please specify a different name or set `overwrite=True`"
+                )
                 raise (e)
         to_create.append(class_name_field_template)
 
@@ -946,26 +1073,30 @@ class FeatureClassifier(ArcGISModel):
                 "editable": True,
                 "visible": True,
                 "domain": None,
-                "defaultValue": -999
+                "defaultValue": -999,
             }
-            if confidence_field_template['name'] in feature_layer_fields:
+            if confidence_field_template["name"] in feature_layer_fields:
                 if overwrite:
-                    to_delete.append(feature_layer_fields[confidence_field_template['name']])
+                    to_delete.append(
+                        feature_layer_fields[confidence_field_template["name"]]
+                    )
                 else:
                     e = Exception(
-                        f"The specified confidence_field '{confidence_field}' already exists, please specify a different name or set `overwrite=True`")
+                        f"The specified confidence_field '{confidence_field}' already exists, please specify a different name or set `overwrite=True`"
+                    )
                     raise (e)
             to_create.append(confidence_field_template)
 
-        feature_layer.manager.delete_from_definition({'fields': to_delete})
-        feature_layer.manager.add_to_definition({'fields': to_create})
+        feature_layer.manager.delete_from_definition({"fields": to_delete})
+        feature_layer.manager.add_to_definition({"fields": to_create})
 
         # Get features for updation
         fields_to_update = [oid_field, class_value_field, class_name_field]
         if confidence_field is not None:
             fields_to_update.append(confidence_field)
-        feature_layer_features = feature_layer.query(out_fields=",".join(fields_to_update),
-                                                     return_geometry=False).features
+        feature_layer_features = feature_layer.query(
+            out_fields=",".join(fields_to_update), return_geometry=False
+        ).features
         update_store = {}
 
         if raster is not None:
@@ -984,7 +1115,7 @@ class FeatureClassifier(ArcGISModel):
                 feature_layer_url = feature_layer_url + f"?token={feature_layer._token}"
 
             # Create Temporary ID field
-            tempid_field = _tempid_field = 'f_fcuid'
+            tempid_field = _tempid_field = "f_fcuid"
             i = 1
             while tempid_field in feature_layer_fields:
                 tempid_field = _tempid_field + str(i)
@@ -999,15 +1130,22 @@ class FeatureClassifier(ArcGISModel):
                 "editable": True,
                 "visible": True,
                 "domain": None,
-                "defaultValue": -999
+                "defaultValue": -999,
             }
-            feature_layer.manager.add_to_definition({'fields': [tempid_field_template]})
+            feature_layer.manager.add_to_definition({"fields": [tempid_field_template]})
             # arcpy.CalculateField_management(feature_layer_url, tempid_field, f"{oid_field}", "SQL")
-            feature_layer.calculate(where='1=1',
-                                    calc_expression={"field": tempid_field, "sqlExpression": f"{oid_field}"})
+            feature_layer.calculate(
+                where="1=1",
+                calc_expression={
+                    "field": tempid_field,
+                    "sqlExpression": f"{oid_field}",
+                },
+            )
 
             temp_folder = arcpy.env.scratchFolder
-            temp_datafldr = os.path.join(temp_folder, 'categorize_features_' + str(int(time.time())))
+            temp_datafldr = os.path.join(
+                temp_folder, "categorize_features_" + str(int(time.time()))
+            )
             result = arcpy.ia.ExportTrainingDataForDeepLearning(
                 in_raster=raster,
                 out_folder=temp_datafldr,
@@ -1023,24 +1161,34 @@ class FeatureClassifier(ArcGISModel):
                 class_value_field=tempid_field,
                 buffer_radius=0,
                 in_mask_polygons=None,
-                rotation_angle=0
+                rotation_angle=0,
             )
             # cleanup
             # arcpy.DeleteField_management(feature_layer_url, [ tempid_field ])
-            feature_layer.manager.delete_from_definition({'fields': [tempid_field_template]})
+            feature_layer.manager.delete_from_definition(
+                {"fields": [tempid_field_template]}
+            )
 
-            image_list = ImageList.from_folder(os.path.join(temp_datafldr, 'images'))
+            image_list = ImageList.from_folder(os.path.join(temp_datafldr, "images"))
 
             def get_id(imagepath):
-                with open(os.path.join(temp_datafldr, 'labels', os.path.basename(imagepath)[:-3] + 'xml')) as f:
-                    return (int(f.read().split('<name>')[1].split('<')[0]))
+                with open(
+                    os.path.join(
+                        temp_datafldr,
+                        "labels",
+                        os.path.basename(imagepath)[:-3] + "xml",
+                    )
+                ) as f:
+                    return int(f.read().split("<name>")[1].split("<")[0])
 
             for i in range(0, len(image_list), batch_size):
                 # Get Temporary Ids
-                tempids = [get_id(f) for f in image_list.items[i:i + batch_size]]
+                tempids = [get_id(f) for f in image_list.items[i : i + batch_size]]
 
                 # Get Image batch
-                image_batch = torch.stack([im.data for im in image_list[i:i + batch_size]])
+                image_batch = torch.stack(
+                    [im.data for im in image_list[i : i + batch_size]]
+                )
                 image_batch = normalize(image_batch, mean=norm_mean, std=norm_std)
 
                 # Get Predications
@@ -1052,7 +1200,7 @@ class FeatureClassifier(ArcGISModel):
                     update_store[oid] = {
                         oid_field: oid,
                         class_value_field: classvalue,
-                        class_name_field: self._data.class_mapping[classvalue]
+                        class_name_field: self._data.class_mapping[classvalue],
                     }
                     if confidence_field is not None:
                         update_store[oid][confidence_field] = predictions_conf[ui]
@@ -1065,24 +1213,23 @@ class FeatureClassifier(ArcGISModel):
             out_folder = tempfile.TemporaryDirectory().name
             os.mkdir(out_folder)
             feature_layer.export_attachments(out_folder)
-            with open(os.path.join(out_folder, 'mapping.txt')) as file:
+            with open(os.path.join(out_folder, "mapping.txt")) as file:
                 feature_attachments_mapping = json.load(file)
                 images_store = []
                 for oid in feature_attachments_mapping:
                     for im in feature_attachments_mapping[oid]:
-                        images_store.append({
-                            'oid': oid,
-                            'im': os.path.join(out_folder, im)
-                        })
+                        images_store.append(
+                            {"oid": oid, "im": os.path.join(out_folder, im)}
+                        )
             update_store_scratch = {}
             for i in range(0, len(images_store), batch_size):
                 rel_objectids = []
                 image_batch = []
-                for r in images_store[i:i + batch_size]:
-                    im = open_image(r['im'])  # Read Bytes
+                for r in images_store[i : i + batch_size]:
+                    im = open_image(r["im"])  # Read Bytes
                     im = im.resize(self._data.chip_size)  # Resize
                     image_batch.append(im.data)  # Convert to tensor
-                    rel_objectids.append(int(r['oid']))
+                    rel_objectids.append(int(r["oid"]))
                 image_batch = torch.stack(image_batch)
                 image_batch = normalize(image_batch, mean=norm_mean, std=norm_std)
                 # Get Predictions and save to scratch
@@ -1090,10 +1237,14 @@ class FeatureClassifier(ArcGISModel):
                 for ai, oid in enumerate(rel_objectids):
                     if update_store_scratch.get(oid) is None:
                         update_store_scratch[oid] = []
-                    update_store_scratch[oid].append([predicted_classes[ai], predictions_conf[ai]])
+                    update_store_scratch[oid].append(
+                        [predicted_classes[ai], predictions_conf[ai]]
+                    )
             # Prepare final updated features
             for oid in update_store_scratch:
-                max_prediction_class, max_prediction_value = predict_function(update_store_scratch[oid])
+                max_prediction_class, max_prediction_value = predict_function(
+                    update_store_scratch[oid]
+                )
                 if max_prediction_class is not None:
                     classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
@@ -1103,7 +1254,7 @@ class FeatureClassifier(ArcGISModel):
                 update_store[oid] = {
                     oid_field: oid,
                     class_value_field: classvalue,
-                    class_name_field: classname
+                    class_name_field: classname,
                 }
                 if confidence_field is not None:
                     update_store[oid][confidence_field] = max_prediction_value
@@ -1118,27 +1269,27 @@ class FeatureClassifier(ArcGISModel):
                 features_to_update.append(feat)
         step = 100
         for si in range(0, len(features_to_update), step):
-            feature_batch = features_to_update[si:si + step]
+            feature_batch = features_to_update[si : si + step]
             response = feature_layer.edit_features(updates=feature_batch)
-            for resp in response.get('updateResults', []):
-                if resp.get('success', False):
+            for resp in response.get("updateResults", []):
+                if resp.get("success", False):
                     continue
                 warnings.warn(f"Something went wrong for data {resp}")
             time.sleep(2)
         return True
 
     def _categorize_feature_class(
-            self,
-            feature_class,
-            raster,
-            class_value_field,
-            class_name_field,
-            confidence_field,
-            cell_size,
-            coordinate_system,
-            predict_function,
-            batch_size,
-            overwrite
+        self,
+        feature_class,
+        raster,
+        class_value_field,
+        class_name_field,
+        confidence_field,
+        cell_size,
+        coordinate_system,
+        predict_function,
+        batch_size,
+        overwrite,
     ):
 
         # class values
@@ -1159,38 +1310,39 @@ class FeatureClassifier(ArcGISModel):
 
         fcdesc = arcpy.Describe(feature_class)
         oid_field = fcdesc.OIDFieldName
-        if not (fcdesc.dataType == 'FeatureClass' and fcdesc.shapeType == 'Polygon'):
+        if not (fcdesc.dataType == "FeatureClass" and fcdesc.shapeType == "Polygon"):
             e = Exception(
-                f"The specified FeatureClass at '{feature_class}' is not valid, it should be Polygon FeatureClass")
+                f"The specified FeatureClass at '{feature_class}' is not valid, it should be Polygon FeatureClass"
+            )
             raise (e)
         fields = arcpy.ListFields(feature_class)
         field_names = [f.name for f in fields]
         if class_value_field in field_names:
             if not overwrite:
                 e = Exception(
-                    f"The specified class_value_field '{class_value_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`")
+                    f"The specified class_value_field '{class_value_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`"
+                )
                 raise (e)
-        arcpy.DeleteField_management(feature_class,
-                                     [class_value_field])
+        arcpy.DeleteField_management(feature_class, [class_value_field])
         arcpy.AddField_management(feature_class, class_value_field, "LONG")
 
         if class_name_field in field_names:
             if not overwrite:
                 e = Exception(
-                    f"The specified class_name_field '{class_name_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`")
+                    f"The specified class_name_field '{class_name_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`"
+                )
                 raise (e)
-        arcpy.DeleteField_management(feature_class,
-                                     [class_name_field])
+        arcpy.DeleteField_management(feature_class, [class_name_field])
         arcpy.AddField_management(feature_class, class_name_field, "TEXT")
 
         if confidence_field is not None:
             if confidence_field in field_names:
                 if not overwrite:
                     e = Exception(
-                        f"The specified confidence_field '{confidence_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`")
+                        f"The specified confidence_field '{confidence_field}' already exists in the target FeatureClass, please specify a different name or set `overwrite=True`"
+                    )
                     raise (e)
-            arcpy.DeleteField_management(feature_class,
-                                         [confidence_field])
+            arcpy.DeleteField_management(feature_class, [confidence_field])
             arcpy.AddField_management(feature_class, confidence_field, "DOUBLE")
 
         if raster is not None:
@@ -1200,16 +1352,20 @@ class FeatureClassifier(ArcGISModel):
                 arcpy.env.outputCoordinateSystem = coordinate_system
                 arcpy.env.cartographicCoordinateSystem = coordinate_system
 
-            tempid_field = _tempid_field = 'f_fcuid'
+            tempid_field = _tempid_field = "f_fcuid"
             i = 1
             while tempid_field in field_names:
                 tempid_field = _tempid_field + str(i)
                 i += 1
             arcpy.AddField_management(feature_class, tempid_field, "LONG")
-            arcpy.CalculateField_management(feature_class, tempid_field, f"!{oid_field}!")
+            arcpy.CalculateField_management(
+                feature_class, tempid_field, f"!{oid_field}!"
+            )
 
             temp_folder = arcpy.env.scratchFolder
-            temp_datafldr = os.path.join(temp_folder, 'categorize_features_' + str(int(time.time())))
+            temp_datafldr = os.path.join(
+                temp_folder, "categorize_features_" + str(int(time.time()))
+            )
             result = arcpy.ia.ExportTrainingDataForDeepLearning(
                 in_raster=raster,
                 out_folder=temp_datafldr,
@@ -1225,22 +1381,30 @@ class FeatureClassifier(ArcGISModel):
                 class_value_field=tempid_field,
                 buffer_radius=0,
                 in_mask_polygons=None,
-                rotation_angle=0
+                rotation_angle=0,
             )
             # cleanup
             arcpy.DeleteField_management(feature_class, [tempid_field])
-            image_list = ImageList.from_folder(os.path.join(temp_datafldr, 'images'))
+            image_list = ImageList.from_folder(os.path.join(temp_datafldr, "images"))
 
             def get_id(imagepath):
-                with open(os.path.join(temp_datafldr, 'labels', os.path.basename(imagepath)[:-3] + 'xml')) as f:
-                    return (int(f.read().split('<name>')[1].split('<')[0]))
+                with open(
+                    os.path.join(
+                        temp_datafldr,
+                        "labels",
+                        os.path.basename(imagepath)[:-3] + "xml",
+                    )
+                ) as f:
+                    return int(f.read().split("<name>")[1].split("<")[0])
 
             for i in range(0, len(image_list), batch_size):
                 # Get Temporary Ids
-                tempids = [get_id(f) for f in image_list.items[i:i + batch_size]]
+                tempids = [get_id(f) for f in image_list.items[i : i + batch_size]]
 
                 # Get Image batch
-                image_batch = torch.stack([im.data for im in image_list[i:i + batch_size]])
+                image_batch = torch.stack(
+                    [im.data for im in image_list[i : i + batch_size]]
+                )
                 image_batch = normalize(image_batch, mean=norm_mean, std=norm_std)
 
                 # Get Predications
@@ -1251,7 +1415,7 @@ class FeatureClassifier(ArcGISModel):
                 update_cursor = arcpy.UpdateCursor(
                     feature_class,
                     where_clause=where_clause,
-                    sort_fields=f"{oid_field} A"
+                    sort_fields=f"{oid_field} A",
                 )
                 for row in update_cursor:
                     row_tempid = row.getValue(oid_field)
@@ -1272,7 +1436,7 @@ class FeatureClassifier(ArcGISModel):
             shutil.rmtree(temp_datafldr, ignore_errors=True)
 
         else:
-            feature_class_attach = feature_class + '__ATTACH'
+            feature_class_attach = feature_class + "__ATTACH"
             nrows = arcpy.GetCount_management(feature_class_attach)[0]
             store = {}
             for i in range(0, int(nrows), batch_size):
@@ -1281,14 +1445,17 @@ class FeatureClassifier(ArcGISModel):
                 image_batch = []
 
                 # Get Image Batch
-                with arcpy.da.SearchCursor(feature_class_attach,
-                                           ['ATTACHMENTID', 'REL_OBJECTID', 'DATA']) as search_cursor:
+                with arcpy.da.SearchCursor(
+                    feature_class_attach, ["ATTACHMENTID", "REL_OBJECTID", "DATA"]
+                ) as search_cursor:
                     for c, item in enumerate(search_cursor):
                         if c >= i and c < i + batch_size:
                             attachment_ids.append(item[0])
                             rel_objectids.append(item[1])
                             attachment = item[-1]
-                            im = open_image(io.BytesIO(attachment.tobytes()))  # Read Bytes
+                            im = open_image(
+                                io.BytesIO(attachment.tobytes())
+                            )  # Read Bytes
                             im = im.resize(self._data.chip_size)  # Resize
                             image_batch.append(im.data)  # Convert to tensor
                             del item
@@ -1302,13 +1469,17 @@ class FeatureClassifier(ArcGISModel):
                 for ai in range(len(attachment_ids)):
                     if store.get(rel_objectids[ai]) is None:
                         store[rel_objectids[ai]] = []
-                    store[rel_objectids[ai]].append([predicted_classes[ai], predictions_conf[ai]])
+                    store[rel_objectids[ai]].append(
+                        [predicted_classes[ai], predictions_conf[ai]]
+                    )
 
             # Update Feature Class
             update_cursor = arcpy.UpdateCursor(feature_class)
             for row in update_cursor:
                 row_oid = row.getValue(oid_field)
-                max_prediction_class, max_prediction_value = predict_function(store[row_oid])
+                max_prediction_class, max_prediction_value = predict_function(
+                    store[row_oid]
+                )
                 if max_prediction_class is not None:
                     classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
@@ -1326,7 +1497,9 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def gradCAM(self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False):
+    def gradCAM(
+        self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
+    ):
         if isinstance(cl, fastai.core.MultiCategory):
             cat = cl.raw  # Handles MuliCategory types
             cat1 = cat[1]
@@ -1334,7 +1507,9 @@ class FeatureClassifier(ArcGISModel):
             cat1 = int(cl)
         m = self.learn.model.eval()
         xb_norm, _ = self._data.one_item(im, detach=False, denorm=True)
-        xb, _ = self._data.one_item(im, detach=False, denorm=False)  # put into a minibatch of batch size = 1
+        xb, _ = self._data.one_item(
+            im, detach=False, denorm=False
+        )  # put into a minibatch of batch size = 1
         with hook_output(m[0]) as hook_a:
             with hook_output(m[0], grad=True) as hook_g:
                 preds = m(xb)
@@ -1348,33 +1523,38 @@ class FeatureClassifier(ArcGISModel):
                 xb_im = Image(xb[0])
                 xb_im_denorm = Image(xb_norm[0])
                 sz = list(xb_im.shape[-2:])
-                if (grad_vis == True):
+                if grad_vis == True:
                     _, ax = plt.subplots(nrows=1, ncols=2, figsize=(12, 12))
-                    xb_im_denorm.show(ax[0],
-                                      title=f"pred. class: {cl}")
-                    xb_im_denorm.show(ax[1],
-                                      title=f"pred. class: {cl}")
-                    ax[1].imshow(mult, alpha=0.4, extent=(0, *sz[::-1], 0),
-                                 interpolation='bilinear', cmap='hot')
+                    xb_im_denorm.show(ax[0], title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax[1], title=f"pred. class: {cl}")
+                    ax[1].imshow(
+                        mult,
+                        alpha=0.4,
+                        extent=(0, *sz[::-1], 0),
+                        interpolation="bilinear",
+                        cmap="hot",
+                    )
                 else:
                     _, ax = plt.subplots(figsize=(6, 6))
-                    xb_im_denorm.show(ax,
-                                      title=f"pred. class: {cl}")
+                    xb_im_denorm.show(ax, title=f"pred. class: {cl}")
             return mult
 
-    @deprecated(deprecated_in="1.7.1", details="Please use arcgis.learn.classify_objects() instead")
+    @deprecated(
+        deprecated_in="1.7.1",
+        details="Please use arcgis.learn.classify_objects() instead",
+    )
     def categorize_features(
-            self,
-            feature_layer,
-            raster=None,
-            class_value_field='class_val',
-            class_name_field='prediction',
-            confidence_field="confidence",
-            cell_size=1,
-            coordinate_system=None,
-            predict_function=None,
-            batch_size=64,
-            overwrite=False
+        self,
+        feature_layer,
+        raster=None,
+        class_value_field="class_val",
+        class_name_field="prediction",
+        confidence_field="confidence",
+        cell_size=1,
+        coordinate_system=None,
+        predict_function=None,
+        batch_size=64,
+        overwrite=False,
     ):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
@@ -1430,7 +1610,7 @@ class FeatureClassifier(ArcGISModel):
             predict_function = _prediction_function
 
         if isinstance(raster, str):
-            if 'http' in raster:
+            if "http" in raster:
                 raster = ImageryLayer(raster, gis=arcgis.env.active_gis)
         if isinstance(raster, ImageryLayer):
             raster_url = raster.url
@@ -1444,7 +1624,7 @@ class FeatureClassifier(ArcGISModel):
             raster = raster_url
 
         if isinstance(feature_layer, str):
-            if 'http' in feature_layer:
+            if "http" in feature_layer:
                 feature_layer = FeatureLayer(feature_layer, gis=arcgis.env.active_gis)
             else:
                 return self._categorize_feature_class(
@@ -1457,7 +1637,7 @@ class FeatureClassifier(ArcGISModel):
                     coordinate_system=coordinate_system,
                     predict_function=predict_function,
                     batch_size=batch_size,
-                    overwrite=overwrite
+                    overwrite=overwrite,
                 )
 
         if isinstance(feature_layer, FeatureLayer):
@@ -1471,7 +1651,7 @@ class FeatureClassifier(ArcGISModel):
                 coordinate_system=coordinate_system,
                 predict_function=predict_function,
                 batch_size=batch_size,
-                overwrite=overwrite
+                overwrite=overwrite,
             )
         else:
             e = Exception("Could not understand layer type")
@@ -1491,16 +1671,18 @@ class FeatureClassifier(ArcGISModel):
         from .._utils.image_classification import TF_IC_get_head_output
 
         if data._is_multispectral:
-            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+            raise Exception(
+                'Multispectral data is not supported with backend="tensorflow"'
+            )
 
         # Pyramid Scheme in head
-        self._fpn = kwargs.get('fpn', True)
+        self._fpn = kwargs.get("fpn", True)
 
         # prepare color array
         alpha = 0.7
-        color_mapping = getattr(data, 'color_mapping', None)
+        color_mapping = getattr(data, "color_mapping", None)
         if color_mapping is None:
-            color_array = torch.tensor([[1., 1., 1.]]).float()
+            color_array = torch.tensor([[1.0, 1.0, 1.0]]).float()
         else:
             color_array = torch.tensor(list(color_mapping.values())).float() / 255
         alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
@@ -1510,7 +1692,7 @@ class FeatureClassifier(ArcGISModel):
 
         self.ssd_version = 1  # ssd_version
         if backbone is None:
-            backbone = 'ResNet50'
+            backbone = "ResNet50"
 
         if type(backbone) == str:
             backbone = getattr(applications, backbone)
@@ -1518,24 +1700,25 @@ class FeatureClassifier(ArcGISModel):
         self._backbone = backbone
 
         x, y = next(iter(data.train_dl))
-        if tf.keras.backend.image_data_format() == 'channels_last':
+        if tf.keras.backend.image_data_format() == "channels_last":
             in_shape = [x.shape[-1], x.shape[-1], 3]
         else:
             in_shape = [3, x.shape[-1], x.shape[-1]]
 
         self._backbone_initalized = self._backbone(
-            input_shape=in_shape,
-            include_top=False,
-            weights='imagenet'
+            input_shape=in_shape, include_top=False, weights="imagenet"
         )
         self._backbone_initalized.trainable = False
 
-        self._device = torch.device('cpu')
+        self._device = torch.device("cpu")
         self._data = data
 
-        self._loss_function_tf_ = CategoricalCrossentropy(from_logits=True, reduction='sum')
-        self._loss_function_tf_noreduction = CategoricalCrossentropy(from_logits=True,
-                                                                     reduction=tf.keras.losses.Reduction.NONE)
+        self._loss_function_tf_ = CategoricalCrossentropy(
+            from_logits=True, reduction="sum"
+        )
+        self._loss_function_tf_noreduction = CategoricalCrossentropy(
+            from_logits=True, reduction=tf.keras.losses.Reduction.NONE
+        )
 
         output_layer = TF_IC_get_head_output(self)
 
@@ -1549,7 +1732,7 @@ class FeatureClassifier(ArcGISModel):
             true_wd=True,
             bn_wd=True,
             wd=defaults.wd,
-            train_bn=True
+            train_bn=True,
         )
 
         self.learn.unfreeze()
@@ -1561,6 +1744,7 @@ class FeatureClassifier(ArcGISModel):
 
     def _loss_function_tf(self, target, predictions, reduction=True):
         import tensorflow as tf
+
         if target.ndim == 2:
             target_masks = target
         else:
@@ -1572,6 +1756,7 @@ class FeatureClassifier(ArcGISModel):
 
 
 if HAS_FASTAI:
+
     class OverSamplingCallback(LearnerCallback):
         """
         The OverSamplingCallback support handles unbalanced dataset (dataset with rare classes). It is used to oversample data during training.
@@ -1584,9 +1769,12 @@ if HAS_FASTAI:
         def on_train_begin(self, **kwargs):
             ds, dl = self.data.train_ds, self.data.train_dl
             self.labels = ds.y.items.astype(int)
-            assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
+            assert np.issubdtype(
+                self.labels.dtype, np.integer
+            ), "Can only oversample integer values"
             _, self.label_counts = np.unique(self.labels, return_counts=True)
-            if self.weights is None: self.weights = torch.DoubleTensor((1 / self.label_counts)[self.labels])
+            if self.weights is None:
+                self.weights = torch.DoubleTensor((1 / self.label_counts)[self.labels])
             self.total_len_oversample = int(self.data.c * np.max(self.label_counts))
             sampler = WeightedRandomSampler(self.weights, self.total_len_oversample)
             self.data.train_dl = dl.new(shuffle=False, sampler=sampler)

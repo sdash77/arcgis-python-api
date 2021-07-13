@@ -105,37 +105,72 @@ class AutoML(object):
     :returns: `AutoML` Object
     """
 
-    def __init__(self, data=None, total_time_limit=3600,
-                 mode='Explain', algorithms=None, eval_metric='auto'):
+    def __init__(
+        self,
+        data=None,
+        total_time_limit=3600,
+        mode="Explain",
+        algorithms=None,
+        eval_metric="auto",
+    ):
         if not HAS_SK_LEARN:
             raise Exception("This module requires scikit-learn.")
         if not HAS_SK_LEARN:
             raise Exception("This module requires mljar-supervised.")
         self._data = data
-        if getattr(self._data, '_is_unsupervised', False):
-            raise Exception("Auto ML feature is currently only available for Supervised learning.")
+        if getattr(self._data, "_is_unsupervised", False):
+            raise Exception(
+                "Auto ML feature is currently only available for Supervised learning."
+            )
 
         if algorithms:
             algorithms = algorithms
         else:
-            algorithms = ['Linear', 'Decision Tree', 'Random Forest',
-                          'Extra Trees', 'LightGBM', 'Xgboost', 'Neural Network']
+            algorithms = [
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Extra Trees",
+                "LightGBM",
+                "Xgboost",
+                "Neural Network",
+            ]
 
-        if getattr(self._data, '_is_not_empty', True):
-            self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
-            self._all_data = np.concatenate((self._training_data, self._validation_data), axis=0)
-            self._all_labels = np.concatenate((self._training_labels, self._validation_labels), axis=0)
-            self._validation_data_df = pd.DataFrame(self._validation_data,
-                                                    columns=self._data._continuous_variables + self._data._categorical_variables)
-            self._all_data_df = pd.DataFrame(self._all_data,
-                                             columns=self._data._continuous_variables + self._data._categorical_variables)
-            if mode == 'Explain':
+        if getattr(self._data, "_is_not_empty", True):
+            (
+                self._training_data,
+                self._training_labels,
+                self._validation_data,
+                self._validation_labels,
+            ) = self._data._ml_data
+            self._all_data = np.concatenate(
+                (self._training_data, self._validation_data), axis=0
+            )
+            self._all_labels = np.concatenate(
+                (self._training_labels, self._validation_labels), axis=0
+            )
+            self._validation_data_df = pd.DataFrame(
+                self._validation_data,
+                columns=self._data._continuous_variables
+                + self._data._categorical_variables,
+            )
+            self._all_data_df = pd.DataFrame(
+                self._all_data,
+                columns=self._data._continuous_variables
+                + self._data._categorical_variables,
+            )
+            if mode == "Explain":
                 explain_level = 2
             else:
                 explain_level = 1
-            self._model = base_AutoML(mode=mode, algorithms=algorithms,
-                                      total_time_limit=total_time_limit,
-                                      golden_features=False, explain_level=explain_level, eval_metric=eval_metric)
+            self._model = base_AutoML(
+                mode=mode,
+                algorithms=algorithms,
+                total_time_limit=total_time_limit,
+                golden_features=False,
+                explain_level=explain_level,
+                eval_metric=eval_metric,
+            )
         else:
             result_path = self._data.path
             self._model = base_AutoML(results_path=result_path)
@@ -145,12 +180,15 @@ class AutoML(object):
         """
         Fits the AutoML model.
         """
-        if getattr(self._data, '_is_not_empty', True):
+        if getattr(self._data, "_is_not_empty", True):
             self._model.fit(self._all_data_df, self._all_labels)
         else:
             raise Exception("Fit can be called only with data.")
         # self.save()
-        print('All the evaluated models are saved in the path ', os.path.abspath(self._model._get_results_path()))
+        print(
+            "All the evaluated models are saved in the path ",
+            os.path.abspath(self._model._get_results_path()),
+        )
 
     def show_results(self, rows=5):
         """
@@ -164,10 +202,14 @@ class AutoML(object):
         =====================   ===========================================
         :returns dataframe
         """
-        if getattr(self._data, 'is_not_empty', True) == False:
-            raise Exception("This method is not available when the model is initiated for prediction")
-        if (not self._data._is_unsupervised and (self._validation_data is None or self._validation_labels is None)) \
-                or (self._data._is_unsupervised and self._validation_data is None):
+        if getattr(self._data, "is_not_empty", True) == False:
+            raise Exception(
+                "This method is not available when the model is initiated for prediction"
+            )
+        if (
+            not self._data._is_unsupervised
+            and (self._validation_data is None or self._validation_labels is None)
+        ) or (self._data._is_unsupervised and self._validation_data is None):
             raise_data_exception()
 
         min_size = len(self._validation_data)
@@ -183,12 +225,13 @@ class AutoML(object):
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
         output_labels = self._predict(validation_data_batch)
         df = self._data._dataframe.loc[
-            sample_indexes]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+            sample_indexes
+        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
-            df[self._data._dependent_variable + '_results'] = output_labels
+            df[self._data._dependent_variable + "_results"] = output_labels
         else:
-            df['prediction_results'] = output_labels
+            df["prediction_results"] = output_labels
 
         return df.sort_index()
 
@@ -196,10 +239,12 @@ class AutoML(object):
         """
         :returns output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
-        if getattr(self._data, '_is_not_empty', True):
+        if getattr(self._data, "_is_not_empty", True):
             return self._model.score(self._validation_data_df, self._validation_labels)
         else:
-            raise Exception("This method is not available when the model is initiated for prediction")
+            raise Exception(
+                "This method is not available when the model is initiated for prediction"
+            )
 
     def report(self):
         """
@@ -207,15 +252,18 @@ class AutoML(object):
         """
         main_readme_html = os.path.join(self._model._results_path, "README.html")
         warnings.warn(
-            'In case the report html is not rendered appropriately in the notebook, the same can be found in the path '
-            '' + main_readme_html)
+            "In case the report html is not rendered appropriately in the notebook, the same can be found in the path "
+            "" + main_readme_html
+        )
         return self._model.report()
 
     def predict_proba(self):
         """
         :returns output from AutoML's model.predict_proba()
         """
-        if ((self._data._is_classification == 'classification') or (self._data._is_classification == True)):
+        if (self._data._is_classification == "classification") or (
+            self._data._is_classification == True
+        ):
             return self._model.predict_proba(self._training_data)
         else:
             raise Exception("This method is applicable only for classification models.")
@@ -238,11 +286,20 @@ class AutoML(object):
         =====================   ===========================================
         :returns path
         """
-        if getattr(self._data, '_is_not_empty', True) == False:
-            raise Exception("This method is not available when the model is initiated for prediction")
+        if getattr(self._data, "_is_not_empty", True) == False:
+            raise Exception(
+                "This method is not available when the model is initiated for prediction"
+            )
         # Required files to be copied to new path
-        files_required = ['data_info.json', 'ldb_performance.png', 'ldb_performance_boxplot.png', 'params.json',
-                          'progress.json', 'README.md', 'drop_features.json']
+        files_required = [
+            "data_info.json",
+            "ldb_performance.png",
+            "ldb_performance_boxplot.png",
+            "params.json",
+            "progress.json",
+            "README.md",
+            "drop_features.json",
+        ]
         required_model_folders = []  # List of folders that are to be copied to new path
         base_file_name = os.path.basename(self._model._get_results_path())
         result_path = os.path.abspath(self._model._get_results_path())
@@ -251,18 +308,24 @@ class AutoML(object):
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
 
-        MLModel._save_encoders(self._data._encoder_mapping, save_model_path, base_file_name)
+        MLModel._save_encoders(
+            self._data._encoder_mapping, save_model_path, base_file_name
+        )
 
         if self._data._procs:
             MLModel._save_transforms(self._data._procs, save_model_path, base_file_name)
 
         self._write_emd(save_model_path, base_file_name)
-        if (self._model._best_model._name == 'Ensemble') or (self._model._best_model._name == 'Ensemble_Stacked'):
+        if (self._model._best_model._name == "Ensemble") or (
+            self._model._best_model._name == "Ensemble_Stacked"
+        ):
             model_map = self._model._best_model.models_map
-            required_model_folders.append(os.path.join(result_path, 'Ensemble'))
+            required_model_folders.append(os.path.join(result_path, "Ensemble"))
             for i in self._model._best_model.selected_models:
                 # print(i['model'])
-                sub_path = list(model_map.keys())[list(model_map.values()).index(i['model'])]
+                sub_path = list(model_map.keys())[
+                    list(model_map.values()).index(i["model"])
+                ]
                 final_path = os.path.join(result_path, sub_path)
                 required_model_folders.append(final_path)
         else:
@@ -280,30 +343,33 @@ class AutoML(object):
                 shutil.copyfile(abs_file_path, dest_file)
         # Creates dlpk
         from ._arcgis_model import _create_zip
+
         _create_zip(Path(save_model_path).name, str(save_model_path))
 
-        print('Model has been saved in the path', save_model_path)
+        print("Model has been saved in the path", save_model_path)
         return save_model_path
 
     def _write_emd(self, path, base_file_name):
-        emd_file = os.path.join(path, base_file_name + '.emd')
+        emd_file = os.path.join(path, base_file_name + ".emd")
         emd_params = {}
-        emd_params['version'] = str(sklearn.__version__)
+        emd_params["version"] = str(sklearn.__version__)
         # if not self._data._is_unsupervised:
-        emd_params['score'] = self.score()
-        emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
-        emd_params['ModelName'] = 'AutoML'
-        emd_params['ResultsPath'] = self._model._results_path
+        emd_params["score"] = self.score()
+        emd_params["_is_classification"] = (
+            "classification" if self._data._is_classification else "regression"
+        )
+        emd_params["ModelName"] = "AutoML"
+        emd_params["ResultsPath"] = self._model._results_path
         # emd_params['ModelFile'] = base_file_name + '.pkl'
         # emd_params['ModelParameters'] = self._model.get_params()
-        emd_params['categorical_variables'] = self._data._categorical_variables
+        emd_params["categorical_variables"] = self._data._categorical_variables
 
         if self._data._dependent_variable:
-            emd_params['dependent_variable'] = self._data._dependent_variable
+            emd_params["dependent_variable"] = self._data._dependent_variable
 
-        emd_params['continuous_variables'] = self._data._continuous_variables
+        emd_params["continuous_variables"] = self._data._continuous_variables
 
-        with open(emd_file, 'w') as f:
+        with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
 
     @classmethod
@@ -327,57 +393,73 @@ class AutoML(object):
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
 
-        with open(emd_path, 'r') as f:
+        with open(emd_path, "r") as f:
             emd = json.loads(f.read())
 
-        categorical_variables = emd['categorical_variables']
-        dependent_variable = emd.get('dependent_variable', None)
-        continuous_variables = emd['continuous_variables']
+        categorical_variables = emd["categorical_variables"]
+        dependent_variable = emd.get("dependent_variable", None)
+        continuous_variables = emd["continuous_variables"]
 
-        if emd['version'] != str(sklearn.__version__):
-            warnings.warn(f"Sklearn version has changed. Model Trained using version {emd['version']}")
+        if emd["version"] != str(sklearn.__version__):
+            warnings.warn(
+                f"Sklearn version has changed. Model Trained using version {emd['version']}"
+            )
 
         _is_classification = True
-        if emd['_is_classification'] != "classification":
+        if emd["_is_classification"] != "classification":
             _is_classification = False
 
         encoder_mapping = None
         if categorical_variables:
-            encoder_path = os.path.join(os.path.dirname(emd_path),
-                                        os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
+            encoder_path = os.path.join(
+                os.path.dirname(emd_path),
+                os.path.basename(emd_path).split(".")[0] + "_encoders.pkl",
+            )
             if os.path.exists(encoder_path):
-                with open(encoder_path, 'rb') as f:
+                with open(encoder_path, "rb") as f:
                     encoder_mapping = pickle.loads(f.read())
 
         column_transformer = None
-        transforms_path = os.path.join(os.path.dirname(emd_path),
-                                       os.path.basename(emd_path).split('.')[0] + '_transforms.pkl')
+        transforms_path = os.path.join(
+            os.path.dirname(emd_path),
+            os.path.basename(emd_path).split(".")[0] + "_transforms.pkl",
+        )
         if os.path.exists(transforms_path):
-            with open(transforms_path, 'rb') as f:
+            with open(transforms_path, "rb") as f:
                 column_transformer = pickle.loads(f.read())
 
-        empty_data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable,
-                                              encoder_mapping, column_transformer)
+        empty_data = TabularDataObject._empty(
+            categorical_variables,
+            continuous_variables,
+            dependent_variable,
+            encoder_mapping,
+            column_transformer,
+        )
         empty_data._is_classification = _is_classification
         empty_data._is_not_empty = False
-        empty_data.path = emd['ResultsPath']
+        empty_data.path = emd["ResultsPath"]
         return cls(data=empty_data)
 
     def _predict(self, data):
-        data_df = pd.DataFrame(data, columns=self._data._continuous_variables + self._data._categorical_variables)
+        data_df = pd.DataFrame(
+            data,
+            columns=self._data._continuous_variables
+            + self._data._categorical_variables,
+        )
         return self._model.predict(data_df)
 
     def predict(
-            self,
-            input_features=None,
-            explanatory_rasters=None,
-            datefield=None,
-            distance_features=None,
-            output_layer_name="Prediction Layer",
-            gis=None,
-            prediction_type='features',
-            output_raster_path=None,
-            match_field_names=None):
+        self,
+        input_features=None,
+        explanatory_rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name="Prediction Layer",
+        gis=None,
+        prediction_type="features",
+        output_raster_path=None,
+        match_field_names=None,
+    ):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -435,41 +517,55 @@ class AutoML(object):
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
-        if prediction_type in ['features', 'dataframe']:
+        if prediction_type in ["features", "dataframe"]:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis,
-                                          match_field_names, prediction_type)
+            return self._predict_features(
+                input_features,
+                rasters,
+                datefield,
+                distance_features,
+                output_layer_name,
+                gis,
+                match_field_names,
+                prediction_type,
+            )
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
 
             if not output_raster_path:
-                raise Exception("Please specify output_raster_folder_path to save the output.")
+                raise Exception(
+                    "Please specify output_raster_folder_path to save the output."
+                )
 
             return self._predict_rasters(output_raster_path, rasters, match_field_names)
 
     def _predict_features(
-            self,
-            input_features,
-            rasters=None,
-            datefield=None,
-            distance_feature_layers=None,
-            output_name="Prediction Layer",
-            gis=None,
-            match_field_names=None,
-            prediction_type="features"
+        self,
+        input_features,
+        rasters=None,
+        datefield=None,
+        distance_feature_layers=None,
+        output_name="Prediction Layer",
+        gis=None,
+        match_field_names=None,
+        prediction_type="features",
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
-        distance_feature_layers = distance_feature_layers if distance_feature_layers else []
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
+        distance_feature_layers = (
+            distance_feature_layers if distance_feature_layers else []
+        )
         continuous_variables = self._data._continuous_variables
 
         columns = dataframe.columns
@@ -508,13 +604,16 @@ class AutoML(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            processed_dataframe, fields_mapping = TabularDataObject._prepare_dataframe_from_features(
+            (
+                processed_dataframe,
+                fields_mapping,
+            ) = TabularDataObject._prepare_dataframe_from_features(
                 input_features,
                 self._data._dependent_variable,
                 feature_layer_columns,
                 raster_columns,
                 datefield,
-                distance_feature_layers
+                distance_feature_layers,
             )
 
         if match_field_names:
@@ -528,8 +627,10 @@ class AutoML(object):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns),
-                                                                               axis=1), fit=False)
+        processed_numpy = self._data._process_data(
+            processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
+            fit=False,
+        )
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
 
@@ -564,32 +665,56 @@ class AutoML(object):
         if not HAS_FAST_PROGRESS:
             raise Exception("This function requires fastprogress.")
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
 
         try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkt"
+            ]
         except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkid"
+            ]
 
-        xmin = rasters[0].extent['xmin']
-        xmax = rasters[0].extent['xmax']
-        ymin = rasters[0].extent['ymin']
-        ymax = rasters[0].extent['ymax']
+        xmin = rasters[0].extent["xmin"]
+        xmax = rasters[0].extent["xmax"]
+        ymin = rasters[0].extent["ymin"]
+        ymax = rasters[0].extent["ymax"]
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent['spatialReference']
+        default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
             point_upper = arcgis.geometry.Point(
-                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmin"],
+                    "y": raster.extent["ymax"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             point_lower = arcgis.geometry.Point(
-                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmax"],
+                    "y": raster.extent["ymin"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             cell_size = arcgis.geometry.Point(
-                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.mean_cell_width,
+                    "y": raster.mean_cell_height,
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
 
-            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
-                                             default_sr)
+            points = arcgis.geometry.project(
+                [point_upper, point_lower, cell_size],
+                raster.extent["spatialReference"],
+                default_sr,
+            )
             point_upper = points[0]
             point_lower = points[1]
             cell_size = points[2]
@@ -612,20 +737,30 @@ class AutoML(object):
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
-        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
+        cell_size = arcgis.geometry.Point(
+            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = \
-                arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
-            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[
-                0]
+            point_upper_translated = arcgis.geometry.project(
+                [point_upper], default_sr, raster.extent["spatialReference"]
+            )[0]
+            cell_size_translated = arcgis.geometry.project(
+                [cell_size], default_sr, raster.extent["spatialReference"]
+            )[0]
             if field_name in fields_needed:
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y),
-                                          ncols=max_raster_columns, nrows=max_raster_rows,
-                                          cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -633,16 +768,22 @@ class AutoML(object):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
                             index = index + 1
                             raster_data[key].append(value)
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y),
-                                          ncols=max_raster_columns, nrows=max_raster_rows,
-                                          cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -650,7 +791,7 @@ class AutoML(object):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
                             index = index + 1
@@ -659,8 +800,11 @@ class AutoML(object):
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field,
-                                                                                                     None) is None:
+            if (
+                field not in list(raster_data.keys())
+                and match_field_names
+                and match_field_names.get(field, None) is None
+            ):
                 raise Exception(f"Field missing {field}")
 
         processed_data = []
@@ -672,16 +816,24 @@ class AutoML(object):
                 processed_row.append(raster_data[raster_name][i])
             processed_data.append(processed_row)
 
-        processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
+        processed_df = pd.DataFrame(
+            data=np.array(processed_data), columns=sorted(raster_data)
+        )
 
         processed_numpy = self._data._process_data(processed_df, fit=False)
 
         predictions = self._predict(processed_numpy)
 
-        predictions = np.array(predictions.reshape([max_raster_rows, max_raster_columns]), dtype='float64')
+        predictions = np.array(
+            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
+        )
 
-        processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x,
-                                                    y_cell_size=min_cell_size_y)
+        processed_raster = arcpy.NumPyArrayToRaster(
+            predictions,
+            arcpy.Point(xmin, ymin),
+            x_cell_size=min_cell_size_x,
+            y_cell_size=min_cell_size_y,
+        )
         processed_raster.save(output_folder_path)
 
         return True

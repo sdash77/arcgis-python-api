@@ -1695,7 +1695,12 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
+        if where == "1=1":
+            params["where"] = f"{self.properties.objectIdField} > 0"
+            record_count = self._query(url, params, raw=as_raw)
+            params["where"] = "1=1"
+        else:
+            record_count = self._query(url, params, raw=as_raw)
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -3456,7 +3461,12 @@ class Table(FeatureLayer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        record_count = self._query(url, params, raw=as_raw)
+        if where == "1=1":
+            params["where"] = f"{self.properties.objectIdField} > 0"
+            record_count = self._query(url, params, raw=as_raw)
+            params["where"] = "1=1"
+        else:
+            record_count = self._query(url, params, raw=as_raw)
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:

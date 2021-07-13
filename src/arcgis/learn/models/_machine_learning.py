@@ -13,10 +13,10 @@ import arcgis
 from arcgis.features import FeatureLayer
 from arcgis.raster.analytics import copy_raster
 
-from .._utils.tabular_data import TabularDataObject , explain_prediction
+from .._utils.tabular_data import TabularDataObject, explain_prediction
 
 HAS_SK_LEARN = True
-HAS_SHAP=True
+HAS_SHAP = True
 try:
     import sklearn
     from sklearn import *
@@ -48,20 +48,19 @@ def _get_model_type(model_type):
     if not isinstance(model_type, str):
         return model_type
 
-    if not model_type.startswith('sklearn.'):
+    if not model_type.startswith("sklearn."):
         raise Exception("Invalid model_type.")
 
-    model_type = model_type.replace('sklearn.', '')
+    model_type = model_type.replace("sklearn.", "")
 
-    module = model_type.split('.')[0]
+    module = model_type.split(".")[0]
 
-    if len(model_type.split('.')) > 1:
-        model = model_type.split('.')[1]
+    if len(model_type.split(".")) > 1:
+        model = model_type.split(".")[1]
     else:
         raise Exception("Invalid model_type.")
 
-    if not hasattr(sklearn, module) or \
-            not hasattr(getattr(sklearn, module), model):
+    if not hasattr(sklearn, module) or not hasattr(getattr(sklearn, module), model):
         raise Exception("Invalid model_type.")
 
     model = getattr(getattr(sklearn, module), model)
@@ -109,24 +108,31 @@ class MLModel(object):
             raise Exception("This module requires scikit-learn.")
 
         self._data = data
-        self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
-        if kwargs.get('pretrained_model'):
-            self._model = kwargs.get('pretrained_model')
+        (
+            self._training_data,
+            self._training_labels,
+            self._validation_data,
+            self._validation_labels,
+        ) = self._data._ml_data
+        if kwargs.get("pretrained_model"):
+            self._model = kwargs.get("pretrained_model")
         else:
             model = _get_model_type(model_type)
 
             if model == sklearn.cluster._kmeans.KMeans:
-                if not kwargs.get('n_clusters'):
-                    kwargs['n_clusters'] = self._get_number_of_clusters(**kwargs)
+                if not kwargs.get("n_clusters"):
+                    kwargs["n_clusters"] = self._get_number_of_clusters(**kwargs)
             elif model == sklearn.mixture._gaussian_mixture.GaussianMixture:
-                if not kwargs.get('n_components'):
-                    kwargs['n_components'] = self._get_number_of_components(**kwargs)
+                if not kwargs.get("n_components"):
+                    kwargs["n_components"] = self._get_number_of_components(**kwargs)
 
             self._model = model(**kwargs)
 
     def fit(self):
-        if (not self._data._is_unsupervised and (self._training_data is None or self._training_labels is None))\
-                or (self._data._is_unsupervised and self._training_data is None):
+        if (
+            not self._data._is_unsupervised
+            and (self._training_data is None or self._training_labels is None)
+        ) or (self._data._is_unsupervised and self._training_data is None):
             raise_data_exception()
 
         if self._data._is_unsupervised:
@@ -146,8 +152,10 @@ class MLModel(object):
         =====================   ===========================================
         :returns dataframe
         """
-        if (not self._data._is_unsupervised and (self._validation_data is None or self._validation_labels is None)) \
-                or (self._data._is_unsupervised and self._validation_data is None):
+        if (
+            not self._data._is_unsupervised
+            and (self._validation_data is None or self._validation_labels is None)
+        ) or (self._data._is_unsupervised and self._validation_data is None):
             raise_data_exception()
 
         min_size = len(self._validation_data)
@@ -162,12 +170,14 @@ class MLModel(object):
 
         output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        df = self._data._dataframe.iloc[
+            sample_indexes
+        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
-            df[self._data._dependent_variable + '_results'] = output_labels
+            df[self._data._dependent_variable + "_results"] = output_labels
         else:
-            df['prediction_results'] = output_labels
+            df["prediction_results"] = output_labels
 
         return df.sort_index()
 
@@ -176,12 +186,14 @@ class MLModel(object):
         :returns output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
         For KMeans returns Opposite of the value of X on the K-means objective.
         """
-        if (not self._data._is_unsupervised and (self._validation_data is None or self._validation_labels is None)) \
-                or (self._data._is_unsupervised and self._validation_data is None):
+        if (
+            not self._data._is_unsupervised
+            and (self._validation_data is None or self._validation_labels is None)
+        ) or (self._data._is_unsupervised and self._validation_data is None):
             raise_data_exception()
 
         if self._data._is_unsupervised:
-            if hasattr(self._model, 'score'):
+            if hasattr(self._model, "score"):
                 return self._model.score(self._training_data)
 
             raise Exception("Score function not applicable for unsupervised data")
@@ -195,7 +207,7 @@ class MLModel(object):
         if self._training_data is None:
             raise_data_exception()
 
-        if not hasattr(self._model, 'decision_function'):
+        if not hasattr(self._model, "decision_function"):
             raise Exception("Function not implemented for this model.")
 
         return self._model.decision_function(self._training_data)
@@ -207,7 +219,7 @@ class MLModel(object):
         if self._training_data is None:
             raise_data_exception()
 
-        if not hasattr(self._model, 'mahalanobis'):
+        if not hasattr(self._model, "mahalanobis"):
             raise Exception("Function not implemented for this model.")
 
         return self._model.mahalanobis(self._training_data)
@@ -216,21 +228,21 @@ class MLModel(object):
         """
         :returns output from scikit-learn's model.kneighbors()
         """
-        if not hasattr(self._model, 'kneighbors'):
+        if not hasattr(self._model, "kneighbors"):
             raise Exception("Function not implemented for this model.")
 
         kwargs = {}
         if X:
-            kwargs['X'] = X
+            kwargs["X"] = X
         elif self._training_data is None:
             raise Exception("No data found")
         else:
-            kwargs['X'] = self._training_data
+            kwargs["X"] = self._training_data
 
         if n_neighbors:
-            kwargs['n_neighbors'] = n_neighbors
+            kwargs["n_neighbors"] = n_neighbors
 
-        kwargs['return_distance'] = return_distance
+        kwargs["return_distance"] = return_distance
 
         return self._model.kneighbors(**kwargs)
 
@@ -239,7 +251,7 @@ class MLModel(object):
         :returns output from scikit-learn's model.predict_proba()
         """
 
-        if not hasattr(self._model, 'predict_proba'):
+        if not hasattr(self._model, "predict_proba"):
             raise Exception("Function not implemented for this model.")
 
         if self._training_data is None:
@@ -253,17 +265,22 @@ class MLModel(object):
         :Returns the global feature importance summary plot from SHAP.
         Most of the sklearn models are supported by this method.
         """
-        #if not hasattr(self._model, 'feature_importances_'):
-            #raise Exception("Property not implemented for this model.")
-        processed_dataframe= None
+        # if not hasattr(self._model, 'feature_importances_'):
+        # raise Exception("Property not implemented for this model.")
+        processed_dataframe = None
         explain_index = None
         random_index = None
-        explain_prediction(self, processed_dataframe, index=explain_index, random_index=random_index,
-                               predictor=None,
-                               global_pred=True)
+        explain_prediction(
+            self,
+            processed_dataframe,
+            index=explain_index,
+            random_index=random_index,
+            predictor=None,
+            global_pred=True,
+        )
         return
 
-        #return self._model.feature_importances_
+        # return self._model.feature_importances_
 
     def save(self, name_or_path, publish=False, gis=None, **kwargs):
         """
@@ -287,10 +304,10 @@ class MLModel(object):
         :returns dataframe
         """
 
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = name_or_path
         else:
-            path = os.path.join(self._data.path, 'models', name_or_path)
+            path = os.path.join(self._data.path, "models", name_or_path)
             if not os.path.exists(os.path.dirname(path)):
                 os.mkdir(os.path.dirname(path))
 
@@ -302,9 +319,9 @@ class MLModel(object):
 
         base_file_name = os.path.basename(path)
 
-        model_file = os.path.join(path, base_file_name + '.pkl')
+        model_file = os.path.join(path, base_file_name + ".pkl")
 
-        with open(model_file, 'wb') as f:
+        with open(model_file, "wb") as f:
             f.write(pickle.dumps(self._model, protocol=_PROTOCOL_LEVEL))
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
@@ -313,83 +330,99 @@ class MLModel(object):
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
         self._write_emd(path, base_file_name)
-        zip_files = kwargs.pop('zip_files', True)
+        zip_files = kwargs.pop("zip_files", True)
 
         if zip_files:
             from ._arcgis_model import _create_zip
+
             _create_zip(Path(path).name, str(path))
 
         if publish:
-            self._publish_dlpk((Path(path) / Path(path).stem).with_suffix('.dlpk'), gis=gis,
-                               overwrite=kwargs.get('overwrite', False))
+            self._publish_dlpk(
+                (Path(path) / Path(path).stem).with_suffix(".dlpk"),
+                gis=gis,
+                overwrite=kwargs.get("overwrite", False),
+            )
 
         return Path(path)
 
     def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
-        model_characteristics_folder = 'ModelCharacteristics'
+        model_characteristics_folder = "ModelCharacteristics"
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
-            warnings.warn('No active gis user found!')
+            warnings.warn("No active gis user found!")
             return
 
         if not os.path.exists(dlpk_path):
-            warnings.warn('DLPK file not found!')
+            warnings.warn("DLPK file not found!")
             return
 
-        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + '.emd')
+        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + ".emd")
 
         if not os.path.exists(emd_path):
-            warnings.warn('EMD File not found!')
+            warnings.warn("EMD File not found!")
             return
 
-        emd_data = json.load(open(emd_path, 'r'))
+        emd_data = json.load(open(emd_path, "r"))
         formatted_description = f"""
                 <p><b> {emd_data.get('ModelName').replace('>', '').replace('<', '')} </b></p>
                 <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
                 <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
         """
 
-        if emd_data.get('accuracy'):
-            formatted_description = formatted_description + f"""
+        if emd_data.get("accuracy"):
+            formatted_description = (
+                formatted_description
+                + f"""
                 <p><b>Analysis of the model</b></p>
                 <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
             """
+            )
 
-        if emd_data.get('average_precision_score'):
-            formatted_description = formatted_description + f"""
+        if emd_data.get("average_precision_score"):
+            formatted_description = (
+                formatted_description
+                + f"""
                 <p><b>Analysis of the model</b></p>
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
+            )
 
         item = gis_user.content.add(
-            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem,
-             'overwrite': True if overwrite else False},
-            data=str(dlpk_path.absolute())
+            {
+                "type": "Deep Learning Package",
+                "description": formatted_description,
+                "title": dlpk_path.stem,
+                "overwrite": True if overwrite else False,
+            },
+            data=str(dlpk_path.absolute()),
         )
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
     def _write_emd(self, path, base_file_name):
-        emd_file = os.path.join(path, base_file_name + '.emd')
+        emd_file = os.path.join(path, base_file_name + ".emd")
         emd_params = {}
-        emd_params['version'] = str(sklearn.__version__)
+        emd_params["version"] = str(sklearn.__version__)
         if not self._data._is_unsupervised:
             if self._data._is_empty:
-                emd_params['score'] = self._data._emd['score']
+                emd_params["score"] = self._data._emd["score"]
             else:
-                emd_params['score'] = self.score()
-        emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
-        emd_params['ModelName'] = type(self._model).__name__
-        emd_params['ModelFile'] = base_file_name + '.pkl'
-        emd_params['ModelParameters'] = self._model.get_params()
-        emd_params['categorical_variables'] = self._data._categorical_variables
+                emd_params["score"] = self.score()
+        emd_params["_is_classification"] = (
+            "classification" if self._data._is_classification else "regression"
+        )
+        emd_params["ModelName"] = type(self._model).__name__
+        emd_params["ModelFile"] = base_file_name + ".pkl"
+        emd_params["ModelParameters"] = self._model.get_params()
+        emd_params["categorical_variables"] = self._data._categorical_variables
 
         if self._data._dependent_variable:
-            emd_params['dependent_variable'] = self._data._dependent_variable
+            emd_params["dependent_variable"] = self._data._dependent_variable
 
-        emd_params['continuous_variables'] = self._data._continuous_variables
+        emd_params["continuous_variables"] = self._data._continuous_variables
 
-        with open(emd_file, 'w') as f:
+        with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
 
     @classmethod
@@ -415,57 +448,73 @@ class MLModel(object):
 
         emd_path = str(emd_path)
 
-        if emd_path.endswith('.dlpk'):
-            with ZipFile(emd_path, 'r') as zip_obj:
+        if emd_path.endswith(".dlpk"):
+            with ZipFile(emd_path, "r") as zip_obj:
                 temp_dir = tempfile.TemporaryDirectory().name
                 zip_obj.extractall(temp_dir)
                 MLModel.from_model(temp_dir, data)
 
-        if not emd_path.endswith('.emd'):
-            emd_path = os.path.join(emd_path, (str(os.path.basename(emd_path))+'.emd'))
+        if not emd_path.endswith(".emd"):
+            emd_path = os.path.join(
+                emd_path, (str(os.path.basename(emd_path)) + ".emd")
+            )
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
 
-        with open(emd_path, 'r') as f:
+        with open(emd_path, "r") as f:
             emd = json.loads(f.read())
 
-        categorical_variables = emd['categorical_variables']
-        dependent_variable = emd.get('dependent_variable', None)
-        continuous_variables = emd['continuous_variables']
-        model_parameters = emd['ModelParameters']
+        categorical_variables = emd["categorical_variables"]
+        dependent_variable = emd.get("dependent_variable", None)
+        continuous_variables = emd["continuous_variables"]
+        model_parameters = emd["ModelParameters"]
 
-        if emd['version'] != str(sklearn.__version__):
-            warnings.warn(f"Sklearn version has changed. Model Trained using version {emd['version']}")
+        if emd["version"] != str(sklearn.__version__):
+            warnings.warn(
+                f"Sklearn version has changed. Model Trained using version {emd['version']}"
+            )
 
         _is_classification = True
-        if emd['_is_classification'] != "classification":
+        if emd["_is_classification"] != "classification":
             _is_classification = False
 
         encoder_mapping = None
         if categorical_variables:
-            encoder_path = os.path.join(os.path.dirname(emd_path), os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
+            encoder_path = os.path.join(
+                os.path.dirname(emd_path),
+                os.path.basename(emd_path).split(".")[0] + "_encoders.pkl",
+            )
             if os.path.exists(encoder_path):
-                with open(encoder_path, 'rb') as f:
+                with open(encoder_path, "rb") as f:
                     encoder_mapping = pickle.loads(f.read())
 
         column_transformer = None
-        transforms_path = os.path.join(os.path.dirname(emd_path), os.path.basename(emd_path).split('.')[0] + '_transforms.pkl')
+        transforms_path = os.path.join(
+            os.path.dirname(emd_path),
+            os.path.basename(emd_path).split(".")[0] + "_transforms.pkl",
+        )
         if os.path.exists(transforms_path):
-            with open(transforms_path, 'rb') as f:
+            with open(transforms_path, "rb") as f:
                 column_transformer = pickle.loads(f.read())
 
         if data is None:
-            data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, encoder_mapping, column_transformer)
+            data = TabularDataObject._empty(
+                categorical_variables,
+                continuous_variables,
+                dependent_variable,
+                encoder_mapping,
+                column_transformer,
+            )
             data._is_classification = _is_classification
 
         data._emd = emd
 
-        model_file = os.path.join(os.path.dirname(emd_path), emd['ModelFile'])
-        with open(model_file, 'rb') as f:
+        model_file = os.path.join(os.path.dirname(emd_path), emd["ModelFile"])
+        with open(model_file, "rb") as f:
             model = pickle.loads(f.read())
 
-        return cls(data, emd['ModelName'], pretrained_model=model, **model_parameters)
+        return cls(data, emd["ModelName"], pretrained_model=model, **model_parameters)
 
     def _predict(self, data):
         return self._model.predict(data)
@@ -475,8 +524,8 @@ class MLModel(object):
         if not encoder_mapping:
             return
 
-        encoder_file = os.path.join(path, base_file_name + '_encoders.pkl')
-        with open(encoder_file, 'wb') as f:
+        encoder_file = os.path.join(path, base_file_name + "_encoders.pkl")
+        with open(encoder_file, "wb") as f:
             f.write(pickle.dumps(encoder_mapping, protocol=_PROTOCOL_LEVEL))
 
     @staticmethod
@@ -484,8 +533,8 @@ class MLModel(object):
         if not column_transformer:
             return
 
-        transforms_file = os.path.join(path, base_file_name + '_transforms.pkl')
-        with open(transforms_file, 'wb') as f:
+        transforms_file = os.path.join(path, base_file_name + "_transforms.pkl")
+        with open(transforms_file, "wb") as f:
             f.write(pickle.dumps(column_transformer, protocol=_PROTOCOL_LEVEL))
 
     @property
@@ -498,7 +547,27 @@ class MLModel(object):
         from sklearn.cluster import KMeans
         from sklearn.metrics import silhouette_score
 
-        range_n_clusters = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        range_n_clusters = [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+        ]
 
         threshold = 5
         count = 0
@@ -529,23 +598,15 @@ class MLModel(object):
                 break
 
         import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(1, 1)
 
-        ax.plot(
-            range_n_clusters[0:len(scores)],
-            scores
-        )
+        ax.plot(range_n_clusters[0 : len(scores)], scores)
         ax.set_xlabel("Cluster")
         ax.set_ylabel("Silhouette scores")
         # ax.set_xscale('log')
         # ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
-        ax.plot(
-            max_cluster,
-            max_score,
-            markersize=10,
-            marker='o',
-            color='red'
-        )
+        ax.plot(max_cluster, max_score, markersize=10, marker="o", color="red")
 
         plt.show()
 
@@ -564,8 +625,8 @@ class MLModel(object):
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-        if not ('\\' in str(name_or_path) or '/' in str(name_or_path)):
-            name_or_path = self._data.path / 'models' / name_or_path
+        if not ("\\" in str(name_or_path) or "/" in str(name_or_path)):
+            name_or_path = self._data.path / "models" / name_or_path
         model = MLModel.from_model(name_or_path, self._data)
         self._model = model._model
 
@@ -574,7 +635,27 @@ class MLModel(object):
 
         from sklearn.mixture import GaussianMixture
 
-        range_n_components = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        range_n_components = [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+        ]
 
         max_score = -1
         max_component = 2
@@ -601,23 +682,15 @@ class MLModel(object):
                 break
 
         import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(1, 1)
 
-        ax.plot(
-            range_n_components[0:len(scores)],
-            scores
-        )
+        ax.plot(range_n_components[0 : len(scores)], scores)
         ax.set_xlabel("Cluster")
         ax.set_ylabel("BIC score")
         # ax.set_xscale('log')
         # ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
-        ax.plot(
-            max_component,
-            max_score,
-            markersize=10,
-            marker='o',
-            color='red'
-        )
+        ax.plot(max_component, max_score, markersize=10, marker="o", color="red")
 
         plt.show()
 
@@ -626,18 +699,19 @@ class MLModel(object):
         return max_component
 
     def predict(
-            self,
-            input_features=None,
-            explanatory_rasters=None,
-            datefield=None,
-            distance_features=None,
-            output_layer_name=None,
-            gis=None,
-            prediction_type='features',
-            output_raster_path=None,
-            match_field_names=None,
-            explain=False,
-            explain_index=None):
+        self,
+        input_features=None,
+        explanatory_rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name=None,
+        gis=None,
+        prediction_type="features",
+        output_raster_path=None,
+        match_field_names=None,
+        explain=False,
+        explain_index=None,
+    ):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -708,45 +782,72 @@ class MLModel(object):
         rasters = explanatory_rasters if explanatory_rasters else []
         if explain:
             if not HAS_SHAP:
-                warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
+                warnings.warn(
+                    "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
+                )
                 explain = False
                 explain_index = None
-        if prediction_type in ['features', 'dataframe']:
+        if prediction_type in ["features", "dataframe"]:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type,explain,explain_index)
+            return self._predict_features(
+                input_features,
+                rasters,
+                datefield,
+                distance_features,
+                output_layer_name,
+                gis,
+                match_field_names,
+                prediction_type,
+                explain,
+                explain_index,
+            )
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
 
             if not output_raster_path:
-                raise Exception("Please specify output_raster_folder_path to save the output.")
+                raise Exception(
+                    "Please specify output_raster_folder_path to save the output."
+                )
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index,output_layer_name,gis)
+            return self._predict_rasters(
+                output_raster_path,
+                rasters,
+                match_field_names,
+                explain,
+                explain_index,
+                output_layer_name,
+                gis,
+            )
 
     def _predict_features(
-            self,
-            input_features,
-            rasters=None,
-            datefield=None,
-            distance_feature_layers=None,
-            output_name="Prediction Layer",
-            gis=None,
-            match_field_names=None,
-            prediction_type="features",
-            explain = False,
-            explain_index = None
+        self,
+        input_features,
+        rasters=None,
+        datefield=None,
+        distance_feature_layers=None,
+        output_name="Prediction Layer",
+        gis=None,
+        match_field_names=None,
+        prediction_type="features",
+        explain=False,
+        explain_index=None,
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
-        distance_feature_layers = distance_feature_layers if distance_feature_layers else []
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
+        distance_feature_layers = (
+            distance_feature_layers if distance_feature_layers else []
+        )
         continuous_variables = self._data._continuous_variables
 
         columns = dataframe.columns
@@ -785,13 +886,16 @@ class MLModel(object):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            processed_dataframe, fields_mapping = TabularDataObject._prepare_dataframe_from_features(
+            (
+                processed_dataframe,
+                fields_mapping,
+            ) = TabularDataObject._prepare_dataframe_from_features(
                 input_features,
                 self._data._dependent_variable,
                 feature_layer_columns,
                 raster_columns,
                 datefield,
-                distance_feature_layers
+                distance_feature_layers,
             )
 
         if match_field_names:
@@ -805,7 +909,10 @@ class MLModel(object):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1), fit=False)
+        processed_numpy = self._data._process_data(
+            processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
+            fit=False,
+        )
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
         if explain:
@@ -813,22 +920,40 @@ class MLModel(object):
                 random_index = True
             else:
                 random_index = False
-            explain_prediction(self,processed_dataframe,index=explain_index,random_index=random_index,predictor=None,
-                               global_pred=False)
+            explain_prediction(
+                self,
+                processed_dataframe,
+                index=explain_index,
+                random_index=random_index,
+                predictor=None,
+                global_pred=False,
+            )
         if prediction_type == "dataframe":
             return dataframe
 
-        if 'SHAPE' in list(dataframe.columns):
+        if "SHAPE" in list(dataframe.columns):
             return dataframe.spatial.to_featurelayer(output_name, gis)
         else:
             import tempfile
+
             with tempfile.TemporaryDirectory() as tmpdir:
-                table_file = os.path.join(tmpdir, output_name + '.xlsx')
+                table_file = os.path.join(tmpdir, output_name + ".xlsx")
                 dataframe.to_excel(table_file, index=False, header=True)
-                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                online_table = gis.content.add(
+                    {"type": "Microsoft Excel", "overwrite": True}, table_file
+                )
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None,output_layer_name=None, gis=None):
+    def _predict_rasters(
+        self,
+        output_folder_path,
+        rasters,
+        match_field_names=None,
+        explain=False,
+        explain_index=None,
+        output_layer_name=None,
+        gis=None,
+    ):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -854,35 +979,61 @@ class MLModel(object):
         if not HAS_FAST_PROGRESS:
             raise Exception("This function requires fastprogress.")
 
-        fields_needed = self._data._categorical_variables + self._data._continuous_variables
-        raster_names = [r.name for r in rasters] # Removing duplicate rasters if same raster is passed twice.
+        fields_needed = (
+            self._data._categorical_variables + self._data._continuous_variables
+        )
+        raster_names = [
+            r.name for r in rasters
+        ]  # Removing duplicate rasters if same raster is passed twice.
         unique_indexes = [raster_names.index(x) for x in set(raster_names)]
         rasters = [rasters[i] for i in unique_indexes]
 
         try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkt"
+            ]
         except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
+            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
+                "wkid"
+            ]
 
-        xmin = rasters[0].extent['xmin']
-        xmax = rasters[0].extent['xmax']
-        ymin = rasters[0].extent['ymin']
-        ymax = rasters[0].extent['ymax']
+        xmin = rasters[0].extent["xmin"]
+        xmax = rasters[0].extent["xmax"]
+        ymin = rasters[0].extent["ymin"]
+        ymax = rasters[0].extent["ymax"]
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent['spatialReference']
+        default_sr = rasters[0].extent["spatialReference"]
 
         for raster in rasters:
             point_upper = arcgis.geometry.Point(
-                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmin"],
+                    "y": raster.extent["ymax"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             point_lower = arcgis.geometry.Point(
-                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.extent["xmax"],
+                    "y": raster.extent["ymin"],
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
             cell_size = arcgis.geometry.Point(
-                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
+                {
+                    "x": raster.mean_cell_width,
+                    "y": raster.mean_cell_height,
+                    "sr": raster.extent["spatialReference"],
+                }
+            )
 
-            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
-                                             default_sr)
+            points = arcgis.geometry.project(
+                [point_upper, point_lower, cell_size],
+                raster.extent["spatialReference"],
+                default_sr,
+            )
             point_upper = points[0]
             point_lower = points[1]
             cell_size = points[2]
@@ -902,21 +1053,35 @@ class MLModel(object):
             if min_cell_size_y > cell_size.y:
                 min_cell_size_y = cell_size.y
 
-        max_raster_columns = int(abs(math.ceil((xmax-xmin)/min_cell_size_x)))
-        max_raster_rows = int(abs(math.ceil((ymax-ymin)/min_cell_size_y)))
+        max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
+        max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
-        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
+        cell_size = arcgis.geometry.Point(
+            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        )
 
         raster_data = {}
-        #fields_needed.append(raster.name)# Change
+        # fields_needed.append(raster.name)# Change
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
-            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
-            #if field_name in fields_needed:
+            point_upper_translated = arcgis.geometry.project(
+                [point_upper], default_sr, raster.extent["spatialReference"]
+            )[0]
+            cell_size_translated = arcgis.geometry.project(
+                [cell_size], default_sr, raster.extent["spatialReference"]
+            )[0]
+            # if field_name in fields_needed:
             if field_name == re.search("(?s:.*)_", fields_needed[-1]).group(0)[:-1]:
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -924,7 +1089,7 @@ class MLModel(object):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 if key in fields_needed:
                                     raster_data[key] = []
@@ -934,8 +1099,16 @@ class MLModel(object):
             elif match_field_names:
                 field_name = list(match_field_names.values())[-1]
                 field_name = re.search("(?s:.*)_", field_name).group(0)[:-1]
-                #field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                # field_name = match_field_names.get(raster.name)
+                raster_read = raster.read(
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
                         values = raster_read[row][column]
@@ -943,7 +1116,7 @@ class MLModel(object):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 if key in fields_needed:
                                     raster_data[key] = []
@@ -954,7 +1127,11 @@ class MLModel(object):
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
+            if (
+                field not in list(raster_data.keys())
+                and match_field_names
+                and match_field_names.get(field, None) is None
+            ):
                 raise Exception(f"Field missing {field}")
 
         processed_data = []
@@ -966,7 +1143,9 @@ class MLModel(object):
                 processed_row.append(raster_data[raster_name][i])
             processed_data.append(processed_row)
 
-        processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
+        processed_df = pd.DataFrame(
+            data=np.array(processed_data), columns=sorted(raster_data)
+        )
 
         processed_numpy = self._data._process_data(processed_df, fit=False)
 
@@ -975,21 +1154,36 @@ class MLModel(object):
                 random_index = True
             else:
                 random_index = False
-            explain_prediction(self,processed_df,index=explain_index,random_index=random_index,predictor=None,
-                               global_pred=False)
+            explain_prediction(
+                self,
+                processed_df,
+                index=explain_index,
+                random_index=random_index,
+                predictor=None,
+                global_pred=False,
+            )
 
         predictions = self._predict(processed_numpy)
 
-        predictions = np.array(predictions.reshape([max_raster_rows, max_raster_columns]), dtype='float64')
+        predictions = np.array(
+            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
+        )
 
-        processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
+        processed_raster = arcpy.NumPyArrayToRaster(
+            predictions,
+            arcpy.Point(xmin, ymin),
+            x_cell_size=min_cell_size_x,
+            y_cell_size=min_cell_size_y,
+        )
         processed_raster.save(output_folder_path)
         if output_layer_name:
-            copy_raster_op = copy_raster(input_raster=output_folder_path,
-                                         output_name=output_layer_name.replace(" ", ""),
-                                         raster_type_name="Raster Dataset",
-                                         gis=gis,
-                                         tiles_only=True)
-            print('The Published Item ID is : ',copy_raster_op.id)
+            copy_raster_op = copy_raster(
+                input_raster=output_folder_path,
+                output_name=output_layer_name.replace(" ", ""),
+                raster_type_name="Raster Dataset",
+                gis=gis,
+                tiles_only=True,
+            )
+            print("The Published Item ID is : ", copy_raster_op.id)
             return
         return True
