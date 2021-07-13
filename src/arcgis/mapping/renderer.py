@@ -1278,7 +1278,7 @@ def generate_renderer(
 
         # calculate the class breaks from column data
         cbs = []
-        breaks = np.linspace(minValue, maxValue, num=class_count).tolist()
+        breaks = np.linspace(minValue, maxValue, num=class_count+1).tolist()
         steps = np.linspace(0, 255, len(breaks), dtype=np.int)
         ss = symbol_args.pop("symbol_style", None)
         st = symbol_args.pop("symbol_type", None)
@@ -1286,6 +1286,8 @@ def generate_renderer(
 
         for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
             gt = None
+            if pair[1] is None:
+                break
             if isinstance(sdf_or_series, SpatialDataFrame) or hasattr(
                 sdf_or_series, "geometry_type"
             ):
