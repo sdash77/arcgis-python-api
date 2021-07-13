@@ -2057,7 +2057,7 @@ class FeatureLayerCollectionManager(_GISResource):
         # endregion
         params = None
         if (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline == False
         ):
             params = {
@@ -2104,7 +2104,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # region construct publishParameters dictionary
         elif (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition
