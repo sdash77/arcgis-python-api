@@ -1278,7 +1278,7 @@ def generate_renderer(
 
         # calculate the class breaks from column data
         cbs = []
-        breaks = np.linspace(minValue, maxValue, num=class_count+1).tolist()
+        breaks = np.linspace(minValue, maxValue, num=class_count + 1).tolist()
         steps = np.linspace(0, 255, len(breaks), dtype=np.int)
         ss = symbol_args.pop("symbol_style", None)
         st = symbol_args.pop("symbol_type", None)
