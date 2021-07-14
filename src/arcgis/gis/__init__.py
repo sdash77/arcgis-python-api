@@ -11722,17 +11722,17 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-            elif fileType.lower() == 'csv' and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type='csv')
+            elif fileType.lower() == "csv" and not overwrite:
+                res = self._gis.content.analyze(item=self, file_type="csv")
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
-                
-            elif fileType.lower() == 'excel' and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type='excel')
+
+            elif fileType.lower() == "excel" and not overwrite:
+                res = self._gis.content.analyze(item=self, file_type="excel")
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
-                publish_parameters.update({"name": service_name})                
+                publish_parameters.update({"name": service_name})
 
             elif (
                 fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite
