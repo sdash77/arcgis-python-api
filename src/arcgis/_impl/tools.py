@@ -15562,7 +15562,7 @@ class _GeometryService(_GISService):
             "sr": sr,
         }
         if isinstance(areaUnit, str):
-            areaUnit = {"areaUnit" : areaUnit}
+            areaUnit = {"areaUnit": areaUnit}
         if isinstance(polygons, list) and len(polygons) > 0:
             p = polygons[0]
             if isinstance(p, Polygon):
