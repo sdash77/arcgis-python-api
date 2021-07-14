@@ -4777,11 +4777,11 @@ class ContentManager(object):
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {"layers": [data._lyr_dict]}
             data = None
         elif _is_geoenabled(data) and hasattr(data, "spatial"):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
@@ -11679,7 +11679,7 @@ class Item(dict):
             elif self["type"] == "Feature Collection":
                 fileType = "featureCollection"
             elif self["type"] == "CSV":
-                fileType = "CSV"
+                fileType = "csv"
             elif self["type"] == "Shapefile":
                 fileType = "shapefile"
             elif self["type"] == "File Geodatabase":
@@ -11721,13 +11721,13 @@ class Item(dict):
                     "layerInfo": {"capabilities": "Query"},
                 }
 
-            elif fileType in ["CSV", "excel"] and not overwrite:
+            elif fileType in ["csv", "excel"] and not overwrite:
                 path = "content/features/analyze"
 
                 postdata = {
                     "f": "pjson",
                     "itemid": self.itemid,
-                    "filetype": "csv",
+                    "filetype": fileType,
                     "analyzeParameters": {
                         "enableGlobalGeocoding": "true",
                         "sourceLocale": "en-us",
@@ -11750,7 +11750,7 @@ class Item(dict):
                 publish_parameters.update({"name": service_name})
 
             elif (
-                fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite
+                fileType in ["csv", "shapefile", "fileGeodatabase", "excel"] and overwrite
             ):  # need to construct full publishParameters
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
@@ -11777,14 +11777,14 @@ class Item(dict):
                         self.update(item_properties=update_params)
 
                     # if source file type is CSV or Excel, blend publish parameters with analysis results
-                    if fileType == "CSV":
+                    if fileType in ["csv", "excel"] :
                         publish_parameters_orig = publish_parameters
                         path = "content/features/analyze"
 
                         postdata = {
                             "f": "pjson",
                             "itemid": self.itemid,
-                            "filetype": "csv",
+                            "filetype": fileType,
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
@@ -11886,7 +11886,7 @@ class Item(dict):
                 }
 
         elif (
-            fileType == "CSV" or fileType == "excel"
+            fileType in ["csv", "excel"]
         ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
             path = "content/features/analyze"
@@ -11894,7 +11894,7 @@ class Item(dict):
             postdata = {
                 "f": "pjson",
                 "itemid": self.itemid,
-                "filetype": "csv",
+                "filetype": fileType,
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
                     "sourceLocale": "en-us",
