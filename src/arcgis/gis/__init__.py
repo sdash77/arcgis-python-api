@@ -4461,6 +4461,22 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    # ----------------------------------------------------------------------
+    def check_url(self, url: str) -> Dict[str, Any]:
+        """
+        To verify a URL is accessible by the Organization, provide the `url` and
+        the system will check if the location is valid and reachable.  This
+        method is useful when checking service URLs or validating that URLs can
+        be reached.
+
+        :returns: Dict[str, Any]
+
+        """
+        curl = f"{self._gis._portal.resturl}portals/checkUrl"
+        params = {"f": "json", "url": url}
+        return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -11585,6 +11601,7 @@ class Item(dict):
         file_type=None,
         build_initial_cache=False,
         item_id=None,
+        geocode_service=None,
     ):
         """
         Publishes a hosted service based on an existing source item (this item).
@@ -11644,6 +11661,11 @@ class Item(dict):
                                during the `publish` process.
 
                                Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -------------------    ---------------------------------------------------------------
+        geocode_service        Optional Geocoder. When publishing a table of data, an optional
+                               `Geocoder` can be supplied in order to specify which service
+                               geocodes the information. If no geocoder is given, the first
+                               registered `Geocoder` is used.
         ===================    ===============================================================
 
 
@@ -11722,17 +11744,36 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-            elif fileType.lower() == "csv" and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type="csv")
-                publish_parameters = res["publishParameters"]
-                service_name = re.sub(r"[\W_]+", "_", self["title"])
-                publish_parameters.update({"name": service_name})
+            elif fileType in ["csv", "excel"] and not overwrite:
+                location_type = None
+                if geocode_service is None:
+                    from arcgis.geocoding import get_geocoders
 
-            elif fileType.lower() == "excel" and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type="excel")
+                    services = [
+                        geocoder
+                        for geocoder in get_geocoders(gis=self._gis)
+                        if geocoder._url.find("portal/sharing") > -1
+                    ]
+                    if len(services) > 0:
+                        geocode_service = services[0]
+                    else:
+                        geocode_service = get_geocoders(gis=self._gis)[0]
+                if address_fields is not None:
+                    location_type = "address"
+                res = self._gis.content.analyze(
+                    item=self,
+                    file_type=fileType,
+                    location_type=location_type,
+                    geocoding_service=geocode_service,
+                )
                 publish_parameters = res["publishParameters"]
+
+                if address_fields is not None:
+                    publish_parameters.update({"addressFields": address_fields})
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
-                publish_parameters.update({"name": service_name})
+                import uuid
+
+                publish_parameters.update({"name": service_name + uuid.uuid4().hex[:3]})
 
             elif (
                 fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite
