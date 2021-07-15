@@ -272,8 +272,8 @@ def connect_origins_to_destinations(
             travelmodes = route_service.retrieve_travel_modes()
             tm = [
                 stm
-                for stm in travelmodes['supportedTravelModes']
-                if stm['id'] == travelmodes['defaultTravelMode']
+                for stm in travelmodes["supportedTravelModes"]
+                if stm["id"] == travelmodes["defaultTravelMode"]
             ]
             if tm:
                 params["measurement_type"] = tm[0]
