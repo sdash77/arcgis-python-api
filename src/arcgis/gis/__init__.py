@@ -11670,6 +11670,8 @@ class Item(dict):
         if file_type is None:
             if self["type"] == "GeoPackage":
                 fileType = "gpkg"
+            elif self["type"].lower().find("excel") > -1:
+                fileType = "excel"
             elif self["type"] == "Compact Tile Package":
                 fileType = "compactTilePackage"
             elif self["type"] == "Service Definition":
@@ -11720,32 +11722,15 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-
-            elif fileType in ["CSV", "excel"] and not overwrite:
-                path = "content/features/analyze"
-
-                postdata = {
-                    "f": "pjson",
-                    "itemid": self.itemid,
-                    "filetype": "csv",
-                    "analyzeParameters": {
-                        "enableGlobalGeocoding": "true",
-                        "sourceLocale": "en-us",
-                        # "locationType":"address",
-                        "sourceCountry": "",
-                        "sourceCountryHint": "",
-                    },
-                }
-
-                if address_fields is not None:
-                    postdata["analyzeParameters"]["locationType"] = "address"
-
-                res = self._portal.con.post(path, postdata)
+            elif fileType.lower() == "csv" and not overwrite:
+                res = self._gis.content.analyze(item=self, file_type="csv")
                 publish_parameters = res["publishParameters"]
-                if address_fields is not None:
-                    publish_parameters.update({"addressFields": address_fields})
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
 
-                # use csv title for service name, after replacing non-alphanumeric characters with _
+            elif fileType.lower() == "excel" and not overwrite:
+                res = self._gis.content.analyze(item=self, file_type="excel")
+                publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
 
