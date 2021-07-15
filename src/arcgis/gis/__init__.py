@@ -11670,6 +11670,8 @@ class Item(dict):
         if file_type is None:
             if self["type"] == "GeoPackage":
                 fileType = "gpkg"
+            elif self["type"].lower().find("excel") > -1:
+                fileType = "excel"
             elif self["type"] == "Compact Tile Package":
                 fileType = "compactTilePackage"
             elif self["type"] == "Service Definition":
@@ -11722,33 +11724,11 @@ class Item(dict):
                 }
 
             elif fileType in ["csv", "excel"] and not overwrite:
-                path = "content/features/analyze"
-
-                postdata = {
-                    "f": "pjson",
-                    "itemid": self.itemid,
-                    "filetype": fileType,
-                    "analyzeParameters": {
-                        "enableGlobalGeocoding": "true",
-                        "sourceLocale": "en-us",
-                        # "locationType":"address",
-                        "sourceCountry": "",
-                        "sourceCountryHint": "",
-                    },
-                }
-
-                if address_fields is not None:
-                    postdata["analyzeParameters"]["locationType"] = "address"
-
-                res = self._portal.con.post(path, postdata)
+                res = self._gis.content.analyze(item=self, file_type=fileType)
                 publish_parameters = res["publishParameters"]
-                if address_fields is not None:
-                    publish_parameters.update({"addressFields": address_fields})
-
-                # use csv title for service name, after replacing non-alphanumeric characters with _
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
-
+            
             elif (
                 fileType in ["csv", "shapefile", "fileGeodatabase", "excel"] and overwrite
             ):  # need to construct full publishParameters
@@ -11889,28 +11869,29 @@ class Item(dict):
             fileType in ["csv", "excel"]
         ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
-            path = "content/features/analyze"
-
-            postdata = {
-                "f": "pjson",
-                "itemid": self.itemid,
-                "filetype": fileType,
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    # "locationType":"address",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                },
-            }
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
+            res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters:
+                publish_parameters["layers"] =[]
+            if "tables" not in publish_parameters:
+                publish_parameters["tables"] =[]
+            
+            # update layers but layer index must match
+            # update the layers otherwise general update will overwrite nested dictionary
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr.update(publish_parameters_orig["layers"][idx])
+            for idx, tbl in enumerate(publish_parameters["tables"]):
+                tbl.update(publish_parameters_orig["tables"][idx])
+
+            # delete since already updated and avoid overwritting
+            del publish_parameters_orig["layers"]
+            del publish_parameters_orig["tables"]
+
+            # do general update
             publish_parameters.update(publish_parameters_orig)
-        # params['overwrite'] = json.dumps(overwrite)
+
         ret = self._portal.publish_item(
             self.itemid,
             None,
