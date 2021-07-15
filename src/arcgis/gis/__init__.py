@@ -30,8 +30,8 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import chunks as _chunks
+from cachetools import cached, TTLCache
 from ._impl import _portalpy
-
 from ._impl._jb import StatusJob
 
 _log = logging.getLogger(__name__)
@@ -9528,6 +9528,9 @@ class Item(dict):
             self["layers"] = None
             self["tables"] = None
 
+    def __hash__(self):
+        return hash(tuple(frozenset(self)))
+
     # ----------------------------------------------------------------------
     @property
     def snapshots(self) -> list:
@@ -11147,6 +11150,7 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range="7D", as_df=True):
         """
 
