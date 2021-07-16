@@ -386,8 +386,11 @@ class Connection(object):
                                       add a token to any token based security.
         ---------------------------   -----------------------------------------------------
         json_encode                   optional Boolean.  When False, the JSON values will not be encoded.
+        ---------------------------   -----------------------------------------------------
+        ignore_error_key              otional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
         ===========================   =====================================================
         """
+        ignore_error_key = kwargs.pop("ignore_error_key", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
@@ -492,10 +495,19 @@ class Connection(object):
             out_path,
             try_json,
             force_bytes=kwargs.pop("force_bytes", False),
+            ignore_error_key=ignore_error_key,
         )
 
     # ----------------------------------------------------------------------
-    def _handle_response(self, resp, file_name, out_path, try_json, force_bytes=False):
+    def _handle_response(
+        self,
+        resp,
+        file_name,
+        out_path,
+        try_json,
+        force_bytes=False,
+        ignore_error_key=False,
+    ):
         """
         handles the request responses
 
@@ -583,7 +595,7 @@ class Connection(object):
                     else:
                         data += it
                 data = json.loads(data)
-                if "error" in data:
+                if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:
                 data = resp.json()
@@ -592,7 +604,7 @@ class Connection(object):
             # return data
             # else:
             # return resp.text
-            if "error" in data:
+            if "error" in data and ignore_error_key == False:
                 if "messages" in data:
                     return data
                 errorcode = data["error"]["code"] if "code" in data["error"] else 0
