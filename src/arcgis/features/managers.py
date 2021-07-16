@@ -2072,15 +2072,15 @@ class FeatureLayerCollectionManager(_GISResource):
 
              # append layers and tables and check if empty
             layers_and_tables=[]
-            layers_and_tables.append(feature_layer_item.layers)
-            layers_and_tables.append(feature_layer_item.tabels)
+            layers_and_tables.extend(feature_layer_item.layers)
+            layers_and_tables.extend(feature_layer_item.tables)
             if not layers_and_tables:
                 raise Exception(
                 "Must contain layer or table. Empty list."
                 )
 
-            lyr_url_info = "%s/layers" % feature_layer_item.layers_and_tables[0].container._url
-            fs_url = "%s" % feature_layer_item.layers_and_tables[0].container._url
+            lyr_url_info = "%s/layers" % layers_and_tables[0].container._url
+            fs_url = "%s" % layers_and_tables[0].container._url
             layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
