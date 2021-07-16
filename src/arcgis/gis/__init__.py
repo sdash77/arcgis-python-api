@@ -30,8 +30,8 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import chunks as _chunks
+from cachetools import cached, TTLCache
 from ._impl import _portalpy
-
 from ._impl._jb import StatusJob
 
 _log = logging.getLogger(__name__)
@@ -4461,6 +4461,22 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    # ----------------------------------------------------------------------
+    def check_url(self, url: str) -> Dict[str, Any]:
+        """
+        To verify a URL is accessible by the Organization, provide the `url` and
+        the system will check if the location is valid and reachable.  This
+        method is useful when checking service URLs or validating that URLs can
+        be reached.
+
+        :returns: Dict[str, Any]
+
+        """
+        curl = f"{self._gis._portal.resturl}portals/checkUrl"
+        params = {"f": "json", "url": url}
+        return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -9512,6 +9528,9 @@ class Item(dict):
             self["layers"] = None
             self["tables"] = None
 
+    def __hash__(self):
+        return hash(tuple(frozenset(self)))
+
     # ----------------------------------------------------------------------
     @property
     def snapshots(self) -> list:
@@ -11131,6 +11150,7 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range="7D", as_df=True):
         """
 
@@ -11585,6 +11605,7 @@ class Item(dict):
         file_type=None,
         build_initial_cache=False,
         item_id=None,
+        geocode_service=None,
     ):
         """
         Publishes a hosted service based on an existing source item (this item).
@@ -11644,6 +11665,11 @@ class Item(dict):
                                during the `publish` process.
 
                                Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -------------------    ---------------------------------------------------------------
+        geocode_service        Optional Geocoder. When publishing a table of data, an optional
+                               `Geocoder` can be supplied in order to specify which service
+                               geocodes the information. If no geocoder is given, the first
+                               registered `Geocoder` is used.
         ===================    ===============================================================
 
 

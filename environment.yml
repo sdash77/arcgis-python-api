@@ -46,3 +46,4 @@ dependencies:
   - requests_toolbelt>=0.9.1
   - requests_ntlm
   - python-certifi-win32
+  - cachetools
