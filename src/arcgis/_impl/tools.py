@@ -15554,6 +15554,8 @@ class _GeometryService(_GISService):
            JSON as dictionary
         """
         url = self._url + "/areasAndLengths"
+        if isinstance(areaUnit, str):
+            areaUnit = {"areaUnit": areaUnit}
         params = {
             "f": "json",
             "lengthUnit": lengthUnit,
