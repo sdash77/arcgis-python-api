@@ -200,13 +200,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#Based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+# Based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
 
 import numpy as np
 from typing import Dict
 import torch
 from torch import nn
 from torch.nn import functional as F
+
 
 def calculate_uncertainty(sem_seg_logits):
     """
@@ -223,6 +224,7 @@ def calculate_uncertainty(sem_seg_logits):
     """
     top2_scores = torch.topk(sem_seg_logits, k=2, dim=1)[0]
     return (top2_scores[:, 1] - top2_scores[:, 0]).unsqueeze(1)
+
 
 def point_sample(input, point_coords, **kwargs):
     """
@@ -249,6 +251,7 @@ def point_sample(input, point_coords, **kwargs):
         output = output.squeeze(3)
     return output
 
+
 def get_uncertain_point_coords_on_grid(uncertainty_map, num_points):
     """
     Find `num_points` most uncertain points from `uncertainty_map` grid.
@@ -270,13 +273,20 @@ def get_uncertain_point_coords_on_grid(uncertainty_map, num_points):
 
     num_points = min(H * W, num_points)
     point_indices = torch.topk(uncertainty_map.view(R, H * W), k=num_points, dim=1)[1]
-    point_coords = torch.zeros(R, num_points, 2, dtype=torch.float, device=uncertainty_map.device)
+    point_coords = torch.zeros(
+        R, num_points, 2, dtype=torch.float, device=uncertainty_map.device
+    )
     point_coords[:, :, 0] = w_step / 2.0 + (point_indices % W).to(torch.float) * w_step
     point_coords[:, :, 1] = h_step / 2.0 + (point_indices // W).to(torch.float) * h_step
     return point_indices, point_coords
 
+
 def get_uncertain_point_coords_with_randomness(
-    coarse_logits, uncertainty_func, num_points, oversample_ratio, importance_sample_ratio
+    coarse_logits,
+    uncertainty_func,
+    num_points,
+    oversample_ratio,
+    importance_sample_ratio,
 ):
     """
     Sample points in [0, 1] x [0, 1] coordinate space based on their uncertainty. The unceratinties
@@ -315,7 +325,9 @@ def get_uncertain_point_coords_with_randomness(
     num_uncertain_points = int(importance_sample_ratio * num_points)
     num_random_points = num_points - num_uncertain_points
     idx = torch.topk(point_uncertainties[:, 0, :], k=num_uncertain_points, dim=1)[1]
-    shift = num_sampled * torch.arange(num_boxes, dtype=torch.long, device=coarse_logits.device)
+    shift = num_sampled * torch.arange(
+        num_boxes, dtype=torch.long, device=coarse_logits.device
+    )
     idx += shift[:, None]
     point_coords = point_coords.view(-1, 2)[idx.view(-1), :].view(
         num_boxes, num_uncertain_points, 2
@@ -324,7 +336,9 @@ def get_uncertain_point_coords_with_randomness(
         point_coords = torch.cat(
             [
                 point_coords,
-                torch.rand(num_boxes, num_random_points, 2, device=coarse_logits.device),
+                torch.rand(
+                    num_boxes, num_random_points, 2, device=coarse_logits.device
+                ),
             ],
             dim=1,
         )
@@ -345,10 +359,15 @@ def generate_regular_grid_point_coords(R, side_size, device):
             for the regular grids.
     """
     aff = torch.tensor([[[0.5, 0, 0.5], [0, 0.5, 0.5]]], device=device)
-    r = F.affine_grid(aff, torch.Size((1, 1, side_size, side_size)), align_corners=False)
+    r = F.affine_grid(
+        aff, torch.Size((1, 1, side_size, side_size)), align_corners=False
+    )
     return r.view(1, -1, 2).expand(R, -1, -1)
 
-def point_sample_fine_grained_features(features_list, feature_scales, boxes, point_coords):
+
+def point_sample_fine_grained_features(
+    features_list, feature_scales, boxes, point_coords
+):
     """
     Get features from feature maps in `features_list` that correspond to specific point coordinates
         inside each bounding box from `boxes`.
@@ -372,7 +391,9 @@ def point_sample_fine_grained_features(features_list, feature_scales, boxes, poi
     point_coords_wrt_image = get_point_coords_wrt_image(cat_boxes, point_coords)
     split_point_coords_wrt_image = torch.split(point_coords_wrt_image, num_boxes)
     point_features = []
-    for idx_img, point_coords_wrt_image_per_image in enumerate(split_point_coords_wrt_image):
+    for idx_img, point_coords_wrt_image_per_image in enumerate(
+        split_point_coords_wrt_image
+    ):
         point_features_per_image = []
         for idx_feature, feature_map in enumerate(features_list):
             h, w = feature_map.shape[-2:]
@@ -391,6 +412,7 @@ def point_sample_fine_grained_features(features_list, feature_scales, boxes, poi
         point_features.append(torch.cat(point_features_per_image, dim=1))
 
     return torch.cat(point_features, dim=0), point_coords_wrt_image
+
 
 def get_point_coords_wrt_image(boxes_coords, point_coords):
     """
@@ -417,6 +439,7 @@ def get_point_coords_wrt_image(boxes_coords, point_coords):
         point_coords_wrt_image[:, :, 0] += boxes_coords[:, None, 0]
         point_coords_wrt_image[:, :, 1] += boxes_coords[:, None, 1]
     return point_coords_wrt_image
+
 
 def roi_mask_point_loss(mask_logits, instances, points_coord):
     """
@@ -446,20 +469,25 @@ def roi_mask_point_loss(mask_logits, instances, points_coord):
         gt_mask_logits = []
         idx = 0
         for instances_per_image in instances:
-            if instances_per_image['gt_masks'].shape[0] == 0:
+            if instances_per_image["gt_masks"].shape[0] == 0:
                 continue
 
             if not cls_agnostic_mask:
-                gt_classes_per_image = instances_per_image['gt_classes'].to(dtype=torch.int64)
+                gt_classes_per_image = instances_per_image["gt_classes"].to(
+                    dtype=torch.int64
+                )
                 gt_classes.append(gt_classes_per_image)
 
-            gt_bit_masks = instances_per_image['gt_masks']
-            h, w = instances_per_image['gt_masks'].shape[-2:]#instances_per_image.gt_masks.image_size
+            gt_bit_masks = instances_per_image["gt_masks"]
+            h, w = instances_per_image["gt_masks"].shape[
+                -2:
+            ]  # instances_per_image.gt_masks.image_size
             scale = torch.tensor([w, h], dtype=torch.float, device=gt_bit_masks.device)
             points_coord_grid_sample_format = (
-                points_coord[idx : idx + instances_per_image['gt_masks'].shape[0]] / scale
+                points_coord[idx : idx + instances_per_image["gt_masks"].shape[0]]
+                / scale
             )
-            idx += instances_per_image['gt_masks'].shape[0]
+            idx += instances_per_image["gt_masks"].shape[0]
             gt_mask_logits.append(
                 point_sample(
                     gt_bit_masks.to(torch.float32).unsqueeze(1),
@@ -486,6 +514,7 @@ def roi_mask_point_loss(mask_logits, instances, points_coord):
     )
     return point_loss
 
+
 def PointRend_target_transform(targets, point_coords):
 
     point_targets = (
@@ -501,6 +530,7 @@ def PointRend_target_transform(targets, point_coords):
 
     return point_targets
 
+
 def c2_msra_fill(module: nn.Module):
     """
     Initialize `module.weight` using the "MSRAFill" implemented in Caffe2.
@@ -512,6 +542,7 @@ def c2_msra_fill(module: nn.Module):
     nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
     if module.bias is not None:  # pyre-ignore
         nn.init.constant_(module.bias, 0)
+
 
 def c2_xavier_fill(module: nn.Module):
     """
@@ -526,6 +557,7 @@ def c2_xavier_fill(module: nn.Module):
     if module.bias is not None:  # pyre-ignore
         nn.init.constant_(module.bias, 0)
 
+
 class PointRendSemSegHead(nn.Module):
     """
     A semantic segmentation head that combines a head set in `POINT_HEAD.COARSE_SEM_SEG_HEAD_NAME`
@@ -534,11 +566,11 @@ class PointRendSemSegHead(nn.Module):
 
     def __init__(self, num_classes, backbone_features_channel, **kwargs):
         super().__init__()
-        self.train_num_points        = max(1024, int(kwargs.get('train_num_points', 1024)))
-        self.oversample_ratio        = 3
+        self.train_num_points = max(1024, int(kwargs.get("train_num_points", 1024)))
+        self.oversample_ratio = 3
         self.importance_sample_ratio = 0.75
-        self.subdivision_steps       = int(kwargs.get('subdivision_steps', 3))
-        self.subdivision_num_points  = int(kwargs.get('subdivision_num_points', 1024))
+        self.subdivision_steps = int(kwargs.get("subdivision_steps", 3))
+        self.subdivision_num_points = int(kwargs.get("subdivision_num_points", 1024))
         self.point_head = StandardPointHead(num_classes, backbone_features_channel)
 
     def forward(self, coarse_sem_seg_logits, backbone_features):
@@ -552,7 +584,9 @@ class PointRendSemSegHead(nn.Module):
                     self.oversample_ratio,
                     self.importance_sample_ratio,
                 )
-            coarse_features = point_sample(coarse_sem_seg_logits, point_coords, align_corners=False)
+            coarse_features = point_sample(
+                coarse_sem_seg_logits, point_coords, align_corners=False
+            )
 
             fine_grained_features = torch.cat(
                 [
@@ -561,9 +595,9 @@ class PointRendSemSegHead(nn.Module):
                 ],
                 dim=1,
             )
-            
+
             point_logits = self.point_head(fine_grained_features, coarse_features)
-            
+
             return point_logits, point_coords
         else:
             sem_seg_logits = coarse_sem_seg_logits.clone()
@@ -575,13 +609,13 @@ class PointRendSemSegHead(nn.Module):
                 point_indices, point_coords = get_uncertain_point_coords_on_grid(
                     uncertainty_map, self.subdivision_num_points
                 )
-                
+
                 fine_grained_features = torch.cat(
-                [
-                    point_sample(in_feature, point_coords, align_corners=False)
-                    for in_feature in backbone_features
-                ],
-                dim=1,
+                    [
+                        point_sample(in_feature, point_coords, align_corners=False)
+                        for in_feature in backbone_features
+                    ],
+                    dim=1,
                 )
 
                 coarse_features = point_sample(
@@ -615,22 +649,26 @@ class StandardPointHead(nn.Module):
                 layer's input
         """
         super(StandardPointHead, self).__init__()
-        fc_dim                      = 256
-        num_fc                      = 3
-        cls_agnostic_mask           = False
+        fc_dim = 256
+        num_fc = 3
+        cls_agnostic_mask = False
         self.coarse_pred_each_layer = coarse_pred_each_layer
 
         fc_dim_in = input_channels + num_classes
         self.fc_layers = []
         for k in range(num_fc):
-            fc = nn.Conv1d(fc_dim_in, fc_dim, kernel_size=1, stride=1, padding=0, bias=True)
+            fc = nn.Conv1d(
+                fc_dim_in, fc_dim, kernel_size=1, stride=1, padding=0, bias=True
+            )
             self.add_module("fc{}".format(k + 1), fc)
             self.fc_layers.append(fc)
             fc_dim_in = fc_dim
             fc_dim_in += num_classes if self.coarse_pred_each_layer else 0
 
         num_mask_classes = 1 if cls_agnostic_mask else num_classes
-        self.predictor = nn.Conv1d(fc_dim_in, num_mask_classes, kernel_size=1, stride=1, padding=0)
+        self.predictor = nn.Conv1d(
+            fc_dim_in, num_mask_classes, kernel_size=1, stride=1, padding=0
+        )
 
         for layer in self.fc_layers:
             c2_msra_fill(layer)

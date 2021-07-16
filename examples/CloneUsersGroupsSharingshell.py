@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 #
 #   This example demonstrates how to stage a new Portal with user accounts,
 #     Groups, and Group Memebership in order to establish a shell of a Portal
@@ -23,6 +24,7 @@ else:
     # unresolved reference in Python3, but should work if running from Python2
     from urllib2 import URLError
 
+
 def copy_user(target, user, password, role_name):
     # See if the user has firstName and lastName properties
     try:
@@ -35,36 +37,68 @@ def copy_user(target, user, password, role_name):
         try:
             lastname = fullName.split()[1]
         except:
-            lastname = ' '
+            lastname = " "
 
     try:
         testuser = target.users.get(user.username)
         if not testuser is None:
-            print("\tUsername {} already exists in Target Portal; skipping user creation.\n".format(user.username))
+            print(
+                "\tUsername {} already exists in Target Portal; skipping user creation.\n".format(
+                    user.username
+                )
+            )
             return testuser
 
-        target_user = target.users.create(user.username, password, firstname, lastname,
-                                          user.email, user.description, user.role, user.provider, user.idpUsername)
+        target_user = target.users.create(
+            user.username,
+            password,
+            firstname,
+            lastname,
+            user.email,
+            user.description,
+            user.role,
+            user.provider,
+            user.idpUsername,
+        )
 
         # update user properties from existing user
-        target_user.update(user.access, user.preferredView,
-                           user.description, user.tags, user.get_thumbnail_link(),
-                           culture=user.culture, region=user.region)
+        target_user.update(
+            user.access,
+            user.preferredView,
+            user.description,
+            user.tags,
+            user.get_thumbnail_link(),
+            culture=user.culture,
+            region=user.region,
+        )
 
         # update user role;
-        if 'role' in user and not user.role == 'org_user':
-            target_role = [role for role in target.users.roles.all(max_roles=50) if role.name == role_name][0]
-            target_user.update_role(role = target_role)
+        if "role" in user and not user.role == "org_user":
+            target_role = [
+                role
+                for role in target.users.roles.all(max_roles=50)
+                if role.name == role_name
+            ][0]
+            target_user.update_role(role=target_role)
 
         return target_user
 
     except:
-        print("Unable to create user "+ user.username)
+        print("Unable to create user " + user.username)
         return None
 
+
 def copy_group(target, source, group):
-    ''' Copy group to the target portal.'''
-    GROUP_COPY_PROPERTIES = ['title', 'description', 'tags', 'snippet', 'phone', 'access', 'isInvitationOnly']
+    """Copy group to the target portal."""
+    GROUP_COPY_PROPERTIES = [
+        "title",
+        "description",
+        "tags",
+        "snippet",
+        "phone",
+        "access",
+        "isInvitationOnly",
+    ]
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a new groups with the subset of properties we want to
         # copy to the target portal. Handle switching between org and
@@ -75,32 +109,40 @@ def copy_group(target, source, group):
         for property_name in GROUP_COPY_PROPERTIES:
             target_group[property_name] = group[property_name]
 
-        if target_group['access'] == 'org' and target.properties['portalMode'] == 'singletenant':
-            target_group['access'] = 'public'
-        elif target_group['access'] == 'public' and source.properties['portalMode'] == 'singletenant' \
-             and target.properties['portalMode'] == 'multitenant' and 'id' in target.properties: # is org
-            target_group['access'] = 'org'
+        if (
+            target_group["access"] == "org"
+            and target.properties["portalMode"] == "singletenant"
+        ):
+            target_group["access"] = "public"
+        elif (
+            target_group["access"] == "public"
+            and source.properties["portalMode"] == "singletenant"
+            and target.properties["portalMode"] == "multitenant"
+            and "id" in target.properties
+        ):  # is org
+            target_group["access"] = "org"
 
         # Handle the thumbnail (if one exists)
         thumbnail_file = None
-        if 'thumbnail' in group:
-            target_group['thumbnail'] = group.download_thumbnail(temp_dir)
+        if "thumbnail" in group:
+            target_group["thumbnail"] = group.download_thumbnail(temp_dir)
 
         # Create the group in the target portal
         copied_group = target.groups.create_from_dict(target_group)
 
-         # Reassign all groups to correct owners, add users, and find shared items
+        # Reassign all groups to correct owners, add users, and find shared items
         members = group.get_members()
-        copied_group.reassign_to(members['owner'])
-        if members['users']:
-            copied_group.add_users(members['users'])
+        copied_group.reassign_to(members["owner"])
+        if members["users"]:
+            copied_group.add_users(members["users"])
 
         # remove the admin user copying this group from the copied group if that
         #   username is not part of the group in the Source Portal
-        if not target.users.me.username in members['users']:
+        if not target.users.me.username in members["users"]:
             copied_group.remove_users(target.users.me.username)
 
         return copied_group
+
 
 # Wrap source GIS connection with error handling to determine why it may fail
 try:
@@ -112,7 +154,12 @@ except RuntimeError as e2:
 
 # Wrap target GIS connection with error handling to determine why it may fail
 try:
-    target = GIS("https://ps002233.esri.com/portal", "portaladmin", "secretpwd", verify_cert=False)
+    target = GIS(
+        "https://ps002233.esri.com/portal",
+        "portaladmin",
+        "secretpwd",
+        verify_cert=False,
+    )
 except URLError as e:
     sys.exit("Invalid Taget Portal URL...")
 except RuntimeError as e2:
@@ -122,37 +169,46 @@ except RuntimeError as e2:
 sourceusers = source.users.search(max_users=500)
 
 # Create a list of "system" Portal users that we will ignore during copy
-systemusers = ['system_publisher', 'esri_nav', 'esri_livingatlas', 'esri_boundaries', 'esri_demographics', str(source.users.me.username)]
+systemusers = [
+    "system_publisher",
+    "esri_nav",
+    "esri_livingatlas",
+    "esri_boundaries",
+    "esri_demographics",
+    str(source.users.me.username),
+]
 
 for user in sourceusers:
     if not user.username in systemusers:
-        print('Copying {}...'.format(user.username))
+        print("Copying {}...".format(user.username))
         src_role = source.users.roles.get_role(user.roleId)
-        if user.provider == 'arcgis':
-            copy_user(target, user, 'TestPassword@123', src_role.name)
-        elif user.provider == 'enterprise':  # web tier authenticated users
-            copy_user(target, user, 'NoPwdUsed', src_role.name)
+        if user.provider == "arcgis":
+            copy_user(target, user, "TestPassword@123", src_role.name)
+        elif user.provider == "enterprise":  # web tier authenticated users
+            copy_user(target, user, "NoPwdUsed", src_role.name)
 
 # Get list of groups from the Source Portal and also from Target Portal (for cleanup purposes)
 sourcegroups = source.groups.search()
 targetgroups = target.groups.search()
 
 # Create a list of "system" Portal Groups that we will ignore during copy
-systemgroups = ['Navigator Maps', 'Featured Maps and Apps']
+systemgroups = ["Navigator Maps", "Featured Maps and Apps"]
 
 # Let's make sure in our Target Portal, existing Groups don't already exist.
 #   This is useful in testing and cleaning up Groups before trying again.
 #   The assumption is this script is copying to a new, clean Portal.
 for tg in targetgroups:
     for sg in sourcegroups:
-        if sg.title == tg.title and (not tg.owner in systemusers) and (not tg.title in systemgroups):
+        if (
+            sg.title == tg.title
+            and (not tg.owner in systemusers)
+            and (not tg.title in systemgroups)
+        ):
             print("Cleaning up group {} in target Portal...".format(tg.title))
             tg.delete()
             break
 
 for grp in sourcegroups:
     if not grp.title in systemgroups:
-        print('Copying Group {}...'.format(grp.title))
+        print("Copying Group {}...".format(grp.title))
         tgt_group = copy_group(target, source, grp)
-
-

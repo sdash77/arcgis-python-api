@@ -202,7 +202,7 @@ class Feature(object):
 
     @attributes.setter
     def attributes(self, value):
-        """ The ``attributes`` property gets and sets a feature's attributes"""
+        """The ``attributes`` property gets and sets a feature's attributes"""
         self._attributes = value
         self._dict["attributes"] = value
 
@@ -827,23 +827,23 @@ class FeatureSet(object):
     @staticmethod
     def from_json(json_str):
         """
-         The ``from_json`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         JSON string.
+        The ``from_json`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        JSON string.
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
         """
         return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
     def from_dataframe(df):
         """
-         The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
+        The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
-         """
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
 
         def _infer_type(df, col):
             """
@@ -937,11 +937,11 @@ class FeatureSet(object):
     @staticmethod
     def from_geojson(geojson):
         """
-         The ``from_geoJSON`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         GEO JSON  :class:`~arcgis.features.FeatureCollection` object
+        The ``from_geoJSON`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        GEO JSON  :class:`~arcgis.features.FeatureCollection` object
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
 
         """
         from warnings import warn
@@ -1095,11 +1095,11 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """
-         The ``from_dict`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         dictionary.
+        The ``from_dict`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        dictionary.
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
         """
         features = []
         if "fields" in featureset_dict:

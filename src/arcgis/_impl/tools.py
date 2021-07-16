@@ -776,20 +776,20 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
+        The Aggregate Points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
 
         Parameters
         ----------
         point_layer : Required layer (see Feature Input in documentation)
             Point layer to be aggregated
         polygon_layer : Optional layer (see Feature Input in documentation)
-            Polygon layer to which the points should be aggregated.
+            Polygon layer to which the points should be aggregated.  Required if the bin_type, bin_size, and bin_size_unit are not specified.
         keep_boundaries_with_no_points : Optional bool
             Specify whether the polygons without any points should be returned in the output.
         summary_fields : Optional list of strings
-            A list of field names and summary type. Example [fieldName1 summaryType1,fieldName2 summaryType2].
+            A list of field names and summary type. Example ['fieldName1 summaryType1','fieldName2 summaryType2'].
         group_by_field : Optional string
-            A field name from PointLayer based on which the points will be grouped.
+            A field name from point_layer based on which the points will be grouped.
         minority_majority : Optional bool
             This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
         percent_points : Optional bool
@@ -798,11 +798,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
-        estimate: Optional Boolean
+        estimate: Optional bool
             Returns the estimated number of credits for the current task.
-        bin_type: Optional String
-        bin_size : Optional String
-        bin_size_unit: Optional String
+        bin_type: Optional string
+            The type of bin that will be generated and points will be aggregated into if no polygon_layer is provided. One of the following: ['SQUARE', 'HEXAGON']
+        bin_size : Optional float
+            The distance for the bins of type bin_type.
+        bin_size_unit: Optional string
+            The linear unit for bin_size. One of the following: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Nautical Miles']
 
         Returns
         -------
@@ -1870,14 +1873,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features.In both tasks, the attribute expression  where and the spatial relationships within and contains return the same result. This is because these relationships return entire features.When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
+        The Derive New Locations task derives new features from an input layer at the locations that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features. In both tasks, the attribute expression where and the spatial relationships within and contains return the same result. This is because these relationships return entire features. When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
 
         Parameters
         ----------
         input_layers : Required list of Feature Layers
             A list of layers that will be used in the expressions parameter.
         expressions : Required string
-            Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on expressions.
+            A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
         context : Optional string
@@ -2337,7 +2340,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
 
-        :Returns: dict
+        :Returns: output_layer - Feature Layer or Feature Collection
 
         """
         task = "FindCentroids"
@@ -2402,14 +2405,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The Find Existing Locations task selects features in the input layer that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
+        The Find Existing Locations task selects features in an input layer where at least part of the feature meets a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
         Parameters
         ----------
         input_layers : Required list of Feature Layers
             A list of layers that will be used in the expressions parameter.
         expressions : Required string
-            Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
+            A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
         context : Optional string
@@ -3293,7 +3296,54 @@ class _FeatureAnalysisTools(BaseAnalytics):
         join_type=None,
     ):
         """
-        Join Features Tool
+        The Join Features task works with two layers and joins the attributes from the join layer to the target layer based on spatial and/or attribute relationships.
+
+        Parameters
+        ----------
+        target_layer : Required FeatureSet. The point, line, polygon, or table layer that will have attributes from the join_layer appended to its table.
+
+        join_layer : Required FeatureSet. The point, line, polygon, or table layer whose attributes will be joined to the target_layer.
+
+        join_operation : Required string
+            Determines the response if multiple records in the join_layer have the same relationship with a single target feature. One of the following: [‘JoinOneToOne’, ‘JoinOneToMany’]
+
+        attribute_relationship: Optional list of strings
+            A list of dictionaries that define an attribute relationship used to join features. Features are matched when the field values in the join_layer are equal to field values in the target_layer.
+            Example: [{"targetField":"target fieldname","operator":"equal","joinField":"join fieldname"}]
+
+        spatial_relationship : Optional string
+            Defines the spatial relationship that determines which records to join. One of the following: [‘identicalto’, ‘intersects’, ‘completelycontains’, ‘completelywithin’, ‘withindistance’]
+
+        spatial_relationship_distance : Optional float
+            Sets the distance if the spatial_relationship is ‘withindistance’
+
+        spatial_relationship_distance_units : Optional string
+            Sets the distance unit if the spatial_relationship is ‘withindistance’. One of the following: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'Nautical Miles']
+
+        summary_fields : Optional list of strings
+            A list of dictionaries of field names and summary type ex. [{"statisticType": "summaryType1", "onStatisticField": "fieldName1"}]
+
+        records_to_match: Optional string
+            Defines which records are joined when multiple records in the join_layer match a single target feature
+            Example: {"groupByFields":"","orderByFields":"joinField1 ASC","topCount":1}
+
+        join_type: Optional string.
+            One of the following: ['INNER', 'LEFT']. Inner means only target features that match one or more join features are returned, while Left returns all target features.
+
+        output_name : Optional string
+            Additional properties such as output feature service name.
+
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        estimate: Optional bool
+            Returns the estimated number of credits for the current task.
+
+
+        Returns
+        -------
+        result_layer : layer (Feature Service item)
+
         """
         task = "JoinFeatures"
         params = {}
@@ -3846,22 +3896,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
+        The Summarize Within task helps you summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example: Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
 
         Parameters
         ----------
-        sum_within_layer : Required layer (see Feature Input in documentation)
-            A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below) that fall within the boundaries of these polygons will be summarized.
         summary_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features that will be summarized for each polygon in the sumWithinLayer.
+            Point, line, or polygon features that will be summarized for each bin or polygon in the sum_within_layer.
+        sum_within_layer : Optional layer (see Feature Input in documentation)
+            Optional polygon layer. Features, or portions of features, in the summary_layer that fall within the boundaries of these polygons will be summarized. The sum_within_layer is required if the bin_type, bin_size, and bin_size_unit are not specified.
         sum_shape : Optional bool
-            A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of the summaryLayer within each polygon in sumWithinLayer.
+            A boolean value that instructs the task to calculate count of points, length of lines, or areas of polygons of the summary_layer within each summary polygon.
         shape_units : Optional string
-            Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize points.
+            Specify units to summarize the length or areas when sum_shape is set to true. Units are not required to summarize points. When summary_layer contains polygons, options are: [Acres, Hectares, SquareMeters, SquareKilometers, SquareFeet, SquareYards, SquareMiles]. When summary_layer contains lines, options are: [Meters, Kilometers, Feet, Yards, Miles]
         summary_fields : Optional list of strings
-            A list of field names and statistical summary type that you wish to calculate for all features in the  summaryLayer that are within each polygon in the sumWithinLayer . Eg: ["fieldname1 summary", "fieldname2 summary"]
+            A list of field names and statistical summary type that you wish to calculate for features in the summary_layer. Ex: ["fieldname1 summaryType1", "fieldname2 summaryType2"]
         group_by_field : Optional string
-            Specify a field from the summaryLayer features to calculate statistics separately for each unique attribute value.
+            A field from the summary_layer based on which to calculate statistics separately for each unique attribute value.
         minority_majority : Optional bool
             This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
         percent_shape : Optional bool
@@ -3870,8 +3920,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        estimate: Optional bool
+            Returns the estimated number of credits for the operation.
+        bin_type: Optional string
+            The type of bin that will be generated, into which features or portions of features from the summary_layer will be summarized if no sum_within_layer is provided. One of the following: ['SQUARE', 'HEXAGON']
+        bin_size : Optional float
+            The distance for the bins of type bin_type.
+        bin_size_unit: Optional string
+            The linear unit for bin_size. One of the following: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Nautical Miles']
 
         Returns
         -------
@@ -4084,34 +4140,34 @@ class _FeatureAnalysisTools(BaseAnalytics):
         future=False,
     ):
         """
-        The SummarizeNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate the total population within five minutes of driving time of a proposed new store location.Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of store accessibility.
+        The Summarize Nearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example: Calculate the total population within five minutes of driving time of a proposed new store location.
 
         Parameters
         ----------
         sum_nearby_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.
+            Point, line, or polygon features from which distances will be measured to features in the summary_layer.
         summary_layer : Required layer (see Feature Input in documentation)
-            Point, line, or polygon features. Features in this layer that are within the specified distance to features in the sumNearbyLayer will be summarized.
+            Point, line, or polygon features. Features in this layer that are within the specified distance to features in the sum_nearby_layer will be summarized.
         near_type : Optional string
-            Defines what kind of distance measurement you want to use to create areas around the nearbyLayer features.
+            Defines what kind of distance measurement you want to use to create areas around the sum_nearby_layer features.
         distances : Required list of floats
-            An array of double values that defines the search distance for creating areas mentioned above
+            An array of double values that defines the distance(s) around the sum_nearby_layer features within which summary_layer features will be summarized.
         units : Optional string
-            The linear unit for distances parameter above. Eg. Miles, Kilometers, Minutes Seconds etc
+            The linear unit for distances parameter. One of : [Meters, Kilometers, Feet, Yards, Miles, Seconds, Minutes, Hours]
         time_of_day : Optional datetime.date
-            For timeOfDay, set the time and day according to the number of milliseconds elapsed since the Unix epoc (January 1, 1970 UTC). When specified and if relevant for the nearType parameter, the traffic conditions during the time of the day will be considered.
+            When specified and if relevant for the near_type parameter, the traffic conditions during the time of the day will be considered. Set the time and day according to the number of milliseconds elapsed since the Unix epoc (January 1, 1970 UTC).
         time_zone_for_time_of_day : Optional string
-            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
+            Determines if the value specified for time_of_day is specified in UTC or in the time zone of features in the sum_nearby_layer. Use one of: [‘GeoLocal’, ‘UTC’]
         return_boundaries : Optional bool
-            If true, will return a result layer of areas that contain the requested summary information.  The resulting areas are defined by the specified nearType.  For example, if using a StraightLine of 5 miles, your result will contain areas with a 5 mile radius around the input features and specified summary information.If false, the resulting layer will return the same features as the input analysis layer with requested summary information.
+            Determines whether the result layer will return the summary areas defined by the specified near_type (true) or the same features as the input sum_nearby features (false).
         sum_shape : Optional bool
-            A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of the summaryLayer within each polygon in sumWithinLayer.
+            A boolean value that instructs the task to calculate the count of points, length of lines, or areas of polygons of the summary_layer within the specified distance of each sum_nearby_layer feature.
         shape_units : Optional string
-            Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize points.
+            Specify units to summarize the length or areas when sum_shape is set to true. Units are not required to summarize points. When summary_layer contains polygons, options are: [Acres, Hectares, SquareMeters, SquareKilometers, SquareFeet, SquareYards, SquareMiles]. When summary_layer contains lines, options are: [Meters, Kilometers, Feet, Yards, Miles]
         summary_fields : Optional list of strings
-            A list of field names and statistical summary type that you wish to calculate for all features in the summaryLayer that are within each polygon in the sumWithinLayer . Eg: ["fieldname1 summary", "fieldname2 summary"]
+            A list of field names and statistical summary type that you wish to calculate for features in the summary_layer. Ex: ["fieldname1 summaryType1", "fieldname2 summaryType2"]
         group_by_field : Optional string
-            Specify a field from the summaryLayer features to calculate statistics separately for each unique value of the field.
+            A field from the summary_layer based on which to calculate statistics separately for each unique attribute value.
         minority_majority : Optional bool
             This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
         percent_shape : Optional bool
@@ -4120,8 +4176,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
-        estimate: Optional Boolean
-            Returns the number of credit for the operation.
+        estimate: Optional bool
+            Returns the estimated number of credits for the operation.
 
         Returns
         -------

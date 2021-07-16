@@ -4,15 +4,20 @@ from arcgis.learn._data import _bb_pad_collate, prepare_data
 from arcgis.learn._data_utils._base_data import ArcgisData
 from arcgis.learn._data_utils._pixel_classifier_data import ClassifiedTilesData
 
-__data_classes__ = {
-    "Classified_Tiles": ClassifiedTilesData
-}
+__data_classes__ = {"Classified_Tiles": ClassifiedTilesData}
 
 
 class ArcgisDataFactory:
     def __init__(
-        self, path, class_mapping=None, val_split_pct=0.1, batch_size=64,
-        transforms=None, collate_fn=_bb_pad_collate, seed=42, **kwargs
+        self,
+        path,
+        class_mapping=None,
+        val_split_pct=0.1,
+        batch_size=64,
+        transforms=None,
+        collate_fn=_bb_pad_collate,
+        seed=42,
+        **kwargs
     ):
         self.path = path
         self.class_mapping = class_mapping
@@ -26,18 +31,31 @@ class ArcgisDataFactory:
     def create(self, dataset_type):
         if dataset_type in __data_classes__.keys():
             return __data_classes__[dataset_type](
-                path=self.path, class_mapping=self.class_mapping, val_split_pct=self.val_split_pct,
-                batch_size=self.batch_size, transforms=self.transforms, seed=self.seed,
-                dataset_type=dataset_type, **self.kwargs,
+                path=self.path,
+                class_mapping=self.class_mapping,
+                val_split_pct=self.val_split_pct,
+                batch_size=self.batch_size,
+                transforms=self.transforms,
+                seed=self.seed,
+                dataset_type=dataset_type,
+                **self.kwargs,
             )
         else:
             return None
 
 
 def prepare_data_future(
-    path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64,
-    transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None,
-    resize_to=None, **kwargs
+    path,
+    class_mapping=None,
+    chip_size=224,
+    val_split_pct=0.1,
+    batch_size=64,
+    transforms=None,
+    collate_fn=_bb_pad_collate,
+    seed=42,
+    dataset_type=None,
+    resize_to=None,
+    **kwargs
 ):
     """
     Prepares a data object from training sample exported by the
@@ -168,18 +186,32 @@ def prepare_data_future(
         dataset_type = ArcgisData._get_dataset_type(Path(path))
     if has_esri_files and dataset_type in __data_classes__.keys():
         dataset_type = (
-            dataset_type
-            if dataset_type
-            else ArcgisData._get_dataset_type(Path(path))
+            dataset_type if dataset_type else ArcgisData._get_dataset_type(Path(path))
         )
         objData = __data_classes__[dataset_type](
-            path=path, class_mapping=class_mapping, chip_size=chip_size, val_split_pct=val_split_pct,
-            batch_size=batch_size, transforms=transforms, seed=seed,
-            dataset_type=dataset_type, resize_to=resize_to, **kwargs,
+            path=path,
+            class_mapping=class_mapping,
+            chip_size=chip_size,
+            val_split_pct=val_split_pct,
+            batch_size=batch_size,
+            transforms=transforms,
+            seed=seed,
+            dataset_type=dataset_type,
+            resize_to=resize_to,
+            **kwargs,
         )
         return objData.get_databunch(**kwargs)
     else:
         return prepare_data(
-            path, class_mapping, chip_size, val_split_pct, batch_size, transforms,
-            collate_fn, seed, dataset_type, resize_to, **kwargs
+            path,
+            class_mapping,
+            chip_size,
+            val_split_pct,
+            batch_size,
+            transforms,
+            collate_fn,
+            seed,
+            dataset_type,
+            resize_to,
+            **kwargs,
         )

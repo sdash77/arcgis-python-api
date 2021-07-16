@@ -30,8 +30,9 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._utils import chunks as _chunks
+from cachetools import cached, TTLCache
 from ._impl import _portalpy
-
 from ._impl._jb import StatusJob
 
 _log = logging.getLogger(__name__)
@@ -420,6 +421,7 @@ class GIS(object):
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
+                proxy=kwargs.get("proxy", None),
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -439,6 +441,7 @@ class GIS(object):
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -508,6 +511,7 @@ class GIS(object):
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
+                        proxy=kwargs.get("proxy", None),
                     )
                     self._portal = pp
         except:
@@ -3580,9 +3584,12 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -3626,9 +3633,13 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
+
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -4642,6 +4653,22 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    # ----------------------------------------------------------------------
+    def check_url(self, url: str) -> Dict[str, Any]:
+        """
+        To verify a URL is accessible by the Organization, provide the `url` and
+        the system will check if the location is valid and reachable.  This
+        method is useful when checking service URLs or validating that URLs can
+        be reached.
+
+        :returns: Dict[str, Any]
+
+        """
+        curl = f"{self._gis._portal.resturl}portals/checkUrl"
+        params = {"f": "json", "url": url}
+        return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -10100,6 +10127,9 @@ class Item(dict):
             self["layers"] = None
             self["tables"] = None
 
+    def __hash__(self):
+        return hash(tuple(frozenset(self)))
+
     # ----------------------------------------------------------------------
     @property
     def snapshots(self) -> list:
@@ -11783,6 +11813,7 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range="7D", as_df=True):
         """
 
@@ -12264,6 +12295,7 @@ class Item(dict):
         file_type=None,
         build_initial_cache=False,
         item_id=None,
+        geocode_service=None,
     ):
         """
         The ``publishes`` method is used to publish a hosted service based on an existing source item (this item).
@@ -12326,6 +12358,11 @@ class Item(dict):
                                If the `item_id` is already being used, an error will be raised
                                during the `publish` process.
 
+        -------------------    ---------------------------------------------------------------
+        geocode_service        Optional Geocoder. When publishing a table of data, an optional
+                               `Geocoder` can be supplied in order to specify which service
+                               geocodes the information. If no geocoder is given, the first
+                               registered `Geocoder` is used.
         ===================    ===============================================================
 
         .. code-block:: python
@@ -12364,6 +12401,8 @@ class Item(dict):
         if file_type is None:
             if self["type"] == "GeoPackage":
                 fileType = "gpkg"
+            elif self["type"].lower().find("excel") > -1:
+                fileType = "excel"
             elif self["type"] == "Compact Tile Package":
                 fileType = "compactTilePackage"
             elif self["type"] == "Service Definition":
@@ -12414,34 +12453,36 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
+            elif fileType in ["csv", "excel"] and not overwrite:
+                location_type = None
+                if geocode_service is None:
+                    from arcgis.geocoding import get_geocoders
 
-            elif fileType in ["CSV", "excel"] and not overwrite:
-                path = "content/features/analyze"
-
-                postdata = {
-                    "f": "pjson",
-                    "itemid": self.itemid,
-                    "filetype": "csv",
-                    "analyzeParameters": {
-                        "enableGlobalGeocoding": "true",
-                        "sourceLocale": "en-us",
-                        # "locationType":"address",
-                        "sourceCountry": "",
-                        "sourceCountryHint": "",
-                    },
-                }
-
+                    services = [
+                        geocoder
+                        for geocoder in get_geocoders(gis=self._gis)
+                        if geocoder._url.find("portal/sharing") > -1
+                    ]
+                    if len(services) > 0:
+                        geocode_service = services[0]
+                    else:
+                        geocode_service = get_geocoders(gis=self._gis)[0]
                 if address_fields is not None:
-                    postdata["analyzeParameters"]["locationType"] = "address"
-
-                res = self._portal.con.post(path, postdata)
+                    location_type = "address"
+                res = self._gis.content.analyze(
+                    item=self,
+                    file_type=fileType,
+                    location_type=location_type,
+                    geocoding_service=geocode_service,
+                )
                 publish_parameters = res["publishParameters"]
+
                 if address_fields is not None:
                     publish_parameters.update({"addressFields": address_fields})
-
-                # use csv title for service name, after replacing non-alphanumeric characters with _
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
-                publish_parameters.update({"name": service_name})
+                import uuid
+
+                publish_parameters.update({"name": service_name + uuid.uuid4().hex[:3]})
 
             elif (
                 fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite

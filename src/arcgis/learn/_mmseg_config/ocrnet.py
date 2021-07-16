@@ -13,21 +13,23 @@
 # limitations under the License.
 
 
-_base_ = './ocrnet_base.py'
-norm_cfg = dict(type='BN', requires_grad=True)
+_base_ = "./ocrnet_base.py"
+norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    pretrained='open-mmlab://msra/hrnetv2_w48',
+    pretrained="open-mmlab://msra/hrnetv2_w48",
     backbone=dict(
         extra=dict(
             stage2=dict(num_channels=(48, 96)),
             stage3=dict(num_channels=(48, 96, 192)),
-            stage4=dict(num_channels=(48, 96, 192, 384)))),
+            stage4=dict(num_channels=(48, 96, 192, 384)),
+        )
+    ),
     decode_head=[
         dict(
-            type='FCNHead',
+            type="FCNHead",
             in_channels=[48, 96, 192, 384],
             channels=sum([48, 96, 192, 384]),
-            input_transform='resize_concat',
+            input_transform="resize_concat",
             in_index=(0, 1, 2, 3),
             kernel_size=1,
             num_convs=1,
@@ -37,20 +39,25 @@ model = dict(
             num_classes=19,
             align_corners=False,
             loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+                type="CrossEntropyLoss", use_sigmoid=False, loss_weight=0.4
+            ),
+        ),
         dict(
-            type='OCRHead',
+            type="OCRHead",
             in_channels=[48, 96, 192, 384],
             channels=512,
             ocr_channels=256,
-            input_transform='resize_concat',
+            input_transform="resize_concat",
             in_index=(0, 1, 2, 3),
             norm_cfg=norm_cfg,
             dropout_ratio=-1,
             num_classes=19,
             align_corners=False,
             loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0))
-    ])
+                type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0
+            ),
+        ),
+    ],
+)
 
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/ocrnet/ocrnet_hr48_512x1024_160k_cityscapes/ocrnet_hr48_512x1024_160k_cityscapes_20200602_191037-dfbf1b0c.pth'
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/ocrnet/ocrnet_hr48_512x1024_160k_cityscapes/ocrnet_hr48_512x1024_160k_cityscapes_20200602_191037-dfbf1b0c.pth"

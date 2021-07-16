@@ -35,13 +35,15 @@ try:
     from scipy.optimize import linear_sum_assignment as linear_assignment
 
     from ._deepsort_train_utils import *
+
     HAS_FASTAI = True
 except Exception as e:
-    import_exception = \
-        "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
-INFTY_COST = 1e+5
+INFTY_COST = 1e5
 
 
 def non_max_suppression(boxes, max_bbox_overlap, scores=None):
@@ -108,8 +110,8 @@ def non_max_suppression(boxes, max_bbox_overlap, scores=None):
         overlap = (w * h) / area[idxs[:last]]
 
         idxs = np.delete(
-            idxs, np.concatenate(
-                ([last], np.where(overlap > max_bbox_overlap)[0])))
+            idxs, np.concatenate(([last], np.where(overlap > max_bbox_overlap)[0]))
+        )
 
     return pick
 
@@ -128,7 +130,8 @@ chi2inv95 = {
     6: 12.592,
     7: 14.067,
     8: 15.507,
-    9: 16.919}
+    9: 16.919,
+}
 
 
 class KalmanFilter(object):
@@ -149,7 +152,7 @@ class KalmanFilter(object):
     """
 
     def __init__(self):
-        ndim, dt = 4, 1.
+        ndim, dt = 4, 1.0
 
         # Create Kalman filter model matrices.
         self._motion_mat = np.eye(2 * ndim, 2 * ndim)
@@ -160,8 +163,8 @@ class KalmanFilter(object):
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in
         # the model. This is a bit hacky.
-        self._std_weight_position = 1. / 20
-        self._std_weight_velocity = 1. / 160
+        self._std_weight_position = 1.0 / 20
+        self._std_weight_velocity = 1.0 / 160
 
     def initiate(self, measurement):
         """Create track from unassociated measurement.
@@ -192,7 +195,8 @@ class KalmanFilter(object):
             10 * self._std_weight_velocity * measurement[3],
             10 * self._std_weight_velocity * measurement[3],
             1e-5,
-            10 * self._std_weight_velocity * measurement[3]]
+            10 * self._std_weight_velocity * measurement[3],
+        ]
         covariance = np.diag(np.square(std))
         return mean, covariance
 
@@ -219,17 +223,21 @@ class KalmanFilter(object):
             self._std_weight_position * mean[3],
             self._std_weight_position * mean[3],
             1e-2,
-            self._std_weight_position * mean[3]]
+            self._std_weight_position * mean[3],
+        ]
         std_vel = [
             self._std_weight_velocity * mean[3],
             self._std_weight_velocity * mean[3],
             1e-5,
-            self._std_weight_velocity * mean[3]]
+            self._std_weight_velocity * mean[3],
+        ]
         motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
 
         mean = np.dot(self._motion_mat, mean)
-        covariance = np.linalg.multi_dot((
-            self._motion_mat, covariance, self._motion_mat.T)) + motion_cov
+        covariance = (
+            np.linalg.multi_dot((self._motion_mat, covariance, self._motion_mat.T))
+            + motion_cov
+        )
 
         return mean, covariance
 
@@ -254,12 +262,14 @@ class KalmanFilter(object):
             self._std_weight_position * mean[3],
             self._std_weight_position * mean[3],
             1e-1,
-            self._std_weight_position * mean[3]]
+            self._std_weight_position * mean[3],
+        ]
         innovation_cov = np.diag(np.square(std))
 
         mean = np.dot(self._update_mat, mean)
-        covariance = np.linalg.multi_dot((
-            self._update_mat, covariance, self._update_mat.T))
+        covariance = np.linalg.multi_dot(
+            (self._update_mat, covariance, self._update_mat.T)
+        )
         return mean, covariance + innovation_cov
 
     def update(self, mean, covariance, measurement):
@@ -285,19 +295,22 @@ class KalmanFilter(object):
         projected_mean, projected_cov = self.project(mean, covariance)
 
         chol_factor, lower = scipy.linalg.cho_factor(
-            projected_cov, lower=True, check_finite=False)
+            projected_cov, lower=True, check_finite=False
+        )
         kalman_gain = scipy.linalg.cho_solve(
-            (chol_factor, lower), np.dot(covariance, self._update_mat.T).T,
-            check_finite=False).T
+            (chol_factor, lower),
+            np.dot(covariance, self._update_mat.T).T,
+            check_finite=False,
+        ).T
         innovation = measurement - projected_mean
 
         new_mean = mean + np.dot(innovation, kalman_gain.T)
-        new_covariance = covariance - np.linalg.multi_dot((
-            kalman_gain, projected_cov, kalman_gain.T))
+        new_covariance = covariance - np.linalg.multi_dot(
+            (kalman_gain, projected_cov, kalman_gain.T)
+        )
         return new_mean, new_covariance
 
-    def gating_distance(self, mean, covariance, measurements,
-                        only_position=False):
+    def gating_distance(self, mean, covariance, measurements, only_position=False):
         """Compute gating distance between state distribution and measurements.
 
         A suitable distance threshold can be obtained from `chi2inv95`. If
@@ -334,15 +347,20 @@ class KalmanFilter(object):
         cholesky_factor = np.linalg.cholesky(covariance)
         d = measurements - mean
         z = scipy.linalg.solve_triangular(
-            cholesky_factor, d.T, lower=True, check_finite=False,
-            overwrite_b=True)
+            cholesky_factor, d.T, lower=True, check_finite=False, overwrite_b=True
+        )
         squared_maha = np.sum(z * z, axis=0)
         return squared_maha
 
 
 def min_cost_matching(
-        distance_metric, max_distance, tracks, detections, track_indices=None,
-        detection_indices=None):
+    distance_metric,
+    max_distance,
+    tracks,
+    detections,
+    track_indices=None,
+    detection_indices=None,
+):
     """Solve linear assignment problem.
 
     Parameters
@@ -384,8 +402,7 @@ def min_cost_matching(
     if len(detection_indices) == 0 or len(track_indices) == 0:
         return [], track_indices, detection_indices  # Nothing to match.
 
-    cost_matrix = distance_metric(
-        tracks, detections, track_indices, detection_indices)
+    cost_matrix = distance_metric(tracks, detections, track_indices, detection_indices)
     cost_matrix[cost_matrix > max_distance] = max_distance + 1e-5
 
     row_indices, col_indices = linear_assignment(cost_matrix)
@@ -409,8 +426,14 @@ def min_cost_matching(
 
 
 def matching_cascade(
-        distance_metric, max_distance, cascade_depth, tracks, detections,
-        track_indices=None, detection_indices=None):
+    distance_metric,
+    max_distance,
+    cascade_depth,
+    tracks,
+    detections,
+    track_indices=None,
+    detection_indices=None,
+):
     """Run matching cascade.
 
     Parameters
@@ -459,24 +482,34 @@ def matching_cascade(
             break
 
         track_indices_l = [
-            k for k in track_indices
-            if tracks[k].time_since_update == 1 + level
+            k for k in track_indices if tracks[k].time_since_update == 1 + level
         ]
         if len(track_indices_l) == 0:  # Nothing to match at this level
             continue
 
-        matches_l, _, unmatched_detections = \
-            min_cost_matching(
-                distance_metric, max_distance, tracks, detections,
-                track_indices_l, unmatched_detections)
+        matches_l, _, unmatched_detections = min_cost_matching(
+            distance_metric,
+            max_distance,
+            tracks,
+            detections,
+            track_indices_l,
+            unmatched_detections,
+        )
         matches += matches_l
     unmatched_tracks = list(set(track_indices) - set(k for k, _ in matches))
     return matches, unmatched_tracks, unmatched_detections
 
 
 def gate_cost_matrix(
-        kf, cost_matrix, tracks, detections, track_indices, detection_indices,
-        gated_cost=INFTY_COST, only_position=False):
+    kf,
+    cost_matrix,
+    tracks,
+    detections,
+    track_indices,
+    detection_indices,
+    gated_cost=INFTY_COST,
+    only_position=False,
+):
     """Invalidate infeasible entries in cost matrix based on the state
     distributions obtained by Kalman filtering.
 
@@ -513,12 +546,12 @@ def gate_cost_matrix(
     """
     gating_dim = 2 if only_position else 4
     gating_threshold = chi2inv95[gating_dim]
-    measurements = np.asarray(
-        [detections[i].to_xyah() for i in detection_indices])
+    measurements = np.asarray([detections[i].to_xyah() for i in detection_indices])
     for row, track_idx in enumerate(track_indices):
         track = tracks[track_idx]
         gating_distance = kf.gating_distance(
-            track.mean, track.covariance, measurements, only_position)
+            track.mean, track.covariance, measurements, only_position
+        )
         cost_matrix[row, gating_distance > gating_threshold] = gated_cost
     return cost_matrix
 
@@ -544,8 +577,8 @@ def _pdist(a, b):
     if len(a) == 0 or len(b) == 0:
         return np.zeros((len(a), len(b)))
     a2, b2 = np.square(a).sum(axis=1), np.square(b).sum(axis=1)
-    r2 = -2. * np.dot(a, b.T) + a2[:, None] + b2[None, :]
-    r2 = np.clip(r2, 0., float(np.inf))
+    r2 = -2.0 * np.dot(a, b.T) + a2[:, None] + b2[None, :]
+    r2 = np.clip(r2, 0.0, float(np.inf))
     return r2
 
 
@@ -572,11 +605,11 @@ def _cosine_distance(a, b, data_is_normalized=False):
     if not data_is_normalized:
         a = np.asarray(a) / np.linalg.norm(a, axis=1, keepdims=True)
         b = np.asarray(b) / np.linalg.norm(b, axis=1, keepdims=True)
-    return 1. - np.dot(a, b.T)
+    return 1.0 - np.dot(a, b.T)
 
 
 def _nn_euclidean_distance(x, y):
-    """ Helper function for nearest neighbor distance metric (Euclidean).
+    """Helper function for nearest neighbor distance metric (Euclidean).
 
     Parameters
     ----------
@@ -597,7 +630,7 @@ def _nn_euclidean_distance(x, y):
 
 
 def _nn_cosine_distance(x, y):
-    """ Helper function for nearest neighbor distance metric (cosine).
+    """Helper function for nearest neighbor distance metric (cosine).
 
     Parameters
     ----------
@@ -648,8 +681,7 @@ class NearestNeighborDistanceMetric(object):
         elif metric == "cosine":
             self._metric = _nn_cosine_distance
         else:
-            raise ValueError(
-                "Invalid metric; must be either 'euclidean' or 'cosine'")
+            raise ValueError("Invalid metric; must be either 'euclidean' or 'cosine'")
         self.matching_threshold = matching_threshold
         self.budget = budget
         self.samples = {}
@@ -670,7 +702,7 @@ class NearestNeighborDistanceMetric(object):
         for feature, target in zip(features, targets):
             self.samples.setdefault(target, []).append(feature)
             if self.budget is not None:
-                self.samples[target] = self.samples[target][-self.budget:]
+                self.samples[target] = self.samples[target][-self.budget :]
         self.samples = {k: self.samples[k] for k in active_targets}
 
     def distance(self, features, targets):
@@ -720,21 +752,23 @@ def iou(bbox, candidates):
     candidates_tl = candidates[:, :2]
     candidates_br = candidates[:, :2] + candidates[:, 2:]
 
-    tl = np.c_[np.maximum(bbox_tl[0], candidates_tl[:, 0])[:, np.newaxis],
-               np.maximum(bbox_tl[1], candidates_tl[:, 1])[:, np.newaxis]]
-    br = np.c_[np.minimum(bbox_br[0], candidates_br[:, 0])[:, np.newaxis],
-               np.minimum(bbox_br[1], candidates_br[:, 1])[:, np.newaxis]]
-    wh = np.maximum(0., br - tl)
+    tl = np.c_[
+        np.maximum(bbox_tl[0], candidates_tl[:, 0])[:, np.newaxis],
+        np.maximum(bbox_tl[1], candidates_tl[:, 1])[:, np.newaxis],
+    ]
+    br = np.c_[
+        np.minimum(bbox_br[0], candidates_br[:, 0])[:, np.newaxis],
+        np.minimum(bbox_br[1], candidates_br[:, 1])[:, np.newaxis],
+    ]
+    wh = np.maximum(0.0, br - tl)
 
     area_intersection = wh.prod(axis=1)
     area_bbox = bbox[2:].prod()
     area_candidates = candidates[:, 2:].prod(axis=1)
-    return area_intersection / \
-        (area_bbox + area_candidates - area_intersection)
+    return area_intersection / (area_bbox + area_candidates - area_intersection)
 
 
-def iou_cost(tracks, detections, track_indices=None,
-             detection_indices=None):
+def iou_cost(tracks, detections, track_indices=None, detection_indices=None):
     """An intersection over union distance metric.
 
     Parameters
@@ -770,9 +804,8 @@ def iou_cost(tracks, detections, track_indices=None,
             continue
 
         bbox = tracks[track_idx].to_tlwh()
-        candidates = np.asarray(
-            [detections[i].tlwh for i in detection_indices])
-        cost_matrix[row, :] = 1. - iou(bbox, candidates)
+        candidates = np.asarray([detections[i].tlwh for i in detection_indices])
+        cost_matrix[row, :] = 1.0 - iou(bbox, candidates)
     return cost_matrix
 
 
@@ -840,17 +873,18 @@ class CustomTrack:
 
     """
 
-    def __init__(self,
-                 mean,
-                 covariance,
-                 track_id,
-                 n_init,
-                 max_age,
-                 feature=None,
-                 track_label="Object",
-                 track_score=1.,
-                 track_state=TrackState.Tentative
-                 ):
+    def __init__(
+        self,
+        mean,
+        covariance,
+        track_id,
+        n_init,
+        max_age,
+        feature=None,
+        track_label="Object",
+        track_score=1.0,
+        track_state=TrackState.Tentative,
+    ):
         self.mean = mean
         self.covariance = covariance
         self.track_id = track_id
@@ -923,7 +957,8 @@ class CustomTrack:
 
         """
         self.mean, self.covariance = kf.update(
-            self.mean, self.covariance, detection.to_xyah())
+            self.mean, self.covariance, detection.to_xyah()
+        )
         self.features.append(detection.feature)
 
         self.hits += 1
@@ -932,21 +967,18 @@ class CustomTrack:
             self.state = TrackState.Confirmed
 
     def mark_deleted(self):
-        """Mark this track as deleted.
-        """
+        """Mark this track as deleted."""
         self.state = TrackState.Deleted
 
     def mark_missed(self):
-        """Mark this track as missed (no association at the current time step).
-        """
+        """Mark this track as missed (no association at the current time step)."""
         if self.state == TrackState.Tentative:
             self.state = TrackState.Deleted
         elif self.time_since_update > self._max_age:
             self.state = TrackState.Deleted
 
     def is_tentative(self):
-        """Returns True if this track is tentative (unconfirmed).
-        """
+        """Returns True if this track is tentative (unconfirmed)."""
         return self.state == TrackState.Tentative
 
     def is_confirmed(self):
@@ -988,12 +1020,9 @@ class Tracker:
 
     """
 
-    def __init__(self,
-                 metric,
-                 max_iou_distance=0.7,
-                 max_age=70,
-                 n_init=3,
-                 update_interval=1):
+    def __init__(
+        self, metric, max_iou_distance=0.7, max_age=70, n_init=3, update_interval=1
+    ):
         self.metric = metric
         self.max_iou_distance = max_iou_distance
         self.max_age = max_age
@@ -1027,13 +1056,11 @@ class Tracker:
 
         """
         # Run matching cascade.
-        matches, unmatched_tracks, unmatched_detections = \
-            self._match(detections)
+        matches, unmatched_tracks, unmatched_detections = self._match(detections)
 
         # Update track set.
         for track_idx, detection_idx in matches:
-            self.tracks[track_idx].update(
-                self.kf, detections[detection_idx])
+            self.tracks[track_idx].update(self.kf, detections[detection_idx])
         for track_idx in unmatched_tracks:
             self.tracks[track_idx].mark_missed()
         for detection_idx in unmatched_detections:
@@ -1050,56 +1077,52 @@ class Tracker:
             targets += [track.track_id for _ in track.features]
             track.features = []
         self.metric.partial_fit(
-            np.asarray(features), np.asarray(targets), active_targets)
+            np.asarray(features), np.asarray(targets), active_targets
+        )
 
     def _match(self, detections):
-
         def gated_metric(tracks, dets, track_indices, detection_indices):
             features = np.array([dets[i].feature for i in detection_indices])
             targets = np.array([tracks[i].track_id for i in track_indices])
             cost_matrix = self.metric.distance(features, targets)
             cost_matrix = gate_cost_matrix(
-                self.kf,
-                cost_matrix,
-                tracks,
-                dets,
-                track_indices,
-                detection_indices)
+                self.kf, cost_matrix, tracks, dets, track_indices, detection_indices
+            )
 
             return cost_matrix
 
         # Split track set into confirmed and unconfirmed tracks.
-        confirmed_tracks = [
-            i for i, t in enumerate(self.tracks) if t.is_confirmed()]
+        confirmed_tracks = [i for i, t in enumerate(self.tracks) if t.is_confirmed()]
         unconfirmed_tracks = [
-            i for i, t in enumerate(self.tracks) if not t.is_confirmed()]
+            i for i, t in enumerate(self.tracks) if not t.is_confirmed()
+        ]
 
         # Associate confirmed tracks using appearance features.
-        matches_a, unmatched_tracks_a, unmatched_detections = \
-            matching_cascade(
-                gated_metric,
-                self.metric.matching_threshold,
-                self.max_age,
-                self.tracks,
-                detections,
-                confirmed_tracks)
+        matches_a, unmatched_tracks_a, unmatched_detections = matching_cascade(
+            gated_metric,
+            self.metric.matching_threshold,
+            self.max_age,
+            self.tracks,
+            detections,
+            confirmed_tracks,
+        )
 
         # Associate remaining tracks together with unconfirmed tracks using
         # IOU.
         iou_track_candidates = unconfirmed_tracks + [
-            k for k in unmatched_tracks_a if
-            self.tracks[k].time_since_update == 1]
+            k for k in unmatched_tracks_a if self.tracks[k].time_since_update == 1
+        ]
         unmatched_tracks_a = [
-            k for k in unmatched_tracks_a if
-            self.tracks[k].time_since_update != 1]
-        matches_b, unmatched_tracks_b, unmatched_detections = \
-            min_cost_matching(
-                iou_cost,
-                self.max_iou_distance,
-                self.tracks,
-                detections,
-                iou_track_candidates,
-                unmatched_detections)
+            k for k in unmatched_tracks_a if self.tracks[k].time_since_update != 1
+        ]
+        matches_b, unmatched_tracks_b, unmatched_detections = min_cost_matching(
+            iou_cost,
+            self.max_iou_distance,
+            self.tracks,
+            detections,
+            iou_track_candidates,
+            unmatched_detections,
+        )
 
         matches = matches_a + matches_b
         unmatched_tracks = list(set(unmatched_tracks_a + unmatched_tracks_b))
@@ -1110,25 +1133,25 @@ class Tracker:
         track_state = TrackState.Tentative
         if self._update_interval > 1:
             track_state = TrackState.Confirmed
-        self.tracks.append(CustomTrack(
-            mean,
-            covariance,
-            self._next_id,
-            self.n_init,
-            self.max_age,
-            detection.feature,
-            detection.label,
-            detection.confidence,
-            track_state=track_state))
+        self.tracks.append(
+            CustomTrack(
+                mean,
+                covariance,
+                self._next_id,
+                self.n_init,
+                self.max_age,
+                detection.feature,
+                detection.label,
+                detection.confidence,
+                track_state=track_state,
+            )
+        )
         self._next_id += 1
 
 
 def get_corrected_labels_scores(
-        labels=None,
-        scores=None,
-        target_len=0,
-        default_label="Object",
-        default_score=1.):
+    labels=None, scores=None, target_len=0, default_label="Object", default_score=1.0
+):
 
     if labels is None:
         labels = [default_label] * target_len
@@ -1146,24 +1169,26 @@ def get_corrected_labels_scores(
 
 
 class Extractor(object):
-    def __init__(
-            self, model, device):
+    def __init__(self, model, device):
         self.device = device
         self.net = model
         if self.net is not None:
             self.net.eval().to(self.device)
         self.size = (model.img_shape[2], model.img_shape[1])
-        self.norm = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ])
+        self.norm = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ]
+        )
 
     def _preprocess(self, im_crops):
         def _resize(im, size):
-            return cv2.resize(im.astype(np.float32) / 255., size)
+            return cv2.resize(im.astype(np.float32) / 255.0, size)
 
-        im_batch = torch.cat([self.norm(_resize(im, self.size)).unsqueeze(
-            0) for im in im_crops], dim=0).float()
+        im_batch = torch.cat(
+            [self.norm(_resize(im, self.size)).unsqueeze(0) for im in im_crops], dim=0
+        ).float()
         return im_batch
 
     def __call__(self, im_crops):
@@ -1226,34 +1251,28 @@ class Detection(object):
 
 
 class DeepSortPredictor(object):
-    def __init__(
-        self,
-        model,
-        cfg,
-        device,
-        update_interval
-    ):
+    def __init__(self, model, cfg, device, update_interval):
 
-        self.min_confidence = cfg['min_confidence']
-        self.nms_max_overlap = cfg['nms_max_overlap']
+        self.min_confidence = cfg["min_confidence"]
+        self.nms_max_overlap = cfg["nms_max_overlap"]
         self._update_interval = update_interval
         self.extractor = Extractor(model, device)
-        max_cosine_distance = cfg['max_dist']
-        nn_budget = cfg['nn_budget']
+        max_cosine_distance = cfg["max_dist"]
+        nn_budget = cfg["nn_budget"]
 
-        metric = NearestNeighborDistanceMetric(
-            "cosine", max_cosine_distance, nn_budget)
+        metric = NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
         self.tracker = Tracker(
             metric,
-            max_iou_distance=cfg['max_iou_distance'],
-            max_age=cfg['max_age'],
-            n_init=cfg['n_init'],
-            update_interval=update_interval)
+            max_iou_distance=cfg["max_iou_distance"],
+            max_age=cfg["max_age"],
+            n_init=cfg["n_init"],
+            update_interval=update_interval,
+        )
 
     def update(self, bbox_xywh, confidences, labels, ori_img):
         outputs = []
         track_labels = []
-        if (len(labels) != len(confidences)):
+        if len(labels) != len(confidences):
             return np.asarray(outputs), np.asarray(track_labels)
 
         self.height, self.width = ori_img.shape[:2]
@@ -1261,12 +1280,10 @@ class DeepSortPredictor(object):
         features = self._get_features(bbox_xywh, ori_img)
         bbox_tlwh = self._xywh_to_tlwh(bbox_xywh)
         detections = [
-            Detection(
-                bbox_tlwh[i],
-                conf,
-                features[i],
-                labels[i]) for i,
-            conf in enumerate(confidences) if conf > self.min_confidence]
+            Detection(bbox_tlwh[i], conf, features[i], labels[i])
+            for i, conf in enumerate(confidences)
+            if conf > self.min_confidence
+        ]
 
         boxes = np.array([d.tlwh for d in detections])
         scores = np.array([d.confidence for d in detections])
@@ -1278,8 +1295,10 @@ class DeepSortPredictor(object):
         self.tracker.update(detections)
 
         for track in self.tracker.tracks:
-            if not track.is_confirmed() \
-                    or track.time_since_update > self._update_interval + 1:
+            if (
+                not track.is_confirmed()
+                or track.time_since_update > self._update_interval + 1
+            ):
                 continue
             box = track.to_tlwh()
             x1, y1, x2, y2 = self._tlwh_to_xyxy(box)
@@ -1288,8 +1307,12 @@ class DeepSortPredictor(object):
             track_score = track.track_score
             track_age = track.age
             track_labels.append(track_label)
-            outputs.append(np.array(
-                [x1, y1, x2 - x1, y2 - y1, track_id, track_score, track_age], dtype=np.float))
+            outputs.append(
+                np.array(
+                    [x1, y1, x2 - x1, y2 - y1, track_id, track_score, track_age],
+                    dtype=np.float,
+                )
+            )
         if len(outputs) > 0:
             outputs = np.stack(outputs, axis=0)
         return outputs, np.asarray(track_labels)
@@ -1303,13 +1326,13 @@ class DeepSortPredictor(object):
             bbox_tlwh = bbox_xywh.copy()
         elif isinstance(bbox_xywh, torch.Tensor):
             bbox_tlwh = bbox_xywh.clone()
-        bbox_tlwh[:, 0] = bbox_xywh[:, 0] - bbox_xywh[:, 2] / 2.
-        bbox_tlwh[:, 1] = bbox_xywh[:, 1] - bbox_xywh[:, 3] / 2.
+        bbox_tlwh[:, 0] = bbox_xywh[:, 0] - bbox_xywh[:, 2] / 2.0
+        bbox_tlwh[:, 1] = bbox_xywh[:, 1] - bbox_xywh[:, 3] / 2.0
         return bbox_tlwh
 
     def xywh_to_xywh(self, bbox_xywh):
-        bbox_xywh[:, 0] = bbox_xywh[:, 0] + bbox_xywh[:, 2] / 2.
-        bbox_xywh[:, 1] = bbox_xywh[:, 1] + bbox_xywh[:, 3] / 2.
+        bbox_xywh[:, 0] = bbox_xywh[:, 0] + bbox_xywh[:, 2] / 2.0
+        bbox_xywh[:, 1] = bbox_xywh[:, 1] + bbox_xywh[:, 3] / 2.0
         return bbox_xywh
 
     def _xywh_to_xyxy(self, bbox_xywh):

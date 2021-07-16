@@ -7,11 +7,15 @@ from arcgis import GIS
 from arcgis.features.summarize_data import aggregate_points, summarize_within
 from arcgis.features import FeatureCollection, FeatureSet
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 def create_gis(profile: str) -> GIS:
-    return GIS(profile=profile, verify_cert=False, trust_env=True,)
+    return GIS(
+        profile=profile,
+        verify_cert=False,
+        trust_env=True,
+    )
 
 
 class FeatureAnalysisSumWithin(unittest.TestCase):
@@ -19,7 +23,7 @@ class FeatureAnalysisSumWithin(unittest.TestCase):
 
         # Input feature collection path
         feat_collection_path = (
-            r'\\qalab_server\pyunit\ArcGISOnline\featureCollections\france_cities.json'
+            r"\\qalab_server\pyunit\ArcGISOnline\featureCollections\france_cities.json"
         )
         if os.path.isfile(feat_collection_path):
             for profile in PROFILES:
@@ -50,14 +54,14 @@ class FeatureAnalysisSumWithin(unittest.TestCase):
 
         # Input feature collection path
         feat_collection_path = (
-            r'\\qalab_server\pyunit\ArcGISOnline\featureCollections\france_cities.json'
+            r"\\qalab_server\pyunit\ArcGISOnline\featureCollections\france_cities.json"
         )
 
         if os.path.isfile(feat_collection_path):
             for profile in PROFILES:
                 with open(feat_collection_path) as json_file:
                     point_data = FeatureCollection(json.load(json_file))
-                sdf = FeatureSet.from_dict(dict(point_data.layer)['featureSet']).sdf
+                sdf = FeatureSet.from_dict(dict(point_data.layer)["featureSet"]).sdf
                 geom = sdf.spatial.bbox
                 row = [[1, geom, "full_extent"]]
                 columns = ["OBJECTID", "SHAPE", "description"]

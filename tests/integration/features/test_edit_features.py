@@ -3301,7 +3301,7 @@ test_data = {
     },
 }
 
-PROFILES = ['your_online_profile', 'your_enterprise_profile']
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 class TestFeatureLayerEditFeatures(unittest.TestCase):
@@ -3322,7 +3322,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
             item = gis.content.import_data(self._sdf)
             print(item)
             resp = item.layers[0].edit_features(adds=self._sdf)
-            assert resp['addResults']
+            assert resp["addResults"]
 
             if item:
                 related = self._get_relationships(item)
@@ -3343,10 +3343,10 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
 
             resp = item.layers[0].edit_features(adds=self._sdf)
             update_sdf = self._sdf.head().copy()
-            update_sdf['OBJECTID'] = range(len(update_sdf))
-            update_sdf['OBJECTID'] += 1
+            update_sdf["OBJECTID"] = range(len(update_sdf))
+            update_sdf["OBJECTID"] += 1
             respupdate = item.layers[0].edit_features(updates=update_sdf)
-            assert respupdate['updateResults']
+            assert respupdate["updateResults"]
             if item:
                 related = self._get_relationships(item)
                 item.delete()
@@ -3372,7 +3372,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                         break
 
                 resp = item.layers[0].edit_features(deletes=sdf[oidfld].tolist())
-                assert resp['deleteResults']
+                assert resp["deleteResults"]
             except Exception as e:
                 raise e
             finally:
@@ -3397,8 +3397,8 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 sdf = item.layers[0].query(as_df=True)
                 sdf = self._sdf.head().copy()
                 sdf_updates = self._sdf.tail().copy()
-                sdf_updates['OBJECTID'] = range(len(sdf_updates))
-                sdf_updates['OBJECTID'] += 1
+                sdf_updates["OBJECTID"] = range(len(sdf_updates))
+                sdf_updates["OBJECTID"] += 1
                 fs = sdf_updates.spatial.to_featureset()
 
                 fs_adds = sdf.spatial.to_featureset()
@@ -3408,7 +3408,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 )  # , updates=sdf_updates.spatial.to_featureset()
                 # )
                 # assert resp['updateResults']
-                assert resp['addResults']
+                assert resp["addResults"]
             except Exception as e:
 
                 raise e
@@ -3433,14 +3433,14 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 item = gis.content.import_data(self._sdf)
                 sdf = item.layers[0].query(as_df=True)
                 sdf_updates = sdf.tail().copy().head()
-                sdf_updates['OBJECTID'] = range(len(sdf_updates))
-                sdf_updates['OBJECTID'] += 1
+                sdf_updates["OBJECTID"] = range(len(sdf_updates))
+                sdf_updates["OBJECTID"] += 1
 
                 resp = item.layers[0].edit_features(
                     updates=sdf_updates.spatial.to_featureset()
                 )
 
-                assert resp['updateResults']
+                assert resp["updateResults"]
             except Exception as e:
 
                 raise e
@@ -3470,7 +3470,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 fs = sdf.spatial.to_featureset()
                 adds = [feat.as_dict for feat in fs.features]
                 resp = item.layers[0].edit_features(adds=adds)
-                assert resp['addResults']
+                assert resp["addResults"]
             except Exception as e:
 
                 raise e
@@ -3501,7 +3501,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 fs = sdf.spatial.to_featureset()
                 updates = [feat.as_dict for feat in fs.features]
                 resp = item.layers[0].edit_features(updates=updates)
-                assert resp['updateResults']
+                assert resp["updateResults"]
             except Exception as e:
 
                 raise e
@@ -3516,8 +3516,7 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                             ...
 
     def _get_relationships(self, item):
-        """
-        """
+        """ """
         related = []
         from arcgis.gis import Item
 

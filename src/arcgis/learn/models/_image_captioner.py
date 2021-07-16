@@ -4,14 +4,19 @@ from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
 import logging
+
 logger = logging.getLogger()
 
 try:
-    from ._image_captioning_utils import (image_captioner_learner,
-                                          predict_image, get_bleu)
+    from ._image_captioning_utils import (
+        image_captioner_learner,
+        predict_image,
+        get_bleu,
+    )
     from .._utils.image_captioning_data import show_results
     from ._arcgis_model import _resnet_family
     from .._utils.common import _get_emd_path
+
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
@@ -73,9 +78,9 @@ class ImageCaptioner(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
 
         if not HAS_FASTAI:
-            raise_fastai_import_error(import_exception=import_exception,
-                                      message="",
-                                      installation_steps=' ')
+            raise_fastai_import_error(
+                import_exception=import_exception, message="", installation_steps=" "
+            )
 
         super().__init__(data, backbone, **kwargs)
 
@@ -84,19 +89,20 @@ class ImageCaptioner(ArcGISModel):
         else:
             pretrained_backbone = True
 
-        self.decoder_params = kwargs.get('decoder_params', {})
-        self.learn = image_captioner_learner(self._data,
-                                             self._backbone,
-                                             decoder_params=self.decoder_params,
-                                             metrics=kwargs.get('metrics', None),
-                                             pretrained=pretrained_backbone
-                                             )
+        self.decoder_params = kwargs.get("decoder_params", {})
+        self.learn = image_captioner_learner(
+            self._data,
+            self._backbone,
+            decoder_params=self.decoder_params,
+            metrics=kwargs.get("metrics", None),
+            pretrained=pretrained_backbone,
+        )
         if pretrained_path is not None:
             self.load(pretrained_path)  # Load model and vocab
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'accuracy', 'corpus_bleu']
+        return ["valid_loss", "accuracy", "corpus_bleu"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -120,42 +126,40 @@ class ImageCaptioner(ArcGISModel):
         """
 
         from fastai.text.transform import Vocab
+
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        model_params = emd['ModelParameters']
+        model_params = emd["ModelParameters"]
         if data is None:
-            data = _EmptyData(path=emd_path.parent,
-                              loss_func=None,
-                              c=0,
-                              chip_size=emd['ImageHeight'])
+            data = _EmptyData(
+                path=emd_path.parent, loss_func=None, c=0, chip_size=emd["ImageHeight"]
+            )
 
             data.emd_path = emd_path
             data.emd = emd
-            for key, value in emd['DataAttributes'].items():
+            for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 
-            vocab_path = emd_path.parent / 'vocab'
-            data.vocab = Vocab.load(vocab_path)   # load vocab.
+            vocab_path = emd_path.parent / "vocab"
+            data.vocab = Vocab.load(vocab_path)  # load vocab.
 
-        return cls(data,
-                   **model_params,
-                   pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """
+        """Supported torchvision backbones for this model."""
         return ImageCaptioner._supported_backbones()
 
     @staticmethod
@@ -164,16 +168,16 @@ class ImageCaptioner(ArcGISModel):
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return ImageCaptioner._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
-        return ['ImageCaptioning']
+        return ["ImageCaptioning"]
 
     @property
     def _model_metrics(self):
-        return {'Metrics': json.dumps(self._get_model_metrics())}
+        return {"Metrics": json.dumps(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
         return self.bleu_score(**kwargs)
@@ -196,7 +200,7 @@ class ImageCaptioner(ArcGISModel):
 
         """
         if isinstance(self._data, _EmptyData):
-            scores = self._data.emd.get('Metrics')
+            scores = self._data.emd.get("Metrics")
             if scores is None:
                 logger.error("Metric not found in the loaded model")
                 return
@@ -248,17 +252,14 @@ class ImageCaptioner(ArcGISModel):
 
         """
         self._check_requisites()
-        return_fig = kwargs.get('return_fig', False)
-        fig=show_results(self, rows=rows, **kwargs)
+        return_fig = kwargs.get("return_fig", False)
+        fig = show_results(self, rows=rows, **kwargs)
         if return_fig:
             return fig
 
-    def _save(self,
-             name_or_path,
-             framework='PyTorch',
-             publish=False,
-             gis=None,
-             **kwargs):
+    def _save(
+        self, name_or_path, framework="PyTorch", publish=False, gis=None, **kwargs
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -295,14 +296,17 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
         """
         from ._arcgis_model import _create_zip
-        zip_files = kwargs.pop('zip_files', True)
-        path = super()._save(name_or_path,
-                            framework=framework,
-                            publish=publish,
-                            gis=gis,
-                            zip_files=False,
-                            **kwargs)
-        self._data.vocab.save(path / 'vocab')
+
+        zip_files = kwargs.pop("zip_files", True)
+        path = super()._save(
+            name_or_path,
+            framework=framework,
+            publish=publish,
+            gis=gis,
+            zip_files=False,
+            **kwargs
+        )
+        self._data.vocab.save(path / "vocab")
         if zip_files:
             _create_zip(path.name, str(path))
         return path
@@ -320,16 +324,17 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
         """
         from fastai.text.transform import Vocab
+
         super().load(name_or_path)
-        model_path = self.learn.path.parent / 'models'
-        path_like = '/' in name_or_path or '\\' in name_or_path
+        model_path = self.learn.path.parent / "models"
+        path_like = "/" in name_or_path or "\\" in name_or_path
         name = Path(name_or_path).name if path_like else name_or_path
         if path_like:
             model_path = Path(name_or_path)
             if model_path.is_file():
-                vocab_path = model_path.parent / 'vocab'
+                vocab_path = model_path.parent / "vocab"
             else:
-                vocab_path = model_path / 'vocab'
+                vocab_path = model_path / "vocab"
         else:
-            vocab_path = model_path / name / 'vocab'
-        self._data.vocab = Vocab.load(vocab_path)   # load vocab.
+            vocab_path = model_path / name / "vocab"
+        self._data.vocab = Vocab.load(vocab_path)  # load vocab.

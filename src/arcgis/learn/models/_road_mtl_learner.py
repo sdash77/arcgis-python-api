@@ -21,7 +21,7 @@ try:
     )
     from fastai.basic_data import DatasetType
     from arcgis.learn.models._unet_utils import show_results_multispectral
-    from arcgis.learn._utils.common import dynamic_range_adjustment,kwarg_fill_none
+    from arcgis.learn._utils.common import dynamic_range_adjustment, kwarg_fill_none
     from arcgis.learn.models._unet_utils import ArcGISSegmentationLabelList
     from arcgis.learn._data_utils._road_orient_data import (
         _plotOrientationOnImage,
@@ -66,30 +66,34 @@ class MultiTaskRoadLearner(Learner):
         self.return_fig = kwargs.get("return_fig", False)
         rows = min(total_len * batch_size, rows)
         data_iterator = iter(self.dl(ds_type))
-        ds = self.data.dl(DatasetType.Valid).dataset.orig_data.dl(DatasetType.Valid).dataset
-        norm = getattr(self.data.dl(DatasetType.Valid).dataset.orig_data, 'norm', False)
+        ds = (
+            self.data.dl(DatasetType.Valid)
+            .dataset.orig_data.dl(DatasetType.Valid)
+            .dataset
+        )
+        norm = getattr(self.data.dl(DatasetType.Valid).dataset.orig_data, "norm", False)
 
-        #for index in range(1, rows+1, batch_size):
-            #n_items = (rows + 1 - index) if (index + batch_size) > (rows + 1) else batch_size
-            #self.callbacks.append(RecordOnCPU())
-            #batch = next(data_iterator)
-            #preds = self.pred_batch(ds_type, batch=batch)
-            #*self.callbacks, rec_cpu = self.callbacks
-            #x, labels = rec_cpu.input, rec_cpu.target
-            #x = to_detach(x)
-            #labels = [to_detach(y) for y in labels]
-            #if norm:
-            #    x = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(x)
-            #    if norm.keywords.get('do_y', False):
-            #        labels = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(labels, do_x=True)
-            #        preds = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(preds, do_x=True)
-            #xs = [Image(x[i]) for i in range(n_items)]
-            #ys = [ds.x.reconstruct(grab_idx(labels[0].unsqueeze(1), i)) for i in range(n_items)]
-            #zs = [ds.x.reconstruct(grab_idx(torch.max(preds[0],axis=0)[1].unsqueeze(1),i)) for i in range(n_items)]
-            #self._show_xyzs(xs, ys, zs, **kwargs)
-            #ds.x.show_xyzs(xs, ys, zs, **kwargs)
-            #show_results_multispectral(4,alpha=0.1)
-            #self._show_pairs(xs, ys, zs, bin_size=self.data.orient_bin_size, **kwargs)
+        # for index in range(1, rows+1, batch_size):
+        # n_items = (rows + 1 - index) if (index + batch_size) > (rows + 1) else batch_size
+        # self.callbacks.append(RecordOnCPU())
+        # batch = next(data_iterator)
+        # preds = self.pred_batch(ds_type, batch=batch)
+        # *self.callbacks, rec_cpu = self.callbacks
+        # x, labels = rec_cpu.input, rec_cpu.target
+        # x = to_detach(x)
+        # labels = [to_detach(y) for y in labels]
+        # if norm:
+        #    x = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(x)
+        #    if norm.keywords.get('do_y', False):
+        #        labels = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(labels, do_x=True)
+        #        preds = self.data.dl(DatasetType.Valid).dataset.orig_data.denorm(preds, do_x=True)
+        # xs = [Image(x[i]) for i in range(n_items)]
+        # ys = [ds.x.reconstruct(grab_idx(labels[0].unsqueeze(1), i)) for i in range(n_items)]
+        # zs = [ds.x.reconstruct(grab_idx(torch.max(preds[0],axis=0)[1].unsqueeze(1),i)) for i in range(n_items)]
+        # self._show_xyzs(xs, ys, zs, **kwargs)
+        # ds.x.show_xyzs(xs, ys, zs, **kwargs)
+        # show_results_multispectral(4,alpha=0.1)
+        # self._show_pairs(xs, ys, zs, bin_size=self.data.orient_bin_size, **kwargs)
         total_len = len(self.dl(ds_type))
         batch_size = self.dl(ds_type).batch_size
         rows = min(total_len * batch_size, rows)
@@ -97,7 +101,9 @@ class MultiTaskRoadLearner(Learner):
             rows = 1
         data_iterator = iter(self.dl(ds_type))
         for index in range(1, rows + 1, batch_size):
-            n_items = (rows + 1 - index) if (index + batch_size) > (rows + 1) else batch_size
+            n_items = (
+                (rows + 1 - index) if (index + batch_size) > (rows + 1) else batch_size
+            )
             self.callbacks.append(RecordOnCPU())
             batch = next(data_iterator)
             preds = self.pred_batch(ds_type, batch=batch)
@@ -107,7 +113,10 @@ class MultiTaskRoadLearner(Learner):
             x = to_detach(x)
             labels = [to_detach(y).squeeze(1) for y in labels]
 
-            xs = [grab_idx(x, i).numpy().transpose(1, 2, 0).astype(np.uint8) for i in range(n_items)]
+            xs = [
+                grab_idx(x, i).numpy().transpose(1, 2, 0).astype(np.uint8)
+                for i in range(n_items)
+            ]
             ys = []
             for i in range(n_items):
                 ys.append([_to_np(grab_idx(y, i)) for y in labels])
@@ -121,40 +130,42 @@ class MultiTaskRoadLearner(Learner):
                     sub_zs.append(_to_np(grab_idx(pred_y, i)))
                 zs.append(sub_zs)
 
-            fig, axs = self._show_pairs(xs, ys, zs, bin_size=self.data.orient_bin_size, **kwargs)
+            fig, axs = self._show_pairs(
+                xs, ys, zs, bin_size=self.data.orient_bin_size, **kwargs
+            )
             if self.return_fig:
                 return fig
 
     def _show_pairs(
-            self,
-            xs,
-            ys,
-            zs,
-            imgsize: int = 4,
-            figsize: Optional[Tuple[int, int]] = None,
-            bin_size: int = 10,
-            **kwargs
+        self,
+        xs,
+        ys,
+        zs,
+        imgsize: int = 4,
+        figsize: Optional[Tuple[int, int]] = None,
+        bin_size: int = 10,
+        **kwargs
     ):
         self.alpha = kwargs.get("alpha", 0.6)
         rows = len(xs)
         main_title = "Ground Truth  / Predictions"
-        #axs = subplots(rows, 2, imgsize=imgsize, figsize=figsize, title=main_title)
-        fig, axs = plt.subplots(nrows=rows, ncols=2, figsize=(2 * imgsize, rows * imgsize))
+        # axs = subplots(rows, 2, imgsize=imgsize, figsize=figsize, title=main_title)
+        fig, axs = plt.subplots(
+            nrows=rows, ncols=2, figsize=(2 * imgsize, rows * imgsize)
+        )
         fig.suptitle(main_title)
         for x, y, z, ax in zip(xs, ys, zs, axs):
-            if rows ==1:
+            if rows == 1:
                 ax = axs
             ax[0].imshow(x)
-            ax[0].imshow(y[0], alpha=self.alpha,cmap='binary')
+            ax[0].imshow(y[0], alpha=self.alpha, cmap="binary")
             # _plotOrientationOnImage(ax[0], y[0], x, bin_size)
 
             ax[1].imshow(x)
-            ax[1].imshow(z[0], alpha=self.alpha,cmap='binary')
+            ax[1].imshow(z[0], alpha=self.alpha, cmap="binary")
             # _plotOrientationOnImage(ax[3], z[1], x, bin_size)
         for ax in axs.flatten():
             ax.axis("off")
         # plt.tight_layout()
-        #self.display = kwargs.get("for_display", True)
-        return fig,axs
-
-
+        # self.display = kwargs.get("for_display", True)
+        return fig, axs

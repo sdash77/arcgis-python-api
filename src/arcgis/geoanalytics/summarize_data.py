@@ -1682,6 +1682,9 @@ def summarize_within(
                                                                                     * ``Min`` - The minimum of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
                                                                                     * ``Max`` - The maximum of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
                                                                                     * ``Range`` - Finds the difference between Min and Max.
+                                                                                    * ``Stddev`` - The standard deviation of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons. (Added 10.9.1)
+                                                                                    * ``Var`` - The variance of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons. (Added 10.9.1)
+
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     sum_shape                                                                    Optional boolean. A boolean value that instructs the task to calculate statistics based on the
                                                                                  shape type of ``summarized_layer``, such as the length of lines or areas of polygons
