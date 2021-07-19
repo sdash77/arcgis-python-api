@@ -20,7 +20,7 @@ _logger = logging.getLogger()
 def connect_origins_to_destinations(
     origins_layer,
     destinations_layer,
-    measurement_type="DrivingTime",
+    measurement_type=None,
     origins_layer_route_id_field=None,
     destinations_layer_route_id_field=None,
     time_of_day=None,
@@ -265,6 +265,21 @@ def connect_origins_to_destinations(
                 params["measurement_type"] = tm[0]
             else:
                 params["measurement_type"] = measurement_type
+        elif measurement_type is None:
+            route_service = network.RouteLayer(
+                gis.properties.helperServices.route.url, gis=gis
+            )
+            travelmodes = route_service.retrieve_travel_modes()
+            tm = [
+                stm
+                for stm in travelmodes["supportedTravelModes"]
+                if stm["id"] == travelmodes["defaultTravelMode"]
+            ]
+            if tm:
+                params["measurement_type"] = tm[0]
+            else:
+                params["measurement_type"] = measurement_type
+            # measurement_type = ""
     except Exception as e:
         msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
         _logger.warn(msg)
@@ -691,7 +706,7 @@ def create_drive_time_areas(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
+            params["travel_mode"] = travel_mode
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:
@@ -1255,7 +1270,7 @@ def plan_routes(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
+            params["travel_mode"] = travel_mode
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:
