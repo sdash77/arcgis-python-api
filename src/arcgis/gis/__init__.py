@@ -4811,6 +4811,8 @@ class ContentManager(object):
                 filetype = "GeoPackage"
             elif extn == ".CSV":
                 filetype = "CSV"
+            elif extn == ".XLSX":
+                filetype = "Microsoft Excel"
             elif extn == ".SD":
                 filetype = "Service Definition"
             elif title.upper().endswith(".GDB"):
