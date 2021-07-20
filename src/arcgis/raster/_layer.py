@@ -11082,7 +11082,7 @@ from ._util import _local_function_template, _get_geometry, _get_extent
 
 class RasterCollection:
     """
-    The RasterCollection object allows a group of rasters to be sorted and
+    The ``RasterCollection`` class allows a group of rasters to be sorted and
     filtered easily, and prepares a collection for additional processing and analysis.
 
     ====================================     ====================================================================
@@ -11110,9 +11110,9 @@ class RasterCollection:
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
-                                                - "arcpy" : Use the arcpy engine for processing.
+                                                - ``arcpy`` : Use the arcpy engine for processing.
 
-                                                - "image_server" : Use the Image Server engine for processing.
+                                                - ``image_server`` : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS of the RasterCollection object.
     ------------------------------------     --------------------------------------------------------------------
@@ -11284,7 +11284,10 @@ class RasterCollection:
                     )
 
     def set_engine(self, engine):
-        """Can be used to change the back end engine"""
+        """
+        The ``set_engine`` method can be used to change the back end engine of the
+        :class:`~arcgis.raster.RasterCollection` object.
+        """
         return RasterCollection(
             rasters=self._ras_coll_engine_obj._rasters,
             attribute_dict=self._ras_coll_engine_obj._attribute_dict,
@@ -11297,12 +11300,22 @@ class RasterCollection:
 
     @property
     def count(self):
-        """returns the count of items in the RasterCollection"""
+        """
+        The ``count`` property returns the count of items in the ``RasterCollection`` object.
+
+        :returns:
+            An integer
+        """
         return self._ras_coll_engine_obj.count
 
     @property
     def fields(self):
-        """returns the fields available in the RasterCollection"""
+        """
+        The ``fields`` property returns the fields available in the ``RasterCollection`` objects.
+
+        :returns:
+            A list of available fields
+        """
         return self._ras_coll_engine_obj.fields
 
     @property
@@ -11330,7 +11343,9 @@ class RasterCollection:
         gis=None,
     ):
         """
-        Create a RasterCollection object from a `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__ `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
+        The ``from_stac_api`` method creates  a :class:`~arcgis.raster.RasterCollection` object from a
+        `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__
+        `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -11353,13 +11368,13 @@ class RasterCollection:
                               objects are also accepted (in any spatial reference).
 
                               Example:
-                                    | {
+                                    `| {
                                     |   "collections": ["landsat-8-l1-c1"],
                                     |   "bbox": [-110,39.5,-105,40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 30}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
                                     |   "limit": 10
-                                    | }
+                                    | }`
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
                               (STAC Item) raster returned from the query. For each key-value pair, the key is
@@ -11372,17 +11387,19 @@ class RasterCollection:
                                     - key : value -> Attribute display name : STAC item property name
 
                               Example:
-                                    | {
+                                    `| {
                                     |   "Name":"id",
                                     |   "Sensor":"platform",
                                     |   "StdTime":"datetime",
                                     |   "Cloud Cover":"eo:cloud_cover",
                                     |   "Extent":"bbox"
-                                    | }
+                                    | }`
 
-                              **Note:** If ‘Geometry’ is not specified in the attribute_dict then it would
-                              be automatically added for each Raster in the RasterCollection based
-                              on its STAC Item ‘geometry’ property and would be in Spatial reference: ``{'wkid':4326}``.
+                              .. note::
+                                If ‘Geometry’ is not specified in the ``attribute_dict`` then it would
+                                be automatically added for each Raster in the ``RasterCollection`` based
+                                on its STAC Item ‘geometry’ property and would be in
+                                Spatial reference: ``{'wkid':4326}``.
         -----------------     --------------------------------------------------------------------
         request_method        Optional string. The HTTP request method used with the STAC API for making the search.
 
@@ -11421,7 +11438,7 @@ class RasterCollection:
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
-        :returns: A RasterCollection object
+        :returns: A :class:`~arcgis.raster.RasterCollection` object
 
         .. code-block:: python
 
@@ -11577,7 +11594,8 @@ class RasterCollection:
         stac_catalog, attribute_dict=None, request_params=None, engine=None, *, gis=None
     ):
         """
-        Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
+        The ``from_stac_catalog`` method creates a :class:`~arcgis.raster.RasterCollection` object from a
+        `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -11585,7 +11603,8 @@ class RasterCollection:
         stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
                               be the URL of the Static STAC (Catalog).
 
-                              | Note: Currently only Landsat-8 STAC (Catalogs) are supported for this method.
+                              .. note::
+                                Currently only Landsat-8 STAC (Catalogs) are supported for this method.
 
                               Example:
                                     "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/catalog.json"
@@ -11638,7 +11657,7 @@ class RasterCollection:
         gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
         =================     ====================================================================
 
-        :returns: A RasterCollection object
+        :returns: A :class:`~arcgis.raster.RasterCollection` object
 
         .. code-block:: python
 
@@ -11758,7 +11777,7 @@ class RasterCollection:
         context=None,
     ):
         """
-        filter a raster collection based on attribute and/or spatial queries
+        The ``filter_by`` filter a :class:`~arcgis.raster.RasterCollection` based on attribute and/or spatial queries.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -11792,7 +11811,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the queries
+        :returns: a :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the queries
 
         .. code-block:: python
 
@@ -11820,7 +11839,7 @@ class RasterCollection:
         context=None,
     ):
         """
-        filter a raster collection by time
+        The ``filter_by_time`` filters a :class:`~arcgis.raster.RasterCollection` by time.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -11859,7 +11878,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the filter
+        :returns: a :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the filter
 
         .. code-block:: python
 
@@ -11888,9 +11907,12 @@ class RasterCollection:
         context=None,
     ):
         """
-        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
-        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
-        end to 1.
+        The ``filter_by_calendar_range`` method filters the :class:`~arcgis.raster.RasterCollection` by a
+        ``calendar_field`` and its start and end value (inclusive).
+
+        .. note::
+            For example, if you would like to select all the rasters that have the time stamp on
+            Monday, specify ``calendar_field`` as 'DAY_OF_WEEK' and put start and end to 1.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -11940,7 +11962,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the filter
+        :returns: a :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the filter
 
         .. code-block:: python
 
@@ -11967,7 +11989,8 @@ class RasterCollection:
 
     def filter_by_geometry(self, query_geometry_or_extent, context=None):
         """
-        Filters the collection of raster items so that only those that intersect with the geometry will be returned.
+        The ``filter_by_geometry`` filters the :class:`~arcgis.raster.RasterCollection` so that only those that
+        intersect with the geometry will be returned.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -11997,7 +12020,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the filter
+        :returns: a :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the filter
 
         .. code-block:: python
 
@@ -12023,8 +12046,8 @@ class RasterCollection:
 
     def filter_by_attribute(self, field_name, operator, field_values, context=None):
         """
-        Filters the collection of raster items by an attribute query and returns a raster collection
-        containing only the items that satisfy the query.
+        The ``filter_by_attribute`` method filters the collection of raster items by an attribute query and returns a
+        raster collection containing only the items that satisfy the query.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12034,33 +12057,33 @@ class RasterCollection:
         operator                                 Required string. The keyword to filter the attributes.
                                                  Keywords include the following:
 
-                                                  - CONTAINS - The attribute in the field contains the specified string, list, or number.
+                                                  - ``CONTAINS`` - The attribute in the field contains the specified string, list, or number.
 
-                                                  - ENDS_WITH - The attribute ends with the specified string or number.
+                                                  - ``ENDS_WITH`` - The attribute ends with the specified string or number.
 
-                                                  - EQUALS - The attribute equals the specified string, list, or number.
+                                                  - ``EQUALS`` - The attribute equals the specified string, list, or number.
 
-                                                  - GREATER_THAN - The attribute is greater than the specified number.
+                                                  - ``GREATER_THAN`` - The attribute is greater than the specified number.
 
-                                                  - IN - The attribute is one of the items in the specified list.
+                                                  - ``IN`` - The attribute is one of the items in the specified list.
 
-                                                  - LESS_THAN - The attribute is less than the specified number.
+                                                  - ``LESS_THAN`` - The attribute is less than the specified number.
 
-                                                  - NOT_CONTAINS - The attribute does not contain the specified string, list, or number.
+                                                  - ``NOT_CONTAINS`` - The attribute does not contain the specified string, list, or number.
 
-                                                  - NOT_ENDS_WITH - The attribute does not end with the specified string or number.
+                                                  - ``NOT_ENDS_WITH`` - The attribute does not end with the specified string or number.
 
-                                                  - NOT_EQUALS - The attribute does not equal the specified string, list, or number.
+                                                  - ``NOT_EQUALS`` - The attribute does not equal the specified string, list, or number.
 
-                                                  - NOT_GREATER_THAN - The attribute is not greater than the specified number.
+                                                  - ``NOT_GREATER_THAN`` - The attribute is not greater than the specified number.
 
-                                                  - NOT_IN - The attribute is not one of the items in the specified list.
+                                                  - ``NOT_IN`` - The attribute is not one of the items in the specified list.
 
-                                                  - NOT_LESS_THAN - The attribute is not less than the specified number.
+                                                  - ``NOT_LESS_THAN`` - The attribute is not less than the specified number.
 
-                                                  - NOT_STARTS_WITH - The attribute does not start with the specified string or number.
+                                                  - ``NOT_STARTS_WITH`` - The attribute does not start with the specified string or number.
 
-                                                  - STARTS_WITH - The attribute starts with the specified string or number.
+                                                  - ``STARTS_WITH`` - The attribute starts with the specified string or number.
         ------------------------------------     --------------------------------------------------------------------
         field_values                             Required object. The attribute value or values against which to compare.
                                                  This can be specified as a string, a list, or a number.
@@ -12086,7 +12109,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the filter
+        :returns: a :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the filter
 
         .. code-block:: python
 
@@ -12114,8 +12137,9 @@ class RasterCollection:
         self, property_name, operator, property_values, context=None
     ):
         """
-        Filters the collection of raster items by a raster property query and returns a raster collection
-        containing only the items that satisfy the query.
+        The ``filter_by_raster_property`` method filters the :class:`~arcgis.raster.RasterCollection` by a raster
+        property query and returns a :class:`~arcgis.raster.RasterCollection` containing only the
+        items that satisfy the query.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12125,35 +12149,35 @@ class RasterCollection:
         operator                                 Required string. The keyword to filter the attributes.
                                                  Keywords include the following:
 
-                                                  -  CONTAINS - The attribute in the field contains the specified string, list, or number.
+                                                  -  `CONTAINS` - The attribute in the field contains the specified string, list, or number.
 
-                                                  - ENDS_WITH - The attribute ends with the specified string or number.
+                                                  - `ENDS_WITH` - The attribute ends with the specified string or number.
 
-                                                  -  EQUALS - The attribute equals the specified string, list, or number.
+                                                  -  `EQUALS` - The attribute equals the specified string, list, or number.
 
-                                                  -  GREATER_THAN - The attribute is greater than the specified number.
+                                                  -  `GREATER_THAN` - The attribute is greater than the specified number.
 
-                                                  -  IN - The attribute is one of the items in the specified list.
+                                                  -  `IN` - The attribute is one of the items in the specified list.
 
-                                                  -  LESS_THAN - The attribute is less than the specified number.
+                                                  -  `LESS_THAN` - The attribute is less than the specified number.
 
-                                                  -  NOT_CONTAINS - The attribute does not contain the specified string, list, or number.
+                                                  -  `NOT_CONTAINS` - The attribute does not contain the specified string, list, or number.
 
-                                                  -  NOT_ENDS_WITH - The attribute does not end with the specified string or number.
+                                                  -  `NOT_ENDS_WITH` - The attribute does not end with the specified string or number.
 
-                                                  -  NOT_EQUALS - The attribute does not equal the specified string, list, or number.
+                                                  -  `NOT_EQUALS` - The attribute does not equal the specified string, list, or number.
 
-                                                  -  NOT_GREATER_THAN - The attribute is not greater than the specified number.
+                                                  -  `NOT_GREATER_THAN` - The attribute is not greater than the specified number.
 
-                                                  -  NOT_IN - The attribute is not one of the items in the specified list.
+                                                  -  `NOT_IN` - The attribute is not one of the items in the specified list.
 
-                                                  -  NOT_LESS_THAN - The attribute is not less than the specified number.
+                                                  -  `NOT_LESS_THAN` - The attribute is not less than the specified number.
 
-                                                  -  NOT_STARTS_WITH - The attribute does not start with the specified string or number.
+                                                  -  `NOT_STARTS_WITH` - The attribute does not start with the specified string or number.
 
-                                                  -  STARTS_WITH - The attribute starts with the specified string or number.
+                                                  -  `STARTS_WITH` - The attribute starts with the specified string or number.
         ------------------------------------     --------------------------------------------------------------------
-        property_values                             Required object. The property value or values against which to compare.
+        property_values                          Required object. The property value or values against which to compare.
                                                  This can be specified as a string, a list, or a number.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
@@ -12177,7 +12201,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection object that only contains items sastisfying the filter
+        :returns: A :class:`~arcgis.raster.RasterCollection` object that only contains items satisfying the filter
 
         .. code-block:: python
 
@@ -12197,7 +12221,8 @@ class RasterCollection:
 
     def sort(self, field_name, ascending=True, context=None):
         """
-        Sorts the collection of rasters by a field name and returns a raster collection that is in the order specified.
+        The ``sort`` method sorts the collection of :class:`~arcgis.raster.Raster` objects by a field name and returns
+        a :class:`~arcgis.raster.RasterCollection` that is in the order specified.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12228,7 +12253,7 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a sorted RasterCollection object
+        :returns: A sorted :class:`~arcgis.raster.RasterCollection` object
 
         """
         return self._ras_coll_engine_obj.sort(
@@ -12237,7 +12262,8 @@ class RasterCollection:
 
     def get_field_values(self, field_name, max_count=0):
         """
-        Returns the values of a specified field from the raster collection.
+        The ``get_field_values`` method retrieves the values of a specified field from the
+        :class:`~arcgis.raster.RasterCollection` object.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12251,7 +12277,7 @@ class RasterCollection:
                                                  will be returned.
         ====================================     ====================================================================
 
-        :returns: a list of values of the specified field from the raster collection.
+        :returns: A List of values of the specified field from the :class:`~arcgis.raster.RasterCollection`.
 
         """
         return self._ras_coll_engine_obj.get_field_values(
@@ -12260,8 +12286,8 @@ class RasterCollection:
 
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         """
-        Returns a multidimensional raster dataset, in which each item in the raster collection is a
-        slice in the multidimensional raster.
+        The ``to_multidimensional_raster`` returns a multidimensional raster dataset, in which each item in the
+        :class:`~arcgis.raster.RasterCollection` is a slice in the multidimensional raster.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12279,7 +12305,7 @@ class RasterCollection:
                                                  dimension_field_names = ["Time", "Depth"]).
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
 
         .. code-block:: python
 
@@ -12296,14 +12322,15 @@ class RasterCollection:
 
     def max(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the maximum pixel values for that
-        band across all rasters in the raster collection.
+        The ``max`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
+        maximum pixel values for that band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection, each with four bands,
-        the max method will calculate the maximum pixel value that occurs across all raster
-        items for band 1, band 2, band 3, and band 4; a four-band raster is returned.
-        Band numbers are matched between raster items using the band index, so the items
-        in the raster collection must follow the same band order.
+        .. note::
+            For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`, each with
+            four bands, the max method will calculate the maximum pixel value that occurs across all raster
+            items for band 1, band 2, band 3, and band 4; a four-band raster is returned.
+            Band numbers are matched between raster items using the band index, so the items
+            in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12314,15 +12341,15 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
 
         """
         return self._ras_coll_engine_obj.max(ignore_nodata=ignore_nodata)
 
     def min(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the minimum pixel values for that
-        band across all rasters in the raster collection.
+        The ``min`` method eturns a :class:`~arcgis.raster.Raster` object in which each band contains the
+        minimum pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
 
         For example, if there are ten raster items in the raster collection, each with four bands,
         the min method will calculate the minimum pixel value that occurs across all raster
@@ -12345,15 +12372,16 @@ class RasterCollection:
 
     def median(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the median pixel values
-        for that band across all rasters in the raster collection.
+        The ``median`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
+        median pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
 
-        For example, if there are ten raster items in the raster collection,
-        each with four bands, the median method will calculate the median pixel value
-        that occurs across all raster items for band 1, for band 2, for band 3,
-        and for band 4; a four-band raster is returned. Band numbers are matched
-        between raster items using the band index, so the items in the raster
-        collection must follow the same band order.
+        .. note::
+            For example, if there are ten raster items in the raster collection,
+            each with four bands, the median method will calculate the median pixel value
+            that occurs across all raster items for band 1, for band 2, for band 3,
+            and for band 4; a four-band raster is returned. Band numbers are matched
+            between raster items using the band index, so the items in the raster
+            collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12364,21 +12392,22 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
         """
         return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata)
 
     def mean(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the average pixel values
-        for that band across all rasters in the raster collection.
+        The ``mean`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the average
+        pixel values for that band across all rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection,
-        each with four bands, the mean method will calculate the mean pixel value
-        that occurs across all raster items for band 1, for band 2, for band 3,
-        and for band 4; a four-band raster is returned. Band numbers are matched
-        between raster items using the band index, so the items in the raster
-        collection must follow the same band order.
+        .. note::
+            For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
+            each with four bands, the mean method will calculate the mean pixel value
+            that occurs across all raster items for band 1, for band 2, for band 3,
+            and for band 4; a four-band raster is returned. Band numbers are matched
+            between raster items using the band index, so the items in the raster
+            collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12389,23 +12418,24 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
         """
         return self._ras_coll_engine_obj.mean(ignore_nodata=ignore_nodata)
 
     def majority(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the pixel
+        The ``majority`` method returns a raster object in which each band contains the pixel
         value that occurs most frequently for that band across all
         rasters in the raster collection.
 
-        For example, if there are ten raster items in the raster collection,
-        each with four bands, the majority method will determine the
-        pixel value that occurs most frequently across all raster
-        items for band 1, for band 2, for band 3, and for band 4;
-        a four-band raster is returned. Band numbers are matched
-        between raster items using the band index, so the items
-        in the raster collection must follow the same band order.
+        .. note::
+            For example, if there are ten raster items in the :class:`~arcgis.raster.RasterCollection`,
+            each with four bands, the majority method will determine the
+            pixel value that occurs most frequently across all raster
+            items for band 1, for band 2, for band 3, and for band 4;
+            a four-band raster is returned. Band numbers are matched
+            between raster items using the band index, so the items
+            in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12416,22 +12446,23 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
 
         """
         return self._ras_coll_engine_obj.majority(ignore_nodata=ignore_nodata)
 
     def sum(self, ignore_nodata=True):
         """
-        Returns a raster object in which each band contains the sum
-        of pixel values for that band across all rasters in the raster collection.
+        The ``sum`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the sum
+        of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
 
-        For example, if there are ten raster items in the raster collection,
-        each with four bands, the sum method will calculate the sum of pixel
-        values for each pixel that occurs across all raster items for band 1,
-        band 2, band 3, and band 4; a four-band raster is returned.
-        Band numbers are matched between raster items using the band index,
-        so the items in the raster collection must follow the same band order.
+        .. note::
+            For example, if there are ten raster items in the raster collection,
+            each with four bands, the sum method will calculate the sum of pixel
+            values for each pixel that occurs across all raster items for band 1,
+            band 2, band 3, and band 4; a four-band raster is returned.
+            Band numbers are matched between raster items using the band index,
+            so the items in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12442,14 +12473,14 @@ class RasterCollection:
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
         """
         return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata)
 
     def mosaic(self, mosaic_method="FIRST"):
         """
-        Returns a Raster object in which all items in a raster collection
-        have been mosaicked into a single raster.
+        The ``mosaic`` method returns a :class:`~arcgis.raster.Raster` object in which all items in a
+        :class:`~arcgis.raster.RasterCollection` have been mosaicked into a single raster.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12457,35 +12488,38 @@ class RasterCollection:
         mosaic_method                            Optional string. The method used to handle overlapping areas
                                                  between adjacent raster items. Mosaic method options include the following:
 
-                                                   - FIRST -  Determines the pixel value from the first raster that is overlapping.
+                                                   - `FIRST` -  Determines the pixel value from the first raster that is overlapping.
 
-                                                   - LAST - Determines the pixel value from the last raster that is overlapping.
+                                                   - `LAST` - Determines the pixel value from the last raster that is overlapping.
 
-                                                   - MEAN - Determines the average pixel value from the two rasters that are overlapping.
+                                                   - `MEAN` - Determines the average pixel value from the two rasters that are overlapping.
 
-                                                   - MIN - Determines the lower pixel value from the two raster datasets that are overlapping.
+                                                   - `MIN` - Determines the lower pixel value from the two raster datasets that are overlapping.
 
-                                                   - MAX - Determines the higher pixel value from the two raster datasets that are overlapping.
+                                                   - `MAX` - Determines the higher pixel value from the two raster datasets that are overlapping.
 
-                                                   - SUM - Determines the sum of pixel values from the two rasters that are overlapping.
+                                                   - `SUM` - Determines the sum of pixel values from the two rasters that are overlapping.
 
-                                                    (The default value is FIRST)
+                                                    .. note::
+                                                        The default value is `FIRST`
         ====================================     ====================================================================
 
-        :returns: a Raster object
+        :returns: A :class:`~arcgis.raster.Raster` object
 
         """
         return self._ras_coll_engine_obj.mosaic(mosaic_method=mosaic_method)
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         """
-        Returns a Raster object in which all items in a raster collection have been 
-        mosaicked into a single raster based on a quality requirement.
+        The ``quality_mosaic`` method returns a :class:`~arcgis.raster.Raster` object in which all items in a
+        :class:`~arcgis.raster.RasterCollection` have been  mosaicked into a single raster based on a quality
+        requirement.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        quality_rc_or_list                       Required. The raster collection or list of rasters to be used as quality indicators.
+        quality_rc_or_list                       Required. The :class:`~arcgis.raster.RasterCollection`
+                                                 or list of rasters to be used as quality indicators.
 
                                                  For example, Landsat 8's Band 1 is the Coastal/Aerosol band, 
                                                  which can be used to estimate the concentration of fine aerosol 
@@ -12499,17 +12533,20 @@ class RasterCollection:
         statistic_type                           Required string. The statistic used to compare the input collection 
                                                  or list of quality rasters.
 
-                                                    MAX - The highest pixel value in the input quality rasters will \
+                                                    `MAX` - The highest pixel value in the input quality rasters will \
                                                           be the pixel value in the output raster. This is the default.
 
-                                                    MEDIAN - The median pixel value in the input quality rasters \
+                                                    `MEDIAN` - The median pixel value in the input quality rasters \
                                                              will be the pixel value in the output raster.
 
-                                                    MIN - The minimum pixel value in the input quality rasters \
+                                                    `MIN` - The minimum pixel value in the input quality rasters \
                                                           will be the pixel value in the output raster.
 
-                                                    For example, to mosaic the input raster collection such that 
-                                                    those with the lowest aerosol content are on top, use the MIN statistic type.
+
+                                                .. note::
+                                                    For example, to mosaic the input raster collection such that
+                                                    those with the lowest aerosol content are on top,
+                                                    use the ``MIN`` statistic type.
         ====================================     ====================================================================
 
         :returns: a Raster object
@@ -12521,8 +12558,9 @@ class RasterCollection:
 
     def select_bands(self, band_ids_or_names, context=None):
         """
-        Selects a list of bands from every raster item in a raster collection and
-        returns a raster collection that contains raster items with only the selected bands.
+        The ``select_bands`` method selects a list of bands from every :class:`~arcgis.raster.Raster` item in a
+        :class:`~arcgis.raster.RasterCollection` and returns a raster collection that contains raster items with only
+        the selected bands.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12552,7 +12590,9 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a RasterCollection that contains raster items with only the selected bands.
+        :returns:
+            A :class:`~arcgis.raster.RasterCollection` that contains
+            :class:`~arcgis.raster.Raster` items with only the selected bands.
 
         """
         return self._ras_coll_engine_obj.select_bands(
@@ -12561,7 +12601,7 @@ class RasterCollection:
 
     def map(self, func, context=None):
         """
-        Maps a Python function over a raster collection.
+        The ``map`` method maps a Python function over a raster collection.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -12592,7 +12632,9 @@ class RasterCollection:
                                                         {"query_boundary":True}
         ====================================     ====================================================================
 
-        :returns: a new RasterCollection created from the existing RasterCollection after applying the func on each item.
+        :returns:
+            A new :class:`~arcgis.raster.RasterCollection` created from the existing
+            ``RasterCollection`` after applying the func on each item.
 
         .. code-block:: python
 
@@ -15015,8 +15057,8 @@ class ImageryTileManager(object):
 ########################################################################
 class RasterCatalogItem(object):
     """
-    Represents a single catalog item on an Image Layer.  This class is only
-    to be used with Imagery Layer objects that have 'Catalog' in the layer's
+    The ``RasterCatalogItem`` class represents a single catalog item on an ``Image Layer``. ``RasterCatalogItem``
+    is only to be used with :class:`~arcgis.raster.ImageryLayer` objects that have ``Catalog`` in the layer's
     capabilities property.
 
 
@@ -15025,9 +15067,9 @@ class RasterCatalogItem(object):
     -----------------     --------------------------------------------------------------------
     url                   required string. Web address to the catalog item.
     -----------------     --------------------------------------------------------------------
-    imglyr                required ImageryLayer. The imagery layer object.
+    imglyr                required :class:`~arcgis.raster.ImageryLayer`. The imagery layer object.
     -----------------     --------------------------------------------------------------------
-    initialize            optional boolean. Default is true. If false, the properties of the
+    initialize            optional boolean. Default is ``True``. If ``False``, the properties of the
                           item will not be loaded until requested.
     =================     ====================================================================
 
@@ -15082,7 +15124,10 @@ class RasterCatalogItem(object):
     @property
     def properties(self):
         """
-        returns the object properties
+        The ``properties`` property retrieves the :class:`~arcgis.raster.Raster` object's properties.
+
+        :returns:
+            Raster properties
         """
         if self._properties is None:
             self._init()
@@ -15124,8 +15169,11 @@ class RasterCatalogItem(object):
     @property
     def info(self):
         """
-        The info property returns information about the associated raster
+        The ``info`` property returns information about the associated :class:`~arcgis.raster.Raster`
         such as its width, height, number of bands, and pixel type.
+
+        :return:
+            Raster properties
         """
         url = "%s/info" % self._url
         params = {"f": "json"}
@@ -15135,8 +15183,11 @@ class RasterCatalogItem(object):
     @property
     def key_properties(self):
         """
-        The raster key_properties property returns key properties of the
-        associated raster in an image layer.
+        The raster ``key_properties`` property returns key properties of the
+        associated :class:`~arcgis.raster.ImageryLayer` in an image layer.
+
+        :returns:
+            Key properties of a :class:`~arcgis.raster.Raster` object
         """
         url = "%s/info/keyProperties" % self._url
         params = {"f": "json"}
@@ -15145,7 +15196,12 @@ class RasterCatalogItem(object):
     # ----------------------------------------------------------------------
     @property
     def thumbnail(self):
-        """returns a thumbnail of the current item"""
+        """
+        The ``thumbnail`` property returns a thumbnail of the current :class:`~arcgis.raster.Raster` item.
+
+        :returns:
+            A thumbnail
+        """
         import tempfile
 
         folder = tempfile.gettempdir()
@@ -15174,16 +15230,18 @@ class RasterCatalogItem(object):
         compression=75,
     ):
         """
-        The image() method returns a composite image for a single
+        The ``image`` method returns a composite image for a single
         raster catalog item. You can use this method for generating
         dynamic images based on a single catalog item.
         This method provides information about the exported image, such
         as its URL, width and height, and extent.
-        Apart from the usual response formats of html and json, you can
-        also request a format called image for the image. When you specify
-        image as the format, the server responds by directly streaming the
-        image bytes to the client. With this approach, you don't get any
-        information associated with the image other than the actual image.
+
+        .. note::
+            Apart from the usual response formats of html and json, you can
+            also request a format called image for the image. When you specify
+            image as the format, the server responds by directly streaming the
+            image bytes to the client. With this approach, you don't get any
+            information associated with the image other than the actual image.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -15210,28 +15268,30 @@ class RasterCatalogItem(object):
         -----------------     --------------------------------------------------------------------
         format                optional string. The format of the exported image. The default
                               format is png.
-                              Values: png, png8, png24, jpg, bmp, gif
+                              Values: `png, png8, png24, jpg, bmp, gif`
         -----------------     --------------------------------------------------------------------
         pixel_type            optional string. The pixel type, also known as data type, that
                               pertains to the type of values stored in the raster, such as signed
                               integer, unsigned integer, or floating point. Integers are whole
                               numbers; floating points have decimals.
-                              Values: C128, C64, F32, F64, S16, S32, S8, U1, U16, U2, U32, U4,
-                              U8, UNKNOWN
+                              Values: `C128, C64, F32, F64, S16, S32, S8, U1, U16, U2, U32, U4,
+                              U8, UNKNOWN`
         -----------------     --------------------------------------------------------------------
         no_data               optional float. The pixel value representing no information.
         -----------------     --------------------------------------------------------------------
         interpolation         optional string. The resampling process of extrapolating the pixel
                               values while transforming the raster dataset when it undergoes
                               warping or when it changes coordinate space.
-                              Values: RSP_BilinearInterpolation,
-                              RSP_CubicConvolution, RSP_Majority, RSP_NearestNeighbor
+                              Values: `RSP_BilinearInterpolation,
+                              RSP_CubicConvolution, RSP_Majority, RSP_NearestNeighbor`
         -----------------     --------------------------------------------------------------------
         compression           optional integer. Controls how much loss the image will be subjected
                               to by the compression algorithm. Valid value ranges of compression
                               quality are from 0 to 100.
         =================     ====================================================================
 
+        :returns:
+            A composite image
         """
         import json
 
@@ -15282,9 +15342,11 @@ class RasterCatalogItem(object):
     @property
     def ics(self):
         """
-        The raster ics property returns the image coordinate system of the
-        associated raster in an image layer. The returned ics can be used
-        as the SR parameter.
+        The raster ``ics`` property returns the image coordinate system of the
+        associated raster in an image layer.
+
+        .. note::
+            The returned ics can be used as the SR parameter.
 
 
         """
@@ -15295,8 +15357,14 @@ class RasterCatalogItem(object):
     @property
     def metadata(self):
         """
-        The metadata property returns metadata of the image layer or a
-        raster catalog item. The output format is always XML.
+        The ``metadata`` property returns metadata of the image layer or a
+        raster catalog item.
+
+        .. note::
+            The output format is always XML.
+
+        :returns:
+            Metadata in XML format
         """
         url = "%s/info/metadata" % self._url
         out_folder = tempfile.gettempdir()
@@ -15313,10 +15381,13 @@ class RasterCatalogItem(object):
     @property
     def ics_to_pixel(self):
         """
-        returns coefficients to build up mathematic model for geometric
-        transformation. With this transformation, ICS coordinates based
-        from the catalog item raster can be used to calculate the original
-        column and row numbers on the corresponding image.
+        The ``ics_to_pixel`` property returns coefficients to build up a mathematic model for geometric
+        transformation.
+
+        .. note::
+            With this transformation, ICS coordinates based
+            from the catalog item raster can be used to calculate the original
+            column and row numbers on the corresponding image.
 
         """
         url = "%s/info/icsToPixel" % self._url
@@ -15326,19 +15397,22 @@ class RasterCatalogItem(object):
 ########################################################################
 class RasterManager(object):
     """
-    This class allows users to update, add, and delete rasters to an
-    ImageryLayer object.  The functions are only available if the
-    layer has 'Edit' on it's capabilities property.
+    The ``RasterManager`` class allows users to update, add, and delete rasters to an
+    :class:`~arcgis.raster.ImageryLayer` object.
 
-    .. note :: This class is not created by users directly. An instance of this class, called  rasters ,
-     is available as a property of an ImageryLayer object. Users call methods on this  rasters  object
-     to  update, add and delete rasters from an ImageryLayer
+    .. note::
+        The functions are only available if the layer has 'Edit' on it's capabilities property.
+
+    .. note ::
+        This class is not created by users directly. An instance of this class, called ``rasters``,
+        is available as a property of an ImageryLayer object. Users call methods on this ``rasters`` object
+        to  update, add and delete rasters from an :class:`~arcgis.raster.ImageryLayer`.
 
     =================     ====================================================================
     **Argument**          **Description**
     -----------------     --------------------------------------------------------------------
-    imglyr                required ImageryLayer. The imagery layer object where 'Edit' is in
-                          the capabilities.
+    imglyr                required :class:`~arcgis.raster.ImageryLayer` object.
+                          The imagery layer object where 'Edit' is in the capabilities.
     =================     ====================================================================
     """
 
@@ -15364,17 +15438,18 @@ class RasterManager(object):
         geodata_transform_apply_method="esriGeodataTransformApplyAppend",
     ):
         """
-        This operation is supported at 10.1 and later.
-        The Add Rasters operation is performed on an image layer method.
-        The Add Rasters operation adds new rasters to an image layer
+        The ``add`` operation is performed on an image layer method, adding new rasters to an image layer.
         (POST only).
-        The added rasters can either be uploaded items, using the item_ids
-        parameter, or published services, using the service_url parameter.
-        If item_ids is specified, uploaded rasters are copied to the image
-        Layer's dynamic image workspace location; if the service_url is
+        The added rasters can either be uploaded items, using the ``item_ids``
+        parameter, or published services, using the ``service_url`` parameter.
+        If ``item_ids`` is specified, uploaded rasters are copied to the image
+        layer's dynamic image workspace location; if the ``service_url`` is
         specified, the image layer adds the URL to the mosaic dataset no
-        raster files are copied. The service_url is required input for the
+        raster files are copied. The ``service_url`` is required input for the
         following raster types: Image Layer, Map Service, WCS, and WMS.
+
+        .. note::
+            The ``add`` operation is supported at 10.1 and later.
 
         ===============================     ====================================================================
         **Arguments**                       **Description**
@@ -15384,7 +15459,7 @@ class RasterManager(object):
                                              
                                             Syntax:
 
-                                                item_ids=<itemId1>,<itemId2>
+                                                ``item_ids=<itemId1>,<itemId2>``
                                             
                                             Example:
 
@@ -15405,29 +15480,28 @@ class RasterManager(object):
                                             define the metadata and processing template for raster files to be \
                                             added. Allowed values are listed in image layer resource.
                                             
-                                            Example: 
-
-                                                Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service, \
-                                                NITF, WCS, WMS
+                                            Example:
+                                                `Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service, \
+                                                NITF, WCS, WMS`
         -------------------------------     --------------------------------------------------------------------
         compute_statistics                  If true, statistics for the rasters will be computed. \
                                             The default is false.
                                             
                                             Values: 
 
-                                                false,true
+                                                `false,true`
         -------------------------------     --------------------------------------------------------------------
         build_pyramids                      If true, builds pyramids for the rasters. The default is false.
                                             
                                             Values: 
 
-                                                false,true
+                                                `false,true`
         -------------------------------     --------------------------------------------------------------------
         build_thumbnail                     If true, generates a thumbnail for the rasters. The default is false.
                                             
                                             Values:
 
-                                                false,true
+                                                `false,true`
         -------------------------------     --------------------------------------------------------------------
         minimum_cell_size_factor            The factor (times raster resolution) used \
                                             to populate the MinPS field (maximum cell size above which the \
@@ -15456,10 +15530,10 @@ class RasterManager(object):
 
                                             Syntax:
 
-                                              | {
+                                              `| {
                                               |   "<name1>" : <value1>,
                                               |   "<name2>" : <value2>
-                                              | }
+                                              | }`
                 
                                             Example:
 
@@ -15480,7 +15554,7 @@ class RasterManager(object):
 
                                             Syntax:
 
-                                              | [
+                                              `| [
                                               | {
                                               |   "geodataTransform" : "<geodataTransformName1>",
                                               |   "geodataTransformArguments" : {<geodataTransformArguments1>}
@@ -15489,7 +15563,7 @@ class RasterManager(object):
                                               |   "geodataTransform" : "<geodataTransformName2>",
                                               |   "geodataTransformArguments" : {<geodataTransformArguments2>}
                                               |   }
-                                              | ]
+                                              | ]`
 
                                             The syntax of the geodataTransformArguments property varies based \
                                             on the specified geodataTransform name. See Geodata Transformations \
@@ -15500,12 +15574,12 @@ class RasterManager(object):
 
                                             Values: 
 
-                                                esriGeodataTransformApplyAppend |
+                                                `esriGeodataTransformApplyAppend |
                                                 esriGeodataTransformApplyReplace |
-                                                esriGeodataTransformApplyOverwrite
+                                                esriGeodataTransformApplyOverwrite`
         ===============================     ====================================================================
 
-        :returns: dictionary
+        :returns: A dictionary
         """
 
         return self._service._add_rasters(
@@ -15525,7 +15599,7 @@ class RasterManager(object):
     # ----------------------------------------------------------------------
     def delete(self, raster_ids):
         """
-        The Delete Rasters operation deletes one or more rasters in an image layer.
+        The ``delete`` operation deletes one or more rasters in an image layer.
 
         =================     ====================================================================
         **Argument**          **Description**
@@ -15537,7 +15611,7 @@ class RasterManager(object):
                               | example 2: raster_ids='10' # single ID
         =================     ====================================================================
 
-        :returns: dictionary
+        :returns: A dictionary
         """
         return self._service._delete_rasters(raster_ids)
 
@@ -15559,13 +15633,15 @@ class RasterManager(object):
         apply_method="esriGeodataTransformApplyAppend",
     ):
         """
-        The Update Raster operation updates rasters (attributes and
+        The ``update`` operation updates rasters (attributes and
         footprints, or replaces existing raster files) in an image layer.
         In most cases, this operation is used to update attributes or
-        footprints of existing rasters in an image layer. In cases where
-        the original raster needs to be replaced, the new raster can either
-        be items uploaded using the items parameter or URLs of published
-        services using the serviceUrl parameter.
+        footprints of existing rasters in an image layer.
+
+        .. note::
+            In cases where the original raster needs to be replaced, the new raster can either
+            be items uploaded using the items parameter or URLs of published
+            services using the serviceUrl parameter.
 
         ========================  ====================================================================
         **Argument**              **Description**
@@ -15618,12 +15694,12 @@ class RasterManager(object):
         apply_method              optional string. Defines how to apply the provided geodataTransform. \
                                   The default is esriGeodataTransformApplyAppend.
                                   
-                                  Values: esriGeodataTransformApplyAppend, \
+                                  Values: `esriGeodataTransformApplyAppend, \
                                       esriGeodataTransformApplyReplace, \
-                                      esriGeodataTransformApplyOverwrite
+                                      esriGeodataTransformApplyOverwrite`
         ========================  ====================================================================
 
-        :returns: dictionary
+        :returns: A dictionary
         """
         return self._service._update_raster(
             raster_id=raster_id,
