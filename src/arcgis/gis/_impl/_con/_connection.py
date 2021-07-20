@@ -1069,12 +1069,12 @@ class Connection(object):
     def put_raw(self, url, data, **kwargs):
         """
         performs a raw PUT operation
-        
+
         url: str
         data: bytes or open() object
         kwargs - optional requests.put parameters.  headers is not supported, use additional_headers
         """
-        verify = kwargs.pop('verify', True)
+        verify = kwargs.pop("verify", True)
         original_headers = copy.deepcopy(self._session.headers)
         self._session.headers.update(kwargs.pop("additional_headers", {}))
         token_header = "X-Esri-Authorization"

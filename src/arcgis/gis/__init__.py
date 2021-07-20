@@ -909,11 +909,14 @@ class GIS(object):
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
+
                 res = self._portal.con.post("portals/self/servers", {"f": "json"})
-                
-                return [NotebookServer(server['adminUrl'] + "/admin", self) \
-                        for server in res['servers'] \
-                        if server['serverFunction'].lower() == 'notebookserver']
+
+                return [
+                    NotebookServer(server["adminUrl"] + "/admin", self)
+                    for server in res["servers"]
+                    if server["serverFunction"].lower() == "notebookserver"
+                ]
             except:
                 return []
         return []

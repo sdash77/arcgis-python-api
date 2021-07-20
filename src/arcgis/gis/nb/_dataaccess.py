@@ -31,25 +31,25 @@ class NotebookFile:
     def download(self) -> str:
         """
         Copies down the data from the server to the local machine
-        
+
         :returns: str as file path
         """
-        return self._da._download(filename=self.properties['Name'])
+        return self._da._download(filename=self.properties["Name"])
 
     # ---------------------------------------------------------------------
     def erase(self) -> bool:
         """
         Deletes a file from the system
-        
+
         :return: Boolean
         """
-        return self._da._delete(filename=self.properties['Name'])
+        return self._da._delete(filename=self.properties["Name"])
 
 
 ###########################################################################
 class NotebookDataAccess:
     """
-    The Data Access Workspace Directory allows notebook authors to manage files used in their notebooks. 
+    The Data Access Workspace Directory allows notebook authors to manage files used in their notebooks.
     """
 
     _url = None
@@ -63,13 +63,13 @@ class NotebookDataAccess:
     def upload(self, fp: str) -> bool:
         """
         Uploads a file to the Notebook Server
-        
+
         ===================  ==========================================================================
         **Argument**         **Description**
         -------------------  --------------------------------------------------------------------------
         fp                   Required String. The path of the file to upload
         ===================  ==========================================================================
-        
+
         :returns: bool
         """
 
@@ -83,7 +83,7 @@ class NotebookDataAccess:
             "x-ms-version": "2020-02-10",
         }
         resp = self._gis._con.put_raw(
-            url, data=open(fp, 'rb'), additional_headers=additional_headers
+            url, data=open(fp, "rb"), additional_headers=additional_headers
         )
         return resp.status_code >= 200 and resp.status_code < 300
 
@@ -92,7 +92,7 @@ class NotebookDataAccess:
     def files(self) -> List[Dict[str, Any]]:
         """
         Lists files that are located in the workspace directory (/arcgis/home) of the user making the request.
-        
+
         :returns: List[Dict[str, Any]]
         """
         url = f"{self._url}/notebookworkspace"
@@ -105,7 +105,7 @@ class NotebookDataAccess:
     # ---------------------------------------------------------------------
     def _download(self, filename: str) -> str:
         """
-        downloads a file from the 
+        downloads a file from the
         """
         url = f"{self._url}/notebookworkspace/downloadFile"
         params = {
@@ -117,7 +117,7 @@ class NotebookDataAccess:
     # ---------------------------------------------------------------------
     def _delete(self, filename: str) -> bool:
         """
-        downloads a file from the 
+        downloads a file from the
         """
         url = f"{self._url}/notebookworkspace/deleteFile"
         params = {

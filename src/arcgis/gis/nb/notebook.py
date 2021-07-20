@@ -70,9 +70,8 @@ class NotebookServer(object):
 
     # ----------------------------------------------------------------------
     @property
-    def data_access(self):
-        """
-        """
+    def data_access(self) -> "NotebookDataAccess":
+        """Provides access to managing files stored on notebook server."""
         if self._da is None:
             from ._dataaccess import NotebookDataAccess
 
