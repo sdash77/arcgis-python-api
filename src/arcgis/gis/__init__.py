@@ -4811,7 +4811,7 @@ class ContentManager(object):
                 filetype = "GeoPackage"
             elif extn == ".CSV":
                 filetype = "CSV"
-            elif extn == ".XLSX":
+            elif extn in [".XLSX", ".XLS"]:
                 filetype = "Microsoft Excel"
             elif extn == ".SD":
                 filetype = "Service Definition"
@@ -5052,6 +5052,7 @@ class ContentManager(object):
 
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
+ 
         return gis._con.post(path=surl, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
@@ -11752,7 +11753,9 @@ class Item(dict):
                 }
 
             elif fileType in ["csv", "excel"] and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type=fileType)
+                res = self._gis.content.analyze(item=self, geocoding_service=self._gis.properties.helperServices.geocode[0]["url"], file_type=fileType)
+                if res['publishParameters']["layers"][0]["type"] == "Table":
+                    res['publishParameters']["layers"][0]["locationType"] = None
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
@@ -11914,8 +11917,10 @@ class Item(dict):
                 tbl.update(publish_parameters_orig["tables"][idx])
 
             # delete since already updated and avoid overwritting
-            del publish_parameters_orig["layers"]
-            del publish_parameters_orig["tables"]
+            if "layers" in publish_parameters_orig:
+                del publish_parameters_orig["layers"]
+            if "tables" in publish_parameters_orig:    
+                del publish_parameters_orig["tables"]
 
             # do general update
             publish_parameters.update(publish_parameters_orig)
