@@ -20,6 +20,7 @@ class NotebookServer(object):
     Provides access to the ArcGIS Notebook Server administration API.
     """
 
+    _da = None
     _gis = None
     _url = None
     _properties = None
@@ -66,6 +67,18 @@ class NotebookServer(object):
         if self._properties is None:
             self._init()
         return self._properties
+
+    # ----------------------------------------------------------------------
+    @property
+    def data_access(self):
+        """
+        """
+        if self._da is None:
+            from ._dataaccess import NotebookDataAccess
+
+            url = self._url + "/dataaccess"
+            self._da = NotebookDataAccess(url, self._gis)
+        return self._da
 
     # ----------------------------------------------------------------------
     @property

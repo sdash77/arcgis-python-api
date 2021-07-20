@@ -1066,6 +1066,29 @@ class Connection(object):
         )
 
     # ----------------------------------------------------------------------
+    def put_raw(self, url, data, **kwargs):
+        """
+        performs a raw PUT operation
+        
+        url: str
+        data: bytes or open() object
+        kwargs - optional requests.put parameters.  headers is not supported, use additional_headers
+        """
+        verify = kwargs.pop('verify', True)
+        original_headers = copy.deepcopy(self._session.headers)
+        self._session.headers.update(kwargs.pop("additional_headers", {}))
+        token_header = "X-Esri-Authorization"
+        if self.token and not "X-Esri-Authorization" in original_headers:
+            token = self.token
+            self._session.headers.update({token_header: "Bearer %s" % token})
+
+        resp = self._session.put(
+            url=url, data=data, verify=verify, headers=self._session.headers, **kwargs
+        )
+        self._session.headers = original_headers
+        return resp
+
+    # ----------------------------------------------------------------------
     def put(self, url, params=None, files=None, **kwargs):
         """
         sends a PUT request
