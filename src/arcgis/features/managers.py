@@ -2212,7 +2212,7 @@ class FeatureLayerCollectionManager(_GISResource):
         # region Construct publish parameters for Portal / Enterprise
         params = None
         if (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline == False
         ):
             params = {
@@ -2260,7 +2260,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # region Construct publish parameters for AGO
         elif (
-            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase"]
+            related_data_item.type in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
             and self._gis._portal.is_arcgisonline
         ):
             # construct a full publishParameters that is a combination of existing Feature Layer definition

@@ -11753,9 +11753,7 @@ class Item(dict):
                 }
 
             elif fileType in ["csv", "excel"] and not overwrite:
-                res = self._gis.content.analyze(item=self, geocoding_service=self._gis.properties.helperServices.geocode[0]["url"], file_type=fileType)
-                if res['publishParameters']["layers"][0]["type"] == "Table":
-                    res['publishParameters']["layers"][0]["locationType"] = None
+                res = self._gis.content.analyze(item=self, file_type=fileType)
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
@@ -11900,6 +11898,7 @@ class Item(dict):
             fileType in ["csv", "excel"]
         ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
+            
             res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
 
@@ -11908,7 +11907,7 @@ class Item(dict):
                 publish_parameters["layers"] =[]
             if "tables" not in publish_parameters:
                 publish_parameters["tables"] =[]
-            
+
             # update layers but layer index must match
             # update the layers otherwise general update will overwrite nested dictionary
             for idx, lyr in enumerate(publish_parameters["layers"]):
