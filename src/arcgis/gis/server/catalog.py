@@ -239,7 +239,13 @@ class ServicesDirectory(BaseServer):
     # ----------------------------------------------------------------------
     def list(self, folder=None):
         """
-        returns a list of services at the given folder
+        The ``list`` method returns a list of services at the given folder, and can retrieve a variety of services.
+        Examples include a ``Feature Service``, ``Map Service``, ``Vector Tile``, ``Geoprocessing Service``, etc.
+
+        .. note::
+            This method is not to be confused with the :attr:`~arcgis.server.ServerManager.list` method, in the
+            :class:`~arcgis.server.ServerManager` class, which returns an admin service.
+
         """
         services = []
         if folder is None:
