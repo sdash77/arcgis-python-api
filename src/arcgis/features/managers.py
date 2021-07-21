@@ -2033,7 +2033,7 @@ class FeatureLayerCollectionManager(_GISResource):
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
         # check for outstanding replicas
-        if bool(self._fs.replicas.get_list()):
+        if hasattr(self._fs, 'replicas') and bool(self._fs.replicas.get_list()):
             raise Exception(
                 "Service cannot be overwritten if Sync is enabled and replicas exist."
             )
