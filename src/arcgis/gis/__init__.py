@@ -11908,6 +11908,12 @@ class Item(dict):
             if "tables" not in publish_parameters:
                 publish_parameters["tables"] =[]
 
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters_orig:
+                publish_parameters_orig["layers"] =[]
+            if "tables" not in publish_parameters_orig:
+                publish_parameters_orig["tables"] =[]
+
             # update layers but layer index must match
             # update the layers otherwise general update will overwrite nested dictionary
             for idx, lyr in enumerate(publish_parameters["layers"]):
