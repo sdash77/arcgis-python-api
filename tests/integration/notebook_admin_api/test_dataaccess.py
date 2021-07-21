@@ -1,4 +1,6 @@
 import sys, os
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master_nb_data_access_api\src")
 import unittest
 from arcgis.gis import GIS
 
@@ -43,7 +45,7 @@ class TestNotebookDataAccess(unittest.TestCase):
         local_file_path = data[0].download()
         assert os.path.isfile(local_file_path)
         os.remove(local_file_path)
-        assert data[0].erase
+        assert data[0].erase()
 
 
 if __name__ == "__main__":
