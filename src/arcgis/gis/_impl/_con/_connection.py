@@ -37,6 +37,7 @@ import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
@@ -598,7 +599,13 @@ class Connection(object):
                 if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:
-                data = resp.json()
+                try:
+                    data = resp.json()
+                except JSONDecodeError:
+                    if resp.text:
+                        raise Exception(resp.text)
+                    else:
+                        raise
             # if 'error' in data:
             # raise Exception(data['error'])
             # return data
