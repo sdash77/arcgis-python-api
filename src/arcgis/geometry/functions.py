@@ -10,21 +10,21 @@ from enum import Enum
 
 
 class AreaUnits(Enum):
-    """"""
+    """ """
 
-    UNKNOWNAREAUNITS = {'areaUnit': 'esriUnknownAreaUnits'}
-    SQUAREINCHES = {'areaUnit': 'esriSquareInches'}
-    SQUAREFEET = {'areaUnit': 'esriSquareFeet'}
-    SQUAREYARDS = {'areaUnit': 'esriSquareYards'}
-    ACRES = {'areaUnit': 'esriAcres'}
-    SQUAREMILES = {'areaUnit': 'esriSquareMiles'}
-    SQUAREMILLIMETERS = {'areaUnit': 'esriSquareMillimeters'}
-    SQUARECENTIMETERS = {'areaUnit': 'esriSquareCentimeters'}
-    SQUAREDECIMETERS = {'areaUnit': 'esriSquareDecimeters'}
-    SQUAREMETERS = {'areaUnit': 'esriSquareMeters'}
-    ARES = {'areaUnit': 'esriAres'}
-    HECTARES = {'areaUnit': 'esriHectares'}
-    SQUAREKILOMETERS = {'areaUnit': 'esriSquareKilometers'}
+    UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
+    SQUAREINCHES = {"areaUnit": "esriSquareInches"}
+    SQUAREFEET = {"areaUnit": "esriSquareFeet"}
+    SQUAREYARDS = {"areaUnit": "esriSquareYards"}
+    ACRES = {"areaUnit": "esriAcres"}
+    SQUAREMILES = {"areaUnit": "esriSquareMiles"}
+    SQUAREMILLIMETERS = {"areaUnit": "esriSquareMillimeters"}
+    SQUARECENTIMETERS = {"areaUnit": "esriSquareCentimeters"}
+    SQUAREDECIMETERS = {"areaUnit": "esriSquareDecimeters"}
+    SQUAREMETERS = {"areaUnit": "esriSquareMeters"}
+    ARES = {"areaUnit": "esriAres"}
+    HECTARES = {"areaUnit": "esriHectares"}
+    SQUAREKILOMETERS = {"areaUnit": "esriSquareKilometers"}
 
 
 class LengthUnits(Enum):

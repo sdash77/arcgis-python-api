@@ -5054,7 +5054,7 @@ class ContentManager(object):
 
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
- 
+
         return gis._con.post(path=surl, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
@@ -11759,9 +11759,10 @@ class Item(dict):
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
-            
+
             elif (
-                fileType in ["csv", "shapefile", "fileGeodatabase", "excel"] and overwrite
+                fileType in ["csv", "shapefile", "fileGeodatabase", "excel"]
+                and overwrite
             ):  # need to construct full publishParameters
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
@@ -11788,7 +11789,7 @@ class Item(dict):
                         self.update(item_properties=update_params)
 
                     # if source file type is CSV or Excel, blend publish parameters with analysis results
-                    if fileType in ["csv", "excel"] :
+                    if fileType in ["csv", "excel"]:
                         publish_parameters_orig = publish_parameters
                         path = "content/features/analyze"
 
@@ -11896,25 +11897,26 @@ class Item(dict):
                     "layerInfo": {"capabilities": "Query"},
                 }
 
-        elif (
-            fileType in ["csv", "excel"]
-        ):  # merge users passed-in publish parameters with analyze results
+        elif fileType in [
+            "csv",
+            "excel",
+        ]:  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
-            
+
             res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
 
             # check if layers and tables key exist. If not, add empty array to avoid error in update
             if "layers" not in publish_parameters:
-                publish_parameters["layers"] =[]
+                publish_parameters["layers"] = []
             if "tables" not in publish_parameters:
-                publish_parameters["tables"] =[]
+                publish_parameters["tables"] = []
 
             # check if layers and tables key exist. If not, add empty array to avoid error in update
             if "layers" not in publish_parameters_orig:
-                publish_parameters_orig["layers"] =[]
+                publish_parameters_orig["layers"] = []
             if "tables" not in publish_parameters_orig:
-                publish_parameters_orig["tables"] =[]
+                publish_parameters_orig["tables"] = []
 
             # update layers but layer index must match
             # update the layers otherwise general update will overwrite nested dictionary
@@ -11926,7 +11928,7 @@ class Item(dict):
             # delete since already updated and avoid overwritting
             if "layers" in publish_parameters_orig:
                 del publish_parameters_orig["layers"]
-            if "tables" in publish_parameters_orig:    
+            if "tables" in publish_parameters_orig:
                 del publish_parameters_orig["tables"]
 
             # do general update
