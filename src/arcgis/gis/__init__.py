@@ -4795,11 +4795,11 @@ class ContentManager(object):
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {"layers": [data._lyr_dict]}
             data = None
         elif _is_geoenabled(data) and hasattr(data, "spatial"):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
@@ -4813,6 +4813,8 @@ class ContentManager(object):
                 filetype = "GeoPackage"
             elif extn == ".CSV":
                 filetype = "CSV"
+            elif extn in [".XLSX", ".XLS"]:
+                filetype = "Microsoft Excel"
             elif extn == ".SD":
                 filetype = "Service Definition"
             elif title.upper().endswith(".GDB"):
@@ -5052,6 +5054,7 @@ class ContentManager(object):
 
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
+
         return gis._con.post(path=surl, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
@@ -11709,7 +11712,7 @@ class Item(dict):
             elif self["type"] == "Feature Collection":
                 fileType = "featureCollection"
             elif self["type"] == "CSV":
-                fileType = "CSV"
+                fileType = "csv"
             elif self["type"] == "Shapefile":
                 fileType = "shapefile"
             elif self["type"] == "File Geodatabase":
@@ -11750,39 +11753,16 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
+
             elif fileType in ["csv", "excel"] and not overwrite:
-                location_type = None
-                if geocode_service is None:
-                    from arcgis.geocoding import get_geocoders
-
-                    services = [
-                        geocoder
-                        for geocoder in get_geocoders(gis=self._gis)
-                        if geocoder._url.find("portal/sharing") > -1
-                    ]
-                    if len(services) > 0:
-                        geocode_service = services[0]
-                    else:
-                        geocode_service = get_geocoders(gis=self._gis)[0]
-                if address_fields is not None:
-                    location_type = "address"
-                res = self._gis.content.analyze(
-                    item=self,
-                    file_type=fileType,
-                    location_type=location_type,
-                    geocoding_service=geocode_service,
-                )
+                res = self._gis.content.analyze(item=self, file_type=fileType)
                 publish_parameters = res["publishParameters"]
-
-                if address_fields is not None:
-                    publish_parameters.update({"addressFields": address_fields})
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
-                import uuid
-
-                publish_parameters.update({"name": service_name + uuid.uuid4().hex[:3]})
+                publish_parameters.update({"name": service_name})
 
             elif (
-                fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite
+                fileType in ["csv", "shapefile", "fileGeodatabase", "excel"]
+                and overwrite
             ):  # need to construct full publishParameters
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
@@ -11809,14 +11789,14 @@ class Item(dict):
                         self.update(item_properties=update_params)
 
                     # if source file type is CSV or Excel, blend publish parameters with analysis results
-                    if fileType == "CSV":
+                    if fileType in ["csv", "excel"]:
                         publish_parameters_orig = publish_parameters
                         path = "content/features/analyze"
 
                         postdata = {
                             "f": "pjson",
                             "itemid": self.itemid,
-                            "filetype": "csv",
+                            "filetype": fileType,
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
@@ -11917,32 +11897,43 @@ class Item(dict):
                     "layerInfo": {"capabilities": "Query"},
                 }
 
-        elif (
-            fileType == "CSV" or fileType == "excel"
-        ):  # merge users passed-in publish parameters with analyze results
+        elif fileType in [
+            "csv",
+            "excel",
+        ]:  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
-            path = "content/features/analyze"
 
-            postdata = {
-                "f": "pjson",
-                "itemid": self.itemid,
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    # "locationType":"address",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                },
-            }
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
+            res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters:
+                publish_parameters["layers"] = []
+            if "tables" not in publish_parameters:
+                publish_parameters["tables"] = []
+
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters_orig:
+                publish_parameters_orig["layers"] = []
+            if "tables" not in publish_parameters_orig:
+                publish_parameters_orig["tables"] = []
+
+            # update layers but layer index must match
+            # update the layers otherwise general update will overwrite nested dictionary
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr.update(publish_parameters_orig["layers"][idx])
+            for idx, tbl in enumerate(publish_parameters["tables"]):
+                tbl.update(publish_parameters_orig["tables"][idx])
+
+            # delete since already updated and avoid overwritting
+            if "layers" in publish_parameters_orig:
+                del publish_parameters_orig["layers"]
+            if "tables" in publish_parameters_orig:
+                del publish_parameters_orig["tables"]
+
+            # do general update
             publish_parameters.update(publish_parameters_orig)
-        # params['overwrite'] = json.dumps(overwrite)
+
         ret = self._portal.publish_item(
             self.itemid,
             None,
