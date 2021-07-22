@@ -2576,8 +2576,7 @@ class FeatureLayer(Layer):
                                 reference. When specifying transformations, you need to think about which datum
                                 transformation best projects the layer (not the feature service) to the `outSR` and
                                 `sourceSpatialReference` property in the layer properties. For a list of valid datum
-                                transformation ID values ad well-known text strings, see `Geographic and Vertical
-                                Transformation Tables  <https://desktop.arcgis.com/en/arcmap/latest/map/projections/pdf/geographic_transformations.pdf>`_.
+                                transformation ID values ad well-known text strings, see `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
                                 For more information on datum transformations please see the transformation 
                                 parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_ documentation.
 
