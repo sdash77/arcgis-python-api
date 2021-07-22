@@ -1102,7 +1102,7 @@ def edit_vehicle_routing_problem(
     if isinstance(travel_mode, str):
         travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
     elif isinstance(travel_mode, dict):
-        params["travel_mode"] = json.dumps(travel_mode)
+        params["travel_mode"] = travel_mode
     else:
         travel_mode = _utils.find_travel_mode(
             gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)

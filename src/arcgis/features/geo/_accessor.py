@@ -79,10 +79,10 @@ class GeoSeriesAccessor:
     @property
     def area(self):
         """
-       The ``area`` method retrieves the :class:`~arcgis.features.Feature` object's area.
+        The ``area`` method retrieves the :class:`~arcgis.features.Feature` object's area.
 
-        :returns:
-            A float in a series
+         :returns:
+             A float in a series
         """
         return pd.Series(self._data.area, name="area", index=self._index)
 

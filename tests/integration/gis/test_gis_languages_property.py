@@ -6,9 +6,9 @@ from arcgis.gis import GIS, UserManager, User
 
 profiles = [
     None,
-    'your_online_profile',
-    'your_enterprise_profile',
-    'your_dev_online_profile',
+    "your_online_profile",
+    "your_enterprise_profile",
+    "your_dev_online_profile",
 ]
 VERIFY_CERT = False
 TRUST_ENV = True
@@ -115,7 +115,7 @@ class TestLanguagesRegionEndpoint(unittest.TestCase):
                     credits=1,
                     groups=None,
                 )
-                region_selections = [g['region'] for g in gis.regions if g]
+                region_selections = [g["region"] for g in gis.regions if g]
                 rs = region_selections[0]
                 if user.region == rs:
                     rs = region_selections[1]
@@ -128,13 +128,13 @@ class TestLanguagesRegionEndpoint(unittest.TestCase):
                     user.delete()
 
     def test_setting_culture_and_format(self):
-        """The languages is used in the update operation of the user. We use the 
+        """The languages is used in the update operation of the user. We use the
         `GIS.lanaguages` to validate it."""
         for profile in [p for p in profiles if p]:
             user = None
             try:
                 gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=TRUST_ENV)
-                culture = [l['culture'] for l in gis.languages]
+                culture = [l["culture"] for l in gis.languages]
                 um = gis.users
                 isinstance(um, UserManager)
                 user = um.create(

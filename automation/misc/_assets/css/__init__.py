@@ -1,6 +1,7 @@
 import os
 import glob
 
+
 def get_css_asset_file_names():
     output = []
     this_dir = os.path.dirname(os.path.realpath(__file__))

@@ -14,13 +14,13 @@
 
 
 # model settings
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type="BN", requires_grad=True)
 model = dict(
-    type='CascadeEncoderDecoder',
+    type="CascadeEncoderDecoder",
     num_stages=2,
-    pretrained='open-mmlab://resnet101_v1c',
+    pretrained="open-mmlab://resnet101_v1c",
     backbone=dict(
-        type='ResNetV1c',
+        type="ResNetV1c",
         depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -28,16 +28,15 @@ model = dict(
         strides=(1, 2, 2, 2),
         norm_cfg=norm_cfg,
         norm_eval=False,
-        style='pytorch',
-        contract_dilation=True),
+        style="pytorch",
+        contract_dilation=True,
+    ),
     neck=dict(
-        type='FPN',
-        in_channels=[256, 512, 1024, 2048],
-        out_channels=256,
-        num_outs=4),
+        type="FPN", in_channels=[256, 512, 1024, 2048], out_channels=256, num_outs=4
+    ),
     decode_head=[
         dict(
-            type='FPNHead',
+            type="FPNHead",
             in_channels=[256, 256, 256, 256],
             in_index=[0, 1, 2, 3],
             feature_strides=[4, 8, 16, 32],
@@ -47,9 +46,11 @@ model = dict(
             norm_cfg=norm_cfg,
             align_corners=False,
             loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+                type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0
+            ),
+        ),
         dict(
-            type='PointHead',
+            type="PointHead",
             in_channels=[256],
             in_index=[0],
             channels=256,
@@ -59,15 +60,15 @@ model = dict(
             num_classes=19,
             align_corners=False,
             loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0))
+                type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0
+            ),
+        ),
     ],
     # model training and testing settings
-    train_cfg=dict(
-        num_points=2048, oversample_ratio=3, importance_sample_ratio=0.75),
+    train_cfg=dict(num_points=2048, oversample_ratio=3, importance_sample_ratio=0.75),
     test_cfg=dict(
-        mode='whole',
-        subdivision_steps=2,
-        subdivision_num_points=8196,
-        scale_factor=2))
+        mode="whole", subdivision_steps=2, subdivision_num_points=8196, scale_factor=2
+    ),
+)
 
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/point_rend/pointrend_r101_512x1024_80k_cityscapes/pointrend_r101_512x1024_80k_cityscapes_20200711_170850-d0ca84be.pth'
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/point_rend/pointrend_r101_512x1024_80k_cityscapes/pointrend_r101_512x1024_80k_cityscapes_20200711_170850-d0ca84be.pth"

@@ -63,7 +63,7 @@ class _WebExperience(_ItemDefinition):
         item_id = None
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
-        item_properties['text'] = data
+        item_properties["text"] = data
         new_item = self.target.content.add(
             item_properties=item_properties,
             thumbnail=thumbnail,

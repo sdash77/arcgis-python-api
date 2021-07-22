@@ -785,10 +785,10 @@ class Geometry(BaseGeometry):
     @property
     def is_empty(self):
         """
-         The ``is_empty`` property`` determines if the geometry is empty.
+        The ``is_empty`` property`` determines if the geometry is empty.
 
-         :returns:
-            A boolean indicating empty (True), or filled (False)
+        :returns:
+           A boolean indicating empty (True), or filled (False)
         """
         if isinstance(self, Point):
             return False
@@ -3507,11 +3507,11 @@ class Envelope(Geometry):
     @property
     def geohash_covers(self):
         """
-         The ``geohash_covers`` method retrieves a list of up to the four longest geohash strings that
-         fit within the extent of the ``Envelope``.
+        The ``geohash_covers`` method retrieves a list of up to the four longest geohash strings that
+        fit within the extent of the ``Envelope``.
 
-         :returns:
-            A list of geohash Strings
+        :returns:
+           A list of geohash Strings
         """
         return getattr(self.as_arcpy, "geohashCovers", None)
 
@@ -3519,11 +3519,11 @@ class Envelope(Geometry):
     @property
     def geohash_neighbors(self):
         """
-         The ``geohash_neighbors`` method retrieves a list of the geohash neighbor strings for the extent of the
-         ``Envelope``.
-         
-         :returns:
-            A list of geohash neighbor Strings
+        The ``geohash_neighbors`` method retrieves a list of the geohash neighbor strings for the extent of the
+        ``Envelope``.
+
+        :returns:
+           A list of geohash neighbor Strings
         """
         return getattr(self.as_arcpy, "geohashNeighbors", None)
 
