@@ -34,7 +34,7 @@ class _TileItemDefinition(BaseCloneItemDefinition):  # _ItemDefinition):
     @staticmethod
     def is_tileservice(item) -> bool:
         return (
-            'Hosted Service' in item.typeKeywords and 'Map Service' in item.typeKeywords
+            "Hosted Service" in item.typeKeywords and "Map Service" in item.typeKeywords
         )
 
     # --------------------------------------------------------------------
@@ -83,13 +83,13 @@ class _TileItemDefinition(BaseCloneItemDefinition):  # _ItemDefinition):
 
         # Get the related source items and clone them (tile packages)
         tpk_result = self.target.content.clone_items(
-            self.portal_item.related_items('Service2Data'), folder=self.folder
+            self.portal_item.related_items("Service2Data"), folder=self.folder
         )
         if len(tpk_result) > 0:
             self.created_items.extend(tpk_result)
         elif tpk_result == []:
             tpk_result = self.target.content.search(
-                "source-{}".format(self.portal_item.related_items('Service2Data')[0].id)
+                "source-{}".format(self.portal_item.related_items("Service2Data")[0].id)
             )
         # add the tile package
         if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
