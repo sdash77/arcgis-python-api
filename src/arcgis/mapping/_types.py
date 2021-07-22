@@ -365,7 +365,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             options["renderer"] = json.loads(layer.renderer.json)
         elif hasattr(layer, "spatial"):
             layer = layer.spatial.to_feature_collection()
-        # region extact basic info from options
+        # region extract basic info from options
         title = options["title"] if options and "title" in options else None
         opacity = options["opacity"] if options and "opacity" in options else 1
         visibility = (
@@ -458,6 +458,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if layer.type == "Feature Collection":
                         options["serviceItemId"] = layer.itemid
                     for lyr in layer.layers:  # recurse - works for all.
+                        lyr.properties.serviceItemId = layer.id #add to refer to parent
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
                     for tbl in layer.tables:  # recurse - works for all.
@@ -1977,7 +1978,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         }
 
         if layout_options:
-            map_options["layoutOptions"]: layout_options
+            map_options["layoutOptions"] = layout_options
 
         # compose export options
         export_options = {"dpi": dpi, "outputSize": output_dimensions}
