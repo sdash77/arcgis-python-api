@@ -1022,7 +1022,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def update(self, item_properties=None, thumbnail=None, metadata=None):
         """
-        The ``updates`` method updates the web map :class:`~arcgis.gis.Item` in your :class:`~arcgis.gis.GIS`
+        The ``update`` method updates the web map :class:`~arcgis.gis.Item` in your :class:`~arcgis.gis.GIS`
         with the changes you made to the ``WebMap`` object. In addition, you can update
         other item properties, thumbnail and metadata.
 
@@ -1585,7 +1585,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def get_table(self, item_id=None, title=None, layer_id=None):
         """
-        The ``get_table`` method retrieves the first table with a matching ``itemId``, ``title``, or l``ayer_id`` in
+        The ``get_table`` method retrieves the first table with a matching ``itemId``, ``title``, or ``layer_id`` in
         the ``WebMap`` object's tables.
 
         .. note::
@@ -2174,7 +2174,7 @@ class PackagingJob(object):
     # ----------------------------------------------------------------------
     def cancel(self):
         """
-        The ``cancel`` method attempts to cancel the call.
+        The ``cancel`` method attempts to cancel the job.
 
         .. note::
             If the call is currently being executed
@@ -2240,7 +2240,7 @@ class PackagingJob(object):
 ###########################################################################
 class OfflineMapAreaManager(object):
     """
-    The ``OfflineMapAreaManager`` helper class to manage offline map areas attached to a web map item.
+    The ``OfflineMapAreaManager`` is a helper class to manage offline map areas attached to a web map item.
 
     .. note::
         Users should not instantiate this class
@@ -2701,7 +2701,7 @@ class OfflineMapAreaManager(object):
 
         :return:
             :class:`~arcgis.gis.Item` object for the offline map area item that was created.
-            If Future==True, then the result is a ``PackageJob`` object.
+            If Future==True, then the result is a  :class:`~arcgis.mapping.PackagingJob` object.
 
         .. code-block:: python
 
@@ -3298,7 +3298,7 @@ class OfflineMapAreaManager(object):
     # ----------------------------------------------------------------------
     def modify_refresh_schedule(self, item, refresh_schedule=None, refresh_rates=None):
         """
-        The ``modify_refresh_schedule`` method modifies an Existing Package's Refresh Schedule for offline packages.
+        The ``modify_refresh_schedule`` method modifies an existing offline package's refresh schedule.
 
         ============================     ====================================================================
         **Argument**                     **Description**
@@ -3654,7 +3654,8 @@ class VectorTileLayer(Layer):
     # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range):
         """
-         The ``tile_fonts`` method retrieves glyphs in PBF format.
+         The ``tile_fonts`` method retrieves glyphs in
+         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
 
          .. note::
             The template url for this fonts resource is represented in Vector Tile Style resource.
@@ -3813,17 +3814,19 @@ class MapImageLayerManager(_GISResource):
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-
-            >>> imported_tiles = MapImageLayerManager.delete_tiles(levels = "11-20",
-                                                  extent = {"xmin":6224324.092137296,
-                                                            "ymin":487347.5253569535,
-                                                            "xmax":11473407.698535524,
-                                                            "ymax":4239488.369818687,
-                                                            "spatialReference":{"wkid":102100}
-                                                            }
-                                                  merge = True,
-                                                  replace = True
-                                                  )
+            >>> map_layer_item = gis.content.get('abcd_item-id')
+            >>> map_image_layer = map_layer_item.layers[0]
+            >>> mil_manager = map_image_layer.manager
+            >>> imported_tiles = mil_manager.import_tiles(levels = "11-20",
+                                                          extent = {"xmin":6224324.092137296,
+                                                                    "ymin":487347.5253569535,
+                                                                    "xmax":11473407.698535524,
+                                                                    "ymax":4239488.369818687,
+                                                                    "spatialReference":{"wkid":102100}
+                                                                    }
+                                                          merge = True,
+                                                        replace = True
+                                                          )
             >>> type(imported_tiles)
             <Dictionary>
 
@@ -3880,15 +3883,17 @@ class MapImageLayerManager(_GISResource):
 
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
-
-            >>> update_tiles = MapImageLayerManager.update_tiles(levels = "11-20",
-                                                  extent = {"xmin":6224324.092137296,
-                                                            "ymin":487347.5253569535,
-                                                            "xmax":11473407.698535524,
-                                                            "ymax":4239488.369818687,
-                                                            "spatialReference":{"wkid":102100}
-                                                            }
-                                                  )
+            >>> map_layer_item = gis.content.get('abcd_item-id')
+            >>> map_image_layer = map_layer_item.layers[0]
+            >>> mil_manager = map_image_layer.manager
+            >>> update_tiles = mil_manager.update_tiles(levels = "11-20",
+                                                        extent = {"xmin":6224324.092137296,
+                                                                    "ymin":487347.5253569535,
+                                                                    "xmax":11473407.698535524,
+                                                                    "ymax":4239488.369818687,
+                                                                    "spatialReference":{"wkid":102100}
+                                                                    }
+                                                        )
             >>> type(update_tiles)
             <Dictionary>
         """
@@ -3947,24 +3952,24 @@ class MapImageLayerManager(_GISResource):
         """
         The ``edit_tile_service`` operation updates a Tile Service's properties.
 
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        service_definition  Required String. Updates a service definition.
-        ---------------     ----------------------------------------------------
-        min_scale           Required float. Sets the services minimum scale for caching.
-        ---------------     ----------------------------------------------------
-        max_scale           Required float. Sets the services maximum scale for caching.
-        ---------------     ----------------------------------------------------
-        source_item_id      Required String. The Source Item ID is the GeoWarehouse Item ID of the map service
-        ---------------     ----------------------------------------------------
-        exportTilesAllowed  Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
-        ---------------     ----------------------------------------------------
-        maxExportTileCount  Optional float. ``max_export_tile_count``sets the maximum amount of tiles to be exported from a single call.
+        =================     ======================================================
+        **Argument**          **Description**
+        -----------------     ------------------------------------------------------
+        service_definition    Required String. Updates a service definition.
+        -----------------     ------------------------------------------------------
+        min_scale             Required float. Sets the services minimum scale for caching.
+        -----------------     ------------------------------------------------------
+        max_scale             Required float. Sets the services maximum scale for caching.
+        -----------------     ------------------------------------------------------
+        source_item_id        Required String. The Source Item ID is the GeoWarehouse Item ID of the map service
+        -----------------     ------------------------------------------------------
+        export_tiles_allowed  Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
+        -----------------     ------------------------------------------------------
+        max_export_tile_count Optional float. ``max_export_tile_count``sets the maximum amount of tiles to be exported from a single call.
 
-                            .. note::
+                              .. note::
                                 The default value is 100000.
-        ===============     ====================================================
+        =================     ======================================================
 
         .. code-block:: python
 
@@ -3976,13 +3981,13 @@ class MapImageLayerManager(_GISResource):
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
 
-            >>> MapImageLayerManager.edit_tiles(service_definition = "updated serice definition",
-                                                min_scale = 50,
-                                                max_scale = 100,
-                                                source_item_id = "geowarehouse_item_id",
-                                                export_tiles_allowed = True,
-                                                max_Export_Tile_Count = 10000
-                                                  )
+            >>> MapImageLayerManager.edit_tile_service(service_definition = "updated service definition",
+                                                        min_scale = 50,
+                                                        max_scale = 100,
+                                                        source_item_id = "geowarehouse_item_id",
+                                                        export_tiles_allowed = True,
+                                                        max_Export_Tile_Count = 10000
+                                                        )
         """
         params = {
             "f": "json",
@@ -4005,7 +4010,7 @@ class MapImageLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def delete_tiles(self, levels, extent=None):
         """
-        The ``delete_tiles`` method deletes tiles for the current cache.
+        The ``delete_tiles`` method deletes tiles from the current cache.
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -4181,7 +4186,8 @@ class MapImageLayer(Layer):
     def manager(self):
         if self._admin is None:
             """
-            THe ``manager`` property accesses the administration service.
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
+            which provides methods and properties for administering this service.
             """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
@@ -4202,7 +4208,7 @@ class MapImageLayer(Layer):
     def create_dynamic_layer(self, layer):
         """
         The ``create_dynamic_layer`` method creates a dynamic layer.
-        A dynamic layer / table method represents a single layer / table of a map service published by ArcGIS Server
+        A dynamic layer / table represents a single layer / table of a map service published by ArcGIS Server
         or of a registered workspace. This resource is supported only when the map image layer
         supports dynamic layers, as indicated by ``supportsDynamicLayers`` on
         the map image layer properties.

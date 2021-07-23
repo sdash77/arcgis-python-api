@@ -1181,7 +1181,7 @@ class MapFeatureLayer(Layer):
         return_true_curve=False,
     ):
         """
-        The ``query_related_records`` operation is performed on a :class:`~arcgis.features.Feature` service layer
+        The ``query_related_records`` operation is performed on a :class:`~arcgis.mapping.MapFeatureLayer`
         resource. The result of this operation are :class:`~arcgis.features.FeatureSet` objects grouped
         by source layer/table object IDs. Each :class:`~arcgis.features.FeatureSet` contains
         :class:`~arcgis.features.Feature` objects including the values for the fields requested by
