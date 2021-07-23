@@ -189,6 +189,21 @@ class ImageryLayerCacheManager(_GISResource):
 
         :returns: A dictionary
 
+        .. code-block:: python
+
+            # Example Usage
+            >>> imported_tiles = ImageryLayerCacheManager.delete_tiles(item = item1,
+                                                                       levels = "11-20",
+                                                                       extent = {
+                                                                                "xmin":6224324.092137296,
+                                                                                "ymin":487347.5253569535,
+                                                                                "xmax":11473407.698535524,
+                                                                                "ymax":4239488.369818687
+                                                                                },
+                                                                       merge = True
+                                                                      )
+            >>> type(imported_tiles)
+            <Dictionary>
         """
         params = {
             "f": "json",
@@ -238,6 +253,22 @@ class ImageryLayerCacheManager(_GISResource):
         :returns:
            Dictionary. If the product is not ArcGIS Online tile service, the
            result will be None.
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> updated_tiles = ImageryLayerCacheManager.delete_tiles(item = item1,
+                                                                       levels = "11-20",
+                                                                       extent = {
+                                                                                "xmin":6224324.092137296,
+                                                                                "ymin":487347.5253569535,
+                                                                                "xmax":11473407.698535524,
+                                                                                "ymax":4239488.369818687
+                                                                                },
+                                                                       merge = True
+                                                                      )
+            >>> type(updated_tiles)
+            <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
@@ -357,7 +388,7 @@ class ImageryLayerCacheManager(_GISResource):
                                 | 11473407.698535524,4239488.369818687
                                 | the minx, miny, maxx, maxy values or,
                                 | {"xmin":6224324.092137296,"ymin":487347.5253569535,
-                                | "xmax":11473407.698535524,"ymax":4239488.369818687,
+                                 "xmax":11473407.698535524,"ymax":4239488.369818687}
                                 | "spatialReference":{"wkid":102100}} the JSON
                                 | representation of the Extent object.
         ---------------     ----------------------------------------------------
@@ -367,6 +398,21 @@ class ImageryLayerCacheManager(_GISResource):
 
         :returns:
            dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> deleted_tiles = ImageryLayerCacheManager.delete_tiles(levels = "11-20",
+                                                                      extent = {
+                                                                                "xmin":6224324.092137296,
+                                                                                "ymin":487347.5253569535,
+                                                                                "xmax":11473407.698535524,
+                                                                                "ymax":4239488.369818687
+                                                                                }
+                                                                      )
+            >>> type(deleted_tiles)
+            <Dictionary>
+
         """
         params = {
             "f": "json",
@@ -1123,30 +1169,26 @@ class ImageryLayer(Layer):
                                         
                                         .. note::
                                             The parameter was added at 10.6.1.
-                                        
-                                        Example:
-                                          2
+
         ----------------------------    --------------------------------------------------------------------
         slice_id                        optional int. The slice ID of multidimensional raster. The identify 
                                         operation will be performed for the specified slice. To get the slice 
-                                        ID use slices method on the ImageryLayer object.
+                                        ID use slices method on the ``ImageryLayer`` object.
                                         
 
                                         .. note::
                                             The parameter was added at 10.9 for image services which use
                                             ``ArcObjects11`` or ``ArcObjectsRasterRendering``
                                             as the service provider.
-                                        
-                                        Example:
-                                          1
         ----------------------------    --------------------------------------------------------------------
         process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
                                         multidimensional image service.
                                         
                                             - ``False`` - Pixel values of the specified rendering rules and mosaic \
-                                                      rule at the specified geometry will be returned. This is the default.
-                                            - ``True`` - The image service is treated as a multidimensional raster, \
-                                                     and pixel values from all slices, along with additional properties \
+                                                      rule at the specified geometry will be returned. This is the
+                                                      default.
+                                            - ``True`` - The image service is treated as a multidimensional raster,
+                                                     and pixel values from all slices, along with additional properties
                                                      describing the slices, will be returned.
                                         
                                         .. note::
@@ -1157,6 +1199,19 @@ class ImageryLayer(Layer):
 
         :returns: A dictionary
 
+        .. code-block:: python
+
+            # Example Usage
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> identified = img_layer.identify(geometry = polygon1,
+                                                pixel_size = '0.18,0.18',
+                                                return_geometry = True,
+                                                return_pixel_values = False,
+                                                max_item_count = 5,
+                                                slice_id = 1,
+                                                )
+            >>> type(identified)
+            <Dictionary>
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -1351,6 +1406,19 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :returns: dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> measured = img_layer.measure(from_geometry = point1,
+                                            top_geometry = point2,
+                                            linear_unit = "Meters",
+                                            angular_unit = "DURadians",
+                                            area_unit = "SquareMeters"
+                                            )
+            >>> type(measured)
+            <Dictionary>
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -1518,6 +1586,15 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: :class:`~arcgis.raster.ImageryLayer` with filtered images meeting the filter criteria
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> filtered_img_lyr = img_layer.filterby(time_filter = [10.00, 10.30],
+                                                  lock_rasters = True)
+            >>> type(filtered_img_lyr)
+            <arcgis.raster.ImageryLayer>
 
         """
         if self.tiles_only:
@@ -2177,9 +2254,25 @@ class ImageryLayer(Layer):
                                         This option was added at 10.8.1.
         ==============================  ====================================================================
 
-        :returns: A :class:`~arcgis.fatures.FeatureSet` containing the footprints (features) matching the query when
+        :returns: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
                   return_geometry is ``True``, else a dictionary containing the expected return
                   type.
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> search_count = feature_layer.query(where = "OBJECTID1",
+                                                  out_fields = ["FieldName1, FieldName2"],
+                                                  pixel_size='0.18,0.18',
+                                                  return_count_only = True)
+
+            >>> type(search_count)
+            <Integer>
+            >>> search_count
+            <149>
+
         """
 
         def _feat_to_row(feature):
@@ -3310,23 +3403,6 @@ class ImageryLayer(Layer):
                             as the structure of the JSON geometry objects returned by the
                             ArcGIS REST API.
 
-                            :Syntax:
-                            | {
-                            |     "classes":  [  // An list of classes
-                            |       {
-                            |         "id" : <id>,
-                            |         "name" : "<name>",
-                            |         "geometry" : <geometry> //polygon
-                            |       },
-                            |       {
-                            |         "id" : <id>,
-                            |         "name" : "<name>",
-                            |        "geometry" : <geometry>  //polygon
-                            |       }
-                            |       ...
-                            |       ]
-                            | }
-
         ---------------     --------------------------------------------------------------------
         mosaic_rule         optional string. Specifies the mosaic rule when defining how
                             individual images should be mosaicked. When a mosaic rule is not
@@ -3360,6 +3436,31 @@ class ImageryLayer(Layer):
         ===============     ====================================================================
 
         :returns: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> stats = img_lyr.compute_stats(descriptions = { "classes":  [
+                                                                        {
+                                                                        "id" : <id1>,
+                                                                        "name" : "<name1>",
+                                                                        "geometry" : <polygon1>
+                                                                        },
+                                                                        {
+                                                                        "id" : <id2>,
+                                                                        "name" : "<name2>",
+                                                                         "geometry" : <polygon1>
+                                                                        }
+                                                                        ]
+                                                            },
+                                            pixel_size = {"x": 0.18, "y": 0.18}
+                                            )
+            >>> type(stats)
+            <Dictionary>
+
+
+
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -3644,8 +3745,8 @@ class ImageryLayer(Layer):
                                  The default is true.
         -----------------------  -----------------------------------------------------------------------
         interpolation            optional string. The resampling method. Default is nearest neighbor.
-                                 Values: RSP_BilinearInterpolation,RSP_CubicConvolution,
-                                         RSP_Majority,RSP_NearestNeighbor
+                                 Values: RSP_BilinearInterpolation, RSP_CubicConvolution,
+                                         RSP_Majority, RSP_NearestNeighbor
         -----------------------  -----------------------------------------------------------------------
         out_fields               optional string. The list of fields to be included in the response.
                                  This list is a comma-delimited list of field names. You can also
@@ -3655,6 +3756,20 @@ class ImageryLayer(Layer):
 
         :returns:
             A list of samples
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> samples = img_layer.filterby(geometry = point1,
+                                         geometry_type = 'point',
+                                         sample_distance = 1000,
+                                         sample_count = 500,
+                                         pixel_size='0.18,0.18',
+                                         interpolation = "RSP_BilinearInterpolation"
+                                         )
+            >>> type(samples)
+            <List>
         """
         if self.tiles_only:
             raise RuntimeError(
@@ -4338,7 +4453,18 @@ class ImageryLayer(Layer):
                                                  will generate Dynamic Imagery Layer by default.
         ====================================     ====================================================================
 
-        :return: output_raster - Image layer item
+        :return: output_raster - :class:`~arcgis.raster.ImageryLayer` item
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> img_lyr.save(output_name = "saved_imagery_layer",
+                             for_viz = True,
+                             process_as_multidimensional = True,
+                             build_transpose = True,
+                             future = True)
         """
         g = _arcgis.env.active_gis if gis is None else gis
         layer_extent_set = False
@@ -4473,7 +4599,7 @@ class ImageryLayer(Layer):
                                                  if False, then The features will follow exactly the cell boundaries of the raster dataset.
         ------------------------------------     --------------------------------------------------------------------
         output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output
-        .
+
                                                  You can pass in an existing Feature Service Item from your GIS to use that instead.
 
                                                  Alternatively, you can pass in the name of the output Feature Service that should be created by this method
@@ -4498,6 +4624,20 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
+
+        .. code-block:: python
+
+            # Usage Example of an advanced query returning the number of features in the query
+
+            >>> img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            >>> feature_layer = img_lyr.to_features(output_type = "Polygon",
+                                                    simplify = False,
+                                                    output_name = "new_feature_layer",
+                                                    create_multipart_freatures = True,
+                                                    future = True
+                                                    )
+            >>> type(feature_layer)
+            <arcgis.features.FeatureLayer>
 
         """
         g = _arcgis.env.active_gis if gis is None else gis
@@ -6095,19 +6235,10 @@ class ImageryLayer(Layer):
                                         `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
                                         parameters and values specified in dict format.
 
-                                        Example:
-                                            - {"figsize":(15,15)}
         ----------------------------    --------------------------------------------------------------------
         subplot_properties              optional list or dictionary. This parameter can be used to set band-wise 
                                         histogram (subplot) display properties. These are the `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`__
                                         parameters and values specified in dictionary format.
-
-                                        Example:
-                                             - | [
-                                               |  {"color":"r"},
-                                               |  {"color":"g"},
-                                               |  {"color":"b","edgecolor":"w"}
-                                               | ]
 
                                         .. note::
                                             `matplotlib.axes.Axes.bar() <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.bar.html#matplotlib-axes-axes-bar>`_
@@ -6127,7 +6258,15 @@ class ImageryLayer(Layer):
 
             # Usage Example: Plots histograms of the raster with specified resolution and bands
 
-            raster1.plot_histograms(pixel_size="0.18, 0.18", bands=[1, 2, 3])
+            raster1.plot_histograms(pixel_size="0.18, 0.18",
+                                    bands=[1, 2, 3],
+                                    plot_properties = {"figsize":(15,15)},
+                                    subplot_properties = [
+                                                 {"color":"r"},
+                                                 {"color":"g"},
+                                                 {"color":"b","edgecolor":"w"}
+                                                ],
+                                    )
         
         """
         if self.tiles_only:
@@ -14778,6 +14917,24 @@ class ImageryTileManager(object):
 
         :returns:
             An ``Image Layer Job``
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> exported = ImageryTileManager.export(tile_package = True,
+                                                     levels = "11-20",
+                                                     extent = {
+                                                                "xmin":6224324.092137296,
+                                                                "ymin":487347.5253569535,
+                                                                "xmax":11473407.698535524,
+                                                                "ymax":4239488.369818687
+                                                               },
+                                                     merge = True,
+                                                     optimize_for_size = True,
+                                                     export_by = "Scale"
+                                                     )
+            >>> type(size_estimate)
+            <Dictionary>
         """
         if self._service.properties["exportTilesAllowed"] == False:
             return None
@@ -14901,6 +15058,24 @@ class ImageryTileManager(object):
         =================     ====================================================================
 
         :returns: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> size_estimate = ImageryTileManager.estimate_size(tile_package = True,
+                                                                 levels = "11-20",
+                                                                 extent = {
+                                                                            "xmin":6224324.092137296,
+                                                                            "ymin":487347.5253569535,
+                                                                            "xmax":11473407.698535524,
+                                                                            "ymax":4239488.369818687
+                                                                            },
+                                                                merge = True,
+                                                                optimize_for_size = True,
+                                                                export_by = "Scale"
+                                                                )
+            >>> type(size_estimate)
+            <Dictionary>
         """
         if self._service.properties["exportTilesAllowed"] == False:
             return None
@@ -15017,7 +15192,7 @@ class ImageryTileManager(object):
         level, row, and column are directly streamed to the client.
 
         .. note::
-            If the tile is not found, an HTTP status code of 404 .
+            If the tile is not found, an HTTP status code of 404 is thrown.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -15454,35 +15629,26 @@ class RasterManager(object):
         ===============================     ====================================================================
         **Arguments**                       **Description**
         -------------------------------     --------------------------------------------------------------------
-        item_ids                            The upload items (raster files) to be added. Either item_ids or \ 
+        item_ids                            The upload items (raster files) to be added. Either item_ids or
                                             service_url is needed to perform this operation.
                                              
                                             Syntax:
 
                                                 ``item_ids=<itemId1>,<itemId2>``
                                             
-                                            Example:
 
-                                                item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c, \ 
-                                                ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
         -------------------------------     --------------------------------------------------------------------
         service_url                         The URL of the service to be added. The image layer \
                                             will add this URL to the mosaic dataset. Either item_ids or \
                                             service_url is needed to perform this operation. The service URL is \
                                             required for the following raster types: Image Layer, Map Service, \
                                             WCS, and WMS.
-                                            
-                                            Example: 
 
-                                                service_url= http://myserver/arcgis/services/Portland/ImageServer
         -------------------------------     --------------------------------------------------------------------
         raster_type                         The type of raster files being added. Raster types \
                                             define the metadata and processing template for raster files to be \
                                             added. Allowed values are listed in image layer resource.
-                                            
-                                            Example:
-                                                `Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service, \
-                                                NITF, WCS, WMS`
+
         -------------------------------     --------------------------------------------------------------------
         compute_statistics                  If true, statistics for the rasters will be computed. \
                                             The default is false.
@@ -15510,10 +15676,7 @@ class RasterManager(object):
                                             Syntax:
 
                                                 minimum_cell_size_factor=<minimum_cell_size_factor>
-                
-                                            Example:
 
-                                                minimum_cell_size_factor=0.1
         -------------------------------     --------------------------------------------------------------------
         maximum_cell_size_factor            The factor (times raster resolution) used \
                                             to populate MaxPS field (maximum cell size below which raster is visible).
@@ -15522,9 +15685,6 @@ class RasterManager(object):
 
                                                 maximum_cell_size_factor=<maximum_cell_size_factor>
 
-                                            Example:
-
-                                                maximum_cell_size_factor=10
         -------------------------------     --------------------------------------------------------------------
         attributes                          Any attribute for the added rasters.
 
@@ -15535,14 +15695,7 @@ class RasterManager(object):
                                               |   "<name2>" : <value2>
                                               | }`
                 
-                                            Example:
 
-                                              | {
-                                              |   "MinPS": 0,
-                                              |   "MaxPS": 20;
-                                              |   "Year" : 2002,
-                                              |   "State" : "Florida"
-                                              | }
         -------------------------------     --------------------------------------------------------------------
         geodata_transforms                  The geodata transformations applied on the \
                                             added rasters. A geodata transformation is a mathematical model \
@@ -15554,16 +15707,16 @@ class RasterManager(object):
 
                                             Syntax:
 
-                                              `| [
-                                              | {
-                                              |   "geodataTransform" : "<geodataTransformName1>",
-                                              |   "geodataTransformArguments" : {<geodataTransformArguments1>}
-                                              |   },
-                                              |   {
-                                              |   "geodataTransform" : "<geodataTransformName2>",
-                                              |   "geodataTransformArguments" : {<geodataTransformArguments2>}
-                                              |   }
-                                              | ]`
+                                              ` [
+                                               {
+                                                 "geodataTransform" : "<geodataTransformName1>",
+                                                 "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                                 },
+                                                 {
+                                                 "geodataTransform" : "<geodataTransformName2>",
+                                                 "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                                 }
+                                               ]`
 
                                             The syntax of the geodataTransformArguments property varies based \
                                             on the specified geodataTransform name. See Geodata Transformations \
@@ -15580,6 +15733,38 @@ class RasterManager(object):
         ===============================     ====================================================================
 
         :returns: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> added = RasterManager.add(item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+                                                               ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
+                                        service_url= "http://myserver/arcgis/services/Portland/ImageServer",
+                                        raster_type = `Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service,
+                                                                   NITF, WCS, WMS`,
+                                        build_thumbnail = True,
+                                        minimum_cell_size_factor=0.1,
+                                        maximum_cell_size_factor=10,
+                                        attributes = {
+                                                                "MinPS": 0,
+                                                                "MaxPS": 20;
+                                                                "Year" : 2002,
+                                                                "State" : "Florida"
+                                                    },
+                                        geodata_transforms = [
+                                                                        {
+                                                                         "geodataTransform" : "<geodataTransformName1>",
+                                                                         "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                                                        },
+                                                                        {
+                                                                         "geodataTransform" : "<geodataTransformName2>",
+                                                                         "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                                                        }
+                                                            ]
+                                        geodata_transform_apply_method = 'esriGeodataTransformApplyOverwrite`
+                                        )
+            >>> type(added)
+            <Dictionary>
         """
 
         return self._service._add_rasters(
@@ -15700,6 +15885,37 @@ class RasterManager(object):
         ========================  ====================================================================
 
         :returns: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            >>> updated = RasterManager.update(raster_ids = 087631,
+                                              item_ids= "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
+                                                        ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
+                                              service_url= "http://myserver/arcgis/services/Portland/ImageServer",
+                                              build_thumbnail = True,
+                                              minimum_cell_size_factor=0.1,
+                                              maximum_cell_size_factor=10,
+                                              attributes = {
+                                                                "MinPS": 0,
+                                                                "MaxPS": 20;
+                                                                "Year" : 2002,
+                                                                "State" : "Florida"
+                                                          },
+                                              geodata_transforms = [
+                                                                        {
+                                                                         "geodataTransform" : "<geodataTransformName1>",
+                                                                         "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                                                        },
+                                                                        {
+                                                                         "geodataTransform" : "<geodataTransformName2>",
+                                                                         "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                                                        }
+                                                                  ]
+                                              apply_method = 'esriGeodataTransformApplyOverwrite`
+                                        )
+            >>> type(updated)
+            <Dictionary>
         """
         return self._service._update_raster(
             raster_id=raster_id,
