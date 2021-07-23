@@ -15916,6 +15916,7 @@ class RasterManager(object):
                                         )
             >>> type(updated)
             <Dictionary>
+
         """
         return self._service._update_raster(
             raster_id=raster_id,
