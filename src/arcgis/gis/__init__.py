@@ -12000,8 +12000,12 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
-        elif 'success' in ret[0] and ret[0]['success'] == False and ret[0].get('error', None):
-            raise Exception(ret[0].get("error"))        
+        elif (
+            "success" in ret[0]
+            and ret[0]["success"] == False
+            and ret[0].get("error", None)
+        ):
+            raise Exception(ret[0].get("error"))
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
             return Item(self._gis, ret[0]["serviceItemId"])
         else:
@@ -12348,8 +12352,12 @@ class Item(dict):
                         raise Exception("Job cancelled.")
                     elif job_response.get("status") == "esriJobTimedOut":
                         raise Exception("Job timed out.")
-            elif not "jobId" in ret[0] and 'serviceItemId' in ret[0] and ret[0]['type'] == "Map Service":
-                return ret[0]['serviceItemId']
+            elif (
+                not "jobId" in ret[0]
+                and "serviceItemId" in ret[0]
+                and ret[0]["type"] == "Map Service"
+            ):
+                return ret[0]["serviceItemId"]
             else:
                 raise Exception("No job results.")
         else:
