@@ -134,6 +134,24 @@ VectorTileLayer
     :undoc-members:
     :show-inheritance:
 
+Working with OGC layers
+-----------------------
+arcgis.mapping.ogc
+^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 3
+
+   arcgis.mapping.ogc
+
+Working with Map Forms
+----------------------
+arcgis.mapping.forms
+^^^^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 3
+
+   arcgis.mapping.forms
+
 Utility Functions for Mapping
 -----------------------------
 export_map
@@ -158,22 +176,3 @@ generate_renderer
 visual_variables
 ^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.mapping.renderer.visual_variables
-
-
-Working with OGC layers
------------------------
-arcgis.mapping.ogc
-^^^^^^^^^^^^^^^^^^
-.. toctree::
-   :maxdepth: 3
-
-   arcgis.mapping.ogc
-
-Working with Map Forms
-----------------------
-arcgis.mapping.forms
-^^^^^^^^^^^^^^^^^^^^
-.. toctree::
-   :maxdepth: 3
-
-   arcgis.mapping.forms
