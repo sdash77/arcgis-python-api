@@ -13,14 +13,16 @@
 # limitations under the License.
 
 
-_base_ = './deeplabv3.py'
+_base_ = "./deeplabv3.py"
 model = dict(
-    pretrained='open-mmlab://resnest101',
+    pretrained="open-mmlab://resnest101",
     backbone=dict(
-        type='ResNeSt',
+        type="ResNeSt",
         stem_channels=128,
         radix=2,
         reduction_factor=4,
-        avg_down_stride=True))
+        avg_down_stride=True,
+    ),
+)
 
-checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/resnest/deeplabv3_s101-d8_512x1024_80k_cityscapes/deeplabv3_s101-d8_512x1024_80k_cityscapes_20200807_144429-b73c4270.pth'
+checkpoint = "https://download.openmmlab.com/mmsegmentation/v0.5/resnest/deeplabv3_s101-d8_512x1024_80k_cityscapes/deeplabv3_s101-d8_512x1024_80k_cityscapes_20200807_144429-b73c4270.pth"

@@ -1080,7 +1080,7 @@ def choose_best_facilities(
             )
             params["travel_mode"] = travel_mode
         elif isinstance(travel_mode, dict):
-            params["travel_mode"] = json.dumps(travel_mode)
+            params["travel_mode"] = travel_mode
         else:
             params["travel_mode"] = network._utils.find_travel_mode(gis=gis)
     except Exception as e:

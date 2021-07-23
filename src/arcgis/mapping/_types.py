@@ -384,7 +384,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             options["renderer"] = json.loads(layer.renderer.json)
         elif hasattr(layer, "spatial"):
             layer = layer.spatial.to_feature_collection()
-        # region extact basic info from options
+        # region extract basic info from options
         title = options["title"] if options and "title" in options else None
         opacity = options["opacity"] if options and "opacity" in options else 1
         visibility = (
@@ -477,9 +477,14 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if layer.type == "Feature Collection":
                         options["serviceItemId"] = layer.itemid
                     for lyr in layer.layers:  # recurse - works for all.
+                        if isinstance(lyr, VectorTileLayer):
+                            lyr.properties.serviceItemId = layer.id #Vector Tile Service does not automatically have this
+                            lyr.properties.name = layer.name
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
                     for tbl in layer.tables:  # recurse - works for all.
+                        if isinstance(tbl, VectorTileLayer):
+                            tbl.properties.serviceItemId = layer.id #Vector Tile Service does not automatically have this
                         self.add_table(tbl, options)
                 return (
                     True  # end add_layer execution after iterating through each layer.
@@ -700,7 +705,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                 ]
             }
         # endregion
-
+       
+        # Add Vector Tile Layer Properties
+        if isinstance(layer, arcgis.mapping._types.VectorTileLayer):
+            new_layer["type"] = "VectorTileLayer"
+            new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
+        
         # region
         if isinstance(layer, BaseOGC):
             new_layer = {**new_layer, **layer._operational_layer_json}
@@ -2048,7 +2058,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         }
 
         if layout_options:
-            map_options["layoutOptions"]: layout_options
+            map_options["layoutOptions"] = layout_options
 
         # compose export options
         export_options = {"dpi": dpi, "outputSize": output_dimensions}
