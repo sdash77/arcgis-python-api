@@ -1487,8 +1487,16 @@ def convolution(raster, kernel=None, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
+    HAS_NUMPY = True
+    try:
+        import numpy as np
+    except:
+        HAS_NUMPY = False
+
     if isinstance(kernel, int):
         template_dict["rasterFunctionArguments"]["Type"] = kernel
+    elif (HAS_NUMPY) and isinstance(kernel, np.ndarray):
+        kernel= kernel.tolist()
     elif isinstance(kernel, list):
         numrows = len(kernel)
         numcols = len(kernel[0])
@@ -1498,7 +1506,7 @@ def convolution(raster, kernel=None, astype=None):
         template_dict["rasterFunctionArguments"]["Kernel"] = flattened
     else:
         raise RuntimeError(
-            "Invalid kernel type - pass int or list of list: [[][][]...]"
+            "Invalid kernel type - pass well known kernel from arcgis.raster.kernels or list of list: [[][][]...] or a numpy array representing the kernel"
         )
 
     return _clone_layer(layer, template_dict, raster_ra)
