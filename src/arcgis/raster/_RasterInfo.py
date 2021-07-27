@@ -59,8 +59,7 @@ class RasterInfo(object):
     @property
     def band_count(self):
         """
-        The ``band_count`` property retrieves information about the band count of a :class:`~arcgis.raster.Raster`
-        object.
+        The ``band_count`` property retrieves information about the band count of a raster.
         """
         return self._band_count
 
@@ -71,7 +70,7 @@ class RasterInfo(object):
     @property
     def extent(self):
         """
-        The ``extent`` property retrieves information about the extent of a :class:`~arcgis.raster.Raster` object.
+        The ``extent`` property retrieves information about the extent of a raster.
         """
         return self._extent
 
@@ -142,7 +141,7 @@ class RasterInfo(object):
     @property
     def no_data_values(self):
         """
-        The ``no_data_values`` property information about the ``no_data_values`` propert of a
+        The ``no_data_values`` property information about the ``no_data_values`` property of a
         :class:`~arcgis.raster.Raster` object.
         """
         return self._no_data_values
