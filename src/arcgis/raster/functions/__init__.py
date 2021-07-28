@@ -6488,22 +6488,16 @@ def aggregate(
                 opnum = 74 if ignore_nodata else 55
             elif aggregation_function.upper() == "VARIETY":
                 opnum = 75 if ignore_nodata else 58
+            elif aggregation_function.upper() == "PERCENTILE":
+                opnum = 94 if ignore_nodata else 93
 
-            if opnum is None:
-                if aggregation_function.upper() == "PERCENTILE":
-                    template_dict["rasterFunctionArguments"][
-                        "AggregationFunction"
-                    ] = _percentile_function_template(
-                        ignore_nodata=ignore_nodata,
-                        percentile=percentile_value,
-                        percentile_interpolation_type=percentile_interpolation_type,
-                    )
-                else:
-                    raise RuntimeError("Invalid aggregation_function")
-            else:
-                template_dict["rasterFunctionArguments"][
-                    "AggregationFunction"
-                ] = _local_function_template(opnum)
+            if percentile_interpolation_type == "NEAREST":
+                percentile_interpolation_type = 2
+            elif percentile_interpolation_type == "LINEAR":
+                percentile_interpolation_type = 3
+            template_dict["rasterFunctionArguments"][
+                "AggregationFunction"
+            ] = _local_function_template(operation_number=opnum, percentile_value=percentile_value, percentile_interpolation_type=percentile_interpolation_type)
         if (
             "type"
             not in template_dict["rasterFunctionArguments"]["AggregationFunction"]
