@@ -453,10 +453,10 @@ def _local_function_template(
     if operation_number is not None:
         template_dict["arguments"]["Operation"]["value"] = operation_number
     if percentile_value is not None:
-        template_dict["arguments"]["Operation"]["PercentileValue"] = percentile_value
+        template_dict["arguments"]["PercentileValue"]["value"] = percentile_value
     if percentile_interpolation_type is not None:
-        template_dict["arguments"]["Operation"][
-            "PercentileInterpolationType"
+        template_dict["arguments"]["PercentileInterpolationType"][
+            "value"
         ] = percentile_interpolation_type
     return template_dict
 

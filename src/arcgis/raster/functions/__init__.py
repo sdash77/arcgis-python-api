@@ -6488,9 +6488,9 @@ def aggregate(
             elif aggregation_function.upper() == "PERCENTILE":
                 opnum = 94 if ignore_nodata else 93
 
-            if percentile_interpolation_type == "NEAREST":
+            if percentile_interpolation_type.upper() == "NEAREST":
                 percentile_interpolation_type = 2
-            elif percentile_interpolation_type == "LINEAR":
+            elif percentile_interpolation_type.upper() == "LINEAR":
                 percentile_interpolation_type = 3
             template_dict["rasterFunctionArguments"][
                 "AggregationFunction"
