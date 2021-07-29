@@ -6444,10 +6444,7 @@ def aggregate(
     :return: the output raster with function applied on it
     """
 
-    from arcgis.raster._util import (
-        _local_function_template,
-        _percentile_function_template,
-    )
+    from arcgis.raster._util import _local_function_template
 
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -6497,7 +6494,11 @@ def aggregate(
                 percentile_interpolation_type = 3
             template_dict["rasterFunctionArguments"][
                 "AggregationFunction"
-            ] = _local_function_template(operation_number=opnum, percentile_value=percentile_value, percentile_interpolation_type=percentile_interpolation_type)
+            ] = _local_function_template(
+                operation_number=opnum,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+            )
         if (
             "type"
             not in template_dict["rasterFunctionArguments"]["AggregationFunction"]

@@ -357,7 +357,9 @@ def _check_if_iso_format(timestamp):
             return False
 
 
-def _local_function_template(operation_number=None, percentile_value=None, percentile_interpolation_type=None):
+def _local_function_template(
+    operation_number=None, percentile_value=None, percentile_interpolation_type=None
+):
     template_dict = {
         "name": "max_rft",
         "description": "A raster function template.",
@@ -426,21 +428,21 @@ def _local_function_template(operation_number=None, percentile_value=None, perce
                 "type": "RasterFunctionVariable",
                 "_object_id": 9,
             },
-            "PercentileValue":{
-                "name":"PercentileValue",
-                "value":90,
-                "isDataset":False,
-                "isPublic":False,
-                "type":"RasterFunctionVariable",
-                "_object_id":5
+            "PercentileValue": {
+                "name": "PercentileValue",
+                "value": 90,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 5,
             },
-            "PercentileInterpolationType":{
-                "name":"PercentileInterpolationType",
-                "value":1,
-                "isDataset":False,
-                "isPublic":False,
-                "type":"RasterFunctionVariable",
-                "_object_id":6
+            "PercentileInterpolationType": {
+                "name": "PercentileInterpolationType",
+                "value": 1,
+                "isDataset": False,
+                "isPublic": False,
+                "type": "RasterFunctionVariable",
+                "_object_id": 6,
             },
             "type": "LocalFunctionArguments",
             "_object_id": 10,
@@ -453,13 +455,15 @@ def _local_function_template(operation_number=None, percentile_value=None, perce
     if percentile_value is not None:
         template_dict["arguments"]["Operation"]["PercentileValue"] = percentile_value
     if percentile_interpolation_type is not None:
-        template_dict["arguments"]["Operation"]["PercentileInterpolationType"] = percentile_interpolation_type
+        template_dict["arguments"]["Operation"][
+            "PercentileInterpolationType"
+        ] = percentile_interpolation_type
     return template_dict
 
 
-#def _percentile_function_template(
+# def _percentile_function_template(
 #    ignore_nodata=False, percentile=90, percentile_interpolation_type=False
-#):
+# ):
 #    template_dict = {
 #        "name": "Raster Function Template",
 #        "description": "A raster function template.",
