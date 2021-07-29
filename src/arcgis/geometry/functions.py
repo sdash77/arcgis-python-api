@@ -10,7 +10,10 @@ from enum import Enum
 
 
 class AreaUnits(Enum):
-    """ """
+    """
+    Represents the Geometry Service Area Units Enumerations.
+    Example: areas_and_lengths(polygons=[geom],area_unit=AreaUnits.ACRES)
+    """
 
     UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
     SQUAREINCHES = {"areaUnit": "esriSquareInches"}
@@ -30,6 +33,7 @@ class AreaUnits(Enum):
 class LengthUnits(Enum):
     """
     Represents the Geometry Service Length Units Enumerations
+    Example: areas_and_lengths(polygons=[geom],length_unit=LengthUnits.FOOT)
     """
 
     BRITISH1936FOOT = 9095
@@ -119,26 +123,25 @@ def areas_and_lengths(
     length_unit       The length unit in which the perimeters of
                       polygons will be calculated. If ``calculation_type``
                       is planar, then ``length_unit`` can be any esriUnits
-                      constant. If ``length_unit`` is not specified, the
-                      units are derived from ``spatial_ref``. If ``calculationType`` is
+                      constant (string or integer). If ``calculationType`` is
                       not planar, then ``length_unit`` must be a linear
-                      esriUnits constant, such as `esriSRUnit_Meter` or
-                      `esriSRUnit_SurveyMile`. If ``length_unit`` is not
-                      specified, the units are meters. For a list of
+                      esriUnits constant, such as `esriSRUnit_Meter`(i.e. `9001`|`LengthUnits.METER`) or
+                      `esriSRUnit_SurveyMile`(i.e. `9035`|`LengthUnits.SURVEYMILE`). If ``length_unit`` is not
+                      specified, the units are derived from ``spatial_ref``. If ``spatial_ref`` is not
+                      specified as well, the units are in meters. For a list of
                       valid units, see `esriSRUnitType Constants` and
-                      `esriSRUnit2Type Constant`.
+                      `esriSRUnit2Type Constants`.
     ----------------  -------------------------------------------------------------------------------
     area_unit         The area unit in which areas of polygons will be
                       calculated. If calculation_type is planar, then
-                      area_unit can be any `esriUnits` constant. If
+                      area_unit can be any `esriAreaUnits` constant (dict or enum). If ``calculation_type`` is
+                      not planar, then ``area_unit`` must be a `esriAreaUnits` constant such
+                      as `AreaUnits.SQUAREMETERS` (i.e. `{"areaUnit": "esriSquareMeters"}`) or
+                      `AreaUnits.SQUAREMILES` (i.e. `{"areaUnit": "esriSquareMiles"}`). If
                       ``area_unit`` is not specified, the units are derived
-                      from ``spatial_ref``. If ``calculation_type`` is not planar, then
-                      ``area_unit`` must be a linear `esriUnits` constant such
-                      as esriSRUnit_Meter or esriSRUnit_SurveyMile. If
-                      area_unit is not specified, then the units are
+                      from ``spatial_ref``. If ``spatial_ref`` is not specified, then the units are in square
                       meters. For a list of valid units, see
-                      `esriSRUnitType Constants` and `esriSRUnit2Type
-                      constant`.
+                      `esriAreaUnits Constants`.
                       The list of valid esriAreaUnits constants include,
                       `esriSquareInches | esriSquareFeet |
                       esriSquareYards | esriAcres | esriSquareMiles |
@@ -166,17 +169,18 @@ def areas_and_lengths(
 
     .. code-block:: python
 
-            >>> geom = Geometry({
-            >>>   "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
-            >>>               [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
-            >>>               [-97.06326,32.759]]],
-            >>>   "spatialReference" : {"wkid" : 4326}
-            >>>                 })
-            >>> geom.areas_and_lengths(polygons =[polygon1, polygon2,...],
-                                       length_unit = "esriMeters",
-                                       area_unit = "esriSquareMeters",
-                                       calculation_type = "planar",
-                                       future = True)
+            >>> # Use case 1
+            >>> areas_and_lengths(polygons =[polygon1, polygon2,...],
+                                  length_unit = 9001,
+                                  area_unit = {"areaUnit": "esriSquareMeters"},
+                                  calculation_type = "planar")
+            >>> # Use case 2
+            >>> from arcgis.geometry import LengthUnits, AreaUnits
+            >>> areas_and_lengths(polygons =[polygon1, polygon2,...],
+                                  length_unit = LengthUnits.METER,
+                                  area_unit = AreaUnits.SQUAREMETERS,
+                                  calculation_type = "planar",
+                                  future = True)
     :returns:
         JSON as dictionary
     """
