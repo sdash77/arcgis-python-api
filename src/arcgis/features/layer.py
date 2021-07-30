@@ -15,6 +15,7 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from arcgis.features.FeatureCollection_pb2 import FeatureCollectionPBuffer
 
 from .managers import (
     AttachmentManager,
@@ -1578,8 +1579,15 @@ class FeatureLayer(Layer):
             url = self._url + "/query"
         else:
             url = "%s/query" % self._url.split("?")[0]
+        
+        # if layer can be queried with PBF then it is the default
+        if "PBF" in self.properties.supportedQueryFormats:
+            params = {"f": "pbf"}
+        else:
+            params = {"f": "json"}
 
-        params = {"f": "json"}
+        #params = {"f": "json"}
+
         if self._dynamic_layer is not None:
             params["layer"] = self._dynamic_layer
         if result_type is not None:
@@ -1697,10 +1705,14 @@ class FeatureLayer(Layer):
         params["returnCountOnly"] = True
         if where == "1=1":
             params["where"] = f"{self.properties.objectIdField} > 0"
+            params["f"] = "json"
             record_count = self._query(url, params, raw=as_raw)
             params["where"] = "1=1"
+            params["f"] = "pbf"
         else:
+            params["f"] = "json"
             record_count = self._query(url, params, raw=as_raw)
+            params["f"] = "pbf"
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -2912,6 +2924,17 @@ class FeatureLayer(Layer):
                 result = self._con.post(
                     path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
+            elif "add_token" in kwargs and 'pbf' in params["f"]:
+                result = self._con.post(
+                    path=url, postdata=params, add_token=kwargs.get("add_token", True), try_json=False
+                )
+            elif 'pbf' in params["f"]:
+                result = self._con.post(
+                    path=url,
+                    postdata=params,
+                    try_json=False,
+                    json_encode=False
+                )
             else:
                 result = self._con.post(
                     path=url,
@@ -2981,6 +3004,13 @@ class FeatureLayer(Layer):
         elif is_true(raw):
             return result
         else:
+            if "pbf" in params["f"]:
+                import FeatureCollection_pb2 as FCpbf
+
+                layer_data = FCpbf.FeatureCollectionPBuffer()
+                with open(f"C:\\Users\\nan11818\\AppData\\Local\\Temp\\results.pbf", "rb") as fd:
+                    layer_data.ParseFromString(fd.read()) 
+
             return FeatureSet.from_dict(result)
 
     # ----------------------------------------------------------------------
