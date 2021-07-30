@@ -182,7 +182,7 @@ def areas_and_lengths(
                                   calculation_type = "planar",
                                   future = True)
     :returns:
-        A list of JSON as dictionary, or a `GeometryJob` object
+        A JSON as dictionary, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -497,7 +497,7 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     ================  ===============================================================================
 
     :returns:
-        A :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -946,7 +946,7 @@ def offset(
                                   future = True)
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
 
     """
     if gis is None:
