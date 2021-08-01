@@ -1494,7 +1494,7 @@ def convolution(raster, kernel=None, astype=None):
         HAS_NUMPY = False
 
     if (HAS_NUMPY) and isinstance(kernel, np.ndarray):
-        kernel= kernel.tolist()
+        kernel = kernel.tolist()
 
     if isinstance(kernel, int):
         template_dict["rasterFunctionArguments"]["Type"] = kernel
