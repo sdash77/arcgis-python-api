@@ -8432,6 +8432,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         or ele_dim["name"].lower() == "acquisitiondate"
                         or ele_dim["unit"] == "ISO8601"
                     ):
+                        if ("recurring" in ele_dim.keys()) and ele_dim["recurring"]:
+                            continue
                         val = ele_dim["values"]
                         # if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
                         val_list = []
@@ -8451,7 +8453,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
                                 _epoch_to_iso(ele_dim["extent"][0]),
                                 _epoch_to_iso(ele_dim["extent"][1]),
                             ]
-                    break
 
         return mdinfo
 
