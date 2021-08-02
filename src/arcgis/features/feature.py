@@ -514,7 +514,7 @@ class FeatureSet(object):
             if self._object_id_field_name:
                 for f in self._fields:
                     if f["name"] == self._object_id_field_name:
-                        if f["type"] != "esriFieldTypeOID":
+                        if "type" not in f or f["type"] != "esriFieldTypeOID":
                             f["type"] = "esriFieldTypeOID"
                         break
 
