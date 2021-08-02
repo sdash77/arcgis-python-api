@@ -889,12 +889,12 @@ def geocode_from_items(
     ---------------------     ----------------------------------------------------------------
     geocode_parameters        optional dictionary.  This includes parameters that help parse
                               the input data, as well the field lengths and a field mapping.
-                              This value is the output from the analyze_geocode_input()
+                              This value is the output from the ``analyze_geocode_input``
                               available on your server designated to geocode. It is important
                               to inspect the field mapping closely and adjust them accordingly
                               before submitting your job, otherwise your geocoding results may
                               not be accurate. It is recommended to use the output from
-                              analyze_geocode_input() and modify the field mapping instead of
+                              ``analyze_geocode_input`` and modify the field mapping instead of
                               constructing this dictionary by hand.
 
                               **Values**
@@ -960,9 +960,23 @@ def geocode_from_items(
                                 If not specified, the active ``GIS`` is used.
     =====================     ================================================================
 
+    .. code-block:: python
+
+        # Usage Example
+        >>> from_item = Geocoder.geocode(input_data = item1,
+                                        output_type = "FeatureLayer",
+                                        output_fields = "score",
+                                        header_rows_to_skip = 2,
+                                        context = {
+                                                "extent" : {extent}
+                                                "outSR" : {spatial reference}
+                                                  }
+                                        )
+        >>> type(from_item)
+        <:class:`~arcgis.geocoding.Geocoder`>
 
     :returns:
-        A :class:`~arcgis.gis.Item` object.
+        A :class:`~arcgis.geocoding.Geocoder` object.
     """
 
     import json
@@ -1295,6 +1309,24 @@ def geocode(
                              the 3-character country code.
     ====================     ====================================================
 
+    .. code-block:: python
+
+        # Usage Example
+        >>> geocoded = Geocoder.geocode(addresses = {
+                                                    Street: "1234 W Main St",
+                                                    City: "Small Town",
+                                                    State: "WA",
+                                                    Zone: "99027"
+                                                    },
+                                            distance = 1000,
+                                            max_locations = 50,
+                                            as_featureset = True,
+                                            match_out_of_range = True,
+                                            location_type = True
+                                            )
+        >>> type(geocoded)
+        <:class:`~arcgis.features.FeatureSet>
+
     :returns:
        A dictionary or :class:`~arcgis.features.FeatureSet` object.
 
@@ -1407,6 +1439,17 @@ def reverse_geocode(
 
                         Values: ``street``, ``rooftop``
     =================== ====================================================
+
+    .. code-block:: python
+
+        # Usage Example
+        >>> reversed = Geocoder.reverse_geocode(location = point1,
+                                                distance = 50,
+                                                for_storage = True,
+                                                feature_types = StreetName,
+                                                location_type = street)
+        >>> type(reversed)
+        <class: arcgis.geocoding.Geocoder>
 
     :returns:
        A dictionary
@@ -1535,6 +1578,21 @@ def batch_geocode(
                                   a single value or a comma-delimited collection of values as input.
                                   e.g. ='matchedCity,primaryStreet'
     =========================     ================================================================
+
+    .. code-block:: python
+
+        # Usage Example
+        >>> batched = Geocoder.batch_geocode(addresses = ["380 New York St, Redlands, CA",
+                                                            "1 World Way, Los Angeles, CA",
+                                                            "1200 Getty Center Drive, Los Angeles, CA",
+                                                            "5905 Wilshire Boulevard, Los Angeles, CA",
+                                                            "100 Universal City Plaza, Universal City, CA 91608",
+                                                            "4800 Oak Grove Dr, Pasadena, CA 91109"]
+                                            as_featureset = True,
+                                            match_out_of_range = True,
+                                            )
+        >>> type(batched)
+        <:class:`~arcgis.features.FeatureSet>
 
     :returns:
       A dictionary or :class:`~arcgis.features.FeatureSet`
@@ -1678,6 +1736,17 @@ def suggest(
                             also include the ``country_code`` parameter with the
                             same value.
     ===============     =================================================================
+
+    .. code-block:: python
+
+        # Usage Example
+        >>> suggested = Geocoder.suggest(text = "geocoding_text"
+                                        location = point1,
+                                        distance = 5000,
+                                        max_suggestions = 10
+                                        )
+        >>> type(suggested)
+        <List>
 
     :returns:
         A list of suggested matches
