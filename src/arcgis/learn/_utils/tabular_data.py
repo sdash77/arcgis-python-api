@@ -1534,6 +1534,12 @@ def explain_prediction(
 def show_local_interpretation(
     model, processed_df, index=0, random_index=False, method="Tree"
 ):
+    feature_variables = model._data._categorical_variables + model._data._continuous_variables
+    if len(feature_variables) < 2:
+        print(
+            'Shap Explanation for prediction can be obtained only if number of explnatory variables > 1 '
+        )
+        return
     if method == "Tree":
         explainer = shap.TreeExplainer(model._model, algorithm="Tree")
     elif method == "KernelRegressor":
@@ -1690,6 +1696,11 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         feature_variables = (
             model._data._categorical_variables + model._data._continuous_variables
         )
+        if len(feature_variables) <2:
+            print(
+                'This method can be used only on datasets with more than 1 explanatory variables'
+            )
+            return
         df = pd.DataFrame(
             shap.sample(model._data._ml_data[0], 500), columns=feature_variables
         )
