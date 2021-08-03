@@ -14,7 +14,7 @@ from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
 
 from ._utils import local_vs_gis, get_helper_service_url, set_source, geography_iterable_to_arcpy_geometry_list, \
-    get_sanitized_names, pep8ify, validate_spatial_reference, get_spatially_enabled_dataframe
+    get_sanitized_names, pep8ify, validate_spatial_reference, get_spatially_enabled_dataframe, pro_at_least_version
 from ._spatial import change_spatial_reference
 
 __all__ = ['BusinessAnalyst', 'Country']
@@ -493,13 +493,25 @@ class Country(AOI):
         geo_lvl_df = geo_lvl_df.iloc[::-1].reset_index(drop=True)
 
         # calculate a field for use in the accessor
-        geo_lvl_df['level_name'] = geo_lvl_df['LevelID'].apply(lambda val: pep8ify(val.split('.')[1]))
+        geo_lvl_df.insert(0, 'level_name', geo_lvl_df['LevelID'].apply(lambda val: pep8ify(val.split('.')[1])))
 
-        # purge, reorder and rename columns
-        geo_lvl_df = geo_lvl_df[['level_name', 'SingularName', 'PluralName', 'LevelName', 'LayerID', 'IDField',
-                                 'NameField']].copy()
-        geo_lvl_df.columns = ['level_name', 'singular_name', 'plural_name', 'alias', 'level_id', 'id_field',
-                              'name_field']
+        # purge columns and include AdminLevel if present (added in Pro 2.9)
+        out_col_lst = ['level_name', 'SingularName', 'PluralName', 'LevelName', 'LayerID', 'IDField', 'NameField']
+        if 'AdminLevel' in list(geo_lvl_df.columns):
+            out_col_lst = out_col_lst + ['AdminLevel']
+        geo_lvl_df.drop(columns=[c for c in geo_lvl_df.columns if c not in out_col_lst], drop=True)
+
+        # rename fields for consistency
+        out_rename_dict = {
+            'SingularName': 'singular_name',
+            'PluralName': 'plural_name',
+            'LevelName': 'alias',
+            'LayerID': 'level_id',
+            'IDField': 'id_field',
+            'NameField': 'name_field',
+            'AdminLevel': 'admin_level'
+        }
+        geo_lvl_df.rename(columns=out_rename_dict, inplace=True, errors='ignore')
 
         return geo_lvl_df
 
@@ -754,7 +766,8 @@ class Country(AOI):
                                                          f'[{",".join(valid_metric_lst)}]'
 
             # TODO - remove once issue with point geometry list error is addressed
-            geographies = arcpy.management.CopyFeatures(geographies, f'memory/points_{uuid.uuid4().hex}')[0]
+            if not pro_at_least_version('2.9'):
+                geographies = arcpy.management.CopyFeatures(geographies, f'memory/points_{uuid.uuid4().hex}')[0]
 
             # invoke enrichment using proximity around points
             enrich_fc = arcpy.ba.EnrichLayer(geographies, out_feature_class=f'memory/enrich_{uuid.uuid4().hex}',
@@ -763,7 +776,8 @@ class Country(AOI):
                                              unit=proximity_metric)[0]
 
             # TODO - remove once issue with point geometry list error is addressed
-            arcpy.management.Delete(geographies)
+            if not pro_at_least_version('2.9'):
+                arcpy.management.Delete(geographies)
 
         # if not points, just enrich
         else:
@@ -1016,7 +1030,7 @@ class BusinessAnalyst(object):
 
     def __init__(self, source: Union[str, GIS] = None) -> None:
 
-        # set the source, defaulting, based on what is available, to local or active_gis, or simply errorring if neither
+        # set the source, defaulting, based on what is available, to local or active_gis, or simply error if neither
         self.source = set_source(source)
 
     def __repr__(self):
@@ -1084,11 +1098,11 @@ class BusinessAnalyst(object):
 
         # clean up some column names for consistency
         cntry_df.rename({'id': 'iso2', 'abbr3': 'iso3', 'name': 'country_name', 'altName': 'alt_name',
-                         'defaultDatasetID': 'country_id'}, inplace=True, axis=1)
+                         'defaultDatasetID': 'default_dataset'}, inplace=True, axis=1)
         cntry_df.drop(columns=['distanceUnits', 'esriUnits', 'hierarchies', 'currencySymbol', 'currencyFormat',
                                'defaultDataCollection', 'dataCollections', 'defaultReportTemplate',
-                               'datasets', 'defaultExtent'], inplace=True)
-        cntry_df = cntry_df[['iso2', 'iso3', 'country_name', 'country_id', 'alt_name', 'continent']]
+                               'defaultExtent'], inplace=True)
+        cntry_df = cntry_df[['iso2', 'iso3', 'country_name', 'datasets', 'default_dataset', 'alt_name', 'continent']]
 
         return cntry_df
 

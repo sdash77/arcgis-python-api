@@ -36,15 +36,21 @@ def local_vs_gis(fn):
     @wraps(fn)
     def wrapped(self, *args, **kwargs):
 
+        # get source no matter how defined
+        for val in ['source', '_source', '_gis', 'gis']:
+            if val in self.__dict__.keys():
+                src = getattr(self, val)
+                break
+
         # if performing analysis locally, try to access the function locally, but if not implemented, catch the error
-        if self.source == 'local':
+        if src == 'local':
             try:
                 fn_to_call = getattr(self, f'_{fn_name}_local')
             except AttributeError:
                 raise NotImplementedError(f"'{fn_name}' not available using 'local' as the source.")
 
         # now, if performing analysis using a Web GIS, then access the function referencing remote resources
-        elif isinstance(self.source, GIS):
+        elif isinstance(src, GIS):
             try:
                 fn_to_call = getattr(self, f'_{fn_name}_gis')
             except AttributeError:
@@ -82,13 +88,21 @@ def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
 
     # if string input is provided, ensure setting to local and lowercase
     if isinstance(in_source, str):
-        if in_source.lower() != 'local':
+
+        # cast to lowercast
+        in_source = in_source.lower()
+
+        # account for setting to "pro"
+        if in_source == 'pro':
+            in_source = 'local'
+
+        if in_source != 'local':
             raise Exception(f'Source must be either "local" or a Web GIS instance, not {in_source}.')
 
-        elif in_source.lower() == 'local' and not local_business_analyst_avail():
+        elif in_source == 'local' and not local_business_analyst_avail():
             raise Exception(f'If using local source, the Business Analyst extension must be available')
 
-        elif in_source.lower() == 'local':
+        elif in_source == 'local':
             source = 'local'
 
     # if nothing provided, default to local if arcpy is available, and remote if arcpy not available
@@ -412,3 +426,39 @@ def pep8ify(name):
     s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
     s3 = s2.replace(' ', '')
     return s3
+
+
+def pro_at_least_version(version: str) -> bool:
+    """
+    Test the current ArcGIS Pro version to be equal or greater than.
+    Args:
+        version: Version number eg ('2', '2.1', '2.8.1')
+    Returns:
+        Boolean indicating if version is at least or greater than specified version.
+    """
+
+    # late import since may or may not already be loaded
+    import arcpy
+
+    # get parts of the current version
+    v_lst = [int(v) for v in arcpy.GetInstallInfo()['Version'].split('.')]
+
+    # get parts of the version to test for
+    in_lst = [int(v) for v in version.split('.')]
+
+    # extend the shorter version list to match the longer
+    max_len = max((len(v_lst), len(in_lst)))
+    v_lst, in_lst = [lst + ([0] * (max_len - len(lst))) for lst in [v_lst, in_lst]]
+
+    # variable to store status
+    at_least = True
+
+    # test all the parts of the input version against the current version
+    for idx in range(0, max_len):
+
+        # evaluate if the part and if greater, break and report status
+        if v_lst[idx] < in_lst[idx]:
+            at_least = False
+            break
+
+    return at_least

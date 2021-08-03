@@ -1,57 +1,61 @@
-import pandas as pd
-from typing import Union
+import pytest
 
-from arcgis.geoenrichment import Country, NamedArea
-from arcgis.geometry import Polygon
-from arcgis.gis import GIS
-import pandas as pd
+from ..geoenrichment_country_tests import *
 
-
-def get_usa_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('USA')
-    assert isinstance(cntry, Country)
+@pytest.fixture
+def usa():
+    return Country.get('USA', gis='local')
 
 
-def get_can_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('CAN')
-    assert isinstance(cntry, Country)
+def test_usa_local() -> None:
+    usa_test('local')
 
 
-def get_usa_2019_test(gis: Union[str, GIS, None]) -> None:
-    cntry = Country.get('USA', year=2019)
-    assert isinstance(cntry, Country)
+def test_get_usa_local() -> None:
+    get_usa_test('local')
 
 
-def dataset_test(country: Country) -> None:
-    ds = country.dataset
-    assert ds
+def test_test_get_can_local() -> None:
+    get_can_test('local')
 
 
-def data_collections_test(country: Country) -> None:
-    dc_df = country.data_collections
-    assert isinstance(dc_df, pd.DataFrame)
+def test_get_usa_2019_local() -> None:
+    get_usa_2019_test('local')
 
 
-def geometry_test(country: Country) -> None:
-    geom = country.geometry
-    assert isinstance(geom, Polygon)
+def test_dataset_local(usa) -> None:
+    with pytest.raises(NotImplementedError):
+        dataset_test(usa)
 
 
-def levels_test(country: Country) -> None:
-    lvls = country.levels
-    assert lvls
+def test_data_collections_local(usa) -> None:
+    data_collections_test(usa)
 
 
-def reports_test(country: Country) -> None:
-    reports_df = country.reports
-    assert reports_df
+def test_enrich_variables(usa) -> None:
+    enrich_variables_test(usa)
 
 
-def search_cbsa_chicago(country: Country) -> None:
-    areas = country.search('chicago')
-    assert areas
+def test_geometry_local(usa) -> None:
+    with pytest.raises(NotImplementedError):
+        geometry_test(usa)
 
 
-def subgeographies_test(country: Country) -> None:
-    subgeos = country.subgeographies
-    assert isinstance(subgeos, NamedArea)
+def test_levels_local(usa) -> None:
+    with pytest.raises(NotImplementedError):
+        levels_test(usa)
+
+
+def test_reports_local(usa) -> None:
+    with pytest.raises(NotImplementedError):
+        reports_test(usa)
+
+
+# def test_search_cbsa_chicago_local(usa) -> None:
+#     with pytest.raises(NotImplementedError):
+#         search_cbsa_chicago(usa)
+#
+#
+# def test_subgeographies_local(usa) -> None:
+#     with pytest.raises(NotImplementedError):
+#         subgeographies_test(usa)
