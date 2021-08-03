@@ -14,10 +14,12 @@ if arcpy_avail:
     import arcpy
 
 
-def change_spatial_reference(input_dataframe: pd.DataFrame,
-                             output_spatial_reference: Union[int, SpatialReference] = 4326,
-                             input_spatial_reference: Union[int, SpatialReference] = None,
-                             transformation_name: str = None) -> pd.DataFrame:
+def change_spatial_reference(
+    input_dataframe: pd.DataFrame,
+    output_spatial_reference: Union[int, SpatialReference] = 4326,
+    input_spatial_reference: Union[int, SpatialReference] = None,
+    transformation_name: str = None,
+) -> pd.DataFrame:
     """
     Change the spatial reference of the input Spatially Enabled Dataframe to a desired output spatial reference,
         applying a transformation if needed if to the geographic coordinate system changes.
@@ -34,15 +36,23 @@ def change_spatial_reference(input_dataframe: pd.DataFrame,
     Returns: Spatially Enabled DataFrame in the desired output spatial reference.
     """
     # ensure the geometry is set
-    geom_col_lst = [c for c in input_dataframe.columns if input_dataframe[c].dtype.name.lower() == 'geometry']
-    assert len(geom_col_lst) > 0, 'The DataFrame does not appear to have a geometry column defined. This can be ' \
-                                  'accomplished using the "input_dataframe.spatial.set_geometry" method.'
+    geom_col_lst = [
+        c
+        for c in input_dataframe.columns
+        if input_dataframe[c].dtype.name.lower() == "geometry"
+    ]
+    assert len(geom_col_lst) > 0, (
+        "The DataFrame does not appear to have a geometry column defined. This can be "
+        'accomplished using the "input_dataframe.spatial.set_geometry" method.'
+    )
 
     # save the geometry column to a variable
     geom_col = geom_col_lst[0]
 
     # ensure the input spatially enabled dataframe validates
-    assert input_dataframe.spatial.validate(), 'The DataFrame does not appear to be valid.'
+    assert (
+        input_dataframe.spatial.validate()
+    ), "The DataFrame does not appear to be valid."
 
     # if a spatial reference is set for the dataframe, just use it
     if input_dataframe.spatial.sr is not None:
@@ -52,9 +62,12 @@ def change_spatial_reference(input_dataframe: pd.DataFrame,
     elif input_spatial_reference is not None:
 
         # check the input
-        assert isinstance(input_spatial_reference, int) or isinstance(input_spatial_reference, SpatialReference), \
-            f'input_spatial_reference must be either an int referencing a wkid or a SpatialReference object, ' \
-            f'not {type(input_spatial_reference)}.'
+        assert isinstance(input_spatial_reference, int) or isinstance(
+            input_spatial_reference, SpatialReference
+        ), (
+            f"input_spatial_reference must be either an int referencing a wkid or a SpatialReference object, "
+            f"not {type(input_spatial_reference)}."
+        )
 
         if isinstance(input_spatial_reference, int):
             in_sr = SpatialReference(input_spatial_reference)
@@ -69,9 +82,15 @@ def change_spatial_reference(input_dataframe: pd.DataFrame,
         x_min, y_min, x_max, y_max = input_dataframe.spatial.full_extent
 
         # check the range of the values, if in longitude and latitude range
-        wgs_range = True if (x_min > -181 and y_min > -91 and x_max < 181 and y_max < 91) else False
-        assert wgs_range, 'Input data for changing the spatial reference must have a spatial reference set, or one ' \
-                          'must be provided.'
+        wgs_range = (
+            True
+            if (x_min > -181 and y_min > -91 and x_max < 181 and y_max < 91)
+            else False
+        )
+        assert wgs_range, (
+            "Input data for changing the spatial reference must have a spatial reference set, or one "
+            "must be provided."
+        )
 
         # if the values are in range, run with it
         in_sr = SpatialReference(4326)
@@ -99,13 +118,15 @@ def change_spatial_reference(input_dataframe: pd.DataFrame,
         gis = active_gis if active_gis else GIS()
 
         # get any transformations, if needed due to changing geographic spatial reference, as a list of dicts
-        trns_lst = find_transformation(in_sr, out_sr, gis=gis)['transformations']
+        trns_lst = find_transformation(in_sr, out_sr, gis=gis)["transformations"]
 
     # apply across the geometries using apply since it recognizes the transformation correctly if transformation
     # is necessary and also tries arcpy first, and if not available, rolls back to rest resources elegantly
     if len(trns_lst) or transformation_name is not None:
         trns = transformation_name if transformation_name is not None else trns_lst[0]
-        out_df[geom_col] = out_df[geom_col].apply(lambda geom: geom.project_as(out_sr, trns))
+        out_df[geom_col] = out_df[geom_col].apply(
+            lambda geom: geom.project_as(out_sr, trns)
+        )
 
     # otherwise, do the same thing using the apply method since the geoaccessor project method is not working reliably
     # and only if necessary if the spatial reference is being changed
@@ -113,14 +134,20 @@ def change_spatial_reference(input_dataframe: pd.DataFrame,
         out_df[geom_col] = out_df[geom_col].apply(lambda geom: geom.project_as(out_sr))
 
     # ensure the spatial column is set
-    if not len([c for c in out_df.columns if out_df[c].dtype.name.lower() == 'geometry']):
+    if not len(
+        [c for c in out_df.columns if out_df[c].dtype.name.lower() == "geometry"]
+    ):
         out_df.spatial.set_geometry(geom_col)
 
     return out_df
 
 
-def _get_weighted_centroid_geometry(sub_df: pd.DataFrame, weighting_column: str, sptl_ref: SpatialReference,
-                                    geom_col: str = 'SHAPE') -> Point:
+def _get_weighted_centroid_geometry(
+    sub_df: pd.DataFrame,
+    weighting_column: str,
+    sptl_ref: SpatialReference,
+    geom_col: str = "SHAPE",
+) -> Point:
     """
     Helper function to calculate centroid coordinates.
 
@@ -138,8 +165,14 @@ def _get_weighted_centroid_geometry(sub_df: pd.DataFrame, weighting_column: str,
 
     # if there is a weighting sum, use it
     if wgt_sum > 0:
-        wgt_x = np.average(sub_df[geom_col].apply(lambda geom: geom.centroid[0]), weights=sub_df[weighting_column])
-        wgt_y = np.average(sub_df[geom_col].apply(lambda geom: geom.centroid[1]), weights=sub_df[weighting_column])
+        wgt_x = np.average(
+            sub_df[geom_col].apply(lambda geom: geom.centroid[0]),
+            weights=sub_df[weighting_column],
+        )
+        wgt_y = np.average(
+            sub_df[geom_col].apply(lambda geom: geom.centroid[1]),
+            weights=sub_df[weighting_column],
+        )
 
     # if there is not a weighting sum, just get the average centroid
     else:
@@ -147,12 +180,14 @@ def _get_weighted_centroid_geometry(sub_df: pd.DataFrame, weighting_column: str,
         wgt_y = np.average(sub_df[geom_col].apply(lambda geom: geom.centroid[1]))
 
     # create a point geometry at the weighted centroid
-    wgt_geom = Point({'x': wgt_x, 'y': wgt_y, 'spatialReference': sptl_ref})
+    wgt_geom = Point({"x": wgt_x, "y": wgt_y, "spatialReference": sptl_ref})
 
     return wgt_geom
 
 
-def get_weighted_centroid(input_dataframe: pd.DataFrame, grouping_column: str, weighting_column: str) -> pd.DataFrame:
+def get_weighted_centroid(
+    input_dataframe: pd.DataFrame, grouping_column: str, weighting_column: str
+) -> pd.DataFrame:
     """
     Get a spatially enabled dataframe of weighted centroids identified by a grouping
         column.
@@ -169,30 +204,44 @@ def get_weighted_centroid(input_dataframe: pd.DataFrame, grouping_column: str, w
     """
     # check the input dataframe
     assert isinstance(input_dataframe, pd.DataFrame)
-    assert input_dataframe.spatial.validate(), 'A valid Spatially Enabled DataFrame must be provided for '
+    assert (
+        input_dataframe.spatial.validate()
+    ), "A valid Spatially Enabled DataFrame must be provided for "
 
     # ensure the input columns are in the dataframe
     in_cols = input_dataframe.columns
     for col in [grouping_column, weighting_column]:
-        assert col in in_cols, f'{col} does not appear to be in the DataFrame columns [{", ".join(in_cols)}]'
+        assert (
+            col in in_cols
+        ), f'{col} does not appear to be in the DataFrame columns [{", ".join(in_cols)}]'
 
     # ensure the weighting column is a numeric column
-    assert is_numeric_dtype(input_dataframe[weighting_column]), f'The weighting column ({weighting_column}) must be ' \
-                                                                f'numeric, and it appears to be ' \
-                                                                f'{input_dataframe[weighting_column].dtype()}.'
+    assert is_numeric_dtype(input_dataframe[weighting_column]), (
+        f"The weighting column ({weighting_column}) must be "
+        f"numeric, and it appears to be "
+        f"{input_dataframe[weighting_column].dtype()}."
+    )
 
     # get the geometry column name
-    geom_col = [c for c in in_cols if input_dataframe[c].dtype.name.lower() == 'geometry'][0]
+    geom_col = [
+        c for c in in_cols if input_dataframe[c].dtype.name.lower() == "geometry"
+    ][0]
 
     # get the input spatial reference
     sptl_ref = input_dataframe.spatial.sr
 
     # calculate weighted centroids
-    centroid_df = input_dataframe.groupby(grouping_column).apply(
-        lambda sub_df: _get_weighted_centroid_geometry(sub_df, weighting_column, sptl_ref, geom_col)
-    ).to_frame('SHAPE')
+    centroid_df = (
+        input_dataframe.groupby(grouping_column)
+        .apply(
+            lambda sub_df: _get_weighted_centroid_geometry(
+                sub_df, weighting_column, sptl_ref, geom_col
+            )
+        )
+        .to_frame("SHAPE")
+    )
 
     # reset the geometry to ensure updates recognized
-    centroid_df.spatial.set_geometry('SHAPE')
+    centroid_df.spatial.set_geometry("SHAPE")
 
     return centroid_df

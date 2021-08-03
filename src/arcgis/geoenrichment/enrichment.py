@@ -28,7 +28,7 @@ def _call_method_by_source(fn) -> callable:
 
         # try to pull out the source or gis caller
         src = None
-        for param_src in ['source', 'gis']:
+        for param_src in ["source", "gis"]:
             if param_src in kwargs.keys():
                 src = kwargs[param_src]
                 break
@@ -38,7 +38,7 @@ def _call_method_by_source(fn) -> callable:
             for p in args:
                 if isinstance(p, str):
                     p = p.lower()
-                    if p == 'local':
+                    if p == "local":
                         src = p.lower()
                         break
                 elif isinstance(p, GIS):
@@ -47,21 +47,31 @@ def _call_method_by_source(fn) -> callable:
 
         # if still nothing found, default to local
         if src is None:
-            src = 'local'
+            src = "local"
 
         # make sure a source was located
-        assert src is not None, 'The gis parameter must be pesent and populated with either a GIS instance or using ' \
-                                'the "local" keyword.'
+        assert src is not None, (
+            "The gis parameter must be pesent and populated with either a GIS instance or using "
+            'the "local" keyword.'
+        )
 
         # build function name to call
-        fn_nm_to_call = f'_{fn_name}_gis' if isinstance(src, GIS) else f'_{fn_name}_local'
+        fn_nm_to_call = (
+            f"_{fn_name}_gis" if isinstance(src, GIS) else f"_{fn_name}_local"
+        )
 
-        print(f'fn_nm_to_call: {fn_nm_to_call}')
+        print(f"fn_nm_to_call: {fn_nm_to_call}")
 
         # get the function if it is implemented
         if fn_nm_to_call not in globals().keys():
-            src_nm = 'Web GIS' if isinstance(src, GIS) else 'local (ArcGIS Pro with Business Analayst)'
-            raise NotImplementedError(f'The {fn_name} function is not yet implemented with a {src_nm} source.')
+            src_nm = (
+                "Web GIS"
+                if isinstance(src, GIS)
+                else "local (ArcGIS Pro with Business Analayst)"
+            )
+            raise NotImplementedError(
+                f"The {fn_name} function is not yet implemented with a {src_nm} source."
+            )
         else:
             fn_to_call = globals()[fn_nm_to_call]
 
@@ -89,7 +99,7 @@ travel_mode: None or string, one of the supported travel modes when using networ
 def _pep8ify(name):
     """PEP8ify name"""
     if "." in name:
-        name = name[name.rfind(".") + 1:]
+        name = name[name.rfind(".") + 1 :]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
@@ -247,7 +257,7 @@ class Country(object):
         ----------------  --------------------------------------------------------
         name              Required string. The country name or 2 letter/ISO3 code
         ----------------  --------------------------------------------------------
-        gis               Optional gis source.
+        gis               Optional gis source. This
         ================  ========================================================
 
         Returns the country
@@ -255,8 +265,14 @@ class Country(object):
         return cls(name, gis, year)
 
     # noinspection PyMissingConstructor
-    def __init__(self, iso3: str, gis: Union[str, GIS] = None, year: Union[str, int] = None, portal_url=None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        iso3: str,
+        gis: Union[str, GIS] = None,
+        year: Union[str, int] = None,
+        portal_url=None,
+        **kwargs,
+    ) -> None:
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
@@ -268,8 +284,8 @@ class Country(object):
         self._ba_cntry = ba.get_country(iso3, year=year)
 
         # legacy parameter support
-        if 'purl' in kwargs:
-            portal_url = kwargs['purl']
+        if "purl" in kwargs:
+            portal_url = kwargs["purl"]
 
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
@@ -291,17 +307,23 @@ class Country(object):
             # if a hosted notebook environment, get the private service url if set
             if self._gis._is_hosted_nb_home:
                 res = self._gis._private_service_url(self._base_url)
-                self._base_url = res["privateServiceUrl"] if 'privateServiceUrl' in res else res["serviceUrl"]
+                self._base_url = (
+                    res["privateServiceUrl"]
+                    if "privateServiceUrl" in res
+                    else res["serviceUrl"]
+                )
 
             # set the dataset_id to the default
             self._dataset_id = self._ba_cntry.properties.default_dataset
 
     def __repr__(self):
-        if self._gis == 'local':
-            repr = f'<{type(self).__name__} - {self.properties.country_name} {self.properties.year} ' \
-                   f'({self._gis.__repr__()})>'
+        if self._gis == "local":
+            repr = (
+                f"<{type(self).__name__} - {self.properties.country_name} {self.properties.year} "
+                f"({self._gis.__repr__()})>"
+            )
         else:
-            repr = f'<{type(self).__name__} - {self.properties.country_name} ({self._gis.__repr__()})>'
+            repr = f"<{type(self).__name__} - {self.properties.country_name} ({self._gis.__repr__()})>"
         return repr
 
     @property
@@ -319,12 +341,14 @@ class Country(object):
                 return_sub_geography=False,
                 return_geometry=True,
                 as_featureset=False,
-                gis=self._gis
+                gis=self._gis,
             )
             geom = Geometry(df.iloc[0]["SHAPE"])
 
         else:
-            raise NotImplementedError(f"'geometry' not available using 'local' as the source.")
+            raise NotImplementedError(
+                f"'geometry' not available using 'local' as the source."
+            )
 
         return geom
 
@@ -362,7 +386,9 @@ class Country(object):
         if isinstance(self._gis, GIS):
             ds_id = self._dataset_id
         else:
-            raise NotImplementedError(f"'dataset' not available using 'local' as the source.")
+            raise NotImplementedError(
+                f"'dataset' not available using 'local' as the source."
+            )
         return ds_id
 
     @dataset.setter
@@ -381,7 +407,9 @@ class Country(object):
                     + str(self.properties.datasets)
                 )
         else:
-            raise NotImplementedError(f"'dataset' not available using 'local' as the source.")
+            raise NotImplementedError(
+                f"'dataset' not available using 'local' as the source."
+            )
 
     @_lazy_property
     @local_vs_gis
@@ -431,11 +459,13 @@ class Country(object):
         """Local implementation for data_collections"""
         # get the variables and reorganize the dataframe to be as similar as possible to the existing online response
         col_map = {
-            'data_collection': 'dataCollectionID',
-            'enrich_name': 'analysisVariable'
+            "data_collection": "dataCollectionID",
+            "enrich_name": "analysisVariable",
         }
-        dc_df = self._ba_cntry.enrich_variables.rename(columns=col_map).set_index('dataCollectionID')
-        dc_df = dc_df[['analysisVariable', 'alias']].copy()
+        dc_df = self._ba_cntry.enrich_variables.rename(columns=col_map).set_index(
+            "dataCollectionID"
+        )
+        dc_df = dc_df[["analysisVariable", "alias"]].copy()
         return dc_df
 
     @property
@@ -503,7 +533,7 @@ class Country(object):
             layers=layers,
             return_geometry=True,
             as_featureset=False,
-            gis=self._gis
+            gis=self._gis,
         )
 
         places = []
@@ -548,8 +578,19 @@ def get_countries(gis=None):
 
 
 @_call_method_by_source
-def create_report(study_areas, report=None, export_format="pdf", report_fields=None, options=None, return_type=None,
-                  use_data=None, in_sr=4326, out_name=None, out_folder=None, gis=None):
+def create_report(
+    study_areas,
+    report=None,
+    export_format="pdf",
+    report_fields=None,
+    options=None,
+    return_type=None,
+    use_data=None,
+    in_sr=4326,
+    out_name=None,
+    out_folder=None,
+    gis=None,
+):
     """
     The Create Report method allows you to create many types of high quality reports for a
     variety of use cases describing the input area. If a point is used as a study area, the
@@ -642,8 +683,19 @@ def create_report(study_areas, report=None, export_format="pdf", report_fields=N
     pass
 
 
-def _create_report_gis(study_areas, report=None, export_format="pdf", report_fields=None, options=None,
-                       return_type=None, use_data=None, in_sr=4326, out_name=None, out_folder=None, gis=None):
+def _create_report_gis(
+    study_areas,
+    report=None,
+    export_format="pdf",
+    report_fields=None,
+    options=None,
+    return_type=None,
+    use_data=None,
+    in_sr=4326,
+    out_name=None,
+    out_folder=None,
+    gis=None,
+):
     """GIS implementation of create report."""
     if gis is None:
         gis = env.active_gis
@@ -652,7 +704,7 @@ def _create_report_gis(study_areas, report=None, export_format="pdf", report_fie
     for area in study_areas:
         area_dict = area
         if isinstance(
-                area, str
+            area, str
         ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
             area_dict = {"address": {"text": area}}
         elif isinstance(area, dict):  # pass through - user knows what they're sending
@@ -696,8 +748,8 @@ def _create_report_gis(study_areas, report=None, export_format="pdf", report_fie
                 for namedarea in area:
                     a = namedarea.__studyarea__
                     if (
-                            a["layer"] != first_area["layer"]
-                            or a["sourceCountry"] != first_area["sourceCountry"]
+                        a["layer"] != first_area["layer"]
+                        or a["sourceCountry"] != first_area["sourceCountry"]
                     ):
                         raise ValueError(
                             "All NamedAreas in the list must have the same source country and level"
@@ -733,13 +785,13 @@ def _create_report_gis(study_areas, report=None, export_format="pdf", report_fie
 
 # ----------------------------------------------------------------------
 def _data_collections(
-        country=None,
-        collection_name=None,
-        variables=None,
-        out_fields="*",
-        hide_nulls=True,
-        gis=None,
-        as_dict=True,
+    country=None,
+    collection_name=None,
+    variables=None,
+    out_fields="*",
+    hide_nulls=True,
+    gis=None,
+    as_dict=True,
 ):
     """
     The GeoEnrichment class uses the concept of a data collection to define the data
@@ -817,8 +869,16 @@ def _service_limits_gis(gis=None):
 
 
 @_call_method_by_source
-def enrich(study_areas, data_collections=None, analysis_variables=None, comparison_levels=None,
-           add_derivative_variables=None, intersecting_geographies=None, return_geometry=True, gis=None):
+def enrich(
+    study_areas,
+    data_collections=None,
+    analysis_variables=None,
+    comparison_levels=None,
+    add_derivative_variables=None,
+    intersecting_geographies=None,
+    return_geometry=True,
+    gis=None,
+):
     """
     Returns demographic and other requested information for the specified study areas.
     Study areas define the location of the point or area that you want to enrich
@@ -906,14 +966,22 @@ def enrich(study_areas, data_collections=None, analysis_variables=None, comparis
     pass
 
 
-def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, comparison_levels=None,
-                add_derivative_variables=None, intersecting_geographies=None, return_geometry=True, gis=None):
+def _enrich_gis(
+    study_areas,
+    data_collections=None,
+    analysis_variables=None,
+    comparison_levels=None,
+    add_derivative_variables=None,
+    intersecting_geographies=None,
+    return_geometry=True,
+    gis=None,
+):
     """GIS implementation of enrich."""
 
     def _chunks(l, n):
         """yield successive n-sized chunks from l."""
         for i in range(0, len(l), n):
-            yield l[i: i + n]
+            yield l[i : i + n]
 
     if gis is None:
         gis = env.active_gis
@@ -923,7 +991,7 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
     if isinstance(study_areas, FeatureSet):
         areas = FeatureSet.sdf
     elif isinstance(
-            study_areas, dict
+        study_areas, dict
     ):  # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
         areas = list(study_areas.values())
         study_areas = areas
@@ -936,7 +1004,7 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
         for area in study_areas:
             area_dict = area
             if isinstance(
-                    area, str
+                area, str
             ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
                 area_dict = {"address": {"text": area}}
             elif isinstance(area, Geometry):  # geometry, polygons, points
@@ -972,7 +1040,7 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
                 area_dict = area.__studyarea__
 
             elif isinstance(
-                    area, dict
+                area, dict
             ):  # pass through - user knows what they're sending
                 pass
             elif isinstance(area, list):  # list of named areas, (union)
@@ -982,8 +1050,8 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
                     for namedarea in area:
                         a = namedarea.__studyarea__
                         if (
-                                a["layer"] != first_area["layer"]
-                                or a["sourceCountry"] != first_area["sourceCountry"]
+                            a["layer"] != first_area["layer"]
+                            or a["sourceCountry"] != first_area["sourceCountry"]
                         ):
                             raise ValueError(
                                 "All NamedAreas in the list must have the same source country and level"
@@ -1030,7 +1098,7 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
                         "return_geometry": return_geometry,
                         "out_sr": env.out_spatial_reference,
                         "as_featureset": False,
-                    }
+                    },
                 )
 
                 concurrent_parts[idx] = f  # .append(f)
@@ -1053,7 +1121,9 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
                         list(set(study_areas.OBJECTID) - set(enrich_res.OBJECTID))
                     )
 
-                    enrich_res = pd.concat([enrich_res, study_areas[missing_q]]).set_index(
+                    enrich_res = pd.concat(
+                        [enrich_res, study_areas[missing_q]]
+                    ).set_index(
                         keys=areas.index,
                         drop=True,
                         append=False,
@@ -1075,7 +1145,7 @@ def _enrich_gis(study_areas, data_collections=None, analysis_variables=None, com
 
         # set the spatial column
         if return_geometry:
-            enrich_res.spatial.set_geometry('SHAPE')
+            enrich_res.spatial.set_geometry("SHAPE")
 
     # no chunking, len < 100, or FeatureSet
     else:
@@ -1207,19 +1277,19 @@ def _find_report(country, gis=None):
     details="Method was removed due to changes in the GeoEnrichment API",
 )
 def find_businesses(
-        type_filters=None,
-        feature_limit=1000,
-        feature_offset=0,
-        exact_match=False,
-        search_string=None,
-        spatial_filter=None,
-        simple_search=False,
-        dataset_id=None,
-        full_error_message=False,
-        out_sr=4326,
-        return_geometry=False,
-        as_featureset=False,
-        gis=None,
+    type_filters=None,
+    feature_limit=1000,
+    feature_offset=0,
+    exact_match=False,
+    search_string=None,
+    spatial_filter=None,
+    simple_search=False,
+    dataset_id=None,
+    full_error_message=False,
+    out_sr=4326,
+    return_geometry=False,
+    as_featureset=False,
+    gis=None,
 ):
     """
 
@@ -1282,22 +1352,22 @@ def find_businesses(
 # ----------------------------------------------------------------------
 @_call_method_by_source
 def standard_geography_query(
-        source_country=None,
-        country_dataset=None,
-        layers=None,
-        ids=None,
-        geoquery=None,
-        return_sub_geography=False,
-        sub_geography_layer=None,
-        sub_geography_query=None,
-        out_sr=4326,
-        return_geometry=False,
-        return_centroids=False,
-        generalization_level=0,
-        use_fuzzy_search=False,
-        feature_limit=1000,
-        as_featureset=False,
-        gis=None,
+    source_country=None,
+    country_dataset=None,
+    layers=None,
+    ids=None,
+    geoquery=None,
+    return_sub_geography=False,
+    sub_geography_layer=None,
+    sub_geography_query=None,
+    out_sr=4326,
+    return_geometry=False,
+    return_centroids=False,
+    generalization_level=0,
+    use_fuzzy_search=False,
+    feature_limit=1000,
+    as_featureset=False,
+    gis=None,
 ):
     """
     This method allows you to search and query standard geography areas so that they can be used to
@@ -1420,22 +1490,22 @@ def standard_geography_query(
 
 
 def _standard_geography_query_gis(
-        source_country=None,
-        country_dataset=None,
-        layers=None,
-        ids=None,
-        geoquery=None,
-        return_sub_geography=False,
-        sub_geography_layer=None,
-        sub_geography_query=None,
-        out_sr=4326,
-        return_geometry=False,
-        return_centroids=False,
-        generalization_level=0,
-        use_fuzzy_search=False,
-        feature_limit=1000,
-        as_featureset=False,
-        gis=None,
+    source_country=None,
+    country_dataset=None,
+    layers=None,
+    ids=None,
+    geoquery=None,
+    return_sub_geography=False,
+    sub_geography_layer=None,
+    sub_geography_query=None,
+    out_sr=4326,
+    return_geometry=False,
+    return_centroids=False,
+    generalization_level=0,
+    use_fuzzy_search=False,
+    feature_limit=1000,
+    as_featureset=False,
+    gis=None,
 ):
     """GIS implementation of standard_geography_query."""
     if gis is None:

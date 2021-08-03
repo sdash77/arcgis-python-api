@@ -28,7 +28,7 @@ def get_child_key_strs(key_path) -> list:
             child_key = winreg.EnumKey(parent_key, counter)
 
             # add the located key to the list
-            key_list.append('{}\\{}'.format(key_path, child_key))
+            key_list.append("{}\\{}".format(key_path, child_key))
 
             # increment the counter
             counter += 1
@@ -62,31 +62,44 @@ def get_first_child_key_str(key_path, pattern) -> str:
             return key
 
 
-def get_ba_country_key_str(three_letter_country_code: str, year: [int, str] = None) -> str:
+def get_ba_country_key_str(
+    three_letter_country_code: str, year: [int, str] = None
+) -> str:
     """Lookup the country registry key by three letter country identifier and year."""
     cntry_cd = three_letter_country_code.upper()
-    cntry_key_lst = get_child_key_strs(r'SOFTWARE\WOW6432Node\Esri\BusinessAnalyst\Datasets')
+    cntry_key_lst = get_child_key_strs(
+        r"SOFTWARE\WOW6432Node\Esri\BusinessAnalyst\Datasets"
+    )
 
-    key_dict = {os.path.basename(k).split('_')[2]: k for k in cntry_key_lst
-                if os.path.basename(k).split('_')[0] == cntry_cd}
+    key_dict = {
+        os.path.basename(k).split("_")[2]: k
+        for k in cntry_key_lst
+        if os.path.basename(k).split("_")[0] == cntry_cd
+    }
 
     yr_lst = [int(y) for y in key_dict.keys()]
     yr_lst.sort()
     assert len(yr_lst)
 
     if year:
-        year = str(year) if isinstance(year, int) or isinstance(year, np.int64) else year
+        year = (
+            str(year) if isinstance(year, int) or isinstance(year, np.int64) else year
+        )
         assert isinstance(year, str)
         assert len(year) == 4
         cntry_key = key_dict[year]
     else:
         cntry_key = key_dict[str(yr_lst[-1:][0])]
-        assert len(yr_lst), f'It appears {cntry_cd} {year} is not installed on this machine.'
+        assert len(
+            yr_lst
+        ), f"It appears {cntry_cd} {year} is not installed on this machine."
 
     return cntry_key
 
 
-def get_ba_key_value(locator_key, three_letter_country_identifier: str = 'USA', year: [int, str] = None) -> Path:
+def get_ba_key_value(
+    locator_key, three_letter_country_identifier: str = "USA", year: [int, str] = None
+) -> Path:
     """
     In the Business Analyst key, get the value corresponding to the provided locator key.
     :param locator_key: Locator key.
@@ -104,10 +117,16 @@ def get_ba_key_value(locator_key, three_letter_country_identifier: str = 'USA', 
     return winreg.QueryValueEx(key, locator_key)[0]
 
 
-def get_ba_network_dataset_path(three_letter_country_identifier: str, vintage_year: int = None) -> Path:
+def get_ba_network_dataset_path(
+    three_letter_country_identifier: str, vintage_year: int = None
+) -> Path:
     """
     Get the path to the transportation network dataset.
     :param three_letter_country_identifier: Three letter country identification code.
     :return: String describing resource location.
     """
-    return Path(get_ba_key_value('StreetsNetwork', three_letter_country_identifier, vintage_year))
+    return Path(
+        get_ba_key_value(
+            "StreetsNetwork", three_letter_country_identifier, vintage_year
+        )
+    )

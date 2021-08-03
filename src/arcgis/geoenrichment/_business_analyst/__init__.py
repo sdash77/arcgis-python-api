@@ -14,4 +14,4 @@ Business Analyst or ArcGIS Online.
 """
 from ._main import BusinessAnalyst, Country
 
-__all__ = ['BusinessAnalyst', 'Country']
+__all__ = ["BusinessAnalyst", "Country"]

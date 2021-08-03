@@ -20,6 +20,20 @@ With the enrich() method, the proposed site can be submitted, and the demographi
 associated with the area around the site will be returned.
 """
 
-__all__ = ['Country', 'get_countries', 'create_report', 'enrich', 'standard_geography_query', 'service_limits']
+__all__ = [
+    "Country",
+    "get_countries",
+    "create_report",
+    "enrich",
+    "standard_geography_query",
+    "service_limits",
+]
 
-from .enrichment import Country, get_countries, create_report, enrich, standard_geography_query, service_limits
+from .enrichment import (
+    Country,
+    get_countries,
+    create_report,
+    enrich,
+    standard_geography_query,
+    service_limits,
+)
