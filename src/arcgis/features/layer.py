@@ -3073,7 +3073,7 @@ class FeatureLayer(Layer):
                         result_dict["features"][x]["geometry"]["rings"] = ring
                         del result_dict["features"][x]["geometry"]["coords"]
                     
-                    # WARNING: envelope and multipoint geometry type not handled
+                    # WARNING: envelope geometry type not handled
                 result = result_dict
 
             return FeatureSet.from_dict(result)
