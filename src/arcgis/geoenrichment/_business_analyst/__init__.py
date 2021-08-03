@@ -1,8 +1,3 @@
-__title__ = 'business-analyst-python-api'
-__version__ = '0.1.1-dev2'
-__author__ = 'Joel McCune (https://github.com/knu2xs)'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2020 by Joel McCune (https://github.com/knu2xs)'
 """
 Business analyst provides a single interface for interacting
 with ArcGIS Business Analyst - whether accessing Business Analyst
