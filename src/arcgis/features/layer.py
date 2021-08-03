@@ -3060,13 +3060,17 @@ class FeatureLayer(Layer):
                         result_dict["features"][x]["geometry"]["x"] =startx
                         result_dict["features"][x]["geometry"]["y"] =starty
                         del result_dict["features"][x]["geometry"]["coords"]
+                    elif "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
+                        points = [list(a) for a in iter(zip(xs,ys))]
+                        result_dict["features"][x]["geometry"]["points"] = points
+                        del result_dict["features"][x]["geometry"]["coords"]
                     elif "esriGeometryTypePolyline" in result_dict["geometryType"]:
                         path = [list(a) for a in iter(zip(xs,ys))]
                         result_dict["features"][x]["geometry"]["paths"] = path
                         del result_dict["features"][x]["geometry"]["coords"]
                     elif "esriGeometryTypePolygon" in result_dict["geometryType"]:  
-                        path = [list(a) for a in iter(zip(xs,ys))]
-                        result_dict["features"][x]["geometry"]["rings"] = path
+                        ring = [list(a) for a in iter(zip(xs,ys))]
+                        result_dict["features"][x]["geometry"]["rings"] = ring
                         del result_dict["features"][x]["geometry"]["coords"]
                     
                     # WARNING: envelope and multipoint geometry type not handled
