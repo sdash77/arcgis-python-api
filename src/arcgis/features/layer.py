@@ -1581,12 +1581,10 @@ class FeatureLayer(Layer):
             url = "%s/query" % self._url.split("?")[0]
         
         # if layer can be queried with PBF then it is the default
-        if "PBF" in self.properties.supportedQueryFormats:
+        if "supportedQueryFormats" in self.properties and "pbf" in self.properties.supportedQueryFormats.lower():
             params = {"f": "pbf"}
         else:
             params = {"f": "json"}
-
-        #params = {"f": "json"}
 
         if self._dynamic_layer is not None:
             params["layer"] = self._dynamic_layer
@@ -1703,16 +1701,15 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
+        previous_format = params["f"]
+        params["f"] = "json"
         if where == "1=1":
             params["where"] = f"{self.properties.objectIdField} > 0"
-            params["f"] = "json"
             record_count = self._query(url, params, raw=as_raw)
             params["where"] = "1=1"
-            params["f"] = "pbf"
         else:
-            params["f"] = "json"
             record_count = self._query(url, params, raw=as_raw)
-            params["f"] = "pbf"
+        params["f"] = previous_format
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -2920,25 +2917,22 @@ class FeatureLayer(Layer):
     def _query(self, url, params, raw=False, **kwargs):
         """returns results of query"""
         try:
+            try_json = False if "pbf" in params["f"] else True
+            json_encode = False if "pbf" in params["f"] else True
             if "add_token" in kwargs:
                 result = self._con.post(
-                    path=url, postdata=params, add_token=kwargs.get("add_token", True)
-                )
-            elif "add_token" in kwargs and 'pbf' in params["f"]:
-                result = self._con.post(
-                    path=url, postdata=params, add_token=kwargs.get("add_token", True), try_json=False
-                )
-            elif 'pbf' in params["f"]:
-                result = self._con.post(
-                    path=url,
-                    postdata=params,
-                    try_json=False,
-                    json_encode=False
+                    path=url, 
+                    postdata=params, 
+                    add_token=kwargs.get("add_token", True), 
+                    try_json = try_json, 
+                    json_encode = json_encode
                 )
             else:
                 result = self._con.post(
                     path=url,
                     postdata=params,
+                    try_json = try_json,
+                    json_encode = json_encode
                 )
         except Exception as queryException:
             error_list = [
@@ -3007,10 +3001,11 @@ class FeatureLayer(Layer):
             if "pbf" in params["f"]:
                 from arcgis.features import FeatureCollection_pb2 as FC
                 from google.protobuf.json_format import MessageToDict
+                import tempfile
 
                 # parse pbf file to retrieve data from schema
                 layer_data = FC.FeatureCollectionPBuffer()
-                with open(f"C:\\Users\\nan11818\\AppData\\Local\\Temp\\results.pbf", "rb") as fd:
+                with open(f"{tempfile.gettempdir()}\\results.pbf", "rb") as fd:
                     layer_data.ParseFromString(fd.read()) 
                 result = MessageToDict(layer_data)
                 result_dict = result["queryResult"]["featureResult"]
@@ -3057,8 +3052,8 @@ class FeatureLayer(Layer):
                     # esriGeometryPoint does not get saved as geometryType in pbf
                     # bug in schema
                     if "geometryType" not in result_dict:
-                        result_dict["features"][x]["geometry"]["x"] =startx
-                        result_dict["features"][x]["geometry"]["y"] =starty
+                        result_dict["features"][x]["geometry"]["x"] = startx
+                        result_dict["features"][x]["geometry"]["y"] = starty
                         del result_dict["features"][x]["geometry"]["coords"]
                     elif "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
                         points = [list(a) for a in iter(zip(xs,ys))]
