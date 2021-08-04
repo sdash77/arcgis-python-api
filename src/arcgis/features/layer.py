@@ -1579,9 +1579,12 @@ class FeatureLayer(Layer):
             url = self._url + "/query"
         else:
             url = "%s/query" % self._url.split("?")[0]
-        
+
         # if layer can be queried with PBF then it is the default
-        if "supportedQueryFormats" in self.properties and "pbf" in self.properties.supportedQueryFormats.lower():
+        if (
+            "supportedQueryFormats" in self.properties
+            and "pbf" in self.properties.supportedQueryFormats.lower()
+        ):
             params = {"f": "pbf"}
         else:
             params = {"f": "json"}
@@ -1931,10 +1934,7 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(
-            path=url,
-            postdata=params,
-        )
+        return self._con.post(path=url, postdata=params,)
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -2259,10 +2259,8 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
+        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+            ","
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2899,19 +2897,13 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(
-                path=url,
-                postdata=params,
-            )
+            res = self._con.post(path=url, postdata=params,)
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(
-            path=url,
-            postdata=params,
-        )
+        return self._con.post(path=url, postdata=params,)
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
@@ -2921,18 +2913,18 @@ class FeatureLayer(Layer):
             json_encode = False if "pbf" in params["f"] else True
             if "add_token" in kwargs:
                 result = self._con.post(
-                    path=url, 
-                    postdata=params, 
-                    add_token=kwargs.get("add_token", True), 
-                    try_json = try_json, 
-                    json_encode = json_encode
+                    path=url,
+                    postdata=params,
+                    add_token=kwargs.get("add_token", True),
+                    try_json=try_json,
+                    json_encode=json_encode,
                 )
             else:
                 result = self._con.post(
                     path=url,
                     postdata=params,
-                    try_json = try_json,
-                    json_encode = json_encode
+                    try_json=try_json,
+                    json_encode=json_encode,
                 )
         except Exception as queryException:
             error_list = [
@@ -3006,10 +2998,10 @@ class FeatureLayer(Layer):
                 # parse pbf file to retrieve data from schema
                 layer_data = FC.FeatureCollectionPBuffer()
                 with open(f"{tempfile.gettempdir()}\\results.pbf", "rb") as fd:
-                    layer_data.ParseFromString(fd.read()) 
+                    layer_data.ParseFromString(fd.read())
                 result = MessageToDict(layer_data)
                 result_dict = result["queryResult"]["featureResult"]
-            
+
                 # handle case no data in layer
                 if "features" not in result_dict:
                     raise ValueError("No data to query")
@@ -3190,36 +3182,37 @@ class FeatureLayer(Layer):
     def _parse_pbf_from_query(self, result_dict, x):
         # transform feature attributes to include field names
         for attribute_id in range(len(result_dict["fields"])):
-            result_dict['features'][x]['attributes'][attribute_id]["name"] = result_dict["fields"][attribute_id]["name"] 
+            result_dict["features"][x]["attributes"][attribute_id][
+                "name"
+            ] = result_dict["fields"][attribute_id]["name"]
 
         # transform geometry coords.
         # extract all x and y coordinates and create lists
-        coord_list = result_dict['features'][x]['geometry']['coords']
+        coord_list = result_dict["features"][x]["geometry"]["coords"]
         xs = [int(coord_list[j]) for j in range(len(coord_list)) if j % 2 != 1]
         ys = [int(coord_list[j]) for j in range(len(coord_list)) if j % 2 != 0]
 
         # extract transformation and scale values
-        x_scale = result_dict['transform']['scale']['xScale']
-        x_translate = result_dict['transform']['translate']['xTranslate']
+        x_scale = result_dict["transform"]["scale"]["xScale"]
+        x_translate = result_dict["transform"]["translate"]["xTranslate"]
 
-        y_scale = result_dict['transform']['scale']['yScale']
-        y_translate = result_dict['transform']['translate']['yTranslate']
+        y_scale = result_dict["transform"]["scale"]["yScale"]
+        y_translate = result_dict["transform"]["translate"]["yTranslate"]
 
         # x-coordinate transform
         startx = xs[0]
-        startx = startx * x_scale +  x_translate
+        startx = startx * x_scale + x_translate
         xs[0] = startx
         for i in range(1, len(xs)):
-            xs[i] = xs[i-1] + xs[i]*x_scale
-                    
+            xs[i] = xs[i - 1] + xs[i] * x_scale
+
         # y-coordinate transform
         starty = ys[0]
         starty = y_translate - starty * y_scale
         ys[0] = starty
         for i in range(1, len(ys)):
-            ys[i] = ys[i-1] - ys[i]*y_scale
-                    
-                    
+            ys[i] = ys[i - 1] - ys[i] * y_scale
+
         # handle different Geometry types
         # esriGeometryPoint does not get saved as geometryType in pbf which is bug in schema
         if "geometryType" not in result_dict:
@@ -3227,22 +3220,23 @@ class FeatureLayer(Layer):
             result_dict["features"][x]["geometry"]["y"] = starty
             del result_dict["features"][x]["geometry"]["coords"]
         elif "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
-            points = [list(a) for a in iter(zip(xs,ys))]
+            points = [list(a) for a in iter(zip(xs, ys))]
             result_dict["features"][x]["geometry"]["points"] = points
             del result_dict["features"][x]["geometry"]["coords"]
         elif "esriGeometryTypePolyline" in result_dict["geometryType"]:
-            path = [list(a) for a in iter(zip(xs,ys))]
+            path = [list(a) for a in iter(zip(xs, ys))]
             result_dict["features"][x]["geometry"]["paths"] = path
             del result_dict["features"][x]["geometry"]["coords"]
-        elif "esriGeometryTypePolygon" in result_dict["geometryType"]:  
-            ring = [list(a) for a in iter(zip(xs,ys))]
+        elif "esriGeometryTypePolygon" in result_dict["geometryType"]:
+            ring = [list(a) for a in iter(zip(xs, ys))]
             result_dict["features"][x]["geometry"]["rings"] = ring
             del result_dict["features"][x]["geometry"]["coords"]
-                    
+
         return result_dict
 
-
     # ----------------------------------------------------------------------
+
+
 class Table(FeatureLayer):
     """
     ``Table`` objects represent entity classes with uniform properties. In addition to working with
