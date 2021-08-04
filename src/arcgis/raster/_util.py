@@ -954,6 +954,16 @@ def _upload_imagery_agol(
                 ]
                 if len(file_dict["files_list"]) == 0:
                     to_upload = False
+            elif os.path.isdir(file) and ".gdb" in file:
+                file_dict["is_dir"] = True
+                file_dict["basename_len"] = len(os.path.dirname(file))
+                file_dict["files_list"] = [
+                    os.path.join(root, f)
+                    for root, d_names, f_names in os.walk(file)
+                    for f in f_names
+                ]
+                if len(file_dict["files_list"]) == 0:
+                    to_upload = False
             else:
                 file_dict["is_dir"] = False
                 if os.path.splitext(file)[1][1:].lower() in allowed_extensions:
@@ -963,7 +973,6 @@ def _upload_imagery_agol(
 
             if to_upload:
                 file_list.append(file_dict)
-
     if len(file_list) == 0:
         raise RuntimeError("No supported files to upload")
 

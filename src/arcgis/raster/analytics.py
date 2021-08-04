@@ -3807,7 +3807,7 @@ def create_image_collection(
         context=context,
         future=future,
         mosaic_dataset=mosaic_dataset,
-        data_path= data_path,
+        data_path=data_path,
         **kwargs
     )
 

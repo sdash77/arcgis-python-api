@@ -7859,18 +7859,29 @@ class _RasterAnalysisTools(BaseAnalytics):
         if mosaic_dataset is not None:
             if gis._con._product == "AGOL":
                 from arcgis.raster._util import _upload_imagery_agol
+
+                if ".gdb" in mosaic_dataset:
+                    gdb_path = os.path.dirname(mosaic_dataset)
                 uploaded_list = _upload_imagery_agol(
-                    [mosaic_dataset],
-                    gis,
-                    upload_properties=upload_properties
+                    [gdb_path], gis, upload_properties=upload_properties
                 )
-                if len(uploaded_list) ==1:
-                    mosaic_dataset_uploaded = uploaded_list[0]
+                if len(uploaded_list) == 1:
+                    azure_upload_url = uploaded_list[0]
+                    mosaic_dataset_uploaded = (
+                        azure_upload_url
+                        + "/"
+                        + os.path.basename(gdb_path)
+                        + "/"
+                        + os.path.basename(mosaic_dataset)
+                    )
 
             if data_path is None:
-                raise RuntimeError("Specify data_path to publish hosted imagery layer from exisiting mosaic dataset") 
-            input_rasters.update({"mosaic_dataset":mosaic_dataset_uploaded,"data_path":data_path})
-
+                raise RuntimeError(
+                    "Specify data_path to publish hosted imagery layer from exisiting mosaic dataset"
+                )
+            input_rasters.update(
+                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": data_path}
+            )
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,
