@@ -47,6 +47,14 @@ class MMSegmentationConfig:
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
+            #changes normalizaion layers for custom cfg since by default mmseg config consider multigpu env
+            def change_norm_layer(cfg):
+                for k, v in cfg.items():
+                    if k == 'norm_cfg':
+                        cfg[k].type = 'BN'
+                    elif isinstance(cfg[k], dict):
+                        change_norm_layer(cfg[k])
+            change_norm_layer(cfg.model)
         else:
             import arcgis
 
