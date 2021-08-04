@@ -628,7 +628,7 @@ def get_geocoders(gis):
     =================== ====================================================
     **Argument**        **Description**
     ------------------- ----------------------------------------------------
-    gis                 A required :class:`~arcgis.gis.gis` object. The
+    gis                 A required :class:`~arcgis.gis.Gis` object. The
                         ``GIS`` whose registered ``geocoders`` are to be
                         queried.
 
@@ -675,7 +675,7 @@ def analyze_geocode_input(
     =====================     ================================================================
     **Argument**              **Description**
     ---------------------     ----------------------------------------------------------------
-    input_table_or_item       required :class:`~arcgis.gis.GIS`, string or dictionary.
+    input_table_or_item       required :class:`~arcgis.gis.Item`, string or dictionary.
                               The input to analyze for geocoding.
 
                               For tables:
@@ -699,7 +699,7 @@ def analyze_geocode_input(
                               - Microsoft Excel spreadsheet (XLSX)
                               Example: {"itemid": "<itemid of file>" }
     ---------------------     ----------------------------------------------------------------
-    geocode_service_url       Optional string or ``Geocode`` class.  The geocode service
+    geocode_service_url       Optional string or ``Geocoder`` object.  The geocode service
                               that you want to geocode your addresses against.
     ---------------------     ----------------------------------------------------------------
     column_names              Optional string.  Only used when input table or ``Item`` has no
@@ -749,7 +749,7 @@ def analyze_geocode_input(
 
         :Usage Example:
 
-        >>>res = analyze_geocode_input(geocode_service_url=Geocoder,
+        >>>res = analyze_geocode_input(geocode_service_url=my_geocoder_url,
                                        input_table_or_item={"itemid" : "abc123545asv"},
                                        input_file_parameters={"fileType":"csv","headerRowExists":"true",
                                                              "columnDelimiter":"","textQualifier":""})
@@ -963,20 +963,18 @@ def geocode_from_items(
     .. code-block:: python
 
         # Usage Example
-        >>> from_item = Geocoder.geocode(input_data = item1,
-                                        output_type = "FeatureLayer",
-                                        output_fields = "score",
-                                        header_rows_to_skip = 2,
-                                        context = {
-                                                "extent" : {extent}
-                                                "outSR" : {spatial reference}
-                                                  }
-                                        )
-        >>> type(from_item)
-        <:class:`~arcgis.geocoding.Geocoder`>
+        >>> fl_item = geocode_from_items(csv_item, output_type='Feature Layer',
+                             geocode_parameters={"field_info": ['Addresses', 'TEXT', 255],
+                                                 "column_names": ["Addresses"],
+                                                 "field_mapping": ['Addresses', 'Address']
+                                                 },
+                             output_name="address_file_matching",
+                             gis=gis)
+        >>> type(fl_item)
+        <:class:`~arcgis.gis.Item`>
 
     :returns:
-        A :class:`~arcgis.geocoding.Geocoder` object.
+        A :class:`~arcgis.gis.Item` object.
     """
 
     import json
@@ -1312,7 +1310,7 @@ def geocode(
     .. code-block:: python
 
         # Usage Example
-        >>> geocoded = Geocoder.geocode(addresses = {
+        >>> geocoded = geocode(addresses = {
                                                     Street: "1234 W Main St",
                                                     City: "Small Town",
                                                     State: "WA",
@@ -1322,7 +1320,7 @@ def geocode(
                                             max_locations = 50,
                                             as_featureset = True,
                                             match_out_of_range = True,
-                                            location_type = True
+                                            location_type = "Street"
                                             )
         >>> type(geocoded)
         <:class:`~arcgis.features.FeatureSet>
@@ -1373,8 +1371,8 @@ def reverse_geocode(
     =================== ====================================================
     **Argument**        **Description**
     ------------------- ----------------------------------------------------
-    location            Required list or :class:`~arcgis.geometry.Point`
-                        object.
+    location            Required location input as list, dict (with or without SpatialReference),
+                        or :class:`~arcgis.geometry.Point` object.
     ------------------- ----------------------------------------------------
     distance            optional float, radial distance in meters to
                         search for an address.
@@ -1446,10 +1444,10 @@ def reverse_geocode(
         >>> reversed = Geocoder.reverse_geocode(location = point1,
                                                 distance = 50,
                                                 for_storage = True,
-                                                feature_types = StreetName,
-                                                location_type = street)
+                                                feature_types = "StreetName",
+                                                location_type = "street")
         >>> type(reversed)
-        <class: arcgis.geocoding.Geocoder>
+        <Dictionary>
 
     :returns:
        A dictionary
@@ -1582,7 +1580,7 @@ def batch_geocode(
     .. code-block:: python
 
         # Usage Example
-        >>> batched = Geocoder.batch_geocode(addresses = ["380 New York St, Redlands, CA",
+        >>> batched = batch_geocode(addresses = ["380 New York St, Redlands, CA",
                                                             "1 World Way, Los Angeles, CA",
                                                             "1200 Getty Center Drive, Los Angeles, CA",
                                                             "5905 Wilshire Boulevard, Los Angeles, CA",
@@ -1661,7 +1659,7 @@ def suggest(
                         suggest operation to generate a list of possible
                         matches. This is a required parameter.
     ---------------     -----------------------------------------------------------------
-    location            Optional location. Defines an origin point location that is used
+    location            Optional x/y dictionary. Defines an origin point location that is used
                         with the distance parameter to sort suggested candidates
                         based on their proximity to the location. The
                         distance parameter specifies the radial distance from
@@ -1740,16 +1738,16 @@ def suggest(
     .. code-block:: python
 
         # Usage Example
-        >>> suggested = Geocoder.suggest(text = "geocoding_text"
+        >>> suggested = suggest(text = "geocoding_text"
                                         location = point1,
                                         distance = 5000,
                                         max_suggestions = 10
                                         )
         >>> type(suggested)
-        <List>
+        <Dictionary>
 
     :returns:
-        A list of suggested matches
+        A dictionary
     """
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
