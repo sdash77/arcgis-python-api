@@ -3109,6 +3109,8 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
+    mosaic_dataset=None,
+    data_path=None,
     *,
     gis=None,
     future=False,
@@ -3804,6 +3806,8 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
+        mosaic_dataset=mosaic_dataset,
+        data_path= data_path,
         **kwargs
     )
 

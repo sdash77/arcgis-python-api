@@ -7709,6 +7709,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         out_sr=None,
         context=None,
         future=False,
+        mosaic_dataset=None,
+        data_path=None,
         **kwargs
     ):
 
@@ -7852,6 +7854,23 @@ class _RasterAnalysisTools(BaseAnalytics):
             use_input_rasters_by_ref=use_input_rasters_by_ref,
             upload_properties=upload_properties,
         )
+
+        mosaic_dataset_uploaded = mosaic_dataset
+        if mosaic_dataset is not None:
+            if gis._con._product == "AGOL":
+                from arcgis.raster._util import _upload_imagery_agol
+                uploaded_list = _upload_imagery_agol(
+                    [mosaic_dataset],
+                    gis,
+                    upload_properties=upload_properties
+                )
+                if len(uploaded_list) ==1:
+                    mosaic_dataset_uploaded = uploaded_list[0]
+
+            if data_path is None:
+                raise RuntimeError("Specify data_path to publish hosted imagery layer from exisiting mosaic dataset") 
+            input_rasters.update({"mosaic_dataset":mosaic_dataset_uploaded,"data_path":data_path})
+
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,
