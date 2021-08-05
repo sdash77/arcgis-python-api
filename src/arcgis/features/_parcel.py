@@ -320,7 +320,10 @@ class ParcelFabricManager(object):
                                  they exist. Pairs of field name and value.
 
 
-                                 :Syntax: ``attributeOverrides= [{ "type":"PropertySet","propertySetItems":[<field name>,<field value>]}]``
+                                 :Syntax: 
+                                 ``attributeOverrides = [{ "type":"PropertySet",
+                                                        "propertySetItems":
+                                                            [<field name>,<field val>]}]``
 
                                  * to set subtype, include subtype value in this list.
         --------------------     --------------------------------------------------------------------
@@ -705,7 +708,7 @@ class ParcelFabricManager(object):
         :returns: Dictionary
 
         """
-        if parcel_type is None:
+        if parcel_subtype is None:
             parcel_subtype = 0
         if moment is None:
             moment = int(time.time())
