@@ -3109,8 +3109,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
-    mosaic_dataset=None,
-    data_path=None,
+    md_to_upload=None,
     *,
     gis=None,
     future=False,
@@ -3272,6 +3271,19 @@ def create_image_collection(
                                             | "defineNodata":True,                                            
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
+    ------------------                   --------------------------------------------------------------------
+    md_to_upload                         Optional string. Provide value for md_to_upload parameter to publish hosted 
+                                         dynamic imagery layer by uploading existing mosaic dataset.
+                                         It accepts path to the existing mosaic dataset.
+
+                                         In order to publish an exisiting mosaic dataset, specify the input data of the mosaic dataset
+                                         as a value to the input_rasters parameters so that it can be uploaded to ArcGIS 
+                                         Online.
+
+                                         Option available only on ArcGIS online
+
+                                         Example:
+                                            "C:\\data\\temp\\uploaded.gdb\\test"
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -3806,8 +3818,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
-        mosaic_dataset=mosaic_dataset,
-        data_path=data_path,
+        md_to_upload=md_to_upload,
         **kwargs
     )
 

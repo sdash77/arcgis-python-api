@@ -7709,8 +7709,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         out_sr=None,
         context=None,
         future=False,
-        mosaic_dataset=None,
-        data_path=None,
+        md_to_upload=None,
         **kwargs
     ):
 
@@ -7846,6 +7845,14 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
+        md_data_path = []
+        if md_to_upload is not None:
+            if isinstance(input_rasters, str):
+                md_data_path.append(os.path.dirname(input_rasters))
+            elif isinstance(input_rasters, list):
+                for ele in input_rasters:
+                    md_data_path.append(os.path.dirname(ele))
+
         input_rasters, raster_type = self._build_param_dictionary(
             input_rasters=input_rasters,
             raster_type_name=raster_type_name,
@@ -7855,13 +7862,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             upload_properties=upload_properties,
         )
 
-        mosaic_dataset_uploaded = mosaic_dataset
-        if mosaic_dataset is not None:
+        mosaic_dataset_uploaded = md_to_upload
+        if md_to_upload is not None:
             if gis._con._product == "AGOL":
                 from arcgis.raster._util import _upload_imagery_agol
 
-                if ".gdb" in mosaic_dataset:
-                    gdb_path = os.path.dirname(mosaic_dataset)
+                if ".gdb" in md_to_upload:
+                    gdb_path = os.path.dirname(md_to_upload)
                 uploaded_list = _upload_imagery_agol(
                     [gdb_path], gis, upload_properties=upload_properties
                 )
@@ -7872,15 +7879,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                         + "/"
                         + os.path.basename(gdb_path)
                         + "/"
-                        + os.path.basename(mosaic_dataset)
+                        + os.path.basename(md_to_upload)
                     )
 
-            if data_path is None:
-                raise RuntimeError(
-                    "Specify data_path to publish hosted imagery layer from exisiting mosaic dataset"
-                )
+            if len(md_data_path) == 1:
+                md_data_path = md_data_path[0]
             input_rasters.update(
-                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": data_path}
+                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_path}
             )
 
         gpjob = self._tbx.create_image_collection(
