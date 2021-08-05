@@ -3008,7 +3008,6 @@ class FeatureLayer(Layer):
                 result = MessageToDict(layer_data)
                 result_dict = result["queryResult"]["featureResult"]
                 
-                # TODO: Change this because sometimes query does not want geometries
                 # TODO: Tables do not have geometries
                 if "features" not in result_dict:
                     raise ValueError("No data to query")
