@@ -7853,6 +7853,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 for ele in input_rasters:
                     md_data_path.append(os.path.dirname(ele))
 
+            if raster_type_name is None:
+                raster_type_name = "mosaic_dataset"
+
         input_rasters, raster_type = self._build_param_dictionary(
             input_rasters=input_rasters,
             raster_type_name=raster_type_name,
@@ -7887,6 +7890,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_rasters.update(
                 {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_path}
             )
+
+        if raster_type_name == "mosaic_dataset":
+            raster_type=None
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,

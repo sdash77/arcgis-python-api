@@ -3280,6 +3280,9 @@ def create_image_collection(
                                          as a value to the input_rasters parameters so that it can be uploaded to ArcGIS 
                                          Online.
 
+                                         raster_type_name parameter can be set to None as it is not a required parameter to publish
+                                         imagery layer from mosaic dataset.
+
                                          Option available only on ArcGIS online
 
                                          Example:
