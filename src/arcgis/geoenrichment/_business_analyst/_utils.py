@@ -158,7 +158,7 @@ def get_helper_service_url(gis: GIS, service_key: str) -> str:
 
 
 def can_enrich_gis(user: User) -> bool:
-    """ Determine if the provided user has data enrichment privileges in the Web GIS.
+    """Determine if the provided user has data enrichment privileges in the Web GIS.
 
     .. note::
 
