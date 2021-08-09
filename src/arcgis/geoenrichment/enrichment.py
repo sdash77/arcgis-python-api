@@ -115,6 +115,7 @@ class NamedArea(object):
     supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
     places within that level of geography. This allows for interactive selection of places using intellisense and a
     notation such as the following:
+
     .. code-block:: python
 
         # Usage Example
@@ -507,24 +508,23 @@ class Country(object):
     @local_vs_gis
     def subgeographies(self):
         """
-            Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
-            supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
-            places within that level of geography. This allows for interactive selection of places using intellisense and a
-            notation such as the following:
+        Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
+        supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
+        places within that level of geography. This allows for interactive selection of places using intellisense and a
+        notation such as the following:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # Usage Example 1
+            # Usage Example 1
 
-                usa = Country.get('USA')
-                usa.subgeographies.states['California'].counties['San_Bernardino_County']
+            usa = Country.get('USA')
+            usa.subgeographies.states['California'].counties['San_Bernardino_County']
 
-            .. code-block:: python
+        .. code-block:: python
 
-                    # Usage Example 2
+                # Usage Example 2
 
-                    india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
-
+                india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
         """
         pass
 
@@ -1341,9 +1341,6 @@ def find_businesses(
     gis=None,
 ):
     """
-
-
-
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
     string, spatial filter and business type. A business point will be selected if it matches
