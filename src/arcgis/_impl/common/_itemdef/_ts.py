@@ -82,9 +82,11 @@ class _TileItemDefinition(BaseCloneItemDefinition):  # _ItemDefinition):
             item_id = self.portal_item.itemid
 
         # Get the related source items and clone them (tile packages)
-        tpk_result = self.target.content.clone_items(
-            self.portal_item.related_items("Service2Data"), folder=self.folder
-        )
+        related_items = self.portal_item.related_items("Service2Data")
+        if len(related_items) == 0:
+            raise Exception("Could not locate the source tile package.")
+
+        tpk_result = self.target.content.clone_items(related_items, folder=self.folder)
         if len(tpk_result) > 0:
             self.created_items.extend(tpk_result)
         elif tpk_result == []:
