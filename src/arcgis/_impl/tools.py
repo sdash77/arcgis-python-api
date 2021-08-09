@@ -4450,7 +4450,9 @@ class _PackagingTools(object):
         if output_name is None:
             output_name = {}
             output_name["title"] = uuid.uuid4().hex
-        if gis is None:
+        if gis is None and self._gis:
+            gis = self._gis
+        elif gis is None and self._gis is None:
             gis = arcgis.env.active_gis
         if isinstance(map_item_id, arcgis.gis.Item):
             map_item_id = map_item_id.itemid
@@ -4482,8 +4484,10 @@ class _PackagingTools(object):
 
         """
         res = []
-        if gis is None:
+        if gis is None and self._gis:
             gis = self._gis
+        elif gis is None and self._gis is None:
+            gis = arcgis.env.active_gis
         if isinstance(packages, (tuple, list)):
             for package in packages:
                 if isinstance(package, Item):
