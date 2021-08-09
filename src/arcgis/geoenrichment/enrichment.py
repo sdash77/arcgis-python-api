@@ -242,25 +242,53 @@ class NamedArea(object):
 
 class Country(object):
     """
-    A country for which geoenrichment data is available. The Country class can be used
-    to discover the data collections, sub-geographies and available reports for a country.
+    The Country object enables access to data and methods for a specific country. This
+    class can reference country data and methods available using data accessed through
+    both a Web GIS and a `local` installation of ArcGIS Pro with the Business Analyst
+    extension and local country data installed.
+
+    .. note::
+        Currently, when using the ``'local'`` GIS source, only the``data_collections``
+        and ``enrich_variables`` properties to discover of available enrichment
+        variables is supported.
     """
 
     @classmethod
     def get(cls, name: str, gis: Union[str, GIS] = None, year: Union[str, int] = None):
         """
         Gets a reference to a particular country, given its name, or its
-        2 letter abbreviation or ISO3 code.
+        two letter abbreviation or three letter ISO3 code.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        name              Required string. The country name or 2 letter/ISO3 code
+        name              Required string. The country name, two letter code or
+                          three letter ISO3 code identifying the country.
         ----------------  --------------------------------------------------------
-        gis               Optional gis source. This
+        gis               Optional ``arcgis.gis.GIS`` object instance or `local`
+                          keyword. This specifies what GIS country sources are
+                          available. If using a Web GIS, a ``GIS`` object
+                          instance must be used. If using `local`, the
+                          environment must have ArcGIS Pro installed with
+                          Business Analyst and data for the country.
+        ----------------  --------------------------------------------------------
+        year              Optional integer explicitly specifying the vintage
+                          (year) of data to use. This option is only available
+                          when using a `'local'` GIS source, and will be
+                          ignored if used with a Web GIS source.
         ================  ========================================================
 
-        Returns the country
+        .. note:
+            If a GIS source is not explicitly specified, the current environment
+            is searched to see if ArcGIS Pro (specifically ``arcpy``) is available.
+            If available, `local` is then used. However, if ``arcpy`` is not
+            available, the current execution environment is searched to see if
+            there is an active instance of a ``GIS`` object. If available, this is
+            used. If, however, neither of these is available, an exception will be
+            raised.
+
+        :return:
+            ``arcgis.geoenrichment.Country`` instance for the requested country.
         """
         return cls(name, gis, year)
 
@@ -417,8 +445,8 @@ class Country(object):
         """
         Returns the supported data collections and analysis variables as a Pandas dataframe.
 
-        The dataframe is indexed by the data collection id(dataCollectionID) and contains columns for
-        analysis variables(analysisVariable)
+        The dataframe is indexed by the data collection id(``dataCollectionID``) and
+        contains columns for analysis variables(``analysisVariable``).
         """
         pass
 
@@ -471,7 +499,7 @@ class Country(object):
     @property
     def enrich_variables(self):
         """
-        Data frame of available geoenrichment variables.
+        Pandas Dataframe of available geoenrichment variables.
         """
         return self._ba_cntry.enrich_variables
 
@@ -491,11 +519,11 @@ class Country(object):
                 usa = Country.get('USA')
                 usa.subgeographies.states['California'].counties['San_Bernardino_County']
 
-        .. code-block:: python
+            .. code-block:: python
 
-                # Usage Example 2
+                    # Usage Example 2
 
-                india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
+                    india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
 
         """
         pass
@@ -572,8 +600,29 @@ class Country(object):
         return df
 
 
-def get_countries(gis=None):
-    """Returns the countries for which there is GeoEnrichment data."""
+def get_countries(gis: Union[GIS, str] = None):
+    """
+    Retrieve available countries based on the GIS source being used.
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional ``arcgis.gis.GIS`` object instance or `local` keyword. This
+                           specifies what GIS country sources are available. If using a Web
+                           GIS, a ``GIS`` object instance must be used. If using `local`, the
+                           environment must have ArcGIS Pro installed with Business Analyst and
+                           data for the country.
+    ==================     ====================================================================
+
+    .. note:
+        If a GIS source is not explicitly specified, the current environment is searched to see
+        if ArcGIS Pro (specifically ``arcpy``) is available. If available, `local` is then used.
+        However, if ``arcpy`` is not available, the current execution environment is searched to
+        see if there is an active instance of a ``GIS`` object. If available, this is used.
+        If, however, neither of these is available, an exception will be raised.
+
+    :return:
+        Pandas Dataframe of available countries.
+    """
     return _business_analyst.BusinessAnalyst(gis).countries
 
 
