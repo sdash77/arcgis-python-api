@@ -459,13 +459,17 @@ class WebMap(HasTraits, collections.OrderedDict):
                         options["serviceItemId"] = layer.itemid
                     for lyr in layer.layers:  # recurse - works for all.
                         if isinstance(lyr, VectorTileLayer):
-                            lyr.properties.serviceItemId = layer.id #Vector Tile Service does not automatically have this
+                            lyr.properties.serviceItemId = (
+                                layer.id
+                            )  # Vector Tile Service does not automatically have this
                             lyr.properties.name = layer.name
                         self.add_layer(lyr, dict(options))
                 if hasattr(layer, "tables"):
                     for tbl in layer.tables:  # recurse - works for all.
                         if isinstance(tbl, VectorTileLayer):
-                            tbl.properties.serviceItemId = layer.id #Vector Tile Service does not automatically have this
+                            tbl.properties.serviceItemId = (
+                                layer.id
+                            )  # Vector Tile Service does not automatically have this
                         self.add_table(tbl, options)
                 return (
                     True  # end add_layer execution after iterating through each layer.
@@ -686,12 +690,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                 ]
             }
         # endregion
-       
+
         # Add Vector Tile Layer Properties
         if isinstance(layer, arcgis.mapping._types.VectorTileLayer):
             new_layer["type"] = "VectorTileLayer"
             new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
-        
+
         # region
         if isinstance(layer, BaseOGC):
             new_layer = {**new_layer, **layer._operational_layer_json}
