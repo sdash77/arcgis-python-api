@@ -996,11 +996,13 @@ def prepare_tabulardata(
     _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
 
-    if hasattr(data,"_training_indexes"):
-        warnings.simplefilter('always', UserWarning)
-        if (batch_size > len(data._training_indexes)):
-            warnings.warn("The number of records in the training set is less than the batch_size. "
-                          "Please consider reducing the batch_size.")
+    if hasattr(data, "_training_indexes"):
+        warnings.simplefilter("always", UserWarning)
+        if batch_size > len(data._training_indexes):
+            warnings.warn(
+                "The number of records in the training set is less than the batch_size. "
+                "Please consider reducing the batch_size."
+            )
 
     return data
 
