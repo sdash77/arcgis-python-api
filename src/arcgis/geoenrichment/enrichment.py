@@ -249,9 +249,9 @@ class Country(object):
     extension and local country data installed.
 
     .. note::
-        Currently, when using the ``'local'`` GIS source, only the``data_collections``
+        Currently, when using the ``'local'`` GIS source, only the ``data_collections``
         and ``enrich_variables`` properties to discover of available enrichment
-        variables is supported.
+        variables are supported.
     """
 
     @classmethod
@@ -299,8 +299,7 @@ class Country(object):
         iso3: str,
         gis: Union[str, GIS] = None,
         year: Union[str, int] = None,
-        portal_url=None,
-        **kwargs,
+        **kwargs
     ) -> None:
 
         # instantiate a BA object instance
@@ -313,8 +312,7 @@ class Country(object):
         self._ba_cntry = ba.get_country(iso3, year=year)
 
         # legacy parameter support
-        if "purl" in kwargs:
-            portal_url = kwargs["purl"]
+        portal_url = kwargs["purl"] if "purl" in kwargs else None
 
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
