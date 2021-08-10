@@ -31,4 +31,3 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._siammask import SiamMask, Track
     from ._deepsort import DeepSort
     from ._auto_ml import AutoML
-    from ._pix2pix_hd import Pix2PixHD

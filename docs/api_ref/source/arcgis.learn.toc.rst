@@ -159,13 +159,6 @@ Pix2Pix
     :inherited-members:
     :undoc-members:
 
-Pix2PixHD
-^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.Pix2PixHD
-    :members:
-    :inherited-members:
-    :undoc-members:
-
 SuperResolution
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.SuperResolution

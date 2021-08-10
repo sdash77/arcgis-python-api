@@ -293,12 +293,10 @@ def cyclegan_image(model, images, device, direction):
         output = model.G_B(normed_batch_tensor)
     return output
 
-def pix2pix_image(model, images, device, label_nc=0):
-    from .._pix2pix_hd_utils import encode_input
+
+def pix2pix_image(model, images, device):
     model = model.to(device)
     normed_batch_tensor = tensor(images).to(device).float()
-    if label_nc:
-        normed_batch_tensor, _, _, _ = encode_input(normed_batch_tensor, label_nc)
     output = model.G(normed_batch_tensor)
     return output
 
@@ -454,35 +452,3 @@ def detect_change(model, batch, device, model_info):
     change_class = [c["Value"] for c in model_info["Classes"] if c["Value"] != 0][0]
     predictions[predictions != 0] = change_class
     return predictions[:, 0]
-
-
-def pixel_classify_pix2pix_hd_image(model, tiles, device, model_info):
-    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    num_chanel = model_info.get("n_channel", None)
-    label_nc  = model_info.get('label_nc', 0)
-    if model_info.get('IsMultispectral', False):
-        norm_stats = model_info.get("NormalizationStats", None)
-        img_scaled = scale_batch(tiles, model_info, norm_stats)
-        img_normed = -1 + 2*img_scaled
-        if img_normed.shape[1] < num_chanel:
-            cont = []
-            for j in range(img_normed.shape[0]):
-                tile = img_normed[j,:,:,:]
-                last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
-                res = abs(num_chanel - tile.shape[0])
-                for i in range(res):
-                    tile = np.concatenate((tile, last_tile), axis=0)
-                cont.append(tile)
-            img_normed = np.stack(cont, axis = 0)
-    elif label_nc == 0:
-        img_normed = -1 + 2*tiles
-    else:
-        mask_map = model_info.get("mask_map", None)
-        for i, j in enumerate(mask_map):
-            tiles[tiles==j] = i
-        img_normed = tiles
-
-    pix2pix_predictions = pix2pix_image(model, img_normed, device, label_nc)
-    pix2pix_predictions = pix2pix_predictions/2 + 0.5
-    return pix2pix_predictions
-

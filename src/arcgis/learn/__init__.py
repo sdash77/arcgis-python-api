@@ -45,7 +45,6 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         MMSegmentation,
         AutoML,
         DeepSort,
-        Pix2PixHD
     )
 
     from ._object_tracker import ObjectTracker
