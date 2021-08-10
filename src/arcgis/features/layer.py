@@ -3005,6 +3005,7 @@ class FeatureLayer(Layer):
                 layer_data = FC.FeatureCollectionPBuffer()
                 with open(f"{tempfile.gettempdir()}\\results.pbf", "rb") as fd:
                     layer_data.ParseFromString(fd.read())
+                os.remove(f"{tempfile.gettempdir()}\\results.pbf")
                 result = MessageToDict(layer_data)
                 result_dict = result["queryResult"]["featureResult"]
 
