@@ -28,8 +28,8 @@ _use_async = True
 def group_by_proximity(
     input_layer,
     spatial_relationship,
-    spatial_near_distance="Meters",
-    spatial_near_distance_unit=None,
+    spatial_near_distance=None,
+    spatial_near_distance_unit="Meters",
     temporal_relationship=None,
     temporal_near_distance=None,
     temporal_near_distance_unit=None,
@@ -39,37 +39,37 @@ def group_by_proximity(
     future=False,
 ):
     """
-    The Group By Proximity tool groups features that are within spatial 
-    proximity (intersect, touch, or are near) or spatiotemporal proximity 
-    (intersect, touch, near and temporally near, or temporally intersect) 
+    The Group By Proximity tool groups features that are within spatial
+    proximity (intersect, touch, or are near) or spatiotemporal proximity
+    (intersect, touch, near and temporally near, or temporally intersect)
     of each other.
-    
+
     ===================================================================    =============================================================================
     **Argument**                                                           **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_layer                                                            Required layer. The point, line, or polygon features to be grouped.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_relationship                                                   Required String. The type of relationship to group by. For more information 
+    spatial_relationship                                                   Required String. The type of relationship to group by. For more information
                                                                            on the values for this parameter, see the Spatial relationships section below.
 
-                                                                           Values: ```Intersects, Touches, Near```
+                                                                           Values: ```Intersects, Touches, NearGeodesic, NearPlanar```
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if 
-                                                                           features are near one another. This is only applied if Near is the selected 
-                                                                           `spatial_relationship`. 
+    spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if
+                                                                           features are near one another. This is only applied if Near is the selected
+                                                                           `spatial_relationship`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified 
+    spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified
                                                                            in `spatial_near_distance`. The default value is Meters.
 
                                                                            Values: Meters (default) | Kilometers | Feet | Miles | NauticalMiles | Yards
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    temporal_relationship                                                  Optional String. The type of temporal relationship to group by. 
+    temporal_relationship                                                  Optional String. The type of temporal relationship to group by.
 
                                                                            Values: Intersects | Near
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_near_distance                                                 Optional Float. A float value used for the temporal search distance to determine if features are near one another.
-                                                                           
+
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_near_distance_unit                                            Optional String. The temporal unit to be used with the distance value specified in `temporal_near_distance`.
 
@@ -88,15 +88,15 @@ def group_by_proximity(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
-    
+
     :returns: Item when Future=False or GAJob when Future=True
-    
+
     """
     input_features = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    tbx = _import_toolbox(url, gis=gis)
+    tbx = import_toolbox(url, gis=gis)
 
     if output_name is None:
         output_service_name = _id_generator(prefix="Group_By_Proximity_")
@@ -155,7 +155,7 @@ def group_by_proximity(
                 kwargs[key] = value
         elif key == "field" and value:
             kwargs[key] = value
-    params = inspect_function_inputs(tbx.trace_proximity_events, **kwargs)
+    params = inspect_function_inputs(tbx.group_by_proximity, **kwargs)
     params["future"] = True
 
     try:
@@ -164,10 +164,9 @@ def group_by_proximity(
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
         return output_service
-    except:
+    except Exception as e:
         output_service.delete()
         raise
-
     return
 
 
