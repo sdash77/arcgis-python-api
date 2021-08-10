@@ -48,12 +48,12 @@ def group_by_proximity(
     input_layer                                                            Required layer. The point, line, or polygon features to be grouped.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_relationship                                                   Required String. The type of relationship to group by. 
+    spatial_relationship                                                   Required String. The type of relationship to group by.
 
                                                                            Values: ```Intersects, Touches, NearGeodesic, NearPlanar```
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if
-                                                                           features are near one another. This is only applied if `NewGeodesic` or 
+                                                                           features are near one another. This is only applied if `NewGeodesic` or
                                                                            `NewPlanar` is the selected `spatial_relationship`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified
