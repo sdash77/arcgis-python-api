@@ -299,7 +299,7 @@ class Country(object):
         iso3: str,
         gis: Union[str, GIS] = None,
         year: Union[str, int] = None,
-        **kwargs
+        **kwargs,
     ) -> None:
 
         # instantiate a BA object instance
