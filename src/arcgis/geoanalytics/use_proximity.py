@@ -29,7 +29,7 @@ def group_by_proximity(
     input_layer,
     spatial_relationship,
     spatial_near_distance=None,
-    spatial_near_distance_unit="Meters",
+    spatial_near_distance_unit=None,
     temporal_relationship=None,
     temporal_near_distance=None,
     temporal_near_distance_unit=None,
@@ -40,9 +40,7 @@ def group_by_proximity(
 ):
     """
     The Group By Proximity tool groups features that are within spatial
-    proximity (intersect, touch, or are near) or spatiotemporal proximity
-    (intersect, touch, near and temporally near, or temporally intersect)
-    of each other.
+    proximity or spatiotemporal proximity of each other.
 
     ===================================================================    =============================================================================
     **Argument**                                                           **Description**
@@ -50,19 +48,18 @@ def group_by_proximity(
     input_layer                                                            Required layer. The point, line, or polygon features to be grouped.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_relationship                                                   Required String. The type of relationship to group by. For more information
-                                                                           on the values for this parameter, see the Spatial relationships section below.
+    spatial_relationship                                                   Required String. The type of relationship to group by. 
 
                                                                            Values: ```Intersects, Touches, NearGeodesic, NearPlanar```
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if
-                                                                           features are near one another. This is only applied if Near is the selected
-                                                                           `spatial_relationship`.
+                                                                           features are near one another. This is only applied if `NewGeodesic` or 
+                                                                           `NewPlanar` is the selected `spatial_relationship`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified
                                                                            in `spatial_near_distance`. The default value is Meters.
 
-                                                                           Values: Meters (default) | Kilometers | Feet | Miles | NauticalMiles | Yards
+                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_relationship                                                  Optional String. The type of temporal relationship to group by.
 
@@ -86,7 +83,7 @@ def group_by_proximity(
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                            #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                 optional Boolean. If True, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
     :returns: Item when Future=False or GAJob when Future=True
