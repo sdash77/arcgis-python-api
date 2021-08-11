@@ -17,6 +17,7 @@ dependencies:
 - keyrings.alt
 - nbconvert
 - beautifulsoup4
+- protobuf
 - requests
 - requests-kerberos>=0.12.0
 - requests-oauthlib>=1.2.0
