@@ -1524,9 +1524,9 @@ class FeatureLayer(Layer):
                                                 ===========     ===================================
 
         -------------------------------     --------------------------------------------------------------------
-        use_pbf                             Optional boolean.  If True, the results are queried as PBF if supported
-                                            by the feature layer, otherwise default back to JSON. Results are 
-                                            returned as a FeatureSet.
+        use_pbf                             In kwargs. Optional boolean.  If True, the results are queried as PBF 
+                                            if supported by the feature layer, otherwise default back to JSON. Results 
+                                            are returned as a FeatureSet.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
