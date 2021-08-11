@@ -6,6 +6,7 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
 import json
+from operator import mul
 import os
 from re import search
 import time
@@ -2995,18 +2996,20 @@ class FeatureLayer(Layer):
         else:
             if "pbf" in params["f"]:
                 from arcgis.features import FeatureCollection_pb2 as FC
-                from google.protobuf.json_format import MessageToDict
+                from google.protobuf.json_format import MessageToJson
                 import tempfile
 
                 # variable to pass into pbf parsing
                 has_geometries = True
                 hasZ = False
+                hasM = False
                 # parse pbf file to retrieve data from schema
-                layer_data = FC.FeatureCollectionPBuffer()
+                result = FC.FeatureCollectionPBuffer()
                 with open(f"{tempfile.gettempdir()}\\results.pbf", "rb") as fd:
-                    layer_data.ParseFromString(fd.read())
+                    result.ParseFromString(fd.read())
                 os.remove(f"{tempfile.gettempdir()}\\results.pbf")
-                result = MessageToDict(layer_data)
+                
+                result = json.loads(MessageToJson(result), parse_int=int)
                 result_dict = result["queryResult"]["featureResult"]
 
                 # tables don't have geometries
@@ -3018,8 +3021,11 @@ class FeatureLayer(Layer):
                 # take into account z parameter
                 if "returnZ" in params and is_true(params["returnZ"]):
                     hasZ = True
+                # take into account z parameter
+                if "returnM" in params and is_true(params["returnM"]):
+                    hasM = True
                 # necessary transformations to match dictionary format
-                result = self._parse_pbf_from_query(result_dict, has_geometries, hasZ)
+                result = self._parse_pbf_from_query(result_dict, has_geometries, hasZ, hasM)
 
             return FeatureSet.from_dict(result)
 
@@ -3190,148 +3196,116 @@ class FeatureLayer(Layer):
         return df
 
     # ----------------------------------------------------------------------
-    def _parse_pbf_from_query(self, result_dict, has_geometries=True, hasZ=False):
+    def _parse_pbf_from_query(self, result_dict, has_geometries=True, hasZ=False, hasM=False):
         """"Returns results of parsed pbf file"""
-
+        # extract transformation and scale values
+        x_scale = result_dict["transform"]["scale"]["xScale"]
+        x_translate = result_dict["transform"]["translate"]["xTranslate"]
+        y_scale = result_dict["transform"]["scale"]["yScale"]
+        y_translate = result_dict["transform"]["translate"]["yTranslate"]
+        if hasZ:
+            if "zScale" not in result_dict["transform"]["scale"]:
+                raise ValueError("Layer has no z coordinates")
+            z_scale = result_dict["transform"]["scale"]["zScale"]
+            z_translate = result_dict["transform"]["translate"]["zTranslate"]
+        if hasM:
+            if "mScale" not in result_dict["transform"]["scale"]:
+                raise ValueError("Layer has no m coordinates")
+            m_scale = result_dict["transform"]["scale"]["mScale"]
+            m_translate = result_dict["transform"]["translate"]["mTranslate"]
+        # transform each feature to correct geometries
         for x in range(len(result_dict["features"])):
+            current_feature = result_dict["features"][x]
             # transform feature attributes to include field names
             for attribute_id in range(len(result_dict["fields"])):
-                result_dict["features"][x]["attributes"][attribute_id][
-                    "name"
-                ] = result_dict["fields"][attribute_id]["name"]
-
-            if has_geometries:
-                # extract transformation and scale values
-                x_scale = result_dict["transform"]["scale"]["xScale"]
-                x_translate = result_dict["transform"]["translate"]["xTranslate"]
-
-                y_scale = result_dict["transform"]["scale"]["yScale"]
-                y_translate = result_dict["transform"]["translate"]["yTranslate"]
-
+                current_feature["attributes"][attribute_id]["name"] = result_dict["fields"][attribute_id]["name"]
+            if has_geometries:  
                 # transform geometry coords.
                 # extract all x and y coordinates and create lists
                 # Lengths are for multipoint, multiline and multipolygons and show the delimitations
-                if "lengths" in result_dict["features"][x]["geometry"] and not hasZ:
-                    lengths_list = result_dict["features"][x]["geometry"]["lengths"]
+                if "lengths" in current_feature["geometry"]:
+                    lengths_list = current_feature["geometry"]["lengths"]
+                    multiple = 2
+                    #check how many coordinates to expect
+                    if hasZ and hasM:
+                        multiple = 4
+                    elif hasZ or hasM:
+                        multiple = 3
+                        z_transform = True if hasZ else False                                                
+                    # begin creating new coordinate lists and transforming
                     start = 0
                     for length in lengths_list:
-                        stop = length * 2 + start
-                        coord_list = result_dict["features"][x]["geometry"]["coords"][
-                            start:stop
-                        ]
+                        stop = length * multiple + start
+                        coord_list = current_feature["geometry"]["coords"][start:stop]
                         start = stop
-
                         # get x and y values for each set of points
-                        xs = coord_list[0::2]
-                        xs = [int(j) for j in xs]
-                        ys = coord_list[1::2]
+                        xs = coord_list[0::multiple]
+                        xs = [int(j) for j in xs] #json loads converts to string
+                        ys = coord_list[1::multiple]
                         ys = [int(j) for j in ys]
-
                         # x-coordinate transform
                         startx = xs[0]
                         startx = startx * x_scale + x_translate
                         xs[0] = startx
                         for i in range(1, len(xs)):
                             xs[i] = xs[i - 1] + xs[i] * x_scale
-
                         # y-coordinate transform
                         starty = ys[0]
                         starty = y_translate - starty * y_scale
                         ys[0] = starty
                         for i in range(1, len(ys)):
                             ys[i] = ys[i - 1] - ys[i] * y_scale
-
-                        # length occur in Polyline and Polygon Layers only
+                        new_coords = [list(a) for a in iter(zip(xs, ys))]
+                        #check if need to consider z and/or m coords
+                        if multiple == 3:
+                            scale = z_scale if z_transform else m_scale
+                            translate = z_translate if z_transform else m_translate
+                            other_coord = coord_list[2::multiple]
+                            other_coord = [int(j) for j in other_coord] 
+                            # coordinate transform
+                            startc = other_coord[0]
+                            startc = translate + startc * scale
+                            other_coord[0] = startc
+                            for i in range(1, len(other_coord)):
+                                other_coord[i] = startc
+                            new_coords = [list(a) for a in iter(zip(xs, ys, other_coord))]
+                        elif multiple == 4:
+                            zs = coord_list[2::multiple]
+                            zs = [int(j) for j in zs]
+                            ms = coord_list[3::multiple]
+                            ms = [int(j) for j in ms]
+                            # z-coordinate transform
+                            startz = zs[0]
+                            startz = z_translate + startz * z_scale
+                            zs[0] = startz
+                            for i in range(1, len(zs)):
+                                zs[i] = startz
+                            # m-coordinate transform
+                            startm = ms[0]
+                            startm = m_translate + startm * m_scale
+                            ms[0] = startm
+                            for i in range(1, len(ms)):
+                                ms[i] = ms[i - 1] + ms[i] * m_scale
+                            new_coords = [list(a) for a in iter(zip(xs, ys, zs, ms))]
+                        # check geometry types to create geometries
                         if "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
-                            points = [list(a) for a in iter(zip(xs, ys))]
                             if "points" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["points"] = []
-                            result_dict["features"][x]["geometry"]["points"].append(
-                                points
-                            )
+                                current_feature["geometry"]["points"] = []
+                            current_feature["geometry"]["points"].append(new_coords)
                         elif "esriGeometryTypePolyline" in result_dict["geometryType"]:
-                            path = [list(a) for a in iter(zip(xs, ys))]
                             if "paths" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["paths"] = []
-                            result_dict["features"][x]["geometry"]["paths"].append(path)
+                                current_feature["geometry"]["paths"] = []
+                            current_feature["geometry"]["paths"].append(new_coords)
                         elif "esriGeometryTypePolygon" in result_dict["geometryType"]:
-                            ring = [list(a) for a in iter(zip(xs, ys))]
                             if "rings" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["rings"] = []
-                            result_dict["features"][x]["geometry"]["rings"].append(ring)
+                                current_feature["geometry"]["rings"] = []
+                            current_feature["geometry"]["rings"].append(new_coords)
                     # no longer needed
-                    del result_dict["features"][x]["geometry"]["coords"]
-                    del result_dict["features"][x]["geometry"]["lengths"]
-                # has Z and has lengths
-                elif hasZ and "lengths" in result_dict["features"][x]["geometry"]:
-                    if "zScale" not in result_dict["transform"]["scale"]:
-                        raise ValueError("Layer has no z coordinates")
-
-                    z_scale = result_dict["transform"]["scale"]["zScale"]
-                    z_translate = result_dict["transform"]["translate"]["zTranslate"]
-
-                    lengths_list = result_dict["features"][x]["geometry"]["lengths"]
-                    start = 0
-                    for length in lengths_list:
-                        stop = length * 3 + start
-                        coord_list = result_dict["features"][x]["geometry"]["coords"][
-                            start:stop
-                        ]
-                        start = stop
-
-                        # get x and y values for each set of points
-                        xs = coord_list[0::3]
-                        xs = [int(j) for j in xs]
-                        ys = coord_list[1::3]
-                        ys = [int(j) for j in ys]
-                        zs = coord_list[2::3]
-                        zs = [int(j) for j in zs]
-
-                        # x-coordinate transform
-                        startx = xs[0]
-                        startx = startx * x_scale + x_translate
-                        xs[0] = startx
-                        for i in range(1, len(xs)):
-                            xs[i] = xs[i - 1] + xs[i] * x_scale
-
-                        # y-coordinate transform
-                        starty = ys[0]
-                        starty = y_translate - starty * y_scale
-                        ys[0] = starty
-                        for i in range(1, len(ys)):
-                            ys[i] = ys[i - 1] - ys[i] * y_scale
-
-                        # z-coordinate transform
-                        startz = zs[0]
-                        startz = z_translate + startz * z_scale
-                        zs[0] = startz
-                        for i in range(1, len(zs)):
-                            zs[i] = startz
-
-                        # length occur in Polyline and Polygon Layers only
-                        if "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
-                            points = [list(a) for a in iter(zip(xs, ys, zs))]
-                            if "points" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["points"] = []
-                            result_dict["features"][x]["geometry"]["points"].append(
-                                points
-                            )
-                        elif "esriGeometryTypePolyline" in result_dict["geometryType"]:
-                            path = [list(a) for a in iter(zip(xs, ys, zs))]
-                            if "paths" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["paths"] = []
-                            result_dict["features"][x]["geometry"]["paths"].append(path)
-                        elif "esriGeometryTypePolygon" in result_dict["geometryType"]:
-                            ring = [list(a) for a in iter(zip(xs, ys, zs))]
-                            if "rings" not in result_dict["features"][x]["geometry"]:
-                                result_dict["features"][x]["geometry"]["rings"] = []
-                            result_dict["features"][x]["geometry"]["rings"].append(ring)
-                    # no longer needed
-                    del result_dict["features"][x]["geometry"]["coords"]
-                    del result_dict["features"][x]["geometry"]["lengths"]
+                    del current_feature["geometry"]["coords"]
+                    del current_feature["geometry"]["lengths"]
                 else:
                     # Only case: Point Layer. No lengths saved in pbf
-                    coord_list = result_dict["features"][x]["geometry"]["coords"]
+                    coord_list = current_feature["geometry"]["coords"]
                     xs = int(coord_list[0])
                     ys = int(coord_list[1])
                     # x-coordinate transform
@@ -3339,26 +3313,18 @@ class FeatureLayer(Layer):
                     # y-coordinate transform
                     starty = y_translate - ys * y_scale
                     # esriGeometryPoint does not get saved as geometryType in pbf which is bug in schema
-                    result_dict["features"][x]["geometry"]["x"] = startx
-                    result_dict["features"][x]["geometry"]["y"] = starty
-
+                    current_feature["geometry"]["x"] = startx
+                    current_feature["geometry"]["y"] = starty
                     if hasZ:
                         if "zScale" not in result_dict["transform"]["scale"]:
                             raise ValueError("Layer has no z coordinates")
-
                         z_scale = result_dict["transform"]["scale"]["zScale"]
-                        z_translate = result_dict["transform"]["translate"][
-                            "zTranslate"
-                        ]
+                        z_translate = result_dict["transform"]["translate"]["zTranslate"]
                         zs = int(coord_list[2])
-
                         # z-coordinate transform
                         startz = z_translate + zs * z_scale
-
-                        result_dict["features"][x]["geometry"]["z"] = startz
-
-                    del result_dict["features"][x]["geometry"]["coords"]
-
+                        current_feature["geometry"]["z"] = startz
+                    del current_feature["geometry"]["coords"]
         return result_dict
 
     # ----------------------------------------------------------------------
