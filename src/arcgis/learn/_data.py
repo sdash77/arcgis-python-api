@@ -688,61 +688,75 @@ def prepare_textdata(
     """
     Prepares a text data object from the files present at data folder
 
-    =====================   =================================================
+    =====================   ===========================================
     **Argument**            **Description**
-    ---------------------   -------------------------------------------------
-    path                    Required directory path. The directory path where
-                            the training and validation files are present.
-    ---------------------   -------------------------------------------------
-    task                    Required string. The task for which the dataset is
-                            prepared. Available choice at this point is "classification"
-                            and "sequence_translation".
-    ---------------------   -------------------------------------------------
-    text_columns            Required string. The column that will be used as
-                            feature.
-    ---------------------   -------------------------------------------------
-    label_columns           Required list. The list of columns denoting the
-                            class label/translated text to predict. Provide a list of columns
-                            in case of multi-label classification problem
-    ---------------------   -------------------------------------------------
-    train_file              Optional string. The file name containing the
-                            training data. Supported file formats/extensions are
-                            .csv and .tsv
+    ---------------------   -------------------------------------------
+    path                    Required directory path. 
+                            The directory path where the training and 
+                            validation files are present.
+    ---------------------   -------------------------------------------
+    task                    Required string. 
+                            The task for which the dataset is prepared. 
+                            Available choice at this point is 
+                            "classification" and "sequence_translation".
+    ---------------------   -------------------------------------------
+    text_columns            Required string. 
+                            The column that will be used as feature.
+    ---------------------   -------------------------------------------
+    label_columns           Required list. 
+                            The list of columns denoting the class 
+                            label/translated text to predict. Provide 
+                            a list of columns in case of multi-label 
+                            classification problem
+    ---------------------   -------------------------------------------
+    train_file              Optional string. 
+                            The file name containing the training data. 
+                            Supported file formats/extensions are .csv 
+                            and .tsv
                             Default value is `train.csv`
-    ---------------------   -------------------------------------------------
-    valid_file              Optional string. The file name containing the
-                            validation data. Supported file formats/extensions
-                            are .csv and .tsv.
-                            Default value is `None`. If None then some portion
-                            of the training data will be kept for validation
-                            (based on the value of `val_split_pct` parameter)
-    ---------------------   -------------------------------------------------
-    val_split_pct           Optional float. Percentage of training data to keep
-                            as validation.
+    ---------------------   -------------------------------------------
+    valid_file              Optional string. 
+                            The file name containing the validation data. 
+                            Supported file formats/extensions are .csv 
+                            and .tsv. 
+                            Default value is `None`. If None then some 
+                            portion of the training data will be kept 
+                            for validation (based on the value of 
+                            `val_split_pct` parameter)
+    ---------------------   -------------------------------------------
+    val_split_pct           Optional float. 
+                            Percentage of training data to keep as 
+                            validation. 
                             By default 10% data is kept for validation.
-    ---------------------   -------------------------------------------------
-    seed                    Optional integer. Random seed for reproducible
-                            train-validation split.
+    ---------------------   -------------------------------------------
+    seed                    Optional integer. 
+                            Random seed for reproducible train-validation 
+                            split. 
                             Default value is 42.
-    ---------------------   -------------------------------------------------
-    batch_size              Optional integer. Batch size for mini batch gradient
-                            descent (Reduce it if getting CUDA Out of Memory
-                            Errors).
+    ---------------------   -------------------------------------------
+    batch_size              Optional integer. 
+                            Batch size for mini batch gradient descent 
+                            (Reduce it if getting CUDA Out of Memory 
+                            Errors). 
                             Default value is 16.
-    ---------------------   -------------------------------------------------
-    process_labels          Optional boolean. If true, default processing functions
-                            will be called on label columns as well.
-                            Default value is False.
-    ---------------------   -------------------------------------------------
-    remove_html_tags        Optional boolean. If true, remove html tags from text.
-                            Default value is False.
-    ---------------------   -------------------------------------------------
-    remove_urls             Optional boolean. If true, remove urls from text.
+    ---------------------   -------------------------------------------
+    process_labels          Optional boolean. 
+                            If true, default processing functions will 
+                            be called on label columns as well. 
                             Default value is False.
     ---------------------   -------------------------------------------
-    working_dir             Optional string. Sets the default path to be used as
-                            a prefix for saving trained models and checkpoints.
-    =====================   =================================================
+    remove_html_tags        Optional boolean. 
+                            If true, remove html tags from text. 
+                            Default value is False.
+    ---------------------   -------------------------------------------
+    remove_urls             Optional boolean. 
+                            If true, remove urls from text. 
+                            Default value is False.
+    ---------------------   -------------------------------------------
+    working_dir             Optional string. 
+                            Sets the default path to be used as a prefix 
+                            for saving trained models and checkpoints.
+    =====================   ===========================================
 
     :returns: `TextData` object
 
@@ -995,6 +1009,14 @@ def prepare_tabulardata(
         working_dir = ""
     _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
+
+    if hasattr(data, "_training_indexes"):
+        warnings.simplefilter("always", UserWarning)
+        if batch_size > len(data._training_indexes):
+            warnings.warn(
+                "The number of records in the training set is less than the batch_size. "
+                "Please consider reducing the batch_size."
+            )
 
     return data
 

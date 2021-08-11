@@ -6410,7 +6410,7 @@ def subset_multidimensional_raster(
     .. code-block:: python
 
         # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
-        values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
+        # values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
 
         subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr,
                                                        variables=["cceiling","ccover"],
