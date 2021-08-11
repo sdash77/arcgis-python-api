@@ -321,9 +321,13 @@ class ParcelFabricManager(object):
 
 
                                  :Syntax: 
-                                 ``attributeOverrides = [{ "type":"PropertySet",
-                                                        "propertySetItems":
-                                                            [<field name>,<field val>]}]``
+                                 ``attributeOverrides = [{
+                                                            "type": "PropertySet",
+                                                            "propertySetItems": [ 
+                                                              <field name> , 
+                                                              <field value>
+                                                            ]
+                                                        }]``
 
                                  * to set subtype, include subtype value in this list.
         --------------------     --------------------------------------------------------------------
@@ -346,15 +350,6 @@ class ParcelFabricManager(object):
                                  calculating the stated area of the merged parcel. The stated area of
                                  the merged parcel will be calculated if the stated areas exist on
                                  the parcels being merged.
-        --------------------     --------------------------------------------------------------------
-        attribute_overrides      Optional Dict. Represents a list of attributes to set on the new
-                                 merged parcel.
-
-
-                                 :Syntax: ``attribute_overrides={"type":"PropertySet",
-                                 "propertySetItems":["<FieldName>",<value>,
-                                                    "<FieldName>",<value>,.....,"IsSeed",0]}``
-
         ====================     ====================================================================
 
 
@@ -430,9 +425,14 @@ class ParcelFabricManager(object):
         attribute_overrides         Optional Dictionary. To set fields on the child parcel lines with a
                                     specific value. Uses a key/value pair of FieldName/Value.
 
-                                    Example:
-
-                                    {'type' : "PropertySet", "propertySetItems" : []}
+                                    :Syntax: 
+                                    ``attributeOverrides = [{
+                                                                "type": "PropertySet",
+                                                                "propertySetItems": [ 
+                                                                  <field name> , 
+                                                                  <field value>
+                                                                ]
+                                                            }]``
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
         =======================     ====================================================================
