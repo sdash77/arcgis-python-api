@@ -3285,7 +3285,7 @@ class FeatureLayer(Layer):
                             startm = m_translate + startm * m_scale
                             ms[0] = startm
                             for i in range(1, len(ms)):
-                                ms[i] = ms[i - 1] + ms[i] * m_scale
+                                ms[i] = startm
                             new_coords = [list(a) for a in iter(zip(xs, ys, zs, ms))]
                         # check geometry types to create geometries
                         if "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
