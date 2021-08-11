@@ -1523,7 +1523,10 @@ class FeatureLayer(Layer):
                                                 Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                                 ===========     ===================================
 
-
+        -------------------------------     --------------------------------------------------------------------
+        use_pbf                             Optional boolean.  If True, the results are queried as PBF if supported
+                                            by the feature layer, otherwise default back to JSON. Results are 
+                                            returned as a FeatureSet.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
@@ -1581,14 +1584,13 @@ class FeatureLayer(Layer):
         else:
             url = "%s/query" % self._url.split("?")[0]
 
-        # if layer can be queried with PBF then it is the default
-        if (
-            "supportedQueryFormats" in self.properties
-            and "pbf" in self.properties.supportedQueryFormats.lower()
-        ):
-            params = {"f": "pbf"}
-        else:
-            params = {"f": "json"}
+        params = {"f": "json"}
+        use_pbf = kwargs.pop("use_pbf", False)
+        if use_pbf:
+            if ("supportedQueryFormats" in self.properties and "pbf" in self.properties.supportedQueryFormats.lower()):
+                params = {"f": "pbf"}
+            else:
+                params = {"f": "json"}
 
         if self._dynamic_layer is not None:
             params["layer"] = self._dynamic_layer
