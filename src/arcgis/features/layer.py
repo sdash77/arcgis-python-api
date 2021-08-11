@@ -2996,7 +2996,7 @@ class FeatureLayer(Layer):
         else:
             if "pbf" in params["f"]:
                 from arcgis.features import FeatureCollection_pb2 as FC
-                from google.protobuf.json_format import MessageToJson
+                from google.protobuf.json_format import MessageToDict
                 import tempfile
 
                 # variable to pass into pbf parsing
@@ -3009,7 +3009,7 @@ class FeatureLayer(Layer):
                     result.ParseFromString(fd.read())
                 os.remove(f"{tempfile.gettempdir()}\\results.pbf")
                 
-                result = json.loads(MessageToJson(result), parse_int=int)
+                result = MessageToDict(result)
                 result_dict = result["queryResult"]["featureResult"]
 
                 # tables don't have geometries
