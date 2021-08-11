@@ -2915,6 +2915,7 @@ class FeatureLayer(Layer):
         try:
             try_json = False if "pbf" in params["f"] else True
             json_encode = False if "pbf" in params["f"] else True
+            force_bytes = True if "pbf" in params["f"] else False
             if "add_token" in kwargs:
                 result = self._con.post(
                     path=url,
@@ -2922,6 +2923,7 @@ class FeatureLayer(Layer):
                     add_token=kwargs.get("add_token", True),
                     try_json=try_json,
                     json_encode=json_encode,
+                    force_bytes=force_bytes
                 )
             else:
                 result = self._con.post(
@@ -2929,6 +2931,7 @@ class FeatureLayer(Layer):
                     postdata=params,
                     try_json=try_json,
                     json_encode=json_encode,
+                    force_bytes=force_bytes
                 )
         except Exception as queryException:
             error_list = [
@@ -2982,7 +2985,13 @@ class FeatureLayer(Layer):
                 return True
             else:
                 return False
-
+        #change results here to not get error        
+        if "pbf" in params["f"]: 
+            from arcgis.features import FeatureCollection_pb2 as FC
+            from google.protobuf.json_format import MessageToDict
+            FC_item = FC.FeatureCollectionPBuffer()
+            FC_item.ParseFromString(result)
+            result = MessageToDict(FC_item)
         if "error" in result:
             raise ValueError(result)
         if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
@@ -2995,23 +3004,11 @@ class FeatureLayer(Layer):
             return result
         else:
             if "pbf" in params["f"]:
-                from arcgis.features import FeatureCollection_pb2 as FC
-                from google.protobuf.json_format import MessageToDict
-                import tempfile
-
                 # variable to pass into pbf parsing
                 has_geometries = True
                 hasZ = False
                 hasM = False
-                # parse pbf file to retrieve data from schema
-                result = FC.FeatureCollectionPBuffer()
-                with open(f"{tempfile.gettempdir()}\\results.pbf", "rb") as fd:
-                    result.ParseFromString(fd.read())
-                os.remove(f"{tempfile.gettempdir()}\\results.pbf")
-                
-                result = MessageToDict(result)
                 result_dict = result["queryResult"]["featureResult"]
-
                 # tables don't have geometries
                 if "features" not in result_dict:
                     return FeatureSet.from_dict(result_dict)
