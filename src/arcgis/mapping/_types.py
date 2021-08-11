@@ -660,14 +660,19 @@ class WebMap(HasTraits, collections.OrderedDict):
                     "esriGeometryMultipoint",
                 ]:
                     fset_symbol = {
+                        "type": "esriSMS",
+                        "color": [226, 29, 145, 158],
                         "angle": 0,
                         "xoffset": 0,
-                        "yoffset": 12,
-                        "type": "esriPMS",
-                        "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
-                        "contentType": "image/png",
-                        "width": 24,
-                        "height": 24,
+                        "yoffset": 0,
+                        "size": 12,
+                        "style": "esriSMSCircle",
+                        "outline": {
+                            "type": "esriSLS",
+                            "color": [0, 0, 0, 255],
+                            "width": 0.75,
+                            "style": "esriSLSSolid",
+                        },
                     }
             # endregion
             # insert symbol into the layerDefinition of featureCollection - pro style
@@ -4488,10 +4493,7 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(
-            path=url,
-            postdata=params,
-        )
+        res = self._con.post(path=url, postdata=params,)
         return res
 
     # ----------------------------------------------------------------------
@@ -4533,11 +4535,7 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(
-            kmlURL,
-            params,
-            out_folder=save_location,
-        )
+        return self._con.get(kmlURL, params, out_folder=save_location,)
 
     # ----------------------------------------------------------------------
     def export_map(
