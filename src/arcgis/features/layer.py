@@ -2107,7 +2107,7 @@ class FeatureLayer(Layer):
         """
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
         See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
-        page in the ArcGIS REST API documentation for more informatin.
+        page in the ArcGIS REST API documentation for more information.
 
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
