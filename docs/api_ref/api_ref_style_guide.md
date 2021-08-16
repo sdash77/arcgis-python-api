@@ -129,7 +129,7 @@ _warnings_, _tables_, _return_, and _code-block_ directives. (See below for
 details on these). Make sure that there is a blank space before the start and
 at the end of of **every** _note_, _warning_, _table_, and _code-block_.
 
-    ![Blank_line_illustration](./imgs/spacing_demo.png)
+    ![Blank_line_illustration](./source/_static/images/api_ref_style_guide/spacing_demo.png)
 
 ## Customizing Table of Contents with subjective groupings
 By default, the sphinx engine lays out all the classes and static functions at the root level of a module. Usually the 
@@ -249,30 +249,30 @@ yet.
      * api ref output:    *Italics*
    * Box with red lettering
      * docstring:    The \`\`as\_dict\`\` property
-     * api ref output:    ![red_string output](./imgs/red_string.png)
+     * api ref output:    ![red_string output](./source/_static/images/api_ref_style_guide/red_string.png)
 2. **Notes**
    * Use the note directive to start the docstring:
      * .. note::
      * Anything indented on the lines following this directive will be included in the note, until a blank line interrupts the note. Make sure there is blank line between the directive and the previous docstring line.
        * **Docstring**
-      ![Python docstring note syntax](./imgs/note_string.png)
+      ![Python docstring note syntax](./source/_static/images/api_ref_style_guide/note_string.png)
        * **Documentation Outcome**
-      ![Note api ref output](./imgs/note_output.png)
+      ![Note api ref output](./source/_static/images/api_ref_style_guide/note_output.png)
 3.  **Warnings**
    * Use the warning directive to start the docstring   
      * .. warning::
       * Anything indented on the lines following this directive will be included in the warning, until a blank line interrupts the warning. Make sure there is blank line between the directive and the previous docstring line.
         * **Docstring**
-      ![Python docstring warning syntax](./imgs/warning_string.png)
+      ![Python docstring warning syntax](./source/_static/images/api_ref_style_guide/warning_string.png)
         * **Documentation Outcome**
-      ![Warning api ref output](./imgs/warning_output.png)
+      ![Warning api ref output](./source/_static/images/api_ref_style_guide/warning_output.png)
 4.  **Hyperlinks**
    * To create a hyperlink, use the following format:
       * \`Hyperlink Text \<www.url.com\>\`\_ **\(do not forget the underscore at the end\!\)**
         * **Docstring**
-      ![Python docstring hyperlink syntax](./imgs/hyperlink_string.png)
+      ![Python docstring hyperlink syntax](./source/_static/images/api_ref_style_guide/hyperlink_string.png)
         * **Documentation Outcome**      
-      ![Hyperlink api ref output](./imgs/hyperlink_output.png)
+      ![Hyperlink api ref output](./source/_static/images/api_ref_style_guide/hyperlink_output.png)
 5.  **Cross-references:**
    * Cross-references use text roles and specific syntax to link to another class, method, or property within the API reference documentation. See [Cross-referencing syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#xref-syntax)
    within the Sphinx documentation for additional details.
@@ -284,34 +284,34 @@ yet.
        * **Docstring syntax**
          * :class:\`\~arcgis.features.FeatureLayerCollection\`
          
-         ![full docstring](./imgs/class_string.png)
+         ![full docstring](./source/_static/images/api_ref_style_guide/class_string.png)
 
          * the tilde \(\~\) prefixing the full module pathway uses only the last component of the path as link text. The cross-reference will be directly to the class documentation. See the image below for what appears when you hover over a correctly formatted cross-reference. 
        * **Documentation Output**
 
-       ![xref output](./imgs/class_output.png)
+       ![xref output](./source/_static/images/api_ref_style_guide/class_output.png)
      * options for referencing a `Method` or `Property`:
        * _:attr:_
          * **Docstring syntax**
            * :attr:\`\~arcgis.features.FeatureLayer.append\`
-           ![full attr docstring](./imgs/attr_string.png)
+           ![full attr docstring](./source/_static/images/api_ref_style_guide/attr_string.png)
          * **Documentation Output**
 
-           ![xref attr output](./imgs/attr_output.png)
+           ![xref attr output](./source/_static/images/api_ref_style_guide/attr_output.png)
        * _:func:_
          * **Docstring syntax**
            * :func:\`\~ServerManager.list\`
-           ![func attr docstring](./imgs/func_string.png)
+           ![func attr docstring](./source/_static/images/api_ref_style_guide/func_string.png)
          * **Documentation Output**
 
-           ![xref func output](./imgs/func_output.png)
+           ![xref func output](./source/_static/images/api_ref_style_guide/func_output.png)
        * _:meth:_
          * **Docstring syntax**
            * :meth:\`arcgis.mapping.symbol.display_colormaps\`
-           ![meth attr docstring](./imgs/meth_string.png)
+           ![meth attr docstring](./source/_static/images/api_ref_style_guide/meth_string.png)
          * **Documentation Output**
 
-           ![xref meth output](./imgs/meth_output.png)
+           ![xref meth output](./source/_static/images/api_ref_style_guide/meth_output.png)
 
        * Leaving off the \~ directly following the second colon in the directive syntax renders the entire path rather than just the last component.
 
@@ -327,9 +327,9 @@ yet.
       bleeds beyond the boundary the table will still render, it is strongly encouraged to start a new line if text will bleed. (See green rectangle below.)
         * The exception to this rule is _hyperlink_ text as the full url cannot be split upon multiple lines.
       * **Sample Table from Docstring**
-    ![table docstring](./imgs/table_string.png)
+    ![table docstring](./source/_static/images/api_ref_style_guide/table_string.png)
       * **Documentation Output**       
-    ![table output](./imgs/table_output.png)
+    ![table output](./source/_static/images/api_ref_style_guide/table_output.png)
         
 7.  **Code Block**
   * Use the code block directive to insert code snippets, either within parameter tables to illustrate parameter options, or after a blank line following return directives.
@@ -338,21 +338,21 @@ yet.
     * Start actual code lines a user will type with the \>\>\> prompt, which will render highlighting for Python reserved words \(the snippet looks more like it is actual code rather than a snippet in a docstring\)
   * **Docstring example**
     * within a parameter table cell:
-      ![code block table input](./imgs/codeblk_tbl_string.png)
+      ![code block table input](./source/_static/images/api_ref_style_guide/codeblk_tbl_string.png)
       * **Documentation output**
       
-      ![code block table output](./imgs/codeblk_tbl_output.png)
+      ![code block table output](./source/_static/images/api_ref_style_guide/codeblk_tbl_output.png)
     * after a docstring
-      ![code block post string](./imgs/codeblk_end_string.png)
+      ![code block post string](./source/_static/images/api_ref_style_guide/codeblk_end_string.png)
       * **Documentation output**
       
-      ![code block post output](./imgs/codeblk_end_output.png)
+      ![code block post output](./source/_static/images/api_ref_style_guide/codeblk_end_output.png)
 8.  **Returns**
    * Use the _:return:_ directive for the return statements on classes and methods
    * Make sure there is a blank space between the directive and the preceding portion of the docstring,
    as well as before the beginning of the next entry in the file
    * **Documentation syntax**
-     ![return string](./imgs/returns_string.png)
+     ![return string](./source/_static/images/api_ref_style_guide/returns_string.png)
    * **Documentation output**
 
-     ![return output](./imgs/returns_output.png)
+     ![return output](./source/_static/images/api_ref_style_guide/returns_output.png)
