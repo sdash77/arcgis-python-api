@@ -1,5 +1,10 @@
-#Summary:
-
+# Summary:
+This document serves as a guideline for contributing to the API Reference
+documentation for the ArcGIS API for Python. It includes a brief overview
+of setting up a conda environment and a workflow for managing Git daily 
+to build the API Reference locally. It also includes tips and advice for
+efficient work and debugging, and syntax to use in Python docstrings to
+add code emphasis and hyperlinks to other portions of the api reference.
 
 ## Set up the `conda` environment
 1. Clone the geosaurus repo from _https://github.com/arcgis/geosaurus_
@@ -31,7 +36,7 @@ and open it in the web browswer of your choice. You will have a locally
 rendered API for Python Reference for you to test out changes you make
 to docstrings in your local branch.
 
-**<span class="underline">Sample Workflow for editing API Reference:</span>**
+## Sample Workflow for editing API Reference
 
 Managing `git` can be confusing, but a daily workflow to
 establish consistent code practices will help avoid merge conflicts when
@@ -92,7 +97,7 @@ make html
 directory in your repo and open the _index.html_ file with your web browser
 of choice
 
-**<span class="underline">Tips/Advice:</span>**
+## Tips and Suggestions
 
 1.  Always render the local documentation before issuing a pull request
 to the repo. This baseline for comparing changes to the current doc will

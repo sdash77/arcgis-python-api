@@ -36,6 +36,101 @@ and open it in the web browswer of your choice. You will have a locally
 rendered API for Python Reference for you to test out changes you make
 to docstrings in your local branch.
 
+## Sample Workflow for editing API Reference
+
+Managing `git` can be confusing, but a daily workflow to
+establish consistent code practices will help avoid merge conflicts when
+pushing upstream.
+
+Use the following steps to maintain an updated working branch. Make sure
+you have activated the `geosaurus_dev_env` so you have access to
+the `sphinx` software and `sphinx-rtd-theme` used the API for Python 
+api reference:
+```bash
+conda activate geosaurus_dev_env
+```
+1.  Create a working branch for editing documentation
+```git
+git checkout -b new-working-branch -t upstream/master
+```
+> This command creates a new branch tracking the upstream repo's
+  master branch.
+2.  Checkout your local master branch and bring it up to date with the 
+upstream repo
+```git
+git checkout master
+```
+3.  Download all the records from your upstream repo
+```git 
+git fetch --all
+```
+> This command fetches all of the changes from the upstream repository
+>that have been made since the last time all records were fetched.
+
+> This command does not merge in the changes and can be
+>aborted, unlike *git pull*
+4. Check the status and merge if necessary
+```git
+git status
+```
+```git
+git merge upstream/master
+```
+5. Checkout your working branch
+```git
+git checkout new-working-branch
+```
+6. Edit the docstrings you intend to change and save them.
+7. Add the changes to your branch
+```git
+git add paths_to_files_if_necessary
+```
+> Depending upon your edits, you may need to append specific paths to 
+> files after the add command
+
+> `git add .` will add all changes that occur within your current path
+8. Build the documentation to inspect the changes you made:
+```bash
+make html
+```
+9. Navigate in your file browser to the `geosaurus/docs/api_ref/build/html`
+directory in your repo and open the _index.html_ file with your web browser
+of choice
+
+## Tips and Suggestions
+
+1.  Always render the local documentation before issuing a pull request
+to the repo. This baseline for comparing changes to the current doc will
+avoid merge conflicts.
+
+2.  Sphinx is finicky and particular. Small changes to a table or code 
+snippet could easily break the corresponding _class_ documentation, 
+preventing it from rendering. To avoid hours of debugging, break your
+edits into smaller modules of work (10-15 methods depending on length and 
+volume of changes\. At a stopping point, save your work (add
+changes to your local branch) and render local documentation to ensure 
+proper rendering. If something has gone wrong, you will be working with 
+a smaller amount of changes to debug.
+
+3.  The search command on your IDE is integral to finding the right methods 
+and properties in the source code to verify how and wher they render in the 
+live document at `https://developers.arcgis.com/python/api-reference`.
+
+4.  When dealing with properties, there are often two similar entries
+in the source code: a _getter_ and a _setter_.
+  * A getter is decorated with **@property**,  while a setter is decorated 
+with **@property.setter**. However, only the docstring of the getter
+will be rendered for that specific property. Any changes made to the 
+**@property.setter** docstring will be disregarded in the final html output. 
+However, both docstrings should be edited for consistency\!
+
+5.  Attention to spacing is **imperative**\! Especially for _notes_, 
+_warnings_, _tables_, _return_, and _code-block_ directives. (See below for 
+details on these). Make sure that there is a blank space before the start and
+at the end of of **every** _note_, _warning_, _table_, and _code-block_.
+
+    ![Blank_line_illustration](./imgs/spacing_demo.png)
+    
 ## Customizing Table of Contents with subjective groupings
 By default, the sphinx engine lays out all the classes and static functions at the root level of a module. Usually the 
 members are sorted alphabetically. However, for a large API, this becomes tedius to navigate or to quickly understand
