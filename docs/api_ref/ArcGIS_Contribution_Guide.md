@@ -1,13 +1,7 @@
-**<span class="underline">Summary:</span>**
+#Summary:
 
-This document serves as a guideline for contributing to the API Reference
-documentation for the ArcGIS API for Python. It includes a brief overview
-of setting up a conda environment and a workflow for managing Git daily 
-to build the API Reference locally. It also includes tips and advice for
-efficient work and debugging, and syntax to use in Python docstrings to
-add code emphasis and hyperlinks to other portions of the api reference.
 
-**<span class="underline">Set up the `conda` environment</span>**
+## Set up the `conda` environment
 1. Clone the geosaurus repo from _https://github.com/arcgis/geosaurus_
 2. Navigate to the geosaurus directory:
   `cd path_to_newly_cloned_repo\geosaurus`
@@ -106,19 +100,19 @@ avoid merge conflicts.
 
 2.  Sphinx is finicky and particular. Small changes to a table or code 
 snippet could easily break the corresponding _class_ documentation, 
-preventing it and prevent it from rendering. To avoid hours of debugging,
-break your edits into smaller modules of work (10-15 methods depending 
-on length and amount of changes). At a stopping point, save your work (add
+preventing it from rendering. To avoid hours of debugging, break your
+edits into smaller modules of work (10-15 methods depending on length and 
+volume of changes\. At a stopping point, save your work (add
 changes to your local branch) and render local documentation to ensure 
 proper rendering. If something has gone wrong, you will be working with 
 a smaller amount of changes to debug.
 
-3.  The search command on your IDE is integral to finding the right
-    methods and properties in the source code to verify how and where
-    they render in the live document at `https://developers.arcgis.com/python/api-reference`.
+3.  The search command on your IDE is integral to finding the right methods 
+and properties in the source code to verify how and wher they render in the 
+live document at `https://developers.arcgis.com/python/api-reference`.
 
-4.  When dealing with properties, there are often two similare entries
-in the source code: a _getter_ and a _setter_. 
+4.  When dealing with properties, there are often two similar entries
+in the source code: a _getter_ and a _setter_.
   * A getter is decorated with **@property**,  while a setter is decorated 
 with **@property.setter**. However, only the docstring of the getter
 will be rendered for that specific property. Any changes made to the 

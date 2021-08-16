@@ -1,8 +1,40 @@
 # API Ref style guide
-This document aims to show how to author doc-strings which get converted to Python API's api-ref documents.
+This document serves as a guideline for contributing to the API Reference
+documentation for the ArcGIS API for Python. It includes a brief overview
+of setting up a conda environment and a workflow for managing Git daily 
+to build the API Reference locally. It also includes tips and advice for
+efficient work and debugging, and syntax to use in Python docstrings to
+add code emphasis and hyperlinks to other portions of the api reference.
 
--- to be filled --
-
+## Set up the `conda` environment
+1. Clone the geosaurus repo from _https://github.com/arcgis/geosaurus_
+2. Navigate to the geosaurus directory:
+  `cd path_to_newly_cloned_repo\geosaurus`
+3. Create the default environment from configuration file in the repo:
+  ```python
+  conda env create -f environment.yml
+  ```
+  * **Note:** Anaconda or Miniconda must be installed on your system to 
+  provide access to the `conda` utility. Add the pathway to your installation 
+  to run the command above without having to navigate to the install
+  directory.
+  * The `environment.yml` file in the geosaurus repo contains a list 
+  of all dependencies for the API for Python and instructs conda to create
+  an environment named `geosaurus_dev_env` and install all the dependencies
+  within that environment.
+4. Activate the environment:
+```python
+conda activate geosaurus_dev_env
+```
+5. Navigate to the API Reference directory in the repo:
+`cd docs/api_ref`
+6. Build the API Reference locally:
+`make html` 
+7. Open your file system's browser and navigate to the 
+_geosaurus/docs/api_ref/build/html_ directory. Locate the _index.html_ file 
+and open it in the web browswer of your choice. You will have a locally
+rendered API for Python Reference for you to test out changes you make
+to docstrings in your local branch.
 
 ## Customizing Table of Contents with subjective groupings
 By default, the sphinx engine lays out all the classes and static functions at the root level of a module. Usually the 
