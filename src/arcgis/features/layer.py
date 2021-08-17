@@ -3217,7 +3217,14 @@ class FeatureLayer(Layer):
             current_feature = result_dict["features"][x]
             # transform feature attributes to include field names
             for attribute_id in range(len(result_dict["fields"])):
-                current_feature["attributes"][attribute_id]["name"] = result_dict["fields"][attribute_id]["name"]
+                name_to_insert = result_dict["fields"][attribute_id]["name"]
+                current_attribute = current_feature["attributes"][attribute_id]
+                # key to delete
+                key = list(current_attribute.keys())[0]
+                # value to insert to proper name
+                value = list(current_attribute.values())[0]
+                current_attribute[name_to_insert] = value if value is not ' ' else None
+                del current_attribute[key]
             if has_geometries:  
                 # transform geometry coords.
                 # extract all x and y coordinates and create lists
