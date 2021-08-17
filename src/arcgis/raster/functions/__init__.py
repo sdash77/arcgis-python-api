@@ -484,9 +484,7 @@ def arg_statistics(
 
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {
-            "Rasters": raster,
-        },
+        "rasterFunctionArguments": {"Rasters": raster,},
         "variableName": "Rasters",
     }
 
@@ -593,14 +591,63 @@ def arithmetic(
     operation_type=1,
 ):
     """
-    The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+    The arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
 
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
-    :return: the output raster with this function applied to it
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster1                              Required first input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters.
+    --------------------------------     --------------------------------------------------------------------
+    raster2                              Required second input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    operation_type                       Optional int. Available options include:
+
+                                            1 = Plus. This is the default.
+
+                                            2 = Minus
+
+                                            3 = Multiply
+
+                                            4 = Divide
+
+                                            5 = Power
+
+                                            6 = Mode
+    ================================     ====================================================================
+
+    :return: The output raster with this function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Applies the multiplication opeeration on two rasters.
+
+        arithmetic_op = arithmetic(raster1=raster_obj_1, raster2=raster_obj_2, operation_type=3)
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
@@ -725,23 +772,32 @@ def arithmetic(
 
 def aspect(raster):
     """
-    aspect identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
+    The aspect function identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
     Aspect can be thought of as the slope direction. The values of the output raster will be the compass direction of
     the aspect. For more information, see
     `Aspect function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/aspect-function.htm>`__
     and `How Aspect works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-aspect-works.htm>`__.
 
-    :param raster: the input raster / imagery layer
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    ================================     ====================================================================
+
     :return: aspect applied to the input raster
+
+    .. code-block:: python
+
+        # Usage Example 1: Applies the aspect function on a raster.
+
+        aspect_op = aspect(raster)
     """
 
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Aspect",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -752,43 +808,91 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     The band_arithmetic function performs an arithmetic operation on the bands of a raster. For more information,
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
 
-    :param raster: the input raster / imagery layer
-    :param band_indexes: band indexes or expression. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)"
-    :param astype: output pixel type
-    :param method: int. The type of band arithmetic algorithm you want to deploy.
-                   You can define your custom algorithm, or choose a predefined index.
-                   0 = UserDefined,
-                   1 = NDVI,
-                   2 = SAVI,
-                   3 = TSAVI,
-                   4 = MSAVI,
-                   5 = GEMI,
-                   6 = PVI,
-                   7 = GVITM,
-                   8 = Sultan,
-                   9 = VARI,
-                   10 = GNDVI,
-                   11 = SR,
-                   12 = NDVIre,
-                   13 = SRre,
-                   14 = MTVI2,
-                   15 = RTVICore,
-                   16 = CIre,
-                   17 = CIg,
-                   18 = NDWI,
-                   19 = EVI,
-                   20 = IronOxide,
-                   21 = FerrousMinerals,
-                   22 = ClayMinerals,
-                   23 = WNDWI,
-                   24 = BAI,
-                   25 = NBR,
-                   26 = NDBI,
-                   27 = NDMI,
-                   28 = NDSI,
-                   29 = MNDWI
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    band_indexes                         Optional string or list. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)".
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    method                               Optional int. The type of band arithmetic algorithm you want to deploy. You can define your custom algorithm, or choose a predefined index.
 
-    :return: band_arithmetic applied to the input raster
+                                            0 = UserDefined
+
+                                            1 = NDVI
+
+                                            2 = SAVI
+
+                                            3 = TSAVI
+
+                                            4 = MSAVI
+
+                                            5 = GEMI
+
+                                            6 = PVI
+
+                                            7 = GVITM
+
+                                            8 = Sultan
+
+                                            9 = VARI
+
+                                            10 = GNDVI
+
+                                            11 = SR
+
+                                            12 = NDVIre
+
+                                            13 = SRre
+
+                                            14 = MTVI2
+
+                                            15 = RTVICore
+
+                                            16 = CIre
+
+                                            17 = CIg
+
+                                            18 = NDWI
+
+                                            19 = EVI
+
+                                            20 = IronOxide
+
+                                            21 = FerrousMinerals
+
+                                            22 = ClayMinerals
+
+                                            23 = WNDWI
+
+                                            24 = BAI
+
+                                            25 = NBR
+
+                                            26 = NDBI
+
+                                            27 = NDMI
+
+                                            28 = NDSI
+
+                                            29 = MNDW
+
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Apply the 'NDVI' band arithmetic algorithm on the input raster.
+
+        band_op = band_arithmetic(raster, method=1)
+
+        # Usage Example 2: Apply user defined band arithmetic algorithm on the input raster.
+
+        band_operation = "(B3 - B1)/(B3 + B1)"
+        band_op = band_arithmetic(raster, band_indexes=band_operation, method=0)
     """
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -1360,22 +1464,42 @@ def clip(raster, geometry=None, clip_outside=True, astype=None):
 
 def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=None):
     """
-    Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
+    The colormap function transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm
 
-    :param raster: input raster
-    :param colormap_name: colormap name, if one of Random | NDVI | Elevation | Gray
-    :param colormap: | [
-                     | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-                     | [<value2>, <red2>, <green2>, <blue2>]
-                     | ],
-    :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object.
-                      For more information about colorramp object, see color ramp object at
-                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
-    :param astype: output pixel type
-    :return: the colorized raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    colormap_name                        Optional string. Available options are - "Random" | "NDVI" | "Elevation" | "Gray".
+    --------------------------------     --------------------------------------------------------------------
+    colormap                             Optional list.
+
+                                            Syntax
+                                                [
+
+                                                [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                                                [<value2>, <red2>, <green2>, <blue2>]
+
+                                                ]
+    --------------------------------     --------------------------------------------------------------------
+    colorramp                             Can be a string specifiying color ramp name like - "Black To White" | "Yellow To Red" | "Slope" | more... For more information about colorramp object, see color ramp object at
+
+                                          https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The colorized output raster.
+
+    .. code-block:: python
+
+        # Usage Example 1: Apply NDVI color map to the raster to detect live vegetation.
+
+        colormap_op = colormap(raster, colormap="NDVI")
+
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -1478,23 +1602,12 @@ def convolution(raster, kernel=None, astype=None):
 
     template_dict = {
         "rasterFunction": "Convolution",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
-
-    HAS_NUMPY = True
-    try:
-        import numpy as np
-    except ImportError:
-        HAS_NUMPY = False
-
-    if (HAS_NUMPY) and isinstance(kernel, np.ndarray):
-        kernel = kernel.tolist()
 
     if isinstance(kernel, int):
         template_dict["rasterFunctionArguments"]["Type"] = kernel
@@ -1505,10 +1618,9 @@ def convolution(raster, kernel=None, astype=None):
         template_dict["rasterFunctionArguments"]["Columns"] = numcols
         template_dict["rasterFunctionArguments"]["Rows"] = numrows
         template_dict["rasterFunctionArguments"]["Kernel"] = flattened
-        template_dict["rasterFunctionArguments"]["Type"] = -1
     else:
         raise RuntimeError(
-            "Invalid kernel type - pass well known kernel from arcgis.raster.kernels or list of list: [[][][]...] or a numpy array representing the kernel"
+            "Invalid kernel type - pass int or list of list: [[][][]...]"
         )
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -1767,18 +1879,65 @@ def hillshade(
 
     The arguments for the hillshade function are as follows:
 
-    :param dem: input DEM
-    :param azimuth: double (e.g. 215.0)
-    :param altitude: double (e.g. 75.0)
-    :param z_factor: double (e.g. 0.3)
-    :param slope_type: new at 10.2. 1=DEGREE, 2=PERCENTRISE, 3=SCALED. default is 1.
-    :param ps_power: new at 10.2. double, used together with SCALED slope type
-    :param psz_factor: new at 10.2. double, used together with SCALED slope type
-    :param remove_edge_effect: new at 10.2. boolean, true of false
-    :param astype: output pixel type
-    :param hillshade_type: new at 10.5.1 0 = traditional, 1 = multi - directional; default is 0
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    dem                                  Required Raster/ImageryLayer object created from a DEM.
+    --------------------------------     --------------------------------------------------------------------
+    azimuth                              Optional float. Azimuth is the sun's relative position along the horizon (in degrees). This position is indicated by the angle of the sun measured clockwise from due north. An azimuth of 0 degrees indicates north, east is 90 degrees, south is 180 degrees, and west is 270 degrees.
 
+                                         This parameter is only valid when hillshade_type is 0 (0 = Traditional). The default is 215 degrees, which is from the southwest.
+    --------------------------------     --------------------------------------------------------------------
+    altitude                             Optional float. Altitude is the sun's angle of elevation above the horizon and ranges from 0 to 90 degrees. A value of 0 degrees indicates that the sun is on the horizon, that is, on the same horizontal plane as the frame of reference. A value of 90 degrees indicates that the sun is directly overhead.
+
+                                         This parameter is only valid when hillshade_type is 0 (0 = Traditional). The default is 75 degrees above the horizon.
+    --------------------------------     --------------------------------------------------------------------
+    z_factor                             Optional float. Scaling factor used to convert the elevation values for two purposes:
+
+                                          - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
+
+                                          - Add vertical exaggeration for visual effect.
+
+                                         Default is 0.3.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           (New at 10.2) Optional float. Available options are -
+                                            - 1=DEGREE
+                                            - 2=PERCENTRISE
+                                            - 3=SCALED.
+
+                                         Default is 1.
+    --------------------------------     --------------------------------------------------------------------
+    ps_power                             (New at 10.2) Optional float. Pixel Size Power accounts for the altitude
+                                         changes (or scale) as the viewer zooms in and out on the map display.
+                                         Used together with SCALED slope type.
+    --------------------------------     --------------------------------------------------------------------
+    psz_factor                           (New at 10.2) Optional float. Pixel Size Factor controls the rate at which
+                                         z_factor changes. Used together with SCALED slope type.
+    --------------------------------     --------------------------------------------------------------------
+    remove_edge_effect                   (New at 10.2) Optional bool. Using this option will avoid any resampling artifacts that may occur along the edges of a raster. Optional boolean.
+
+                                         - False - Bilinear resampling will be applied uniformly to resample the output.
+
+                                         - True - Bilinear resampling will be used to resample the output, except along the edges of the rasters or beside pixels of NoData.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    hillshade_type                       Optional int. Controls the illumination source for the hillshade.
+
+                                         - 0 = Traditional. Calculates hillshade from a single illumination direction. You can set the azimuth and altitude arguments to control the location of the light source. This is the default.
+
+                                         - 1 = Multi-directional. Combines light from multiple sources to represent an enhanced visualization of the terrain.
+
+                                         Default is 0.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied. to it.
+
+    .. code-block:: python
+
+        # Usage Example 1: Produces a hillshade of the input raster with the sun located east and 80 degrees overhead.
+
+        hillshade_op = hillshade(raster, azimuth=90, altitude=80)
     """
     raster = dem
 
@@ -1886,15 +2045,54 @@ def local(
 
 def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The binary Plus (addition,+) operation
+    The plus function adds (sums) the values of two rasters on a cell-by-cell basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by adding the two input rasters using the + operator.
+
+        Example:
+        plus_op = raster1 + raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the plus function on the input raster.
+
+        plus_op = plus([raster1, raster2])
 
     """
     return local(
@@ -1904,15 +2102,54 @@ def plus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The binary Minus (subtraction,-) operation
+    The minus function subtracts the value of the second input raster from the value of the first input raster on a cell-by-cell basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by subtracting the second input raster from the first using the - operator.
+
+        Example:
+        diff_raster = raster1 - raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the minus function on the input raster.
+
+        diff_raster = minus([raster1, raster2])
 
     """
     return local(
@@ -1922,15 +2159,54 @@ def minus(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Times (multiplication,*) operation
+    The times function multiplies the values of two rasters on a cell-by-cell basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by multiplying the two input rasters using the * operator.
+
+        Example:
+        prod_raster = raster1 * raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the times function on the input raster.
+
+        prod_raster = times([raster1, raster2])
 
     """
     return local(
@@ -1940,15 +2216,48 @@ def times(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Square Root operation
+    The sqrt function calculates the square-root of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the sqrt function on a raster.
+
+        sqrt_op = sqrt([raster])
 
     """
     return local(
@@ -1958,15 +2267,54 @@ def sqrt(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Power operation
+    The power function raises the cell values in a raster to the power of the values found in another raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed using the ** operator.
+
+        Example:
+        pow_raster = raster1 ** raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the power function on the input raster.
+
+        pow_raster = power([raster1, raster2])
 
     """
     return local(
@@ -1976,15 +2324,48 @@ def power(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The acos operation
+    The acos operation calculates the inverse cosine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the acos function on a raster.
+
+        acos_op = acos([raster])
 
     """
     return local(
@@ -1994,15 +2375,48 @@ def acos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The asin operation
+    The asin operation calculates the inverse sine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the asin function on a raster.
+
+        asin_op = asin([raster])
 
     """
     return local(
@@ -2012,15 +2426,48 @@ def asin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The ATan operation
+    The atan function calculates the inverse tangent of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the atan function on a raster.
+
+        atan_op = atan([raster])
 
     """
     return local(
@@ -2030,15 +2477,48 @@ def atan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The ATanH operation
+    The atanh function calculates the inverse hyperbolic tangent of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the atanh function on a raster.
+
+        atanh_op = atanh([raster])
 
     """
     return local(
@@ -2048,15 +2528,48 @@ def atanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Abs operation
+    The abs function calculates the absolute value of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the abs function on the input raster.
+
+        abs_op = abs([raster])
 
     """
     return local(
@@ -2066,15 +2579,50 @@ def abs(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def bitwise_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BitwiseAnd operation
+    The bitwise_and function performs a Bitwise And operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_and operation on two rasters.
+        # Extent here is defined by all rasters.
+
+        raster_list = [raster1, raster2]
+        bitwise_and_op = bitwise_and(raster_list, extent_type="UnionOf")
 
     """
     return local(
@@ -2086,15 +2634,55 @@ def bitwise_left_shift(
     rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 ):
     """
-    The BitwiseLeftShift operation
+    The bitwise_left_shift function performs a Bitwise Left Shift operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the << operator between the two input rasters.
+
+        Example:
+        op_raster = raster1 << raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_left_shift function on two rasters.
+
+        raster_list = [raster1, raster2]
+        bitwise_left_shift_op = bitwise_left_shift(raster_list)
 
     """
     return local(
@@ -2104,15 +2692,48 @@ def bitwise_left_shift(
 
 def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BitwiseNot operation
+    The bitwise_not function performs a Bitwise Not operation on the binary values of an input raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_not function on the input raster.
+
+        bitwise_not_op = bitwise_not([raster])
 
     """
     return local(
@@ -2122,15 +2743,49 @@ def bitwise_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 
 def bitwise_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BitwiseOr operation
+    The bitwise_or function performs a Bitwise Or operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_or function on two rasters.
+
+        raster_list = [raster1, raster2]
+        bitwise_or_op = bitwise_or(raster_list)
 
     """
     return local(
@@ -2142,15 +2797,55 @@ def bitwise_right_shift(
     rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 ):
     """
-    The BitwiseRightShift operation
+    The bitwise_right_shift function performs a Bitwise Right Shift operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the >> operator between the two input rasters.
+
+        Example:
+        op_raster = raster1 >> raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_right_shift function on two rasters.
+
+        raster_list = [raster1, raster2]
+        bitwise_right_shift_op = bitwise_right_shift(raster_list)
 
     """
     return local(
@@ -2160,15 +2855,49 @@ def bitwise_right_shift(
 
 def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BitwiseXOr operation
+    The bitwise_xor function performs a Bitwise Xor operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the bitwise_xor function on two rasters.
+
+        raster_list = [raster1, raster2]
+        bitwise_xor_op = bitwise_xor(raster_list)
 
     """
     return local(
@@ -2178,15 +2907,55 @@ def bitwise_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 
 def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BooleanAnd operation
+    The boolean_and function performs a Boolean And operation on the pixels of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the & operator between the two input rasters.
+
+        Example:
+        op_raster = raster1 & raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the boolean_and function on two rasters.
+
+        raster_list = [raster1, raster2]
+        boolean_and_op = boolean_and(raster_list)
 
     """
     return local(
@@ -2196,15 +2965,54 @@ def boolean_and(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 
 def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BooleanNot operation
+    The boolean_not function performs a Boolean Not operation on the pixels of an input raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. tip::
+        This raster operation can also be performed by invoking the ~ operator in front of the input raster.
+
+        Example:
+        op_raster = ~ raster1
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the boolean_not function on a raster.
+
+        boolean_not_op = boolean_not([raster1])
 
     """
     return local(
@@ -2214,15 +3022,55 @@ def boolean_not(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 
 def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BooleanOr operation
+    The boolean_or function performs a Boolean Or operation on the pixels of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the | operator between the two input rasters.
+
+        Example:
+        op_raster = raster1 | raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the boolean_or function on two rasters.
+
+        raster_list = [raster1, raster2]
+        boolean_or_op = boolean_or(raster_list)
 
     """
     return local(
@@ -2232,15 +3080,56 @@ def boolean_or(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
 
 def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The BooleanXOr operation
+    The boolean_xor function performs a Boolean Xor operation on the pixels of two input rasters.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. tip::
+        This raster operation can also be performed by invoking the ^ operator between the two input rasters.
+
+        Example: To perform Boolean Xor between raster1 and raster2:
+
+        op_raster = raster2 ^ raster1
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the boolean_xor function on two rasters.
+
+        raster_list = [raster1, raster2]
+        boolean_xor_op = boolean_xor(raster_list)
 
     """
     return local(
@@ -2250,15 +3139,48 @@ def boolean_xor(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=
 
 def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Cos operation
+    The cos function calculates the cosine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the cos function on a raster.
+
+        cos_op = cos([raster])
 
     """
     return local(
@@ -2268,15 +3190,48 @@ def cos(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The CosH operation
+    The cosh function calculates the hyperbolic cosine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the cosh function on a raster.
+
+        cosh_op = cosh([raster])
 
     """
     return local(
@@ -2286,16 +3241,56 @@ def cosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Divide operation
+    The divide function divides the pixel values of two rasters on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of two rasters/two ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
 
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by dividing the two input rasters using the / operator.
+
+        Example:
+        op_raster = raster1 / raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the divide function on a list of two rasters.
+        # Processing extent is determined using all rasters.
+
+        raster_list = [raster1, raster2]
+        divide_op = divide(raster_list, extent_type="UnionOf")
     """
     return local(
         rasters, 23, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
@@ -2304,15 +3299,54 @@ def divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
 
 def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The EqualTo operation
+    The equal_to function performs an equal-to operation on two input rasters on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the == operator between the two input rasters.
+
+        Example:
+        equal_to_op = raster1 == raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the equal_to function on two input rasters.
+
+        equal_to_op = equal_to([raster1, raster2])
 
     """
     return local(
@@ -2322,15 +3356,48 @@ def equal_to(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 
 def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Exp operation
+    The exp function calculates base 'e' exponential of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the exp function on a raster.
+
+        exp_op = exp([raster])
 
     """
     return local(
@@ -2340,15 +3407,48 @@ def exp(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Exp10 operation
+    The exp10 function calculates base 10 exponential of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the exp10 function on a raster.
+
+        exp10_op = exp10([raster])
 
     """
     return local(
@@ -2358,15 +3458,48 @@ def exp10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Exp2 operation
+    The exp2 function calculates base 2 exponential of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the exp2 function on a raster.
+
+        exp2_op = exp2([raster])
 
     """
     return local(
@@ -2376,15 +3509,54 @@ def exp2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def greater_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The GreaterThan operation
+    The greater_than function performs a relational greater-than operation on two input rasters on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the > operator between the two input rasters.
+
+        Example:
+        gt_raster = raster1 > raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the greater_than function on two input rasters.
+
+        gt_raster = greater_than([raster1, raster2])
 
     """
     return local(
@@ -2396,15 +3568,55 @@ def greater_than_equal(
     rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 ):
     """
-    The GreaterThanEqual operation
+    The greater_than_equal function performs a relational greater-than-or-equal-to operation on two inputs on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+
+    .. tip::
+        This raster operation can also be performed by invoking the >= operator between the two input rasters.
+
+        Example:
+        ge_raster = raster1 >= raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the greater_than function on two input rasters.
+
+        ge_raster = greater_than_equal([raster1, raster2])
 
     """
     return local(
@@ -2414,15 +3626,49 @@ def greater_than_equal(
 
 def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Int operation
+    The INT function converts each pixel value of a raster to an integer by truncation.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the INT function on the input raster.
+
+        int_raster = INT([raster])
 
     """
     return local(
@@ -2432,15 +3678,49 @@ def INT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The IsNull operation
+    The is_null function determines which values from the input raster are NoData on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the is_null function on the input raster.
+
+        is_null_raster = is_null([raster])
 
     """
     return local(
@@ -2450,15 +3730,49 @@ def is_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 
 def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Float operation
+    The FLOAT function converts each pixel value of a raster into a floating-point representation.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the FLOAT function on the input raster.
+
+        float_op = FLOAT([raster])
 
     """
     return local(
@@ -2468,15 +3782,54 @@ def FLOAT(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def less_than(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The LessThan operation
+    The less_than function performs a relational less-than operation on two inputs on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by invoking the < operator between the two input rasters.
+
+        Example:
+        lt_raster = raster1 < raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the less_than function on two input rasters.
+
+        lt_raster = less_than([raster1, raster2])
 
     """
     return local(
@@ -2488,15 +3841,55 @@ def less_than_equal(
     rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None
 ):
     """
-    The LessThanEqual operation
+    The less_than_equal function performs a relational less-than-or-equal-to operation on two inputs on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+
+    .. tip::
+        This raster operation can also be performed by invoking the <= operator between the two input rasters.
+
+        Example:
+        le_raster = raster1 <= raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the greater_than function on two input rasters.
+
+        le_raster = less_than_equal([raster1, raster2])
 
     """
     return local(
@@ -2506,15 +3899,48 @@ def less_than_equal(
 
 def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Ln operation
+    The ln function calculates the natural logarithm of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the ln function on a raster.
+
+        ln_op = ln([raster])
 
     """
     return local(
@@ -2524,15 +3950,48 @@ def ln(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Log10 operation
+    The log10 function calculates base 10 logarithm of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the log10 function on a raster.
+
+        log10_op = log10([raster])
 
     """
     return local(
@@ -2542,15 +4001,48 @@ def log10(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Log2 operation
+    The log2 function calculates base 2 logarithm of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the log2 function on a raster.
+
+        log2_op = log2([raster])
 
     """
     return local(
@@ -2567,17 +4059,57 @@ def majority(
     process_as_multiband=None,
 ):
     """
-    The Majority operation
+    The majority function calculates focal statistics for each pixel of an image based on the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the majority function on a list of input rasters.
+
+        majority_op = majority([raster1, raster2, raster3])
+
+        # Usage Example 2: Executes the majority function on a list of input rasters.
+        # Setting process_as_multiband to True so as to process multiband inputs as multiband.
+
+        majority_op = majority([raster1, raster2, raster3], process_as_multiband=True)
 
     """
     opnum = 66 if ignore_nodata else 38
@@ -2600,17 +4132,62 @@ def max(
     process_as_multiband=None,
 ):
     """
-    The Max operation
+    The max function calculates focal statistics for each pixel of an image based on the maximum value of the pixels within the neighborhood.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by calling the in-built max function for the input rasters.
+
+        Example:
+        max_op = max([raster1, raster2, raster3])
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the max function on a list of input rasters with the same band count.
+
+        max_op = max([raster1, raster2, raster3])
+
+        # Usage Example 2: Executes the max function on a list of input rasters with different band counts.
+
+        max_op = max([raster1, raster2, raster3], process_as_multiband=True)
 
     """
     opnum = 67 if ignore_nodata else 39
@@ -2633,19 +4210,55 @@ def mean(
     process_as_multiband=None,
 ):
     """
-    The Mean operation
+    The mean function calculates the average of a raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the mean function on a list of input rasters.
+
+        mean_raster = mean([raster1, raster2, raster3])
 
     """
+
     opnum = 68 if ignore_nodata else 40
     return local(
         rasters,
@@ -2666,17 +4279,52 @@ def med(
     process_as_multiband=None,
 ):
     """
-    The Med operation
+    The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the med function on a list of input rasters.
+
+        med_raster = med([raster1, raster2, raster3])
 
     """
     opnum = 69 if ignore_nodata else 41
@@ -2699,17 +4347,52 @@ def min(
     process_as_multiband=None,
 ):
     """
-    The Min operation
+    The min function determines the smallest value of the pixels on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: Set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the min function on an input raster.
+
+        min_raster = min([raster])
 
     """
     opnum = 70 if ignore_nodata else 42
@@ -2732,17 +4415,57 @@ def minority(
     process_as_multiband=None,
 ):
     """
-    The Minority operation
+    The miniority function determines the value that occurs least often on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the minority function on a list of input rasters.
+
+        minority_op = minority([raster1, raster2, raster3])
+
+        # Usage Example 2: Executes the minority function on a list of input rasters.
+        # Setting process_as_multiband to True so as to process multiband inputs as multiband.
+
+        minority_op = minority([raster1, raster2, raster3], process_as_multiband=True)
 
     """
     opnum = 71 if ignore_nodata else 43
@@ -2758,15 +4481,54 @@ def minority(
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Mod operation
+    The mod function calculates the remainder (modulo) of the first raster when divided by the second raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    .. tip::
+        This raster operation can also be performed by finding the 'remainder' upon division of the two input rasters by using the % operator.
+
+        Example:
+        op_raster = raster1 % raster2
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the mod function on a raster.
+
+        mod_op = mod([raster])
 
     """
     return local(
@@ -2776,15 +4538,54 @@ def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Negate operation
+    The negate function changes the sign (multiplies by -1) of the pixel values of the input raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. tip::
+        This raster operation can also be performed by placing the - operator in front of the input raster.
+
+        Example:
+        neg_raster = -raster
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the negate function on a raster.
+
+        neg_op = negate([raster])
 
     """
     return local(
@@ -2794,15 +4595,54 @@ def negate(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
 
 def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The NotEqual operation
+    The not_equal function performs a relational not-equal-to operation on two input rasters on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. tip::
+        This raster operation can also be performed by invoking the != operator between the two input rasters.
+
+        Example:
+        ne_op = raster1 != raster2
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the boolean_not function on a raster.
+
+        ne_op = not_equal([raster1, raster2])
 
     """
     return local(
@@ -2819,17 +4659,52 @@ def cellstats_range(
     process_as_multiband=None,
 ):
     """
-    The Range operation
+    The cellstats_range function calculates the difference between the largest and the smallest values of a raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the cellstats_range function on the list of rasters.
+
+        range_op = cellstats_range([raster1, raster2])
 
     """
     opnum = 72 if ignore_nodata else 47
@@ -2845,15 +4720,48 @@ def cellstats_range(
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The RoundDown operation
+    The round_down function returns the next lower integer, as a floating-point value, for each pixel in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the round_down function on the input raster.
+
+        round_down_op = round_down([raster])
 
     """
     return local(
@@ -2863,15 +4771,48 @@ def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=N
 
 def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The RoundUp operation
+    The round_up function returns the next higher integer, as a floating-point value, for each pixel in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the round_up function on the input raster.
+
+        round_up_op = round_up([raster])
 
     """
     return local(
@@ -2881,15 +4822,58 @@ def round_up(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 
 def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The SetNull operation
+    The set_null function sets the identified pixels of a raster to NoData on a pixel by pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the set_null function on the list of input rasters.
+
+        # The first input raster would be a raster with any logical math function applied
+        # on it to generate a boolean raster (values of 1 and 0).
+
+        # The second input raster will be the False Raster.
+
+        # On using the set_null function, all the values of 1 in the boolean raster
+        # (first raster) will be set to NoData, and all values of 0 will be set to
+        # the False Raster (second raster) values.
+
+        bool_raster = boolean_not(raster)  # Generate the boolean raster using boolean_not function
+        set_null_op = set_null([bool_raster, false_raster])
 
     """
     return local(
@@ -2899,15 +4883,48 @@ def set_null(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=Non
 
 def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Sin operation
+    The sin operation calculates the sine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the sin function on a raster.
+
+        sin_op = sin([raster])
 
     """
     return local(
@@ -2917,15 +4934,48 @@ def sin(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The SinH operation
+    The sinh operation calculates the hyperbolic sine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the sinh function on a raster.
+
+        sinh_op = sinh([raster])
 
     """
     return local(
@@ -2935,15 +4985,48 @@ def sinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Square operation
+    The square operation calculates the squares of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the square function on a raster.
+
+        square_op = square([raster])
 
     """
     return local(
@@ -2960,17 +5043,53 @@ def std(
     process_as_multiband=None,
 ):
     """
-    The Std operation
+    The std function calculates the standard deviation of the pixels of a raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the std function on a list of input rasters with the same band count.
+
+        raster_list = [raster1, raster2, raster3]
+        std_raster = std(raster_list)
 
     """
     opnum = 73 if ignore_nodata else 54
@@ -2993,17 +5112,57 @@ def sum(
     process_as_multiband=None,
 ):
     """
-    The Sum operation
+    The sum function adds the values of the rasters on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the sum function on a list of rasters.
+
+        sum_op = sum([raster1, raster2, raster3])
+
+        # Usage Example 2: Executes the sum function on a list of rasters.
+        # Setting process_as_multiband to True so as to process multiband inputs as multiband.
+
+        sum_op = sum([raster1, raster2, raster3], process_as_multiband=True)
 
     """
     opnum = 74 if ignore_nodata else 55
@@ -3019,15 +5178,48 @@ def sum(
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The Tan operation
+    The tan function calculates the tangent of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the tan function on a raster.
+
+        tan_op = tan([raster])
 
     """
     return local(
@@ -3037,15 +5229,48 @@ def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The TanH operation
+    The tanh operation calculates the hyperbolic tangent of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the tanh function on a raster.
+
+        tanh_op = tanh([raster])
 
     """
     return local(
@@ -3062,17 +5287,52 @@ def variety(
     process_as_multiband=None,
 ):
     """
-    The Variety operation
+    The variety function calculates the number of unique values of a raster on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param ignore_nodata: True or False, set to True to ignore NoData values
-    :param astype: output pixel type
-    :param process_as_multiband: True or False, set to True to process as multiband.
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    process_as_multiband                 Optional boolean. Set to True to process as multiband. Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the variety function on a list of rasters.
+
+        variety_op = variety([raster1, raster2])
 
     """
     opnum = 75 if ignore_nodata else 58
@@ -3088,15 +5348,48 @@ def variety(
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The ACosH operation
+    The acosh operation calculates the inverse hyperbolic cosine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the acosh function on a raster.
+
+        acosh_op = acosh([raster])
 
     """
     return local(
@@ -3106,15 +5399,48 @@ def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The ASinH operation
+    The asinh function calculates the inverse hyperbolic sine of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the asinh function on a raster.
+
+        asinh_op = asinh([raster])
 
     """
     return local(
@@ -3124,15 +5450,48 @@ def asinh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The ATan2 operation
+    The atan2 function calculates the inverse tangent (with quadrant correction) of the pixels in a raster.
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the atan2 function on a raster.
+
+        atan2_op = atan2([raster])
 
     """
     return local(
@@ -3142,15 +5501,48 @@ def atan2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The FloatDivide operation
+    The float_divide function
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the float_divide function on two input rasters.
+
+        float_div_op = float_divide([raster1, raster2])
 
     """
     return local(
@@ -3160,15 +5552,48 @@ def float_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 
 def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The FloorDivide operation
+    The floor_divide function
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Executes the floor_divide function on two input rasters.
+
+        floor_div_op = floor_divide([raster1, raster2])
 
     """
     return local(
@@ -3178,25 +5603,52 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The con operation.Performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
+    The con function performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
 
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :returns: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To extract raster from flow direction raster layer that only covers the watershed.
+        Usage Example 1: To extract raster from flow direction raster layer that only covers the watershed.
                        rasters:
                        ["Input raster representing the true or false result of the desired condition. It can be of integer or floating point type.",
                         "The input whose values will be used as the output cell values if the condition is true. It can be an integer or a floating point raster, or a constant value.",
                         "The input whose values will be used as the output cell values if the condition is false. It can be an integer or a floating point raster, or a constant value."]
 
-        con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
+        con_op = con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
 
     """
     return local(
@@ -3206,15 +5658,48 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
 
 def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The value from a position raster is used to determine from which raster in
-    a list of input rasters the output cell value will be obtained.
+    The _pick function assigns output values using one of a list of rasters determined by the value of an input raster.
+
     The arguments for this function are as follows:
 
-    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+                                         operation, the scalar can be a double or string.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        Usage Example 1: Executes the _pick function on a list of rasters.
+
+        pick_op = _pick([raster1, raster2, raster3])
 
     """
     return local(
@@ -3642,20 +6127,52 @@ def slope(
     astype=None,
 ):
     """
-    slope represents the rate of change of elevation for each pixel. For more information, see
+    Slope represents the rate of change of elevation for each pixel. For more information, see
     `slope function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm>`__
     and `How slope works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-slope-works.htm>`__.
 
     The arguments for the slope function are as follows:
 
-    :param dem: input DEM
-    :param z_factor: double (e.g. 0.3)
-    :param slope_type: new at 10.2. 1=DEGREE, 2=PERCENTRISE, 3=SCALED. default is 1.
-    :param ps_power: new at 10.2. double, used together with SCALED slope type
-    :param psz_factor: new at 10.2. double, used together with SCALED slope type
-    :param remove_edge_effect: new at 10.2. boolean, true of false
-    :param astype: output pixel type
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    dem                                  Required input Raster/ImageryLayer object created from a DEM.
+    --------------------------------     --------------------------------------------------------------------
+    z_factor                             Optional float. Scaling factor used to convert the elevation values for two purposes:
+
+                                          - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
+
+                                          - Add vertical exaggeration for visual effect.
+
+                                          Default is 0.3.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           (New at 10.2) Optional float. Available options are -
+                                            - 1=DEGREE
+                                            - 2=PERCENTRISE
+                                            - 3=SCALED.
+
+                                         Default is 1.
+    --------------------------------     --------------------------------------------------------------------
+    ps_power                             (New at 10.2) Optional float. Pixel Size Power accounts for the altitude changes (or scale) as the viewer zooms in and out on the map display. Used together with SCALED slope type.
+    --------------------------------     --------------------------------------------------------------------
+    psz_factor                           (New at 10.2) Optional float. Pixel Size Factor controls the rate at which z_factor changes.
+    --------------------------------     --------------------------------------------------------------------
+    remove_edge_effect                   (New at 10.2) Optional bool. Using this option will avoid any resampling artifacts that may occur along the edges of a raster. Optional bool.
+
+                                         - False - Bilinear resampling will be applied uniformly to resample the output.
+
+                                         - True - Bilinear resampling will be used to resample the output, except along the edges of the rasters or beside pixels of NoData.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
     :return: the output raster
+
+    .. code-block:: python
+
+        # Usage Example 1: Applies the slope function to a raster with edge resampling artifact removal.
+
+        slope_op = slope(raster, remove_edge_effect=True)
 
     """
     raster = dem
@@ -3895,14 +6412,25 @@ def stretch(
 
 def threshold(raster, astype=None):
     """
-    The binary threshold function produces the binary image. It uses the Otsu method and assumes the input image to have
-    a bi-modal histogram.
+    The threshold function produces a binary thresholded image. It uses the Otsu method and assumes the input image to have a bi-modal histogram.
 
     The arguments for the threshold function are as follows:
 
-    :param raster: input raster
-    :param astype: output pixel type
-    :return: the output raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Applies binary thresholding to the input raster.
+
+        threshold_op = threshold(inp_raster)
 
     """
     threshold_type = 1
@@ -4010,10 +6538,12 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     Distance Units: str, one of Inches, Feet, Yards, Miles, NauticalMiles, Millimeters, Centimeters, Meters
 
     :param raster: input raster
-    :param from_unit: units constant listed below (int)
-    :param to_unit: units constant listed below (int)
+    :param from_unit: units constant listed above (int)
+    :param to_unit: units constant listed above (int)
     :param astype: output pixel type
     :return: the output raster
+
+
 
     """
 
@@ -4255,9 +6785,7 @@ def complex(raster):
 
     template_dict = {
         "rasterFunction": "Complex",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4265,7 +6793,7 @@ def complex(raster):
 
 def colormap_to_rgb(raster):
     """
-    The function is designed to work with single band image service that has
+    The colormap_to_rgb function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
     raster. This function takes no arguments except an input raster. For
     qualified image service, there are two situations when ColormapToRGB
@@ -4274,17 +6802,26 @@ def colormap_to_rgb(raster):
     or png format. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm)
 
-    :param raster: the input raster / imagery layer
-    :return: Three band raster
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    ================================     ====================================================================
+
+    :return: Three band output raster.
+
+    .. code-block:: python
+
+        # Usage Example 1: Converts the input raster into a three-band RGB raster.
+
+        rgb_op = colormap_to_rgb(raster)
     """
 
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "ColormapToRGB",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4306,9 +6843,7 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 
     template_dict = {
         "rasterFunction": "StatisticsHistogram",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if statistics is not None:
@@ -4345,9 +6880,7 @@ def tasseled_cap(raster):
 
     template_dict = {
         "rasterFunction": "TasseledCap",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4368,9 +6901,7 @@ def identity(raster):
 
     template_dict = {
         "rasterFunction": "Identity",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4396,9 +6927,7 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
 
     template_dict = {
         "rasterFunction": "ColorspaceConversion",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     template_dict["rasterFunctionArguments"]["ConversionType"] = conversion_types[
@@ -4415,18 +6944,29 @@ def grayscale(raster, conversion_parameters=None):
     normalization is applied for output. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/grayscale-function.htm
 
-    :param raster: the input raster
-    :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
-    :return: the output raster with this function applied to it
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    conversion_parameters                Optional list of length N representing the weights of each band, where N is the band count.
+    ================================     ====================================================================
+
+    :return: The output raster with this function applied to it.
+
+    .. code-block:: python
+
+        # Usage Example 1: Performs a linear transformation for a 3-band input raster with weighted bands.
+
+        grayscale_op = grayscale(input_raster, [1, 3, 2])
+
     """
 
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Grayscale",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if conversion_parameters is not None and isinstance(conversion_parameters, list):
@@ -4558,9 +7098,7 @@ def speckle(
 
     template_dict = {
         "rasterFunction": "Speckle",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     template_dict["rasterFunctionArguments"]["FilterType"] = filter_types[filter_type]
@@ -4717,7 +7255,7 @@ def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
 def weighted_sum(rasters, fields, weights):
 
     """
-    The WeightedSum function allows you to overlay several rasters, multiplying each by their given weight and summing them together.  For more information, see
+    The weighted_sum function allows you to overlay several rasters, multiplying each by their given weight and summing them together. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
 
     :param raster: array of rasters
@@ -4907,9 +7445,7 @@ def lookup(raster, field=None):
 
     template_dict = {
         "rasterFunction": "Lookup",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if field is not None:
@@ -5547,9 +8083,7 @@ def aggregate_cells(
 
     template_dict = {
         "rasterFunction": "Aggregate",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if cell_factor is not None:
@@ -5678,9 +8212,7 @@ def generate_trend(
 
     template_dict = {
         "rasterFunction": "TrendAnalysis",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if dimension_name is not None:
@@ -5791,9 +8323,7 @@ def predict_using_trend(
 
     template_dict = {
         "rasterFunction": "Trend",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     dimension_definition_type_dict = {"BY_VALUE": 0, "BY_INTERVAL": 1}
@@ -5863,9 +8393,7 @@ def linear_spectral_unmixing(
 
     template_dict = {
         "rasterFunction": "SpectralUnmixing",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if spectral_profile_def is not None:
@@ -6096,9 +8624,7 @@ def s1_radiometric_calibration(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1RadiometricCalibration",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
@@ -6135,9 +8661,7 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1ThermalNoiseRemoval",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -6263,9 +8787,7 @@ def _simple_collection(raster, md_info=None):
 
     template_dict = {
         "rasterFunction": "SimpleCollection",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Rasters",
     }
 
@@ -6290,157 +8812,112 @@ def aggregate(
     percentile_interpolation_type="NEAREST",
 ):
     """
-     Creates a new raster by applying an aggregation function
-    :param raster: Input Raster.
-    :param aggregation_function: Optional String. Specifies the mathematical method that will be used
-                               to combine the aggregated slices in an interval.
+    The aggregate function creates a new raster by applying an aggregation function to the input raster.
 
-                                - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
+    The arguments for this function are as follows:
 
-                                - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object.
+    --------------------------------     --------------------------------------------------------------------
+    dimension                            Optional string. This is the dimension along which the variables will be aggregated.
+    --------------------------------     --------------------------------------------------------------------
+    aggregation_function                 Optional string. Specifies the mathematical method that will be used to combine the aggregated slices in an interval.
 
-                                - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
+                                            - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
 
-                                - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
+                                            - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
 
-                                - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
+                                            - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
 
-                                - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+                                            - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
 
-                                - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval.
-                                  The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the
-                                  percentile_value parameter.
+                                            - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
 
-                                - RANGE : Calculates the range of values for a pixel across all slices in the interval.
+                                            - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
-                                - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
+                                            - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the percentile_value parameter.
 
-                                - SUM : Calculates the sum of a pixel's values across all slices in the interval.
+                                            - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
-                                - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
+                                            - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
 
-                                You may also pass custom aggregation function.
-                                Create an RFT object out of the raster function template item on the portal and
-                                specify that as the input to aggregation_function or directly specify the RFT in JSON format as the
-                                aggregation_function.
+                                            - SUM : Calculates the sum of a pixel's values across all slices in the interval.
 
-    :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
-                                        will be aggregated.
+                                            - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
-                                        - ALL : The data values will be aggregated across all slices. This is the default.
+                                         You may also pass custom aggregation function. Create an RFT object out of the raster function template item on the portal and specify that as the input to aggregation_function or directly specify the RFT in JSON format as the aggregation_function.
+    --------------------------------     --------------------------------------------------------------------
+    aggregation_definition_type          Optional string. Specifies the dimension interval for which the data will be aggregated.
 
-                                        - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+                                            - ALL : The data values will be aggregated across all slices. This is the default.
 
-                                        - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+                                            - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
 
-                                        - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
-    :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
-    :param interval_keyword: Optional String. Specifies the keyword interval that will be used
-                                             when aggregating along the dimension. This parameter is required
-                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
-                                             the aggregation must be across time.
+                                            - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
 
-                                             - HOURLY : The data values will be aggregated into hourly time steps,
-                                               and the result will include every hour in the time series.
+                                            - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+    --------------------------------     --------------------------------------------------------------------
+    interval_keyword                     Optional string. Specifies the keyword interval that will be used when aggregating along the dimension. This parameter is required when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and the aggregation must be across time.
 
-                                             - DAILY : The data values will be aggregated into daily time steps,
-                                               and the result will include every day in the time series.
+                                            - HOURLY : The data values will be aggregated into hourly time steps, and the result will include every hour in the time series.
 
-                                             - WEEKLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include every week in the time series.
+                                            - DAILY : The data values will be aggregated into daily time steps, and the result will include every day in the time series.
 
-                                             - DEKADLY : Divides each month into 3 periods of 10 days each
-                                               (last period might have more or less than 10 days)
-                                               and each month would output 3 slices.
+                                            - WEEKLY : The data values will be aggregated into weekly time steps, and the result will include every week in the time series.
 
-                                             - PENTADLY : Divides each month into 6 periods of 5 days each
-                                               (last period might have more or less than 5 days)
-                                               and each month would output 6 slices.
+                                            - DEKADLY : Divides each month into 3 periods of 10 days each (last period might have more or less than 10 days) and each month would output 3 slices.
 
-                                             - MONTHLY : The data values will be aggregated into monthly time steps,
-                                               and the result will include every month in the time series.
+                                            - PENTADLY : Divides each month into 6 periods of 5 days each (last period might have more or less than 5 days) and each month would output 6 slices.
 
-                                             - QUARTERLY : The data values will be aggregated into quarterly time steps,
-                                               and the result will include every quarter in the time series.
+                                            - MONTHLY : The data values will be aggregated into monthly time steps, and the result will include every month in the time series.
 
-                                             - YEARLY : The data values will be aggregated into yearly time steps,
-                                               and the result will include every year in the time series.
+                                            - QUARTERLY : The data values will be aggregated into quarterly time steps, and the result will include every quarter in the time series.
 
-                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps,
-                                               and the result includes each one aggregated value per day.
-                                               The output will include, at most, 366 daily time slices
+                                            - YEARLY : The data values will be aggregated into yearly time steps, and the result will include every year in the time series.
 
-                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per week.
-                                               The output will include, at most, 53 weekly time slices.
+                                            - RECURRING_DAILY : The data values will be aggregated into daily time steps, and the result includes each one aggregated value per day. The output will include, at most, 366 daily time slices
 
-                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per month.
-                                               The output will include, at most, 12 monthly time slices.
+                                            - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per week. The output will include, at most, 53 weekly time slices.
 
-                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per quarter.
-                                               The output will include, at most, 4 quarterly time slices.
+                                            - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per month. The output will include, at most, 12 monthly time slices.
 
-    :param interval_value: Optional String. The size of the interval that will be used for the
-                           aggregation. This parameter is required when the aggregation_definition_type
-                           parameter is set to INTERVAL_VALUE.
+                                            - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per quarter. The output will include, at most, 4 quarterly time slices.
+    --------------------------------     --------------------------------------------------------------------
+    interval_value                       Optional string. The size of the interval that will be used for the aggregation. This parameter is required when the aggregation_definition_type parameter is set to INTERVAL_VALUE. For example, to aggregate 30 years of monthly temperature data into 5-year increments, enter 5 as the interval_value, and specify interval_unit as YEARS.
+    --------------------------------     --------------------------------------------------------------------
+    interval_unit                        Optional string. The unit that will be used for the interval value. This parameter is required when the dimension parameter is set to a time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE. If you are aggregating over anything other than time, this option will not be available and the unit for the interval value will match the variable unit of the input multidimensional raster data.
 
-                           For example, to aggregate 30 years of monthly temperature data into
-                           5-year increments, enter 5 as the interval_value, and specify
-                           interval_unit as YEARS.
+                                            - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                                            - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                                            - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                                            - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                                            - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+    --------------------------------     --------------------------------------------------------------------
+    interval_ranges                      Optional list of dictionary objects. Interval ranges specified as list of dictionary objects that will be used to aggregate groups of values. This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE. If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
-    :param interval_unit: Optional String. The unit that will be used for the interval value.
-                          This parameter is required when the dimension parameter is set to a
-                          time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE.
+                                            Syntax
+                                                [{"minValue":"<min value>","maxValue":"<max value>"},
+                                                {"minValue":"<min value>","maxValue":"<max value>"}]
 
-                          If you are aggregating over anything other than time, this option
-                          will not be available and the unit for the interval value will match
-                          the variable unit of the input multidimensional raster data.
+                                            Example
+                                                [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                                {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    --------------------------------     --------------------------------------------------------------------
+    ignore_nodata                        Optional boolean. Specifies whether NoData values are ignored.
 
-                          - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
-                          - DAYS : The data values will be aggregated into daily time slices at the interval provided.
-                          - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
-                          - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
-                          - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
-    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects
-                            that will be used to aggregate groups of values.
+                                            - True : The function will include all valid pixels and ignore any NoData pixels.
+                                            - False : The function will result in NoData if there are any NoData values. This is the default.
+    --------------------------------     --------------------------------------------------------------------
+    dimensionless                        Optional boolean. Specifies whether the layer will have dimension values. This parameter is only active if a single slice is selected to create a layer.
 
-                            This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
-                            If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
-
-                            Syntax:
-                                [{"minValue":"<min value>","maxValue":"<max value>"},
-                                {"minValue":"<min value>","maxValue":"<max value>"}]
-
-                            Example:
-                                [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
-                                {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
-
-    :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
-
-                            - True : The function will include all valid pixels and ignore any NoData pixels.
-                            - False : The function will result in NoData if there are any NoData values. This is the default.
-
-    :param dimensionless: Optional Boolean. Specifies whether the layer will have dimension values.
-                          This parameter is only active if a single slice is selected to create a layer.
-
-                            - True : The layer will not have dimension values.
-                            - False : The layer will have dimension values. This is the default.
-
-    :param percentile_value: Optional float. The percentile to calculate. The default is 90, indicating
-                             the 90th percentile.
-
-                             The values can range from 0 to 100. The 0th percentile is essentially equivalent
-                             to the minimum statistic, and the 100th percentile is equivalent to maximum.
-                             A value of 50 will produce essentially the same result as the median statistic.
-                             This option is only honored if the aggregation_function parameter is set to PERCENTILE.
-
-                             Example:
-                                90
-
-    :param percentile_interpolation_type: Optional string. Specifies the method of percentile interpolation that will be used when there is an
-                                          even number of values from the input raster to be calculated
+                                            - True : The layer will not have dimension values.
+                                            - False : The layer will have dimension values. This is the default.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile. The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce essentially the same result as the median statistic. This option is only honored if the aggregation_function parameter is set to PERCENTILE.
+    --------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of percentile interpolation that will be used when there is an even number of values from the input raster to be calculated.
 
                                             - NEAREST : The nearest available value to the desired percentile will be used.
                                               In this case, the output pixel type will be the same as that of the input
@@ -6448,10 +8925,25 @@ def aggregate(
 
                                             - LINEAR  : The weighted average of the two surrounding values from the desired
                                               percentile will be used. In this case, the output pixel type will be floating point.
+    ================================     ====================================================================
 
-                                          Example:
-                                            NEAREST
-    :return: the output raster with function applied on it
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculates the aggregate of the input raster.
+
+        aggregate_op = aggregate(raster, aggregation_function="MAXIMUM")
+
+        # Usage Example 2: Calculates the aggregate of the input raster based on the specified interval range.
+
+        aggregate_op = aggregate(raster,
+                                 aggregation_definition_type="INTERVAL_RANGES",
+                                 interval_ranges=[{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                                  {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}
+                                                 ]
+                                )
+
     """
 
     from arcgis.raster._util import (
@@ -7047,9 +9539,7 @@ def detect_change_using_change_analysis_raster(
 
     template_dict = {
         "rasterFunction": "DetectChange",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7205,9 +9695,7 @@ def trend_to_rgb(raster, model_type=0):
 
     template_dict = {
         "rasterFunction": "TrendToRGB",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7296,9 +9784,7 @@ def apparent_reflectance(
 
     template_dict = {
         "rasterFunction": "Reflectance",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7393,9 +9879,7 @@ def buffered(raster):
 
     template_dict = {
         "rasterFunction": "BufferedRaster",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -7442,9 +9926,7 @@ def rasterize_features(
 
     template_dict = {
         "rasterFunction": "RasterizeFeatureClass",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if feature_class is not None:
@@ -7594,9 +10076,7 @@ def reproject(
 
     template_dict = {
         "rasterFunction": "Reproject",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if spatial_reference is not None:
@@ -7719,6 +10199,11 @@ def wind_chill(
     ================================     ====================================================================
 
     :return: the output raster
+
+    .. code-block:: python
+
+        # Usage Example 1: Applies the wind chill function to the input raster.
+
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(temperature_raster)
@@ -7758,19 +10243,25 @@ def wind_chill(
 
 def aspect_slope(raster, z_factor=1):
     """
-    Creates a raster layer that simultaneously displays the aspect and slope of a surface.
+    The aspect_slope function creates a raster layer that simultaneously displays the aspect and slope of a surface.
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               The input raster.
+    raster                               Required input Raster/ImageryLayer object.
     --------------------------------     --------------------------------------------------------------------
-    z_factor                             A multiplication factor that converts the vertical (elevation) values
+    z_factor                             Optional float. A multiplication factor that converts the vertical (elevation) values
                                          to the linear units of the horizontal (x,y) coordinate system.
-                                         "Use larger values to add vertical exaggeration.
+                                         Use larger values to add vertical exaggeration. Default is 1.
     ================================     ====================================================================
 
-    :return: the output raster
+    :return: aspect_slope applied to the input raster
+
+    .. code-block:: python
+
+        # Usage Example 1: Apply the aspect_slope function to an input raster.
+
+        aspect_slope_op = aspect_slope(raster)
     """
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -7801,17 +10292,47 @@ def contour(
     z_factor=1,
 ):
     """
-    Creates contour lines.
+    The contour function creates contour lines from the input raster.
 
-    :param raster: the raster from which the contour is created
-    :param adaptive_smoothing(double): adaptive smooting value, e.g., 2.5
-    :param contour_type(string): contour type. Available values could be "CONTOUR_LINES", "CONTOUR_FILL" or "SMOOTH_SURFACE_ONLY"
-    :param z_base(double): the z-base value, e.g., 0
-    :param number_of_contours(int): the number of contours, e.g., 0
-    :param contour_interval(double): the contour interval, e.g., 100
-    :param nth_contour_line_in_bold(int): the nth contour line that would be rendered in bold, e.g., 5
-    :param z_factor(double): the z-factor, e.g., 1
-    :return:
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required input Raster/ImageryLayer object created from a DEM.
+    --------------------------------     --------------------------------------------------------------------
+    adaptive_smoothing                   Optional float. The amount of smoothing to apply to the contour line. The default value is 2.5. A lower value produces a contour line with more granularity and less smoothing, while a higher value produces a contour line with more smoothing that appears less jagged.
+    --------------------------------     --------------------------------------------------------------------
+    contour_type                         Optional string. Specifies the type of contour to be created. Available values include:
+
+                                         - "CONTOUR_LINES" - Joins points of equal elevation to create a line representing constant elevation. This is the default.
+
+                                         - "CONTOUR_FILL" - Fills the area between every contour line with the quantized elevation value.
+
+                                         - "SMOOTH_SURFACE_ONLY" - Smooths the input elevation layer but does not produce contours.
+    --------------------------------     --------------------------------------------------------------------
+    z_base                               Optional float. The base contour value. Contours are generated above and below this value as needed to cover the entire value range of the input raster. The default value is 0.
+    --------------------------------     --------------------------------------------------------------------
+    number_of_contours                   Optional int. The number of contours to be generated in the display. This dynamically adjusts the contour interval to fit the terrain in the display while maintaining standardized intervals such as 1, 5, 10, and so on. The default value is 0.
+    --------------------------------     --------------------------------------------------------------------
+    contour_interval                     Optional float. The difference in altitude between contour lines. The default value is 100.
+    --------------------------------     --------------------------------------------------------------------
+    nth_contour_line_in_bold             Optional int. The nth contour line that would be rendered in bold. The default value is 5; thus, every 5th contour line is bold.
+    --------------------------------     --------------------------------------------------------------------
+    z_factor                             Note that it is not necessary to have the ground x,y and surface z-units be consistent for this tool. The default value is 1.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Displays 50 units spaced contours in the raster
+
+        contour_op = contour(raster, contour_interval=50)
+
+        # Usage Example 2: Smoothes the input elevation layer. Note that this does not produce contours.
+
+        contour_op = contour(raster, contour_type="SMOOTH_SURFACE_ONLY")
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -8172,10 +10693,10 @@ class RFT:
                                                 )
                                         else:
                                             if (
-                                                "value" in element["arguments"]
-                                            ) and "arguments" in element["arguments"][
-                                                "value"
-                                            ]:
+                                                ("value" in element["arguments"])
+                                                and "arguments"
+                                                in element["arguments"]["value"]
+                                            ):
                                                 self._apply_argument(
                                                     element["arguments"]["value"][
                                                         "arguments"
