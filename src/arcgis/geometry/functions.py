@@ -10,7 +10,9 @@ from enum import Enum
 
 
 class AreaUnits(Enum):
-    """ """
+    """
+    Supported Geometry Service Area Units
+    """
 
     UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
     SQUAREINCHES = {"areaUnit": "esriSquareInches"}
