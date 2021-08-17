@@ -357,11 +357,12 @@ yet.
 
      ![return output](./source/_static/images/api_ref_style_guide/returns_output.png)
 9. **Images**
-  * add images you want to use to to the following directory: 
+  * add images you want to use to the following directory: 
      `/docs/api_ref/source/_static/images` directory
   * add a relative link to that location after the `image::` directive
   * **Docstring Syntax**  .. image:: \<path_to_image\>
   * **Docstring Example**
     ![image_input](./source/_static/images/api_ref_style_guide/image_string.png)
   * **Docstring Output**
+    
     ![image_output](./source/_static/images/api_ref_style_guide/image_output.png)
