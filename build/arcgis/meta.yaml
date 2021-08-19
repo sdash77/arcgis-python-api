@@ -24,7 +24,6 @@ requirements:
   - keyring >=19
   - pytest
   - pyshp >=2
-  - protobuf
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -47,7 +46,6 @@ requirements:
   - pyshp >=2
   - matplotlib
   - keyring >=19
-  - protobuf
   - requests
   - requests-toolbelt
   - requests-kerberos

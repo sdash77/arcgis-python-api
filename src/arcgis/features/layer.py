@@ -6,7 +6,6 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
 import json
-from operator import mul
 import os
 from re import search
 import time
@@ -16,7 +15,6 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
-from arcgis.features.FeatureCollection_pb2 import FeatureCollectionPBuffer
 
 from .managers import (
     AttachmentManager,
@@ -1320,7 +1318,6 @@ class FeatureLayer(Layer):
     ):
         """
         The ``query`` method queries a :class:`~arcgis.features.FeatureLayer` based on a ``sql`` statement.
-
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
@@ -1413,9 +1410,7 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
                                             statistics to be calculated.
-
                                             Syntax:
-
                                             [
                                                 {
                                                   "statisticType": "<count | sum | min | max | avg | stddev | var>",
@@ -1474,7 +1469,6 @@ class FeatureLayer(Layer):
                                             applies only if the layer is archiving enabled and the
                                             supportsQueryWithHistoricMoment property is set to true. This
                                             property is provided in the layer resource.
-
                                             If historic_moment is not specified, the query will apply to the
                                             current features.
         -------------------------------     --------------------------------------------------------------------
@@ -1491,7 +1485,6 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
                                             set to true, features are returned even when the results include
                                             'exceededTransferLimit': True.
-
                                             When set to false and querying with resultType = tile features are
                                             not returned when the results include 'exceededTransferLimit': True.
                                             This allows a client to find the resolution in which the transfer
@@ -1509,10 +1502,7 @@ class FeatureLayer(Layer):
                                             transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
                                             For more information on datum transformations, please see the transformation
                                             parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
-
                                             **Examples**
-
-
                                                 ===========     ===================================
                                                 Inputs          Description
                                                 -----------     -----------------------------------
@@ -1522,58 +1512,41 @@ class FeatureLayer(Layer):
                                                 -----------     -----------------------------------
                                                 Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                                 ===========     ===================================
-
-        -------------------------------     --------------------------------------------------------------------
-        use_pbf                             In kwargs. Optional boolean.  If True, the results are queried as PBF 
-                                            if supported by the feature layer, otherwise default back to JSON. Results 
-                                            are returned as a FeatureSet.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
-
         .. code-block:: python
-
             # Usage Example with only a "where" sql statement
-
             >>> feat_set = feature_layer.query(where = "OBJECTID= 1")
             >>> type(feat_set)
             <arcgis.Features.FeatureSet>
             >>> feat_set[0]
             <Feature 1>
-
         .. code-block:: python
-
             # Usage Example of an advanced query returning the object IDs instead of Features
-
             >>> id_set = feature_layer.query(where = "OBJECTID1",
                                                out_fields = ["FieldName1, FieldName2"],
                                                distance = 100,
                                                units = 'esriSRUnit_Meter',
                                                return_ids_only = True)
-
             >>> type(id_set)
             <Array>
             >>> id_set[0]
             <"Item_id1">
-
         .. code-block:: python
-
             # Usage Example of an advanced query returning the number of features in the query
-
             >>> search_count = feature_layer.query(where = "OBJECTID1",
                                                out_fields = ["FieldName1, FieldName2"],
                                                distance = 100,
                                                units = 'esriSRUnit_Meter',
                                                return_count_only = True)
-
             >>> type(search_count)
             <Integer>
             >>> search_count
             <149>
-
         :returns:
             A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
             is specified, such as ``count``
@@ -1585,13 +1558,6 @@ class FeatureLayer(Layer):
             url = "%s/query" % self._url.split("?")[0]
 
         params = {"f": "json"}
-        use_pbf = kwargs.pop("use_pbf", False)
-        if use_pbf:
-            if ("supportedQueryFormats" in self.properties and "pbf" in self.properties.supportedQueryFormats.lower()):
-                params = {"f": "pbf"}
-            else:
-                params = {"f": "json"}
-
         if self._dynamic_layer is not None:
             params["layer"] = self._dynamic_layer
         if result_type is not None:
@@ -1702,21 +1668,17 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
-            params["f"] = "json"  # does not need to be pbf. Too much to unpack after.
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        previous_format = params["f"]
-        params["f"] = "json"
         if where == "1=1":
             params["where"] = f"{self.properties.objectIdField} > 0"
             record_count = self._query(url, params, raw=as_raw)
             params["where"] = "1=1"
         else:
             record_count = self._query(url, params, raw=as_raw)
-        params["f"] = previous_format
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -1811,10 +1773,8 @@ class FeatureLayer(Layer):
         dfs = []
         if not supports_pagination:
             params["returnIdsOnly"] = True
-            params["f"] = "json"
             oid_info = self._query(url, params, raw=as_raw)
             params["returnIdsOnly"] = False
-            params["f"] = previous_format
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
                 sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))
@@ -1894,16 +1854,12 @@ class FeatureLayer(Layer):
         The ``validate_sql`` operation ensures that an ``SQL-92`` expression, such
         as one written by a user through a user interface, is correct
         before performing another operation that uses the expression.
-
         .. note::
             For example, ``validateSQL`` can be used to validate information that is
             subsequently passed in as part of the where parameter of the calculate operation.
-
         ``validate_sql`` also prevents SQL injection. In addition, all table
         and field names used in the SQL expression or WHERE clause are
         validated to ensure they are valid tables and fields.
-
-
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
@@ -1923,7 +1879,6 @@ class FeatureLayer(Layer):
                                                   completeness.
                                                   Values: `where | expression | statement`
         ===============================     ====================================================================
-
         :returns:
             A dictionary
         """
@@ -1940,7 +1895,10 @@ class FeatureLayer(Layer):
             params["sqlType"] = sql_type
         sql_type = sql_type.lower()
         url = self._url + "/validateSQL"
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def query_related_records(
@@ -1968,10 +1926,8 @@ class FeatureLayer(Layer):
         information, the geometry of each feature is also returned in
         the feature set. For related tables, the feature set does not
         include geometries.
-
         .. note::
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
-
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
@@ -2021,10 +1977,8 @@ class FeatureLayer(Layer):
                                    applies only if the supportsQueryWithHistoricMoment property of the
                                    layers being queried is set to true. This setting is provided in the
                                    layer resource.
-
                                    If historic_moment is not specified, the query will apply to the
                                    current features.
-
                                    Syntax: historic_moment=<Epoch time in milliseconds>
         ----------------------     --------------------------------------------------------------------
         return_true_curves         Optional boolean. Optional parameter that is false by default. When
@@ -2032,11 +1986,7 @@ class FeatureLayer(Layer):
                                    curves are converted to densified :class:`~arcgis.geometry.Polyline` or
                                    :class:`~arcgis.features.Polygon` objects.
         ======================     ====================================================================
-
-
         :return: dict
-
-
         """
         params = {
             "f": "json",
@@ -2079,16 +2029,13 @@ class FeatureLayer(Layer):
         """
         The ``get_html_popup`` method provides details about the HTML pop-up
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
-
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
-
         :returns:
             A string
-
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
             pop_url = self._url + "/%s/htmlPopup" % oid
@@ -2123,10 +2070,8 @@ class FeatureLayer(Layer):
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
         See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
         page in the ArcGIS REST API documentation for more informatin.
-
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
-
         ========================   ====================================================================
         **Argument**               **Description**
         ------------------------   --------------------------------------------------------------------
@@ -2141,9 +2086,7 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         source_table_name          required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
-
                                    .. code-block:: python
-
                                        # Example usage:
                                        source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
@@ -2151,7 +2094,6 @@ class FeatureLayer(Layer):
                                    Syntax: fieldMappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
                                    .. code-block:: python
-
                                        # Example usage:
                                        fieldMappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
@@ -2179,9 +2121,7 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         append_fields              Optional list. The list of destination fields to append to. This is
                                    supported when upsert=true or false.
-
                                    .. code-block:: python
-
                                        #Values:
                                        ["fieldName1", "fieldName2",....]
         ------------------------   --------------------------------------------------------------------
@@ -2212,11 +2152,8 @@ class FeatureLayer(Layer):
         future                     Optional Boolean.  When true, the response is returned as a
                                    :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
-
         .. code-block:: python
-
             # Usage Example
-
             >>> feature_layer.append(source_table_name= "Building",
                                     field_Mappings=[{"name" : "CountyID",
                                                     "sourceName" : "GEOID10"}],
@@ -2224,13 +2161,10 @@ class FeatureLayer(Layer):
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
                                     return_messages = False)
             <True>
-
-
         :returns:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
             If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
-
         """
         import copy
 
@@ -2265,8 +2199,10 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-            ","
+        upload_formats = (
+            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+                ","
+            )
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2323,7 +2259,6 @@ class FeatureLayer(Layer):
         """
         The ``delete_features`` deletes features in a :class:`~arcgis.features.FeatureLayer` or
         :class:`~arcgis.features.Table`
-
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
@@ -2354,18 +2289,13 @@ class FeatureLayer(Layer):
                                    asynchronously else the operation will occur synchronously.  False
                                    is the default.
         ======================     ====================================================================
-
         .. code-block:: python
-
             # Usage Example with only a "where" sql statement
-
             >>> from arcgis.features import FeatureLayer
-
             >>> gis = GIS("pro")
             >>> buck = gis.content.search("owner:"+ gis.users.me.username)
             >>> buck_1 =buck[1]
             >>> lay = buck_1.layers[0]
-
             >>> la_df = lay.delete_features(where = "OBJECTID > 15")
             >>> la_df
             {'deleteResults': [
@@ -2384,12 +2314,8 @@ class FeatureLayer(Layer):
             {'objectId': 13, 'uniqueId': 13, 'globalId': None, 'success': True},
             {'objectId': 14, 'uniqueId': 14, 'globalId': None, 'success': True},
             {'objectId': 15, 'uniqueId': 15, 'globalId': None, 'success': True}]}
-
-
         :returns:
             A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
-
-
         """
         delete_url = self._url + "/deleteFeatures"
         params = {
@@ -2504,14 +2430,10 @@ class FeatureLayer(Layer):
         """
         The ``edit_features`` operation adds, updates, and deletes features to the
         associated :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.Table` in a single call.
-
-
         .. note::
             When making large number (250+ records at once) of edits,
             :attr:`~arcgis.features.FeatureLayer.append` should be used over ``edit_features`` to improve
             performance and ensure service stability.
-
-
         =====================   ======================================================================================
         **Inputs**              **Description**
         ---------------------   --------------------------------------------------------------------------------------
@@ -2543,12 +2465,9 @@ class FeatureLayer(Layer):
                                 and deletes are identified by each feature or attachment globalId, rather than their
                                 objectId or attachmentId. This parameter requires the layer's
                                 supportsApplyEditsWithGlobalIds property to be true.
-
                                 Attachments to be added or updated can use either pre-uploaded data or base 64
                                 encoded data.
-
                                 **Inputs**
-
                                     ========     ================================
                                     Inputs       Description
                                     --------     --------------------------------
@@ -2558,7 +2477,6 @@ class FeatureLayer(Layer):
                                     --------     --------------------------------
                                     deletes      List of attachments to delete
                                     ========     ================================
-
                                 See the `Apply Edits to a Feature Service layer <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_
                                 in the ArcGIS REST API for more information.
         ---------------------   --------------------------------------------------------------------------------------
@@ -2578,11 +2496,9 @@ class FeatureLayer(Layer):
                                 editor to apply single block of edits partially, complete another task and then
                                 complete the block of edits. This parameter is set by a client during long transaction
                                 editing on a branch version.
-
                                 When set to true, the edits are applied with the same edit moment as the previous set
                                 of edits. When set to false or not set (default) the edits are applied with a new
                                 edit moment.
-
         ---------------------   --------------------------------------------------------------------------------------
         datum_transformation    Optional Integer/Dictionary.  This parameter applies a datum transformation while
                                 projecting geometries in the results when out_sr is different than the layer's spatial
@@ -2593,9 +2509,7 @@ class FeatureLayer(Layer):
                                 transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
                                 For more information on datum transformations, please see the transformation
                                 parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
-
                                 **Examples**
-
                                     ===========     ===================================
                                     Inputs          Description
                                     -----------     -----------------------------------
@@ -2605,14 +2519,9 @@ class FeatureLayer(Layer):
                                     -----------     -----------------------------------
                                     Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                     ===========     ===================================
-
-
         =====================   ======================================================================================
-
         :returns:
             A dictionary
-
-
         """
         try:
             import pandas as pd
@@ -2797,7 +2706,6 @@ class FeatureLayer(Layer):
         ``supportsCalculate`` property of the layer is `True`.
         Neither the Shape field nor system fields can be updated using
         ``calculate``. System fields include ``ObjectId`` and ``GlobalId``.
-
         =====================   ====================================================
         **Inputs**              **Description**
         ---------------------   ----------------------------------------------------
@@ -2810,17 +2718,13 @@ class FeatureLayer(Layer):
                                 scalar values or SQL expression.  Allowed types are
                                 dictionary and list.  List must be a list of
                                 dictionary objects.
-
                                 Calculation Format is as follows:
-
                                     `{"field" : "<field name>",  "value" : "<value>"}`
-
         ---------------------   ----------------------------------------------------
         sql_format              Optional String. The SQL format for the
                                 calc_expression. It can be either standard SQL92
                                 (standard) or native SQL (native). The default is
                                 standard.
-
                                 Values: `standard`, `native`
         ---------------------   ----------------------------------------------------
         version                 Optional String. The geodatabase version to apply
@@ -2847,25 +2751,16 @@ class FeatureLayer(Layer):
         future                  Optional Boolean.  If True, the result is returned
                                 as a future object and the results are obtained in
                                 an asynchronous fashion.  False is the default.
-
                                 **This applies to 10.8+ only**
-
         =====================   ====================================================
-
         .. code-block:: python
-
             # Usage Example 1:
-
             print(fl.calculate(where="OBJECTID < 2",
                                calc_expression={"field": "ZONE", "value" : "R1"}))
-
         .. code-block:: python
-
             # Usage Example 2:
-
             print(fl.calculate(where="OBJECTID < 2001",
                                calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
-
         :returns:
             A dictionary with the following format:
              {
@@ -2903,37 +2798,32 @@ class FeatureLayer(Layer):
         ):
             params["async"] = True
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=url, postdata=params,)
+            res = self._con.post(
+                path=url,
+                postdata=params,
+            )
             future = executor.submit(
                 self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
             )
             executor.shutdown(False)
             return future
-        return self._con.post(path=url, postdata=params,)
+        return self._con.post(
+            path=url,
+            postdata=params,
+        )
 
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False, **kwargs):
         """returns results of query"""
         try:
-            try_json = False if "pbf" in params["f"] else True
-            json_encode = False if "pbf" in params["f"] else True
-            force_bytes = True if "pbf" in params["f"] else False
             if "add_token" in kwargs:
                 result = self._con.post(
-                    path=url,
-                    postdata=params,
-                    add_token=kwargs.get("add_token", True),
-                    try_json=try_json,
-                    json_encode=json_encode,
-                    force_bytes=force_bytes
+                    path=url, postdata=params, add_token=kwargs.get("add_token", True)
                 )
             else:
                 result = self._con.post(
                     path=url,
                     postdata=params,
-                    try_json=try_json,
-                    json_encode=json_encode,
-                    force_bytes=force_bytes
                 )
         except Exception as queryException:
             error_list = [
@@ -2987,13 +2877,7 @@ class FeatureLayer(Layer):
                 return True
             else:
                 return False
-        #change results here to not get error        
-        if "pbf" in params["f"]: 
-            from arcgis.features import FeatureCollection_pb2 as FC
-            from google.protobuf.json_format import MessageToDict
-            FC_item = FC.FeatureCollectionPBuffer()
-            FC_item.ParseFromString(result)
-            result = MessageToDict(FC_item)
+
         if "error" in result:
             raise ValueError(result)
         if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
@@ -3005,27 +2889,6 @@ class FeatureLayer(Layer):
         elif is_true(raw):
             return result
         else:
-            if "pbf" in params["f"]:
-                # variable to pass into pbf parsing
-                has_geometries = True
-                hasZ = False
-                hasM = False
-                result_dict = result["queryResult"]["featureResult"]
-                # tables don't have geometries
-                if "features" not in result_dict:
-                    return FeatureSet.from_dict(result_dict)
-                # parameter specified by user in query
-                if "returnGeometry" in params and not is_true(params["returnGeometry"]):
-                    has_geometries = False
-                # take into account z parameter
-                if "returnZ" in params and is_true(params["returnZ"]):
-                    hasZ = True
-                # take into account z parameter
-                if "returnM" in params and is_true(params["returnM"]):
-                    hasM = True
-                # necessary transformations to match dictionary format
-                result = self._parse_pbf_from_query(result_dict, has_geometries, hasZ, hasM)
-
             return FeatureSet.from_dict(result)
 
     # ----------------------------------------------------------------------
@@ -3193,147 +3056,6 @@ class FeatureLayer(Layer):
                         df[fld], errors="coerce", infer_datetime_format=True
                     )
         return df
-
-    # ----------------------------------------------------------------------
-    def _parse_pbf_from_query(self, result_dict, has_geometries=True, hasZ=False, hasM=False):
-        """"Returns results of parsed pbf file"""
-        # extract transformation and scale values
-        x_scale = result_dict["transform"]["scale"]["xScale"]
-        x_translate = result_dict["transform"]["translate"]["xTranslate"]
-        y_scale = result_dict["transform"]["scale"]["yScale"]
-        y_translate = result_dict["transform"]["translate"]["yTranslate"]
-        if hasZ:
-            if "zScale" not in result_dict["transform"]["scale"]:
-                raise ValueError("Layer has no z coordinates")
-            z_scale = result_dict["transform"]["scale"]["zScale"]
-            z_translate = result_dict["transform"]["translate"]["zTranslate"]
-        if hasM:
-            if "mScale" not in result_dict["transform"]["scale"]:
-                raise ValueError("Layer has no m coordinates")
-            m_scale = result_dict["transform"]["scale"]["mScale"]
-            m_translate = result_dict["transform"]["translate"]["mTranslate"]
-        # transform each feature to correct geometries
-        for x in range(len(result_dict["features"])):
-            current_feature = result_dict["features"][x]
-            # transform feature attributes to include field names
-            for attribute_id in range(len(result_dict["fields"])):
-                name_to_insert = result_dict["fields"][attribute_id]["name"]
-                current_attribute = current_feature["attributes"][attribute_id]
-                # key to delete
-                key = list(current_attribute.keys())[0]
-                # value to insert to proper name
-                value = list(current_attribute.values())[0]
-                current_attribute[name_to_insert] = value if value is not ' ' else None
-                del current_attribute[key]
-            if has_geometries:  
-                # transform geometry coords.
-                # extract all x and y coordinates and create lists
-                # Lengths are for multipoint, multiline and multipolygons and show the delimitations
-                if "lengths" in current_feature["geometry"]:
-                    lengths_list = current_feature["geometry"]["lengths"]
-                    multiple = 2
-                    #check how many coordinates to expect
-                    if hasZ and hasM:
-                        multiple = 4
-                    elif hasZ or hasM:
-                        multiple = 3
-                        z_transform = True if hasZ else False                                                
-                    # begin creating new coordinate lists and transforming
-                    start = 0
-                    for length in lengths_list:
-                        stop = length * multiple + start
-                        coord_list = current_feature["geometry"]["coords"][start:stop]
-                        start = stop
-                        # get x and y values for each set of points
-                        xs = coord_list[0::multiple]
-                        xs = [int(j) for j in xs] #json loads converts to string
-                        ys = coord_list[1::multiple]
-                        ys = [int(j) for j in ys]
-                        # x-coordinate transform
-                        startx = xs[0]
-                        startx = startx * x_scale + x_translate
-                        xs[0] = startx
-                        for i in range(1, len(xs)):
-                            xs[i] = xs[i - 1] + xs[i] * x_scale
-                        # y-coordinate transform
-                        starty = ys[0]
-                        starty = y_translate - starty * y_scale
-                        ys[0] = starty
-                        for i in range(1, len(ys)):
-                            ys[i] = ys[i - 1] - ys[i] * y_scale
-                        new_coords = [list(a) for a in iter(zip(xs, ys))]
-                        #check if need to consider z and/or m coords
-                        if multiple == 3:
-                            scale = z_scale if z_transform else m_scale
-                            translate = z_translate if z_transform else m_translate
-                            other_coord = coord_list[2::multiple]
-                            other_coord = [int(j) for j in other_coord] 
-                            # coordinate transform
-                            startc = other_coord[0]
-                            startc = translate + startc * scale
-                            other_coord[0] = startc
-                            for i in range(1, len(other_coord)):
-                                other_coord[i] = startc
-                            new_coords = [list(a) for a in iter(zip(xs, ys, other_coord))]
-                        elif multiple == 4:
-                            zs = coord_list[2::multiple]
-                            zs = [int(j) for j in zs]
-                            ms = coord_list[3::multiple]
-                            ms = [int(j) for j in ms]
-                            # z-coordinate transform
-                            startz = zs[0]
-                            startz = z_translate + startz * z_scale
-                            zs[0] = startz
-                            for i in range(1, len(zs)):
-                                zs[i] = startz
-                            # m-coordinate transform
-                            startm = ms[0]
-                            startm = m_translate + startm * m_scale
-                            ms[0] = startm
-                            for i in range(1, len(ms)):
-                                ms[i] = startm
-                            new_coords = [list(a) for a in iter(zip(xs, ys, zs, ms))]
-                        # check geometry types to create geometries
-                        if "esriGeometryTypeMultipoint" in result_dict["geometryType"]:
-                            if "points" not in result_dict["features"][x]["geometry"]:
-                                current_feature["geometry"]["points"] = []
-                            current_feature["geometry"]["points"].append(new_coords)
-                        elif "esriGeometryTypePolyline" in result_dict["geometryType"]:
-                            if "paths" not in result_dict["features"][x]["geometry"]:
-                                current_feature["geometry"]["paths"] = []
-                            current_feature["geometry"]["paths"].append(new_coords)
-                        elif "esriGeometryTypePolygon" in result_dict["geometryType"]:
-                            if "rings" not in result_dict["features"][x]["geometry"]:
-                                current_feature["geometry"]["rings"] = []
-                            current_feature["geometry"]["rings"].append(new_coords)
-                    # no longer needed
-                    del current_feature["geometry"]["coords"]
-                    del current_feature["geometry"]["lengths"]
-                else:
-                    # Only case: Point Layer. No lengths saved in pbf
-                    coord_list = current_feature["geometry"]["coords"]
-                    xs = int(coord_list[0])
-                    ys = int(coord_list[1])
-                    # x-coordinate transform
-                    startx = xs * x_scale + x_translate
-                    # y-coordinate transform
-                    starty = y_translate - ys * y_scale
-                    # esriGeometryPoint does not get saved as geometryType in pbf which is bug in schema
-                    current_feature["geometry"]["x"] = startx
-                    current_feature["geometry"]["y"] = starty
-                    if hasZ:
-                        if "zScale" not in result_dict["transform"]["scale"]:
-                            raise ValueError("Layer has no z coordinates")
-                        z_scale = result_dict["transform"]["scale"]["zScale"]
-                        z_translate = result_dict["transform"]["translate"]["zTranslate"]
-                        zs = int(coord_list[2])
-                        # z-coordinate transform
-                        startz = z_translate + zs * z_scale
-                        current_feature["geometry"]["z"] = startz
-                    del current_feature["geometry"]["coords"]
-        return result_dict
-
-    # ----------------------------------------------------------------------
 
 
 class Table(FeatureLayer):
