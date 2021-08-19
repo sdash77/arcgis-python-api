@@ -62,6 +62,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "protobuf",
+        "geomet",
         "requests",
         "requests-oauthlib",
         "requests_toolbelt",
