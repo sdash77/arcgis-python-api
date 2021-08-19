@@ -765,16 +765,8 @@ class MapFeatureLayer(Layer):
             url = self._url + "/query"
         else:
             url = "%s/query" % self._url.split("?")[0]
-        
-        # if layer can be queried with PBF then it is the default
-        if (
-            "supportedQueryFormats" in self.properties
-            and "pbf" in self.properties.supportedQueryFormats.lower()
-        ):
-            params = {"f": "pbf"}
-        else:
-            params = {"f": "json"}
-        
+
+        params = {"f": "json"}
         if self._dynamic_layer is not None:
             params["layer"] = self._dynamic_layer
         if result_type is not None:
@@ -891,16 +883,12 @@ class MapFeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
-            params["f"] = "json"
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
-        previous_format = params["f"]
-        params["f"] = "json"
         record_count = self._query(url, params, raw=as_raw)
-        params["f"] = previous_format
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -990,10 +978,8 @@ class MapFeatureLayer(Layer):
         dfs = []
         if not supports_pagination:
             params["returnIdsOnly"] = True
-            params["f"] = "json"
             oid_info = self._query(url, params, raw=as_raw)
             params["returnIdsOnly"] = False
-            params["f"] = previous_format
             for ids in chunks(oid_info["objectIds"], max_records):
                 ids = [str(i) for i in ids]
                 sql = "%s in (%s)" % (oid_info["objectIdFieldName"], ",".join(ids))

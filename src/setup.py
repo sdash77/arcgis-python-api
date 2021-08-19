@@ -61,7 +61,6 @@ else:
         "python-certifi-win32",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
-        "protobuf",
         "geomet",
         "requests",
         "requests-oauthlib",

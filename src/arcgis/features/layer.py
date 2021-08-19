@@ -1472,7 +1472,7 @@ class FeatureLayer(Layer):
                                             applies only if the layer is archiving enabled and the
                                             supportsQueryWithHistoricMoment property is set to true. This
                                             property is provided in the layer resource.
- 
+
                                             If historic_moment is not specified, the query will apply to the
                                             current features.
         -------------------------------     --------------------------------------------------------------------
@@ -1528,7 +1528,7 @@ class FeatureLayer(Layer):
                                             explicitly implemented on the function. A complete list of functions
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
- 
+
         .. code-block:: python
 
             # Usage Example with only a "where" sql statement
