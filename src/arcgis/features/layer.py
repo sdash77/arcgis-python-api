@@ -1318,6 +1318,7 @@ class FeatureLayer(Layer):
     ):
         """
         The ``query`` method queries a :class:`~arcgis.features.FeatureLayer` based on a ``sql`` statement.
+
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
@@ -1410,7 +1411,9 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_statistics                      Optional string. The definitions for one or more field-based
                                             statistics to be calculated.
+
                                             Syntax:
+
                                             [
                                                 {
                                                   "statisticType": "<count | sum | min | max | avg | stddev | var>",
@@ -1469,6 +1472,7 @@ class FeatureLayer(Layer):
                                             applies only if the layer is archiving enabled and the
                                             supportsQueryWithHistoricMoment property is set to true. This
                                             property is provided in the layer resource.
+ 
                                             If historic_moment is not specified, the query will apply to the
                                             current features.
         -------------------------------     --------------------------------------------------------------------
@@ -1485,6 +1489,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
                                             set to true, features are returned even when the results include
                                             'exceededTransferLimit': True.
+
                                             When set to false and querying with resultType = tile features are
                                             not returned when the results include 'exceededTransferLimit': True.
                                             This allows a client to find the resolution in which the transfer
@@ -1502,7 +1507,10 @@ class FeatureLayer(Layer):
                                             transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
                                             For more information on datum transformations, please see the transformation
                                             parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+
                                             **Examples**
+
+
                                                 ===========     ===================================
                                                 Inputs          Description
                                                 -----------     -----------------------------------
@@ -1512,41 +1520,55 @@ class FeatureLayer(Layer):
                                                 -----------     -----------------------------------
                                                 Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                                 ===========     ===================================
+
+
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
                                             available is documented on the Query REST API.
         ===============================     ====================================================================
+ 
         .. code-block:: python
+
             # Usage Example with only a "where" sql statement
+
             >>> feat_set = feature_layer.query(where = "OBJECTID= 1")
             >>> type(feat_set)
             <arcgis.Features.FeatureSet>
             >>> feat_set[0]
             <Feature 1>
+
         .. code-block:: python
+
             # Usage Example of an advanced query returning the object IDs instead of Features
+
             >>> id_set = feature_layer.query(where = "OBJECTID1",
                                                out_fields = ["FieldName1, FieldName2"],
                                                distance = 100,
                                                units = 'esriSRUnit_Meter',
                                                return_ids_only = True)
+
             >>> type(id_set)
             <Array>
             >>> id_set[0]
             <"Item_id1">
+
         .. code-block:: python
+
             # Usage Example of an advanced query returning the number of features in the query
+
             >>> search_count = feature_layer.query(where = "OBJECTID1",
                                                out_fields = ["FieldName1, FieldName2"],
                                                distance = 100,
                                                units = 'esriSRUnit_Meter',
                                                return_count_only = True)
+
             >>> type(search_count)
             <Integer>
             >>> search_count
             <149>
+
         :returns:
             A :class:`~arcgis.features.FeatureSet` containing the features matching the query unless another return type
             is specified, such as ``count``
@@ -1854,12 +1876,16 @@ class FeatureLayer(Layer):
         The ``validate_sql`` operation ensures that an ``SQL-92`` expression, such
         as one written by a user through a user interface, is correct
         before performing another operation that uses the expression.
+
         .. note::
             For example, ``validateSQL`` can be used to validate information that is
             subsequently passed in as part of the where parameter of the calculate operation.
+
         ``validate_sql`` also prevents SQL injection. In addition, all table
         and field names used in the SQL expression or WHERE clause are
         validated to ensure they are valid tables and fields.
+
+
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
@@ -1879,6 +1905,7 @@ class FeatureLayer(Layer):
                                                   completeness.
                                                   Values: `where | expression | statement`
         ===============================     ====================================================================
+
         :returns:
             A dictionary
         """
@@ -1926,8 +1953,10 @@ class FeatureLayer(Layer):
         information, the geometry of each feature is also returned in
         the feature set. For related tables, the feature set does not
         include geometries.
+
         .. note::
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
+
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
@@ -1977,8 +2006,10 @@ class FeatureLayer(Layer):
                                    applies only if the supportsQueryWithHistoricMoment property of the
                                    layers being queried is set to true. This setting is provided in the
                                    layer resource.
+
                                    If historic_moment is not specified, the query will apply to the
                                    current features.
+
                                    Syntax: historic_moment=<Epoch time in milliseconds>
         ----------------------     --------------------------------------------------------------------
         return_true_curves         Optional boolean. Optional parameter that is false by default. When
@@ -1986,7 +2017,11 @@ class FeatureLayer(Layer):
                                    curves are converted to densified :class:`~arcgis.geometry.Polyline` or
                                    :class:`~arcgis.features.Polygon` objects.
         ======================     ====================================================================
+
+
         :return: dict
+
+
         """
         params = {
             "f": "json",
@@ -2029,13 +2064,16 @@ class FeatureLayer(Layer):
         """
         The ``get_html_popup`` method provides details about the HTML pop-up
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
+
         :returns:
             A string
+
         """
         if self.properties.htmlPopupType != "esriServerHTMLPopupTypeNone":
             pop_url = self._url + "/%s/htmlPopup" % oid
@@ -2070,8 +2108,10 @@ class FeatureLayer(Layer):
         The ``append`` method is used to update an existing hosted :class:`~arcgis.features.FeatureLayer` object.
         See the `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
         page in the ArcGIS REST API documentation for more informatin.
+
         .. note::
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
+
         ========================   ====================================================================
         **Argument**               **Description**
         ------------------------   --------------------------------------------------------------------
@@ -2086,7 +2126,9 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         source_table_name          required string. Required even when the source data contains only
                                    one table, e.g., for file geodatabase.
+
                                    .. code-block:: python
+
                                        # Example usage:
                                        source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
@@ -2094,6 +2136,7 @@ class FeatureLayer(Layer):
                                    Syntax: fieldMappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
                                    .. code-block:: python
+
                                        # Example usage:
                                        fieldMappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
@@ -2121,7 +2164,9 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         append_fields              Optional list. The list of destination fields to append to. This is
                                    supported when upsert=true or false.
+
                                    .. code-block:: python
+
                                        #Values:
                                        ["fieldName1", "fieldName2",....]
         ------------------------   --------------------------------------------------------------------
@@ -2152,8 +2197,11 @@ class FeatureLayer(Layer):
         future                     Optional Boolean.  When true, the response is returned as a
                                    :class:`~concurrent.futures.Future` object.
         ========================   ====================================================================
+
         .. code-block:: python
+
             # Usage Example
+
             >>> feature_layer.append(source_table_name= "Building",
                                     field_Mappings=[{"name" : "CountyID",
                                                     "sourceName" : "GEOID10"}],
@@ -2161,10 +2209,13 @@ class FeatureLayer(Layer):
                                     append_fields = ["fieldName1", "fieldName2",...., fieldname22],
                                     return_messages = False)
             <True>
+
+
         :returns:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
             If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+
         """
         import copy
 
@@ -2259,6 +2310,7 @@ class FeatureLayer(Layer):
         """
         The ``delete_features`` deletes features in a :class:`~arcgis.features.FeatureLayer` or
         :class:`~arcgis.features.Table`
+
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
@@ -2289,13 +2341,18 @@ class FeatureLayer(Layer):
                                    asynchronously else the operation will occur synchronously.  False
                                    is the default.
         ======================     ====================================================================
+
         .. code-block:: python
+
             # Usage Example with only a "where" sql statement
+
             >>> from arcgis.features import FeatureLayer
+
             >>> gis = GIS("pro")
             >>> buck = gis.content.search("owner:"+ gis.users.me.username)
             >>> buck_1 =buck[1]
             >>> lay = buck_1.layers[0]
+
             >>> la_df = lay.delete_features(where = "OBJECTID > 15")
             >>> la_df
             {'deleteResults': [
@@ -2314,8 +2371,12 @@ class FeatureLayer(Layer):
             {'objectId': 13, 'uniqueId': 13, 'globalId': None, 'success': True},
             {'objectId': 14, 'uniqueId': 14, 'globalId': None, 'success': True},
             {'objectId': 15, 'uniqueId': 15, 'globalId': None, 'success': True}]}
+
+
         :returns:
             A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
+
+
         """
         delete_url = self._url + "/deleteFeatures"
         params = {
@@ -2430,10 +2491,14 @@ class FeatureLayer(Layer):
         """
         The ``edit_features`` operation adds, updates, and deletes features to the
         associated :class:`~arcgis.features.FeatureLayer` or :class:`~arcgis.features.Table` in a single call.
+
+
         .. note::
             When making large number (250+ records at once) of edits,
             :attr:`~arcgis.features.FeatureLayer.append` should be used over ``edit_features`` to improve
             performance and ensure service stability.
+
+
         =====================   ======================================================================================
         **Inputs**              **Description**
         ---------------------   --------------------------------------------------------------------------------------
@@ -2465,9 +2530,12 @@ class FeatureLayer(Layer):
                                 and deletes are identified by each feature or attachment globalId, rather than their
                                 objectId or attachmentId. This parameter requires the layer's
                                 supportsApplyEditsWithGlobalIds property to be true.
+
                                 Attachments to be added or updated can use either pre-uploaded data or base 64
                                 encoded data.
+
                                 **Inputs**
+
                                     ========     ================================
                                     Inputs       Description
                                     --------     --------------------------------
@@ -2477,6 +2545,7 @@ class FeatureLayer(Layer):
                                     --------     --------------------------------
                                     deletes      List of attachments to delete
                                     ========     ================================
+
                                 See the `Apply Edits to a Feature Service layer <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_
                                 in the ArcGIS REST API for more information.
         ---------------------   --------------------------------------------------------------------------------------
@@ -2496,9 +2565,11 @@ class FeatureLayer(Layer):
                                 editor to apply single block of edits partially, complete another task and then
                                 complete the block of edits. This parameter is set by a client during long transaction
                                 editing on a branch version.
+
                                 When set to true, the edits are applied with the same edit moment as the previous set
                                 of edits. When set to false or not set (default) the edits are applied with a new
                                 edit moment.
+
         ---------------------   --------------------------------------------------------------------------------------
         datum_transformation    Optional Integer/Dictionary.  This parameter applies a datum transformation while
                                 projecting geometries in the results when out_sr is different than the layer's spatial
@@ -2509,7 +2580,9 @@ class FeatureLayer(Layer):
                                 transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_.
                                 For more information on datum transformations, please see the transformation
                                 parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+
                                 **Examples**
+
                                     ===========     ===================================
                                     Inputs          Description
                                     -----------     -----------------------------------
@@ -2519,9 +2592,14 @@ class FeatureLayer(Layer):
                                     -----------     -----------------------------------
                                     Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                     ===========     ===================================
+
+
         =====================   ======================================================================================
+
         :returns:
             A dictionary
+
+
         """
         try:
             import pandas as pd
@@ -2706,6 +2784,7 @@ class FeatureLayer(Layer):
         ``supportsCalculate`` property of the layer is `True`.
         Neither the Shape field nor system fields can be updated using
         ``calculate``. System fields include ``ObjectId`` and ``GlobalId``.
+
         =====================   ====================================================
         **Inputs**              **Description**
         ---------------------   ----------------------------------------------------
@@ -2718,13 +2797,17 @@ class FeatureLayer(Layer):
                                 scalar values or SQL expression.  Allowed types are
                                 dictionary and list.  List must be a list of
                                 dictionary objects.
+
                                 Calculation Format is as follows:
+
                                     `{"field" : "<field name>",  "value" : "<value>"}`
+
         ---------------------   ----------------------------------------------------
         sql_format              Optional String. The SQL format for the
                                 calc_expression. It can be either standard SQL92
                                 (standard) or native SQL (native). The default is
                                 standard.
+
                                 Values: `standard`, `native`
         ---------------------   ----------------------------------------------------
         version                 Optional String. The geodatabase version to apply
@@ -2751,16 +2834,25 @@ class FeatureLayer(Layer):
         future                  Optional Boolean.  If True, the result is returned
                                 as a future object and the results are obtained in
                                 an asynchronous fashion.  False is the default.
+
                                 **This applies to 10.8+ only**
+
         =====================   ====================================================
+
         .. code-block:: python
+
             # Usage Example 1:
+
             print(fl.calculate(where="OBJECTID < 2",
                                calc_expression={"field": "ZONE", "value" : "R1"}))
+
         .. code-block:: python
+
             # Usage Example 2:
+
             print(fl.calculate(where="OBJECTID < 2001",
                                calc_expression={"field": "A",  "sqlExpression" : "B*3"}))
+
         :returns:
             A dictionary with the following format:
              {
