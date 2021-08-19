@@ -353,14 +353,8 @@ class Geometry(BaseGeometry):
             return arcgis2geojson(arcgis=self)
         else: 
             from geomet import esri
-            if isinstance(self, Point):
-                return esri._to_gj_point(self)
-            elif isinstance(self, Polygon):
-                return esri._to_gj_polygon(self)
-            elif isinstance(self, Polyline):
-                return esri._to_gj_polyline(self)
-            elif isinstance(self, Multipoint):
-                return esri._to_gj_multipoint(self)
+            str_item = json.dumps(dict(self))
+            return esri.loads(str_item)
 
 
     def __hash__(self):
