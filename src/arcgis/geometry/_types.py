@@ -3,7 +3,6 @@ New Geometries Classes
 """
 import copy
 import json
-from arcpy.arcobjects.geometries import Multipoint, Polyline
 import ujson as _ujson
 
 try:
