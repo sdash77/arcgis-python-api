@@ -206,6 +206,7 @@ class GeometryFactory(type):
             return _ujson.loads(arcpy.FromWKB(iterable).JSON)
         else:
             from geomet import wkb
+
             return wkb.loads(iterable)
         return {}
 
@@ -349,12 +350,13 @@ class Geometry(BaseGeometry):
                     "coordinates": [(pt[0], pt[1]) for pt in self["points"]],
                 }
             from arcgis._impl.common._arcgis2geojson import arcgis2geojson
+
             return arcgis2geojson(arcgis=self)
-        else: 
+        else:
             from geomet import esri
+
             str_item = json.dumps(dict(self))
             return esri.loads(str_item)
-
 
     def __hash__(self):
         return hash(frozenset(self.items()))
@@ -960,6 +962,7 @@ class Geometry(BaseGeometry):
                 return self._wkt(fmt="%.16f")
         else:
             from geomet import wkt, esri
+
             geojson_item = self.__geo_interface__
             return wkt.dumps(geojson_item)
 
@@ -992,8 +995,9 @@ class Geometry(BaseGeometry):
             except:
                 return None
         else:
-            #geomet conversion
+            # geomet conversion
             from geomet import wkb
+
             geojson_item = self.__geo_interface__
             return wkb.dumps(geojson_item, big_endian=False)
 
