@@ -843,7 +843,7 @@ class Geometry(BaseGeometry):
             import arcpy
         if HASARCPY and isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
-        elif 'coordinates' in self:
+        elif "coordinates" in self:
             from geomet import esri
 
             return json.dumps(esri.dumps(dict(self)))
