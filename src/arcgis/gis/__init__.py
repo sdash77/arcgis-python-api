@@ -13427,7 +13427,7 @@ class _GISResource(object):
     @property
     def properties(self):
         """
-        The ``properties`` method retrieves and set properties of this object.
+        The ``properties`` property retrieves and set properties of this object.
         """
         if self._hydrated:
             return self._lazy_properties
