@@ -61,6 +61,7 @@ else:
         "python-certifi-win32",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
+        "geomet",
         "requests",
         "requests-oauthlib",
         "requests_toolbelt",

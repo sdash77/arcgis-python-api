@@ -204,6 +204,10 @@ class GeometryFactory(type):
             _HASARCPY = False
         if _HASARCPY:
             return _ujson.loads(arcpy.FromWKB(iterable).JSON)
+        else:
+            from geomet import wkb
+
+            return wkb.loads(iterable)
         return {}
 
     @staticmethod
@@ -324,7 +328,7 @@ class Geometry(BaseGeometry):
                 return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
             else:
                 return self.as_arcpy.__geo_interface__
-        else:
+        elif _HASSHAPELY:
             if isinstance(self, Point):
                 return {"type": "Point", "coordinates": (self.x, self.y)}
             elif isinstance(self, Polygon):
@@ -345,10 +349,14 @@ class Geometry(BaseGeometry):
                     "type": "Multipoint",
                     "coordinates": [(pt[0], pt[1]) for pt in self["points"]],
                 }
-
             from arcgis._impl.common._arcgis2geojson import arcgis2geojson
 
             return arcgis2geojson(arcgis=self)
+        else:
+            from geomet import esri
+
+            str_item = json.dumps(dict(self))
+            return esri.loads(str_item)
 
     def __hash__(self):
         return hash(frozenset(self.items()))
@@ -927,7 +935,7 @@ class Geometry(BaseGeometry):
     @property
     def WKT(self):
         """
-        The ``WKY`` method retrieves the ``well-known text`` (``WKT``) representation for OGC geometry.
+        The ``WKT`` method retrieves the ``well-known text`` (``WKT``) representation for OGC geometry.
         It provides a portable representation of a geometry value as a text
         string.
 
@@ -952,8 +960,11 @@ class Geometry(BaseGeometry):
                 return self.as_shapely.wkt
             except:
                 return self._wkt(fmt="%.16f")
+        else:
+            from geomet import wkt, esri
 
-        return self._wkt(fmt="%.16f")
+            geojson_item = self.__geo_interface__
+            return wkt.dumps(geojson_item)
 
     # ----------------------------------------------------------------------
     @property
@@ -983,7 +994,12 @@ class Geometry(BaseGeometry):
                 return self.as_shapely.wkb
             except:
                 return None
-        return None
+        else:
+            # geomet conversion
+            from geomet import wkb
+
+            geojson_item = self.__geo_interface__
+            return wkb.dumps(geojson_item, big_endian=False)
 
     # ----------------------------------------------------------------------
     @property
@@ -2614,7 +2630,7 @@ class Geometry(BaseGeometry):
                         in_srid, out_srid
                     )
                 )
-
+            # in geomet there is transform in tools and then call from_geomet to make it back to what it was
             g = transform(project, self.as_shapely)
             return Geometry.from_shapely(g, spatial_reference=spatial_reference)
 
