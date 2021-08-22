@@ -1586,14 +1586,19 @@ class FeatureCollection(Layer):
                 "esriGeometryMultipoint",
             ]:
                 symbol = {
+                    "type": "esriSMS",
+                    "color": [226, 29, 145, 158],
                     "angle": 0,
                     "xoffset": 0,
-                    "yoffset": 12,
-                    "type": "esriPMS",
-                    "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
-                    "contentType": "image/png",
-                    "width": 24,
-                    "height": 24,
+                    "yoffset": 0,
+                    "size": 12,
+                    "style": "esriSMSCircle",
+                    "outline": {
+                        "type": "esriSLS",
+                        "color": [0, 0, 0, 255],
+                        "width": 0.75,
+                        "style": "esriSLSSolid",
+                    },
                 }
 
         fc_layer_definition["drawingInfo"] = {
