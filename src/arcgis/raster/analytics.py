@@ -6756,7 +6756,8 @@ def optimal_path_as_line(
         optimal_path_op = optimal_path_as_line(input_destination_data=destination_data,
                                                input_distance_accumulation_raster=accumulation_raster,
                                                input_back_direction_raster=back_direction_raster,
-                                               output_feature_name="optimal_path_feature")
+                                               output_feature_name="optimal_path_feature",
+                                               gis=gis)
 
     """
 
@@ -7686,7 +7687,7 @@ def manage_multidimensional_raster(
                                                         dimension_description="Depth",
                                                         dimension_unit="m",
                                                         gis=gis)
-                                                        
+
     """
 
     # task = "ManageMultidimensionalRaster"
