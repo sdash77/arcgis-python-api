@@ -4,6 +4,7 @@ to represent features and collection of features.
 """
 import copy
 import json
+from numpy import longlong
 import ujson as _ujson
 import os
 import re
@@ -244,7 +245,7 @@ class Feature(object):
     @classmethod
     def from_json(cls, json_str):
         """
-        The ``from_dict`` method creates a :class:`~arcgis.features.Feature` object from a JSON string.
+        The ``from_json`` method creates a :class:`~arcgis.features.Feature` object from a JSON string.
 
         :returns:
             A :class:`~arcgis.features.Feature` from a JSON string"""
@@ -336,7 +337,7 @@ class FeatureSet(object):
         global_id_field_name=None,
     ):
         """Constructor"""
-        self._fields = fields
+        self._fields = fields #set to be fields of all info
 
         self._has_z = has_z
         self._has_m = has_m
@@ -349,7 +350,7 @@ class FeatureSet(object):
         # conversion of different inputs to a common list of feature objects
         if isinstance(features, str):
             # convert the featuresclass to a list of features
-            features = self._fc_to_features(dataset=features)
+            features, fields = self._fc_to_features(dataset=features)
             if features is None:
                 raise AttributeError(
                     "Feature class could not be converted to a feature set"
@@ -385,7 +386,7 @@ class FeatureSet(object):
                 raise AttributeError(
                     "FeatureSet requires a list of features (as dicts or Feature objects)"
                 )
-
+        self._fields = fields
         self._features = features
         if len(features) > 0:
             feat_geom = None
@@ -556,39 +557,50 @@ class FeatureSet(object):
                     "Error creating FeatureSet: {0} does not exist".format(dataset)
                 )
 
-            desc = arcpy.Describe(dataset)
-            fields = [
-                field.name
-                for field in arcpy.ListFields(dataset)
-                if field.type not in ["Geometry"]
-            ]
-            date_fields = [
-                field.name
-                for field in arcpy.ListFields(dataset)
-                if field.type == "Date"
-            ]
-            non_geom_fields = copy.deepcopy(fields)
+            desc = arcpy.da.Describe(dataset)
+            fields =[]
+            date_fields = []
+            for field in desc["fields"]:
+                key = field.name
+                if field.type == "Date":
+                    field_type = "EsriFieldTypeDate"
+                    date_fields.append(key)
+                elif field.type == "Double":
+                    field_type = "EsriFieldTypeDouble"
+                elif field.type == "Integer":
+                    field_type = "EsriFieldTypeInteger"
+                else:
+                    field_type = "EsriFieldTypeString"
+                fields.append({
+                            "name": key,
+                            "alias": key,
+                            "type": field_type,
+                            "sqlType": "sqlTypeOther",
+                        })
+            fields_names = [field["name"] for field in fields]
+            non_geom_fields = copy.deepcopy(fields_names)
             features = []
             if hasattr(desc, "shapeFieldName"):
                 fields.append("SHAPE@JSON")
             del desc
-            with arcpy.da.SearchCursor(dataset, fields) as rows:
+
+            with arcpy.da.SearchCursor(dataset, fields_names) as rows: #get field names here 
                 for row in rows:
                     row = list(row)
                     for date_field in date_fields:
-                        if row[fields.index(date_field)] is not None:
-                            row[fields.index(date_field)] = int(
-                                (_date_handler(row[fields.index(date_field)]))
-                            )
+                        date_value = row[fields_names.index(date_field)]
+                        if date_value is not None:
+                            date_value = int(_date_handler(date_value))
+                            
                     template = {"attributes": dict(zip(non_geom_fields, row))}
                     if "SHAPE@JSON" in fields:
                         template["geometry"] = _ujson.loads(
                             row[fields.index("SHAPE@JSON")]
                         )
-
                     features.append(Feature.from_dict(template))
                     del row
-            return features
+
+            return features, fields
         return None
         # ----------------------------------------------------------------------
 
