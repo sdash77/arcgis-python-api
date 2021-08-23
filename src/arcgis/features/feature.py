@@ -337,7 +337,7 @@ class FeatureSet(object):
         global_id_field_name=None,
     ):
         """Constructor"""
-        self._fields = fields #set to be fields of all info
+        self._fields = fields  # set to be fields of all info
 
         self._has_z = has_z
         self._has_m = has_m
@@ -558,7 +558,7 @@ class FeatureSet(object):
                 )
 
             desc = arcpy.da.Describe(dataset)
-            fields =[]
+            fields = []
             date_fields = []
             for field in desc["fields"]:
                 key = field.name
@@ -571,12 +571,14 @@ class FeatureSet(object):
                     field_type = "EsriFieldTypeInteger"
                 else:
                     field_type = "EsriFieldTypeString"
-                fields.append({
-                            "name": key,
-                            "alias": key,
-                            "type": field_type,
-                            "sqlType": "sqlTypeOther",
-                        })
+                fields.append(
+                    {
+                        "name": key,
+                        "alias": key,
+                        "type": field_type,
+                        "sqlType": "sqlTypeOther",
+                    }
+                )
             fields_names = [field["name"] for field in fields]
             non_geom_fields = copy.deepcopy(fields_names)
             features = []
@@ -584,14 +586,16 @@ class FeatureSet(object):
                 fields.append("SHAPE@JSON")
             del desc
 
-            with arcpy.da.SearchCursor(dataset, fields_names) as rows: #get field names here 
+            with arcpy.da.SearchCursor(
+                dataset, fields_names
+            ) as rows:  # get field names here
                 for row in rows:
                     row = list(row)
                     for date_field in date_fields:
                         date_value = row[fields_names.index(date_field)]
                         if date_value is not None:
                             date_value = int(_date_handler(date_value))
-                            
+
                     template = {"attributes": dict(zip(non_geom_fields, row))}
                     if "SHAPE@JSON" in fields:
                         template["geometry"] = _ujson.loads(
@@ -1499,9 +1503,7 @@ class FeatureCollection(Layer):
                     "layers"
                 ][0]["layerDefinition"]["fields"]
 
-            return FeatureSet.from_dict(
-                self.properties["layers"][0]["featureSet"],
-            )
+            return FeatureSet.from_dict(self.properties["layers"][0]["featureSet"],)
         else:
             if "fields" in self.properties["layerDefinition"]:
                 self.properties["featureSet"]["fields"] = self.properties[
