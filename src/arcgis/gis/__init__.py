@@ -9461,8 +9461,8 @@ class User(dict):
                 print(f"{user.username} using {storage} bytes")
 
         .. code-block:: python
-            
-            # Example get items in each folder
+
+            # Example get items in each folder that is not root
             
             user = User(gis, username)
             folders = user.folders
