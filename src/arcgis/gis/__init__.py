@@ -9459,6 +9459,18 @@ class User(dict):
                 print(f"{user.username} using {storage} bytes")
             except Exception as e:
                 print(f"{user.username} using {storage} bytes")
+
+        .. code-block:: python
+            
+            # Example get items in each folder
+            
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                items = user.items(folder=folder["title"])
+                for item in items:
+                    print(item, folder)
+
         """
 
         items = []
