@@ -174,6 +174,20 @@ class GIS(object):
                         configuration, default authentication and similar. If `False`
                         the GIS class will ignore the `netrc` files defined on the
                         system.
+    ----------------    ---------------------------------------------------------------
+    proxy               Optional Dictionary.  If you need to use a proxy, you can
+                        configure individual requests with the proxy argument to any
+                        request method.  See ```Usage Exmaple 9: Using a Proxy``` for
+                        example usage.
+
+                        :Usage Example:
+
+
+                        {
+                            "http" : "http://10.343.10.22:111",
+                            "https" : "https://127.343.13.22:6443",
+                        }
+
     ================    ===============================================================
 
 
@@ -231,6 +245,15 @@ class GIS(object):
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
+
+    .. code-block:: python
+
+        # Usage Exmaple 9: Using a Proxy
+        proxy = {
+            'http': 'http://10.10.1.10:3128',
+            'https': 'http://10.10.1.10:1080',
+        }
+        gis = GIS(proxy=proxy)
 
     """
 
