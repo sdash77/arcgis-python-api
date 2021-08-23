@@ -1150,20 +1150,20 @@ class ImageryLayer(Layer):
                                         false, neither the geometry nor attributes of catalog items will be
                                         returned.
         ----------------------------    --------------------------------------------------------------------
-        return_pixel_values             optional boolean.  Indicates whether to return the pixel values of 
-                                        all mosaicked raster catalog items under the requested geometry. 
-                                        
-                                        Set it to false when only the pixel value of mosaicked output is 
-                                        needed at requested geometry. 
-                                        
+        return_pixel_values             optional boolean.  Indicates whether to return the pixel values of
+                                        all mosaicked raster catalog items under the requested geometry.
+
+                                        Set it to false when only the pixel value of mosaicked output is
+                                        needed at requested geometry.
+
                                         The default value of this parameter is ``True``.
-                                        
+
                                         .. note::
                                             This parameter was added at 10.6.1.
         ----------------------------    --------------------------------------------------------------------
-        max_item_count                  optional int. If the return_catalog_items parameter is set to true, 
-                                        this parameter will take effect. The default behavior is to return 
-                                        all raster catalog items within the requested geometry. 
+        max_item_count                  optional int. If the return_catalog_items parameter is set to true,
+                                        this parameter will take effect. The default behavior is to return
+                                        all raster catalog items within the requested geometry.
                                         Otherwise, the number of items returned will be the value specified in the
                                         max_item_count or all eligible items, whichever is smaller.
 
@@ -1174,26 +1174,26 @@ class ImageryLayer(Layer):
                                             The parameter was added at 10.6.1.
 
         ----------------------------    --------------------------------------------------------------------
-        slice_id                        optional int. The slice ID of multidimensional raster. The identify 
-                                        operation will be performed for the specified slice. To get the slice 
+        slice_id                        optional int. The slice ID of multidimensional raster. The identify
+                                        operation will be performed for the specified slice. To get the slice
                                         ID use slices method on the ``ImageryLayer`` object.
-                                        
+
 
                                         .. note::
                                             The parameter was added at 10.9 for image services which use
                                             ``ArcObjects11`` or ``ArcObjectsRasterRendering``
                                             as the service provider.
         ----------------------------    --------------------------------------------------------------------
-        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a
                                         multidimensional image service.
-                                        
+
                                             - ``False`` - Pixel values of the specified rendering rules and mosaic
                                             rule at the specified geometry will be returned. This is the
                                             default.
                                             - ``True`` - The image service is treated as a multidimensional raster,
                                             and pixel values from all slices, along with additional properties
                                             describing the slices, will be returned.
-                                        
+
                                         .. note::
                                             The parameter was added at 10.9 for image services which use
                                             ``ArcObjects11`` or ``ArcObjectsRasterRendering``
@@ -7141,7 +7141,7 @@ class Raster:
 
         :returns:
             A list of names and dimensions.
-            """
+        """
         return self._engine_obj.variables
 
     @property
