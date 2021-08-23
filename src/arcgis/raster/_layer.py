@@ -911,6 +911,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"] = self._uri
         return self._con.get(url, params)
+
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
@@ -2571,7 +2572,7 @@ class ImageryLayer(Layer):
     def thumbnail(self, out_path=None):
         """
         Function will download the image to local disk
-        
+
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
