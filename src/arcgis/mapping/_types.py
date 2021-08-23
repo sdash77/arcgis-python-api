@@ -3711,10 +3711,10 @@ class VectorTileLayer(Layer):
     @property
     def info(self):
         """
-         The ``info`` property retrieves the relative paths to a list of resource files.
+        The ``info`` property retrieves the relative paths to a list of resource files.
 
-         :returns:
-            A List of relative paths
+        :returns:
+           A List of relative paths
         """
         url = "{url}/resources/info".format(url=self._url)
         params = {"f": "json"}
