@@ -337,8 +337,6 @@ class FeatureSet(object):
         global_id_field_name=None,
     ):
         """Constructor"""
-        self._fields = fields  # set to be fields of all info
-
         self._has_z = has_z
         self._has_m = has_m
         self._geometry_type = geometry_type
@@ -603,7 +601,7 @@ class FeatureSet(object):
                         )
                     features.append(Feature.from_dict(template))
                     del row
-
+            fields = fields if fields else None
             return features, fields
         return None
         # ----------------------------------------------------------------------
