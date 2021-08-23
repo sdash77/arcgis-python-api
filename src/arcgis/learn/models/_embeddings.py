@@ -28,12 +28,19 @@ try:
     from fastai.vision.data import imagenet_stats
     from fastprogress.fastprogress import progress_bar
     from .._data import _make_folder
-    from ..models._arcgis_model import _device_check, _resnet_family, _vgg_family, _densenet_family
+    from ..models._arcgis_model import (
+        _device_check,
+        _resnet_family,
+        _vgg_family,
+        _densenet_family,
+    )
 except Exception as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 else:
-    warnings.filterwarnings("ignore", category=UserWarning, module='fastai')
+    warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
 try:
     import numpy as np
@@ -47,7 +54,7 @@ try:
 except Exception as e:
     HAS_BEAUTIFULSOUP = False
 else:
-    warnings.filterwarnings("ignore", category=UserWarning, module='bs4')
+    warnings.filterwarnings("ignore", category=UserWarning, module="bs4")
 
 try:
     from transformers import AutoTokenizer, AutoModel
@@ -55,38 +62,48 @@ except Exception as e:
     HAS_TRANSFORMER = False
 
 max_token_length = 512
-allowed_text_extensions = ['csv', 'txt', 'json']
-allowed_image_extensions = ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp']
+allowed_text_extensions = ["csv", "txt", "json"]
+allowed_image_extensions = ["png", "jpg", "jpeg", "tiff", "tif", "bmp"]
 
 
 class TextModule:
-
     @staticmethod
     def preprocess_text(text, remove_urls=False, remove_html_tags=False):
         """
         Perform some basic cleanup like removing HTML tags, removing urls,
         and converting multiple white spaces to single white space
         """
-        if remove_urls: text = re.sub(r'\b(?:(?:https?|ftp)://)?\w[\w-]*(?:\.[\w-]+)+\S*', ' ', text)
+        if remove_urls:
+            text = re.sub(
+                r"\b(?:(?:https?|ftp)://)?\w[\w-]*(?:\.[\w-]+)+\S*", " ", text
+            )
 
         # text = re.sub(r'<.*?>', '', text)
         if remove_html_tags:
-            if not HAS_BEAUTIFULSOUP: raise Exception("This module requires BeautifulSoup.")
-            text = BeautifulSoup(text, 'html.parser').get_text(separator=" ", strip=True)
+            if not HAS_BEAUTIFULSOUP:
+                raise Exception("This module requires BeautifulSoup.")
+            text = BeautifulSoup(text, "html.parser").get_text(
+                separator=" ", strip=True
+            )
 
-        if any([remove_html_tags, remove_urls]): text = re.sub(' +', ' ', text)
+        if any([remove_html_tags, remove_urls]):
+            text = re.sub(" +", " ", text)
         return text.strip()
 
     @classmethod
     def preprocess_text_list(cls, text_list, remove_urls=False, remove_html_tags=False):
-        text_list = [cls.preprocess_text(x, remove_urls, remove_html_tags) for x in text_list]
+        text_list = [
+            cls.preprocess_text(x, remove_urls, remove_html_tags) for x in text_list
+        ]
         return text_list
 
     # Mean Pooling - Take attention mask into account for correct averaging
     @staticmethod
     def mean_pooling(model_output, attention_mask):
         token_embeddings = model_output
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        input_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        )
         sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
         sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
         return sum_embeddings / sum_mask
@@ -95,8 +112,12 @@ class TextModule:
     @staticmethod
     def max_pooling(model_output, attention_mask):
         token_embeddings = model_output
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        token_embeddings[input_mask_expanded == 0] = -1e9  # Set padding tokens to large negative value
+        input_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        )
+        token_embeddings[
+            input_mask_expanded == 0
+        ] = -1e9  # Set padding tokens to large negative value
         max_over_time = torch.max(token_embeddings, 1)[0]
         return max_over_time
 
@@ -150,6 +171,7 @@ class Embeddings:
     def __init__(self, dataset_type="image", backbone=None, **kwargs):
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
+
             _raise_fastai_import_error(import_exception=import_exception)
         self._dataset_type = dataset_type
 
@@ -158,8 +180,8 @@ class Embeddings:
         elif self._dataset_type == "text":
             self._allowed_extensions = allowed_text_extensions
 
-        if 'working_dir' in kwargs:
-            self.working_dir = kwargs.get('working_dir')
+        if "working_dir" in kwargs:
+            self.working_dir = kwargs.get("working_dir")
         else:
             self.working_dir = Path.cwd()
 
@@ -169,11 +191,14 @@ class Embeddings:
         self.backbone = None
         self._tokenizer = None
         self._device = self._get_device()
-        self._error_message = (f"Wrong backbone - {backbone} choosen for dataset-type - {self._dataset_type}. Kindly "
-                               f"call the `Embeddings.supported_backbones('{self._dataset_type}')` to see the "
-                               f"supported backbones for - {self._dataset_type} dataset-type.")
+        self._error_message = (
+            f"Wrong backbone - {backbone} choosen for dataset-type - {self._dataset_type}. Kindly "
+            f"call the `Embeddings.supported_backbones('{self._dataset_type}')` to see the "
+            f"supported backbones for - {self._dataset_type} dataset-type."
+        )
 
         from arcgis._impl.common._utils import _DisableLogger
+
         with _DisableLogger():
             self.model = self._load_model(dataset_type, backbone)
         self.model.to(self._device)
@@ -204,24 +229,41 @@ class Embeddings:
 
     @staticmethod
     def _get_image_compatible_backbones():
-        return [*_resnet_family, *_densenet_family, *_vgg_family, models.mobilenet_v2.__name__]
+        return [
+            *_resnet_family,
+            *_densenet_family,
+            *_vgg_family,
+            models.mobilenet_v2.__name__,
+        ]
 
     @staticmethod
     def _get_text_compatible_backbones():
-        return ["sentence-transformers/distilbert-base-nli-stsb-mean-tokens",
-                "sentence-transformers/bert-base-nli-max-tokens", "sentence-transformers/bert-base-nli-cls-token"] + \
-               ["See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"]
+        return [
+            "sentence-transformers/distilbert-base-nli-stsb-mean-tokens",
+            "sentence-transformers/bert-base-nli-max-tokens",
+            "sentence-transformers/bert-base-nli-cls-token",
+        ] + [
+            "See all `TextEmbedding` models at https://huggingface.co/sentence-transformers"
+        ]
 
     def _get_device(self):
         move_to_cpu = _device_check()
-        if move_to_cpu: arcgis.env._processorType = "CPU"
+        if move_to_cpu:
+            arcgis.env._processorType = "CPU"
 
-        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        if (
+            getattr(arcgis.env, "_processorType", "") == "GPU"
+            and torch.cuda.is_available()
+        ):
             device = torch.device("cuda")
         elif getattr(arcgis.env, "_processorType", "") == "CPU":
             device = torch.device("cpu")
         else:
-            device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+            device = (
+                torch.device("cuda")
+                if torch.cuda.is_available()
+                else torch.device("cpu")
+            )
         return device
 
     def _load_model(self, dataset_type="image", backbone=None):
@@ -235,7 +277,8 @@ class Embeddings:
         return model
 
     def _load_image_model(self, backbone=None):
-        if backbone is None: backbone = "resnet34"
+        if backbone is None:
+            backbone = "resnet34"
 
         if hasattr(models, backbone):
             model_type = getattr(models, backbone)
@@ -244,7 +287,7 @@ class Embeddings:
 
         self.backbone = backbone
         model = model_type(pretrained=True, progress=True)
-        if 'vgg' in self.backbone:
+        if "vgg" in self.backbone:
             model.classifier = model.classifier[:-1]
         else:
             layers = list(model.children())[:-1]
@@ -255,11 +298,14 @@ class Embeddings:
     def _load_text_model(self, backbone=None):
         if not HAS_TRANSFORMER:
             raise Exception("This module requires transformers library.")
-        if backbone is None: backbone = "sentence-transformers/distilbert-base-nli-stsb-mean-tokens"
+        if backbone is None:
+            backbone = "sentence-transformers/distilbert-base-nli-stsb-mean-tokens"
         self.backbone = backbone
         try:
             model = AutoModel.from_pretrained(backbone)
-            self._tokenizer = AutoTokenizer.from_pretrained(backbone, config=model.config)
+            self._tokenizer = AutoTokenizer.from_pretrained(
+                backbone, config=model.config
+            )
         except Exception as e:
             raise Exception(self._error_message)
 
@@ -345,8 +391,10 @@ class Embeddings:
         file_name = f"embeddings_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.h5"
         self._file_path = os.path.join(self.working_dir, "embeddings", file_name)
         if os.path.exists(self._file_path):
-            raise Exception(f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
-                            f"or move the file to another location to proceed.")
+            raise Exception(
+                f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
+                f"or move the file to another location to proceed."
+            )
 
         item_list = self._get_items(text_or_list, **kwargs)
         if self._dataset_type == "image":
@@ -358,19 +406,27 @@ class Embeddings:
 
     @staticmethod
     def _do_h5file_sanity(file_path):
-        hf = h5py.File(file_path, 'r')
+        hf = h5py.File(file_path, "r")
         dataset_keys = list(hf.keys())
-        if len(dataset_keys) != 2 or "embeddings" not in dataset_keys or "items" not in dataset_keys:
-            error_message = (f"Wrong H5 file passed. The H5 files consists of - {dataset_keys} dataset keys. "
-                             f"We expected the following dataset keys - ['items', 'embeddings']")
+        if (
+            len(dataset_keys) != 2
+            or "embeddings" not in dataset_keys
+            or "items" not in dataset_keys
+        ):
+            error_message = (
+                f"Wrong H5 file passed. The H5 files consists of - {dataset_keys} dataset keys. "
+                f"We expected the following dataset keys - ['items', 'embeddings']"
+            )
             hf.close()
             raise Exception(error_message)
 
-        embeddings_dataset, items_dataset = hf.get('embeddings'), hf.get('items')
+        embeddings_dataset, items_dataset = hf.get("embeddings"), hf.get("items")
         if embeddings_dataset.shape[0] != items_dataset.shape[0]:
-            error_message = (f"Length of `embeddings`({embeddings_dataset.shape[0]}) and `items`"
-                             f"({items_dataset.shape[0]}) do not match. There's some problem with the "
-                             f"file present at location - {file_path}")
+            error_message = (
+                f"Length of `embeddings`({embeddings_dataset.shape[0]}) and `items`"
+                f"({items_dataset.shape[0]}) do not match. There's some problem with the "
+                f"file present at location - {file_path}"
+            )
             raise Exception(error_message)
 
         hf.close()
@@ -404,8 +460,8 @@ class Embeddings:
             raise Exception(f"The path `{file_path}` does not exists, or not a file")
 
         self._do_h5file_sanity(file_path)
-        hf = h5py.File(file_path, 'r')
-        embeddings_dataset, items_dataset = hf.get('embeddings'), hf.get('items')
+        hf = h5py.File(file_path, "r")
+        embeddings_dataset, items_dataset = hf.get("embeddings"), hf.get("items")
         if load_to_memory:
             embeddings, items = np.array(embeddings_dataset), np.array(items_dataset)
             hf.close()
@@ -419,46 +475,59 @@ class Embeddings:
             if os.path.exists(directory) is False:
                 raise Exception(f"The path `{directory}` does not exists.")
             if os.path.isfile(directory):
-                raise Exception(f"The path `{directory}` seems like a file path. Please provide the directory path.")
+                raise Exception(
+                    f"The path `{directory}` seems like a file path. Please provide the directory path."
+                )
             if os.path.isdir(directory) is False:
-                raise Exception(f"The path `{directory}` is not a valid directory path.")
+                raise Exception(
+                    f"The path `{directory}` is not a valid directory path."
+                )
 
     def _check_file_extension_validity(self, file_extensions):
         for extension in file_extensions:
             if extension not in self._allowed_extensions:
-                raise Exception(f"Extension -`{extension}` is not a valid extension for dataset-type - "
-                                f"`{self._dataset_type}`. Allowed extension values are - {self._allowed_extensions}")
+                raise Exception(
+                    f"Extension -`{extension}` is not a valid extension for dataset-type - "
+                    f"`{self._dataset_type}`. Allowed extension values are - {self._allowed_extensions}"
+                )
 
     def _get_text_items(self, file_paths, text_column, encoding):
         text_list = []
         for file_path, ext in file_paths:
             if ext == "txt":
-                with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
+                with open(file_path, "r", encoding=encoding, errors="ignore") as f:
                     text_list.append(f.read())
             elif ext == "csv":
-                df = pd.read_csv(file_path, dtype='str')
+                df = pd.read_csv(file_path, dtype="str")
                 if text_column not in df.columns:
-                    raise Exception(f"CSV file - {file_path} doesn't contain the column - `{text_column}`")
+                    raise Exception(
+                        f"CSV file - {file_path} doesn't contain the column - `{text_column}`"
+                    )
                 df.dropna(axis=0, subset=[text_column], inplace=True)
                 text_list.extend(df[text_column].values.tolist())
             elif ext == "json":
-                with open(file_path, 'r', encoding=encoding) as f:
+                with open(file_path, "r", encoding=encoding) as f:
                     data_list = f.readlines()
 
                 txt_list = []
                 for item in data_list:
                     data_dict = json.loads(item)
                     if text_column not in data_dict:
-                        raise Exception(f"Row - \n{data_dict}\n\n in JSON file - {file_path} doesn't contain the key - "
-                                        f"`{text_column}`. Kindly fix the JSON file or pass the correct value of the "
-                                        f"`text_column` parameter in the `get` method call.")
+                        raise Exception(
+                            f"Row - \n{data_dict}\n\n in JSON file - {file_path} doesn't contain the key - "
+                            f"`{text_column}`. Kindly fix the JSON file or pass the correct value of the "
+                            f"`text_column` parameter in the `get` method call."
+                        )
                     text = data_dict[text_column]
-                    if text: txt_list.append(text)
+                    if text:
+                        txt_list.append(text)
 
                 text_list.extend(txt_list)
             else:
-                raise Exception(f"Extension -`{ext}` is not a valid extension for dataset-type - `{self._dataset_type}`"
-                                f". Allowed extension values are - {self._allowed_extensions}")
+                raise Exception(
+                    f"Extension -`{ext}` is not a valid extension for dataset-type - `{self._dataset_type}`"
+                    f". Allowed extension values are - {self._allowed_extensions}"
+                )
 
         return text_list
 
@@ -472,7 +541,8 @@ class Embeddings:
         self._check_file_extension_validity(file_extensions)
         text_column = kwargs.get("text_column", "text")
         encoding = kwargs.get("encoding", "utf-8")
-        if isinstance(dir_path, (str, bytes)): dir_path = [dir_path]
+        if isinstance(dir_path, (str, bytes)):
+            dir_path = [dir_path]
         self._check_directory_validity(dir_path)
 
         for rootdir in dir_path:
@@ -481,13 +551,17 @@ class Embeddings:
                     fname = os.path.join(dirpath, filename)
                     ext = os.path.splitext(filename)[-1].lower().replace(".", "")
                     if ext in file_extensions:
-                        logging.info(f"File name - {fname} will be considered for getting the embeddings")
+                        logging.info(
+                            f"File name - {fname} will be considered for getting the embeddings"
+                        )
                         item_list.append((fname, ext))
 
         if len(item_list) == 0:
-            raise Exception(f"Not a single item found to extract the embeddings in folder(s) - {dir_path}. Kindly check"
-                            f" if the directory contains image/text files or check if you have passed the right set of"
-                            f" `file_extensions` to the method.")
+            raise Exception(
+                f"Not a single item found to extract the embeddings in folder(s) - {dir_path}. Kindly check"
+                f" if the directory contains image/text files or check if you have passed the right set of"
+                f" `file_extensions` to the method."
+            )
 
         if self._dataset_type == "text":
             item_list = self._get_text_items(item_list, text_column, encoding)
@@ -498,50 +572,80 @@ class Embeddings:
 
     @staticmethod
     def _normalize(x, mean, std):
-        z = ((x - mean[..., None, None]) / std[..., None, None])
+        z = (x - mean[..., None, None]) / std[..., None, None]
         return z
 
     @staticmethod
     def _insert_to_h5_file(file_handler, items, embeddings):
         dt = h5py.special_dtype(vlen=bytes)
         if len(file_handler.keys()) == 0:
-            file_handler.create_dataset('items', data=items, maxshape=(None, ), dtype=dt, chunks=True)
-            file_handler.create_dataset('embeddings', data=embeddings,
-                              maxshape=(None, embeddings.shape[1]), chunks=True)
+            file_handler.create_dataset(
+                "items", data=items, maxshape=(None,), dtype=dt, chunks=True
+            )
+            file_handler.create_dataset(
+                "embeddings",
+                data=embeddings,
+                maxshape=(None, embeddings.shape[1]),
+                chunks=True,
+            )
         else:
-            file_handler["items"].resize((file_handler["items"].shape[0] + items.shape[0]), axis=0)
-            file_handler["items"][-items.shape[0]:] = items
-            file_handler["embeddings"].resize((file_handler["embeddings"].shape[0] + embeddings.shape[0]), axis=0)
-            file_handler["embeddings"][-embeddings.shape[0]:] = embeddings
+            file_handler["items"].resize(
+                (file_handler["items"].shape[0] + items.shape[0]), axis=0
+            )
+            file_handler["items"][-items.shape[0] :] = items
+            file_handler["embeddings"].resize(
+                (file_handler["embeddings"].shape[0] + embeddings.shape[0]), axis=0
+            )
+            file_handler["embeddings"][-embeddings.shape[0] :] = embeddings
 
     def _get_image(self, item_list, batch_size=32, show_progress=True, **kwargs):
         normalize = kwargs.get("normalize", True)
-        resize_to = kwargs.get('chip_size', 224)
+        resize_to = kwargs.get("chip_size", 224)
         mean, std = None, None
         if normalize:
             mean, std = imagenet_stats
             mean = torch.tensor(mean).float().to(self._device)
             std = torch.tensor(std).float().to(self._device)
 
-        with h5py.File(self._file_path, 'a') as hf:
-            for i in progress_bar(range(0, len(item_list), batch_size), display=show_progress):
+        with h5py.File(self._file_path, "a") as hf:
+            for i in progress_bar(
+                range(0, len(item_list), batch_size), display=show_progress
+            ):
                 try:
-                    img_list = item_list[i: i + batch_size]
-                    img_batch = np.array([np.array(PIL_Image.open(img_path).resize((resize_to, resize_to)))
-                                         .astype(float) / 255.0 for img_path in img_list])
+                    img_list = item_list[i : i + batch_size]
+                    img_batch = np.array(
+                        [
+                            np.array(
+                                PIL_Image.open(img_path).resize((resize_to, resize_to))
+                            ).astype(float)
+                            / 255.0
+                            for img_path in img_list
+                        ]
+                    )
 
-                    img_batch = torch.tensor(img_batch.transpose(0, 3, 1, 2)).float().to(self._device)
-                    if normalize: img_batch = self._normalize(img_batch, mean, std)
+                    img_batch = (
+                        torch.tensor(img_batch.transpose(0, 3, 1, 2))
+                        .float()
+                        .to(self._device)
+                    )
+                    if normalize:
+                        img_batch = self._normalize(img_batch, mean, std)
 
                     with torch.no_grad():
                         out = self.model(img_batch)
                         if "densenet" in self.backbone or "mobilenet" in self.backbone:
                             out = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))(out)
-                        if "densenet" in self.backbone or "mobilenet" in self.backbone or "resnet" in self.backbone:
+                        if (
+                            "densenet" in self.backbone
+                            or "mobilenet" in self.backbone
+                            or "resnet" in self.backbone
+                        ):
                             out = out.view(out.size(0), -1)
 
                     img_list = np.array([x.encode() for x in img_list])
-                    batch_embeddings = torch.nn.functional.normalize(out.data).cpu().detach().numpy()
+                    batch_embeddings = (
+                        torch.nn.functional.normalize(out.data).cpu().detach().numpy()
+                    )
                     self._insert_to_h5_file(hf, img_list, batch_embeddings)
                 except Exception as e:
                     raise Exception(e)
@@ -552,43 +656,71 @@ class Embeddings:
         pooling_strategy = kwargs.get("pooling_strategy", "mean")
 
         if any([remove_urls, remove_html_tags]):
-            item_list = TextModule.preprocess_text_list(item_list, remove_urls, remove_html_tags)
+            item_list = TextModule.preprocess_text_list(
+                item_list, remove_urls, remove_html_tags
+            )
 
-        with h5py.File(self._file_path, 'a') as hf:
-            for i in progress_bar(range(0, len(item_list), batch_size), display=show_progress):
-                text_batch = item_list[i: i + batch_size]
-                encoded_input = self._tokenizer(text_batch, padding=True, truncation=True, max_length=max_token_length,
-                                                return_tensors='pt').to(self._device)
+        with h5py.File(self._file_path, "a") as hf:
+            for i in progress_bar(
+                range(0, len(item_list), batch_size), display=show_progress
+            ):
+                text_batch = item_list[i : i + batch_size]
+                encoded_input = self._tokenizer(
+                    text_batch,
+                    padding=True,
+                    truncation=True,
+                    max_length=max_token_length,
+                    return_tensors="pt",
+                ).to(self._device)
                 with torch.no_grad():
                     model_output = self.model(**encoded_input)
 
                 # First element of model_output contains all token embeddings
                 # token_embeddings = torch.nn.functional.normalize(model_output[0])
-                token_embeddings, attention_mask = model_output[0], encoded_input['attention_mask']
+                token_embeddings, attention_mask = (
+                    model_output[0],
+                    encoded_input["attention_mask"],
+                )
                 if pooling_strategy == "mean":
-                    batch_embedding = TextModule.mean_pooling(token_embeddings, attention_mask)
+                    batch_embedding = TextModule.mean_pooling(
+                        token_embeddings, attention_mask
+                    )
                 elif pooling_strategy == "max":
-                    batch_embedding = TextModule.max_pooling(token_embeddings, attention_mask)
+                    batch_embedding = TextModule.max_pooling(
+                        token_embeddings, attention_mask
+                    )
                 elif pooling_strategy == "first":
                     batch_embedding = TextModule.cls_token(token_embeddings)
                 else:
-                    error_message = (f"Wrong pooling-strategy - {pooling_strategy} choosen. Allowed values are - "
-                                     f"'mean', 'max' and 'first'. kindly choose from these options.")
+                    error_message = (
+                        f"Wrong pooling-strategy - {pooling_strategy} choosen. Allowed values are - "
+                        f"'mean', 'max' and 'first'. kindly choose from these options."
+                    )
                     raise Exception(error_message)
 
                 text_batch = np.array([x.encode() for x in text_batch])
-                batch_embeddings = torch.nn.functional.normalize(batch_embedding).cpu().detach().numpy()
+                batch_embeddings = (
+                    torch.nn.functional.normalize(batch_embedding)
+                    .cpu()
+                    .detach()
+                    .numpy()
+                )
                 self._insert_to_h5_file(hf, text_batch, batch_embeddings)
 
     @staticmethod
     def _do_clustering(embeddings, item_list=None, n_clusters=5, dimensions=3):
         n_components = min(embeddings.shape[0], 64)
-        transformed_embeddings = PCA(n_components=n_components).fit_transform(embeddings)
-        embeddings_for_visualization = PCA(n_components=dimensions).fit_transform(embeddings)
+        transformed_embeddings = PCA(n_components=n_components).fit_transform(
+            embeddings
+        )
+        embeddings_for_visualization = PCA(n_components=dimensions).fit_transform(
+            embeddings
+        )
 
         columns = ["x", "y", "z"] if dimensions == 3 else ["x", "y"]
         result = pd.DataFrame(embeddings_for_visualization, columns=columns)
-        if item_list:result['item'] = item_list
+        if item_list:
+            result["item"] = item_list
 
         # DBSCAN clustering
         # eps = kwargs.pop("eps", 0.5)
@@ -601,27 +733,35 @@ class Embeddings:
         # KMeans clustering
         clustering = KMeans(n_clusters=n_clusters)
         labels = clustering.fit_predict(transformed_embeddings)
-        result['labels'] = labels
+        result["labels"] = labels
         random_sample = result.reset_index(drop=True)
 
         if len(random_sample) > 500:
-            num_items_per_group = int(500/n_clusters)
+            num_items_per_group = int(500 / n_clusters)
             # random_sample = random_sample.sample(n=500).reset_index(drop=True)
-            random_sample = random_sample.groupby('labels').apply(
-                lambda x: x.sample(n=num_items_per_group, replace=True)).reset_index(drop=True)
+            random_sample = (
+                random_sample.groupby("labels")
+                .apply(lambda x: x.sample(n=num_items_per_group, replace=True))
+                .reset_index(drop=True)
+            )
 
         # print(len(random_sample))
         return random_sample
 
     def _visualize_with_items(self, cluster_dataframe, dimensions=3):
         from ipywidgets import Image, Layout, HBox, Textarea
+
         image_data = {}
         widget_dict = dict(
-            x=cluster_dataframe['x'], y=cluster_dataframe['y'],
-            mode='markers', marker=dict(color=cluster_dataframe["labels"])
+            x=cluster_dataframe["x"],
+            y=cluster_dataframe["y"],
+            mode="markers",
+            marker=dict(color=cluster_dataframe["labels"]),
         )
-        if dimensions == 3: widget_dict.update({"z": cluster_dataframe["z"], "type": "scatter3d"})
-        else: widget_dict.update({"type": "scatter"})
+        if dimensions == 3:
+            widget_dict.update({"z": cluster_dataframe["z"], "type": "scatter3d"})
+        else:
+            widget_dict.update({"type": "scatter"})
 
         fig = go.FigureWidget(data=[widget_dict])
 
@@ -630,14 +770,21 @@ class Embeddings:
         if self._dataset_type == "image":
             for img_path in cluster_dataframe["item"]:
                 img = np.array(PIL_Image.open(img_path))
-                inmem_jpg = cv2.imencode('.png', cv2.cvtColor(img, cv2.COLOR_BGR2RGB))[1].tobytes()
+                inmem_jpg = cv2.imencode(".png", cv2.cvtColor(img, cv2.COLOR_BGR2RGB))[
+                    1
+                ].tobytes()
                 image_data[img_path] = inmem_jpg
 
-            widget = Image(value=image_data[cluster_dataframe.item.iloc[0]],
-                           layout=Layout(height='200px', width='200px'))
+            widget = Image(
+                value=image_data[cluster_dataframe.item.iloc[0]],
+                layout=Layout(height="200px", width="200px"),
+            )
         else:
-            widget = Textarea(value=cluster_dataframe.item.iloc[0], disabled=True,
-                              layout=Layout(height='350px', width='200px'))
+            widget = Textarea(
+                value=cluster_dataframe.item.iloc[0],
+                disabled=True,
+                layout=Layout(height="350px", width="200px"),
+            )
 
         def hover_fn(trace, points, state):
 
@@ -648,7 +795,9 @@ class Embeddings:
         scatter.on_hover(hover_fn)
         return HBox([fig, widget])
 
-    def visualize(self, file_path, visualize_with_items=True, n_clusters=5, dimensions=3):
+    def visualize(
+        self, file_path, visualize_with_items=True, n_clusters=5, dimensions=3
+    ):
         """
         Method to visualize the embedding vectors for the image/text items.
         This method uses the K-Means clustering algorithm to partition the
@@ -680,20 +829,37 @@ class Embeddings:
         """
 
         self._do_h5file_sanity(file_path)
-        hf = h5py.File(file_path, 'r')
-        embeddings_dataset, items_dataset = hf.get('embeddings'), hf.get('items')
-        embeddings, item_list = np.array(embeddings_dataset), np.array(items_dataset).tolist()
+        hf = h5py.File(file_path, "r")
+        embeddings_dataset, items_dataset = hf.get("embeddings"), hf.get("items")
+        embeddings, item_list = (
+            np.array(embeddings_dataset),
+            np.array(items_dataset).tolist(),
+        )
         hf.close()
 
         # For using DBSCAN clustering take `eps`, `metric` and `min_samples` in **kwargs and pass to below method
-        cluster_df = self._do_clustering(embeddings, item_list, n_clusters=n_clusters, dimensions=dimensions)
+        cluster_df = self._do_clustering(
+            embeddings, item_list, n_clusters=n_clusters, dimensions=dimensions
+        )
 
         if visualize_with_items is False:
             if dimensions == 3:
-                fig = px.scatter_3d(cluster_df, x=cluster_df.x, y=cluster_df.y, z=cluster_df.z,
-                                    color=cluster_df.labels, hover_data=['labels'])
+                fig = px.scatter_3d(
+                    cluster_df,
+                    x=cluster_df.x,
+                    y=cluster_df.y,
+                    z=cluster_df.z,
+                    color=cluster_df.labels,
+                    hover_data=["labels"],
+                )
             else:
-                fig = px.scatter(cluster_df, x=cluster_df.x, y=cluster_df.y, color="labels", hover_data=['labels'])
+                fig = px.scatter(
+                    cluster_df,
+                    x=cluster_df.x,
+                    y=cluster_df.y,
+                    color="labels",
+                    hover_data=["labels"],
+                )
             return fig
         else:
             return self._visualize_with_items(cluster_df, dimensions)

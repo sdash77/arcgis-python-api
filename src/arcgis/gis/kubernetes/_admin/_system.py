@@ -57,9 +57,13 @@ class Server(_BaseKube):
 
 ###########################################################################
 class ServerDefaults(_BaseKube):
+    """Represents the server default values"""
+
     @property
     def properties(self):
-        return "foo"
+        url = self._url
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     @properties.setter
     def properties(self, value):
@@ -71,7 +75,7 @@ class ServerDefaults(_BaseKube):
 
 ###########################################################################
 class ServerManager(_BaseKube):
-    """ """
+    """Manages the Registered Servers"""
 
     _gis = None
     _con = None
@@ -86,12 +90,14 @@ class ServerManager(_BaseKube):
 
         """
         servers = []
-        for server in self.properties.servers:
-            url = f"{self._url}/{server.id}"
-            servers.append(Server(url, self._gis))
+        if "servers" in self.properties:
+            for server in self.properties.servers:
+                url = f"{self._url}/{server.id}"
+                servers.append(Server(url, self._gis))
         return servers
 
     # ----------------------------------------------------------------------
+    @property
     def defaults(self):
         """
         Returns the default properties for each server type.
@@ -197,7 +203,7 @@ class SystemManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def deployments(self) -> DeploymentManager:
-        """ """
+        """Manages the deployment settings for enterprise"""
         url = f"{self._url}/deployments"
         if self._deployments is None:
             self._deployments = DeploymentManager(url=url, gis=self._gis)
@@ -237,16 +243,13 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def licenses(self) -> List[Dict[str, Any]]:
+    def _licenses(self) -> List[Dict[str, Any]]:
         """
         The licenses resource lists the current license level of ArcGIS Server and all authorized extensions.
 
         :returns: List[Dict[str, Any]]
         """
-        if self._license is None:
-            url = f"{self._url}/licenses"
-            self._license = LicenseManager(url=url, gis=self._gis)
-        return self._license
+        raise NotImplemented("Not Implemented in 1.9.0")
 
     # ----------------------------------------------------------------------
     @property
@@ -265,14 +268,14 @@ class SystemManager(_BaseKube):
     @property
     def _tasks(self):
         """ """
-        return
+        raise NotImplemented("Not Implemented in 1.9.0")
 
     # ----------------------------------------------------------------------
     @property
-    def architecture_profiles(self) -> ArchitectureManager:
-        """ """
+    def _architecture_profiles(self) -> ArchitectureManager:
+        """Not Implemented in 1.9.0"""
         # architecture profiles
-        return
+        raise NotImplemented("Not Implemented in 1.9.0")
 
     # ----------------------------------------------------------------------
     @property
@@ -317,7 +320,7 @@ class SystemManager(_BaseKube):
     # ----------------------------------------------------------------------
     @property
     def servers(self):
-        """ """
+        """Returns a manager to work with ArcGIS Servers registerd with Kubernetes"""
         if self._sm is None:
             self._sm = ServerManager(url=f"{self._url}/servers", gis=self._gis)
         return self._sm

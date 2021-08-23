@@ -233,28 +233,36 @@ def _reproject_extent(extents, target_sr={"wkid": 102100, "latestWkid": 3857}):
 
 @widgets.register
 class MapView(widgets.DOMWidget):
-    """Mapping widget for Jupyter Notebook and JupyterLab.
+    """
+    The ``MapView`` class creates a mapping widget for Jupyter Notebook and JupyterLab.
 
     ==================     ====================================================================
     **Argument**              **Description**
     ------------------     --------------------------------------------------------------------
-    gis                    The active GIS() instance you want this map widget to use.
+    gis                    The active :class:`~arcgis.gis.GIS` instance you want this map widget to use.
     ------------------     --------------------------------------------------------------------
-    item                   A `WebMap` or `WebScene` item instance that you want to visualize
+    item                   A ``WebMap`` or ``WebScene`` item instance that you want to visualize
     ------------------     --------------------------------------------------------------------
-    mode                   Whether to construct a '2D' map or '3D' map. See the `mode` property
+    mode                   Whether to construct a '2D' map or '3D' map. See the ``mode`` property
                            for more information.
     ==================     ====================================================================
 
     .. note::
-        Note: If the Jupyter Notebook server is running over http, you need to
+        If the Jupyter Notebook server is running over http, you need to
         configure your portal/organization to allow your host and port; or else
-        you will run into CORs issues.
+        you will run into ``CORS`` issues.
 
-        This can be accomplished by signing into your portal/organization in a
-        browser, then navigating to:
+        This can be accomplished programmatically by signing into your organization
+        and running this code:
 
-        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+        .. code-block:: python
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_admin_profile")
+
+            >>> more_origins = {"allowedOrigins":"http://localhost:8888"} #replace your port
+
+            >>> gis.update_properties(more_origins)
 
     """
 
@@ -274,8 +282,23 @@ class MapView(widgets.DOMWidget):
 
     @property
     def zoom(self):
-        """What level of zoom you want to apply: the higher the number, the more
-        zoomed in you are.
+        """
+        The ``zoom`` property defines the level of zoom applied to the Map Widget.
+
+        .. note::
+            The higher the number, the more zoomed in you are.
+
+        .. code-block:: python
+
+            # Usage example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+
+            >>> map2 = gis.map("California")
+            >>> map2.basemap = 'national-geographic'
+            >>> map2
+            >>> map2.zoom = 200
         """
         return self._readonly_zoom
 
@@ -288,13 +311,18 @@ class MapView(widgets.DOMWidget):
 
     @property
     def scale(self):
-        """The map scale at the center of the view. If set to X, the scale
+        """
+        The ``scale`` property represents the map scale at the center of the view. If set to X, the scale
         of the map would be 1:X.
 
-        For continuous values to apply and not get "snapped" to the closest
-        level of detail, set `mapview.snap_to_zoom = False`.
+        .. note::
+            For continuous values to apply and not get "snapped" to the closest
+            level of detail, set `mapview.snap_to_zoom = False`.
 
-        # Usage example: Sets the scale to 1:24000
+        .. code-block:: python
+
+            # Usage example: Sets the scale to 1:24000
+
             map = gis.map()
             map.scale = 24000
         """
@@ -308,8 +336,13 @@ class MapView(widgets.DOMWidget):
 
     @property
     def snap_to_zoom(self):
-        """When `True`, snap to the next level of detail when zooming in or out.
-        When `False`, the zoom is continous. Only applies in 2D mode
+        """
+        The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
+        When ``True``, snap to the next level of detail when zooming in or out.
+        When ``False``, the zoom is continuous.
+
+        .. note::
+            The ``snap_to_zoom`` method only applies in 2D mode.
         """
         return self._snap_to_zoom
 
@@ -323,9 +356,23 @@ class MapView(widgets.DOMWidget):
 
     @property
     def rotation(self):
-        """For 2D mode, the clockwise rotation of due north in relation to the top
-        of the view in degrees. Note that you can NOT set rotation in 3D mode.
-        3D mode uses the ‘heading’ property.
+        """
+        The ``rotation`` property represents the clockwise rotation of due north in relation to the top
+        of the view in degrees in 2D mode.
+
+        .. note::
+            ``rotation`` cannot be set in 3D mode. Rather, 3D mode uses the :attr:`~arcgis.widgets.MapView.heading`
+            property.
+
+        .. code-block:: python
+
+            #Usage Example in 2D mode
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.rotation
+            <134.17566310758235>
         """
         return self._readonly_rotation
 
@@ -339,11 +386,24 @@ class MapView(widgets.DOMWidget):
 
     @property
     def heading(self):
-        """For 3D mode, the compass heading of the camera in degrees. Heading is
-        zero when north is the top of the screen. It increases as the view rotates
-        clockwise. The angles are always normalized between 0 and 360 degrees.
-        Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
-        property.
+        """
+         The ``heading`` property represents the compass heading of the camera in degrees when in 3D mode. ``heading`` is
+         zero when north is the top of the screen. It increases as the view rotates
+         clockwise. The angles are always normalized between 0 and 360 degrees.
+
+        .. note::
+             ``heading`` cannot be set in 2D mode. Rather, 2D mode uses the :attr:`~arcgis.widgets.MapView.rotation`
+             property.
+
+         .. code-block:: python
+
+             #Usage Example in 3D mode
+
+             >>> from arcgis.gis import GIS, Item
+             >>> from arcgis.widgets import MapView
+             >>> map3d = gis.map("California", mode ="3D")
+             >>> map3d.heading
+             <225.82433689241765>
         """
         return self._readonly_heading
 
@@ -357,11 +417,14 @@ class MapView(widgets.DOMWidget):
 
     @property
     def tilt(self):
-        """For 3D mode, the tilt of the camera in degrees with respect to the
-        surface as projected down from the camera position. Tilt is zero when
+        """
+        The ``tilt`` property represents the tilt of the camera in degrees with respect to the
+        surface as projected down from the camera position, when in 3D mode. ``tilt`` is zero when
         looking straight down at the surface and 90 degrees when the camera is
-        looking parallel to the surface. Note that you can NOT set tilt in
-        2D mode.
+        looking parallel to the surface.
+
+        .. note::
+            The ``tilt`` method is not applicable, and cannot be set, in 2D mode.
         """
         return self._readonly_tilt
 
@@ -371,12 +434,21 @@ class MapView(widgets.DOMWidget):
 
     @property
     def basemap(self):
-        """What basemap you would like to apply to the widget (‘topo’,
-        ‘national-geographic’, etc.). See `basemaps` for a full list
+        """
+        The ``basemap`` property defines the basemap you would like to apply to the widget (``topo``,
+        ``national-geographic``, etc.).
 
-        # Usage example: Set the widget basemap equal to an item
+        .. note::
+            See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
+
+
+        .. code-block:: python
+
+            # Usage example: Set the widget basemap equal to an item
+
             from arcgis.mapping import WebMap
             widget = gis.map()
+
             # Use basemap from another item as your own
             widget.basemap = webmap
             widget.basemap = tiled_map_service_item
@@ -444,13 +516,14 @@ class MapView(widgets.DOMWidget):
 
     @property
     def extent(self):
-        """A property representing the map widget's extent.
+        """
+        The ``extent`` property represents the map widget's extent.
 
 
         ==================     ====================================================================
         getter                 A dict that represents the JSON of the map widget's extent.
         ------------------     --------------------------------------------------------------------
-        setter                 A [[xmin, ymin], [xmax, ymax]] list, Spatially Enabled Data Frame `full_extent`,
+        setter                 A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
                                or a dict that represents the JSON of the map widget's extent.
 
                                Examples for each:
@@ -463,6 +536,19 @@ class MapView(widgets.DOMWidget):
                                     "ymax": 41.95
                                 }
         ==================     ====================================================================
+
+         .. code-block:: python
+
+            #Usage Example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.extent
+            {
+            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+             }
 
         """
         if self._readonly_extent:
@@ -519,15 +605,31 @@ class MapView(widgets.DOMWidget):
     @property
     def center(self):
         """
-        A property that represents the map widget's center.
+        The ``center`` property  represents the center of the ``Map Widget``.
 
         ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
         getter                 A dict that represents the JSON of the map widget's center.
         ------------------     --------------------------------------------------------------------
-        setter                 A [lat, long] list, or a dict that represents the JSON of the map
+        setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.
         ==================     ====================================================================
 
+        .. code-block:: python
+
+            #Usage Example
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2
+            >>> map2.center
+            {
+            'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+            'x': -13277101.270396618,
+            'y': 4374001.4894094905
+            }
         """
         if self._readonly_center:
             return self._readonly_center
@@ -574,20 +676,23 @@ class MapView(widgets.DOMWidget):
     _trigger_interactive_draw_mode_for = Unicode("").tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
-    """When set to 'True' will hide the 2D/3D switch button from the widget.
-    Note that once the button is hidden, it cannot be made visible again:
-    you have to create a new MapView instance.
+    """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
+   
+    .. note::
+        Once the button is hidden, it cannot be made visible again: a new MapView instance must be created to see the 
+        button.
     """
     jupyter_target = Unicode("").tag(sync=True)
-    """A readonly string that is either 'lab' or 'notebook': represents if
-    this widget is drawn in a Jupyter Notebook environment, or a JupyterLab
-    environment
+    """
+    ``jupyter_target`` is a readonly string that is either ``lab`` or ``notebook``: ``jupyter_target`` represents if
+    this widget is drawn in a Jupyter Notebook environment or a JupyterLab
+    environment.
     """
     tab_mode = Unicode("auto").tag(sync=True)
     """
     .. raw:: html
 
-        <p>This string property specifies the 'default' behavior of toggling a
+        <p>The ``tab_mode`` property is a string property that specifies the 'default' behavior of toggling a
         new window in a JupyterLab environment, whether that is called by
         pressing the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC
         AAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYA
@@ -601,9 +706,10 @@ class MapView(widgets.DOMWidget):
         gG9knfWwKBGcvAAAAAElFTkSuQmCC"> icon in the widget UI, or by calling
         <i>toggle_window_view()</i> function without arguments.</p>
 
-    Note that after a widget is 'seperated' from the notebook, you can drag
-    it, split it, put it in a new tab, etc. See the JupyterLab guide pages
-    for more information.
+    .. note::
+        After a widget is 'seperated' from the notebook, you can drag
+        it, split it, put it in a new tab, etc. See the JupyterLab guide pages
+        for more information.
 
     ==================     ====================================================================
     **Value**              **Description**
@@ -629,15 +735,19 @@ class MapView(widgets.DOMWidget):
     """
 
     ready = Bool(False).tag(sync=True)
-    """A readonly bool that represents if the map widget has been drawn
-    in the notebook
+    """
+    ``ready`` is a readonly bool that represents if the map widget has been drawn
+    in the notebook.
     """
     _js_cdn_override = Unicode().tag(sync=True)
 
     legend = Bool(False).tag(sync=True)
-    """If set to `True`, will display a legend in the widget that will
-    describe all layers added to the map. If set to `False`, will hide the
-    legend. Default: `False`.
+    """
+    If ``legend`` is set to ``True``, a legend will display in the widget that
+    describes all layers added to the map. If set to ``False``,the legend will be hidden.
+    
+    .. note::
+        The default is ``False`` .
     """
 
     _gallery_basemaps = Dict({}).tag(sync=True)
@@ -645,7 +755,7 @@ class MapView(widgets.DOMWidget):
     @property
     def gallery_basemaps(self):
         """
-        View your portal's custom basemap group
+        The ``gallery_basemaps`` property allows for viewing of your portal's custom basemap group.
         """
         if len(self._gallery_basemaps) <= 1:
             # If the only loaded gallery_basemaps is 'default', load the rest
@@ -681,8 +791,24 @@ class MapView(widgets.DOMWidget):
 
     @property
     def layers(self):
-        """A list of the JSON representation of layers added to the map widget
-        using the add_layers() method
+        """
+        The ``layers`` property is a list of the JSON representation of layers added to the map widget
+        using the :attr:`~arcgis.widgets.MapView.add_layers` method.
+
+        .. code-block:: python
+
+            #Usage Example in 2D mode
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> gis = GIS("pro")
+            >>> itms = gis.content.search("owner:"+ gis.users.me.username)
+            >>> single_item =itms[1]
+            >>> new_layer= FeatureLayer.fromitem(item = single_item)
+            >>> map1 = gis.map("United States")
+            >>> map1.add_layer(new_layer)
+            >>> map1.layers
+            [<FeatureLayer url:"https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/Power_Plants_Itm/FeatureServer/0">]
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
 
@@ -711,7 +837,26 @@ class MapView(widgets.DOMWidget):
         "topo",
         "topo-vector",
     ]
-    """A list of possible basemaps to set `.basemap` with
+    """
+    The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
+    
+    1. Dark Grey
+    2. Dark Grey Vector
+    3. Gray
+    4. Gray Vector
+    5. Hybrid
+    6. National Geographic
+    7. Oceans
+    8. OSM
+    9. Satellite
+    10. Streets
+    11. Streets Navigation Vector
+    12. Streets Night Vector
+    13. Streets Relief Vector
+    14. Streets Vector
+    15. Terrain
+    16. Topo
+    17. Topographic Vector
     """
     # End other properties that don't interact with the model
 
@@ -858,8 +1003,8 @@ class MapView(widgets.DOMWidget):
 
     print_service_url = Unicode("").tag(sync=True)
     """
-    .. note::
-        Note: this property is obselete as of >v1.6 of the Python API, since
+    .. warning::
+        This property is obselete as of >v1.6 of the Python API, since
         the underlying JavaScript code ran during a `take_screenshot()` Python
         call has been has been changed to `MapView.takeScreenshot()` instead
         of calling a Print Service URL. Any value you set to this property
@@ -869,16 +1014,19 @@ class MapView(widgets.DOMWidget):
     _trigger_screenshot_with_args = Dict({}).tag(sync=True)
 
     def take_screenshot(self, output_in_cell=True, set_as_preview=True, file_path=""):
-        """Takes a screenshot of the current widget view. Only works in a
-        Jupyter Notebook environment.
+        """
+        The ``take_screenshot`` method takes a screenshot of the current widget view.
+
+        .. note::
+            Only works in a Jupyter Notebook environment.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        output_in_cell         Optional bool, default `True`. Will display the screenshot in the
+        output_in_cell         Optional bool, default ``True``. Will display the screenshot in the
                                output area of the cell where this function is called.
         ------------------     --------------------------------------------------------------------
-        set_as_preview         Optional bool, default `True`. Will set the screenshot as the static
+        set_as_preview         Optional bool, default ``True``. Will set the screenshot as the static
                                image preview in the cell where the map widget is being displayed.
                                Use this flag if you want the generated HTML previews of your
                                notebook to have a map image visible.
@@ -895,16 +1043,16 @@ class MapView(widgets.DOMWidget):
         notebooks and generated HTML previews of notebooks.
 
         .. note::
-            This function acts asyncronously, meaning that the Python function
+            This function acts asynchronously, meaning that the Python function
             will return right away, with the notebook outputs/files being
             written after an indeterminate amount of time. Avoid calling this
-            function  multiple times in a row if the asyncronous portion of
+            function  multiple times in a row if the asynchronous portion of
             the function hasn't finished yet.
 
         .. note::
-            When this function is called with `set_as_preview = True`, the
+            When this function is called with ``set_as_preview = True``, the
             static image preview will overwrite the embedded HTML element
-            preview from any previous `MapView.embed_html(set_as_preview=True)`
+            preview from any previous ``MapView.embed_html(set_as_preview=True)``
             call
 
         """
@@ -950,14 +1098,18 @@ class MapView(widgets.DOMWidget):
         )
 
     def embed(self, output_in_cell=True, set_as_preview=True):
-        """Embeds the current state of the map into the underlying notebook
-        as an interactive HTML/JS/CSS element. This element will always display
-        this 'snapshot' state of the map, regardless of any future Python code ran.
+        """
+        The ``embed`` method embeds the current state of the map into the underlying notebook
+        as an interactive HTML/JS/CSS element.
+
+        .. note::
+            This element will always display
+            this 'snapshot' state of the map, regardless of any future Python code ran.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        output_in_cell         Optional bool, default `True`. Will display the embedded HTML
+        output_in_cell         Optional bool, default ``True``. Will display the embedded HTML
                                interactive map in the output area of the cell where this function
                                is called.
         ------------------     --------------------------------------------------------------------
@@ -974,15 +1126,15 @@ class MapView(widgets.DOMWidget):
         notebooks and generated HTML previews of notebooks.
 
         .. note::
-            When this function is called with `set_as_preview = True`, the
+            When this function is called with ``set_as_preview = True``, the
             embedded HTML preview element will overwrite the static image
             preview from any previous `MapView.take_screenshot(set_as_preview=True)`
             call
 
         .. note::
             Any embedded maps must only reference publicly available data. The
-            embedded map must also have access to the https://unpkg.com
-            to load the necessry JavaScript components on the page
+            embedded map must also have access to the `Unpkg <https://unpkg.com>`_
+            to load the necessary `JavaScript` components on the page
 
         """
         self._clear_static_image_preview()
@@ -1119,17 +1271,19 @@ class MapView(widgets.DOMWidget):
 
     @classmethod
     def set_js_cdn(cls, js_cdn):
-        """Call this function before the creation of any MapView object, and
-        each instantiated object will use the specified `js_cdn` parameter as
+        """
+        The ``set_js_cdn`` function is called before the creation of any MapView object, and
+        each instantiated object will use the specified ``js_cdn`` parameter as
         the  ArcGIS API for JavaScript CDN URL instead of the default
         http://js.arcgis.com/4.X/. This functionality is necessary in
         disconnected  environments if the portal you are connecting to doesn't
         ship with the minimum necessary JavaScript API version.
 
-        You may not need to call this function to view the widget in
-        disconnected environments: if your computer cannot reach js.arcgis.com,
-        and you have a GIS() connection to a portal, the widget will
-        automatically attempt to use that portal's JS API that it ships with.
+        .. note::
+            You may not need to call this function to view the widget in
+            disconnected environments: if your computer cannot reach js.arcgis.com,
+            and you have a :class:`~arcgis.gis.GIS` connection to a portal, the widget will
+            automatically attempt to use that Portal's JS API that it ships with.
         """
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
@@ -1137,7 +1291,7 @@ class MapView(widgets.DOMWidget):
     @property
     def local_raster_file_format(self):
         """
-        String getter/setter. When calling
+        The ``local_raster_file_format`` method is a string getter & setter. When calling
         ``map.add_layer(arcgis.raster.Raster())`` for a local raster file,
         an intermediate image file must be written to disk in order to
         successfully display on the map. This file format can be one of
@@ -1165,16 +1319,19 @@ class MapView(widgets.DOMWidget):
 
     def add_layer(self, item, options=None):
         """
-        Adds the specified layer or item to the map widget.
+        The ``add_layer`` method adds the specified ``Layer`` or :class:`~arcgis.gis.Item` to the
+        map widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required object. You can specify Item objects, Layer objects such as
-                               FeatureLayer, ImageryLayer, MapImageLayer, FeatureSet,
-                               FeatureCollection, ``arcgis.raster.Raster`` objects, etc.
+        item                   Required object. You can specify :class:`~arcgis.gis.Item` objects, ``Layer`` objects
+                               such as :class:`~arcgis.features.FeatureLayer` , ImageryLayer, MapImageLayer,
+                               :class:`~arcgis.features.FeatureSet` ,
+                               :class:`~arcgis.features.Collection`, :class:`~arcgis.raster.Raster` objects, etc.
 
-                               Item objects will have all of their layers individually
+                               .. note::
+                               :class:`~arcgis.gis.Item` objects will have all of their layers individually
                                added to the map widget.
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify visualization options such as renderer info,
@@ -1182,11 +1339,11 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
 
         .. warning::
-            Calling ``MapView.add_layer()`` on an ``arcgis.raster.Raster`` instance
+            Calling ``MapView.add_layer()`` on an :class:`~arcgis.raster.Raster` instance
             has the following limitations:
 
             - Local raster overlays do not persist beyond the notebook session on
-              published web maps/web scenes -- you would need to seperately publish
+              published web maps/web scenes -- you would need to separately publish
               these local rasters.
 
             - The entire raster image data is placed on the MapView's canvas with
@@ -1346,8 +1503,11 @@ class MapView(widgets.DOMWidget):
 
     def remove_layers(self, layers=None):
         """
-        Removes the layers added to the map widget. You can get the list of layers added to the widget by querying the
-        'layers' property.
+        The ``remove_layers`` method removes the layers added to the map widget.
+
+        .. note::
+            A list of layers added to the widget can be retrieved by querying the
+        :attr:`~arcgis.widgets.MapView.layers` property.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1489,8 +1649,16 @@ class MapView(widgets.DOMWidget):
             return False
 
     def display_message(self, msg):
-        """Displays a message on the upper-right corner of the map widget.
-        You can only send one message at a time, multiple messages don’t show.
+        """
+        The ``display_message`` method displays a message on the upper-right corner of the ``map widget``.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        msg                    A required String. The message to be displayed.
+        ==================     ====================================================================
+        .. note::
+            Only one message can be sent at a time, multiple messages do not show up.
         """
         self._custom_msg = ""
         self._custom_msg = msg
@@ -1505,16 +1673,16 @@ class MapView(widgets.DOMWidget):
         folder=None,
     ):
         """
-        Save the map widget object into a new web map Item or a new web scene
+        The ``save`` method saves the map widget object into a new web map :class:`~arcgis.gis.Item` or a new web scene
         item in your GIS.
 
         .. note::
             If you started out with a fresh map widget object, use this method
-            to save it as a the webmap/webscene item in your GIS.
+            to save it as a the webmap/webscene item in your :class:`~arcgis.gis.GIS`.
             If you started with a map widget object from an existing
             webmap/webscene object, calling this method will create a new item
             with your changes. If you want to update the existing item with your
-            changes, call the `update()` method instead.
+            changes, call the :attr:`~arcgis.widgets.MapView.update` method instead.
 
         .. note::
             Saving as a WebScene item only works in a Jupyter environment:
@@ -1573,10 +1741,6 @@ class MapView(widgets.DOMWidget):
         culture            Optional string. Language and country information.
         =================  =====================================================================
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html# //02r3000000ms000000
-        :return:
-            Item object corresponding to the new web map Item created.
-
         .. code-block:: python
 
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
@@ -1586,6 +1750,8 @@ class MapView(widgets.DOMWidget):
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})
+        :return:
+            Item object corresponding to the new web map Item created.
         """
         if mode == None:
             mode = self.mode
@@ -1742,7 +1908,7 @@ class MapView(widgets.DOMWidget):
 
     def update(self, mode=None, item_properties=None, thumbnail=None, metadata=None):
         """
-        Updates the WebMap/Web Scene item that was used to create the MapWidget
+        The ``update`` method updates the WebMap/Web Scene item that was used to create the ``MapWidget``
         object. In addition, you can update other item properties, thumbnail
         and metadata.
 
@@ -1750,17 +1916,17 @@ class MapView(widgets.DOMWidget):
             If you started out a MapView object from an existing
             webmap/webscene item, use this method to update the
             webmap/webscene item in your with your changes.
-            If you started out with a fresh MapView object (without a
+            If you started out with a fresh :class:`~arcgis.widgets.MapView` object (without a
             webmap/webscene item), calling this method will raise a
             RuntimeError exception. If you want to save the map widget into a
-            new item, call the `save()` method instead.
-            For item_properties, pass in arguments for only the properties you
+            new item, call the :attr:`~arcgis.widgets.MapView.save` method instead.
+            For ``item_properties``, pass in arguments for only the properties you
             want to be updated. All other properties will be untouched.  For
             example, if you want to update only the item's description, then
             only provide the description argument in item_properties.
 
         .. note::
-            Saving as a WebScene item only works in a Jupyter environment: the
+            Saving as a ``WebScene`` item only works in a Jupyter environment: the
             map must be visually displayed in the notebook before calling this
             method.
 
@@ -1770,8 +1936,8 @@ class MapView(widgets.DOMWidget):
         item_properties     Optional dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
         mode                Optional string. Whether to save this map instance as a 2D WebMap,
-                            or a 3D WebScene. Possible strings: "2D", "webmap", "3D", or
-                            "webscene".
+                            or a 3D WebScene. Possible strings: ``2D``, ``webmap``, ``3D``, or
+                            ``webscene``.
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
@@ -1809,10 +1975,6 @@ class MapView(widgets.DOMWidget):
                            allowed (true) or not allowed (false).
         =================  =====================================================================
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html# //02r3000000ms000000
-        :return:
-           A boolean indicating success (True) or failure (False).
-
         .. code-block:: python
 
            USAGE EXAMPLE: Interactively add a new layer and change the basemap of an existing web map.
@@ -1821,6 +1983,9 @@ class MapView(widgets.DOMWidget):
            map1.add_layer(Italy_streets2)
            map1.basemap = 'dark-gray-vector'
            map1.update(thumbnail = './new_webmap.png')
+
+        :return:
+           A boolean indicating success (True) or failure (False).
 
         """
         if mode == None:
@@ -1879,11 +2044,11 @@ class MapView(widgets.DOMWidget):
         self, path_to_file, title="Exported ArcGIS Map Widget", credentials_prompt=False
     ):
         """
-        Takes the current state of the map widget, and exports it to a
+        The ``export_to_html`` method takes the current state of the map widget and exports it to a
         standalone HTML file that can be viewed in any web browser.
 
-        By default, only publically viewable layers will be visible in any
-        exported html map. Specify `credentials_prompt=True` to have a user
+        By default, only publicly viewable layers will be visible in any
+        exported html map. Specify ``credentials_prompt=True`` to have a user
         be prompted for their credentials when opening the HTML page to view
         private content.
 
@@ -1904,7 +2069,7 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         title                  Optional string. The HTML title tag used for the HTML file.
         ------------------     --------------------------------------------------------------------
-        credentials_prompt     Optional boolean, default `False`. If set to `True`, will display a
+        credentials_prompt     Optional boolean, default ``False``. If set to ``True``, will display a
                                credentials prompt on HTML page load for users to authenticate and
                                view private content.
         ==================     ====================================================================
@@ -1936,34 +2101,65 @@ class MapView(widgets.DOMWidget):
 
     def draw(self, shape, popup=None, symbol=None, attributes=None):
         """
-        Draws a shape on the map widget. You can draw anything from known geometries, coordinate pairs, FeatureSet
-        objects.
+        The ``draw`` method draws a shape on the map widget.
+
+        .. note::
+            Anything can be drawn from known :class:`~arcgis.geometry.Geometry` objects, coordinate pairs, and
+            :class:`~arcgis.features.FeatureSet` objects.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         shape                  Required object.
-                               Known geometries:
-                               Shape is one of ["circle", "ellipse", "polygon", "polyline",
-                               "multipoint", "point", "rectangle", "triangle"].
+                               Known :class:`~arcgis.geometry.Geometry` objects:
+                               Shape is one of [``circle``, ``ellipse``, :class:`~arcgis.geometry.Polygon`,
+                               :class:`~arcgis.geometry.Polyline`,
+                               :class:`~arcgis.geometry.MultiPoint`, :class:`~arcgis.geometry.Point`,
+                               ``rectangle``, ``triangle``].
+
                                Coordinate pair: specify shape as a list of [lat, long]. Eg: [34, -81]
-                               FeatureSet: shape can be a FeatureSet object.
+
+                               FeatureSet: shape can be a :class:`~arcgis.features.FeatureSet` object.
+
                                Dict object representing a geometry.
         ------------------     --------------------------------------------------------------------
-        popup                  Optional dict. Dict containing "title" and "content" as keys that will be displayed
-                               when the shape is clicked. In case of a FeatureSet, "title" and "content" are names of
-                               attributes of the features in the FeatureSet instead of actual string values for title
-                               and content.
+        popup                  Optional dict. Dict containing ``title`` and ``content`` as keys that will be displayed
+                               when the shape is clicked. In case of a :class:`~arcgis.features.FeatureSet`,
+                               ``title`` and ``content`` are names of
+                               attributes of the features in the ``FeatureSet`` instead of actual string values for
+                               ``title`` and ``content`` .
         ------------------     --------------------------------------------------------------------
-        symbol                 Optional dict. symbol is specified in json format as described at
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html# //02r3000000n5000000. A
+        symbol                 Optional dict. See the `Symbol Objects <http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000n5000000>`_
+                               page in the ArcGIS REST API documentation for more information. A
                                default symbol is used if one is not specified.
-                               Tip: a helper utility to get the symbol format for several predefined symbols is
-                               available at http://esri.github.io/arcgis-python-api/tools/symbol.html
+
+                               .. note::
+                               A helper utility to get the symbol format for several predefined symbols is
+                               available at the `Esri symbol selector. <http://esri.github.io/arcgis-python-api/tools/symbol.html>`_
         ------------------     --------------------------------------------------------------------
         attributes             Optional dict. Specify a dict containing name value pairs of fields and field values
                                associated with the graphic.
         ==================     ====================================================================
+
+        .. code-block:: python
+
+            #Usage Example: Drawing two Geometry objects on a map widget.
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> from arcgis.geometry import Geometry, Polygon
+
+            >>> geom = Geometry({
+                            "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                                        [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                                        [-97.06326,32.759]]],
+                            "spatialReference" : {"wkid" : 4326}
+                            })
+            >>> map2 = gis.map("Arlington, Texas")
+            >>> map2.draw(shape=geom)
+            >>> map2
+            <Map Widget Displayed with the drawn Polygons>
+
         """
         from arcgis.features import FeatureSet, Feature, FeatureCollection
         from arcgis.raster import ImageryLayer
@@ -2098,17 +2294,43 @@ class MapView(widgets.DOMWidget):
 
     def clear_graphics(self):
         """
-        Clear the graphics drawn on the map widget. Graphics are shapes drawn
-        using the 'draw()' method.
+        The ``clear_graphics`` method clear the graphics drawn on the map widget.
+
+        .. note::
+            Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
+
+        .. code-block:: python
+
+            #Usage Example: Drawing two Geometry objects on a map widget.
+
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> from arcgis.geometry import Geometry, Polygon
+
+            >>> geom = Geometry({
+                            "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                                        [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                                        [-97.06326,32.759]]],
+                            "spatialReference" : {"wkid" : 4326}
+                            })
+            >>> map2 = gis.map("Arlington, Texas")
+            >>> map2.draw(shape=geom)
+            >>> map2
+            <Map Widget Displayed with the drawn Polygons>
+            >>> map2.clear_graphics()
+            >>> map2
+            <Map Widget Displayed without the drawn Polygons>
         """
         self._layers_to_remove = ("nonexistant_layer_id",)
         # All graphics are saved to a layer with the below id
         self._layers_to_remove = ("graphicsLayerId31195",)
 
     def on_draw_end(self, callback, remove=False):
-        """Register a callback to execute when something is drawn.
+        """
+        The ``on_draw_end`` method registers a callback to execute when something is drawn.
         The callback will be called with two arguments:
-        the clicked widget instance, and the geometry drawn
+        1. The clicked widget instance
+        2. The drawn geometry
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2121,9 +2343,11 @@ class MapView(widgets.DOMWidget):
         self._draw_end_handlers.register_callback(callback, remove=remove)
 
     def on_click(self, callback, remove=False):
-        """Register a callback to execute when the map is clicked.
-        The callback will be called with one argument,
-        the clicked widget instance.
+        """
+        The ``on_click`` method registers a callback to execute when the map is clicked.
+
+        .. note::
+            The callback will be called with one argument, the clicked widget instance.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2136,12 +2360,17 @@ class MapView(widgets.DOMWidget):
         self._click_handlers.register_callback(callback, remove=remove)
 
     def toggle_window_view(self, title="ArcGIS Map", tab_mode=None):
-        """In a JupyterLab environment, calling this function will separate
+        """
+        In a JupyterLab environment, calling ``toggle_window_view`` will separate
         the drawn map widget to a new window next to the open notebook,
         allowing you to move the widget it, split it, put it in a new tab, etc.
-        If the widget is already seperated in a new window, calling this
+        If the widget is already separated in a new window, calling this
         function will restore the widget to the notebook where it originated
-        from. See the JupyterLab guide pages for more information.
+        from.
+
+        .. note::
+            See the `JupyterLab guide pages <https://developers.arcgis.com/python/guide/using-the-jupyter-lab-environment/>`_
+            for more information.
 
         .. raw:: html
 
@@ -2192,14 +2421,16 @@ class MapView(widgets.DOMWidget):
             self._draw_end_handlers(self, content.get("message", None))
 
     def zoom_to_layer(self, item, options={}):
-        """Snaps the map to the extent of provided item or items.
+        """
+        The ``zoom_to_layer`` method snaps the map to the extent of the provided :class:`~arcgis.gis.Item` object(s).
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   The item at which you want to zoom your map to.
-                               This can be a single or a list of Items, layers, DataFrame, FeatureSet,
-                               FeatureCollection.
+                               This can be a single or a list of :class:`~arcgis.gis.Item`, ``Layer`` , ``DataFrame`` ,
+                               :class:`~arcgis.features.FeatureSet`, or :class:`~arcgis.features.FeatureCollection`
+                               objects.
         ------------------     --------------------------------------------------------------------
         options                Optional set of arguments.
 
@@ -2226,20 +2457,27 @@ class MapView(widgets.DOMWidget):
     # Start time section
 
     time_slider = Bool(False).tag(sync=True)
-    """If set to `True`, will display a time slider in the widget that will
+    """
+    ``time_slider`` is a string property that determines whether a time slider exists for a map widget.
+    If set to `True`, will display a time slider in the widget that will
     allow you to visualize temporal data for an applicable layer added to
     the map. Default: `False`.
+    
+    See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
+    page in the ArcGIS REST API page for more info.
     """
 
     time_mode = Unicode("time-window").tag(sync=True)
-    """String used for defining if the temporal data will be displayed
+    """
+    ``time_mode`` is the string used for defining if the temporal data will be displayed
     cumulatively up to a point in time, a single instant in time, or
     within a time range.
 
     Possible values: "instant", "time-window", "cumulative-from-start",
     "cumulative-from-end". Default: "time-window"
 
-    See https://bit.ly/3dFSPa2 for more info.
+    See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
+    page in the ArcGIS REST API page for more info.
     """
 
     _time_info = Dict({}).tag(sync=True)
@@ -2250,9 +2488,11 @@ class MapView(widgets.DOMWidget):
 
     @property
     def start_time(self):
-        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
+        """
+        The ``start_time`` property is a representation of a `datetime.datetime` property.
+        If `time_mode` == `"time-window"`,
         represents the lower bound 'thumb' of the time slider. For all other
-        `time_mode` values, represents the single thumb on the time slider."""
+        `time_mode` values, ``start_time`` represents the single thumb on the time slider."""
         date_as_iso = dateutil.parser.parse(self._readonly_start_time)
         date_local = date_as_iso.astimezone()
         return date_local
@@ -2270,9 +2510,10 @@ class MapView(widgets.DOMWidget):
 
     @property
     def end_time(self):
-        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
-        represents the upper bound 'thumb' of the time slider. For all other
-        `time_mode` values, not used."""
+        """
+        ``end_time`` is a ``datetime.datetime`` property. If ``time_mode`` == ``time-window``
+        ``end_time`` represents the upper bound 'thumb' of the time slider. For all other
+        ``time_mode`` values, ``end_time`` is not used."""
 
         date_as_iso = dateutil.parser.parse(self._readonly_end_time)
         date_local = date_as_iso.astimezone()
@@ -2324,15 +2565,17 @@ class MapView(widgets.DOMWidget):
             pass
 
     def set_time_extent(self, start_time, end_time, interval=1, unit="milliseconds"):
-        """When `time_slider = True`, the time extent to display on the time slider.
+        """
+        The ``set_time_extent`` is called when `time_slider = True` and is the time extent to display on the time
+        slider.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Required `datetime.datetime`. The lower bound of the time extent to
+        start_time             Required ``datetime.datetime``. The lower bound of the time extent to
                                display on the time slider.
         ------------------     --------------------------------------------------------------------
-        end_time               Required `datetime.datetime`. The upper bound of the time extent to
+        end_time               Required ``datetime.datetime``. The upper bound of the time extent to
                                display on the time slider.
         ------------------     --------------------------------------------------------------------
         interval               Optional number, default `1`. The numerical value of the time
@@ -2391,13 +2634,19 @@ class MapView(widgets.DOMWidget):
     _dlinks = []
 
     def sync_navigation(self, mapview):
-        """Synchronizes the navigation from this `MapView` to another `MapView`
-        instance so panning/zooming/navigating in one will update the other.
+        """
+        The ``sync_navigation`` method synchronizes the navigation from this :class:`~arcgis.widgets.MapView` to
+        another :class:`~arcgis.widgets.MapView` instance so panning/zooming/navigating in one will update the other.
+
+        .. note::
+            Users can sync more than two class:`~arcgis.widgets.MapView` instances together. For example, a user can
+            sync MapView A to MapView B, MapView B to MapView C, and MapView C to MapView D together and all will be in
+            sync. Thus, driving one of these ``MapView`` objects will make the other ``MapView`` objects follow.
 
         ==================     ===================================================================
         **Argument**           **Description**
         ------------------     -------------------------------------------------------------------
-        mapview                Either a single `MapView` instance, or a list of `MapView`
+        mapview                Either a single :class:`~arcgis.widgets.MapView` instance, or a list of ``MapView``
                                instances to synchronize to.
         ==================     ===================================================================
 
@@ -2501,8 +2750,9 @@ class MapView(widgets.DOMWidget):
                 raise e
 
     def unsync_navigation(self, mapview=None):
-        """Unsynchronizes connections  made to other MapView instances made
-        via `my_mapview.sync_navigation(other_mapview)`.
+        """
+        The ``unsync_navigation`` method unsynchronizes connections made to other :class:`~arcgis.widgets.MapView`
+        instances made via `my_mapview.sync_navigation(other_mapview)`.
 
         ==================     ===================================================================
         **Argument**           **Description**

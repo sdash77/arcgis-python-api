@@ -8,7 +8,12 @@ import tempfile
 import json
 import logging
 from .._data import _raise_fastai_import_error
-from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, _LAMBDA_TEXT_CLASSIFICATION, _IS_ARCGISPRONOTEBOOK
+from .._utils.env import (
+    HAS_TENSORFLOW,
+    raise_tensorflow_import_error,
+    _LAMBDA_TEXT_CLASSIFICATION,
+    _IS_ARCGISPRONOTEBOOK,
+)
 from warnings import warn
 import contextlib
 import io
@@ -19,6 +24,7 @@ import traceback
 import inspect
 import types
 import functools
+import warnings
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -39,6 +45,7 @@ try:
     import warnings
     from fastai.distributed import *
     import tensorflow as tf
+
     tf.get_logger().setLevel(logging.ERROR)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -57,19 +64,21 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
 except ImportError as e:
-    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_FASTAI = False
 
-
-    class TrackerCallback():
+    class TrackerCallback:
         pass
 
-
-    class LearnerCallback():
+    class LearnerCallback:
         pass
+
 
 try:
     import tensorboardX
+
     # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
     from fastai.callbacks.tensorboard import LearnerTensorboardWriter
     from .._utils.tensorboard_utils import ArcGISTBCallback
@@ -81,16 +90,33 @@ logger = logging.getLogger()
 # For lr computation, skip beginning and trailing values.
 losses_skipped = 5
 trailing_losses_skipped = 5
-model_characteristics_folder = 'ModelCharacteristics'
+model_characteristics_folder = "ModelCharacteristics"
 
 if HAS_FASTAI and not _LAMBDA_TEXT_CLASSIFICATION:
     # Declare the family of backbones to be unpacked and used by different models as supported types
-    _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__,
-                   models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
-    _resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__,
-                      models.resnet101.__name__, models.resnet152.__name__]
-    _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__,
-                        models.densenet201.__name__]
+    _vgg_family = [
+        models.vgg11.__name__,
+        models.vgg11_bn.__name__,
+        models.vgg13.__name__,
+        models.vgg13_bn.__name__,
+        models.vgg16.__name__,
+        models.vgg16_bn.__name__,
+        models.vgg19.__name__,
+        models.vgg19_bn.__name__,
+    ]
+    _resnet_family = [
+        models.resnet18.__name__,
+        models.resnet34.__name__,
+        models.resnet50.__name__,
+        models.resnet101.__name__,
+        models.resnet152.__name__,
+    ]
+    _densenet_family = [
+        models.densenet121.__name__,
+        models.densenet169.__name__,
+        models.densenet161.__name__,
+        models.densenet201.__name__,
+    ]
 
 
 @contextlib.contextmanager
@@ -108,24 +134,34 @@ def _get_device():
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
         device = torch.device("cpu")
     else:
-        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
 
     return device
-    
+
+
 class _EmptyDS(object):
     def __init__(self, size):
         self.size = (size, size)
 
 
-class _EmptyData():
+class _EmptyData:
     def __init__(self, path, c, loss_func, chip_size, train_ds=True):
         self.path = path.parent
-        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        if (
+            getattr(arcgis.env, "_processorType", "") == "GPU"
+            and torch.cuda.is_available()
+        ):
             self.device = torch.device("cuda")
         elif getattr(arcgis.env, "_processorType", "") == "CPU":
             self.device = torch.device("cpu")
         else:
-            self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+            self.device = (
+                torch.device("cuda")
+                if torch.cuda.is_available()
+                else torch.device("cpu")
+            )
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
@@ -146,7 +182,7 @@ class _MultiGPUCallback(LearnerCallback):
 
     def on_train_begin(self, **kwargs):
         if self.multi_gpu:
-            logger.info('Training on multiple GPUs')
+            logger.info("Training on multiple GPUs")
             self.learn.model = nn.DataParallel(self.learn.model)
 
     def on_train_end(self, **kwargs):
@@ -155,9 +191,10 @@ class _MultiGPUCallback(LearnerCallback):
 
 
 def _set_multigpu_callback(model):
-    if ((not hasattr(arcgis.env, "_gpuid")) or \
-            (arcgis.env._gpuid >= torch.cuda.device_count())) and \
-            (not getattr(arcgis.env, "_processorType", False)=='CPU'):
+    if (
+        (not hasattr(arcgis.env, "_gpuid"))
+        or (arcgis.env._gpuid >= torch.cuda.device_count())
+    ) and (not getattr(arcgis.env, "_processorType", False) == "CPU"):
         model.learn.callback_fns.append(_MultiGPUCallback)
 
 
@@ -165,12 +202,12 @@ def _set_ddp_multigpu(model):
     parser = argparse.ArgumentParser()
     parser.add_argument("--local_rank", type=int)
     args, unknown = parser.parse_known_args()
-    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
         args.rank = int(os.environ["RANK"])
-        args.world_size = int(os.environ['WORLD_SIZE'])
-        args.gpu = int(os.environ['LOCAL_RANK'])
-    elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
+        args.world_size = int(os.environ["WORLD_SIZE"])
+        args.gpu = int(os.environ["LOCAL_RANK"])
+    elif "SLURM_PROCID" in os.environ:
+        args.rank = int(os.environ["SLURM_PROCID"])
         args.gpu = args.rank % torch.cuda.device_count()
     elif hasattr(args, "rank"):
         pass
@@ -179,8 +216,9 @@ def _set_ddp_multigpu(model):
         return
     model._multigpu_training = True
     torch.cuda.set_device(args.gpu)
-    torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=args.world_size,
-                                         rank=args.rank)
+    torch.distributed.init_process_group(
+        backend="nccl", init_method="env://", world_size=args.world_size, rank=args.rank
+    )
     torch.distributed.barrier()
     model._rank_distributed = args.gpu
 
@@ -188,9 +226,9 @@ def _set_ddp_multigpu(model):
 def _isnotebook():
     try:
         shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
+        if shell == "ZMQInteractiveShell":
             return True
-        elif shell == 'TerminalInteractiveShell':
+        elif shell == "TerminalInteractiveShell":
             return False
         else:
             return False
@@ -200,82 +238,98 @@ def _isnotebook():
 
 def _create_zip(zipname, path):
     import shutil
-    if os.path.exists(os.path.join(path, zipname) + '.dlpk'):
-        os.remove(os.path.join(path, zipname) + '.dlpk')
+
+    if os.path.exists(os.path.join(path, zipname) + ".dlpk"):
+        os.remove(os.path.join(path, zipname) + ".dlpk")
 
     temp_dir = tempfile.TemporaryDirectory().name
-    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
+    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), "zip", path)
     dlpk_base = os.path.splitext(zip_file)[0]
-    os.rename(zip_file, dlpk_base + '.dlpk')
-    dlpk_file = dlpk_base + '.dlpk'
+    os.rename(zip_file, dlpk_base + ".dlpk")
+    dlpk_file = dlpk_base + ".dlpk"
     shutil.move(dlpk_file, path)
 
 
 class SaveModelCallback(TrackerCallback):
-
-    def __init__(self, model, every='improvement', name='bestmodel', load_best_at_end=True, **kwargs):
+    def __init__(
+        self,
+        model,
+        every="improvement",
+        name="bestmodel",
+        load_best_at_end=True,
+        **kwargs,
+    ):
         super().__init__(learn=model.learn, **kwargs)
         self.model = model
         self.every = every
         self.name = name
         self.load_best_at_end = load_best_at_end
-        if self.every not in ['improvement', 'epoch']:
-            warn('SaveModel every {} is invalid, falling back to "improvement".'.format(self.every))
-            self.every = 'improvement'
+        if self.every not in ["improvement", "epoch"]:
+            warn(
+                'SaveModel every {} is invalid, falling back to "improvement".'.format(
+                    self.every
+                )
+            )
+            self.every = "improvement"
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
 
-        if int(os.environ.get('RANK', 0)):
+        if int(os.environ.get("RANK", 0)):
             return
-            
+
         current = self.get_monitor_value()
         if isinstance(current, torch.Tensor):
             if current.is_cuda:
                 current = current.cpu()
         self.current = current
         if self.every == "epoch":
-            self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
+            self.model._save(
+                f"{self.name}_epoch_{epoch}",
+                zip_files=False,
+                save_html=False,
+                compute_metrics=False,
+            )
         else:  # every="improvement"
             if current is not None and self.operator(current, self.best):
                 if arcgis.env.verbose:
-                    print('saving checkpoint.')
+                    print("saving checkpoint.")
                 self.best_epoch = epoch
                 self.best = current
                 self.remove_previous()
-                self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
+                self.model._save(
+                    f"{self.name}_epoch_{epoch}",
+                    zip_files=False,
+                    save_html=False,
+                    compute_metrics=False,
+                )
 
     def remove_previous(self):
         # to avoid creating multiple best checkpoints.
         saved_path = os.path.join(self.model.learn.path, self.model.learn.model_dir)
-        for p in glob.glob(os.path.join(saved_path, self.name + '*')):
+        for p in glob.glob(os.path.join(saved_path, self.name + "*")):
             shutil.rmtree(p)
 
     def on_train_end(self, **kwargs):
         "Load the best model."
         if self.every == "improvement" and self.load_best_at_end:
             try:
-                self.model.load('{}'.format(self.name))
+                self.model.load("{}".format(self.name))
             except FileNotFoundError:
                 pass
 
             try:
-                self.model.save(f'{self.name}_epoch_{self.best_epoch}', compute_metrics=False)
+                self.model.save(
+                    f"{self.name}_epoch_{self.best_epoch}", compute_metrics=False
+                )
             except:
                 pass
 
 
 # Multispectral Models Specific resources start #
 
-valid_init_schemes = ['red_band', 'random', 'all_random']
-rgb_map = {
-    'r': 0,
-    'red': 0,
-    'g': 1,
-    'green': 1,
-    'b': 2,
-    'blue': 2
-}
+valid_init_schemes = ["red_band", "random", "all_random"]
+rgb_map = {"r": 0, "red": 0, "g": 1, "green": 1, "b": 2, "blue": 2}
 
 
 def get_band_mapping(band_name):
@@ -287,12 +341,12 @@ def get_band_mapping(band_name):
 
 
 def _get_tail(model):
-    if hasattr(model, 'named_children'):
+    if hasattr(model, "named_children"):
         child_name, child = next(model.named_children())
         if isinstance(child, nn.Conv2d):
             return child_name, child
 
-    if hasattr(model, 'children'):
+    if hasattr(model, "children"):
         for children in model.children():
             try:
                 child_name, child = _get_tail(children)
@@ -301,7 +355,7 @@ def _get_tail(model):
                 pass
 
 
-def _get_ms_tail(tail, data, type_init='random'):
+def _get_ms_tail(tail, data, type_init="random"):
     new_tail = nn.Conv2d(
         in_channels=len(data._extract_bands),
         out_channels=tail.out_channels,
@@ -317,12 +371,14 @@ def _get_ms_tail(tail, data, type_init='random'):
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
         b = get_band_mapping(band)  # rgb_map.get(band, None)
-        if b is not None and not type_init == 'all_random':
+        if b is not None and not type_init == "all_random":
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
-            if type_init == 'red_band':
-                new_tail.weight.data[:, i] = tail.weight.data[:, 0]  # Red Band Weights for all other band weights
-            elif type_init == 'random' or type_init == 'all_random':
+            if type_init == "red_band":
+                new_tail.weight.data[:, i] = tail.weight.data[
+                    :, 0
+                ]  # Red Band Weights for all other band weights
+            elif type_init == "random" or type_init == "all_random":
                 # Random Weights for all other band weights
                 pass
     return new_tail
@@ -330,12 +386,12 @@ def _get_ms_tail(tail, data, type_init='random'):
 
 def _set_tail(model, new_tail):
     updated = False
-    if hasattr(model, 'named_children'):
+    if hasattr(model, "named_children"):
         child_name, child = next(model.named_children())
         if isinstance(child, nn.Conv2d):
             setattr(model, child_name, new_tail)
             updated = True
-    if hasattr(model, 'children') and not updated:
+    if hasattr(model, "children") and not updated:
         for children in model.children():
             try:
                 _set_tail(children, new_tail)
@@ -347,13 +403,15 @@ def _set_tail(model, new_tail):
 def _change_tail(model, data, tail_weights_type=None):
     tail_name, tail = _get_tail(model)
     if tail_weights_type is None:
-        tail_weights_type = getattr(arcgis.env, 'type_init_tail_parameters', 'random')
+        tail_weights_type = getattr(arcgis.env, "type_init_tail_parameters", "random")
     if tail_weights_type not in valid_init_schemes:
-        raise Exception(f"""
+        raise Exception(
+            f"""
         \n'{type_init}' is not a valid scheme for initializing model tail weights.
         \nplease set a valid scheme from 'red_band', 'random' or 'all_random'.
         \n`arcgis.env.type_init_tail_parameters={{valid_scheme}}`
-        """)
+        """
+        )
     new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type)
     _set_tail(model, new_tail)
     return model
@@ -368,7 +426,7 @@ def _get_backbone_meta(arch_name):
 
 
 def _device_check():
-    if hasattr(arcgis, 'env') and getattr(arcgis.env, '_processorType', "") == "CPU":
+    if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
         return True
 
     if not torch.cuda.is_available():
@@ -415,11 +473,14 @@ def _device_check():
             move_to_cpu = True
             if torch._C._cuda_getDriverVersion() == 0:
                 # found no NVIDIA driver on the system
-                warnings.warn("""
+                warnings.warn(
+                    """
                 Found no GPU driver. CPU will be used for processing.
-                """)
+                """
+                )
             else:
-                warnings.warn("""
+                warnings.warn(
+                    """
                 The NVIDIA driver on your system is too old (found version {})
                 or your GPU architecture is very old and it's not supported.
                 Please update your GPU driver by downloading and installing
@@ -428,7 +489,10 @@ def _device_check():
                 on how to install or build a PyTorch version that has been
                 compiled for your GPU architecture (Cuda compute capability)
                 or for your version of Cuda driver. It may continue to work on CPU.
-                """.format(str(torch._C._cuda_getDriverVersion())))
+                """.format(
+                        str(torch._C._cuda_getDriverVersion())
+                    )
+                )
     except:
         pass
 
@@ -436,7 +500,6 @@ def _device_check():
 
 
 class ArcGISModel(object):
-
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -448,12 +511,7 @@ class ArcGISModel(object):
         if move_to_cpu:
             arcgis.env._processorType = "CPU"
 
-        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
-            self._device = torch.device("cuda")
-        elif getattr(arcgis.env, "_processorType", "") == "CPU":
-            self._device = torch.device("cpu")
-        else:
-            self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self._device = _get_device()
 
         if backbone is None:
             self._backbone = models.resnet34
@@ -465,8 +523,8 @@ class ArcGISModel(object):
         else:
             self._backbone = backbone
 
-        if hasattr(data, '_is_multispectral'):  # multispectral support
-            self._is_multispectral = getattr(data, '_is_multispectral')
+        if hasattr(data, "_is_multispectral"):  # multispectral support
+            self._is_multispectral = getattr(data, "_is_multispectral")
         else:
             self._is_multispectral = False
         if self._is_multispectral:
@@ -476,22 +534,27 @@ class ArcGISModel(object):
 
             @wraps(self._orig_backbone)
             def backbone_wrapper(*args, **inkwargs):
-                if 'pretrained_backbone' in kwargs:
-                    pretrained_backbone = kwargs['pretrained_backbone']
+                if "pretrained_backbone" in kwargs:
+                    pretrained_backbone = kwargs["pretrained_backbone"]
                     assert type(pretrained_backbone) == bool
                     if len(args) > 0:
                         args = tuple([pretrained_backbone, *args[1:]])
                     else:
-                        inkwargs['pretrained'] = pretrained_backbone
-                return _change_tail(self._orig_backbone(*args, **inkwargs), data, kwargs.get('tail_weights_type'))
+                        inkwargs["pretrained"] = pretrained_backbone
+                return _change_tail(
+                    self._orig_backbone(*args, **inkwargs),
+                    data,
+                    kwargs.get("tail_weights_type"),
+                )
 
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
-        if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
+
+        if not hasattr(data, "class_mapping") and hasattr(data, "classes"):
             data.class_mapping = {v: v for v in data.classes}
 
-        if data is not None and getattr(data, 'path', None) is None:
-            data.path = Path(os.path.abspath('.'))
+        if data is not None and getattr(data, "path", None) is None:
+            data.path = Path(os.path.abspath("."))
 
         if getattr(self, "_is_edge_detection", False):
 
@@ -501,12 +564,12 @@ class ArcGISModel(object):
                     # noqa
                 )
 
-            data.class_mapping = {1:data.classes[1]}
+            data.class_mapping = {1: data.classes[1]}
 
         self.learn = None
         self._data = data
         self._learning_rate = None
-        self._backend = getattr(self, '_backend', 'pytorch')
+        self._backend = getattr(self, "_backend", "pytorch")
         self._model_metrics_cache = None
         self._slice_lr = True
 
@@ -517,29 +580,39 @@ class ArcGISModel(object):
 
     def _check_dataset_support(self, data):
         "Fetches the dataset name and returns True if it is in the list of supported dataset type"
-        if hasattr(data, 'dataset_type'):
-            if getattr(data, 'dataset_type') not in self.supported_datasets:
-                raise Exception(f"Enter only compatible datasets from {', '.join(self.supported_datasets)}")
+        if hasattr(data, "dataset_type"):
+            if getattr(data, "dataset_type") not in self.supported_datasets:
+                raise Exception(
+                    f"Enter only compatible datasets from {', '.join(self.supported_datasets)}"
+                )
 
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
-                next(params_iterator).requires_grad = True  # make first conv weights learnable
+                next(
+                    params_iterator
+                ).requires_grad = True  # make first conv weights learnable
 
                 tail_name, first_layer = _get_tail(self.learn.model)
 
-                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN' or self.__class__.__name__ == 'ModelExtension':
+                if (
+                    first_layer.bias is not None
+                    or self.__class__.__name__ == "MaskRCNN"
+                    or self.__class__.__name__ == "ModelExtension"
+                ):
                     # make first conv bias weights learnable
                     # In case of maskrcnn make the batch norm trainable
                     next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
-            if hasattr(self, '_show_results_multispectral'):
+            if hasattr(self, "_show_results_multispectral"):
                 self.show_results = self._show_results_multispectral
 
     # function for checking if data exists for using class functions.
     def _check_requisites(self):
-        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+        if isinstance(self._data, _EmptyData) or getattr(
+            self._data, "_is_empty", False
+        ):
             raise Exception("Can't call this function without data.")
 
     # function for checking if tensorflow is installed otherwise raise error.
@@ -551,30 +624,36 @@ class ArcGISModel(object):
         self._check_tf()
 
         from .._utils.common import get_color_array
-        from .._utils.common_tf import handle_backbone_parameter, get_input_shape, check_backbone_is_mobile_optimized
+        from .._utils.common_tf import (
+            handle_backbone_parameter,
+            get_input_shape,
+            check_backbone_is_mobile_optimized,
+        )
 
         # Get color Array
         color_array = get_color_array(data.color_mapping)
         if len(data.color_mapping) == (data.c - 1):
             # Add Background color
-            color_array = np.concatenate([np.array([[0.0, 0.0, 0.0, 0.0]]), color_array])
+            color_array = np.concatenate(
+                [np.array([[0.0, 0.0, 0.0, 0.0]]), color_array]
+            )
         data._multispectral_color_array = color_array
 
         # Handle Backbone
         self._backbone = handle_backbone_parameter(backbone)
 
-        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(self._backbone)
+        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(
+            self._backbone
+        )
 
         # Initialize Backbone
         in_shape = get_input_shape(data.chip_size)
         self._backbone_initalized = self._backbone(
-            input_shape=in_shape,
-            include_top=False,
-            weights='imagenet'
+            input_shape=in_shape, include_top=False, weights="imagenet"
         )
 
         self._backbone_initalized.trainable = False
-        self._device = torch.device('cpu')
+        self._device = torch.device("cpu")
         self._data = data
 
     def lr_find(self, allow_plot=True):
@@ -594,65 +673,81 @@ class ArcGISModel(object):
         self._check_requisites()
         temp1 = self.learn.path
         metrics = None
-        try:
-            metrics = self.learn.metrics
-            self.learn.metrics = []
-            with tempfile.TemporaryDirectory(prefix='arcgisTemp_') as _tempfolder:
-                self.learn.path = Path(_tempfolder)
-                self.learn.lr_find()
-        except Exception as e:
-            # if some error comes in lr_find
-            raise e
-        finally:
-            self.learn.metrics = metrics
-            # Revert
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            try:
+                metrics = self.learn.metrics
+                self.learn.metrics = []
+                with tempfile.TemporaryDirectory(prefix="arcgisTemp_") as _tempfolder:
+                    self.learn.path = Path(_tempfolder)
+                    self.learn.lr_find()
+            except Exception as e:
+                # if some error comes in lr_find
+                raise e
+            finally:
+                self.learn.metrics = metrics
+                # Revert
+                self.learn.path = temp1
+
+            #
             self.learn.path = temp1
 
-        #
-        self.learn.path = temp1
+            from IPython.display import clear_output
 
-        from IPython.display import clear_output
-        clear_output()
-        lr, index = self._find_lr()
-        if allow_plot:
-            self._show_lr_plot(index)
+            clear_output()
+            lr, index = self._find_lr()
+            if allow_plot:
+                self._show_lr_plot(index)
 
         return lr
 
-    def _show_lr_plot(self, index, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped):
+    def _show_lr_plot(
+        self,
+        index,
+        losses_skipped=losses_skipped,
+        trailing_losses_skipped=trailing_losses_skipped,
+    ):
         import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(1, 1)
         losses = self.learn.recorder.losses
         lrs = self.learn.recorder.lrs
         final_losses_skipped = 0
-        if len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]) >= 5:
+        if (
+            len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped])
+            >= 5
+        ):
             losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
             lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
             final_losses_skipped = losses_skipped
-        ax.plot(
-            lrs,
-            losses
-        )
+        ax.plot(lrs, losses)
         ax.set_ylabel("Loss")
         ax.set_xlabel("Learning Rate")
-        ax.set_xscale('log')
-        ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
+        ax.set_xscale("log")
+        ax.xaxis.set_major_formatter(plt.FormatStrFormatter("%.0e"))
         ax.plot(
             self.learn.recorder.lrs[index],
             self.learn.recorder.losses[index],
             markersize=10,
-            marker='o',
-            color='red'
+            marker="o",
+            color="red",
         )
 
         plt.show()
 
-    def _find_lr(self, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped,
-                 section_factor=3):
+    def _find_lr(
+        self,
+        losses_skipped=losses_skipped,
+        trailing_losses_skipped=trailing_losses_skipped,
+        section_factor=3,
+    ):
         losses = self.learn.recorder.losses
         lrs = self.learn.recorder.lrs
         final_losses_skipped = 0
-        if len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]) >= 5:
+        if (
+            len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped])
+            >= 5
+        ):
             losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
             lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
             final_losses_skipped = losses_skipped
@@ -687,7 +782,7 @@ class ArcGISModel(object):
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        metrics = ['valid_loss']
+        metrics = ["valid_loss"]
         for m in self.learn.metrics:
             if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
                 metrics.append(m.func.__name__)
@@ -698,15 +793,17 @@ class ArcGISModel(object):
 
         return metrics
 
-    def fit(self, 
-            epochs=10, 
-            lr=None, 
-            one_cycle=True, 
-            early_stopping=False, 
-            checkpoint=True,     # "all", "best", True, False ("best" and True are same.)
-            tensorboard=False,
-            monitor='valid_loss',  # whatever is passed here, earlystopping and checkpointing will use that.
-            **kwargs):
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        **kwargs,
+    ):
         """
         Train the model for the specified number of epochs and using the
         specified learning rates
@@ -757,71 +854,100 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
-        self._check_requisites()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            self._check_requisites()
 
-        if lr is None:
-            print('Finding optimum learning rate.')
+            if lr is None:
+                print("Finding optimum learning rate.")
 
-            lr = self.lr_find(allow_plot=False)
-            if self._slice_lr is True:
-                lr = slice(lr / 10, lr)
+                lr = self.lr_find(allow_plot=False)
+                if self._slice_lr is True and len(self.learn.layer_groups) > 1:
+                    lr = slice(lr / 10, lr)
 
-        self._learning_rate = lr
-        self._model_metrics_cache = None
-        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles" and (
-                dice.__qualname__
-                not in [
-                    metric.func.__qualname__
-                    if hasattr(metric, "func")
-                    else metric.__qualname__
-                    for metric in self.learn.metrics
-                ]
-        ) and not getattr(self, "_is_edge_detection", False):
-            self.learn.metrics.extend([dice])
-        if arcgis.env.verbose:
-            logger.info('Fitting the model.')
+            self._learning_rate = lr
+            self._model_metrics_cache = None
+            if (
+                getattr(self._data, "_dataset_type", None) == "Classified_Tiles"
+                and (
+                    dice.__qualname__
+                    not in [
+                        metric.func.__qualname__
+                        if hasattr(metric, "func")
+                        else metric.__qualname__
+                        for metric in self.learn.metrics
+                    ]
+                )
+                and not getattr(self, "_is_edge_detection", False)
+            ):
+                self.learn.metrics.extend([dice])
+            if arcgis.env.verbose:
+                logger.info("Fitting the model.")
 
-        if getattr(self, '_backend', 'pytorch') == 'tensorflow':
-            checkpoint = False
+            if getattr(self, "_backend", "pytorch") == "tensorflow":
+                checkpoint = False
 
-        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
-        kwargs.pop('callbacks', None)
-        monitored_names = self.available_metrics
-        if monitor not in monitored_names:
-            raise Exception(f"`monitor` must be set to one from {monitored_names}")
-        self.monitor = monitor
-        if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.001, patience=5))
-        if checkpoint:
-            from datetime import datetime
-            now = datetime.now()
-            if checkpoint != True and checkpoint != "all":
-                raise Exception("Checkpoint can only be set to a boolean or 'all'")
-            every = "improvement" if checkpoint is True else "epoch"
-            save_callback_params = kwargs.get("save_callback_params", {"monitor": monitor, "every": every})
-            callbacks.append(SaveModelCallback(self,
-                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
-                                               **save_callback_params))
-        kwargs.pop("save_callback_params", None)
-        # If tensorboardx is installed write a log with name as timestamp
-        if tensorboard and HAS_TENSORBOARDX:
-            training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
-            log_path = Path(self._data.path) / 'training_log'
-            abs_path = os.path.abspath(log_path)
-            training_id = type(self).__name__ + "_" + training_id
-            callbacks.append(
-                partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self)(learn=self.learn))
-            hostname = socket.gethostname()
-            print("Monitor training on Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(hostname, abs_path))
-        # Send out a warning if tensorboardX is not installed
-        elif tensorboard:
-            warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
+            callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
+            kwargs.pop("callbacks", None)
+            monitored_names = self.available_metrics
+            if monitor not in monitored_names:
+                raise Exception(f"`monitor` must be set to one from {monitored_names}")
+            self.monitor = monitor
+            if early_stopping:
+                callbacks.append(
+                    EarlyStoppingCallback(
+                        learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
+                    )
+                )
+            if checkpoint:
+                from datetime import datetime
 
-        self._fit_callbacks = callbacks
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
-        else:
-            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
+                now = datetime.now()
+                if checkpoint != True and checkpoint != "all":
+                    raise Exception("Checkpoint can only be set to a boolean or 'all'")
+                every = "improvement" if checkpoint is True else "epoch"
+                save_callback_params = kwargs.get(
+                    "save_callback_params", {"monitor": monitor, "every": every}
+                )
+                callbacks.append(
+                    SaveModelCallback(
+                        self,
+                        name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
+                        **save_callback_params,
+                    )
+                )
+            kwargs.pop("save_callback_params", None)
+            # If tensorboardx is installed write a log with name as timestamp
+            if tensorboard and HAS_TENSORBOARDX:
+                training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
+                log_path = Path(self._data.path) / "training_log"
+                abs_path = os.path.abspath(log_path)
+                training_id = type(self).__name__ + "_" + training_id
+                callbacks.append(
+                    partial(
+                        ArcGISTBCallback,
+                        base_dir=log_path,
+                        name=training_id,
+                        arcgis_model=self,
+                    )(learn=self.learn)
+                )
+                hostname = socket.gethostname()
+                print(
+                    "Monitor training on Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(
+                        hostname, abs_path
+                    )
+                )
+            # Send out a warning if tensorboardX is not installed
+            elif tensorboard:
+                warn(
+                    "Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log"
+                )
+
+            self._fit_callbacks = callbacks
+            if one_cycle:
+                self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+            else:
+                self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
 
     def unfreeze(self):
         """
@@ -839,15 +965,19 @@ class ArcGISModel(object):
         except:
             raise Exception("You need to train your model to compute losses")
 
-    def _create_emd_template(self, path, compute_metrics=True, save_inference_file=True):
+    def _create_emd_template(
+        self, path, compute_metrics=True, save_inference_file=True
+    ):
 
         _emd_template = {}
 
         # For old models - add lr, ModelName
-        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+        if isinstance(self._data, _EmptyData) or getattr(
+            self._data, "_is_empty", False
+        ):
             _emd_template = self._data.emd
             _emd_template["ModelFormat"] = "NCHW"
-            if self._backend == 'tensorflow' and self._framework == 'tflite':
+            if self._backend == "tensorflow" and self._framework == "tflite":
                 _emd_template["ModelFormat"] = "NHWC"
             _emd_template["ModelFile"] = path.name
             if not _emd_template.get("ModelName"):
@@ -855,11 +985,7 @@ class ArcGISModel(object):
 
             if not _emd_template.get("LearningRate"):
                 _emd_template["LearningRate"] = "0.0"
-            if _emd_template["ModelName"] in [
-                "MaskRCNN",
-                "UnetClassifier",
-                "CycleGAN"
-            ]:
+            if _emd_template["ModelName"] in ["MaskRCNN", "UnetClassifier", "CycleGAN"]:
                 _emd_template["SupportsVariableTileSize"] = True
             else:
                 _emd_template["SupportsVariableTileSize"] = False
@@ -870,55 +996,69 @@ class ArcGISModel(object):
         if self._backbone is None:
             backbone = self._backbone
         else:
-            if self._backend == 'tensorflow':
-                backbone = self._backbone._keras_api_names[-1].split('.')[-1]
+            if self._backend == "tensorflow":
+                backbone = self._backbone._keras_api_names[-1].split(".")[-1]
             else:
                 backbone = self._backbone.__name__
-            if backbone == 'backbone_wrapper':
+            if backbone == "backbone_wrapper":
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params(save_inference_file)
 
         _emd_template["ModelFormat"] = "NCHW"
-        if self._backend == 'tensorflow' and self._framework == 'tflite':
+        if self._backend == "tensorflow" and self._framework == "tflite":
             _emd_template["ModelFormat"] = "NHWC"
-        if getattr(self, '_data', None) is not None:
-            _emd_template['MinCellSize'] = getattr(self._data, '_emd', {}).get('MinCellSize', None)
-            _emd_template['MaxCellSize'] = getattr(self._data, '_emd', {}).get('MaxCellSize', None)
+        if getattr(self, "_data", None) is not None:
+            _emd_template["MinCellSize"] = getattr(self._data, "_emd", {}).get(
+                "MinCellSize", None
+            )
+            _emd_template["MaxCellSize"] = getattr(self._data, "_emd", {}).get(
+                "MaxCellSize", None
+            )
 
-
-        _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
+        _emd_template["SupportsVariableTileSize"] = _emd_template.get(
+            "SupportsVariableTileSize", False
+        )
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
 
-        if getattr(self, '_fit_callbacks', None) is not None:
-            checkpoint_callback = [c for c in self._fit_callbacks if isinstance(c, SaveModelCallback)]
+        if getattr(self, "_fit_callbacks", None) is not None:
+            checkpoint_callback = [
+                c for c in self._fit_callbacks if isinstance(c, SaveModelCallback)
+            ]
             if checkpoint_callback != []:
                 checkpoint_callback = checkpoint_callback[0]
-                key = getattr(self, 'monitor', 'valid_loss')
-                if checkpoint_callback.every == 'improvement':
+                key = getattr(self, "monitor", "valid_loss")
+                if checkpoint_callback.every == "improvement":
                     val = checkpoint_callback.best
                 else:
                     val = checkpoint_callback.current
                 if isinstance(val, torch.Tensor):
                     val = val.cpu().item()
                 else:
-                    val =  float(val)
-                _emd_template[f'monitored_{key}'] = val
+                    val = float(val)
+                _emd_template[f"monitored_{key}"] = val
 
         if isinstance(self._learning_rate, slice):
-            _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
+            _emd_lr = slice(
+                "{0:1.4e}".format(self._learning_rate.start),
+                "{0:1.4e}".format(self._learning_rate.stop),
+            )
         elif self._learning_rate is not None:
-            _emd_lr = '{0:1.4e}'.format(self._learning_rate)
+            _emd_lr = "{0:1.4e}".format(self._learning_rate)
         else:
             _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
 
-        if hasattr(self._data, 'chip_size'):
-            _emd_template["ImageHeight"] = self._data.chip_size
-            _emd_template["ImageWidth"] = self._data.chip_size
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
 
-        if hasattr(self._data, '_image_space_used'):
+            _emd_template["ImageHeight"] = chip_size[0]
+            _emd_template["ImageWidth"] = chip_size[1]
+
+        if hasattr(self._data, "_image_space_used"):
             _emd_template["ImageSpaceUsed"] = self._data._image_space_used
 
         _emd_template["LearningRate"] = str(_emd_lr)
@@ -926,15 +1066,12 @@ class ArcGISModel(object):
         _emd_template["backend"] = self._backend
 
         if getattr(self, "_is_mmsegdet", False):
-                model_params = {
-                "model_name": self._kwargs['model'],
-                "backend": self._backend
+            model_params = {
+                "model_name": self._kwargs["model"],
+                "backend": self._backend,
             }
         else:
-            model_params = {
-                "backbone": backbone,
-                "backend": self._backend
-            }
+            model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:
             _emd_template["ModelParameters"] = model_params
         else:
@@ -948,17 +1085,17 @@ class ArcGISModel(object):
             _emd_template.update(self._model_metrics_cache)
 
         resize_to = None
-        if hasattr(self._data, 'resize_to') and self._data.resize_to:
+        if hasattr(self._data, "resize_to") and self._data.resize_to:
             resize_to = self._data.resize_to
 
-        _emd_template['resize_to'] = resize_to
+        _emd_template["resize_to"] = resize_to
 
         # Check if model is Multispectral and dump parameters for that
-        _emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        _emd_template["IsMultispectral"] = getattr(self, "_is_multispectral", False)
         if _emd_template.get("IsMultispectral", False):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
-            if getattr(self._data, '_dataset_type', None) != 'ChangeDetection':
+            if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
                 _emd_template["ExtractBands"] = self._data._extract_bands
             _emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values,
@@ -968,22 +1105,26 @@ class ArcGISModel(object):
                 "scaled_min_values": self._data._scaled_min_values,
                 "scaled_max_values": self._data._scaled_max_values,
                 "scaled_mean_values": self._data._scaled_mean_values,
-                "scaled_std_values": self._data._scaled_std_values
+                "scaled_std_values": self._data._scaled_std_values,
             }
             for _stat in _emd_template["NormalizationStats"]:
                 if _emd_template["NormalizationStats"][_stat] is not None:
-                    _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
+                    _emd_template["NormalizationStats"][_stat] = _emd_template[
+                        "NormalizationStats"
+                    ][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
-        if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles':
+        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles":
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
                     if compute_metrics:
-                        _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
+                        _emd_template[
+                            "per_class_metrics"
+                        ] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod
     def _write_emd(_emd_template, path):
-        json.dump(_emd_template, open(path, 'w'), indent=4)
+        json.dump(_emd_template, open(path, "w"), indent=4)
 
         return path.stem
 
@@ -994,46 +1135,55 @@ class ArcGISModel(object):
     def _create_html(path_model):
         import base64
 
-        model_characteristics_dir = os.path.join(path_model.parent.absolute(), model_characteristics_folder)
-        loss_graph = os.path.join(model_characteristics_dir, 'loss_graph.png')
-        show_results = os.path.join(model_characteristics_dir, 'show_results.png')
-        confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
-        metrics_file = os.path.join(model_characteristics_dir, 'metrics.html')
-        results_file = os.path.join(model_characteristics_dir, 'results.html')
-        iframe_showresults = os.path.exists(os.path.join(model_characteristics_dir, 'show_results.html'))
+        model_characteristics_dir = os.path.join(
+            path_model.parent.absolute(), model_characteristics_folder
+        )
+        loss_graph = os.path.join(model_characteristics_dir, "loss_graph.png")
+        show_results = os.path.join(model_characteristics_dir, "show_results.png")
+        confusion_matrix = os.path.join(
+            model_characteristics_dir, "confusion_matrix.png"
+        )
+        metrics_file = os.path.join(model_characteristics_dir, "metrics.html")
+        results_file = os.path.join(model_characteristics_dir, "results.html")
+        iframe_showresults = os.path.exists(
+            os.path.join(model_characteristics_dir, "show_results.html")
+        )
 
         encoded_losses_img = None
         if os.path.exists(loss_graph):
             encoded_losses_img = "data:image/png;base64,{0}".format(
-                base64.b64encode(open(loss_graph, 'rb').read()).decode('utf-8'))
+                base64.b64encode(open(loss_graph, "rb").read()).decode("utf-8")
+            )
 
         encoded_showresults = None
         if os.path.exists(show_results):
             encoded_showresults = "data:image/png;base64,{0}".format(
-                base64.b64encode(open(show_results, 'rb').read()).decode('utf-8'))
+                base64.b64encode(open(show_results, "rb").read()).decode("utf-8")
+            )
 
         confusion_matrix_img = None
         if os.path.exists(confusion_matrix):
             confusion_matrix_img = "data:image/png;base64,{0}".format(
-                base64.b64encode(open(confusion_matrix, 'rb').read()).decode('utf-8'))
+                base64.b64encode(open(confusion_matrix, "rb").read()).decode("utf-8")
+            )
 
         metrics_html = None
         if os.path.exists(metrics_file):
-            with open(metrics_file, 'r') as f:
+            with open(metrics_file, "r") as f:
                 metrics_html = f.read()
 
         results_html = None
         if os.path.exists(results_file):
-            with open(results_file, 'r') as f:
+            with open(results_file, "r") as f:
                 results_html = f.read()
 
-        html_file_path = os.path.join(path_model.parent, 'model_metrics.html')
+        html_file_path = os.path.join(path_model.parent, "model_metrics.html")
 
-        emd_path = os.path.join(path_model.parent, path_model.stem + '.emd')
+        emd_path = os.path.join(path_model.parent, path_model.stem + ".emd")
         if not os.path.exists(emd_path):
             return
 
-        emd_template = json.load(open(emd_path, 'r'))
+        emd_template = json.load(open(emd_path, "r"))
 
         encoded_losses = ""
         if encoded_losses_img:
@@ -1042,7 +1192,7 @@ class ArcGISModel(object):
                 <img src="{encoded_losses_img}" alt="training and validation losses">
             """
 
-        if emd_template.get('ModelParameters', {}).get('model_name', False):
+        if emd_template.get("ModelParameters", {}).get("model_name", False):
 
             HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
@@ -1066,42 +1216,45 @@ class ArcGISModel(object):
                     <img src="{confusion_matrix_img}" alt="Confusion Matrix">
             """
 
-        if emd_template.get('accuracy'):
+        if emd_template.get("accuracy"):
             model_analysis = f"""
             <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
         """
-        if emd_template.get('mIoU'):
+        if emd_template.get("mIoU"):
             model_analysis = f"""
             <p><b>mIoU:</b> {emd_template.get('mIoU')}</p>
         """
 
-        if emd_template.get('average_precision_score'):
+        if emd_template.get("average_precision_score"):
             model_analysis = f"""
             <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
-        if emd_template.get('score'):
+        if emd_template.get("score"):
             model_analysis = f"""
             <p><b>Score:</b> {emd_template.get('score')}</p>
         """
 
-        if emd_template.get('PSNR'):
+        if emd_template.get("PSNR"):
             model_analysis = f"""
             <p><b>PSNR Metric:</b> {emd_template.get('PSNR')}</p>
             <p><b>SSIM Metric:</b> {emd_template.get('SSIM')}</p>
         """
             # FID is supported for RGB only
-            if emd_template.get('FID'):
-                model_analysis = model_analysis + f"""
+            if emd_template.get("FID"):
+                model_analysis = (
+                    model_analysis
+                    + f"""
                 <p><b>FID Metric:</b> {emd_template.get('FID')}</p>
                 """
+                )
 
-        if emd_template.get('per_class_metrics'):
-            html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
+        if emd_template.get("per_class_metrics"):
+            html_table = pd.read_json(emd_template.get("per_class_metrics")).to_html()
             model_analysis = f"""
             <p><b>Per class metrics:</b> {html_table}</p>
         """
-        if emd_template.get('FID_A'):
+        if emd_template.get("FID_A"):
             model_analysis = f"""
             <p><b>FID A:</b> {emd_template.get('FID_A')}</p>
             <p><b>FID B:</b> {emd_template.get('FID_B')}</p>
@@ -1139,23 +1292,34 @@ class ArcGISModel(object):
                 {results_html}
             """
 
-        file = open(html_file_path, 'w')
+        file = open(html_file_path, "w")
         file.write(HTML_TEMPLATE)
         file.close()
 
-    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None,
-              compute_metrics=True, save_optimizer=False, save_inference_file=True, **kwargs):
-        save_format = kwargs.get('save_format', 'default')  # 'default', 'tflite'
-        post_processed = kwargs.get('post_processed', True)  # True, False
-        quantized = kwargs.get('quantized', False)  # True, False
+    def _save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        zip_files=True,
+        save_html=True,
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        save_inference_file=True,
+        **kwargs,
+    ):
+        save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
+        post_processed = kwargs.get("post_processed", True)  # True, False
+        quantized = kwargs.get("quantized", False)  # True, False
         temp = self.learn.path
         temp1 = self.learn.model_dir
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
             # to make fastai save to both path and with name
             self.learn.path = path
-            self.learn.model_dir = ''
+            self.learn.model_dir = ""
             if not os.path.exists(self.learn.path):
                 os.makedirs(self.learn.path)
         else:
@@ -1168,32 +1332,33 @@ class ArcGISModel(object):
 
         try:
             _framework = framework.lower()
-            if self._backend == 'tensorflow' and _framework == 'tflite':
-                saved_path = self._save_tflite(name, post_processed=post_processed, quantized=quantized)
-            # elif self._backend == 'tensorflow' and _framework != 'tflite':
-            #     _err_msg = """
-            #     Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
-            #     \nPlease set parameter framework="tflite"
-            #     """
-            #     raise Exception(_err_msg)
-            elif self._backend != 'tensorflow' and _framework == 'tflite': #and save_format == 'tflite':
-                #_err_msg = """
-                #Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
-                #"""
-                #raise Exception(_err_msg)
-                #saved_path = self.learn.path / self.learn.model_dir / f'{name}.tflite'
-                supported_models =['FeatureClassifier', 'SingleShotDetector', 'RetinaNet','FasterRCNN','MaskRCNN']
-                if(type(self).__name__) in supported_models:
+            if self._backend == "tensorflow" and _framework == "tflite":
+                saved_path = self._save_tflite(
+                    name, post_processed=post_processed, quantized=quantized
+                )
+            elif self._backend != "tensorflow" and _framework == "tflite":
+                supported_models = [
+                    "FeatureClassifier",
+                    "SingleShotDetector",
+                    "RetinaNet",
+                ]
+                if (type(self).__name__) in supported_models:
                     saved_path = self._save_pytorch_tflite(name)
                 else:
-                    raise Exception("This pytorch model cannot be saved in tflite format")
+                    raise Exception(
+                        "This pytorch model cannot be saved in tflite format"
+                    )
             else:
                 if isinstance(self.learn.model, (DistributedDataParallel)):
-                    if not int(os.environ.get('RANK', 0)):
-                        saved_path = self.learn.save(name, return_path=True, with_opt=save_optimizer)
+                    if not int(os.environ.get("RANK", 0)):
+                        saved_path = self.learn.save(
+                            name, return_path=True, with_opt=save_optimizer
+                        )
                     return
 
-                saved_path = self.learn.save(name, return_path=True, with_opt=save_optimizer)
+                saved_path = self.learn.save(
+                    name, return_path=True, with_opt=save_optimizer
+                )
 
             # undoing changes to self.learn.path
         except Exception as e:
@@ -1204,22 +1369,27 @@ class ArcGISModel(object):
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics, save_inference_file)
+        _emd_template = self._create_emd_template(
+            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+        )
 
         if framework.lower() == "tf-onnx":
-            batch_size = kwargs.get('batch_size', 16)
+            batch_size = kwargs.get("batch_size", 16)
 
             with nostdout():
                 self._save_as_tfonnx(saved_path, batch_size)
 
-            self._create_tfonnx_emd_template(_emd_template, saved_path.with_suffix('.onnx'), batch_size)
-            os.remove(saved_path.with_suffix('.pth'))
+            self._create_tfonnx_emd_template(
+                _emd_template, saved_path.with_suffix(".onnx"), batch_size
+            )
+            os.remove(saved_path.with_suffix(".pth"))
 
         if framework.lower() == "torchscript":
             from ._siammask_utils import Custom
             from ._siammask_utils import load_pretrain
+
             siammask = Custom(anchors=self.anchors)
-            if '\\' in name_or_path or '/' in name_or_path:
+            if "\\" in name_or_path or "/" in name_or_path:
                 models_path = os.path.join(name_or_path)
             else:
                 models_path = os.path.join(self.learn.path, self.learn.model_dir, name)
@@ -1227,30 +1397,44 @@ class ArcGISModel(object):
                 os.makedirs(models_path)
 
             siammask = load_pretrain(siammask, os.path.join(models_path, name + ".pth"))
-            outdir = os.path.join(models_path, 'torch_scripts')
+            outdir = os.path.join(models_path, "torch_scripts")
             if not os.path.isdir(outdir):
                 os.mkdir(outdir)
 
             scripted_feature_extractor = torch.jit.script(siammask.features.features)
-            scripted_feature_extractor.save(os.path.join(outdir, 'feature_extractor.pt'))
+            scripted_feature_extractor.save(
+                os.path.join(outdir, "feature_extractor.pt")
+            )
 
-            scripted_feature_downsampler = torch.jit.script(siammask.features.downsample)
-            scripted_feature_downsampler.save(os.path.join(outdir, 'feature_downsampler.pt'))
+            scripted_feature_downsampler = torch.jit.script(
+                siammask.features.downsample
+            )
+            scripted_feature_downsampler.save(
+                os.path.join(outdir, "feature_downsampler.pt")
+            )
 
             scripted_rpn_model = torch.jit.script(siammask.rpn_model)
-            scripted_rpn_model.save(os.path.join(outdir, 'rpn_model.pt'))
+            scripted_rpn_model.save(os.path.join(outdir, "rpn_model.pt"))
 
-            scripted_mask_conv_kernel = torch.jit.script(siammask.mask_model.mask.conv_kernel)
-            scripted_mask_conv_kernel.save(os.path.join(outdir, 'mask_conv_kernel.pt'))
+            scripted_mask_conv_kernel = torch.jit.script(
+                siammask.mask_model.mask.conv_kernel
+            )
+            scripted_mask_conv_kernel.save(os.path.join(outdir, "mask_conv_kernel.pt"))
 
-            scripted_mask_conv_search = torch.jit.script(siammask.mask_model.mask.conv_search)
-            scripted_mask_conv_search.save(os.path.join(outdir, 'mask_conv_search.pt'))
+            scripted_mask_conv_search = torch.jit.script(
+                siammask.mask_model.mask.conv_search
+            )
+            scripted_mask_conv_search.save(os.path.join(outdir, "mask_conv_search.pt"))
 
-            scripted_mask_depthwise_conv = torch.jit.script(siammask.mask_model.mask.conv2d_dw_group)
-            scripted_mask_depthwise_conv.save(os.path.join(outdir, 'mask_depthwise_conv.pt'))
+            scripted_mask_depthwise_conv = torch.jit.script(
+                siammask.mask_model.mask.conv2d_dw_group
+            )
+            scripted_mask_depthwise_conv.save(
+                os.path.join(outdir, "mask_depthwise_conv.pt")
+            )
 
             scripted_refine_model = torch.jit.script(siammask.refine_model)
-            scripted_refine_model.save(os.path.join(outdir, 'refine_model.pt'))
+            scripted_refine_model.save(os.path.join(outdir, "refine_model.pt"))
             temp_emd_template = _emd_template.copy()
             temp_emd_template["ModelFile"] = "."
             temp_emd_template["ModelFiles"] = [
@@ -1260,22 +1444,23 @@ class ArcGISModel(object):
                 "mask_conv_kernel.pt",
                 "mask_conv_search.pt",
                 "mask_depthwise_conv.pt",
-                "refine_model.pt"
+                "refine_model.pt",
             ]
 
             if os.path.exists(os.path.join(outdir, name + ".emd")):
                 os.remove(os.path.join(outdir, name + ".emd"))
 
             import zipfile
-            dlpk_Name = os.path.join(outdir, name + '.dlpk')
+
+            dlpk_Name = os.path.join(outdir, name + ".dlpk")
             if os.path.exists(dlpk_Name):
                 os.remove(dlpk_Name)
 
             out_file = open(os.path.join(outdir, name + ".emd"), "w")
             json.dump(temp_emd_template, out_file, indent=4)
             out_file.close()
-            dlpk_Name = os.path.join(outdir, name + '.dlpk')
-            f = zipfile.ZipFile(dlpk_Name, 'w')
+            dlpk_Name = os.path.join(outdir, name + ".dlpk")
+            f = zipfile.ZipFile(dlpk_Name, "w")
             cwd = os.getcwd()
             os.chdir(outdir)
             for files in temp_emd_template["ModelFiles"]:
@@ -1285,62 +1470,93 @@ class ArcGISModel(object):
             f.close()
             os.chdir(cwd)
 
-        if _emd_template.get('InferenceFunction', False):
-            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
-                                                  "ObjectClassification", "CycleGAN", "Pix2Pix", "SuperResolution"] or save_inference_file:
-                inference_file = _emd_template['InferenceFunction']
+        if _emd_template.get("InferenceFunction", False):
+            if (
+                _emd_template["ModelType"]
+                not in [
+                    "ObjectDetection",
+                    "ImageClassification",
+                    "InstanceDetection",
+                    "ObjectClassification",
+                    "CycleGAN",
+                    "Pix2Pix",
+                    "SuperResolution",
+                ]
+                or save_inference_file
+            ):
+                inference_file = _emd_template["InferenceFunction"]
                 if "[Functions]" in inference_file:
-                    inference_file = inference_file[len("[Functions]System\\DeepLearning\\ArcGISLearn\\"):]
-                    _emd_template['InferenceFunction'] = inference_file
+                    inference_file = inference_file[
+                        len("[Functions]System\\DeepLearning\\ArcGISLearn\\") :
+                    ]
+                    _emd_template["InferenceFunction"] = inference_file
 
-                with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
+                with open(
+                    saved_path.parent / _emd_template["InferenceFunction"], "w"
+                ) as f:
                     f.write(self._code)
             if not save_inference_file:
-                inference_file = _emd_template['InferenceFunction']
+                inference_file = _emd_template["InferenceFunction"]
                 if "[Functions]" not in inference_file:
-                    _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\" + _emd_template["InferenceFunction"]
+                    _emd_template["InferenceFunction"] = (
+                        "[Functions]System\\DeepLearning\\ArcGISLearn\\"
+                        + _emd_template["InferenceFunction"]
+                    )
 
-
-
-        ArcGISModel._write_emd(_emd_template, saved_path.with_suffix('.emd'))
+        ArcGISModel._write_emd(_emd_template, saved_path.with_suffix(".emd"))
         zip_name = saved_path.stem
 
         if save_html:
             try:
                 if _IS_ARCGISPRONOTEBOOK:
                     from IPython import get_ipython
-                    get_ipython().run_line_magic('matplotlib', 'auto')
-                self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
+
+                    get_ipython().run_line_magic("matplotlib", "auto")
+                self._save_model_characteristics(
+                    saved_path.parent.absolute() / model_characteristics_folder
+                )
                 ArcGISModel._create_html(saved_path)
             except:
                 pass
             finally:
                 if _IS_ARCGISPRONOTEBOOK:
                     from IPython import get_ipython
-                    get_ipython().run_line_magic('matplotlib', 'inline')
 
+                    get_ipython().run_line_magic("matplotlib", "inline")
 
-        if _emd_template.get('ModelConfigurationFile', False):
-            with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
+        if _emd_template.get("ModelConfigurationFile", False):
+            with open(
+                saved_path.parent / _emd_template["ModelConfigurationFile"], "w"
+            ) as f:
                 f.write(inspect.getsource(self._model_conf_class))
 
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))
 
         if arcgis.env.verbose:
-            print('Created model files at {spp}'.format(spp=saved_path.parent))
+            print("Created model files at {spp}".format(spp=saved_path.parent))
 
         if publish:
-            self._publish_dlpk((saved_path.parent / saved_path.stem).with_suffix('.dlpk'), gis=gis,
-                               overwrite=kwargs.get('overwrite', False))
+            self._publish_dlpk(
+                (saved_path.parent / saved_path.stem).with_suffix(".dlpk"),
+                gis=gis,
+                overwrite=kwargs.get("overwrite", False),
+            )
 
         return saved_path.parent
 
     def _save_tflite(self, name, post_processed=True, quantized=False):
         if post_processed or quantized:
             input_normalization = quantized is False
-            return self.learn._save_tflite(name, return_path=True, model_to_save=self._get_post_processed_model(
-                input_normalization=input_normalization), quantized=quantized, data=self._data)
+            return self.learn._save_tflite(
+                name,
+                return_path=True,
+                model_to_save=self._get_post_processed_model(
+                    input_normalization=input_normalization
+                ),
+                quantized=quantized,
+                data=self._data,
+            )
         return self.learn._save_tflite(name)
 
     def _save_pytorch_tflite(self, name):
@@ -1348,33 +1564,50 @@ class ArcGISModel(object):
         torch_model = torch_model.eval()
         num_input_channels = list(self.learn.model.parameters())[0].shape[1]
         dummy_input = torch.randn([1, num_input_channels, 224, 224]).cuda()
-        saved_path = self.learn.path / self.learn.model_dir / f'{name}.tflite'
-        saved_path_onnx = self.learn.path / self.learn.model_dir / f'{name}.onnx'
-        saved_path_pb = self.learn.path / self.learn.model_dir / f'{name}'
-        if type(self).__name__ == 'FeatureClassifier':
+        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+        if type(self).__name__ == "FeatureClassifier":
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                torch.onnx.export(torch_model, dummy_input, saved_path_onnx, export_params=True, input_names=['input'],
-                                  output_names=['output'], opset_version=11)
+                torch.onnx.export(
+                    torch_model,
+                    dummy_input,
+                    saved_path_onnx,
+                    export_params=True,
+                    input_names=["input"],
+                    output_names=["output"],
+                    opset_version=11,
+                )
         else:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                torch.onnx.export(torch_model, dummy_input, saved_path_onnx, export_params=True, input_names=['input'],
-                                  output_names=['scores', 'box'], opset_version=11)
+                torch.onnx.export(
+                    torch_model,
+                    dummy_input,
+                    saved_path_onnx,
+                    export_params=True,
+                    input_names=["input"],
+                    output_names=["scores", "box"],
+                    opset_version=11,
+                )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             arcgis_onnx = onnx.load(saved_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level='ERROR')
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
             tf_onnx.export_graph(str(saved_path_pb))
 
         converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
         converter.experimental_new_converter = True
         converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8, tf.lite.OpsSet.SELECT_TF_OPS]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             tflite_model = converter.convert()
-        with tf.io.gfile.GFile(saved_path, 'wb') as f:
+        with tf.io.gfile.GFile(saved_path, "wb") as f:
             f.write(tflite_model)
         return saved_path
 
@@ -1386,106 +1619,137 @@ class ArcGISModel(object):
         import shutil
         import matplotlib.pyplot as plt
 
-        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
-            if not os.path.exists(os.path.join(self._data.emd_path.parent, model_characteristics_folder)):
+        if isinstance(self._data, _EmptyData) or getattr(
+            self._data, "_is_empty", False
+        ):
+            if not os.path.exists(
+                os.path.join(self._data.emd_path.parent, model_characteristics_folder)
+            ):
                 return
             temp_path = tempfile.NamedTemporaryFile().name
             shutil.copytree(
                 os.path.join(self._data.emd_path.parent, model_characteristics_folder),
-                temp_path
+                temp_path,
             )
-            if os.path.exists(os.path.join(model_characteristics_dir, model_characteristics_dir)):
-                shutil.rmtree(os.path.join(model_characteristics_dir, model_characteristics_dir), ignore_errors=True)
+            if os.path.exists(
+                os.path.join(model_characteristics_dir, model_characteristics_dir)
+            ):
+                shutil.rmtree(
+                    os.path.join(model_characteristics_dir, model_characteristics_dir),
+                    ignore_errors=True,
+                )
 
             shutil.copytree(
                 temp_path,
-                os.path.join(model_characteristics_dir, model_characteristics_dir)
+                os.path.join(model_characteristics_dir, model_characteristics_dir),
             )
 
             return
 
-        if not os.path.exists(os.path.join(model_characteristics_dir, model_characteristics_dir)):
+        if not os.path.exists(
+            os.path.join(model_characteristics_dir, model_characteristics_dir)
+        ):
             os.mkdir(os.path.join(model_characteristics_dir, model_characteristics_dir))
 
-        if hasattr(self.learn, 'recorder'):
+        if hasattr(self.learn, "recorder"):
             try:
                 self.learn.recorder.plot_losses()
-                plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
+                plt.savefig(os.path.join(model_characteristics_dir, "loss_graph.png"))
                 plt.close()
             except:
                 plt.close()
 
-        if self.__str__() == '<PointCNN>':
+        if self.__str__() == "<PointCNN>":
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>", "<SequenceToSequence>"]:
+        elif self.__str__() in [
+            "<TextClassifier>",
+            "<TransformerEntityRecognizer>",
+            "<SequenceToSequence>",
+        ]:
             pass
-        elif hasattr(self, 'show_results'):
+        elif hasattr(self, "show_results"):
             self.show_results()
-            plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
+            plt.savefig(os.path.join(model_characteristics_dir, "show_results.png"))
             plt.close()
 
-        if hasattr(self, '_save_confusion_matrix'):
+        if hasattr(self, "_save_confusion_matrix"):
             self._save_confusion_matrix(model_characteristics_dir)
 
     def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
-            warn('No active gis user found!')
+            warn("No active gis user found!")
             return
 
         if not os.path.exists(dlpk_path):
-            warn('DLPK file not found!')
+            warn("DLPK file not found!")
             return
 
-        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + '.emd')
+        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + ".emd")
 
         if not os.path.exists(emd_path):
-            warn('EMD File not found!')
+            warn("EMD File not found!")
             return
 
-        emd_data = json.load(open(emd_path, 'r'))
+        emd_data = json.load(open(emd_path, "r"))
         formatted_description = f"""
                 <p><b> {emd_data.get('ModelName').replace('>', '').replace('<', '')} </b></p>
                 <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
                 <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
         """
 
-        if emd_data.get('accuracy'):
-            formatted_description = formatted_description + f"""
+        if emd_data.get("accuracy"):
+            formatted_description = (
+                formatted_description
+                + f"""
                 <p><b>Analysis of the model</b></p>
                 <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
             """
+            )
 
-        if emd_data.get('average_precision_score'):
-            formatted_description = formatted_description + f"""
+        if emd_data.get("average_precision_score"):
+            formatted_description = (
+                formatted_description
+                + f"""
                 <p><b>Analysis of the model</b></p>
                 <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
+            )
 
         item = gis_user.content.add(
-            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem,
-             'overwrite': 'true' if overwrite else 'false'},
-            data=str(dlpk_path.absolute())
+            {
+                "type": "Deep Learning Package",
+                "description": formatted_description,
+                "title": dlpk_path.stem,
+                "overwrite": "true" if overwrite else "false",
+            },
+            data=str(dlpk_path.absolute()),
         )
 
         print(f"Published DLPK Item Id: {item.itemid}")
 
-        model_characteristics_dir = os.path.join(dlpk_path.parent.absolute(), model_characteristics_folder)
-        screenshots = [os.path.join(model_characteristics_dir, screenshot) for screenshot in
-                       os.listdir(model_characteristics_dir)]
+        model_characteristics_dir = os.path.join(
+            dlpk_path.parent.absolute(), model_characteristics_folder
+        )
+        screenshots = [
+            os.path.join(model_characteristics_dir, screenshot)
+            for screenshot in os.listdir(model_characteristics_dir)
+        ]
 
-        item.update(item_properties={'screenshots': screenshots})
+        item.update(item_properties={"screenshots": screenshots})
 
     def _create_tfonnx_emd_template(self, _emd_template, saved_path, batch_size):
         _emd_template.update(self._get_tfonnx_emd_params())
-        _emd_template['BatchSize'] = batch_size
+        _emd_template["BatchSize"] = batch_size
         _emd_template["ModelFile"] = saved_path.name
 
         return _emd_template
 
     def _get_tfonnx_emd_params(self):
         # Raises error if framework specified is TF-ONNX but is not supported by the model
-        raise NotImplementedError('TF-ONNX framework is currently not supported by this model.')
+        raise NotImplementedError(
+            "TF-ONNX framework is currently not supported by this model."
+        )
 
     def _save_as_tfonnx(self, saved_path, batch_size):
         try:
@@ -1495,15 +1759,33 @@ class ArcGISModel(object):
                 from onnx_tf.backend import prepare
         except:
             raise Exception(
-                'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".')
+                'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".'
+            )
 
         batch_size = int(math.sqrt(int(batch_size))) ** 2
-        dummy_input = torch.randn(batch_size, 3, self._data.chip_size, self._data.chip_size, device=self._device,
-                                  requires_grad=True)
-        torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
+        dummy_input = torch.randn(
+            batch_size,
+            3,
+            self._data.chip_size,
+            self._data.chip_size,
+            device=self._device,
+            requires_grad=True,
+        )
+        torch.onnx.export(
+            self.learn.model, dummy_input, saved_path.with_suffix(".onnx")
+        )
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
-             save_optimizer=False, save_inference_file=True, **kwargs):
+    def save(
+        self,
+        name_or_path,
+        framework="PyTorch",
+        publish=False,
+        gis=None,
+        compute_metrics=True,
+        save_optimizer=False,
+        save_inference_file=True,
+        **kwargs,
+    ):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -1517,18 +1799,27 @@ class ArcGISModel(object):
                                 with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
-        framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
-
-                                Setting framework = 'tflite' allows the model trained
-                                in pytorch to be saved in tflite format
-                                (Supported for ``FeatureClassifier``,
-                                ``SingleShotDetector``, ``RetinaNet`` ,``FasterRCNN``
-                                and ``MaskRCNN``). This support is currently experimental.
-
-                                Framework choice: 'PyTorch', 'TF-ONNX' and 'tflite'
+        framework               Optional string. Exports the model in the
+                                specified framework format ('PyTorch', 'tflite'
+                                'torchscript', and 'TF-ONXX' (deprecated)).
+                                Only models saved with the default framework
+                                (PyTorch) can be loaded using `from_model`.
+                                ``tflite`` framework (experimental support) is
+                                supported by ``SingleShotDetector``,
+                                ``FeatureClassifier`` and ``RetinaNet``.
+                                ``torchscript`` format is supported by
+                                ``SiamMask``.
+                                For usage of SiamMask model in ArcGIS Pro 2.8,
+                                load the ``PyTorch`` framework saved model
+                                and export it with ``torchscript`` framework
+                                using ArcGIS API for Python v1.8.5.
+                                For usage of SiamMask model in ArcGIS Pro 2.9,
+                                set framework to ``torchscript`` and use the
+                                model files additionally generated inside
+                                'torch_scripts' folder.
+                                If framework is ``TF-ONNX`` (Only supported for
+                                ``SingleShotDetector``), ``batch_size`` can
+                                be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
@@ -1551,10 +1842,18 @@ class ArcGISModel(object):
                                 the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         """
-        if int(os.environ.get('RANK', 0)):
+        if int(os.environ.get("RANK", 0)):
             return
-        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics,
-                          save_optimizer=save_optimizer, save_inference_file=save_inference_file, **kwargs)
+        return self._save(
+            name_or_path,
+            framework=framework,
+            publish=publish,
+            gis=gis,
+            compute_metrics=compute_metrics,
+            save_optimizer=save_optimizer,
+            save_inference_file=save_inference_file,
+            **kwargs,
+        )
 
     def load(self, name_or_path, **kwargs):
         """
@@ -1569,7 +1868,7 @@ class ArcGISModel(object):
         =====================   ===========================================
         """
         temp = self.learn.path
-        if '\\' in name_or_path or '/' in name_or_path:
+        if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             # to make fastai from both path and with name
             if path.is_file():
@@ -1578,7 +1877,7 @@ class ArcGISModel(object):
             else:
                 name = path.parts[-1]
                 self.learn.path = path
-            self.learn.model_dir = ''
+            self.learn.model_dir = ""
         else:
             # fixing fastai bug
             # self.learn.path = self.learn.path.parent
@@ -1586,11 +1885,11 @@ class ArcGISModel(object):
             name = name_or_path
 
         try:
-            device = getattr(self, '_map_location', None)
+            device = getattr(self, "_map_location", None)
             self.learn.load(name, purge=False, device=device)
         except Exception as e:
             raise e
         finally:
             # undoing changes to self.learn.path
             self.learn.path = temp
-            self.learn.model_dir = 'models'
+            self.learn.model_dir = "models"

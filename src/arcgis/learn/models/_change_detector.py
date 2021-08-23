@@ -11,6 +11,7 @@ try:
     from .._utils.change_detection_data import show_results
     from ._arcgis_model import _resnet_family
     from .._utils.common import _get_emd_path
+
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
@@ -23,7 +24,7 @@ class ChangeDetector(ArcGISModel):
     Creates a Change Detection model.
 
     A Spatial-Temporal Attention-Based Method and a New Dataset
-    for Remote Sensing Image Change Detection - 
+    for Remote Sensing Image Change Detection -
     https://www.mdpi.com/2072-4292/12/10/1662
 
     =====================   ===========================================
@@ -49,43 +50,45 @@ class ChangeDetector(ArcGISModel):
     :returns: ``ChangeDetector`` object
     """
 
-    def __init__(self, data, backbone=None, attention_type='PAM', pretrained_path=None, **kwargs):
+    def __init__(
+        self, data, backbone=None, attention_type="PAM", pretrained_path=None, **kwargs
+    ):
 
         if not HAS_FASTAI:
-            raise_fastai_import_error(import_exception=import_exception,
-                                      message="",
-                                      installation_steps=' ')
-                                      
+            raise_fastai_import_error(
+                import_exception=import_exception, message="", installation_steps=" "
+            )
+
         if backbone is None:
-            backbone = 'resnet18'
+            backbone = "resnet18"
 
         if not self._check_backbone_support(backbone):
-            raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")            
+            raise Exception(
+                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+            )
 
-        super().__init__(data, backbone)        
+        super().__init__(data, backbone)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
-        self.learn = get_learner(self._data,
-                                 backbone,
-                                 self.SA_type)
+        self.learn = get_learner(self._data, backbone, self.SA_type)
         self._code = image_classifier_prf
-        self._arcgis_init_callback()    # make first conv weights learnable
+        self._arcgis_init_callback()  # make first conv weights learnable
         if pretrained_path is not None:
             self.load(pretrained_path)
-        
+
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'precision', 'recall', 'f1']
+        return ["valid_loss", "precision", "recall", "f1"]
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        return '<%s>' % (type(self).__name__)
+        return "<%s>" % (type(self).__name__)
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """
+        """Supported torchvision backbones for this model."""
         return ChangeDetector._supported_backbones()
 
     @staticmethod
@@ -94,12 +97,12 @@ class ChangeDetector(ArcGISModel):
 
     @property
     def supported_datasets(self):
-        """ Supported dataset types for this model. """
+        """Supported dataset types for this model."""
         return ChangeDetector._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
-        return ['ChangeDetection']
+        return ["ChangeDetection"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -126,29 +129,29 @@ class ChangeDetector(ArcGISModel):
         with open(emd_path) as f:
             emd = json.load(f)
 
-        model_file = Path(emd['ModelFile'])
+        model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        model_params = emd['ModelParameters']
+        model_params = emd["ModelParameters"]
         if data is None:
-            data = _EmptyData(path=emd_path.parent,
-                              loss_func=None,
-                              c=2, # change, no_change
-                              chip_size=emd['ImageHeight'])
+            data = _EmptyData(
+                path=emd_path.parent,
+                loss_func=None,
+                c=2,  # change, no_change
+                chip_size=emd["ImageHeight"],
+            )
 
             data.emd_path = emd_path
             data.emd = emd
-            for key, value in emd['DataAttributes'].items():
+            for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 
-        return cls(data,
-                   **model_params,
-                   pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
     def _model_metrics(self):
-        return {'model': self._get_model_metrics()}
+        return {"model": self._get_model_metrics()}
 
     def _get_model_metrics(self, **kwargs):
         return float(0.0)
@@ -159,15 +162,23 @@ class ChangeDetector(ArcGISModel):
         _emd_template["ModelParameters"]["attention_type"] = self.SA_type
         # chip size
         _emd_template["DataAttributes"]["chip_size"] = self._data.chip_size
-        _emd_template["DataAttributes"]["_is_multispectral"] = self._data._is_multispectral
+        _emd_template["DataAttributes"][
+            "_is_multispectral"
+        ] = self._data._is_multispectral
         if self._data._is_multispectral:
             _emd_template["DataAttributes"]["_imagery_type"] = self._data._imagery_type
             _emd_template["DataAttributes"]["_bands"] = self._data._bands
             _emd_template["DataAttributes"]["_rgb_bands"] = self._data._rgb_bands
-            _emd_template["DataAttributes"]["_extract_bands"] = self._data._extract_bands
+            _emd_template["DataAttributes"][
+                "_extract_bands"
+            ] = self._data._extract_bands
             _emd_template["DataAttributes"]["_train_tail"] = self._data._train_tail
-            _emd_template["DataAttributes"]["_band_min_values"] = self._data._band_min_values.tolist()
-            _emd_template["DataAttributes"]["_band_max_values"] = self._data._band_max_values.tolist()
+            _emd_template["DataAttributes"][
+                "_band_min_values"
+            ] = self._data._band_min_values.tolist()
+            _emd_template["DataAttributes"][
+                "_band_max_values"
+            ] = self._data._band_max_values.tolist()
 
         # normalization stats
         norm_stats = []
@@ -187,20 +198,27 @@ class ChangeDetector(ArcGISModel):
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         else:
-            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template[
+                "InferenceFunction"
+            ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         if self._is_multispectral:
             # change this when we start to honour extract bands parameter.
-            _emd_template["ExtractBands"] = list(range(len(self._data._extract_bands) * 2))
+            _emd_template["ExtractBands"] = list(
+                range(len(self._data._extract_bands) * 2)
+            )
         else:
             # To extract bands from concatenated images (RGB)
             _emd_template["ExtractBands"] = list(range(6))
-        _emd_template['Classes'] = []
+        _emd_template["Classes"] = []
         class_data = {}
-        for value, class_name in self._data.class_mapping.items():  # 0th index is background
+        for (
+            value,
+            class_name,
+        ) in self._data.class_mapping.items():  # 0th index is background
             class_data["Value"] = value
             class_data["Name"] = class_name
             class_data["Color"] = self._data.color_mapping[value]
-            _emd_template['Classes'].append(class_data.copy())
+            _emd_template["Classes"].append(class_data.copy())
 
         return _emd_template
 
@@ -215,7 +233,8 @@ class ChangeDetector(ArcGISModel):
         Computes precision, recall and f1 score.
         """
         from .._utils.classified_tiles import per_class_metrics
-        return per_class_metrics(self, postprocess_type='CD')
+
+        return per_class_metrics(self, postprocess_type="CD")
 
     def _score_author(self):
         """
@@ -223,6 +242,7 @@ class ChangeDetector(ArcGISModel):
         the author's way of computing scores.
         """
         from ._change_detector_utils import calculate_author_metrics
+
         return calculate_author_metrics(self)
 
     def predict(self, before_image, after_image, **kwargs):
@@ -248,7 +268,7 @@ class ChangeDetector(ArcGISModel):
                                 the model is trained on. Default False.
         ---------------------   -------------------------------------------
         visualize               Optional Boolean. If True, It will plot
-                                the predictions on the notebook. Default False.                            
+                                the predictions on the notebook. Default False.
         ---------------------   -------------------------------------------
         save                    Optional Boolean. If true will write the
                                 prediction file on the disk. Default False.
@@ -257,5 +277,5 @@ class ChangeDetector(ArcGISModel):
         :returns: PyTorch Tensor of the change mask.
         """
         from .._utils.change_detection_data import predict
-        return predict(self, before_image, after_image, **kwargs)
 
+        return predict(self, before_image, after_image, **kwargs)

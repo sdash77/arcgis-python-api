@@ -5,7 +5,7 @@ from .layers import *
 
 
 class Block(nn.Module):
-    def __init__(self, ni, nf, ks=[7, 5, 3], act_fn='relu'):
+    def __init__(self, ni, nf, ks=[7, 5, 3], act_fn="relu"):
         super().__init__()
         self.conv1 = convlayer(ni, nf, ks[0], act_fn=act_fn)
         self.conv2 = convlayer(nf, nf, ks[1], act_fn=act_fn)
@@ -30,10 +30,10 @@ class _TSResCNN(nn.Module):
     def __init__(self, c_in, c_out):
         nf = 64
         super().__init__()
-        self.block = Block(c_in, nf, ks=[7, 5, 3], act_fn='relu')
-        self.conv1 = convlayer(nf, nf * 2, ks=3, act_fn='leakyrelu', negative_slope=.2)
-        self.conv2 = convlayer(nf * 2, nf * 4, ks=3, act_fn='prelu')
-        self.conv3 = convlayer(nf * 4, nf * 2, ks=3, act_fn='elu', alpha=.3)
+        self.block = Block(c_in, nf, ks=[7, 5, 3], act_fn="relu")
+        self.conv1 = convlayer(nf, nf * 2, ks=3, act_fn="leakyrelu", negative_slope=0.2)
+        self.conv2 = convlayer(nf * 2, nf * 4, ks=3, act_fn="prelu")
+        self.conv3 = convlayer(nf * 4, nf * 2, ks=3, act_fn="elu", alpha=0.3)
         self.gap = nn.AdaptiveAvgPool1d(1)
         self.lin = nn.Linear(nf * 2, c_out)
 

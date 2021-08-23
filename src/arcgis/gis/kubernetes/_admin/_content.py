@@ -17,6 +17,8 @@ class LanguageManager(_BaseKube):
 
     def __init__(self, url: str, gis: GIS):
         super()
+        if url.lower().endswith("/languages") == False:
+            url += "/languages"
         self._url = url
         self._gis = gis
         self._con = gis._con

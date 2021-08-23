@@ -8482,6 +8482,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         or ele_dim["name"].lower() == "acquisitiondate"
                         or ele_dim["unit"] == "ISO8601"
                     ):
+                        if ("recurring" in ele_dim.keys()) and ele_dim["recurring"]:
+                            continue
                         val = ele_dim["values"]
                         # if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
                         val_list = []
@@ -8501,7 +8503,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
                                 _epoch_to_iso(ele_dim["extent"][0]),
                                 _epoch_to_iso(ele_dim["extent"][1]),
                             ]
-                    break
 
         return mdinfo
 
@@ -12203,12 +12204,12 @@ class RasterCollection:
 
             rc_local = RasterCollection(r"./data/rasters.gdb/rasters")
 
-            def grayscale(item):
+            def apply_grayscale(item):
                 raster = item["Raster"]
                 gray = grayscale(raster)
-                return {"Raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
+                return {"raster": gray, "Name": item["Name"], "StdTime": item["AcquisitionDate"]}
 
-            gray_rc = rc_local.map(grayscale)
+            gray_rc = rc_local.map(func=apply_grayscale)
 
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)

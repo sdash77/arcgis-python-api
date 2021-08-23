@@ -20,6 +20,7 @@ class NotebookServer(object):
     Provides access to the ArcGIS Notebook Server administration API.
     """
 
+    _da = None
     _gis = None
     _url = None
     _properties = None
@@ -69,6 +70,17 @@ class NotebookServer(object):
 
     # ----------------------------------------------------------------------
     @property
+    def data_access(self) -> "NotebookDataAccess":
+        """Provides access to managing files stored on notebook server."""
+        if self._da is None:
+            from ._dataaccess import NotebookDataAccess
+
+            url = self._url + "/dataaccess"
+            self._da = NotebookDataAccess(url, self._gis)
+        return self._da
+
+    # ----------------------------------------------------------------------
+    @property
     def version(self):
         """
         Returns the notebook server version
@@ -85,7 +97,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's site management operations
 
-        :returns: SiteManager
+        :returns: :class:`~arcgis.gis.nb.SiteManager`
         """
         if self._sitemanager is None:
             from ._site import SiteManager
@@ -135,7 +147,7 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's logging system
 
-        :returns: LogManager
+        :returns: :class:`~arcgis.gis.nb.LogManager`
 
         """
         if self._logs is None:
@@ -149,7 +161,7 @@ class NotebookServer(object):
         """
         returns access to the system properties of the ArcGIS Notebook Server
 
-        :return: SystemManager
+        :return: :class:`arcgis.gis.nb.SystemManager`
 
         """
         if self._system is None:
@@ -164,7 +176,7 @@ class NotebookServer(object):
         Provides access to managing the registered machines with ArcGIS
         Notebook Server
 
-        :returns: MachineManager
+        :returns: :class:`~arcgis.gis.nb.MachineManager`
 
         """
         if self._machine is None:
@@ -179,7 +191,7 @@ class NotebookServer(object):
         Provides access to managing the ArcGIS Notebook Server's security
         settings.
 
-        :return: SecurityManager
+        :return: :class:`~arcgis.gis.nb.SecurityManager`
 
         """
         if self._security is None:
@@ -194,7 +206,7 @@ class NotebookServer(object):
         Provides access to managing the ArcGIS Notebook Server's
         Notebooks
 
-        :return: NotebookManager
+        :return: :class:`~arcgis.gis.nb.NotebookManager`
         """
         if self._notebook is None:
             url = self._url + "/notebooks"

@@ -2,12 +2,104 @@
 The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` types as parameters and return
 :class:`~arcgis.geometry.Geometry` type results.
 """
-
+from enum import Enum
 import arcgis.env
 
-# https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer.
+
+from enum import Enum
 
 
+class AreaUnits(Enum):
+    """
+    Supported Geometry Service Area Units
+    """
+
+    UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
+    SQUAREINCHES = {"areaUnit": "esriSquareInches"}
+    SQUAREFEET = {"areaUnit": "esriSquareFeet"}
+    SQUAREYARDS = {"areaUnit": "esriSquareYards"}
+    ACRES = {"areaUnit": "esriAcres"}
+    SQUAREMILES = {"areaUnit": "esriSquareMiles"}
+    SQUAREMILLIMETERS = {"areaUnit": "esriSquareMillimeters"}
+    SQUARECENTIMETERS = {"areaUnit": "esriSquareCentimeters"}
+    SQUAREDECIMETERS = {"areaUnit": "esriSquareDecimeters"}
+    SQUAREMETERS = {"areaUnit": "esriSquareMeters"}
+    ARES = {"areaUnit": "esriAres"}
+    HECTARES = {"areaUnit": "esriHectares"}
+    SQUAREKILOMETERS = {"areaUnit": "esriSquareKilometers"}
+
+
+class LengthUnits(Enum):
+    """
+    Represents the Geometry Service Length Units Enumerations
+    """
+
+    BRITISH1936FOOT = 9095
+    GOLDCOASTFOOT = 9094
+    INTERNATIONALCHAIN = 9097
+    INTERNATIONALLINK = 9098
+    INTERNATIONALYARD = 9096
+    STATUTEMILE = 9093
+    SURVEYYARD = 109002
+    FIFTYKMLENGTH = 109030
+    ONEFIFTYKMLENGTH = 109031
+    DECIMETER = 109005
+    CENTIMETER = 1033
+    MILLIMETER = 1025
+    INTERNATIONALINCH = 109008
+    USSURVEYINCH = 109009
+    INTERNATIONALROD = 109010
+    USSURVEYROD = 109011
+    USNAUTICALMILE = 109012
+    UKNAUTICALMILE = 109013
+    METER = 9001
+    GERMANMETER = 9031
+    FOOT = 9002
+    SURVEYFOOT = 9003
+    CLARKEFOOT = 9005
+    FATHOM = 9014
+    NAUTICALMILE = 9030
+    SURVEYCHAIN = 9033
+    SURVEYLINK = 9034
+    SURVEYMILE = 9035
+    KILOMETER = 9036
+    CLARKEYARD = 9037
+    CLARKECHAIN = 9038
+    CLARKELINK = 9039
+    SEARSYARD = 9040
+    SEARSFOOT = 9041
+    SEARSCHAIN = 9042
+    SEARSLINK = 9043
+    BENOIT1895A_YARD = 9050
+    BENOIT1895A_FOOT = 9051
+    BENOIT1895A_CHAIN = 9052
+    BENOIT1895A_LINK = 9053
+    BENOIT1895B_YARD = 9060
+    BENOIT1895B_FOOT = 9061
+    BENOIT1895B_CHAIN = 9062
+    BENOIT1895B_LINK = 9063
+    INDIANFOOT = 9080
+    INDIAN1937FOOT = 9081
+    INDIAN1962FOOT = 9082
+    INDIAN1975FOOT = 9083
+    INDIANYARD = 9084
+    INDIAN1937YARD = 9085
+    INDIAN1962YARD = 9086
+    INDIAN1975YARD = 9087
+    FOOT1865 = 9070
+    RADIAN = 9101
+    DEGREE = 9102
+    ARCMINUTE = 9103
+    ARCSECOND = 9104
+    GRAD = 9105
+    GON = 9106
+    MICRORADIAN = 9109
+    ARCMINUTECENTESIMAL = 9112
+    ARCSECONDCENTESIMAL = 9113
+    MIL6400 = 9114
+
+
+# -------------------------------------------------------------------------
 def areas_and_lengths(
     polygons,
     length_unit,
@@ -92,11 +184,16 @@ def areas_and_lengths(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(length_unit, LengthUnits):
+        length_unit = length_unit.value
+    if isinstance(area_unit, AreaUnits):
+        area_unit = area_unit.value
     return gis._tools.geometry.areas_and_lengths(
         polygons, length_unit, area_unit, calculation_type, spatial_ref, future=future
     )
 
 
+# -------------------------------------------------------------------------
 def auto_complete(
     polygons=None, polylines=None, spatial_ref=None, gis=None, future=False
 ):
@@ -371,6 +468,9 @@ def densify(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(length_unit, LengthUnits):
+        length_unit = length_unit.value
+
     return gis._tools.geometry.densify(
         geometries,
         spatial_ref,
@@ -415,6 +515,7 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     """
     if gis is None:
         gis = arcgis.env.active_gis
+
     return gis._tools.geometry.difference(
         geometries, spatial_ref, geometry, future=future
     )
@@ -464,6 +565,8 @@ def distance(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(distance_unit, LengthUnits):
+        distance_unit = distance_unit.value
     return gis._tools.geometry.distance(
         spatial_ref, geometry1, geometry2, distance_unit, geodesic, future=future
     )
@@ -774,6 +877,9 @@ def lengths(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(length_unit, LengthUnits):
+        length_unit = length_unit.value
+
     return gis._tools.geometry.lengths(
         spatial_ref, polylines, length_unit, calculation_type, future=future
     )

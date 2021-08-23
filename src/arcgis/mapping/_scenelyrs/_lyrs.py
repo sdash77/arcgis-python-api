@@ -4,9 +4,11 @@ from arcgis.gis import Layer, _GISResource, Item, GIS
 ###########################################################################
 class Object3DLayer(Layer):
     """
-    Represents a Web scene Point Cloud layer. Point Cloud layer are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``Object3DLayer`` rresents a Web scene 3D Object layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -70,9 +72,11 @@ class Object3DLayer(Layer):
 ###########################################################################
 class IntegratedMeshLayer(Layer):
     """
-    Represents a Web scene Point Cloud layer. Point Cloud layer are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``IntegratedMeshLayer`` class represents a Web scene Integrated Mesh layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -136,9 +140,11 @@ class IntegratedMeshLayer(Layer):
 ###########################################################################
 class Point3DLayer(Layer):
     """
-    Represents a Web scene Point Cloud layer. Point Cloud layer are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``Point3DLayer`` class represents a Web scene 3D Point layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -203,9 +209,11 @@ class Point3DLayer(Layer):
 ###########################################################################
 class PointCloudLayer(Layer):
     """
-    Represents a Web scene Point Cloud layer. Point Cloud layer are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``PointCloudLayer`` class represents a Web scene Point Cloud layer. 
+
+    .. note::
+        Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -269,9 +277,11 @@ class PointCloudLayer(Layer):
 ###########################################################################
 class BuildingLayer(Layer):
     """
-    Represents a Web scene layer. Web scene layers are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``BuildingLayer`` class represents a Web building layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -385,9 +395,14 @@ class _SceneLayerFactory(type):
 ###########################################################################
 class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     """
-    Represents a Web scene layer. Web scene layers are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
+    The ``SceneLayer`` class represents a Web scene layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+
+    .. note::
+        Web scene layers can be used to represent 3D points, point clouds, 3D objects and
+        integrated mesh layers.
 
     ==================     ====================================================================
     **Argument**           **Description**

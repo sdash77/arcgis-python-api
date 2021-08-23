@@ -1,4 +1,4 @@
-__version__ = "1.9.0"
+__version__ = "1.9.1"
 
 from . import env
 from . import features, geoanalytics, geocoding, geometry

@@ -7,10 +7,11 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.9.0
+  version: 1.9.1
 requirements:
   build:
   - python
+  - cachetools
   - ujson >=3
   - setuptools
   - six
@@ -35,6 +36,7 @@ requirements:
   run:
   - python
   - six
+  - cachetools
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
