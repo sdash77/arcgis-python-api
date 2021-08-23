@@ -209,7 +209,7 @@ class Point3DLayer(Layer):
 ###########################################################################
 class PointCloudLayer(Layer):
     """
-    The ``PointCloudLayer`` class represents a Web scene Point Cloud layer. 
+    The ``PointCloudLayer`` class represents a Web scene Point Cloud layer.
 
     .. note::
         Point Cloud layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
