@@ -2576,7 +2576,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        outpath               Optional string. Represents the path to which the image needs to be downloaded.
+        out_path              Optional string. Represents the path to which the image needs to be downloaded.
         =================     ====================================================================
 
         .. code-block:: python
