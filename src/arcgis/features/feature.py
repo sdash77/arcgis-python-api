@@ -4,7 +4,6 @@ to represent features and collection of features.
 """
 import copy
 import json
-from numpy import longlong
 import ujson as _ujson
 import os
 import re
