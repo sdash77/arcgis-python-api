@@ -3357,7 +3357,7 @@ def percentile(
     --------------------------------     --------------------------------------------------------------------
     ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
     --------------------------------     --------------------------------------------------------------------
-    astype                               Optional string. Specifies the output pixel type. 
+    astype                               Optional string. Specifies the output pixel type.
                                          Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
