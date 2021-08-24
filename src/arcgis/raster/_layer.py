@@ -1019,7 +1019,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def item_info(self):
-        """The item_info property returns the image service's item's infomation"""
+        """The ``item_info`` property returns the image service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f": "json"}
         if self._datastore_raster:
@@ -1029,7 +1029,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
-        """The metadata returns the image service's XML metadata file"""
+        """The ``metadata`` property returns the image service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
         if self._datastore_raster:
@@ -2784,7 +2784,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
         """
-        The thumbnail method downloads the image service's thumbnail image to local disk.
+        The ``thumbnail`` method downloads the image service's thumbnail image to local disk.
 
         =================     ====================================================================
         **Arguments**         **Description**
