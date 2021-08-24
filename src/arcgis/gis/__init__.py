@@ -2797,13 +2797,13 @@ class UserManager(object):
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
