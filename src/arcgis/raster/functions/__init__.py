@@ -3324,31 +3324,41 @@ def percentile(
                                          the specified percentile value lies between two input cell values.
 
                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST
-                                         method is used. If the input rasters are of floating point pixel type,
-                                         the LINEAR method is used. This is the default.
+                                           method is used. If the input rasters are of floating point pixel type,
+                                           the LINEAR method is used. This is the default.
 
                                          - NEAREST-The nearest available value to the desired percentile is used.
-                                         In this case, the output pixel type is the same as that of the input rasters.
+                                           In this case, the output pixel type is the same as that of the input rasters.
 
                                          - LINEAR-The weighted average of the two surrounding values from the desired
-                                         percentile is used. In this case, the output pixel type is floating point.
+                                           percentile is used. In this case, the output pixel type is floating point.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
+
                                          - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
                                          - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
                                          - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
                                          - "LastOf" - Use the extent of the last input raster to determine the processing extent.
     --------------------------------     --------------------------------------------------------------------
     cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
                                          - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
                                          - "MinOf" - Use the smallest cell size of all the input rasters.
+
                                          - "MaxOf" - Use the largest cell size of all the input rasters.
+
                                          - "MeanOf" - Use the mean cell size of all the input rasters.
+
                                          - "LastOf" - Use the last cell size of the input rasters.
     --------------------------------     --------------------------------------------------------------------
     ignore_nodata                        Optional boolean. Set to True to ignore NoData values.
     --------------------------------     --------------------------------------------------------------------
-    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    astype                               Optional string. Specifies the output pixel type. 
+                                         Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
     process_as_multiband                 Optional boolean. Set to True to process as multiband.
     ================================     ====================================================================
