@@ -217,7 +217,7 @@ class ImageCaptioner(ArcGISModel):
         # object classifier config can be used.
         _emd_template["ModelConfiguration"] = "_image_captioner_inference"
         # handle for different types of spectrums
-        _emd_template["ExtractBands"] = [0,1,2]
+        _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ModelType"] = "ImageCaptioner"
         # Inference function of object classifier.
         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"

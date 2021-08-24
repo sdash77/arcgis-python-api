@@ -553,6 +553,7 @@ def parse_xml_from_image_file(imagefile):
     labels = ET.parse(xmlfile).getroot().find("object").find("name").text
     return labels
 
+
 def get_annotations(ann_object, key, read_type):
     if read_type == "json":
         # 'images,filename', 'images,sentences,raw'
@@ -731,7 +732,7 @@ def prepare_captioning_dataset(
     # add path
     data.path = path
     # return databunch.
-    data._dataset_type = 'ImageCaptioning'
+    data._dataset_type = "ImageCaptioning"
     return data
 
 
@@ -811,15 +812,14 @@ def show_results(self, rows, **kwargs):
             show_coords,
         )
 
-        if k+1 == rows:
+        if k + 1 == rows:
             break
-    
+
     # delete empty plots in case of small datasets.
-    if k+1 < rows:
-        for i in range(k+1, rows):
+    if k + 1 < rows:
+        for i in range(k + 1, rows):
             fig.delaxes(ax[i][0])
             fig.delaxes(ax[i][1])
-
 
     if return_fig:
         return fig

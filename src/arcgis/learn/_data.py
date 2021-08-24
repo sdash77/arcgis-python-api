@@ -1480,7 +1480,10 @@ def prepare_data(
         _image_space_used = _pixel_space
 
     # Image captioning data value checks.
-    if dataset_type == "MultiLabeled_Tiles" and emd.get('SingleLabelFieldFound') == 'Caption':
+    if (
+        dataset_type == "MultiLabeled_Tiles"
+        and emd.get("SingleLabelFieldFound") == "Caption"
+    ):
         dataset_type = "ImageCaptioning"
 
     # Multispectral check
