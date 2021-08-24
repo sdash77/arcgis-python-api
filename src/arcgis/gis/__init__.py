@@ -9422,7 +9422,30 @@ class User(dict):
 
     @property
     def folders(self):
-        """Gets the list of the user's folders"""
+        """
+        Gets the list of the user's folders
+        
+        :return:
+            List of folders represented as dictionaries.
+            Dictionary keys include: username, folder id (id), title, and date created (created)
+        
+         .. code-block:: python
+
+            # Example to get name of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["title"])
+            
+            # Example to get id of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["id"])
+
+        """
         return self._portal.user_folders(self._user_id)
 
     def items(self, folder=None, max_items=100):
@@ -9459,6 +9482,18 @@ class User(dict):
                 print(f"{user.username} using {storage} bytes")
             except Exception as e:
                 print(f"{user.username} using {storage} bytes")
+
+        .. code-block:: python
+
+            # Example get items in each folder that is not root
+            
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                items = user.items(folder=folder["title"])
+                for item in items:
+                    print(item, folder)
+
         """
 
         items = []
