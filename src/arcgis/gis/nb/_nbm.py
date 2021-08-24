@@ -256,9 +256,9 @@ class NotebookManager(object):
         ------------------      --------------------------------------------------------------------
         templateid              Optional String. The id of the portal notebook template. To get the
                                 system templates, look at the sample notebooks group:
-                            
-                                .. code-block:: python 
-                            
+
+                                .. code-block:: python
+
                                     >>> from arcgis.gis import GIS
                                     >>> gis = GIS()
                                     >>> grp = gis.groups.search("title:(esri sample notebooks) AND

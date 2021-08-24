@@ -1,5 +1,6 @@
 from arcgis.learn._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 from ._text_classifier import TextClassifier
+
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._ner import EntityRecognizer
     from ._seq2seq import SequenceToSequence

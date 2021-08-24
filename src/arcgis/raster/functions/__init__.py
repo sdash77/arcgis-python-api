@@ -1487,6 +1487,15 @@ def convolution(raster, kernel=None, astype=None):
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
+    HAS_NUMPY = True
+    try:
+        import numpy as np
+    except ImportError:
+        HAS_NUMPY = False
+
+    if (HAS_NUMPY) and isinstance(kernel, np.ndarray):
+        kernel = kernel.tolist()
+
     if isinstance(kernel, int):
         template_dict["rasterFunctionArguments"]["Type"] = kernel
     elif isinstance(kernel, list):
@@ -1496,9 +1505,10 @@ def convolution(raster, kernel=None, astype=None):
         template_dict["rasterFunctionArguments"]["Columns"] = numcols
         template_dict["rasterFunctionArguments"]["Rows"] = numrows
         template_dict["rasterFunctionArguments"]["Kernel"] = flattened
+        template_dict["rasterFunctionArguments"]["Type"] = -1
     else:
         raise RuntimeError(
-            "Invalid kernel type - pass int or list of list: [[][][]...]"
+            "Invalid kernel type - pass well known kernel from arcgis.raster.kernels or list of list: [[][][]...] or a numpy array representing the kernel"
         )
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -5568,15 +5578,20 @@ def _raster_item(raster, raster_id=None):
 
     if raster is not None and isinstance(raster, ImageryLayer):
         url = raster.url
-        if "arcgis.com" in url:
-            if (
-                (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
-            ) or not hasattr(raster, "_lazy_token"):
-                raster._lazy_token = raster._gis._con.generate_portal_server_token(
-                    serverUrl=url
-                )
-            if isinstance(raster._lazy_token, str):
-                url = url + "?token=" + raster._lazy_token
+        if "arcgis.com" in url and (
+            hasattr(raster, "_gis") and raster._gis is not None
+        ):
+            try:
+                if (
+                    (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
+                ) or not hasattr(raster, "_lazy_token"):
+                    raster._lazy_token = raster._gis._con.generate_portal_server_token(
+                        serverUrl=url
+                    )
+                if isinstance(raster._lazy_token, str):
+                    url = url + "?token=" + raster._lazy_token
+            except:
+                url = raster.url
             template_dict["rasterFunctionArguments"]["URL"] = url
         else:
             template_dict["rasterFunctionArguments"]["URL"] = raster.url

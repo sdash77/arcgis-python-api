@@ -11,7 +11,7 @@ import arcgis
 from arcgis.features import FeatureLayer
 
 HAS_FASTAI = True
-HAS_SHAP=True
+HAS_SHAP = True
 try:
     from fastai.tabular import TabularList
     from fastai.tabular import TabularDataBunch
@@ -41,7 +41,12 @@ try:
     from sklearn.pipeline import make_pipeline
     from sklearn.compose import make_column_transformer
     from sklearn.impute import SimpleImputer
-    from sklearn.preprocessing import Normalizer, LabelEncoder, MinMaxScaler, StandardScaler
+    from sklearn.preprocessing import (
+        Normalizer,
+        LabelEncoder,
+        MinMaxScaler,
+        StandardScaler,
+    )
 except:
     HAS_SK_LEARN = False
 
@@ -76,7 +81,7 @@ class TabularDataObject(object):
         seed=42,
         batch_size=64,
         index_field=None,
-        column_transforms_mapping=None
+        column_transforms_mapping=None,
     ):
 
         if not HAS_FASTAI:
@@ -86,14 +91,17 @@ class TabularDataObject(object):
         raster_variables = raster_variables if raster_variables else []
 
         tabular_data = cls()
-        tabular_data._dataframe, tabular_data._field_mapping = TabularDataObject._prepare_dataframe_from_features(
+        (
+            tabular_data._dataframe,
+            tabular_data._field_mapping,
+        ) = TabularDataObject._prepare_dataframe_from_features(
             input_features,
             dependent_variable,
             feature_variables,
             raster_variables,
             date_field,
             distance_feature_layers,
-            index_field
+            index_field,
         )
 
         if input_features is None:
@@ -101,12 +109,20 @@ class TabularDataObject(object):
         else:
             tabular_data._is_raster_only = False
 
-        tabular_data._dataframe = tabular_data._dataframe.reindex(sorted(tabular_data._dataframe.columns), axis=1)
+        tabular_data._dataframe = tabular_data._dataframe.reindex(
+            sorted(tabular_data._dataframe.columns), axis=1
+        )
 
-        tabular_data._categorical_variables = tabular_data._field_mapping['categorical_variables']
-        tabular_data._continuous_variables = tabular_data._field_mapping['continuous_variables']
-        tabular_data._dependent_variable = tabular_data._field_mapping['dependent_variable']
-        tabular_data._index_data = tabular_data._field_mapping['index_data']
+        tabular_data._categorical_variables = tabular_data._field_mapping[
+            "categorical_variables"
+        ]
+        tabular_data._continuous_variables = tabular_data._field_mapping[
+            "continuous_variables"
+        ]
+        tabular_data._dependent_variable = tabular_data._field_mapping[
+            "dependent_variable"
+        ]
+        tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
         tabular_data._procs = procs
@@ -118,12 +134,20 @@ class TabularDataObject(object):
         validation_indexes = []
         if tabular_data._dependent_variable:
             random.seed(seed)
-            validation_indexes = random.sample(range(len(tabular_data._dataframe)), round(val_split_pct * len(tabular_data._dataframe)))
+            validation_indexes = random.sample(
+                range(len(tabular_data._dataframe)),
+                round(val_split_pct * len(tabular_data._dataframe)),
+            )
             tabular_data._validation_indexes = validation_indexes
 
-        tabular_data._training_indexes = list(set([i for i in range(len(tabular_data._dataframe))]) - set(validation_indexes))
+        tabular_data._training_indexes = list(
+            set([i for i in range(len(tabular_data._dataframe))])
+            - set(validation_indexes)
+        )
         if not tabular_data._dependent_variable:
-            tabular_data._validation_indexes = list(set([i for i in range(len(tabular_data._dataframe))]))
+            tabular_data._validation_indexes = list(
+                set([i for i in range(len(tabular_data._dataframe))])
+            )
 
         tabular_data._is_empty = False
 
@@ -218,6 +242,7 @@ class TabularDataObject(object):
     @staticmethod
     def _std_dev_of(values_list):
         import statistics
+
         return_values = []
 
         for values in values_list:
@@ -242,20 +267,20 @@ class TabularDataObject(object):
         calc_type = calc_type.lower()
 
         cont_mapping = {
-            'min': TabularDataObject._min_of,
-            'max': TabularDataObject._max_of,
-            'mean': TabularDataObject._mean_of,
-            'majority': TabularDataObject._majority_of,
-            'minority': TabularDataObject._minority_of,
-            'std_dev': TabularDataObject._std_dev_of,
-            'sum': TabularDataObject._sum_of,
-            'variety': TabularDataObject._variety
+            "min": TabularDataObject._min_of,
+            "max": TabularDataObject._max_of,
+            "mean": TabularDataObject._mean_of,
+            "majority": TabularDataObject._majority_of,
+            "minority": TabularDataObject._minority_of,
+            "std_dev": TabularDataObject._std_dev_of,
+            "sum": TabularDataObject._sum_of,
+            "variety": TabularDataObject._variety,
         }
 
         cat_mapping = {
-            'majority': TabularDataObject._majority_of,
-            'minority': TabularDataObject._minority_of,
-            'variety': TabularDataObject._variety
+            "majority": TabularDataObject._majority_of,
+            "minority": TabularDataObject._minority_of,
+            "variety": TabularDataObject._variety,
         }
 
         if raster_type:
@@ -266,26 +291,38 @@ class TabularDataObject(object):
     def _prepare_validation_databunch(self, dataframe):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+            kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
             # kwargs_variables['tfm_y'] = True
             fm = FillMissing(self._categorical_variables, self._continuous_variables)
             fm.add_col = False
             fm(dataframe)
-            databunch_half = TabularList.from_df(
-                dataframe,
-                path=tempfile.NamedTemporaryFile().name,
-                cat_names=self._categorical_variables,
-                cont_names=self._continuous_variables,
-                procs=[Categorify, Normalize]
-            ).split_by_idx([i for i in range(int(len(dataframe)/2))]).label_empty().databunch(**kwargs_variables)
+            databunch_half = (
+                TabularList.from_df(
+                    dataframe,
+                    path=tempfile.NamedTemporaryFile().name,
+                    cat_names=self._categorical_variables,
+                    cont_names=self._continuous_variables,
+                    procs=[Categorify, Normalize],
+                )
+                .split_by_idx([i for i in range(int(len(dataframe) / 2))])
+                .label_empty()
+                .databunch(**kwargs_variables)
+            )
 
-            databunch_second_half = TabularList.from_df(
-                dataframe,
-                path=tempfile.NamedTemporaryFile().name,
-                cat_names=self._categorical_variables,
-                cont_names=self._continuous_variables,
-                procs=[Categorify, Normalize]
-            ).split_by_idx([i for i in range(int(len(dataframe)/2), len(dataframe))]).label_empty().databunch(**kwargs_variables)
+            databunch_second_half = (
+                TabularList.from_df(
+                    dataframe,
+                    path=tempfile.NamedTemporaryFile().name,
+                    cat_names=self._categorical_variables,
+                    cont_names=self._continuous_variables,
+                    procs=[Categorify, Normalize],
+                )
+                .split_by_idx(
+                    [i for i in range(int(len(dataframe) / 2), len(dataframe))]
+                )
+                .label_empty()
+                .databunch(**kwargs_variables)
+            )
 
         return databunch_half, databunch_second_half
 
@@ -307,13 +344,16 @@ class TabularDataObject(object):
         labels = df[self._dependent_variable]
 
         if labels.isna().sum().sum() != 0:
-            raise Exception("You have some missing values in dependent variable column.")
+            raise Exception(
+                "You have some missing values in dependent variable column."
+            )
 
         unique_labels = labels.unique()
 
         labels = np.array(labels)
 
         from numbers import Integral
+
         if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
             return False
         else:
@@ -325,6 +365,7 @@ class TabularDataObject(object):
         labels = np.array(labels)
 
         from numbers import Integral
+
         if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
             return False
 
@@ -344,7 +385,7 @@ class TabularDataObject(object):
             self._field_mapping,
             self._procs,
             self._validation_indexes,
-            self._bs
+            self._bs,
         )
 
     @property
@@ -368,16 +409,15 @@ class TabularDataObject(object):
 
         if not self._procs:
             numerical_transformer = make_pipeline(
-                SimpleImputer(strategy='median'),
-                StandardScaler())
-
-            categorical_transformer = make_pipeline(
-                SimpleImputer(strategy='constant')
+                SimpleImputer(strategy="median"), StandardScaler()
             )
+
+            categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
 
             self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
-                (categorical_transformer, self._categorical_variables))
+                (categorical_transformer, self._categorical_variables),
+            )
 
         _procs = self._procs
 
@@ -386,7 +426,9 @@ class TabularDataObject(object):
             mapping = {}
             for variable in self._categorical_variables:
                 labelEncoder = LabelEncoder()
-                dataframe[variable] = np.array(labelEncoder.fit_transform(dataframe[variable]), dtype='int64')
+                dataframe[variable] = np.array(
+                    labelEncoder.fit_transform(dataframe[variable]), dtype="int64"
+                )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
@@ -408,7 +450,7 @@ class TabularDataObject(object):
         if self._index_data is not None:
             bunched = []
             for i in range(len(self._index_data) - seq_len - 1):
-                bunched.append(list(self._index_data[i:i + seq_len]))
+                bunched.append(list(self._index_data[i : i + seq_len]))
 
             self._index_seq = np.array(bunched)
 
@@ -421,12 +463,15 @@ class TabularDataObject(object):
             return self._multivariate_bunch(seq_len, normalize, bunch)
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
-        kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+        kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
-        kwargs_variables['bs'] = self._bs
+        kwargs_variables["bs"] = self._bs
 
-        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
-            kwargs_variables["device"] = torch.device('cpu')
+        if (
+            hasattr(arcgis, "env")
+            and getattr(arcgis.env, "_processorType", "") == "CPU"
+        ):
+            kwargs_variables["device"] = torch.device("cpu")
 
         self._encoder_mapping = None
         mapping = {}
@@ -435,7 +480,7 @@ class TabularDataObject(object):
         for col in list(df.columns.values):
             if self._is_categorical(df[col]):
                 labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype='int64')
+                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
                 mapping[col] = labelEncoder
 
         self._encoder_mapping = mapping
@@ -454,9 +499,12 @@ class TabularDataObject(object):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
                     transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1))
+                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
+                    )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(transformed_data, dtype=df[col].dtype)
+                processed_dataframe[col] = np.array(
+                    transformed_data, dtype=df[col].dtype
+                )
         else:
             processed_dataframe = df.copy()
 
@@ -471,44 +519,59 @@ class TabularDataObject(object):
         big_bunch = np.array(big_bunch)
 
         random.seed(self._seed)
-        validation_indexes = random.sample(range(big_bunch.shape[0]),
-                                           round(self._val_split_pct * big_bunch.shape[0]))
+        validation_indexes = random.sample(
+            range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
+        )
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
-            set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes))
+            set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes)
+        )
 
         X_train = big_bunch.take(self._training_indexes_ts, axis=0)
         X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
 
-        y_train = np.array(processed_dataframe[self._dependent_variable].take(self._training_indexes_ts))
-        y_valid = np.array(processed_dataframe[self._dependent_variable].take(self._validation_indexes_ts))
+        y_train = np.array(
+            processed_dataframe[self._dependent_variable].take(
+                self._training_indexes_ts
+            )
+        )
+        y_valid = np.array(
+            processed_dataframe[self._dependent_variable].take(
+                self._validation_indexes_ts
+            )
+        )
 
         if bunched is False:
             return X_train, X_valid, y_train, y_valid
 
-        data = (ItemLists('.', TimeSeriesList(X_train), TimeSeriesList(X_valid))
-                .label_from_lists(y_train, y_valid, label_cls=FloatList)
-                .databunch(**kwargs_variables))
+        data = (
+            ItemLists(".", TimeSeriesList(X_train), TimeSeriesList(X_valid))
+            .label_from_lists(y_train, y_valid, label_cls=FloatList)
+            .databunch(**kwargs_variables)
+        )
 
         return data
 
     def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
-        kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+        kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
-        kwargs_variables['bs'] = self._bs
+        kwargs_variables["bs"] = self._bs
 
-        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
-            kwargs_variables["device"] = torch.device('cpu')
+        if (
+            hasattr(arcgis, "env")
+            and getattr(arcgis.env, "_processorType", "") == "CPU"
+        ):
+            kwargs_variables["device"] = torch.device("cpu")
 
         self._encoder_mapping = None
         mapping = {}
-        df = self._dataframe.copy()#.drop(self._dependent_variable, axis=1)
+        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
 
         for col in list(df.columns.values):
             if self._is_categorical(df[col]):
                 labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype='int64')
+                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
                 mapping[col] = labelEncoder
 
         self._encoder_mapping = mapping
@@ -526,110 +589,152 @@ class TabularDataObject(object):
             for col in list(df.columns):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1))
+                    transformed_data = transform.fit_transform(
+                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
+                    )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(transformed_data, dtype=df[col].dtype)
+                processed_dataframe[col] = np.array(
+                    transformed_data, dtype=df[col].dtype
+                )
         else:
             processed_dataframe = df.copy()
 
         big_bunch = []
 
-        for i in range(len(processed_dataframe) - seq_len-1):
+        for i in range(len(processed_dataframe) - seq_len - 1):
             bunch = []
             for col in list(processed_dataframe.columns.values):
-                bunch.append(list(processed_dataframe[col][i:i + seq_len]))
+                bunch.append(list(processed_dataframe[col][i : i + seq_len]))
 
             big_bunch.append(bunch)
 
         big_bunch = np.array(big_bunch)
 
         random.seed(self._seed)
-        validation_indexes = random.sample(range(big_bunch.shape[0]),
-                                           round(self._val_split_pct * big_bunch.shape[0]))
+        validation_indexes = random.sample(
+            range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
+        )
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
-            set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes))
+            set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes)
+        )
 
         X_train = big_bunch.take(self._training_indexes_ts, axis=0)
         X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
 
-        y_train = np.array(processed_dataframe[self._dependent_variable].take(self._training_indexes_ts))
-        y_valid = np.array(processed_dataframe[self._dependent_variable].take(self._validation_indexes_ts))
+        y_train = np.array(
+            processed_dataframe[self._dependent_variable].take(
+                self._training_indexes_ts
+            )
+        )
+        y_valid = np.array(
+            processed_dataframe[self._dependent_variable].take(
+                self._validation_indexes_ts
+            )
+        )
 
         if bunched is False:
             return X_train, X_valid, y_train, y_valid
 
-        data = (ItemLists('.', TimeSeriesList(X_train), TimeSeriesList(X_valid))
-                .label_from_lists(y_train, y_valid, label_cls=FloatList)
-                .databunch(**kwargs_variables))
+        data = (
+            ItemLists(".", TimeSeriesList(X_train), TimeSeriesList(X_valid))
+            .label_from_lists(y_train, y_valid, label_cls=FloatList)
+            .databunch(**kwargs_variables)
+        )
 
         return data
 
     def _univariate_bunch(self, seq_len, normalize=True, bunch=True):
-        kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+        kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
-        kwargs_variables['bs'] = self._bs
+        kwargs_variables["bs"] = self._bs
 
-        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
-            kwargs_variables["device"] = torch.device('cpu')
+        if (
+            hasattr(arcgis, "env")
+            and getattr(arcgis.env, "_processorType", "") == "CPU"
+        ):
+            kwargs_variables["device"] = torch.device("cpu")
 
         df_columns = {}
         for i in range(seq_len):
-            df_columns[f'att{i + 1}'] = []
+            df_columns[f"att{i + 1}"] = []
 
-        df_columns['target'] = []
+        df_columns["target"] = []
 
         if self._is_classification:
             self._encoder_mapping = None
             mapping = {}
             labelEncoder = LabelEncoder()
-            self._dataframe[self._dependent_variable] = np.array(labelEncoder.fit_transform(self._dataframe[self._dependent_variable]), dtype='int64')
+            self._dataframe[self._dependent_variable] = np.array(
+                labelEncoder.fit_transform(self._dataframe[self._dependent_variable]),
+                dtype="int64",
+            )
             mapping[self._dependent_variable] = labelEncoder
             self._encoder_mapping = mapping
 
         if normalize:
             if not self._column_transforms_mapping.get(self._dependent_variable):
-                self._column_transforms_mapping[self._dependent_variable] = [MinMaxScaler()]
+                self._column_transforms_mapping[self._dependent_variable] = [
+                    MinMaxScaler()
+                ]
 
             processed_dataframe = self._dataframe.copy()
             transformed_data = processed_dataframe[self._dependent_variable]
             for transform in self._column_transforms_mapping[self._dependent_variable]:
-                transformed_data = transform.fit_transform(np.array(transformed_data, dtype=processed_dataframe[self._dependent_variable].dtype).reshape(-1, 1))
+                transformed_data = transform.fit_transform(
+                    np.array(
+                        transformed_data,
+                        dtype=processed_dataframe[self._dependent_variable].dtype,
+                    ).reshape(-1, 1)
+                )
                 transformed_data = transformed_data.squeeze(1)
 
-            processed_dataframe[self._dependent_variable] = np.array(transformed_data, dtype=self._dataframe[self._dependent_variable].dtype)
+            processed_dataframe[self._dependent_variable] = np.array(
+                transformed_data, dtype=self._dataframe[self._dependent_variable].dtype
+            )
         else:
             processed_dataframe = self._dataframe.copy()
 
         for i in range(len(processed_dataframe[self._dependent_variable]) - seq_len):
             for j in range(seq_len):
                 if len(processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
-                    df_columns[f'att{j + 1}'].append(processed_dataframe[self._dependent_variable][i + j])
+                    df_columns[f"att{j + 1}"].append(
+                        processed_dataframe[self._dependent_variable][i + j]
+                    )
                 else:
                     continue
 
-            df_columns['target'].append(processed_dataframe[self._dependent_variable][i + seq_len])
+            df_columns["target"].append(
+                processed_dataframe[self._dependent_variable][i + seq_len]
+            )
 
         import pandas as pd
+
         df = pd.DataFrame(df_columns)
 
         columns = list(df.columns.values)
-        columns.remove('target')
+        columns.remove("target")
 
         random.seed(self._seed)
-        validation_indexes = random.sample(range(len(df)),
-                                           round(self._val_split_pct * len(df)))
+        validation_indexes = random.sample(
+            range(len(df)), round(self._val_split_pct * len(df))
+        )
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
-            set([i for i in range(len(df))]) - set(validation_indexes))
+            set([i for i in range(len(df))]) - set(validation_indexes)
+        )
 
-        y_train = np.array(df['target'].take(self._training_indexes_ts))
-        y_valid = np.array(df['target'].take(self._validation_indexes_ts))
+        y_train = np.array(df["target"].take(self._training_indexes_ts))
+        y_valid = np.array(df["target"].take(self._validation_indexes_ts))
 
-        X_train = To3dTensor(df.iloc[:, :-1].take(self._training_indexes_ts).values.astype(np.float32))
-        X_valid = To3dTensor(df.iloc[:, :-1].take(self._validation_indexes_ts).values.astype(np.float32))
+        X_train = To3dTensor(
+            df.iloc[:, :-1].take(self._training_indexes_ts).values.astype(np.float32)
+        )
+        X_valid = To3dTensor(
+            df.iloc[:, :-1].take(self._validation_indexes_ts).values.astype(np.float32)
+        )
 
         if bunch is False:
             return X_train, X_valid, y_train, y_valid
@@ -639,10 +744,11 @@ class TabularDataObject(object):
         else:
             label_cls = FloatList
 
-        data = (ItemLists('.', TimeSeriesList(X_train), TimeSeriesList(X_valid))
-              .label_from_lists(y_train, y_valid, label_cls=label_cls)
-              .databunch(**kwargs_variables)
-              )
+        data = (
+            ItemLists(".", TimeSeriesList(X_train), TimeSeriesList(X_valid))
+            .label_from_lists(y_train, y_valid, label_cls=label_cls)
+            .databunch(**kwargs_variables)
+        )
 
         return data
 
@@ -655,23 +761,24 @@ class TabularDataObject(object):
 
         if not self._procs:
             numerical_transformer = make_pipeline(
-                SimpleImputer(strategy='median'),
-                StandardScaler())
-
-            categorical_transformer = make_pipeline(
-                SimpleImputer(strategy='constant')
+                SimpleImputer(strategy="median"), StandardScaler()
             )
+
+            categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
 
             self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
-                (categorical_transformer, self._categorical_variables))
+                (categorical_transformer, self._categorical_variables),
+            )
 
         _procs = self._procs
 
-        #if hasattr(self,'_encoder_mapping'):
+        # if hasattr(self,'_encoder_mapping'):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
-                dataframe[variable] = np.array(encoder.fit_transform(dataframe[variable]), dtype='int64')
+                dataframe[variable] = np.array(
+                    encoder.fit_transform(dataframe[variable]), dtype="int64"
+                )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
@@ -723,7 +830,9 @@ class TabularDataObject(object):
         import matplotlib.pyplot as plt
 
         if seq_len is not None:
-            X_train, X_valid, y_train, y_valid = self._time_series_bunch(seq_len, False, False)
+            X_train, X_valid, y_train, y_valid = self._time_series_bunch(
+                seq_len, False, False
+            )
 
             n_items = rows ** 2
             if n_items > len(X_train):
@@ -737,7 +846,7 @@ class TabularDataObject(object):
             if self._index_data is not None:
                 indexes = 0
                 while indexes < len(self._index_data):
-                    batched_index.append(self._index_data[indexes: indexes+seq_len])
+                    batched_index.append(self._index_data[indexes : indexes + seq_len])
                     indexes = indexes + seq_len
             else:
                 j = 0
@@ -751,9 +860,9 @@ class TabularDataObject(object):
 
             for i in range(rows):
                 for j in range(rows):
-                    for predictor in X_train_sample[i+j]:
-                        axs[i, j].plot(batched_index[i+j], predictor)
-                    axs[i, j].set_title(y_train_sample[i+j])
+                    for predictor in X_train_sample[i + j]:
+                        axs[i, j].plot(batched_index[i + j], predictor)
+                    axs[i, j].set_title(y_train_sample[i + j])
                     axs[i, j].tick_params(axis="x", labelrotation=60)
 
             plt.tight_layout()
@@ -761,14 +870,18 @@ class TabularDataObject(object):
         else:
             # plotting the points
             # y = self._dataframe[self._dependent_variable]
-            x_field = 'Time'
+            x_field = "Time"
             if self._index_data is not None:
                 x = self._index_data
                 x_field = self._index_field
             else:
                 x = [i for i in range(len(self._dataframe[self._dependent_variable]))]
 
-            fig, axs = plt.subplots(len(list(self._dataframe.columns)), 1, figsize=(25, 5*len(list(self._dataframe.columns))))
+            fig, axs = plt.subplots(
+                len(list(self._dataframe.columns)),
+                1,
+                figsize=(25, 5 * len(list(self._dataframe.columns))),
+            )
             counter = 0
             for col in list(self._dataframe.columns):
                 if isinstance(axs, np.ndarray):
@@ -785,17 +898,19 @@ class TabularDataObject(object):
 
     @staticmethod
     def _prepare_dataframe_from_features(
-            input_features,
-            dependent_variable,
-            feature_variables=None,
-            raster_variables=None,
-            date_field=None,
-            distance_feature_layers=None,
-            index_field=None
+        input_features,
+        dependent_variable,
+        feature_variables=None,
+        raster_variables=None,
+        date_field=None,
+        distance_feature_layers=None,
+        index_field=None,
     ):
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
-        distance_feature_layers = distance_feature_layers if distance_feature_layers else []
+        distance_feature_layers = (
+            distance_feature_layers if distance_feature_layers else []
+        )
 
         continuous_variables = []
         categorical_variables = []
@@ -809,7 +924,7 @@ class TabularDataObject(object):
                 continuous_variables.append(field)
 
         rasters = []
-        bands=[]
+        bands = []
         for i, raster in enumerate(raster_variables):
             if isinstance(raster, tuple):
                 len_tuple = len(raster)
@@ -819,12 +934,16 @@ class TabularDataObject(object):
                         bands.append(raster[1])
                         band_count = len(raster[1])
                         if band_count > raster[0].band_count:
-                            raise ('Incorrect band ids passed. The input raster has only '+str(band_count)+' bands')
-                        for index,band in enumerate(raster[1]):
+                            raise (
+                                "Incorrect band ids passed. The input raster has only "
+                                + str(band_count)
+                                + " bands"
+                            )
+                        for index, band in enumerate(raster[1]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
                             else:
-                                continuous_variables.append(raster[0].name + f'_{band}')
+                                continuous_variables.append(raster[0].name + f"_{band}")
                     elif isinstance(raster[1], bool):
                         band_count = raster[0].band_count
                         if raster[1]:
@@ -832,33 +951,45 @@ class TabularDataObject(object):
                                 if index == 0:
                                     categorical_variables.append(raster[0].name)
                                 else:
-                                    categorical_variables.append(raster[0].name + f'_{index}')
+                                    categorical_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
                         else:
                             for index in range(band_count):
                                 if index == 0:
                                     continuous_variables.append(raster[0].name)
                                 else:
-                                    continuous_variables.append(raster[0].name + f'_{index}')
+                                    continuous_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
                     else:
-                        raise Exception("The format of the raster variable passed is incorrect.")
+                        raise Exception(
+                            "The format of the raster variable passed is incorrect."
+                        )
                 elif len_tuple == 3:
                     if not isinstance(raster[1], bool):
-                        raise Exception ("The format of the raster variable passed is incorrect.")
+                        raise Exception(
+                            "The format of the raster variable passed is incorrect."
+                        )
                     if not isinstance(raster[2], tuple):
-                        raise Exception ("The format of the raster variable passed is incorrect.")
+                        raise Exception(
+                            "The format of the raster variable passed is incorrect."
+                        )
                     bands[i] = raster[2]
                     if raster[1]:
-                        for index,band in enumerate(raster[2]):
+                        for index, band in enumerate(raster[2]):
                             if band == 0:
                                 categorical_variables.append(raster[0].name)
                             else:
-                                categorical_variables.append(raster[0].name + f'_{band}')
+                                categorical_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
                     else:
-                        for index,band in enumerate(raster[2]):
+                        for index, band in enumerate(raster[2]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
                             else:
-                                continuous_variables.append(raster[0].name + f'_{band}')
+                                continuous_variables.append(raster[0].name + f"_{band}")
             else:
                 rasters.append(raster)
                 band_count = raster.band_count
@@ -866,21 +997,21 @@ class TabularDataObject(object):
                     if index == 0:
                         continuous_variables.append(raster.name)
                     else:
-                        continuous_variables.append(raster.name + f'_{index}')
+                        continuous_variables.append(raster.name + f"_{index}")
 
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
             date_field,
             distance_feature_layers,
             raster_variables,
-            index_field
+            index_field,
         )
 
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
             count = 1
-            while f'NEAR_DIST_{count}' in dataframe_columns:
-                continuous_variables.append(f'NEAR_DIST_{count}')
+            while f"NEAR_DIST_{count}" in dataframe_columns:
+                continuous_variables.append(f"NEAR_DIST_{count}")
                 count = count + 1
 
         fields_to_keep = continuous_variables + categorical_variables
@@ -896,17 +1027,33 @@ class TabularDataObject(object):
                 warnings.warn(f"Changing column {column} to continuous")
                 categorical_variables.remove(column)
                 continuous_variables.append(column)
-            elif column in categorical_variables and dataframe[column].unique().shape[0] > 20:
-                warnings.warn(f"Column {column} has more than 20 unique value. Sure this is categorical?")
+            elif (
+                column in categorical_variables
+                and dataframe[column].unique().shape[0] > 20
+            ):
+                warnings.warn(
+                    f"Column {column} has more than 20 unique value. Sure this is categorical?"
+                )
 
         if date_field:
             date_fields = [
-                ('Year', True), ('Month', True), ('Week', True),
-                ('Day', True), ('Dayofweek', True), ('Dayofyear', False),
-                ('Is_month_end', True), ('Is_month_start', True),
-                ('Is_quarter_end', True), ('Is_quarter_start', True),
-                ('Is_year_end', True), ('Is_year_start', True),
-                ('Hour', True), ('Minute', True), ('Second', True), ('Elapsed', False)]
+                ("Year", True),
+                ("Month", True),
+                ("Week", True),
+                ("Day", True),
+                ("Dayofweek", True),
+                ("Dayofyear", False),
+                ("Is_month_end", True),
+                ("Is_month_start", True),
+                ("Is_quarter_end", True),
+                ("Is_quarter_start", True),
+                ("Is_year_end", True),
+                ("Is_year_start", True),
+                ("Hour", True),
+                ("Minute", True),
+                ("Second", True),
+                ("Elapsed", False),
+            ]
 
             for field in date_fields:
                 if field[0] in dataframe_columns:
@@ -915,13 +1062,21 @@ class TabularDataObject(object):
                     else:
                         continuous_variables.append(field[1])
 
-        return dataframe, {'dependent_variable': dependent_variable,
-                           'categorical_variables': categorical_variables if categorical_variables else [],
-                           'continuous_variables': continuous_variables if continuous_variables else [],
-                           'index_data': index_data}
+        return dataframe, {
+            "dependent_variable": dependent_variable,
+            "categorical_variables": categorical_variables
+            if categorical_variables
+            else [],
+            "continuous_variables": continuous_variables
+            if continuous_variables
+            else [],
+            "index_data": index_data,
+        }
 
     @staticmethod
-    def _process_layer(input_features, date_field, distance_layers, rasters, index_field):
+    def _process_layer(
+        input_features, date_field, distance_layers, rasters, index_field
+    ):
         index_data = None
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
@@ -933,21 +1088,25 @@ class TabularDataObject(object):
                 try:
                     input_layer = sdf.spatial.to_feature_collection()
                 except:
-                    warnings.warn("Dataframe is not spatial, Rasters and distance layers will not work")
+                    warnings.warn(
+                        "Dataframe is not spatial, Rasters and distance layers will not work"
+                    )
 
             if input_layer is not None and distance_layers:
                 # Use proximity tool
                 print("Calculating Distances.")
                 count = 1
                 for distance_layer in distance_layers:
-                    output = arcgis.features.use_proximity.find_nearest(input_layer, distance_layer, max_count=1)
-                    connecting_df = output['connecting_lines_layer'].query().sdf
+                    output = arcgis.features.use_proximity.find_nearest(
+                        input_layer, distance_layer, max_count=1
+                    )
+                    connecting_df = output["connecting_lines_layer"].query().sdf
                     near_dist = []
 
                     for i in range(len(connecting_df)):
-                        near_dist.append(connecting_df.iloc[i]['Total_Miles'])
+                        near_dist.append(connecting_df.iloc[i]["Total_Miles"])
 
-                    sdf[f'NEAR_DIST_{count}'] = near_dist
+                    sdf[f"NEAR_DIST_{count}"] = near_dist
                     count = count + 1
 
             # Process Raster Data to get information.
@@ -970,9 +1129,13 @@ class TabularDataObject(object):
                                 raster_type = 1
                                 raster_calc = TabularDataObject._majority_of
                             if len(raster) > 2:
-                                raster_calc = TabularDataObject._get_calc(raster_type, raster[2])
+                                raster_calc = TabularDataObject._get_calc(
+                                    raster_type, raster[2]
+                                )
                         else:
-                            raster_calc = TabularDataObject._get_calc(raster_type, raster[1])
+                            raster_calc = TabularDataObject._get_calc(
+                                raster_type, raster[1]
+                            )
 
                         raster = raster[0]
 
@@ -980,25 +1143,47 @@ class TabularDataObject(object):
                         if i == 0:
                             rasters_data[raster.name] = []
                         else:
-                            rasters_data[raster.name + f'_{i}'] = []
+                            rasters_data[raster.name + f"_{i}"] = []
 
-                    shape_objects_transformed = arcgis.geometry.project(original_points, input_layer_spatial_reference,
-                                                                        raster.extent['spatialReference'])
+                    shape_objects_transformed = arcgis.geometry.project(
+                        original_points,
+                        input_layer_spatial_reference,
+                        raster.extent["spatialReference"],
+                    )
                     for shape in shape_objects_transformed:
-                        shape['spatialReference'] = raster.extent['spatialReference']
+                        shape["spatialReference"] = raster.extent["spatialReference"]
                         if isinstance(shape, arcgis.geometry._types.Point):
-                            raster_value = raster.read(origin_coordinate=(shape['x'], shape['y']), ncols=1, nrows=1)
+                            raster_value = raster.read(
+                                origin_coordinate=(shape["x"], shape["y"]),
+                                ncols=1,
+                                nrows=1,
+                            )
                             value = raster_value[0][0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
-                            start_x, start_y = xmin + (raster.mean_cell_width / 2), ymin + (raster.mean_cell_height / 2)
+                            start_x, start_y = xmin + (
+                                raster.mean_cell_width / 2
+                            ), ymin + (raster.mean_cell_height / 2)
                             values = []
                             while start_y < ymax:
                                 while start_x < xmax:
-                                    if shape.contains(arcgis.geometry._types.Point(
-                                            {'x': start_x, 'y': start_y, 'sr': raster.extent['spatialReference']})):
-                                        raster_read = raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y),
-                                                    ncols=1, nrows=1)[0][0]
+                                    if shape.contains(
+                                        arcgis.geometry._types.Point(
+                                            {
+                                                "x": start_x,
+                                                "y": start_y,
+                                                "sr": raster.extent["spatialReference"],
+                                            }
+                                        )
+                                    ):
+                                        raster_read = raster.read(
+                                            origin_coordinate=(
+                                                start_x - raster.mean_cell_width,
+                                                start_y,
+                                            ),
+                                            ncols=1,
+                                            nrows=1,
+                                        )[0][0]
                                         if len(values) == 0:
                                             for band in raster_read:
                                                 values.append([band])
@@ -1013,20 +1198,29 @@ class TabularDataObject(object):
                                 start_x = xmin + (raster.mean_cell_width / 2)
 
                             if len(values) == 0:
-                                raster_read = raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
-                                                nrows=1)[0][0]
+                                raster_read = raster.read(
+                                    origin_coordinate=(
+                                        shape.true_centroid["x"]
+                                        - raster.mean_cell_width,
+                                        shape.true_centroid["y"],
+                                    ),
+                                    ncols=1,
+                                    nrows=1,
+                                )[0][0]
                                 for band_value in raster_read:
                                     values.append([band_value])
 
                             value = raster_calc(values)
                         else:
-                            raise Exception("Input features can be point or polygon only.")
+                            raise Exception(
+                                "Input features can be point or polygon only."
+                            )
 
                         for i in range(len(value)):
                             if i == 0:
                                 rasters_data[raster.name].append(value[i])
                             else:
-                                rasters_data[raster.name + f'_{i}'].append(value[i])
+                                rasters_data[raster.name + f"_{i}"].append(value[i])
 
             # Append Raster data to sdf
             for key, value in rasters_data.items():
@@ -1047,34 +1241,54 @@ class TabularDataObject(object):
                 raster = raster[0]
 
             try:
-                arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkt']
+                arcpy.env.outputCoordinateSystem = raster.extent["spatialReference"][
+                    "wkt"
+                ]
             except:
-                arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkid']
+                arcpy.env.outputCoordinateSystem = raster.extent["spatialReference"][
+                    "wkid"
+                ]
 
-            xmin = raster.extent['xmin']
-            xmax = raster.extent['xmax']
-            ymin = raster.extent['ymin']
-            ymax = raster.extent['ymax']
+            xmin = raster.extent["xmin"]
+            xmax = raster.extent["xmax"]
+            ymin = raster.extent["ymin"]
+            ymax = raster.extent["ymax"]
             min_cell_size_x = raster.mean_cell_width
             min_cell_size_y = raster.mean_cell_height
 
-            default_sr = raster.extent['spatialReference']
+            default_sr = raster.extent["spatialReference"]
 
             for raster in rasters:
                 if isinstance(raster, tuple):
                     raster = raster[0]
 
                 point_upper = arcgis.geometry.Point(
-                    {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                    {
+                        "x": raster.extent["xmin"],
+                        "y": raster.extent["ymax"],
+                        "sr": raster.extent["spatialReference"],
+                    }
+                )
                 point_lower = arcgis.geometry.Point(
-                    {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                    {
+                        "x": raster.extent["xmax"],
+                        "y": raster.extent["ymin"],
+                        "sr": raster.extent["spatialReference"],
+                    }
+                )
                 cell_size = arcgis.geometry.Point(
-                    {'x': raster.mean_cell_width, 'y': raster.mean_cell_height,
-                     'sr': raster.extent['spatialReference']})
+                    {
+                        "x": raster.mean_cell_width,
+                        "y": raster.mean_cell_height,
+                        "sr": raster.extent["spatialReference"],
+                    }
+                )
 
-                points = arcgis.geometry.project([point_upper, point_lower, cell_size],
-                                                 raster.extent['spatialReference'],
-                                                 default_sr)
+                points = arcgis.geometry.project(
+                    [point_upper, point_lower, cell_size],
+                    raster.extent["spatialReference"],
+                    default_sr,
+                )
                 point_upper = points[0]
                 point_lower = points[1]
                 cell_size = points[2]
@@ -1097,22 +1311,33 @@ class TabularDataObject(object):
             max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
             max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
-            point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
-            cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+            point_upper = arcgis.geometry.Point(
+                {"x": xmin, "y": ymax, "sr": default_sr}
+            )
+            cell_size = arcgis.geometry.Point(
+                {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+            )
 
             raster_data = {}
             for raster in rasters:
                 if isinstance(raster, tuple):
                     raster = raster[0]
                 field_name = raster.name
-                point_upper_translated = \
-                arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
-                cell_size_translated = \
-                arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
+                point_upper_translated = arcgis.geometry.project(
+                    [point_upper], default_sr, raster.extent["spatialReference"]
+                )[0]
+                cell_size_translated = arcgis.geometry.project(
+                    [cell_size], default_sr, raster.extent["spatialReference"]
+                )[0]
                 raster_read = raster.read(
-                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y),
-                    ncols=max_raster_columns, nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y))
+                    origin_coordinate=(
+                        point_upper_translated.x,
+                        point_upper_translated.y,
+                    ),
+                    ncols=max_raster_columns,
+                    nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y),
+                )
 
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -1121,7 +1346,7 @@ class TabularDataObject(object):
                         for value in values:
                             key = field_name
                             if index != 0:
-                                key = key + f'_{index}'
+                                key = key + f"_{index}"
                             if not raster_data.get(key):
                                 raster_data[key] = []
 
@@ -1144,43 +1369,52 @@ class TabularDataObject(object):
 
     @staticmethod
     def _prepare_databunch(
-        dataframe,
-        fields_mapping,
-        procs=None,
-        validation_indexes=[],
-        batch_size=64
+        dataframe, fields_mapping, procs=None, validation_indexes=[], batch_size=64
     ):
 
         if procs is None:
             procs = [Categorify, Normalize]
-            fm = FillMissing(fields_mapping['categorical_variables'], fields_mapping['continuous_variables'])
+            fm = FillMissing(
+                fields_mapping["categorical_variables"],
+                fields_mapping["continuous_variables"],
+            )
             fm.add_col = False
             fm(dataframe)
 
         temp_file = tempfile.NamedTemporaryFile().name
 
-        kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+        kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
-        kwargs_variables['cat_names'] = fields_mapping['categorical_variables']
-        kwargs_variables['cont_names'] = fields_mapping['continuous_variables']
-        kwargs_variables['bs'] = batch_size
+        kwargs_variables["cat_names"] = fields_mapping["categorical_variables"]
+        kwargs_variables["cont_names"] = fields_mapping["continuous_variables"]
+        kwargs_variables["bs"] = batch_size
 
-        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
-            kwargs_variables["device"] = torch.device('cpu')
+        if (
+            hasattr(arcgis, "env")
+            and getattr(arcgis.env, "_processorType", "") == "CPU"
+        ):
+            kwargs_variables["device"] = torch.device("cpu")
 
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,
-            fields_mapping['dependent_variable'],
+            fields_mapping["dependent_variable"],
             procs=procs,
             valid_idx=validation_indexes,
-            **kwargs_variables
+            **kwargs_variables,
         )
 
         return data_bunch
 
     @classmethod
-    def _empty(cls, categorical_variables, continuous_variables, dependent_variable, encoder_mapping, procs=None):
+    def _empty(
+        cls,
+        categorical_variables,
+        continuous_variables,
+        dependent_variable,
+        encoder_mapping,
+        procs=None,
+    ):
         class_object = cls()
         class_object._dependent_variable = dependent_variable
         class_object._continuous_variables = continuous_variables
@@ -1188,170 +1422,343 @@ class TabularDataObject(object):
         class_object._encoder_mapping = encoder_mapping
         class_object._is_empty = True
         class_object._procs = procs
-        class_object.path = Path(os.path.abspath('.'))
+        class_object.path = Path(os.path.abspath("."))
 
         return class_object
 
-def explain_prediction(model,processed_df,index=0,random_index=False,predictor=None,global_pred=False):
-    tree_models=['RandomForestRegressor','RandomForestClassifier','AdaBoostClassifier','AdaBoostRegressor',
-                 'BaggingClassifier','BaggingRegressor','ExtraTreesClassifier','ExtraTreesRegressor',
-                 'GradientBoostingClassifier','GradientBoostingRegressor','IsolationForest','RandomTreesEmbedding',
-                 'StackingClassifier','StackingRegressor','VotingClassifier','VotingRegressor',
-                 'HistGradientBoostingRegressor','HistGradientBoostingClassifier','DecisionTreeClassifier',
-                'DecisionTreeRegressor','ExtraTreeClassifier','ExtraTreeRegressor']
-    sklearn_regressors = ['LinearRegression','Ridge','RidgeCV','SGDRegressor','ARDRegression','BayesianRidge',
-                         'PoissonRegressor','TweedieRegressor','GammaRegressor','HuberRegressor','RANSACRegressor',
-                         'TheilSenRegressor','LinearSVR','NuSVR','SVR','KernelRidge']
-    sklearn_classifiers = ['LogisticRegression','LogisticRegressionCV','PassiveAggressiveClassifier',
-                          'Perceptron','RidgeClassifier','RidgeClassifierCV','SGDClassifier','LinearSVC',
-                          'NuSVC','OneClassSVM','SVC']
+
+def explain_prediction(
+    model, processed_df, index=0, random_index=False, predictor=None, global_pred=False
+):
+    tree_models = [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+        "AdaBoostClassifier",
+        "AdaBoostRegressor",
+        "BaggingClassifier",
+        "BaggingRegressor",
+        "ExtraTreesClassifier",
+        "ExtraTreesRegressor",
+        "GradientBoostingClassifier",
+        "GradientBoostingRegressor",
+        "IsolationForest",
+        "RandomTreesEmbedding",
+        "StackingClassifier",
+        "StackingRegressor",
+        "VotingClassifier",
+        "VotingRegressor",
+        "HistGradientBoostingRegressor",
+        "HistGradientBoostingClassifier",
+        "DecisionTreeClassifier",
+        "DecisionTreeRegressor",
+        "ExtraTreeClassifier",
+        "ExtraTreeRegressor",
+    ]
+    sklearn_regressors = [
+        "LinearRegression",
+        "Ridge",
+        "RidgeCV",
+        "SGDRegressor",
+        "ARDRegression",
+        "BayesianRidge",
+        "PoissonRegressor",
+        "TweedieRegressor",
+        "GammaRegressor",
+        "HuberRegressor",
+        "RANSACRegressor",
+        "TheilSenRegressor",
+        "LinearSVR",
+        "NuSVR",
+        "SVR",
+        "KernelRidge",
+    ]
+    sklearn_classifiers = [
+        "LogisticRegression",
+        "LogisticRegressionCV",
+        "PassiveAggressiveClassifier",
+        "Perceptron",
+        "RidgeClassifier",
+        "RidgeClassifierCV",
+        "SGDClassifier",
+        "LinearSVC",
+        "NuSVC",
+        "OneClassSVM",
+        "SVC",
+    ]
     if global_pred:
-        if hasattr(model,'learn'): # FCN
-            global_interpretation(model, plot_type='bar', method='FCN')
+        if hasattr(model, "learn"):  # FCN
+            global_interpretation(model, plot_type="bar", method="FCN")
         elif type(model._model).__name__ in sklearn_regressors:
-            global_interpretation(model,plot_type='bar',method='KernelRegressor')
+            global_interpretation(model, plot_type="bar", method="KernelRegressor")
         elif type(model._model).__name__ in sklearn_classifiers:
-            global_interpretation(model, plot_type='bar', method='KernelClassifier')
+            global_interpretation(model, plot_type="bar", method="KernelClassifier")
         elif type(model._model).__name__ in tree_models:
-            global_interpretation(model,plot_type='bar', method='Tree')
+            global_interpretation(model, plot_type="bar", method="Tree")
         else:
-            warnings.warn("Feature importance plot cannot be generated for this model as it is not yet supported.")
+            warnings.warn(
+                "Feature importance plot cannot be generated for this model as it is not yet supported."
+            )
             return
     else:
-        if hasattr(model,'_model'): # ML Models
+        if hasattr(model, "_model"):  # ML Models
             if type(model._model).__name__ in tree_models:
-                show_local_interpretation(model,processed_df,index,random_index,method='Tree')
+                show_local_interpretation(
+                    model, processed_df, index, random_index, method="Tree"
+                )
             elif type(model._model).__name__ in sklearn_regressors:
-                show_local_interpretation(model,processed_df,index,random_index,method='KernelRegressor')
+                show_local_interpretation(
+                    model, processed_df, index, random_index, method="KernelRegressor"
+                )
             elif type(model._model).__name__ in sklearn_classifiers:
-                show_local_interpretation(model,processed_df,index,random_index,method='KernelClassifier')
-            elif predictor=='Classifier':
-                show_local_interpretation(model,processed_df,index,random_index,method='KernelClassifier')
-            elif predictor=='Regressor':
-                show_local_interpretation(model,processed_df,index,random_index,method='KernelRegressor')
+                show_local_interpretation(
+                    model, processed_df, index, random_index, method="KernelClassifier"
+                )
+            elif predictor == "Classifier":
+                show_local_interpretation(
+                    model, processed_df, index, random_index, method="KernelClassifier"
+                )
+            elif predictor == "Regressor":
+                show_local_interpretation(
+                    model, processed_df, index, random_index, method="KernelRegressor"
+                )
             else:
-                warnings.warn("Unrecognised Model: Explanation is not supported for this model yet!")
-        elif hasattr(model,'learn'): # FCN
-            show_local_interpretation(model,processed_df,index,random_index,method='FCN')
+                warnings.warn(
+                    "Unrecognised Model: Explanation is not supported for this model yet!"
+                )
+        elif hasattr(model, "learn"):  # FCN
+            show_local_interpretation(
+                model, processed_df, index, random_index, method="FCN"
+            )
 
-def show_local_interpretation(model,processed_df,index=0,random_index=False,method='Tree'):
-    if method=='Tree':
-        explainer = shap.TreeExplainer(model._model,algorithm='Tree')
-    elif method == 'KernelRegressor':
-        if hasattr(model._data, '_training_indexes'):
-            explainer = shap.KernelExplainer(model._model.predict, shap.sample(model._data._ml_data[0],500))
+
+def show_local_interpretation(
+    model, processed_df, index=0, random_index=False, method="Tree"
+):
+    feature_variables = (
+        model._data._categorical_variables + model._data._continuous_variables
+    )
+    if len(feature_variables) < 2:
+        print(
+            "Shap Explanation for prediction can be obtained only if number of explnatory variables > 1 "
+        )
+        return
+    if method == "Tree":
+        explainer = shap.TreeExplainer(model._model, algorithm="Tree")
+    elif method == "KernelRegressor":
+        if hasattr(model._data, "_training_indexes"):
+            explainer = shap.KernelExplainer(
+                model._model.predict, shap.sample(model._data._ml_data[0], 500)
+            )
         else:
-            warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
-                          " with the training data.")
+            warnings.warn(
+                "To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+                " with the training data."
+            )
             return
-    elif method == 'KernelClassifier':
-        if hasattr(model._data, '_training_indexes'):
-            explainer = shap.KernelExplainer(model._model.predict_proba, shap.sample(model._data._ml_data[0],500),link="logit")
+    elif method == "KernelClassifier":
+        if hasattr(model._data, "_training_indexes"):
+            explainer = shap.KernelExplainer(
+                model._model.predict_proba,
+                shap.sample(model._data._ml_data[0], 500),
+                link="logit",
+            )
         else:
-            warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
-                          " with the training data.")
+            warnings.warn(
+                "To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+                " with the training data."
+            )
             return
-    elif method == 'FCN':
-        if hasattr(model._data, '_training_indexes'):
-            df=pd.DataFrame()
-            for cnt,item in enumerate(np.random.choice(model._data._databunch.train_ds.x.items,500)):
-                row=np.array(model._data._databunch.train_ds.x[item].data[1])
-                df[cnt]=row
-            explainer = shap.DeepExplainer(model.learn.model.layers, torch.tensor(df.transpose().values).cuda())
+    elif method == "FCN":
+        if hasattr(model._data, "_training_indexes"):
+            df = pd.DataFrame()
+            for cnt, item in enumerate(
+                np.random.choice(model._data._databunch.train_ds.x.items, 500)
+            ):
+                row = np.array(model._data._databunch.train_ds.x[item].data[1])
+                df[cnt] = row
+            explainer = shap.DeepExplainer(
+                model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
+            )
         else:
-            warnings.warn("To visualize the explanation of fully connected network, the model must be instantiated"
-                          " with the training data.")
+            warnings.warn(
+                "To visualize the explanation of fully connected network, the model must be instantiated"
+                " with the training data."
+            )
             return
     try:
-        #feature_variables = model._data._feature_variables # If model is initialised with data
-        feature_variables= model._data._categorical_variables + model._data._continuous_variables
+        # feature_variables = model._data._feature_variables # If model is initialised with data
+        feature_variables = (
+            model._data._categorical_variables + model._data._continuous_variables
+        )
     except:
-        feature_variables = processed_df.columns # In case when model is initialised only for prediction
-    if random_index==False:
-        #index_int=model._data._training_indexes.index(index)
-        if method=='FCN':
-            #train_tensor=torch.stack((torch.tensor(processed_df.iloc[[index]].to_numpy()).float(),
+        feature_variables = (
+            processed_df.columns
+        )  # In case when model is initialised only for prediction
+    if random_index == False:
+        # index_int=model._data._training_indexes.index(index)
+        if method == "FCN":
+            # train_tensor=torch.stack((torch.tensor(processed_df.iloc[[index]].to_numpy()).float(),
             #                          torch.tensor(processed_df.iloc[[index]].to_numpy()).float()),dim=0)
             processed_df = processed_df.iloc[[index]][feature_variables]
-            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
-                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+            train_tensor = torch.stack(
+                (
+                    torch.tensor(processed_df.values).squeeze().float(),
+                    torch.tensor(processed_df.values).squeeze().float(),
+                ),
+                dim=0,
+            )
         else:
             processed_df = processed_df.iloc[[index]]
             processed_numpy = model._data._process_data(
-                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False)
+                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False
+            )
     else:
-        txt = "The SHAP explanation is generated for {}th row of the dataframe. " \
-              "This row was randomly chosen since the parameter explain_index was passed as None"
-        if method=='FCN':
+        txt = (
+            "The SHAP explanation is generated for {}th row of the dataframe. "
+            "This row was randomly chosen since the parameter explain_index was passed as None"
+        )
+        if method == "FCN":
             processed_df = processed_df.sample(n=1)[feature_variables]
             print(txt.format(processed_df.index.values[0]))
-            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
-                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+            train_tensor = torch.stack(
+                (
+                    torch.tensor(processed_df.values).squeeze().float(),
+                    torch.tensor(processed_df.values).squeeze().float(),
+                ),
+                dim=0,
+            )
         else:
             processed_df = processed_df.sample(n=1)
             print(txt.format(processed_df.index.values[0]))
             processed_numpy = model._data._process_data(
-                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False)
-    #df_index = model._data._dataframe.iloc[index,:][feature_variables]
-    if method == 'Tree':
+                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False
+            )
+    # df_index = model._data._dataframe.iloc[index,:][feature_variables]
+    if method == "Tree":
         shap_values = explainer.shap_values(processed_numpy)
         if isinstance(shap_values, list):
-            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True)
+            shap.force_plot(
+                explainer.expected_value[0],
+                shap_values[0],
+                processed_df,
+                matplotlib=True,
+            )
         else:
-            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True)
-    elif method == 'KernelRegressor':
+            shap.force_plot(
+                explainer.expected_value, shap_values, processed_df, matplotlib=True
+            )
+    elif method == "KernelRegressor":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             shap_values = explainer.shap_values(processed_numpy, nsamples=100)
         if isinstance(shap_values, list):
-            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True)
+            shap.force_plot(
+                explainer.expected_value[0],
+                shap_values[0],
+                processed_df,
+                matplotlib=True,
+            )
         else:
-            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True)
-    elif method == 'KernelClassifier':
+            shap.force_plot(
+                explainer.expected_value, shap_values, processed_df, matplotlib=True
+            )
+    elif method == "KernelClassifier":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             shap_values = explainer.shap_values(processed_numpy, nsamples=100)
         if isinstance(shap_values, list):
-            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True, link="logit")
+            shap.force_plot(
+                explainer.expected_value[0],
+                shap_values[0],
+                processed_df,
+                matplotlib=True,
+                link="logit",
+            )
         else:
-            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True, link="logit")
-    elif method == 'FCN':
+            shap.force_plot(
+                explainer.expected_value,
+                shap_values,
+                processed_df,
+                matplotlib=True,
+                link="logit",
+            )
+    elif method == "FCN":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             shap_values = explainer.shap_values(train_tensor)
-        shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
+        shap.force_plot(
+            explainer.expected_value, shap_values[0], processed_df, matplotlib=True
+        )
 
-def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
 
-    #explainer = shap.TreeExplainer(model._model)
-    if hasattr(model._data, '_training_indexes'):
-        feature_variables = model._data._categorical_variables + model._data._continuous_variables
-        df = pd.DataFrame(shap.sample(model._data._ml_data[0], 500), columns=feature_variables)
-        if method == 'KernelRegressor':
-            explainer = shap.KernelExplainer(model._model.predict, shap.sample(model._data._ml_data[0],100))
-        elif method=='Tree':
+def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
+
+    # explainer = shap.TreeExplainer(model._model)
+    if hasattr(model._data, "_training_indexes"):
+        feature_variables = (
+            model._data._categorical_variables + model._data._continuous_variables
+        )
+        if len(feature_variables) < 2:
+            print(
+                "This method can be used only on datasets with more than 1 explanatory variables"
+            )
+            return
+        df = pd.DataFrame(
+            shap.sample(model._data._ml_data[0], 500), columns=feature_variables
+        )
+        if method == "KernelRegressor":
+            explainer = shap.KernelExplainer(
+                model._model.predict, shap.sample(model._data._ml_data[0], 100)
+            )
+        elif method == "Tree":
             explainer = shap.TreeExplainer(model._model)
-        elif method == 'KernelClassifier':
-            explainer = shap.KernelExplainer(model._model.predict_proba, shap.sample(model._data._ml_data[0],100),link="logit")
-        elif method == 'FCN':
+        elif method == "KernelClassifier":
+            explainer = shap.KernelExplainer(
+                model._model.predict_proba,
+                shap.sample(model._data._ml_data[0], 100),
+                link="logit",
+            )
+        elif method == "FCN":
             df = pd.DataFrame()
-            for cnt, item in enumerate(np.random.choice(model._data._databunch.train_ds.x.items, 500)):
+            for cnt, item in enumerate(
+                np.random.choice(model._data._databunch.train_ds.x.items, 500)
+            ):
                 row = np.array(model._data._databunch.train_ds.x[item].data[1])
                 df[cnt] = row
-            explainer = shap.DeepExplainer(model.learn.model.layers, torch.tensor(df.transpose().values).cuda())
-            feature_variables = model._data._categorical_variables + model._data._continuous_variables
+            explainer = shap.DeepExplainer(
+                model.learn.model.layers, torch.tensor(df.transpose().values).cuda()
+            )
+            feature_variables = (
+                model._data._categorical_variables + model._data._continuous_variables
+            )
             processed_df = df.transpose()
-            processed_df.columns=feature_variables
+            processed_df.columns = feature_variables
             processed_df = processed_df.sample(n=1)[feature_variables]
-            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
-                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+            train_tensor = torch.stack(
+                (
+                    torch.tensor(processed_df.values).squeeze().float(),
+                    torch.tensor(processed_df.values).squeeze().float(),
+                ),
+                dim=0,
+            )
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 shap_values = explainer.shap_values(train_tensor)
             shap.summary_plot(shap_values, processed_df, plot_type="bar")
             return
     else:
-        warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
-                  " with the training data.")
+        warnings.warn(
+            "To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+            " with the training data."
+        )
         return
-
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        shap_values = explainer.shap_values(df, approximate=True)
+    if plot_type == "bar":
+        return shap.summary_plot(shap_values, df, plot_type="bar")
+    else:
+        return shap.force_plot(
+            explainer.expected_value[0], shap_values, df, matplotlib=True
+        )
+    return

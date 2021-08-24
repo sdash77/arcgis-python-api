@@ -29,5 +29,5 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._connect_net import ConnectNet
     from ._mmsegmentation import MMSegmentation
     from ._siammask import SiamMask, Track
+    from ._deepsort import DeepSort
     from ._auto_ml import AutoML
-

@@ -12,29 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco.py, box AP=42.0
+# fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco.py, box AP=42.0
 
 model = dict(
-    type='FOVEA',
-    pretrained='torchvision://resnet101',
+    type="FOVEA",
+    pretrained="torchvision://resnet101",
     backbone=dict(
-        type='ResNet',
+        type="ResNet",
         depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_cfg=dict(type="BN", requires_grad=True),
         norm_eval=True,
-        style='pytorch'),
+        style="pytorch",
+    ),
     neck=dict(
-        type='FPN',
+        type="FPN",
         in_channels=[256, 512, 1024, 2048],
         out_channels=256,
         start_level=1,
         num_outs=5,
-        add_extra_convs='on_input'),
+        add_extra_convs="on_input",
+    ),
     bbox_head=dict(
-        type='FoveaHead',
+        type="FoveaHead",
         num_classes=80,
         in_channels=256,
         stacked_convs=4,
@@ -44,20 +46,20 @@ model = dict(
         scale_ranges=((1, 64), (32, 128), (64, 256), (128, 512), (256, 2048)),
         sigma=0.4,
         with_deform=True,
-        norm_cfg=dict(type='GN', num_groups=32, requires_grad=True),
+        norm_cfg=dict(type="GN", num_groups=32, requires_grad=True),
         loss_cls=dict(
-            type='FocalLoss',
-            use_sigmoid=True,
-            gamma=1.50,
-            alpha=0.4,
-            loss_weight=1.0),
-        loss_bbox=dict(type='SmoothL1Loss', beta=0.11, loss_weight=1.0)),
+            type="FocalLoss", use_sigmoid=True, gamma=1.50, alpha=0.4, loss_weight=1.0
+        ),
+        loss_bbox=dict(type="SmoothL1Loss", beta=0.11, loss_weight=1.0),
+    ),
     # training and testing settings
     train_cfg=dict(),
     test_cfg=dict(
         nms_pre=1000,
         score_thr=0.05,
-        nms=dict(type='nms', iou_threshold=0.5),
-        max_per_img=100))
+        nms=dict(type="nms", iou_threshold=0.5),
+        max_per_img=100,
+    ),
+)
 
-checkpoint = 'http://download.openmmlab.com/mmdetection/v2.0/foveabox/fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco/fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco_20200208-649c5eb6.pth'
+checkpoint = "http://download.openmmlab.com/mmdetection/v2.0/foveabox/fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco/fovea_align_r101_fpn_gn-head_mstrain_640-800_4x4_2x_coco_20200208-649c5eb6.pth"

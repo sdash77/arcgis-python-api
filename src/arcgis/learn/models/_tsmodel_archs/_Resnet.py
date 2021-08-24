@@ -23,29 +23,35 @@ class _TSResNet(nn.Module):
         kss = [7, 5, 3]
 
         self.layers = []
-        self.block1 = nn.ModuleList([
-            convlayer(input, conv_sizes[0], kss[0], act_fn='relu'),
-            convlayer(conv_sizes[0], conv_sizes[0], kss[1], act_fn='relu'),
-            convlayer(conv_sizes[0], conv_sizes[0], kss[2], act_fn=False),
-            Shortcut(input, conv_sizes[0]),
-            nn.ReLU()
-        ])
+        self.block1 = nn.ModuleList(
+            [
+                convlayer(input, conv_sizes[0], kss[0], act_fn="relu"),
+                convlayer(conv_sizes[0], conv_sizes[0], kss[1], act_fn="relu"),
+                convlayer(conv_sizes[0], conv_sizes[0], kss[2], act_fn=False),
+                Shortcut(input, conv_sizes[0]),
+                nn.ReLU(),
+            ]
+        )
 
-        self.block2 = nn.ModuleList([
-            convlayer(conv_sizes[0], conv_sizes[1], kss[0], act_fn='relu'),
-            convlayer(conv_sizes[1], conv_sizes[1], kss[1], act_fn='relu'),
-            convlayer(conv_sizes[1], conv_sizes[1], kss[2], act_fn=False),
-            Shortcut(conv_sizes[0], conv_sizes[1]),
-            nn.ReLU()
-        ])
+        self.block2 = nn.ModuleList(
+            [
+                convlayer(conv_sizes[0], conv_sizes[1], kss[0], act_fn="relu"),
+                convlayer(conv_sizes[1], conv_sizes[1], kss[1], act_fn="relu"),
+                convlayer(conv_sizes[1], conv_sizes[1], kss[2], act_fn=False),
+                Shortcut(conv_sizes[0], conv_sizes[1]),
+                nn.ReLU(),
+            ]
+        )
 
-        self.block3 = nn.ModuleList([
-            convlayer(conv_sizes[1], conv_sizes[2], kss[0], act_fn='relu'),
-            convlayer(conv_sizes[2], conv_sizes[2], kss[1], act_fn='relu'),
-            convlayer(conv_sizes[2], conv_sizes[2], kss[2], act_fn=False),
-            Shortcut(conv_sizes[1], conv_sizes[2]),
-            nn.ReLU()
-        ])
+        self.block3 = nn.ModuleList(
+            [
+                convlayer(conv_sizes[1], conv_sizes[2], kss[0], act_fn="relu"),
+                convlayer(conv_sizes[2], conv_sizes[2], kss[1], act_fn="relu"),
+                convlayer(conv_sizes[2], conv_sizes[2], kss[2], act_fn=False),
+                Shortcut(conv_sizes[1], conv_sizes[2]),
+                nn.ReLU(),
+            ]
+        )
 
         self.blocks = [self.block1, self.block2, self.block3]
 

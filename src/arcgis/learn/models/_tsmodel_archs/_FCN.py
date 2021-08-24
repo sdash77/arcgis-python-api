@@ -5,7 +5,9 @@ from .layers import *
 
 
 class _TSFCN(nn.Module):
-    def __init__(self, input, output, layers=[128, 256, 128], kss=[7, 5, 3], device=None):
+    def __init__(
+        self, input, output, layers=[128, 256, 128], kss=[7, 5, 3], device=None
+    ):
         super().__init__()
 
         if not isinstance(kss, list) or len(kss) == 0:

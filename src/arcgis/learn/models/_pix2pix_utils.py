@@ -1,13 +1,29 @@
-#Code from https://github.com/fastai/course-v3/blob/master/nbs/dl2/cyclegan_ws.ipynb & https://github.com/eriklindernoren/PyTorch-GAN
+# Code from https://github.com/fastai/course-v3/blob/master/nbs/dl2/cyclegan_ws.ipynb & https://github.com/eriklindernoren/PyTorch-GAN
 import torch
-from fastai.vision import nn, Callable, List, LearnerCallback, optim, ifnone, F, flatten_model, requires_grad, SmoothenValue, add_metrics
-from .._utils.cyclegan import calculate_activation_statistics, calculate_frechet_distance
+from fastai.vision import (
+    nn,
+    Callable,
+    List,
+    LearnerCallback,
+    optim,
+    ifnone,
+    F,
+    flatten_model,
+    requires_grad,
+    SmoothenValue,
+    add_metrics,
+)
+from .._utils.cyclegan import (
+    calculate_activation_statistics,
+    calculate_frechet_distance,
+)
 from fastprogress.fastprogress import progress_bar
 from .._utils.superres import psnr, ssim
 
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
@@ -138,98 +154,118 @@ class Discriminator(nn.Module):
         img_input = torch.cat((img_A, img_B), 1)
         return self.model(img_input)
 
+
 class pix2pix(nn.Module):
-    
-    def __init__(self, ch_in:int, ch_out:int):
+    def __init__(self, ch_in: int, ch_out: int):
         super().__init__()
-        
+
         self.D = Discriminator(ch_in)
         self.G = GeneratorUNet(ch_in, ch_out)
         self.arcgis_results = False
-        
+
     def forward(self, real_A, real_B):
         fake_B = self.G(real_A)
         if self.training:
             self.arcgis_results = False
-        if self.arcgis_results: return torch.cat([fake_B[:,None],fake_B[:,None]], 1)
-        #if not self.training: 
+        if self.arcgis_results:
+            return torch.cat([fake_B[:, None], fake_B[:, None]], 1)
+        # if not self.training:
         return [fake_B]
+
 
 class AdaptiveLoss(nn.Module):
     def __init__(self, crit):
         super().__init__()
         self.crit = crit
-    
-    def forward(self, output, target:bool, **kwargs):
-        targ = output.new_ones(*output.size()) if target else output.new_zeros(*output.size())
+
+    def forward(self, output, target: bool, **kwargs):
+        targ = (
+            output.new_ones(*output.size())
+            if target
+            else output.new_zeros(*output.size())
+        )
         return self.crit(output, targ, **kwargs)
+
 
 class Adaptivel1Loss(nn.Module):
     def __init__(self, crit1):
         super().__init__()
         self.crit1 = crit1
-    
-    def forward(self, output, target:bool, **kwargs):
-        targ = output.new_ones(*output.size()) if target else output.new_zeros(*output.size())
+
+    def forward(self, output, target: bool, **kwargs):
+        targ = (
+            output.new_ones(*output.size())
+            if target
+            else output.new_zeros(*output.size())
+        )
         return self.crit1(output, targ, **kwargs)
 
+
 class pix2pixLoss(nn.Module):
-    
-    def __init__(self, cgan:nn.Module, lambda_A:float=100., lambda_B:float=100, lambda_idt:float=0.5, lsgan:bool=False):
+    def __init__(
+        self,
+        cgan: nn.Module,
+        lambda_A: float = 100.0,
+        lambda_B: float = 100,
+        lambda_idt: float = 0.5,
+        lsgan: bool = False,
+    ):
         super().__init__()
-        self.cgan,self.l_A,self.l_B,self.l_idt = cgan,lambda_A,lambda_B,lambda_idt
+        self.cgan, self.l_A, self.l_B, self.l_idt = cgan, lambda_A, lambda_B, lambda_idt
         self.crit = AdaptiveLoss(F.binary_cross_entropy_with_logits)
         self.crit1 = Adaptivel1Loss(F.mse_loss)
-    
+
     def set_input(self, input):
-        self.real_A,self.real_B = input
+        self.real_A, self.real_B = input
 
     def forward(self, output, target):
         fake_B = output[0]
-        
+
         self.gen_loss = self.crit(self.cgan.D(fake_B, self.real_A), True)
         self.l1_loss = torch.mean(F.l1_loss(fake_B, self.real_B))
 
         return self.gen_loss + (self.l_A * self.l1_loss)
 
+
 class pix2pixTrainer(LearnerCallback):
-    _order = -20 #Need to run before the Recorder
+    _order = -20  # Need to run before the Recorder
+
     def _set_trainable(self, D=False):
-        gen = (not D)
+        gen = not D
         requires_grad(self.learn.model.G, gen)
         requires_grad(self.learn.model.D, D)
         if not gen:
             self.opt_D.lr, self.opt_D.mom = self.learn.opt.lr, self.learn.opt.mom
             self.opt_D.wd, self.opt_D.beta = self.learn.opt.wd, self.learn.opt.beta
-    
+
     def on_train_begin(self, **kwargs):
         self.G = self.learn.model.G
         self.D = self.learn.model.D
         self.crit = self.learn.loss_func.crit
         self.crit1 = self.learn.loss_func.crit1
 
-        if not getattr(self,'opt_G',None):
+        if not getattr(self, "opt_G", None):
             self.opt_G = self.learn.opt.new([nn.Sequential(*flatten_model(self.G))])
-        else: 
-            self.opt_G.lr,self.opt_G.wd = self.opt.lr,self.opt.wd
-            self.opt_G.mom,self.opt_G.beta = self.opt.mom,self.opt.beta
+        else:
+            self.opt_G.lr, self.opt_G.wd = self.opt.lr, self.opt.wd
+            self.opt_G.mom, self.opt_G.beta = self.opt.mom, self.opt.beta
 
-        if not getattr(self,'opt_D',None):
+        if not getattr(self, "opt_D", None):
             self.opt_D = self.learn.opt.new([nn.Sequential(*flatten_model(self.D))])
 
         self.learn.opt.opt = self.opt_G.opt
         self._set_trainable()
-        self.gen_smter,self.l1_smter = SmoothenValue(0.98),SmoothenValue(0.98)
+        self.gen_smter, self.l1_smter = SmoothenValue(0.98), SmoothenValue(0.98)
         self.d_smter = SmoothenValue(0.98)
-        self.recorder.add_metric_names(['gen_loss', 'l1_loss', 'D_loss'])
-        
+        self.recorder.add_metric_names(["gen_loss", "l1_loss", "D_loss"])
+
     def on_batch_begin(self, last_input, **kwargs):
         self.learn.loss_func.set_input(last_input)
-    
+
     def on_backward_begin(self, **kwargs):
         self.l1_smter.add_value(self.loss_func.l1_loss.detach().cpu())
         self.gen_smter.add_value(self.loss_func.gen_loss.detach().cpu())
-    
+
     def on_batch_end(self, last_input, last_output, **kwargs):
         self.G.zero_grad()
         fake_B = last_output[0].detach()
@@ -239,7 +275,10 @@ class pix2pixTrainer(LearnerCallback):
 
         self.D.zero_grad()
 
-        loss_D = 0.5 * (torch.mean(self.crit1(self.D(real_A, real_B), True)) + torch.mean(self.crit1(self.D(fake_B,real_A), False)))
+        loss_D = 0.5 * (
+            torch.mean(self.crit1(self.D(real_A, real_B), True))
+            + torch.mean(self.crit1(self.D(fake_B, real_A), False))
+        )
 
         self.d_smter.add_value(loss_D.detach().cpu())
         if self.learn.model.training == True:
@@ -248,24 +287,28 @@ class pix2pixTrainer(LearnerCallback):
         self.opt_D.step()
 
         self._set_trainable()
-        
+
     def on_epoch_end(self, last_metrics, **kwargs):
-        return add_metrics(last_metrics, [s.smooth for s in [self.gen_smter,self.l1_smter,self.d_smter]])
+        return add_metrics(
+            last_metrics,
+            [s.smooth for s in [self.gen_smter, self.l1_smter, self.d_smter]],
+        )
+
 
 def compute_fid_metric(model, data):
     input_a = []
     input_b = []
     pred_b = []
     for input, target in data.valid_dl:
-        input_a.append(input[0]/2+0.5)
-        input_b.append(input[1]/2+0.5)
-        pred = model.learn.pred_batch(batch=(input,target))
+        input_a.append(input[0] / 2 + 0.5)
+        input_b.append(input[1] / 2 + 0.5)
+        pred = model.learn.pred_batch(batch=(input, target))
         if isinstance(pred, list):
             pred = pred[0]
         else:
-            pred = pred[:,0,:,:,:]
-        pred_b.append(pred/2+0.5)
-    
+            pred = pred[:, 0, :, :, :]
+        pred_b.append(pred / 2 + 0.5)
+
     data_len = len(data.valid_ds)
     batch_size = data.batch_size
 
@@ -275,6 +318,7 @@ def compute_fid_metric(model, data):
     fid_value = calculate_frechet_distance(m1_b, s1_b, m2_b, s2_b)
 
     return fid_value
+
 
 def compute_metrics(model, dl, show_progress):
     avg_psnr = 0
@@ -286,7 +330,7 @@ def compute_metrics(model, dl, show_progress):
             if isinstance(prediction, list):
                 prediction = prediction[0]
             else:
-                prediction = prediction[:,0,:,:,:]
+                prediction = prediction[:, 0, :, :, :]
             avg_psnr += psnr(prediction, input[1])
             avg_ssim += ssim(prediction, input[1])
-    return avg_psnr/len(dl), avg_ssim.item()/len(dl)
+    return avg_psnr / len(dl), avg_ssim.item() / len(dl)

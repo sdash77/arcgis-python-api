@@ -15,7 +15,8 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
-class CustomBDCN():
+
+class CustomBDCN:
     """
     Create class with following fixed function names and the number of arguents to train your model from external source
     """
@@ -29,14 +30,14 @@ class CustomBDCN():
         from arcgis.learn.models import _bdcn_utils as bdcn
     except:
         pass
-    
+
     def get_model(self, data, backbone=None, **kwargs):
         """
         In this fuction you have to define your model with following two arguments!
-        
+
         """
-        pretrained_backbone = kwargs.get('pretrained_backbone', True)
-        
+        pretrained_backbone = kwargs.get("pretrained_backbone", True)
+
         if backbone is None:
             self._backbone = self.models.vgg19
         elif type(backbone) is str:
@@ -47,18 +48,20 @@ class CustomBDCN():
         else:
             self._backbone = backbone
 
-        model = self.bdcn._BDCNModel(self._backbone, data.chip_size, pretrained=pretrained_backbone)
-        
+        model = self.bdcn._BDCNModel(
+            self._backbone, data.chip_size, pretrained=pretrained_backbone
+        )
+
         return model
-    
+
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-        
+
         return model_input_batch, model_target_batch
-    
+
     def transform_input(self, xb):
-        
+
         return xb
-    
+
     def transform_input_multispectral(self, xb):
 
         return xb
@@ -66,13 +69,13 @@ class CustomBDCN():
     def loss(self, model_output, *model_target):
 
         final_loss = self.bdcn.bdcn_loss(model_output, *model_target)
-        
+
         return final_loss
-    
+
     def post_process(self, pred, thres=0.5, thinning=True):
         """
         In this function you have to return list with appended output for each image in the batch with shape [C=1,H,W]!
-        
+
         """
 
         from skimage.morphology import skeletonize, binary_dilation
@@ -82,11 +85,21 @@ class CustomBDCN():
         pred = pred[-1]
         if thinning:
             for p in pred:
-                p = self.torch.unsqueeze(self.torch.tensor(skeletonize(binary_dilation(np.squeeze((p>=thres).byte().cpu().numpy())))), dim=0)
+                p = self.torch.unsqueeze(
+                    self.torch.tensor(
+                        skeletonize(
+                            binary_dilation(
+                                np.squeeze((p >= thres).byte().cpu().numpy())
+                            )
+                        )
+                    ),
+                    dim=0,
+                )
                 post_processed_pred.append(p)
         else:
-            return (pred>=thres).byte()
+            return (pred >= thres).byte()
         return post_processed_pred
+
 
 class BDCNEdgeDetector(ModelExtension):
     """
@@ -102,7 +115,7 @@ class BDCNEdgeDetector(ModelExtension):
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `Bi-Directional Cascade Network
                             for Perceptual Edge Detection`, which
-                            is `vgg19` by default. 
+                            is `vgg19` by default.
                             Compatible backbones: resnet and VGG
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
@@ -111,12 +124,15 @@ class BDCNEdgeDetector(ModelExtension):
 
     :returns: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
     """
-    def __init__(self, data, backbone='vgg19', pretrained_path=None):
+
+    def __init__(self, data, backbone="vgg19", pretrained_path=None):
 
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            raise Exception(
+                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+            )
 
         super().__init__(data, CustomBDCN, backbone, pretrained_path)
         self._freeze()
@@ -135,7 +151,7 @@ class BDCNEdgeDetector(ModelExtension):
 
             for p in i.parameters():
                 p.requires_grad = False
-                
+
             if isinstance(i, torch.nn.MaxPool2d):
                 count += 1
                 if count == 3:
@@ -151,7 +167,7 @@ class BDCNEdgeDetector(ModelExtension):
 
     @staticmethod
     def _available_metrics():
-        return ['valid_loss', 'accuracy', 'f1_score']
+        return ["valid_loss", "accuracy", "f1_score"]
 
     @property
     def _is_edge_detection(self):
@@ -159,7 +175,7 @@ class BDCNEdgeDetector(ModelExtension):
 
     @property
     def supported_backbones(self):
-        """ Supported torchvision backbones for this model. """
+        """Supported torchvision backbones for this model."""
         return BDCNEdgeDetector._supported_backbones()
 
     @staticmethod
@@ -167,13 +183,13 @@ class BDCNEdgeDetector(ModelExtension):
         return [*_resnet_family, *_vgg_family]
 
     @property
-    def  supported_datasets(self):
-        """ Supported dataset types for this model. """
+    def supported_datasets(self):
+        """Supported dataset types for this model."""
         return BDCNEdgeDetector._supported_datasets()
 
     @staticmethod
     def _supported_datasets():
-        return ['Classified_Tiles']
+        return ["Classified_Tiles"]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -198,33 +214,38 @@ class BDCNEdgeDetector(ModelExtension):
 
         with open(emd_path) as f:
             emd = json.load(f)
-            
-        model_file = Path(emd['ModelFile'])
-        
+
+        model_file = Path(emd["ModelFile"])
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-        
-        backbone = emd['ModelParameters']['backbone']
+
+        backbone = emd["ModelParameters"]["backbone"]
 
         try:
-            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
+            color_mapping = {i["Value"]: i["Color"] for i in emd["Classes"]}
         except KeyError:
-            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
-            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+            class_mapping = {i["ClassValue"]: i["ClassName"] for i in emd["Classes"]}
+            color_mapping = {i["ClassValue"]: i["Color"] for i in emd["Classes"]}
 
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data = _EmptyData(
+                path=emd_path.parent.parent,
+                loss_func=None,
+                c=len(class_mapping) + 1,
+                chip_size=emd["ImageHeight"],
+            )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data.emd_path = emd_path
             data.emd = emd
-            data.classes = ['background']
+            data.classes = ["background"]
             for k, v in class_mapping.items():
                 data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
-            data.dataset_type = emd['DatasetType']
-        
+            data.dataset_type = emd["DatasetType"]
+
         return cls(data, backbone, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
@@ -242,10 +263,10 @@ class BDCNEdgeDetector(ModelExtension):
                                 consider true detection.
         =====================   ===========================================
 
-        :returns: `dict` 
+        :returns: `dict`
         """
 
-    def show_results(self, rows=5, thresh=0.5, thinning=True,**kwargs):
+    def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
 
         """
         Displays the results of a trained model on a part of the validation set.

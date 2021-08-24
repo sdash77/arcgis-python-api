@@ -1,8 +1,12 @@
 "Functions for calling the Deep Learning Tools."
 from . import _utils
 from ._utils.env import _LAMBDA_TEXT_CLASSIFICATION
-from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
-     _analysis_job_status, _layer_input
+from arcgis.geoprocessing._support import (
+    _analysis_job,
+    _analysis_job_results,
+    _analysis_job_status,
+    _layer_input,
+)
 import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
@@ -10,12 +14,39 @@ from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
-    from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
-      PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
-      FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
-      BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
-      ChangeDetector, Pix2Pix, ConnectNet, SiamMask, Track, Embeddings, MMDetection, MMSegmentation, AutoML
-      
+    from .models import (
+        SingleShotDetector,
+        UnetClassifier,
+        FeatureClassifier,
+        RetinaNet,
+        PSPNetClassifier,
+        MaskRCNN,
+        DeepLab,
+        PointCNN,
+        ModelExtension,
+        FasterRCNN,
+        SuperResolution,
+        FullyConnectedNetwork,
+        MLModel,
+        YOLOv3,
+        HEDEdgeDetector,
+        BDCNEdgeDetector,
+        ImageCaptioner,
+        TimeSeriesModel,
+        CycleGAN,
+        MultiTaskRoadExtractor,
+        ChangeDetector,
+        Pix2Pix,
+        ConnectNet,
+        SiamMask,
+        Track,
+        Embeddings,
+        MMDetection,
+        MMSegmentation,
+        AutoML,
+        DeepSort,
+    )
+
     from ._object_tracker import ObjectTracker
 
     from .text import EntityRecognizer
@@ -23,101 +54,118 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 
+
 def _set_param(gis, params, param_name, input_param):
     if isinstance(input_param, str):
-        if 'http:' in input_param or 'https:' in input_param:
-            params[param_name] = _json.dumps({ 'url' : input_param })
+        if "http:" in input_param or "https:" in input_param:
+            params[param_name] = _json.dumps({"url": input_param})
         else:
-            params[param_name] = _json.dumps({ 'uri' : input_param })
+            params[param_name] = _json.dumps({"uri": input_param})
 
     elif isinstance(input_param, _arcgis.gis.Item):
-        params[param_name] = _json.dumps({ "itemId" : input_param.itemid })
+        params[param_name] = _json.dumps({"itemId": input_param.itemid})
 
     elif isinstance(input_param, dict):
-        params[param_name] =  input_param
+        params[param_name] = input_param
     elif isinstance(input_param, Model):
         params[param_name] = input_param._model
     else:
-        raise TypeError(input_param+" should be a string (service url) or Item")
+        raise TypeError(input_param + " should be a string (service url) or Item")
 
     return
 
 
-def _create_output_image_service(gis, output_name, task, folder = None):
+def _create_output_image_service(gis, output_name, task, folder=None):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
-        raise RuntimeError("An Image Service by this name already exists: " + output_name)
+        raise RuntimeError(
+            "An Image Service by this name already exists: " + output_name
+        )
 
     create_parameters = {
         "name": output_name,
         "description": "",
         "capabilities": "Image",
-        "properties": {
-            "path": "@",
-            "description": "",
-            "copyright": ""
-        }
+        "properties": {"path": "@", "description": "", "copyright": ""},
     }
 
-    output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                service_type="imageService", folder = folder)
+    output_service = gis.content.create_service(
+        output_name,
+        create_params=create_parameters,
+        service_type="imageService",
+        folder=folder,
+    )
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
         "tags": "Analysis Result, " + task,
-        "snippet": "Analysis Image Service generated from " + task
+        "snippet": "Analysis Image Service generated from " + task,
     }
     output_service.update(item_properties)
     return output_service
 
 
-def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', folder = None):
-    ok = gis.content.is_service_name_available(output_name, 'Feature Service')
+def _create_output_feature_service(
+    gis,
+    output_name,
+    output_service_name="Analysis feature service",
+    task="GeoAnalytics",
+    folder=None,
+):
+    ok = gis.content.is_service_name_available(output_name, "Feature Service")
     if not ok:
-        raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+        raise RuntimeError(
+            "A Feature Service by this name already exists: " + output_name
+        )
 
     createParameters = {
         "currentVersion": 10.2,
-            "serviceDescription": "",
-            "hasVersionedData": False,
-            "supportsDisconnectedEditing": False,
-            "hasStaticData": True,
-            "maxRecordCount": 2000,
-            "supportedQueryFormats": "JSON",
-            "capabilities": "Query",
-            "description": "",
-            "copyrightText": "",
-            "allowGeometryUpdates": False,
-            "syncEnabled": False,
-            "editorTrackingInfo": {
-                "enableEditorTracking": False,
-                "enableOwnershipAccessControl": False,
-                "allowOthersToUpdate": True,
-                "allowOthersToDelete": True
-                },
-            "xssPreventionInfo": {
-                "xssPreventionEnabled": True,
-                "xssPreventionRule": "InputOnly",
-                "xssInputRule": "rejectInvalid"
-                },
-            "tables": [],
-            "name": output_service_name.replace(' ', '_')
+        "serviceDescription": "",
+        "hasVersionedData": False,
+        "supportsDisconnectedEditing": False,
+        "hasStaticData": True,
+        "maxRecordCount": 2000,
+        "supportedQueryFormats": "JSON",
+        "capabilities": "Query",
+        "description": "",
+        "copyrightText": "",
+        "allowGeometryUpdates": False,
+        "syncEnabled": False,
+        "editorTrackingInfo": {
+            "enableEditorTracking": False,
+            "enableOwnershipAccessControl": False,
+            "allowOthersToUpdate": True,
+            "allowOthersToDelete": True,
+        },
+        "xssPreventionInfo": {
+            "xssPreventionEnabled": True,
+            "xssPreventionRule": "InputOnly",
+            "xssInputRule": "rejectInvalid",
+        },
+        "tables": [],
+        "name": output_service_name.replace(" ", "_"),
     }
 
-    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder =  folder)
+    output_service = gis.content.create_service(
+        output_name,
+        create_params=createParameters,
+        service_type="featureService",
+        folder=folder,
+    )
     description = "Feature Service generated from running the " + task + " tool."
     item_properties = {
-        "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": output_service_name
+        "description": description,
+        "tags": "Analysis Result, " + task,
+        "snippet": output_service_name,
     }
     output_service.update(item_properties)
     return output_service
 
-def _set_output_raster(output_name, task, gis, output_properties =None):
+
+def _set_output_raster(output_name, task, gis, output_properties=None):
     output_service = None
     output_raster = None
-    
+
     task_name = task
 
     folder = None
@@ -130,7 +178,7 @@ def _set_output_raster(output_name, task, gis, output_properties =None):
         if isinstance(folder, dict):
             if "id" in folder:
                 folderId = folder["id"]
-                folder=folder["title"]
+                folder = folder["title"]
         else:
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
@@ -140,38 +188,56 @@ def _set_output_raster(output_name, task, gis, output_properties =None):
             folderId = folder_dict["id"]
 
     if output_name is None:
-        output_name = str(task_name) + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task, folder = folder)
-        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        output_name = str(task_name) + "_" + _id_generator()
+        output_service = _create_output_image_service(
+            gis, output_name, task, folder=folder
+        )
+        output_raster = {
+            "serviceProperties": {
+                "name": output_service.name,
+                "serviceUrl": output_service.url,
+            },
+            "itemProperties": {"itemId": output_service.itemid},
+        }
     elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task,folder = folder)
-        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        output_service = _create_output_image_service(
+            gis, output_name, task, folder=folder
+        )
+        output_raster = {
+            "serviceProperties": {
+                "name": output_service.name,
+                "serviceUrl": output_service.url,
+            },
+            "itemProperties": {"itemId": output_service.itemid},
+        }
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
-        output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+        output_raster = {"itemProperties": {"itemId": output_service.itemid}}
     else:
-        raise TypeError("output_raster should be a string (service name) or Item") 
+        raise TypeError("output_raster should be a string (service name) or Item")
 
     if folderId is not None:
-        output_raster["itemProperties"].update({"folderId":folderId})
+        output_raster["itemProperties"].update({"folderId": folderId})
     output_raster = _json.dumps(output_raster)
     return output_raster, output_service
 
 
-def detect_objects(input_raster,
-                   model,
-                   model_arguments=None,
-                   output_name=None,
-                   run_nms=False,
-                   confidence_score_field=None,
-                   class_value_field=None,
-                   max_overlap_ratio=0,
-                   context=None,
-                   process_all_raster_items=False,
-                   *,
-                   gis=None,
-                   future=False,
-                   **kwargs):
+def detect_objects(
+    input_raster,
+    model,
+    model_arguments=None,
+    output_name=None,
+    run_nms=False,
+    confidence_score_field=None,
+    class_value_field=None,
+    max_overlap_ratio=0,
+    context=None,
+    process_all_raster_items=False,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function can be used to generate feature service that contains polygons on detected objects
@@ -183,10 +249,10 @@ def detect_objects(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that contains objects that needs to be detected.
     ------------------------------------     --------------------------------------------------------------------
-    model                                    Required model object. 
+    model                                    Required model object.
     ------------------------------------     --------------------------------------------------------------------
     model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
+
                                              eg: {"name1":"value1", "name2": "value2"}
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output .
@@ -200,14 +266,14 @@ def detect_objects(input_raster,
     confidence_score_field                   Optional string. The field in the feature class that contains the confidence scores as output by the object detection method.
                                              This parameter is required when you set the run_nms to True
     ------------------------------------     --------------------------------------------------------------------
-    class_value_field                        Optional string. The class value field in the input feature class. 
-                                             If not specified, the function will use the standard class value fields 
-                                             Classvalue and Value. If these fields do not exist, all features will 
+    class_value_field                        Optional string. The class value field in the input feature class.
+                                             If not specified, the function will use the standard class value fields
+                                             Classvalue and Value. If these fields do not exist, all features will
                                              be treated as the same object class.
                                              Set only if run_nms  is set to True
     ------------------------------------     --------------------------------------------------------------------
-    max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features. 
-                                             Defined as the ratio of intersection area over union area. 
+    max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features.
+                                             Defined as the ratio of intersection area over union area.
                                              Set only if run_nms  is set to True
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -223,7 +289,7 @@ def detect_objects(input_raster,
 
                                              Eg: {"processorType" : "CPU"}
 
-                                             Setting context parameter will override the values set using arcgis.env 
+                                             Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
@@ -242,22 +308,23 @@ def detect_objects(input_raster,
 
     """
 
-
-    #task = "DetectObjectsUsingDeepLearning"
+    # task = "DetectObjectsUsingDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.detect_objects_using_deep_learning(input_raster=input_raster,
-                                                                        model=model,
-                                                                        output_objects=output_name,
-                                                                        model_arguments=model_arguments,
-                                                                        run_nms=run_nms,
-                                                                        confidence_score_field=confidence_score_field,
-                                                                        class_value_field=class_value_field,
-                                                                        max_overlap_ratio=max_overlap_ratio,
-                                                                        context=context,
-                                                                        process_all_raster_items=process_all_raster_items,
-                                                                        future=future,
-                                                                        **kwargs)
+    return gis._tools.rasteranalysis.detect_objects_using_deep_learning(
+        input_raster=input_raster,
+        model=model,
+        output_objects=output_name,
+        model_arguments=model_arguments,
+        run_nms=run_nms,
+        confidence_score_field=confidence_score_field,
+        class_value_field=class_value_field,
+        max_overlap_ratio=max_overlap_ratio,
+        context=context,
+        process_all_raster_items=process_all_raster_items,
+        future=future,
+        **kwargs
+    )
 
     """
     url = gis.properties.helperServices.rasterAnalytics.url
@@ -343,16 +410,19 @@ def detect_objects(input_raster,
     return output_service
     """
 
-def classify_pixels(input_raster,
-                    model,
-                    model_arguments=None,
-                    output_name=None,
-                    context=None,
-                    process_all_raster_items=False,
-                    *,
-                    gis=None,
-                    future=False,
-                    **kwargs):
+
+def classify_pixels(
+    input_raster,
+    model,
+    model_arguments=None,
+    output_name=None,
+    context=None,
+    process_all_raster_items=False,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function to classify input imagery data using a deep learning model.
@@ -382,7 +452,7 @@ def classify_pixels(input_raster,
 
                                                - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
 
-                                               - snapRaster - Function will adjust the extent of output rasters so that they 
+                                               - snapRaster - Function will adjust the extent of output rasters so that they
                                                  match the cell alignment of the specified snap raster.
 
                                                - cellSize - Set the output raster cell size, or resolution
@@ -395,7 +465,7 @@ def classify_pixels(input_raster,
 
                                                Eg: {"outSR" : {spatial reference}}
 
-                                               Setting context parameter will override the values set using arcgis.env 
+                                               Setting context parameter will override the values set using arcgis.env
                                                variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
@@ -408,11 +478,11 @@ def classify_pixels(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+    tiles_only                               Keyword only parameter. Optional boolean.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer.
                                              To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default.
     ====================================     ====================================================================
 
     :return:
@@ -420,19 +490,19 @@ def classify_pixels(input_raster,
 
     """
 
-
-    #task = "ClassifyPixelsUsingDeepLearning"
+    # task = "ClassifyPixelsUsingDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.classify_pixels_using_deep_learning(input_raster=input_raster,
-                                                                        model=model,
-                                                                        model_arguments=model_arguments,
-                                                                        output_classified_raster=output_name,
-                                                                        context=context,
-                                                                        process_all_raster_items=process_all_raster_items,
-                                                                        future=future,
-                                                                        **kwargs)
-
+    return gis._tools.rasteranalysis.classify_pixels_using_deep_learning(
+        input_raster=input_raster,
+        model=model,
+        model_arguments=model_arguments,
+        output_classified_raster=output_name,
+        context=context,
+        process_all_raster_items=process_all_raster_items,
+        future=future,
+        **kwargs
+    )
 
     """
     url = gis.properties.helperServices.rasterAnalytics.url
@@ -474,26 +544,29 @@ def classify_pixels(input_raster,
     return output_service
     """
 
-def export_training_data(input_raster,
-                         input_class_data=None,
-                         chip_format=None,
-                         tile_size=None,
-                         stride_size=None,
-                         metadata_format=None,
-                         classvalue_field=None,
-                         buffer_radius=None,
-                         output_location=None,
-                         context=None,
-                         input_mask_polygons=None,
-                         rotation_angle=0,
-                         reference_system="MAP_SPACE",
-                         process_all_raster_items=False,
-                         blacken_around_feature=False,
-                         fix_chip_size=True,
-                         *,
-                         gis=None,
-                         future=False,
-                         **kwargs):
+
+def export_training_data(
+    input_raster,
+    input_class_data=None,
+    chip_format=None,
+    tile_size=None,
+    stride_size=None,
+    metadata_format=None,
+    classvalue_field=None,
+    buffer_radius=None,
+    output_location=None,
+    context=None,
+    input_mask_polygons=None,
+    rotation_angle=0,
+    reference_system="MAP_SPACE",
+    process_all_raster_items=False,
+    blacken_around_feature=False,
+    fix_chip_size=True,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function is designed to generate training sample image chips from the input imagery data with
@@ -524,7 +597,7 @@ def export_training_data(input_raster,
 
                                              Example: {"x": 256, "y": 256}
     ------------------------------------     --------------------------------------------------------------------
-    stride_size                              Optional dictionary. The distance to move in the X and Y when creating 
+    stride_size                              Optional dictionary. The distance to move in the X and Y when creating
                                              the next image chip.
                                              When stride is equal to the tile size, there will be no overlap.
                                              When stride is equal to half of the tile size, there will be 50% overlap.
@@ -588,15 +661,15 @@ def export_training_data(input_raster,
                                                 ``/rasterStores/rasterstorename/rooftoptrainingsamples``
                                                 ``/cloudStores/cloudstorename/rooftoptrainingsamples``
 
-                                                File share path - 
+                                                File share path -
                                                 ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                              Dictionary can contain value for following keys:
 
                                                 - exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
-                                                
-                                                    * True - Export all the image chips, including those that do not overlap labeled data. 
+
+                                                    * True - Export all the image chips, including those that do not overlap labeled data.
                                                     * False - Export only the image chips that overlap the labelled data. This is the default.
 
                                                 - startIndex - Allows you to set the start index for the sequence of image chips.
@@ -606,37 +679,37 @@ def export_training_data(input_raster,
 
                                                 - extent - Sets the processing extent used by the function
 
-                                             Setting context parameter will override the values set using arcgis.env 
+                                             Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.(cellSize, extent)
 
                                              eg: {"exportAllTiles" : False, "startIndex": 0 }
     ------------------------------------     --------------------------------------------------------------------
-    input_mask_polygons                      Optional feature layer. The feature layer that delineates the area where 
+    input_mask_polygons                      Optional feature layer. The feature layer that delineates the area where
                                              image chips will be created.
                                              Only image chips that fall completely within the polygons will be created.
     ------------------------------------     --------------------------------------------------------------------
-    rotation_angle                           Optional float. The rotation angle that will be used to generate additional 
+    rotation_angle                           Optional float. The rotation angle that will be used to generate additional
                                              image chips.
 
-                                             An image chip will be generated with a rotation angle of 0, which 
-                                             means no rotation. It will then be rotated at the specified angle to 
-                                             create an additional image chip. The same training samples will be 
+                                             An image chip will be generated with a rotation angle of 0, which
+                                             means no rotation. It will then be rotated at the specified angle to
+                                             create an additional image chip. The same training samples will be
                                              captured at multiple angles in multiple image chips for data augmentation.
                                              The default rotation angle is 0.
     ------------------------------------     --------------------------------------------------------------------
-    reference_system                         Optional string. Specifies the type of reference system to be used to interpret 
-                                             the input image. The reference system specified should match the reference system 
-                                             used to train the deep learning model. 
+    reference_system                         Optional string. Specifies the type of reference system to be used to interpret
+                                             the input image. The reference system specified should match the reference system
+                                             used to train the deep learning model.
 
                                                 - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
 
-                                                - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
+                                                - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor
                                                   that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
 
-                                                - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
+                                                - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion.
     ------------------------------------     --------------------------------------------------------------------
     process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
-                                                
+
                                                 - False : all raster items in the image service will be mosaicked together and processed. This is the default.
 
                                                 - True : all raster items in the image service will be processed as separate images.
@@ -667,31 +740,35 @@ def export_training_data(input_raster,
 
     """
 
-    #task = "ExportTrainingDataforDeepLearning"
+    # task = "ExportTrainingDataforDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
 
     if gis._con._product == "AGOL":
-        raise RuntimeError("ArcGIS Online does not support export_training_data function.")
+        raise RuntimeError(
+            "ArcGIS Online does not support export_training_data function."
+        )
 
-    return gis._tools.rasteranalysis.export_training_data_for_deep_learning(input_raster=input_raster,
-                                                                            input_class_data=input_class_data,
-                                                                            chip_format=chip_format,
-                                                                            tile_size=tile_size,
-                                                                            stride_size=stride_size,
-                                                                            metadata_format=metadata_format,
-                                                                            class_value_field=classvalue_field,
-                                                                            buffer_radius=buffer_radius,
-                                                                            output_location=output_location,
-                                                                            input_mask_polygons=input_mask_polygons,
-                                                                            rotation_angle=rotation_angle,
-                                                                            reference_system=reference_system,
-                                                                            process_all_raster_items=process_all_raster_items,
-                                                                            blacken_around_feature=blacken_around_feature,
-                                                                            fix_chip_size=fix_chip_size,
-                                                                            context=context,
-                                                                            future=future,
-                                                                            **kwargs)
+    return gis._tools.rasteranalysis.export_training_data_for_deep_learning(
+        input_raster=input_raster,
+        input_class_data=input_class_data,
+        chip_format=chip_format,
+        tile_size=tile_size,
+        stride_size=stride_size,
+        metadata_format=metadata_format,
+        class_value_field=classvalue_field,
+        buffer_radius=buffer_radius,
+        output_location=output_location,
+        input_mask_polygons=input_mask_polygons,
+        rotation_angle=rotation_angle,
+        reference_system=reference_system,
+        process_all_raster_items=process_all_raster_items,
+        blacken_around_feature=blacken_around_feature,
+        fix_chip_size=fix_chip_size,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
     """
     url = gis.properties.helperServices.rasterAnalytics.url
@@ -762,10 +839,7 @@ def export_training_data(input_raster,
     """
 
 
-def list_models(*,
-                gis=None,
-                future=False,
-                **kwargs):
+def list_models(*, gis=None, future=False, **kwargs):
     """
     Function is used to list all the installed deep learning models.
 
@@ -782,15 +856,12 @@ def list_models(*,
 
     """
 
-
-
-    #task = "ListDeepLearningModels"
+    # task = "ListDeepLearningModels"
 
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis._con._product == "AGOL":
         raise RuntimeError("ArcGIS Online does not support list_models function.")
-    return gis._tools.rasteranalysis.list_deep_learning_models(future=future,
-                                                               **kwargs)
+    return gis._tools.rasteranalysis.list_deep_learning_models(future=future, **kwargs)
     """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
@@ -818,22 +889,25 @@ def list_models(*,
     return output_model_list
     """
 
-def classify_objects(input_raster,
-                     model,
-                     model_arguments=None,
-                     input_features=None,
-                     class_label_field=None,
-                     process_all_raster_items=False,
-                     output_name=None,
-                     context=None,
-                     *,
-                     gis=None,
-                     future=False,
-                     **kwargs):
+
+def classify_objects(
+    input_raster,
+    model,
+    model_arguments=None,
+    input_features=None,
+    class_label_field=None,
+    process_all_raster_items=False,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
     Function can be used to output feature service with assigned class label for each feature based on
-    information from overlapped imagery data using the designated deep learning model. 
+    information from overlapped imagery data using the designated deep learning model.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -843,17 +917,17 @@ def classify_objects(input_raster,
     model                                    Required model object.
     ------------------------------------     --------------------------------------------------------------------
     model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
+
                                              eg: {"name1":"value1", "name2": "value2"}
     ------------------------------------     --------------------------------------------------------------------
     input_features                           Optional feature layer.
-                                             The point, line, or polygon input feature layer that identifies the location of each object to be 
+                                             The point, line, or polygon input feature layer that identifies the location of each object to be
                                              classified and labelled. Each row in the input feature layer represents a single object.
 
-                                             If no input feature layer is specified, the function assumes that each input image contains a single object 
-                                             to be classified. If the input image or images use a spatial reference, the output from the function is a 
-                                             feature layer, where the extent of each image is used as the bounding geometry for each labelled 
-                                             feature layer. If the input image or images are not spatially referenced, the output from the function 
+                                             If no input feature layer is specified, the function assumes that each input image contains a single object
+                                             to be classified. If the input image or images use a spatial reference, the output from the function is a
+                                             feature layer, where the extent of each image is used as the bounding geometry for each labelled
+                                             feature layer. If the input image or images are not spatially referenced, the output from the function
                                              is a table containing the image ID values and the class labels for each image.
     ------------------------------------     --------------------------------------------------------------------
     class_label_field                        Optional str. The name of the field that will contain the classification label in the output feature layer.
@@ -863,7 +937,7 @@ def classify_objects(input_raster,
                                              Example:
                                                 "ClassLabel"
     ------------------------------------     --------------------------------------------------------------------
-    process_all_raster_items                 Optional bool. 
+    process_all_raster_items                 Optional bool.
 
                                              If set to False, all raster items in the image service will be mosaicked together and processed. This is the default.
 
@@ -888,7 +962,7 @@ def classify_objects(input_raster,
 
                                              Eg: {"processorType" : "CPU"}
 
-                                             Setting context parameter will override the values set using arcgis.env 
+                                             Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -900,97 +974,102 @@ def classify_objects(input_raster,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.classify_objects_using_deep_learning(input_raster=input_raster,
-                                                                          input_features=input_features,
-                                                                          output_feature_class=output_name,
-                                                                          model=model,
-                                                                          model_arguments=model_arguments,
-                                                                          class_label_field=class_label_field,
-                                                                          process_all_raster_items=process_all_raster_items,
-                                                                          context=context,
-                                                                          future=future,
-                                                                          **kwargs)
+    return gis._tools.rasteranalysis.classify_objects_using_deep_learning(
+        input_raster=input_raster,
+        input_features=input_features,
+        output_feature_class=output_name,
+        model=model,
+        model_arguments=model_arguments,
+        class_label_field=class_label_field,
+        process_all_raster_items=process_all_raster_items,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def compute_accuracy_for_object_detection(detected_features, 
-                                          ground_truth_features, 
-                                          detected_class_value_field=None, 
-                                          ground_truth_class_value_field=None, 
-                                          min_iou=None, 
-                                          mask_features=None,
-                                          out_accuracy_table_name=None, 
-                                          out_accuracy_report_name=None, 
-                                          context=None,
-                                          *,
-                                          gis=None,
-                                          future=False,
-                                          **kwargs):
+
+def compute_accuracy_for_object_detection(
+    detected_features,
+    ground_truth_features,
+    detected_class_value_field=None,
+    ground_truth_class_value_field=None,
+    min_iou=None,
+    mask_features=None,
+    out_accuracy_table_name=None,
+    out_accuracy_report_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
-    Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from 
-    the detect_objects function to ground truth data. 
+    Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
+    the detect_objects function to ground truth data.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    detected_features                        Required. The input polygon feature layer containing the objects 
+    detected_features                        Required. The input polygon feature layer containing the objects
                                              detected from the detect_objects function.
     ------------------------------------     --------------------------------------------------------------------
-    ground_truth_features                    Required. The polygon feature layer containing ground truth data.  
+    ground_truth_features                    Required. The polygon feature layer containing ground truth data.
     ------------------------------------     --------------------------------------------------------------------
-    detected_class_value_field               Optional dictionary. The field in the detected objects feature class 
-                                             that contains the class names or class values. 
+    detected_class_value_field               Optional dictionary. The field in the detected objects feature class
+                                             that contains the class names or class values.
 
-                                             If a field name is not specified, a Classvalue or Value field will 
-                                             be used. If these fields do not exist, all records will be 
-                                             identified as belonging to one class. 
+                                             If a field name is not specified, a Classvalue or Value field will
+                                             be used. If these fields do not exist, all records will be
+                                             identified as belonging to one class.
 
                                              The class values or class names must match those in the ground truth feature class exactly.
 
-                                             Syntax: A string describing the detected class value field. 
+                                             Syntax: A string describing the detected class value field.
 
                                              Example: "class"
     ------------------------------------     --------------------------------------------------------------------
-    ground_truth_class_value_field           The field in the ground truth feature class that contains the class 
-                                             names or class values. 
+    ground_truth_class_value_field           The field in the ground truth feature class that contains the class
+                                             names or class values.
 
-                                             If a field name is not specified, a Classvalue or Value field will 
-                                             be used. If these fields do not exist, all records will be 
-                                             identified as belonging to one class. 
+                                             If a field name is not specified, a Classvalue or Value field will
+                                             be used. If these fields do not exist, all records will be
+                                             identified as belonging to one class.
 
                                              The class values or class names must match those in the detected objects feature class exactly.
 
                                              Example: "class"
     ------------------------------------     --------------------------------------------------------------------
-    min_iou                                  The Intersection over Union (IoU) ratio to use as a threshold to 
-                                             evaluate the accuracy of the object-detection model. The numerator 
-                                             is the area of overlap between the predicted bounding box and 
-                                             the ground truth bounding box. The denominator is the area of 
-                                             union or the area encompassed by both bounding boxes. 
+    min_iou                                  The Intersection over Union (IoU) ratio to use as a threshold to
+                                             evaluate the accuracy of the object-detection model. The numerator
+                                             is the area of overlap between the predicted bounding box and
+                                             the ground truth bounding box. The denominator is the area of
+                                             union or the area encompassed by both bounding boxes.
 
-                                             min_IoU value should be in the range 0 to 1. [0,1] 
+                                             min_IoU value should be in the range 0 to 1. [0,1]
                                              Example:
                                                 0.5
     ------------------------------------     --------------------------------------------------------------------
-    mask_features                            Optional feature layer. A polygon feature service layer that delineates 
-                                             the area where accuracy will be computed. Only the image area that 
-                                             falls completely within the polygons will be assessed for accuracy. 
+    mask_features                            Optional feature layer. A polygon feature service layer that delineates
+                                             the area where accuracy will be computed. Only the image area that
+                                             falls completely within the polygons will be assessed for accuracy.
     ------------------------------------     --------------------------------------------------------------------
     out_accuracy_table_name                  Optional. Name of the output accuracy table item to be created.
-                                             If not provided, a random name is generated by the method and used as 
+                                             If not provided, a random name is generated by the method and used as
                                              the output name.
     ------------------------------------     --------------------------------------------------------------------
     out_accuracy_report_name                 Optional. Accuracy report can either be added as an item to the portal.
                                              or can be written to a datastore.
-                                             To add as an item, specify the name of the output report item (pdf item) 
+                                             To add as an item, specify the name of the output report item (pdf item)
                                              to be created.
-                                             Example: 
+                                             Example:
 
                                                 "accuracyReport"
 
                                              In order to write accuracy report to datastore, specify the datastore path as value to uri key.
-                                             
-                                             Example - 
+
+                                             Example -
                                                 "/fileShares/yourFileShareFolderName/accuracyReport"
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -1006,7 +1085,7 @@ def compute_accuracy_for_object_detection(detected_features,
 
                                              Eg: {"processorType" : "CPU"}
 
-                                             Setting context parameter will override the values set using arcgis.env 
+                                             Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1019,144 +1098,149 @@ def compute_accuracy_for_object_detection(detected_features,
 
         # Usage Example: This example generates an accuracy table for a specified minimum IoU value.
 
-        compute_accuracy_op = compute_accuracy_for_object_detection(detected_features=detected_features, 
-                                                                    ground_truth_features=ground_truth_features, 
-                                                                    detected_class_value_field="ClassValue", 
-                                                                    ground_truth_class_value_field="Class", 
-                                                                    min_iou=0.5, 
+        compute_accuracy_op = compute_accuracy_for_object_detection(detected_features=detected_features,
+                                                                    ground_truth_features=ground_truth_features,
+                                                                    detected_class_value_field="ClassValue",
+                                                                    ground_truth_class_value_field="Class",
+                                                                    min_iou=0.5,
                                                                     mask_features=None,
-                                                                    out_accuracy_table_name="accuracy_table", 
-                                                                    out_accuracy_report_name="accuracy_report", 
+                                                                    out_accuracy_table_name="accuracy_table",
+                                                                    out_accuracy_report_name="accuracy_report",
                                                                     gis=gis)
 
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(detected_features=detected_features, 
-                                                                          ground_truth_features=ground_truth_features, 
-                                                                          detected_class_value_field=detected_class_value_field, 
-                                                                          ground_truth_class_value_field=ground_truth_class_value_field, 
-                                                                          min_iou=min_iou, 
-                                                                          mask_features=mask_features,
-                                                                          out_accuracy_table_name=out_accuracy_table_name, 
-                                                                          out_accuracy_report_name=out_accuracy_report_name, 
-                                                                          context=context,
-                                                                          future=future,
-                                                                          **kwargs)
+    return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(
+        detected_features=detected_features,
+        ground_truth_features=ground_truth_features,
+        detected_class_value_field=detected_class_value_field,
+        ground_truth_class_value_field=ground_truth_class_value_field,
+        min_iou=min_iou,
+        mask_features=mask_features,
+        out_accuracy_table_name=out_accuracy_table_name,
+        out_accuracy_report_name=out_accuracy_report_name,
+        context=context,
+        future=future,
+        **kwargs
+    )
 
-def train_model(input_folder,
-                model_type,
-                model_arguments=None,
-                batch_size=2,
-                max_epochs=None,
-                learning_rate=None,
-                backbone_model=None,
-                validation_percent=None,
-                pretrained_model=None,
-                stop_training=True,
-                freeze_model=True,
-                overwrite_model=False,
-                output_name=None,
-                context=None,
-                *,
-                gis=None,
-                future=False,
-                **kwargs):
+
+def train_model(
+    input_folder,
+    model_type,
+    model_arguments=None,
+    batch_size=2,
+    max_epochs=None,
+    learning_rate=None,
+    backbone_model=None,
+    validation_percent=None,
+    pretrained_model=None,
+    stop_training=True,
+    freeze_model=True,
+    overwrite_model=False,
+    output_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs
+):
 
     """
-    Function can be used to train a deep learning model using the output from the 
-    export_training_data function. 
+    Function can be used to train a deep learning model using the output from the
+    export_training_data function.
     It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
     train_model function performs the training using the Raster Analytics server.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_folder                             Required string. This is the input location for the training sample data. 
-                                             It can be the path of output location on the file share raster data store or a 
-                                             shared file system path.  
-                                             The training sample data folder needs to be the output of export_training_data function, 
-                                             containing "images" and "labels" folder, 
-                                             as well as the JSON model definition file written out together by the function.  
-                                             
-                                             File share raster store and datastore path examples: 
-                                               -  /rasterStores/yourRasterStoreFolderName/trainingSampleData 
+    input_folder                             Required string. This is the input location for the training sample data.
+                                             It can be the path of output location on the file share raster data store or a
+                                             shared file system path.
+                                             The training sample data folder needs to be the output of export_training_data function,
+                                             containing "images" and "labels" folder,
+                                             as well as the JSON model definition file written out together by the function.
+
+                                             File share raster store and datastore path examples:
+                                               -  /rasterStores/yourRasterStoreFolderName/trainingSampleData
                                                - /fileShares/yourFileShareFolderName/trainingSampleData
 
-                                             Shared path example: 
-                                               - \\serverName\deepLearning\trainingSampleData 
+                                             Shared path example:
+                                               - \\serverName\deepLearning\trainingSampleData
     ------------------------------------     --------------------------------------------------------------------
-    model_type                               Required string. The model type to use for training the deep learning model.  
-                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN 
-                                              - SSD - The Single Shot Detector (SSD) is used for object detection.  
-                                              - UNET - U-Net is used for pixel classification.   
-                                              - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification. 
-                                              - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.                                              
-                                              - RETINANET - The RetinaNet is used for object detection.   
+    model_type                               Required string. The model type to use for training the deep learning model.
+                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                              - SSD - The Single Shot Detector (SSD) is used for object detection.
+                                              - UNET - U-Net is used for pixel classification.
+                                              - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
+                                              - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.
+                                              - RETINANET - The RetinaNet is used for object detection.
                                               - MASKRCNN - The MarkRCNN is used for object detection
     ------------------------------------     --------------------------------------------------------------------
     model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
-                                             Example: 
+
+                                             Example:
                                                 {"name1":"value1", "name2": "value2"}
     ------------------------------------     --------------------------------------------------------------------
     batch_size                               Optional int.
-                                             The number of training samples to be processed for training at one time.  
-                                             If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.   
-                                             
+                                             The number of training samples to be processed for training at one time.
+                                             If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.
+
                                              Example:
                                                 4
     ------------------------------------     --------------------------------------------------------------------
-    max_epochs                               Optional int. The maximum number of epochs that the model should be trained. 
-                                             One epoch means the whole training dataset will be passed forward and backward 
-                                             through the deep neural network once. 
-                                             
+    max_epochs                               Optional int. The maximum number of epochs that the model should be trained.
+                                             One epoch means the whole training dataset will be passed forward and backward
+                                             through the deep neural network once.
+
                                              Example:
                                                 20
     ------------------------------------     --------------------------------------------------------------------
-    learning_rate                            Optional float. 
-                                             The rate at which the weights are updated during the training. 
-                                             It is a small positive value in the range between 0.0 and 1.0.  
-                                             If learning rate is set to 0, it will extract the optimal learning rate 
-                                             from the learning curve during the training process.   
-                                             
+    learning_rate                            Optional float.
+                                             The rate at which the weights are updated during the training.
+                                             It is a small positive value in the range between 0.0 and 1.0.
+                                             If learning rate is set to 0, it will extract the optimal learning rate
+                                             from the learning curve during the training process.
+
                                              Example:
                                                 0.0
     ------------------------------------     --------------------------------------------------------------------
-    backbone_model                           Optional string. 
-                                             Specifies the preconfigured neural network to be used as an architecture for training the new model.  
-                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN , 
-                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 , 
+    backbone_model                           Optional string.
+                                             Specifies the preconfigured neural network to be used as an architecture for training the new model.
+                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN ,
+                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
                                                               VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
-                                             Example: 
-                                                RESNET34 
+                                             Example:
+                                                RESNET34
     ------------------------------------     --------------------------------------------------------------------
-    validation_percent                       Optional float. 
-                                             The percentage (in %) of training sample data that will be used for validating the model.  
-                                             
+    validation_percent                       Optional float.
+                                             The percentage (in %) of training sample data that will be used for validating the model.
+
                                              Example:
                                                 10
     ------------------------------------     --------------------------------------------------------------------
-    pretrained_model                         Optional dlpk portal item. 
-                                             
-                                             The pretrained model to be used for fine tuning the new model. 
-                                             It is a deep learning model package (dlpk) portal item.  
+    pretrained_model                         Optional dlpk portal item.
+
+                                             The pretrained model to be used for fine tuning the new model.
+                                             It is a deep learning model package (dlpk) portal item.
     ------------------------------------     --------------------------------------------------------------------
-    stop_training                            Optional bool. 
+    stop_training                            Optional bool.
                                              Specifies whether early stopping will be implemented.
 
-                                             - True - The model training will stop when the model is no longer improving, 
+                                             - True - The model training will stop when the model is no longer improving,
                                                regardless of the maximum epochs specified. This is the default.
                                              - False - The model training will continue until the maximum epochs is reached.
     ------------------------------------     --------------------------------------------------------------------
     freeze_model                             Optional bool.
-                                             Specifies whether to freeze the backbone layers in the pretrained model, 
-                                             so that the weights and biases in the backbone layers remain unchanged. 
+                                             Specifies whether to freeze the backbone layers in the pretrained model,
+                                             so that the weights and biases in the backbone layers remain unchanged.
 
-                                             - True - The predefined weights and biases will not be altered in the backboneModel. 
-                                               This is the default. 
-                                             - False - The weights and biases of the backboneModel may be altered to better 
-                                               fit your training samples. This may take more time to process but 
+                                             - True - The predefined weights and biases will not be altered in the backboneModel.
+                                               This is the default.
+                                             - False - The weights and biases of the backboneModel may be altered to better
+                                               fit your training samples. This may take more time to process but
                                                usually could get better results.
     ------------------------------------     --------------------------------------------------------------------
     overwrite_model                          Optional bool.
@@ -1167,18 +1251,18 @@ def train_model(input_folder,
                                              - True - The portal .dlpk item will be overwritten.
                                              - False - The portal .dlpk item will not be overwritten. This is the default.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. trained deep learning model package can either be added as an item 
+    output_name                              Optional. trained deep learning model package can either be added as an item
                                              to the portal or can be written to a datastore.
 
-                                             To add as an item, specify the name of the output deep learning model package (item) 
+                                             To add as an item, specify the name of the output deep learning model package (item)
                                              to be created.
 
                                              Example -
                                                 "trainedModel"
 
                                              In order to write the dlpk to fileshare datastore, specify the datastore path.
-                                             
-                                             Example - 
+
+                                             Example -
                                                 "/fileShares/filesharename/folder"
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -1188,17 +1272,17 @@ def train_model(input_folder,
                                              - extent - Sets the processing extent used by the function
                                              - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
                                              - processorType - Sets the processor type. "CPU" or "GPU"
-                                             Example - 
+                                             Example -
                                                 {"processorType" : "CPU"}
 
-                                             Setting context parameter will override the values set using arcgis.env 
+                                             Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ====================================     ====================================================================
 
     :return:
-        Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId. 
+        Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId.
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1206,33 +1290,37 @@ def train_model(input_folder,
     if gis._con._product == "AGOL":
         raise RuntimeError("ArcGIS Online does not support train_model function.")
 
-    return gis._tools.rasteranalysis.train_deep_learning_model(in_folder=input_folder,
-                                                               output_name=output_name, 
-                                                               model_type=model_type, 
-                                                               arguments=model_arguments, 
-                                                               batch_size=batch_size, 
-                                                               max_epochs=max_epochs, 
-                                                               learning_rate=learning_rate, 
-                                                               backbone_model=backbone_model, 
-                                                               validation_percent=validation_percent, 
-                                                               pretrained_model=pretrained_model, 
-                                                               stop_training=stop_training,
-                                                               freeze_model=freeze_model,
-                                                               overwrite_model=overwrite_model,
-                                                               context=context,
-                                                               future=future,
-                                                               **kwargs)
+    return gis._tools.rasteranalysis.train_deep_learning_model(
+        in_folder=input_folder,
+        output_name=output_name,
+        model_type=model_type,
+        arguments=model_arguments,
+        batch_size=batch_size,
+        max_epochs=max_epochs,
+        learning_rate=learning_rate,
+        backbone_model=backbone_model,
+        validation_percent=validation_percent,
+        pretrained_model=pretrained_model,
+        stop_training=stop_training,
+        freeze_model=freeze_model,
+        overwrite_model=overwrite_model,
+        context=context,
+        future=future,
+        **kwargs
+    )
+
+
 class Model:
-    def __init__(self, model = None):
+    def __init__(self, model=None):
         self._model_package = False
         if isinstance(model, _arcgis.gis.Item):
-            self._model = _json.dumps({ "itemId" : model.itemid })
+            self._model = _json.dumps({"itemId": model.itemid})
             self._model_package = True
             self.item = model
 
     def _repr_html_(self):
         if self._model_package:
-            if  hasattr(self,"item"):
+            if hasattr(self, "item"):
                 self.item._repr_html_()
         else:
             self.__repr__()
@@ -1241,20 +1329,19 @@ class Model:
         if self._model_package:
             model = _json.loads(self._model)
             if "url" in model.keys():
-                return '<Model:%s>' % self._model
-            return '<Model Title:%s owner:%s>' %(self.item.title, self.item.owner)
+                return "<Model:%s>" % self._model
+            return "<Model Title:%s owner:%s>" % (self.item.title, self.item.owner)
 
         else:
             try:
-                return '<Model:%s>' % self._model
+                return "<Model:%s>" % self._model
             except:
-                return '<empty Model>'
-
+                return "<empty Model>"
 
     def from_json(self, model):
         """
         Function is used to initialise Model object from model definition JSON
-        
+
         eg usage:
 
         model = Model()
@@ -1293,19 +1380,14 @@ class Model:
         model.from_model_path(``"\\\\sharedstorage\\sharefolder\\findtrees.emd"``)
 
         """
-        if 'http:' in model or 'https:' in model:
-            self._model = _json.dumps({ 'url' : model })
+        if "http:" in model or "https:" in model:
+            self._model = _json.dumps({"url": model})
             self._model_package = True
         else:
-            self._model = _json.dumps({ 'uri' : model })
+            self._model = _json.dumps({"uri": model})
             self._model_package = False
 
-
-    def install(self,
-                *,
-                gis=None,
-                future=False,
-                **kwargs):
+    def install(self, *, gis=None, future=False, **kwargs):
 
         """
         Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
@@ -1325,20 +1407,26 @@ class Model:
 
         """
         if self._model_package is False:
-            raise RuntimeError("model object should be created from a portal item or a portal url")
+            raise RuntimeError(
+                "model object should be created from a portal item or a portal url"
+            )
 
         if self._model is None:
-            raise RuntimeError("For install/uninstall model object should be created from a portal item or portal url")
+            raise RuntimeError(
+                "For install/uninstall model object should be created from a portal item or portal url"
+            )
 
-        #task = "InstallDeepLearningModel"
+        # task = "InstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
 
         if gis._con._product == "AGOL":
-            raise RuntimeError("ArcGIS Online does not support install method on a Model Object. The Model object can be directly used with deep learning functions without installation.")
-        return gis._tools.rasteranalysis.install_deep_learning_model(model_package=self._model,
-                                                                     future=future,
-                                                                     **kwargs)
+            raise RuntimeError(
+                "ArcGIS Online does not support install method on a Model Object. The Model object can be directly used with deep learning functions without installation."
+            )
+        return gis._tools.rasteranalysis.install_deep_learning_model(
+            model_package=self._model, future=future, **kwargs
+        )
 
         """
         url = gis.properties.helperServices.rasterAnalytics.url
@@ -1367,12 +1455,7 @@ class Model:
         return job_values["installSucceed"]
         """
 
-
-    def query_info(self,
-                   *,
-                   gis=None,
-                   future=False,
-                   **kwargs):
+    def query_info(self, *, gis=None, future=False, **kwargs):
         """
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
 
@@ -1388,16 +1471,15 @@ class Model:
            The key model information in dictionary format that describes what the settings are essential for this type of deep learning model.
         """
 
-
-        #task = "QueryDeepLearningModelInfo"
+        # task = "QueryDeepLearningModelInfo"
 
         gis = _arcgis.env.active_gis if gis is None else gis
         if self._model is None:
-            raise RuntimeError('model cannot be None')
+            raise RuntimeError("model cannot be None")
 
-        return gis._tools.rasteranalysis.query_deep_learning_model_info(model=self._model,
-                                                                        future=future,
-                                                                        **kwargs)
+        return gis._tools.rasteranalysis.query_deep_learning_model_info(
+            model=self._model, future=future, **kwargs
+        )
 
         """
         url = gis.properties.helperServices.rasterAnalytics.url
@@ -1431,11 +1513,7 @@ class Model:
             return output
         """
 
-    def uninstall(self,
-                  *,
-                  gis=None,
-                  future=False,
-                  **kwargs):
+    def uninstall(self, *, gis=None, future=False, **kwargs):
 
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
@@ -1454,20 +1532,24 @@ class Model:
 
         """
         if self._model_package is False:
-            raise RuntimeError("For install/uninstall model object should be created from a portal item or a portal url")
+            raise RuntimeError(
+                "For install/uninstall model object should be created from a portal item or a portal url"
+            )
 
-        #task = "UninstallDeepLearningModel"
+        # task = "UninstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
         if gis._con._product == "AGOL":
-            raise RuntimeError("ArcGIS Online does not support uninstall method on a Model Object.")
+            raise RuntimeError(
+                "ArcGIS Online does not support uninstall method on a Model Object."
+            )
 
         if self._model is None:
-            raise RuntimeError('model_package cannot be None')
+            raise RuntimeError("model_package cannot be None")
 
-        return gis._tools.rasteranalysis.uninstall_deep_learning_model(model_item_id=self._model,
-                                                                       future=future,
-                                                                       **kwargs)
+        return gis._tools.rasteranalysis.uninstall_deep_learning_model(
+            model_item_id=self._model, future=future, **kwargs
+        )
 
         """
         url = gis.properties.helperServices.rasterAnalytics.url
@@ -1496,25 +1578,28 @@ class Model:
         return job_values["uninstallSucceed"]
         """
 
-def export_point_dataset(data_path,
-                         output_path,
-                         block_size=50.0,
-                         max_points=8192,
-                         extra_features=[],
-                         **kwargs):
+
+def export_point_dataset(
+    data_path,
+    output_path,
+    block_size=50.0,
+    max_points=8192,
+    extra_features=[],
+    **kwargs
+):
 
     """
     Exports the las files into h5 blocks.
 
     Note: This function has been deprecated starting from `ArcGIS API for
-    Python` version 1.9.0. 
-    Export data using `Prepare Point Cloud Training Data` tool available  
+    Python` version 1.9.0.
+    Export data using `Prepare Point Cloud Training Data` tool available
     in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
 
     ==================     ======================================================
     **Argument**           **Description**
     ------------------     ------------------------------------------------------
-    data_path              Required string. Folder containing two folders with 
+    data_path              Required string. Folder containing two folders with
                            las files.
                              Folder structure:
                                train/
@@ -1523,34 +1608,35 @@ def export_point_dataset(data_path,
                                  *.las
     ------------------     ------------------------------------------------------
     output_path            Required string. Path where exported files will be
-                           dumped. This directory either should be empty or 
-                           be a totally new directory.      
+                           dumped. This directory either should be empty or
+                           be a totally new directory.
     ------------------     ------------------------------------------------------
     block_size             Optional float. Size of the h5 block file.
                            The unit of this parameter is the same as that of the
                            dataset's coordinate system. Default: 50.0 Units.
-                           The default value is based on the assumption that 
-                           dataset's coordinate system is in metric units. 
+                           The default value is based on the assumption that
+                           dataset's coordinate system is in metric units.
     ------------------     ------------------------------------------------------
-    max_points             Optional integer. Maximum number of points to be 
+    max_points             Optional integer. Maximum number of points to be
                            included in each h5 block file.
                            Default: 8192 points.
     ------------------     ------------------------------------------------------
-    extra_features         Optional list of tuple. Extra features to read 
-                           from las files. The length of tuple is 3, which 
+    extra_features         Optional list of tuple. Extra features to read
+                           from las files. The length of tuple is 3, which
                            contain feature name, max, and min values
                            respectively. For example:
-                           If you want extra features like `intensity` or 
-                           `number of returns` to be considered while  
-                           training, set this parameter like: 
-                           `extra_features=[('intensity', 5000, 0), 
-                           ('num_returns', 5, 0)]`. 
-                           The default behavior has changed from v1.8.0. 
+                           If you want extra features like `intensity` or
+                           `number of returns` to be considered while
+                           training, set this parameter like:
+                           `extra_features=[('intensity', 5000, 0),
+                           ('num_returns', 5, 0)]`.
+                           The default behavior has changed from v1.8.0.
                            Default: [].
-    ------------------     ------------------------------------------------------                           
+    ------------------     ------------------------------------------------------
     """
 
-    from ._utils.pointcloud_data import  prepare_las_data
-    prepare_las_data(data_path, block_size, max_points, output_path, extra_features, **kwargs)
+    from ._utils.pointcloud_data import prepare_las_data
 
-    
+    prepare_las_data(
+        data_path, block_size, max_points, output_path, extra_features, **kwargs
+    )

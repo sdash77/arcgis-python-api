@@ -1,4 +1,6 @@
 from ._multi_task_road_extractor import MultiTaskRoadExtractor
+
+
 class ConnectNet(MultiTaskRoadExtractor):
     """
     Creates a ConnectNet model for binary segmentation of linear features. Supports RGB
@@ -54,6 +56,7 @@ class ConnectNet(MultiTaskRoadExtractor):
 
     :returns: `ConnectNet` Object
     """
+
     pass
     # This is a dummy class just to hold the doc strings of the model ConnectNet
     # This model is a clone of MultiTaskRoadExtractor and hence not reimplemented.
