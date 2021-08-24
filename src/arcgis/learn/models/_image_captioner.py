@@ -16,6 +16,7 @@ try:
     from .._utils.image_captioning_data import show_results
     from ._arcgis_model import _resnet_family
     from .._utils.common import _get_emd_path
+    from ._codetemplate import image_captioning_prf
 
     HAS_FASTAI = True
 except ImportError:
@@ -89,6 +90,7 @@ class ImageCaptioner(ArcGISModel):
         else:
             pretrained_backbone = True
 
+        self._code = image_captioning_prf
         self.decoder_params = kwargs.get("decoder_params", {})
         self.learn = image_captioner_learner(
             self._data,
@@ -211,15 +213,15 @@ class ImageCaptioner(ArcGISModel):
     def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
         # arcgis.learn.models._inferencing
-        _emd_template["Framework"] = None
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         # object classifier config can be used.
-        _emd_template["ModelConfiguration"] = None
+        _emd_template["ModelConfiguration"] = "_image_captioner_inference"
         # handle for different types of spectrums
-        _emd_template["ExtractBands"] = None
+        _emd_template["ExtractBands"] = [0,1,2]
+        _emd_template["ModelType"] = "ImageCaptioner"
         # Inference function of object classifier.
-        _emd_template["InferenceFunction"] = None
+        _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
         # add encoder parameters
-        _emd_template["ModelParameters"]["backbone"] = None
         _emd_template["ModelParameters"]["decoder_params"] = self.decoder_params
         # chip size
         _emd_template["DataAttributes"]["chip_size"] = self._data.chip_size
