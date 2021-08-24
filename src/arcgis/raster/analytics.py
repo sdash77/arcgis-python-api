@@ -1748,8 +1748,8 @@ def summarize_raster_within(
                                              set to Percentile.
                                              Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when the 
+                                             specified percentile value lies between two input cell values.
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                                 - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
                                                 - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
@@ -8394,8 +8394,8 @@ def zonal_statistics_as_table(
                                              - True - Statistics will be calculated for all dimensions (such as time or depth) \
                                              of a multidimensional image service.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
-                                             number of values from the input value raster to be calculated are even.
+    percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when 
+                                             the specified percentile value lies between two input cell values.
 
                                                 - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                                 - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.

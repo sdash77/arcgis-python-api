@@ -664,7 +664,7 @@ def zonal_statistics(
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
     For more information,
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/zonal-statistics-global-function.htm
+     https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
 
     Parameters
     ----------
@@ -729,8 +729,8 @@ def zonal_statistics(
                              
                              This parameter is honoured only available if the statistics_type parameter is 
                              set to PERCENTILE.
-    :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
-                                          number of values from the input value raster to be calculated are even.
+    :param percentile_interpolation_type: Optional str. Specifies the method of interpolation to be used when the 
+                                          specified percentile value lies between two input cell values.
                                             - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
                                             - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
                                             - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
