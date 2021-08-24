@@ -6,9 +6,6 @@ from enum import Enum
 import arcgis.env
 
 
-from enum import Enum
-
-
 class AreaUnits(Enum):
     """
     Supported Geometry Service Area Units

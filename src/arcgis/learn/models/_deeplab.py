@@ -343,7 +343,7 @@ class DeepLab(ArcGISModel):
                 pretrained=pretrained_backbone,
             )
 
-        if not _isnotebook() and os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(data, model, metrics=accuracy).to_distributed(
