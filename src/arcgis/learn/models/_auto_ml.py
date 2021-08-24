@@ -16,8 +16,11 @@ from arcgis.features import FeatureLayer
 HAS_SK_LEARN = True
 HAS_AUTOML = True
 HAS_FASTAI = True
+HAS_NUMPY = True
+import_exception=None
 
 try:
+    from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject
     from arcgis.learn._utils.common import _get_emd_path
 except:
@@ -26,21 +29,29 @@ except:
 
 try:
     from supervised.automl import AutoML as base_AutoML
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    HAS_AUTOML = False
+
+try:
     import numpy as np
     import pandas as pd
-except:
-    HAS_AUTOML = False
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    HAS_NUMPY = False
 
 try:
     import sklearn
     from sklearn import *
-except:
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_SK_LEARN = False
 
 HAS_FAST_PROGRESS = True
 try:
     from fastprogress.fastprogress import progress_bar
-except:
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FAST_PROGRESS = False
 
 _PROTOCOL_LEVEL = 2
@@ -114,9 +125,11 @@ class AutoML(object):
         eval_metric="auto",
     ):
         if not HAS_SK_LEARN:
-            raise Exception("This module requires scikit-learn.")
-        if not HAS_SK_LEARN:
-            raise Exception("This module requires mljar-supervised.")
+            _raise_fastai_import_error(import_exception=import_exception)
+        if not HAS_AUTOML:
+            _raise_fastai_import_error(import_exception=import_exception)
+        if not HAS_NUMPY:
+            _raise_fastai_import_error(import_exception=import_exception)
         self._data = data
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
@@ -261,10 +274,11 @@ class AutoML(object):
         """
         :returns output from AutoML's model.predict_proba()
         """
-        if (self._data._is_classification == "classification") or (
-            self._data._is_classification == True
-        ):
-            return self._model.predict_proba(self._training_data)
+        if ((self._data._is_classification == 'classification') or (self._data._is_classification == True)):
+            if getattr(self._data, '_is_not_empty', False):
+                raise Exception("This method is not available when the model is initiated for prediction")
+            else:
+                return self._model.predict_proba(self._data._dataframe)
         else:
             raise Exception("This method is applicable only for classification models.")
 
@@ -373,7 +387,7 @@ class AutoML(object):
             f.write(json.dumps(emd_params, indent=4))
 
     @classmethod
-    def from_model(cls, emd_path, empty_data=None):
+    def from_model(cls, emd_path):
         """
         Creates a `MLModel` Object from an Esri Model Definition (EMD) file.
 
@@ -437,7 +451,8 @@ class AutoML(object):
         )
         empty_data._is_classification = _is_classification
         empty_data._is_not_empty = False
-        empty_data.path = emd["ResultsPath"]
+        #empty_data.path = emd["ResultsPath"]
+        empty_data.path = emd_path.parent
         return cls(data=empty_data)
 
     def _predict(self, data):
