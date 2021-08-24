@@ -905,7 +905,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def item_info(self):
-        """returns the image service's item's infomation"""
+        """The item_info property returns the image service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f": "json"}
         if self._datastore_raster:
@@ -915,7 +915,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
-        """returns the image service's XML metadata file"""
+        """The metadata returns the image service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
         if self._datastore_raster:
@@ -2571,7 +2571,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
         """
-        Function will download the image to local disk
+        The thumbnail method downloads the image service's thumbnail image to local disk.
 
         =================     ====================================================================
         **Arguments**         **Description**
@@ -2585,7 +2585,7 @@ class ImageryLayer(Layer):
 
             lyr_input.thumbnail()
 
-        :returns: string
+        :returns: string representing path to the downloaded thumbnail.
 
         """
         if out_path is None:
