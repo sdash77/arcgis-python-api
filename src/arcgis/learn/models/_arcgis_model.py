@@ -215,9 +215,13 @@ def _set_ddp_multigpu(model):
         model._multigpu_training = False
         return
     model._multigpu_training = True
+    args.gpu = args.gpu % torch.cuda.device_count()
     torch.cuda.set_device(args.gpu)
+    backend = 'nccl'
+    if os.name == 'nt':
+        backend = 'gloo'
     torch.distributed.init_process_group(
-        backend="nccl", init_method="env://", world_size=args.world_size, rank=args.rank
+        backend=backend, init_method="env://", world_size=args.world_size, rank=args.rank
     )
     torch.distributed.barrier()
     model._rank_distributed = args.gpu
