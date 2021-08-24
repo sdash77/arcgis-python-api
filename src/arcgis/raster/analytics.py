@@ -6747,7 +6747,7 @@ def optimal_path_as_line(
 
     .. code-block:: python
 
-        # Usage Example 1: To calculate the optimal path.
+        # Usage Example 1: To calculate the optimal path from a source to a destination.
 
         destination_data = gis.content.search("my_destination_data")[0].layers[0]
         accumulation_raster = gis.content.search("my_accumulation_raster")[0].layers[0]
@@ -6917,7 +6917,7 @@ def optimal_region_connections(
 
     .. code-block:: python
 
-        # Usage Example 1: To calculate the optimal region connections.
+        # Usage Example 1: To calculate the optimal connections between regions.
 
         region_data = gis.content.search("my_region_data")[0].layers[0]
         barrier_data = gis.content.search("my_barrier_data")[0].layers[0]
@@ -7838,7 +7838,7 @@ def sample(
 
     .. code-block:: python
 
-        # Usage Example 1: Create a table of samples for certain locations on a dataset.
+        # Usage Example 1: Create a table that shows values of cells from the raster(s) for defined locations.
 
         raster_1 = gis.content.search("my_raster_1")[0].layers[0]
         raster_2 = gis.content.search("my_raster_2")[0].layers[0]
@@ -8493,7 +8493,7 @@ def zonal_statistics_as_table(
 
     .. code-block:: python
 
-        # Usage Example 1: Calculate zonal statistics of a raster.
+        # Usage Example 1: Calculate the values of a raster within defined zones.
 
         zone_data = gis.content.search("my_zone_data")[0].layers[0]
         value_raster = gis.content.search("my_value_raster")[0].layers[0]
