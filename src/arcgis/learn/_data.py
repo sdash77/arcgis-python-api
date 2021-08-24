@@ -1477,6 +1477,10 @@ def prepare_data(
     else:
         _image_space_used = _pixel_space
 
+    # Image captioning data value checks.
+    if dataset_type == "MultiLabeled_Tiles" and emd.get('SingleLabelFieldFound') == 'Caption':
+        dataset_type = "ImageCaptioning"
+
     # Multispectral check
     # With Python API for ArcGIS 1.9 multispectral workflow will automatically kick in with the following conditions
     # 1. If the imagery source is not having exactly three bands
@@ -1518,7 +1522,7 @@ def prepare_data(
         ## https://gdal.org/api/raster_c_api.html?highlight=gdal%20gdt_byte#_CPPv4N12GDALDataType8GDT_ByteE
         ##
         try:
-            import gdal
+            from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
             ds = gdal.Open(_im_path)
@@ -2106,9 +2110,16 @@ def prepare_data(
     elif dataset_type == "ImageCaptioning":
         from ._utils.image_captioning_data import prepare_captioning_dataset
 
-        return prepare_captioning_dataset(
+        data = prepare_captioning_dataset(
             path, chip_size, batch_size, val_split_pct, transforms, resize_to, **kwargs
         )
+
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        _prepare_working_dir(data.path)
+
+        return data
+
     elif dataset_type == "ChangeDetection":
         from ._utils.change_detection_data import prepare_change_detection_data
 
