@@ -1822,6 +1822,8 @@ def local(
     cellsize_type="FirstOf",
     astype=None,
     process_as_multiband=None,
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT"
 ):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
@@ -1839,6 +1841,23 @@ def local(
     :param astype: output pixel type
     :param process_as_multiband: True or False, set to True to process as multiband.
                                  Applicable for operations - Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.
+    :param percentile_value: optional float. The percentile to calculate. The default is 90, indicating the 90th percentile.
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum 
+                             statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce 
+                             essentially the same result as the median statistic.
+                             Parameter is honoured only if operation is 94 or 93 (PERCENTILE operation)
+    :param percentile_interpolation_type: Optional str. Specifies the method of interpolation to be used when the specified percentile value lies between two input cell values.
+                                          Parameter is honoured only if operation is 94 or 93 (PERCENTILE operation)
+
+                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST 
+                                          method is used. If the input rasters are of floating point pixel type, 
+                                          the LINEAR method is used. This is the default.
+
+                                          - NEAREST-The nearest available value to the desired percentile is used. 
+                                          In this case, the output pixel type is the same as that of the input rasters.
+
+                                          - LINEAR-The weighted average of the two surrounding values from the desired 
+                                          percentile is used. In this case, the output pixel type is floating point.
     :return: the output raster
 
     """
@@ -1877,6 +1896,22 @@ def local(
             ] = process_as_multiband
         else:
             raise RuntimeError("process_as_multiband should be an instance of bool")
+
+    if opnum == 94 or opnum== 93:
+        if percentile_value is not None:
+            template_dict["rasterFunctionArguments"]["PercentileValue"] = percentile_value
+        if percentile_interpolation_type is not None:
+            percentile_interpolation_type_list = [
+            "AUTO_DETECT",
+            "NEAREST",
+            "LINEAR",
+        ]
+            if percentile_interpolation_type.upper() not in percentile_interpolation_type_list:
+                raise RuntimeError(
+                    "percentile_interpolation_type should be one of the following "
+                    + str(percentile_interpolation_type_list)
+                )
+            template_dict["rasterFunctionArguments"]["PercentileInterpolationType"] = percentile_interpolation_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
@@ -3221,7 +3256,56 @@ def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
         rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
     )
 
+def percentile(
+    rasters,
+    percentile_value=90,
+    percentile_interpolation_type="AUTO_DETECT",
+    extent_type="FirstOf",
+    cellsize_type="FirstOf",
+    ignore_nodata=False,
+    astype=None,
+    process_as_multiband=None,
+):
+    """
+    The Mean operation
 
+    The arguments for this function are as follows:
+
+    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
+    :param percentile_value: optional float. The percentile to calculate. The default is 90, indicating the 90th percentile.
+                             The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum 
+                             statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce 
+                             essentially the same result as the median statistic.
+    :param percentile_interpolation_type: Optional str. Specifies the method of interpolation to be used when the specified percentile value lies between two input cell values.
+
+                                          - AUTO_DETECT-If the input rasters are of integer pixel type, the NEAREST 
+                                          method is used. If the input rasters are of floating point pixel type, 
+                                          the LINEAR method is used. This is the default.
+
+                                          - NEAREST-The nearest available value to the desired percentile is used. 
+                                          In this case, the output pixel type is the same as that of the input rasters.
+
+                                          - LINEAR-The weighted average of the two surrounding values from the desired 
+                                          percentile is used. In this case, the output pixel type is floating point.
+    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
+    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param ignore_nodata: True or False, set to True to ignore NoData values
+    :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband.
+    :return: the output raster
+
+    """
+    opnum = 94 if ignore_nodata else 93
+    return local(
+        rasters,
+        opnum,
+        extent_type=extent_type,
+        cellsize_type=cellsize_type,
+        astype=astype,
+        process_as_multiband=process_as_multiband,
+        percentile_value=percentile_value,
+        percentile_interpolation_type=percentile_interpolation_type
+    )
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
 
