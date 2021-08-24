@@ -115,7 +115,10 @@ class DataFile(object):
             save_path = tempfile.gettempdir()
         if data_path:
             return self._con.get(
-                path=data_path, out_folder=save_path, try_json=False, token=self._token,
+                path=data_path,
+                out_folder=save_path,
+                try_json=False,
+                token=self._token,
             )
 
 
