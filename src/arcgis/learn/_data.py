@@ -903,8 +903,10 @@ def prepare_tabulardata(
                             Field names in the prepared data added are
                             "NEAR_DIST_1", "NEAR_DIST_2" etc.
     ---------------------   -------------------------------------------
-    preprocessors           For Fastai: Optional transforms list.
-                            For Scikit-learn:
+    preprocessors           For FullyConnectedNetworks: All the transforms
+                            are applied by default and hence users need not
+                            pass any additional transforms/preprocessors.
+                            For MLModel which uses Scikit-learn transforms:
                             1. Supply a column transformer object.
                             2. Supply a list of tuple,
                             For example:
