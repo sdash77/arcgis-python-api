@@ -9424,11 +9424,11 @@ class User(dict):
     def folders(self):
         """
         Gets the list of the user's folders
-        
+
         :return:
             List of folders represented as dictionaries.
             Dictionary keys include: username, folder id (id), title, and date created (created)
-        
+
          .. code-block:: python
 
             # Example to get name of all folders
@@ -9437,7 +9437,7 @@ class User(dict):
             folders = user.folders
             for folder in folders:
                 print(folder["title"])
-            
+
             # Example to get id of all folders
 
             user = User(gis, username)
@@ -9486,7 +9486,7 @@ class User(dict):
         .. code-block:: python
 
             # Example get items in each folder that is not root
-            
+
             user = User(gis, username)
             folders = user.folders
             for folder in folders:
