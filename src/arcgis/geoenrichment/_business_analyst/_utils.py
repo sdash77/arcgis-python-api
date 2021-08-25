@@ -81,6 +81,7 @@ def local_business_analyst_avail() -> bool:
             avail = True
     return avail
 
+
 def local_ba_data_avail() -> bool:
     """
     Check to see if any local business analyst data packs are installed.
@@ -476,7 +477,9 @@ def get_top_codes(codes: Union[pd.Series, list, tuple], threshold=0.5) -> list:
         List of unique code values.
     """
     # check the threshold to ensure it is deicmal
-    msg_thrshld = f'"threshold" must be a decimal value between zero and one, not {threshold}'
+    msg_thrshld = (
+        f'"threshold" must be a decimal value between zero and one, not {threshold}'
+    )
     assert 0 < threshold < 1, msg_thrshld
 
     # ensure the input codes iterable is a Pandas Series

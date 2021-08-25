@@ -723,7 +723,9 @@ class Country(AOI):
     ) -> Union[pd.DataFrame, Path, float]:
         """Local enrich method implementation."""
         # throw error if trying to estimate credits
-        msg_crdt = "Credit estimation is only relevant and supported with ArcGIS Online."
+        msg_crdt = (
+            "Credit estimation is only relevant and supported with ArcGIS Online."
+        )
         assert not estimate_credits, msg_crdt
 
         # lazy load arcpy
@@ -836,9 +838,14 @@ class Country(AOI):
 
             # get the geography level if index passed in
             if isinstance(standard_geography_level, int):
-                msg_std_geo = (f"There are only {len(self.geography_levels.index)} available. Please use an index "
-                               f"between 0 and {len(self.geography_levels.index) - 1}.",)
-                assert standard_geography_level <= len(self.geography_levels.index), msg_std_geo
+                msg_std_geo = (
+                    f"There are only {len(self.geography_levels.index)} available. Please use an index "
+                    f"between 0 and {len(self.geography_levels.index) - 1}.",
+                )
+                ast_stdgeo = standard_geography_level <= len(
+                    self.geography_levels.index
+                )
+                assert ast_stdgeo, msg_std_geo
                 geo_lvl = self.geography_levels.iloc[standard_geography_level][
                     "level_id"
                 ]
@@ -1082,14 +1089,23 @@ class Country(AOI):
             if isinstance(geographies, pd.DataFrame):
 
                 # must have both the level and the column with the ID's specified
-                msg_lvlandid = ("Both standard_geography_level and standard_geography_id_column must be provided to "
-                                "enrich using standard geographies.")
-                assert standard_geography_level is not None and standard_geography_id_column is not None, msg_lvlandid
+                msg_lvlandid = (
+                    "Both standard_geography_level and standard_geography_id_column must be provided to "
+                    "enrich using standard geographies."
+                )
+                ast_lvlandid = (
+                    standard_geography_level is not None
+                    and standard_geography_id_column is not None
+                )
+                assert ast_lvlandid, msg_lvlandid
 
                 # make sure the standard geography id column is available
-                msg_idandcols = (f"The provided standard_geography_id_column, {standard_geography_id_column}, does "
-                                 f"not appear to be an available column.")
-                assert standard_geography_id_column in geographies.columns, msg_idandcols
+                msg_idandcols = (
+                    f"The provided standard_geography_id_column, {standard_geography_id_column}, does "
+                    f"not appear to be an available column."
+                )
+                ast_idandcols = standard_geography_id_column in geographies.columns
+                assert ast_idandcols, msg_idandcols
 
                 # create a list of standard geography id's to use for enrichment
                 std_geo_id_lst = list(geographies[standard_geography_id_column])
