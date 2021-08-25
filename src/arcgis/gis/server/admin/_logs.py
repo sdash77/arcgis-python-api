@@ -282,7 +282,7 @@ class LogManager(BaseServer):
                     logs["logMessages"].append(log_message)
         if export is True and out_path is not None:
 
-            with open(file=out_path, mode="wb") as f:
+            with open(file=out_path, mode="w") as f:
                 hasKeys = False
                 if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter="\t")
