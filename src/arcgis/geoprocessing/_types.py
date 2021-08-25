@@ -114,12 +114,21 @@ class DataFile(object):
         if not save_path:
             save_path = tempfile.gettempdir()
         if data_path:
-            return self._con.get(
-                path=data_path,
-                out_folder=save_path,
-                try_json=False,
-                token=self._token,
-            )
+            if self._con.product == "AGOL":
+                return self._con.get(
+                    path=data_path,
+                    out_folder=save_path,
+                    try_json=False,
+                    add_token=False,
+                    token=self._token,
+                )
+            else:
+                return self._con.get(
+                    path=data_path,
+                    out_folder=save_path,
+                    try_json=False,
+                    token=self._token,
+                )
 
 
 class RasterData(object):
