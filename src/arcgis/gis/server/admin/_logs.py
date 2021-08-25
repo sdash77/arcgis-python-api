@@ -174,6 +174,7 @@ class LogManager(BaseServer):
         export=False,
         export_type="CSV",  # CSV or TAB
         out_path=None,
+        max_records_return=10000,
     ):
         """
         The query operation on the logs resource provides a way to
@@ -220,6 +221,8 @@ class LogManager(BaseServer):
                                CSV is the default.
         ------------------     --------------------------------------------------------------------
         out_path               Optional string. The path to download the log file to.
+        ------------------     --------------------------------------------------------------------
+        max_records_return     Optional int. The maximum amount of records to return. Default is 10000
         ==================     ====================================================================
 
         :return:
@@ -242,8 +245,12 @@ class LogManager(BaseServer):
         params = {
             "f": "json",
             "sinceServerStart": since_server_start,
-            "pageSize": 10000,
         }
+        if max_records_return >= 10000:
+            max_records_return -= 10000
+            params["pageSize"] = 10000
+        else:
+            params["pageSize"] = max_records_return
         url = "{url}/query".format(url=self._url)
         if start_time is not None and isinstance(start_time, datetime):
             params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
@@ -258,22 +265,36 @@ class LogManager(BaseServer):
         if machines != "*":
             qFilter["machines"] = machines.split(",")
         params["filter"] = qFilter
+
+        logs = self._con.post(path=url, postdata=params)
+        has_more = logs["hasMore"]
+        # If the hasMore member of the response object is true,
+        # pass the last item time as the startTime parameter
+        # for the next request to get the next set of records
+        while max_records_return > 1:
+            if has_more:
+                params["startTime"] = list(logs["logMessages"])[-1]
+                params["pageSize"] = max_records_return
+                max_records_return -= 10000
+                new_logs = self._con.post(path=url, postdata=params)
+                has_more = new_logs["hasMore"]
+                for log_message in new_logs["logMessages"]:
+                    logs["logMessages"].append(log_message)
         if export is True and out_path is not None:
 
-            messages = self._con.post(path=url, postdata=params)
-            with open(name=out_path, mode="wb") as f:
+            with open(file=out_path, mode="wb") as f:
                 hasKeys = False
                 if export_type == "TAB":
                     csvwriter = csv.writer(f, delimiter="\t")
                 else:
                     csvwriter = csv.writer(f)
-                for message in messages["logMessages"]:
+                for message in logs["logMessages"]:
                     if hasKeys == False:
                         csvwriter.writerow(message.keys())
                         hasKeys = True
                     csvwriter.writerow(message.values())
                     del message
-            del messages
+            del logs
             return out_path
         else:
-            return self._con.post(path=url, postdata=params)
+            return logs
