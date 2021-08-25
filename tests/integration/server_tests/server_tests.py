@@ -2,9 +2,7 @@
 Tests Related to Server API Frame
 """
 import ssl
-import sys
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 
 ssl._create_default_https_context = ssl._create_unverified_context
 import unittest
