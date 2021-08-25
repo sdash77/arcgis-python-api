@@ -81,6 +81,22 @@ def local_business_analyst_avail() -> bool:
             avail = True
     return avail
 
+def local_ba_data_avail() -> bool:
+    """
+    Check to see if any local business analyst data packs are installed.
+    """
+    avail = False
+
+    if avail_arcpy is True:
+
+        # lazy load to avoid import issues
+        import arcpy._ba
+
+        # if data is available, there will be more than one dataset available
+        avail = len(list(arcpy._ba.ListDatasets())) > 0
+
+    return avail
+
 
 def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
     """
@@ -108,14 +124,14 @@ def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
 
         elif in_source == "local" and not local_business_analyst_avail():
             raise Exception(
-                f"If using local source, the Business Analyst extension must be available"
+                f"If using local source, the Business Analyst extension must be available."
             )
 
         elif in_source == "local":
             source = "local"
 
     # if nothing provided, default to local if arcpy is available, and remote if arcpy not available
-    elif in_source is None and local_business_analyst_avail():
+    elif in_source is None and local_business_analyst_avail() and local_ba_data_avail():
         source = "local"
 
     # if a web gis is not provided, check to see if working session has one available
