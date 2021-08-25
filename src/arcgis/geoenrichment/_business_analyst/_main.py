@@ -723,9 +723,8 @@ class Country(AOI):
     ) -> Union[pd.DataFrame, Path, float]:
         """Local enrich method implementation."""
         # throw error if trying to estimate credits
-        assert (
-            not estimate_credits
-        ), "Credit estimation is only relevant and supported with ArcGIS Online."
+        msg_crdt = "Credit estimation is only relevant and supported with ArcGIS Online."
+        assert not estimate_credits, msg_crdt
 
         # lazy load arcpy
         import arcpy
@@ -837,11 +836,9 @@ class Country(AOI):
 
             # get the geography level if index passed in
             if isinstance(standard_geography_level, int):
-                assert (
-                    standard_geography_level <= len(self.geography_levels.index),
-                    f"There are only {len(self.geography_levels.index)} available. Please use an index between 0 "
-                    f"and {len(self.geography_levels.index) - 1}.",
-                )
+                msg_std_geo = (f"There are only {len(self.geography_levels.index)} available. Please use an index "
+                               f"between 0 and {len(self.geography_levels.index) - 1}.",)
+                assert standard_geography_level <= len(self.geography_levels.index), msg_std_geo
                 geo_lvl = self.geography_levels.iloc[standard_geography_level][
                     "level_id"
                 ]
@@ -1078,28 +1075,21 @@ class Country(AOI):
             )
 
             # cannot simply toss in random iterable - need a dataframe or path
-            assert (
-                isinstance(geographies, (Iterable, pd.Series)),
-                "If using standard geographies, the input geographies must be a dataframe or Iterable.",
-            )
+            msg_isgeo = "If using standard geographies, the input geographies must be a dataframe or Iterable."
+            assert isinstance(geographies, (Iterable, pd.Series)), msg_isgeo
 
             # if a dataframe is being used for input
             if isinstance(geographies, pd.DataFrame):
 
                 # must have both the level and the column with the ID's specified
-                assert (
-                    standard_geography_level is not None
-                    and standard_geography_id_column is not None,
-                    "Both standard_geography_level and standard_geography_id_column must be provided to enrich "
-                    "using standard geographies.",
-                )
+                msg_lvlandid = ("Both standard_geography_level and standard_geography_id_column must be provided to "
+                                "enrich using standard geographies.")
+                assert standard_geography_level is not None and standard_geography_id_column is not None, msg_lvlandid
 
                 # make sure the standard geography id column is available
-                assert (
-                    standard_geography_id_column in geographies.columns,
-                    f"The provided standard_geography_id_column, {standard_geography_id_column}, does not appear "
-                    f"to be an available column.",
-                )
+                msg_idandcols = (f"The provided standard_geography_id_column, {standard_geography_id_column}, does "
+                                 f"not appear to be an available column.")
+                assert standard_geography_id_column in geographies.columns, msg_idandcols
 
                 # create a list of standard geography id's to use for enrichment
                 std_geo_id_lst = list(geographies[standard_geography_id_column])

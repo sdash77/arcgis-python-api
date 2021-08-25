@@ -50,9 +50,8 @@ def change_spatial_reference(
     geom_col = geom_col_lst[0]
 
     # ensure the input spatially enabled dataframe validates
-    assert (
-        input_dataframe.spatial.validate()
-    ), "The DataFrame does not appear to be valid."
+    msg_valdf = "The DataFrame does not appear to be valid."
+    assert input_dataframe.spatial.validate(), msg_valdf
 
     # if a spatial reference is set for the dataframe, just use it
     if input_dataframe.spatial.sr is not None:
@@ -203,17 +202,15 @@ def get_weighted_centroid(
 
     """
     # check the input dataframe
-    assert isinstance(input_dataframe, pd.DataFrame)
-    assert (
-        input_dataframe.spatial.validate()
-    ), "A valid Spatially Enabled DataFrame must be provided for "
+    msg_valdf = "A valid Spatially Enabled DataFrame must be provided."
+    assert isinstance(input_dataframe, pd.DataFrame), msg_valdf
+    assert input_dataframe.spatial.validate(), msg_valdf
 
     # ensure the input columns are in the dataframe
     in_cols = input_dataframe.columns
     for col in [grouping_column, weighting_column]:
-        assert (
-            col in in_cols
-        ), f'{col} does not appear to be in the DataFrame columns [{", ".join(in_cols)}]'
+        msg_col = f'{col} does not appear to be in the DataFrame columns [{", ".join(in_cols)}]'
+        assert col in in_cols, msg_col
 
     # ensure the weighting column is a numeric column
     assert is_numeric_dtype(input_dataframe[weighting_column]), (

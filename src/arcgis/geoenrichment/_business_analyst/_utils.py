@@ -91,7 +91,7 @@ def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
     # lazy import to load the active_gis
     from arcgis.env import active_gis
 
-    # if string input is provided, ensure setting to local and lowercase
+    # if string input is provided, should be 'local'
     if isinstance(in_source, str):
 
         # cast to lowercast
@@ -460,9 +460,8 @@ def get_top_codes(codes: Union[pd.Series, list, tuple], threshold=0.5) -> list:
         List of unique code values.
     """
     # check the threshold to ensure it is deicmal
-    assert (
-        0 < threshold < 1
-    ), f'"threshold" must be a decimal value between zero and one, not {threshold}'
+    msg_thrshld = f'"threshold" must be a decimal value between zero and one, not {threshold}'
+    assert 0 < threshold < 1, msg_thrshld
 
     # ensure the input codes iterable is a Pandas Series
     cd_srs = codes if isinstance(codes, pd.Series) else pd.Series(codes)
