@@ -31,6 +31,7 @@ import fasttext.util
 
 EPS = 1e-5
 
+
 class EncoderAttention(nn.Module):
     def __init__(self, backbone, cut=None, pretrained=True):
         """Load the pretrained backbone and replace top fc layer."""

@@ -45,7 +45,7 @@ class ChildObjectDetector:
         else:
             self.emd = json.loads(model)
         import arcpy
-        
+
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device("cuda")
             arcgis.env._processorType = "GPU"
@@ -61,22 +61,22 @@ class ChildObjectDetector:
     def getParameterInfo(self, required_parameters):
         required_parameters.extend(
             [
-            {
-                "name": "beam_width",
-                "dataType": "numeric",
-                "value": 5,
-                "required": False,
-                "displayName": "The number of captions to consider.",
-                "description": "The number of captions to consider.",
-            },
-            {
-                "name": "max_length",
-                "dataType": "numeric",
-                "value": 20,
-                "required": False,
-                "displayName": "Maximum length of the caption.",
-                "description": "Maximum length of the caption.",
-            },            
+                {
+                    "name": "beam_width",
+                    "dataType": "numeric",
+                    "value": 5,
+                    "required": False,
+                    "displayName": "The number of captions to consider.",
+                    "description": "The number of captions to consider.",
+                },
+                {
+                    "name": "max_length",
+                    "dataType": "numeric",
+                    "value": 20,
+                    "required": False,
+                    "displayName": "Maximum length of the caption.",
+                    "description": "Maximum length of the caption.",
+                },
             ]
         )
         return required_parameters
@@ -90,13 +90,9 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd["BatchSize"])
 
-        self.beam_width = int(
-            scalars.get("beam_width", 5)
-        )  # Default 0.5 threshold
+        self.beam_width = int(scalars.get("beam_width", 5))  # Default 0.5 threshold
 
-        self.max_length = int(
-            scalars.get("max_length", 20)
-        )  # Default 0.5 threshold
+        self.max_length = int(scalars.get("max_length", 20))  # Default 0.5 threshold
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of

@@ -1696,7 +1696,8 @@ class FeatureLayer(Layer):
 
         params["returnCountOnly"] = True
         if where == "1=1":
-            params["where"] = f"{self.properties.objectIdField} > 0"
+            if "objectIdField" in self.properties:
+                params["where"] = f"{self.properties.objectIdField} > 0"
             record_count = self._query(url, params, raw=as_raw)
             params["where"] = "1=1"
         else:

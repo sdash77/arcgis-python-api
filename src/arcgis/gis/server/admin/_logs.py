@@ -290,9 +290,9 @@ class LogManager(BaseServer):
                     csvwriter = csv.writer(f)
                 for message in logs["logMessages"]:
                     if hasKeys == False:
-                        csvwriter.writerow(message.keys())
+                        csvwriter.writerow(list(message.keys()))
                         hasKeys = True
-                    csvwriter.writerow(message.values())
+                    csvwriter.writerow(list(message.values()))
                     del message
             del logs
             return out_path
