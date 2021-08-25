@@ -3,7 +3,6 @@ Tests Related to Server API Frame
 """
 import ssl
 
-
 ssl._create_default_https_context = ssl._create_unverified_context
 import unittest
 import pandas as pd
@@ -55,7 +54,7 @@ AGOL_PASSWORD = None
 
 if AGOL_USERNAME and AGOL_PASSWORD:
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     class ServerAGOLTest(unittest.TestCase):
         """test the AGOL Server functionality"""
 
@@ -64,7 +63,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
                 url=AGOL_URL, username=AGOL_USERNAME, password=AGOL_PASSWORD
             )
 
-        @unittest.SkipTest
+        # @unittest.SkipTest
         def test_reports(self):
             res = []
             urls = self._gis._con.get(
@@ -91,7 +90,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             res.append(isinstance(df, pd.DataFrame))
             self.assertTrue(all(res))
 
-        @unittest.SkipTest
+        # @unittest.SkipTest
         def test_get_found(self):
             from arcgis.features import FeatureLayerCollection
 
@@ -119,7 +118,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
                 s = c.get(name="02_2016__Gas_Transmission_Facility_Layers_PD")
             self.assertIsInstance(s, FeatureLayerCollection)
 
-        @unittest.SkipTest
+        # @unittest.SkipTest
         def test_get_not_found(self):
             from arcgis.features import FeatureLayerCollection
 
@@ -145,7 +144,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             s = c.get(name="IDONTEXIST")
             self.assertIsNone(s)
 
-        @unittest.SkipTest
+        # @unittest.SkipTest
         def test_agol_server(self):
             res = []
             urls = self._gis._con.get(
@@ -174,7 +173,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
 
 
 #############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class ServerPortalTest(unittest.TestCase):
     """tests the connection to arcgis server object from portal"""
 
@@ -194,7 +193,7 @@ class ServerPortalTest(unittest.TestCase):
         )
         self.assertIsInstance(s, Server)
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_portal_get_server_manager(self):
         """tests getting server manager object"""
         from arcgis.gis import GIS
@@ -203,14 +202,14 @@ class ServerPortalTest(unittest.TestCase):
         gis = self._gis
         self.assertIsInstance(gis.admin.servers, ServerManager)
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_list_servers(self):
         """tests the server listing function on server manager"""
         sm = self._gis.admin.servers
 
         self.assertTrue(all(sm.list()))
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_validate(self):
         """tests validate servers"""
         sm = self._gis.admin.servers
@@ -218,7 +217,7 @@ class ServerPortalTest(unittest.TestCase):
 
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class ServerCatalogCreationTests(unittest.TestCase):
     """
     test server login
@@ -304,7 +303,7 @@ class ServerCatalogCreationTests(unittest.TestCase):
 
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class ServerPropertyTest(unittest.TestCase):
     """
     test server login & properties on class
@@ -392,7 +391,7 @@ class ServerPropertyTest(unittest.TestCase):
 ############################################################################
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class catalog_info_test(unittest.TestCase):
     """
     test server catalog view for a server
@@ -415,19 +414,19 @@ class catalog_info_test(unittest.TestCase):
         self.assertTrue(True)
 
     # -------- Auth Test ---------------------------------------------------
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_info_auth(self):
         info = self._server_auth._info
         self.assertIsInstance(info, Info)
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_info_auth_timezones(self):
         info = self._server_auth._info
         self.assertIsInstance(info.available_time_zones(), dict)
 
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class server_logs_test(unittest.TestCase):
     """
     test server catalog view for a server
@@ -455,7 +454,7 @@ class server_logs_test(unittest.TestCase):
 
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class server_machines_test(unittest.TestCase):
     """
     test server machines module
