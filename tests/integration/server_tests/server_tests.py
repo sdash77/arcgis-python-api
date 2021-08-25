@@ -190,8 +190,8 @@ class ServerPortalTest(unittest.TestCase):
         s = Server(
             url="https://pythonapi.playground.esri.com/portal",
             gis=None,
-            username="naubry",
-            password="97Jenniferst",
+            username="admin",
+            password="esri.agp",
             tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
         self.assertIsInstance(s, Server)
@@ -228,8 +228,8 @@ class ServerCatalogCreationTests(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
 
     # ----------------------------------------------------------------------
     def test_931_catalog(self):
@@ -314,8 +314,8 @@ class ServerPropertyTest(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
 
     # ----------------------------------------------------------------------
     def test_content(self):
@@ -402,8 +402,8 @@ class catalog_info_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
         url_1081 = URLS[5]
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
@@ -412,7 +412,7 @@ class catalog_info_test(unittest.TestCase):
 
     # ----- No Auth Test ---------------------------------------------------
     def test_info_noauth(self):
-        if hasattr(self._server_noauth, "naubry"):
+        if hasattr(self._server_noauth, "admin"):
             self.assertTrue(False)
         self.assertTrue(True)
 
@@ -437,8 +437,8 @@ class server_logs_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
         url_1081 = URLS[5]
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
@@ -466,8 +466,8 @@ class server_machines_test(unittest.TestCase):
     # ----------------------------------------------------------------------
     def setUp(self):
         url_1081 = URLS[5]
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
         ).admin
@@ -503,8 +503,8 @@ class server_usagereports_test(unittest.TestCase):
     # ----------------------------------------------------------------------
     def setUp(self):
         url_1081 = URLS[5]
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
         ).admin
@@ -542,8 +542,8 @@ class server_userandusers_test(unittest.TestCase):
     # ----------------------------------------------------------------------
     def setUp(self):
         url_1081 = URLS[5]
-        self._username = "naubry"
-        self._password = "97Jenniferst"
+        self._username = "admin"
+        self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
         ).admin
@@ -575,7 +575,7 @@ class server_userandusers_test(unittest.TestCase):
     def test_get(self):
 
         isinstance(self.users, UserManager)
-        user = self.users.get(username="naubry")
+        user = self.users.get(username="admin")
         self.assertIsInstance(user, (list, User))
 
     # @unittest.SkipTest
@@ -604,7 +604,7 @@ class server_userandusers_test(unittest.TestCase):
 
         roles = self.users.roles
         isinstance(roles, RoleManager)
-        role = roles.get_role("naubry")
+        role = roles.get_role("admin")
 
         self.assertIsInstance(role, (list, Role))
 
