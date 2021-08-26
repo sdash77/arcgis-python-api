@@ -26,6 +26,7 @@ associated with the area around the site will be returned.
 """
 
 __all__ = [
+    "BufferStudyArea",
     "Country",
     "get_countries",
     "create_report",
@@ -35,6 +36,7 @@ __all__ = [
 ]
 
 from .enrichment import (
+    BufferStudyArea,
     Country,
     get_countries,
     create_report,
