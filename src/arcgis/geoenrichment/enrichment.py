@@ -13,7 +13,11 @@ from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
 
 from . import _business_analyst
-from ._business_analyst._utils import local_vs_gis, local_business_analyst_avail, local_ba_data_avail
+from ._business_analyst._utils import (
+    local_vs_gis,
+    local_business_analyst_avail,
+    local_ba_data_avail,
+)
 from ._ge import _GeoEnrichment
 
 
