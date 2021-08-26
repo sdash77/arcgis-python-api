@@ -3298,7 +3298,7 @@ def create_image_collection(
                                          Option available only on ArcGIS online
 
                                          Example:
-                                            r"C:\data\temp\uploaded.gdb\test"
+                                            ``"C:\\data\\temp_uploaded.gdb\\test"``
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
