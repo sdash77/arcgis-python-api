@@ -327,11 +327,11 @@ class ParcelFabricManager(object):
                                  they exist. Pairs of field name and value.
 
 
-                                 :Syntax: 
+                                 :Syntax:
                                  ``attributeOverrides = [{
                                                             "type": "PropertySet",
-                                                            "propertySetItems": [ 
-                                                              <field name> , 
+                                                            "propertySetItems": [
+                                                              <field name> ,
                                                               <field value>
                                                             ]
                                                         }]``
@@ -435,11 +435,11 @@ class ParcelFabricManager(object):
         attribute_overrides         Optional Dictionary. To set fields on the child parcel lines with a
                                     specific value. Uses a key/value pair of FieldName/Value.
 
-                                    :Syntax: 
+                                    :Syntax:
                                     ``attributeOverrides = [{
                                                                 "type": "PropertySet",
-                                                                "propertySetItems": [ 
-                                                                  <field name> , 
+                                                                "propertySetItems": [
+                                                                  <field name> ,
                                                                   <field value>
                                                                 ]
                                                             }]``
