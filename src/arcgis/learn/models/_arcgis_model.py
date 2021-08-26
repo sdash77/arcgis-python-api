@@ -861,7 +861,7 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
-        if os.environ.get('BLOCK_MODEL_TRAINING', 0) == "1":
+        if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
 
         with warnings.catch_warnings():

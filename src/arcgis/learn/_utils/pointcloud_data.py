@@ -300,14 +300,14 @@ class PointCloudDataset(Dataset):
             raise Exception(
                 "background_classcode can only be used when `classes_of_interest` is passed."
             )
-        
+
         # dummy class mapping for predict case.
-        full_class_mapping = {0:0}
+        full_class_mapping = {0: 0}
         # will overwrite classmapping when classification key is present.
-        if 'classification' in self.statistics: 
+        if "classification" in self.statistics:
             full_class_mapping = {
-                int(v['classCode']): str(v['classCode']) 
-                for v in self.statistics['classification']['table']
+                int(v["classCode"]): str(v["classCode"])
+                for v in self.statistics["classification"]["table"]
             }
 
         orig_classes = list(full_class_mapping.keys())
@@ -2853,7 +2853,12 @@ def predict_h5(self, path, output_path, **kwargs):
     if "xyz" in features_to_keep:
         features_to_keep.remove("xyz")
     point_cloud_dataset = PointCloudDataset(
-        path, None, None, "", extra_features=features_to_keep, attributes=attributes,
+        path,
+        None,
+        None,
+        "",
+        extra_features=features_to_keep,
+        attributes=attributes,
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
