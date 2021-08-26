@@ -9,12 +9,12 @@ gis = GIS('pro')
 
 
 def test_get_countries_local():
-    res = get_countries()
+    res = get_countries(gis)
     assert isinstance(res, list)
 
 
 def test_get_countries_local_df():
-    res = get_countries(as_df=True)
+    res = get_countries(gis, as_df=True)
     assert isinstance(res, pd.DataFrame)
 
 
