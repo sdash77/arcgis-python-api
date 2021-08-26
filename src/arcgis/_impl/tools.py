@@ -7892,7 +7892,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         if raster_type_name == "mosaic_dataset":
-            raster_type=None
+            raster_type = None
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,

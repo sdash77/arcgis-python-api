@@ -3168,7 +3168,11 @@ def create_image_collection(
                                          "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
                                          "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
                                          "ZY3-CRESDA"]         
-                                         
+
+                                         If an existing mosaic dataset is being published as a 
+                                         dynamic imagery layer using the md_to_upload parameter, the
+                                         raster_type_name parameter can be set to None as it is not required.
+
 
                                          Example:
                                             "QuickBird"
@@ -3271,17 +3275,26 @@ def create_image_collection(
                                             | "defineNodata":True,                                            
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
+
+                                         | The context parameter can be used to add new fields when creating \
+                                         the image collection.
+
+
+                                         Example:
+                                            | {"fields": [{"name": "cloud_cover", "type": "Long"},
+                                            | {"name": "cloud_shadow_count", "type": "Long"}]}
+
     ------------------                   --------------------------------------------------------------------
     md_to_upload                         Optional string. Provide value for md_to_upload parameter to publish hosted 
-                                         dynamic imagery layer by uploading existing mosaic dataset.
-                                         It accepts path to the existing mosaic dataset.
+                                         dynamic imagery layer by uploading an existing mosaic dataset.
+                                         It accepts path to an existing mosaic dataset.
 
                                          In order to publish an exisiting mosaic dataset, specify the input data of the mosaic dataset
                                          as a value to the input_rasters parameters so that it can be uploaded to ArcGIS 
                                          Online.
 
-                                         raster_type_name parameter can be set to None as it is not a required parameter to publish
-                                         imagery layer from mosaic dataset.
+                                         raster_type_name parameter can be set to None as it is not required to publish
+                                         imagery layer from a mosaic dataset.
 
                                          Option available only on ArcGIS online
 
@@ -3808,6 +3821,18 @@ def create_image_collection(
                                                              raster_type_params={"productType":"All","processingTemplate":"Multispectral"},
                                                              context={"image_collection_properties":{"imageCollectionType":"Satellite"},"byref":True},
                                                              gis = gis)
+
+        # Usage Example 10: This example publishes an existing mosaic dataset as a dynamic imagery layer on ArcGIS Online. 
+
+        # Specify the actual source data path referenced by the uploaded mosaic dataset using input_rasters parameter. The data would be uploaded 
+        # to the ArcGIS Online's user store from this path. 
+
+        landsat_mosaic  = create_image_collection(image_collection = "landsat_image_collection",
+                                                  input_rasters=["C:\\data\\landsat_data_folder"],
+                                                  raster_type_name = None,
+                                                  context={"upload_properties":{"displayProgress":True}},
+                                                  md_to_upload=r"C:\\data\\md.gdb\\landsat",
+                                                  gis=gis)
 
     """
 
