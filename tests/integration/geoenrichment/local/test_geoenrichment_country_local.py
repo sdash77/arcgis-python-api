@@ -1,26 +1,30 @@
 import pytest
 
+from arcgis.gis import GIS
+
 from ..geoenrichment_country_tests import *
+
+gis = GIS('pro')
 
 @pytest.fixture
 def usa():
-    return Country.get('USA', gis='local')
+    return Country.get('USA', gis=gis)
 
 
 def test_usa_local() -> None:
-    usa_test('local')
+    usa_test(gis)
 
 
 def test_get_usa_local() -> None:
-    get_usa_test('local')
+    get_usa_test(gis)
 
 
 def test_test_get_can_local() -> None:
-    get_can_test('local')
+    get_can_test(gis)
 
 
 def test_get_usa_2019_local() -> None:
-    get_usa_2019_test('local')
+    get_usa_2019_test(gis)
 
 
 def test_dataset_local(usa) -> None:

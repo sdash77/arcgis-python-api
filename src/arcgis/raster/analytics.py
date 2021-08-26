@@ -6410,7 +6410,7 @@ def subset_multidimensional_raster(
     .. code-block:: python
 
         # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
-        values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
+        # values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
 
         subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr,
                                                        variables=["cceiling","ccover"],
@@ -6745,6 +6745,20 @@ def optimal_path_as_line(
 
     :return: Output Feature Layer Item
 
+    .. code-block:: python
+
+        # Usage Example 1: To calculate the optimal path from a source to a destination.
+
+        destination_data = gis.content.search("my_destination_data")[0].layers[0]
+        accumulation_raster = gis.content.search("my_accumulation_raster")[0].layers[0]
+        back_direction_raster = gis.content.search("my_back_direction_raster")[0].layers[0]
+
+        optimal_path_op = optimal_path_as_line(input_destination_data=destination_data,
+                                               input_distance_accumulation_raster=accumulation_raster,
+                                               input_back_direction_raster=back_direction_raster,
+                                               output_feature_name="optimal_path_feature",
+                                               gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -6900,6 +6914,21 @@ def optimal_region_connections(
     ====================================     ====================================================================
 
     :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
+
+    .. code-block:: python
+
+        # Usage Example 1: To calculate the optimal connections between regions.
+
+        region_data = gis.content.search("my_region_data")[0].layers[0]
+        barrier_data = gis.content.search("my_barrier_data")[0].layers[0]
+        cost_raster = gis.content.search("my_cost_raster")[0].layers[0]
+
+        optimal_region_op = optimal_region_connections(input_region_data=region_data,
+                                                       input_barrier_data=barrier_data,
+                                                       input_cost_raster=cost_raster,
+                                                       output_optimal_lines_name="optimal_lines_feature",
+                                                       output_neighbor_connections_name="optimal_region_feature",
+                                                       gis=gis)
 
     """
 
@@ -7632,6 +7661,33 @@ def manage_multidimensional_raster(
     :return:
     output_raster : Imagery Layer URL
 
+    .. code-block:: python
+
+        # Usage Example 1: This example appends variables to a multidimensional raster dataset.
+
+        target_mdim_raster = gis.content.search("my_target_mdim_raster")[0].layers[0]
+        input_mdim_raster = gis.content.search("my_input_mdim_raster")[0].layers[0]
+        variables_to_add = ["variable_1", "variable_2"]
+
+        manage_mdim_op = manage_multidimensional_raster(target_multidimensional_raster=target_mdim_raster,
+                                                        manage_mode="APPEND_VARIABLES",
+                                                        variables=variables_to_add,
+                                                        input_multidimensional_rasters=[input_mdim_raster],
+                                                        gis=gis)
+
+        # Usage Example 2: This example adds the StdZ dimension to a multidimensional raster dataset.
+
+        target_mdim_raster = gis.content.search("my_target_mdim_raster")[0].layers[0]
+
+        manage_mdim_op = manage_multidimensional_raster(target_multidimensional_raster=target_mdim_raster,
+                                                        manage_mode="ADD_DIMENSION",
+                                                        variables="my_variable",
+                                                        dimension_name="StdZ",
+                                                        dimension_value="0",
+                                                        dimension_description="Depth",
+                                                        dimension_unit="m",
+                                                        gis=gis)
+
     """
 
     # task = "ManageMultidimensionalRaster"
@@ -7779,6 +7835,20 @@ def sample(
     ====================================     ====================================================================
 
     :return: Feature Layer or Table object
+
+    .. code-block:: python
+
+        # Usage Example 1: Create a table that shows values of cells from the raster(s) for defined locations.
+
+        raster_1 = gis.content.search("my_raster_1")[0].layers[0]
+        raster_2 = gis.content.search("my_raster_2")[0].layers[0]
+        rasters = [raster1, raster2]
+        location_data = gis.content.search("my_location_data")[0].layers[0]
+
+        sample_op = sample(input_rasters=rasters,
+                           input_location_data=location_data,
+                           output_name="sample_op_data",
+                           gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -8420,6 +8490,19 @@ def zonal_statistics_as_table(
     ====================================     ====================================================================
 
     :return: Feature Layer
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculate the values of a raster within defined zones.
+
+        zone_data = gis.content.search("my_zone_data")[0].layers[0]
+        value_raster = gis.content.search("my_value_raster")[0].layers[0]
+
+        zonal_stats_table = zonal_statistics_as_table(input_zone_raster_or_features=zone_data,
+                                                      input_value_raster=value_raster,
+                                                      zone_field="my_zone_field",
+                                                      output_name="my_zonal_stats_table",
+                                                      gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis

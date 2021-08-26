@@ -215,9 +215,16 @@ def _set_ddp_multigpu(model):
         model._multigpu_training = False
         return
     model._multigpu_training = True
+    args.gpu = args.gpu % torch.cuda.device_count()
     torch.cuda.set_device(args.gpu)
+    backend = "nccl"
+    if os.name == "nt":
+        backend = "gloo"
     torch.distributed.init_process_group(
-        backend="nccl", init_method="env://", world_size=args.world_size, rank=args.rank
+        backend=backend,
+        init_method="env://",
+        world_size=args.world_size,
+        rank=args.rank,
     )
     torch.distributed.barrier()
     model._rank_distributed = args.gpu
@@ -854,6 +861,9 @@ class ArcGISModel(object):
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
+        if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
+            raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()

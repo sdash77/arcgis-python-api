@@ -1,3 +1,4 @@
+from fastai.vision.data import ImageList
 import pandas as pd
 import json
 from pathlib import Path
@@ -8,6 +9,9 @@ import sys
 from typing import List, Callable, Tuple, Dict, cast
 import warnings
 import traceback
+import xml.etree.ElementTree as ET
+
+from traitlets.traitlets import parse_notifier_name
 from .env import raise_fastai_import_error
 
 try:
@@ -535,6 +539,21 @@ def parse_json(obj, keys, index, caption_list, club_items):
             parse_json(obj, keys, index + 1, caption_list, club_items)
 
 
+def parse_xml_from_image_file(imagefile):
+    """
+    Function that returns captions for an image for image captioning data.
+    input: imagefile (Path)
+    returns: labels (List[str])
+    """
+    xmlfile = (
+        imagefile.parents[1]
+        / "labels"
+        / imagefile.name.replace("{ims}".format(ims=imagefile.suffix), ".xml")
+    )
+    labels = ET.parse(xmlfile).getroot().find("object").find("name").text
+    return labels
+
+
 def get_annotations(ann_object, key, read_type):
     if read_type == "json":
         # 'images,filename', 'images,sentences,raw'
@@ -547,10 +566,12 @@ def get_annotations(ann_object, key, read_type):
         parse_json(ann_object, keys, 0, all_captions, club_items=True)
         parse_json(ann_object, input_keys, 0, all_images, club_items=False)
         return all_images, all_captions
-    if ann_path == "csv":
+    if read_type == "csv":
         raise NotImplementedError
-    if ann_path == "arcgis":
-        raise NotImplementedError
+    if read_type == "arcgis":
+        all_images = ImageList.from_folder(ann_object).items
+        all_captions = [[parse_xml_from_image_file(f)] for f in all_images]
+        return all_images, all_captions
 
 
 def collate_fn(data):
@@ -605,7 +626,7 @@ def prepare_captioning_dataset(
         )
 
     # Read file and get all captions.
-    imagecap_kwargs = kwargs.get("image_captioning_kwargs")
+    imagecap_kwargs = kwargs.get("image_captioning_kwargs", {})
     if (path / "annotations.json").exists():
         # RSICD Dataset.
         imagecap_kwargs = {"annotations_key": "images,filename|images,sentences,raw"}
@@ -621,7 +642,8 @@ def prepare_captioning_dataset(
         ann_type = "csv"
 
     elif (path / "labels").exists():
-        annotation_object = path / "labels"
+        annotation_object = path / "images"
+        annotations_key = path / "labels"
         ann_type = "arcgis"
 
     else:
@@ -707,7 +729,10 @@ def prepare_captioning_dataset(
     data.resize_to = resize_to
     # add language
     data.lang = lang
+    # add path
+    data.path = path
     # return databunch.
+    data._dataset_type = "ImageCaptioning"
     return data
 
 
@@ -728,7 +753,7 @@ def show_batch(self, rows=2, **kwargs):
     show_coords = kwargs.get("show_coords", False)
     fig, ax = plt.subplots(rows, rows, figsize=figsize)
 
-    img_idxs = [random.randint(0, len(self.train_ds)) for k in range(rows ** 2)]
+    img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows ** 2)]
     # iterate through the rows and get transformed images from the dataset class
     for k, idx in enumerate(img_idxs):
         img, captions = self.train_ds[idx]
@@ -786,7 +811,15 @@ def show_results(self, rows, **kwargs):
             caption_pred,
             show_coords,
         )
-        if k == rows - 1:
+
+        if k + 1 == rows:
             break
+
+    # delete empty plots in case of small datasets.
+    if k + 1 < rows:
+        for i in range(k + 1, rows):
+            fig.delaxes(ax[i][0])
+            fig.delaxes(ax[i][1])
+
     if return_fig:
         return fig

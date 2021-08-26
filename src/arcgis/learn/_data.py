@@ -11,6 +11,7 @@ import tempfile
 import types
 import traceback
 import copy
+import warnings
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
@@ -688,61 +689,75 @@ def prepare_textdata(
     """
     Prepares a text data object from the files present at data folder
 
-    =====================   =================================================
+    =====================   ===========================================
     **Argument**            **Description**
-    ---------------------   -------------------------------------------------
-    path                    Required directory path. The directory path where
-                            the training and validation files are present.
-    ---------------------   -------------------------------------------------
-    task                    Required string. The task for which the dataset is
-                            prepared. Available choice at this point is "classification"
-                            and "sequence_translation".
-    ---------------------   -------------------------------------------------
-    text_columns            Required string. The column that will be used as
-                            feature.
-    ---------------------   -------------------------------------------------
-    label_columns           Required list. The list of columns denoting the
-                            class label/translated text to predict. Provide a list of columns
-                            in case of multi-label classification problem
-    ---------------------   -------------------------------------------------
-    train_file              Optional string. The file name containing the
-                            training data. Supported file formats/extensions are
-                            .csv and .tsv
+    ---------------------   -------------------------------------------
+    path                    Required directory path.
+                            The directory path where the training and
+                            validation files are present.
+    ---------------------   -------------------------------------------
+    task                    Required string.
+                            The task for which the dataset is prepared.
+                            Available choice at this point is
+                            "classification" and "sequence_translation".
+    ---------------------   -------------------------------------------
+    text_columns            Required string.
+                            The column that will be used as feature.
+    ---------------------   -------------------------------------------
+    label_columns           Required list.
+                            The list of columns denoting the class
+                            label/translated text to predict. Provide
+                            a list of columns in case of multi-label
+                            classification problem
+    ---------------------   -------------------------------------------
+    train_file              Optional string.
+                            The file name containing the training data.
+                            Supported file formats/extensions are .csv
+                            and .tsv
                             Default value is `train.csv`
-    ---------------------   -------------------------------------------------
-    valid_file              Optional string. The file name containing the
-                            validation data. Supported file formats/extensions
-                            are .csv and .tsv.
-                            Default value is `None`. If None then some portion
-                            of the training data will be kept for validation
-                            (based on the value of `val_split_pct` parameter)
-    ---------------------   -------------------------------------------------
-    val_split_pct           Optional float. Percentage of training data to keep
-                            as validation.
+    ---------------------   -------------------------------------------
+    valid_file              Optional string.
+                            The file name containing the validation data.
+                            Supported file formats/extensions are .csv
+                            and .tsv.
+                            Default value is `None`. If None then some
+                            portion of the training data will be kept
+                            for validation (based on the value of
+                            `val_split_pct` parameter)
+    ---------------------   -------------------------------------------
+    val_split_pct           Optional float.
+                            Percentage of training data to keep as
+                            validation.
                             By default 10% data is kept for validation.
-    ---------------------   -------------------------------------------------
-    seed                    Optional integer. Random seed for reproducible
-                            train-validation split.
+    ---------------------   -------------------------------------------
+    seed                    Optional integer.
+                            Random seed for reproducible train-validation
+                            split.
                             Default value is 42.
-    ---------------------   -------------------------------------------------
-    batch_size              Optional integer. Batch size for mini batch gradient
-                            descent (Reduce it if getting CUDA Out of Memory
+    ---------------------   -------------------------------------------
+    batch_size              Optional integer.
+                            Batch size for mini batch gradient descent
+                            (Reduce it if getting CUDA Out of Memory
                             Errors).
                             Default value is 16.
-    ---------------------   -------------------------------------------------
-    process_labels          Optional boolean. If true, default processing functions
-                            will be called on label columns as well.
-                            Default value is False.
-    ---------------------   -------------------------------------------------
-    remove_html_tags        Optional boolean. If true, remove html tags from text.
-                            Default value is False.
-    ---------------------   -------------------------------------------------
-    remove_urls             Optional boolean. If true, remove urls from text.
+    ---------------------   -------------------------------------------
+    process_labels          Optional boolean.
+                            If true, default processing functions will
+                            be called on label columns as well.
                             Default value is False.
     ---------------------   -------------------------------------------
-    working_dir             Optional string. Sets the default path to be used as
-                            a prefix for saving trained models and checkpoints.
-    =====================   =================================================
+    remove_html_tags        Optional boolean.
+                            If true, remove html tags from text.
+                            Default value is False.
+    ---------------------   -------------------------------------------
+    remove_urls             Optional boolean.
+                            If true, remove urls from text.
+                            Default value is False.
+    ---------------------   -------------------------------------------
+    working_dir             Optional string.
+                            Sets the default path to be used as a prefix
+                            for saving trained models and checkpoints.
+    =====================   ===========================================
 
     :returns: `TextData` object
 
@@ -889,8 +904,10 @@ def prepare_tabulardata(
                             Field names in the prepared data added are
                             "NEAR_DIST_1", "NEAR_DIST_2" etc.
     ---------------------   -------------------------------------------
-    preprocessors           For Fastai: Optional transforms list.
-                            For Scikit-learn:
+    preprocessors           For FullyConnectedNetworks: All the transforms
+                            are applied by default and hence users need not
+                            pass any additional transforms/preprocessors.
+                            For MLModel which uses Scikit-learn transforms:
                             1. Supply a column transformer object.
                             2. Supply a list of tuple,
                             For example:
@@ -931,8 +948,6 @@ def prepare_tabulardata(
         explanatory_rasters is None or len(explanatory_rasters) == 0
     ):
         raise Exception("No Features or Rasters found")
-
-    import warnings
 
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
@@ -995,6 +1010,14 @@ def prepare_tabulardata(
         working_dir = ""
     _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
+
+    if hasattr(data, "_training_indexes"):
+        warnings.simplefilter("always", UserWarning)
+        if batch_size > len(data._training_indexes):
+            warnings.warn(
+                "The number of records in the training set is less than the batch_size. "
+                "Please consider reducing the batch_size."
+            )
 
     return data
 
@@ -1104,29 +1127,34 @@ def prepare_data(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    imagery_type            Optional string. Type of imagery used to export
+    imagery_type            **deprecated**
+                            Optional string. Type of imagery used to export
                             the training data, valid values are:
                                 - 'naip'
                                 - 'sentinel2'
                                 - 'landsat8'
                                 - 'ms' - any other type of imagery
     ---------------------   -------------------------------------------
-    bands                   Optional list. Bands of the imagery used to export
+    bands                   **deprecated**
+                            Optional list. Bands of the imagery used to export
                             training data.
                             For example ['r', 'g', 'b', 'nir', 'u']
                             where 'nir' is near infrared band and 'u' is a miscellaneous band.
     ---------------------   -------------------------------------------
-    rgb_bands               Optional list. Indices of red, green and blue bands
+    rgb_bands               **deprecated**
+                            Optional list. Indices of red, green and blue bands
                             in the imagery used to export the training data.
                             for example: [2, 1, 0]
     ---------------------   -------------------------------------------
-    extract_bands           Optional list. Indices of bands to be used for
+    extract_bands           **deprecated**
+                            Optional list. Indices of bands to be used for
                             training the model, same as in the imagery used to
                             export the training data.
                             for example: [3, 1, 0] where we will not be using
                             the band at index 2 to train our model.
     ---------------------   -------------------------------------------
-    norm_pct                Optional float. Percentage of training data to be
+    norm_pct                **deprecated**
+                            Optional float. Percentage of training data to be
                             used for calculating imagery statistics for
                             normalizing the data.
                             Default is 0.3 (30%) of data.
@@ -1455,6 +1483,13 @@ def prepare_data(
     else:
         _image_space_used = _pixel_space
 
+    # Image captioning data value checks.
+    if (
+        dataset_type == "MultiLabeled_Tiles"
+        and emd.get("SingleLabelFieldFound") == "Caption"
+    ):
+        dataset_type = "ImageCaptioning"
+
     # Multispectral check
     # With Python API for ArcGIS 1.9 multispectral workflow will automatically kick in with the following conditions
     # 1. If the imagery source is not having exactly three bands
@@ -1496,7 +1531,7 @@ def prepare_data(
         ## https://gdal.org/api/raster_c_api.html?highlight=gdal%20gdt_byte#_CPPv4N12GDALDataType8GDT_ByteE
         ##
         try:
-            import gdal
+            from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
             ds = gdal.Open(_im_path)
@@ -2084,9 +2119,16 @@ def prepare_data(
     elif dataset_type == "ImageCaptioning":
         from ._utils.image_captioning_data import prepare_captioning_dataset
 
-        return prepare_captioning_dataset(
+        data = prepare_captioning_dataset(
             path, chip_size, batch_size, val_split_pct, transforms, resize_to, **kwargs
         )
+
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        _prepare_working_dir(data.path)
+
+        return data
+
     elif dataset_type == "ChangeDetection":
         from ._utils.change_detection_data import prepare_change_detection_data
 
@@ -2365,8 +2407,6 @@ def prepare_data(
         data._imagery_type_b = imagery_type_b
         data.show_batch = types.MethodType(show_batch_img2img, data)
     else:
-        import warnings
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             data = (
@@ -2453,7 +2493,6 @@ def prepare_data(
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
-    import warnings
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)

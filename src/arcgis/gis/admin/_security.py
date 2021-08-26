@@ -1187,9 +1187,9 @@ class EnterpriseUsers(BasePortalAdmin):
         :returns: dict
 
         """
-        url = "%s/getEnterpriseUsers" % self._url
+        url = "%s/getEnterpriseUser" % self._url
         params = {"f": "json", "username": username}
-        return self._con.get(path=url, params=params)
+        return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def update(self, username, idp_username):

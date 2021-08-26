@@ -7,7 +7,9 @@ from ._arcgis_model import ArcGISModel
 try:
     from ._pix2pix_utils import (
         pix2pixLoss,
+        Pix2PixPerceptualLoss,
         pix2pixTrainer,
+        Pix2PixPerceptualTrainer,
         optim,
         compute_metrics,
         compute_fid_metric,
@@ -42,25 +44,42 @@ class Pix2Pix(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    perceptual_loss         Optional boolean. True when Perceptual loss is used.
+                            Default set to False.
     =====================   ===========================================
 
     :returns: `Pix2Pix` Object
     """
 
-    def __init__(self, data, pretrained_path=None, *args, **kwargs):
+    def __init__(
+        self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
+    ):
         super().__init__(data)
         self._check_dataset_support(data)
-        pix2pix_gan = pix2pix_model(self._data.n_channel, self._data.n_channel)
-        self.learn = Learner(
-            data,
-            pix2pix_gan,
-            loss_func=pix2pixLoss(pix2pix_gan),
-            opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
-            callback_fns=[pix2pixTrainer],
+        pix2pix_gan = pix2pix_model(
+            self._data.n_channel, self._data.n_channel, perceptual_loss
         )
+        if perceptual_loss:
+            self.learn = Learner(
+                data,
+                pix2pix_gan,
+                loss_func=Pix2PixPerceptualLoss(pix2pix_gan),
+                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                callback_fns=[Pix2PixPerceptualTrainer],
+            )
+        else:
+            self.learn = Learner(
+                data,
+                pix2pix_gan,
+                loss_func=pix2pixLoss(pix2pix_gan),
+                opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
+                callback_fns=[pix2pixTrainer],
+            )
 
         self.learn.model = self.learn.model.to(self._device)
         self._slice_lr = False
+        self.perceptual_loss = perceptual_loss
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = image_translation_prf
@@ -150,6 +169,10 @@ class Pix2Pix(ArcGISModel):
             data.emd = emd
         data.resize_to = chip_size
 
+        if emd.get("perceptual_loss", False):
+            model_params["perceptual_loss"] = emd.get("perceptual_loss")
+            return cls(data, **model_params, pretrained_path=str(model_file))
+        model_params["perceptual_loss"] = False
         return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
@@ -160,6 +183,7 @@ class Pix2Pix(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_pix2pix"
+        _emd_template["perceptual_loss"] = self.perceptual_loss
         if save_inference_file:
             _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         else:

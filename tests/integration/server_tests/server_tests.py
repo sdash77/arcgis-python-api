@@ -20,7 +20,7 @@ URLS = [
     "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services",  # 10.05
     "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services",  # 10.02
     "https://sampleserver6.arcgisonline.com/arcgis/rest",  # 10.41
-    "http://acpythondev.esri.com/server/rest",  # 10.5
+    "https://pythonapi.playground.esri.com/server/rest/",  # 10.8
 ]
 import os
 import arcgis
@@ -53,6 +53,7 @@ AGOL_USERNAME = None
 AGOL_PASSWORD = None
 
 if AGOL_USERNAME and AGOL_PASSWORD:
+
     # @unittest.SkipTest
     class ServerAGOLTest(unittest.TestCase):
         """test the AGOL Server functionality"""
@@ -177,18 +178,18 @@ class ServerPortalTest(unittest.TestCase):
     """tests the connection to arcgis server object from portal"""
 
     def setUp(self):
-        self._gis = GIS("https://dev0002320.esri.com/portal", "admin", "esri.agp")
+        self._gis = GIS(profile="your_enterprise_profile")
 
     def test_server_portal_not_gis(self):
         """tests creating a Server object"""
         from arcgis.gis.server import Server
 
         s = Server(
-            url="https://dev0002320.esri.com/portal",
+            url="https://pythonapi.playground.esri.com/portal",
             gis=None,
             username="admin",
             password="esri.agp",
-            tokenurl="https://dev0002320.esri.com:6443/arcgis/admin/generateToken",
+            tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
         self.assertIsInstance(s, Server)
 
@@ -263,42 +264,41 @@ class ServerCatalogCreationTests(unittest.TestCase):
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
-    def test_105_catalog(self):
-        """catalog 10.5"""
-        url_105 = URLS[5]
-        server = ServicesDirectory(url=url_105)
+    def test_1081_catalog(self):
+        """catalog 10.81"""
+        url_1081 = URLS[5]
+        server = ServicesDirectory(url=url_1081)
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
-    def test_105_catalog_token_login(self):
-        """catalog 10.5"""
-        url_105 = URLS[5]
+    def test_1081_catalog_token_login(self):
+        """catalog 10.81"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105,
+            url=url_1081,
             username=self._username,
             password=self._password,
-            tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken",
+            tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
         self.assertIsInstance(server, ServicesDirectory)
-        self.assertGreaterEqual(len(server.list()), 1)
 
     # ---------------------------------------------------------------------
-    def test_105_catalog_admin(self):
+    def test_1081_catalog_admin(self):
         """test getting the admin object to server from direct connection"""
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105,
+            url=url_1081,
             username=self._username,
             password=self._password,
-            tokenurl="http://acpythondev.esri.com/arcgis/admin/generateToken",
+            tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
         self.assertIsInstance(server.admin, Server)
 
     # ----------------------------------------------------------------------
-    def test_105_catalog_ANON(self):
-        """catalog 10.5 Anonymous"""
-        url_105 = URLS[5]
-        server = ServicesDirectory(url=url_105)
+    def test_1081_catalog_ANON(self):
+        """catalog 10.81 Anonymous"""
+        url_1081 = URLS[5]
+        server = ServicesDirectory(url=url_1081)
         self.assertIsInstance(server, ServicesDirectory)
 
 
@@ -316,73 +316,73 @@ class ServerPropertyTest(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def test_content(self):
-        """catalog 10.5 content"""
-        url_105 = URLS[5]
+        """catalog 10.81 content"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
 
         self.assertIsInstance(server, Server)
 
     def test_data_storemanager(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
+        """catalog 10.81 data"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin.datastores
         self.assertIsInstance(ds, DataStoreManager)
 
     def test_info(self):
-        """catalog 10.5 info"""
-        url_105 = URLS[5]
+        """catalog 10.81 info"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin._info
         self.assertIsInstance(ds, Info)
 
     def test_kml(self):
-        """catalog 10.5 kml"""
-        url_105 = URLS[5]
+        """catalog 10.81 kml"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin._kml
         self.assertIsInstance(ds, KML)
 
     def test_log(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
+        """catalog 10.81 data"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin.logs
         self.assertIsInstance(ds, LogManager)
 
     def test_services(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
+        """catalog 10.81 data"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin.services
         self.assertIsInstance(ds, ServiceManager)
 
     def test_usage(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
+        """catalog 10.81 data"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
         ds = server.usage
         self.assertIsInstance(ds, ReportManager)
 
     def test_users(self):
-        """catalog 10.5 data"""
-        url_105 = URLS[5]
+        """catalog 10.81 data"""
+        url_1081 = URLS[5]
         server = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         )
         ds = server.admin.users
         self.assertIsInstance(ds, UserManager)
@@ -401,9 +401,9 @@ class catalog_info_test(unittest.TestCase):
     def setUp(self):
         self._username = "admin"
         self._password = "esri.agp"
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         self._server_auth = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
         self._server_noauth = ServicesDirectory(url=URLS[0])
 
@@ -436,9 +436,9 @@ class server_logs_test(unittest.TestCase):
     def setUp(self):
         self._username = "admin"
         self._password = "esri.agp"
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         self._server_auth = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
         self._server_noauth = ServicesDirectory(url=URLS[0])
 
@@ -462,11 +462,11 @@ class server_machines_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         self._username = "admin"
         self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
 
     # -------- Auth Test ---------------------------------------------------
@@ -499,11 +499,11 @@ class server_usagereports_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         self._username = "admin"
         self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
         self.usage = self._server_auth.usage
 
@@ -530,7 +530,7 @@ class server_usagereports_test(unittest.TestCase):
 
 
 ############################################################################
-@unittest.SkipTest
+# @unittest.SkipTest
 class server_userandusers_test(unittest.TestCase):
     """
     test server usage module
@@ -538,11 +538,11 @@ class server_userandusers_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        url_105 = URLS[5]
+        url_1081 = URLS[5]
         self._username = "admin"
         self._password = "esri.agp"
         self._server_auth = ServicesDirectory(
-            url=url_105, username=self._username, password=self._password
+            url=url_1081, username=self._username, password=self._password
         ).admin
         self.users = self._server_auth.users
 
@@ -568,14 +568,14 @@ class server_userandusers_test(unittest.TestCase):
 
         self.assertIsInstance(user, User)
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_get(self):
 
         isinstance(self.users, UserManager)
-        user = self.users.get(username="arcgis_python_api")
+        user = self.users.get(username="admin")
         self.assertIsInstance(user, (list, User))
 
-    @unittest.SkipTest
+    # @unittest.SkipTest
     def test_me(self):
 
         self.assertIsInstance(self.users.me, User)

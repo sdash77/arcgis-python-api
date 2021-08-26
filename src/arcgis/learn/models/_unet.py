@@ -193,7 +193,7 @@ class UnetClassifier(ArcGISModel):
                 backbone_cut = _backbone_meta["cut"]
                 backbone_split = _backbone_meta["split"]
 
-            if not _isnotebook() and arcgis_os.name == "posix":
+            if not _isnotebook():
                 _set_ddp_multigpu(self)
                 if self._multigpu_training:
                     self.learn = unet_learner(

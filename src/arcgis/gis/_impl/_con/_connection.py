@@ -20,8 +20,11 @@ if sys.platform == "win32":
     try:
         import certifi_win32
 
-        certifi_win32.generate_pem()
         certifi_win32.wincerts.where()
+
+        if certifi_win32.wincerts.verify_combined_pem() == False:
+            certifi_win32.generate_pem()
+
     except ImportError:
         pass
 
@@ -37,6 +40,7 @@ import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.multipart.encoder import MultipartEncoder
+from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
@@ -598,7 +602,13 @@ class Connection(object):
                 if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:
-                data = resp.json()
+                try:
+                    data = resp.json()
+                except JSONDecodeError:
+                    if resp.text:
+                        raise Exception(resp.text)
+                    else:
+                        raise
             # if 'error' in data:
             # raise Exception(data['error'])
             # return data
@@ -1064,6 +1074,29 @@ class Connection(object):
             try_json=try_json,
             force_bytes=kwargs.pop("force_bytes", False),
         )
+
+    # ----------------------------------------------------------------------
+    def put_raw(self, url, data, **kwargs):
+        """
+        performs a raw PUT operation
+
+        url: str
+        data: bytes or open() object
+        kwargs - optional requests.put parameters.  headers is not supported, use additional_headers
+        """
+        verify = kwargs.pop("verify", True)
+        original_headers = copy.deepcopy(self._session.headers)
+        self._session.headers.update(kwargs.pop("additional_headers", {}))
+        token_header = "X-Esri-Authorization"
+        if self.token and not "X-Esri-Authorization" in original_headers:
+            token = self.token
+            self._session.headers.update({token_header: "Bearer %s" % token})
+
+        resp = self._session.put(
+            url=url, data=data, verify=verify, headers=self._session.headers, **kwargs
+        )
+        self._session.headers = original_headers
+        return resp
 
     # ----------------------------------------------------------------------
     def put(self, url, params=None, files=None, **kwargs):
