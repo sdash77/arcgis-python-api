@@ -27,6 +27,7 @@ class ParcelFabricManager(object):
     ====================     ====================================================================
 
     """
+
     _con = None
     _flc = None
     _gis = None
@@ -35,44 +36,50 @@ class ParcelFabricManager(object):
     _properties = None
     # ----------------------------------------------------------------------
 
-    def __init__(self,
-                 url,
-                 gis,
-                 version,
-                 flc):
+    def __init__(self, url, gis, version, flc):
         """Constructor"""
         self._url = url
         self._gis = gis
         self._con = gis._portal.con
         self._version = version
         self._flc = flc
+
     # ----------------------------------------------------------------------
 
     def __str__(self):
         return "<ParcelFabricManager @ %s>" % self._url
+
     # ----------------------------------------------------------------------
 
     def __repr__(self):
         return self.__str__()
+
     # ----------------------------------------------------------------------
 
     def __enter__(self):
         return self
+
     # ----------------------------------------------------------------------
 
     def __exit__(self, type, value, traceback):
         return
+
     # ----------------------------------------------------------------------
 
     @property
     def layer(self):
         """returns the Parcel Layer for the service"""
-        if "controllerDatasetLayers" in self._flc.properties and \
-           "parcelLayerId" in self._flc.properties.controllerDatasetLayers:
-            url = "%s/%s" % (self._flc.url,
-                             self._flc.properties.controllerDatasetLayers.parcelLayerId)
+        if (
+            "controllerDatasetLayers" in self._flc.properties
+            and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
+        ):
+            url = "%s/%s" % (
+                self._flc.url,
+                self._flc.properties.controllerDatasetLayers.parcelLayerId,
+            )
             return FeatureLayer(url=url, gis=self._gis)
         return None
+
     # ----------------------------------------------------------------------
 
     @property
@@ -80,16 +87,13 @@ class ParcelFabricManager(object):
         """returns the properties of the service"""
         if self._properties is None:
 
-            res = self._con.get(self._url, {'f': 'json'})
+            res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
+
     # ----------------------------------------------------------------------
 
-    def assign_to_record(self,
-                         features,
-                         record,
-                         write_attribute,
-                         moment=None):
+    def assign_to_record(self, features, record, write_attribute, moment=None):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -135,19 +139,16 @@ class ParcelFabricManager(object):
             "parcelFeatures": features,
             "record": record,
             "writeAttribute": write_attribute,
-            "f": "json"
+            "f": "json",
         }
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
+
     # ----------------------------------------------------------------------
 
-    def build(self,
-              extent=None,
-              moment=None,
-              return_errors=False,
-              record=None):
+    def build(self, extent=None, moment=None, return_errors=False, record=None):
         """
         A `build` will fix known parcel fabric errors.
 
@@ -198,22 +199,25 @@ class ParcelFabricManager(object):
             "record": record,
             "async": False,
             # "returnErrors" : return_errors,
-            "f": "json"
+            "f": "json",
         }
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
+
     # ----------------------------------------------------------------------
 
-    def clip(self,
-             parent_parcels,
-             clip_record=None,
-             clipping_parcels=None,
-             geometry=None,
-             moment=None,
-             option=None,
-             area_unit=None):
+    def clip(
+        self,
+        parent_parcels,
+        clip_record=None,
+        clipping_parcels=None,
+        geometry=None,
+        moment=None,
+        option=None,
+        area_unit=None,
+    ):
         """
 
         Clip cuts a new child parcel into existing parent parcels. Commonly
@@ -284,20 +288,23 @@ class ParcelFabricManager(object):
             "clippingGeometry": geometry,
             "clipOption": option,
             "defaultAreaUnit": area_unit,
-            "f": "json"
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def merge(self,
-              parent_parcels,
-              target_parcel_type,
-              attribute_overrides=None,
-              child_name=None,
-              default_area_unit=None,
-              merge_record=None,
-              merge_into=None,
-              moment=None):
+    def merge(
+        self,
+        parent_parcels,
+        target_parcel_type,
+        attribute_overrides=None,
+        child_name=None,
+        default_area_unit=None,
+        merge_record=None,
+        merge_into=None,
+        moment=None,
+    ):
         """
         Merge combines 2 or more parent parcels into onenew child parcel. Merge
         sums up legal areas of parent parcels to the new child parcel legal
@@ -372,21 +379,24 @@ class ParcelFabricManager(object):
             # "childName" : child_name,
             "defaultAreaUnit": default_area_unit,
             "attributeOverrides": attribute_overrides,
-            "f": "json"
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def copy_lines_to_parcel_type(self,
-                                  parent_parcels,
-                                  record,
-                                  target_type,
-                                  moment=None,
-                                  mark_historic=False,
-                                  use_source_attributes=False,
-                                  attribute_overrides=None,
-                                  use_polygon_attributes=False,
-                                  parcel_subtype=None):
+    def copy_lines_to_parcel_type(
+        self,
+        parent_parcels,
+        record,
+        target_type,
+        moment=None,
+        mark_historic=False,
+        use_source_attributes=False,
+        attribute_overrides=None,
+        use_polygon_attributes=False,
+        parcel_subtype=None,
+    ):
         """
 
         Copy lines to parcel type is used when the construction of the
@@ -458,16 +468,13 @@ class ParcelFabricManager(object):
             "targetParcelSubtype": parcel_subtype,
             "attributeOverrides": attribute_overrides,
             "moment": moment,
-            "f": "json"
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def change_type(self,
-                    parcels,
-                    target_type,
-                    parcel_subtype=0,
-                    moment=None):
+    def change_type(self, parcels, target_type, parcel_subtype=0, moment=None):
         """
 
         Changes a set of parcels to a new parcel type. It creates new
@@ -509,12 +516,13 @@ class ParcelFabricManager(object):
             "targetParcelType": target_type,
             "targetParcelSubtype": parcel_subtype,
             "moment": moment,
-            "f": "json"
+            "f": "json",
         }
         res = self._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if "success" in res:
+            return res["success"]
         return res
+
     # ----------------------------------------------------------------------
 
     def delete(self, parcels, moment=None):
@@ -548,13 +556,13 @@ class ParcelFabricManager(object):
             "sessionId": session_id,
             "parcels": parcels,
             "moment": moment,
-            "f": "json"
+            "f": "json",
         }
-        return self._con.post(url, params)['success']
+        return self._con.post(url, params)["success"]
+
     # ----------------------------------------------------------------------
 
-    def update_history(self, features, record,
-                       moment=None, set_as_historic=False):
+    def update_history(self, features, record, moment=None, set_as_historic=False):
         """
         Sets the specified parcel features to current or historic using the
         specified record. If setting current parcels as historic, the
@@ -597,18 +605,16 @@ class ParcelFabricManager(object):
             "gdbVersion": gdb_version,
             "sessionId": session_id,
             "moment": moment,
-            'record': record,
-            'setAsHistoric': set_as_historic,
-            'parcelFeatures': features,
-            "f": "json"
+            "record": record,
+            "setAsHistoric": set_as_historic,
+            "parcelFeatures": features,
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def create_seeds(self,
-                     record,
-                     moment=None,
-                     extent=None):
+    def create_seeds(self, record, moment=None, extent=None):
         """
 
         Create seeds creates parcel seeds for closed loops of lines that
@@ -641,13 +647,13 @@ class ParcelFabricManager(object):
 
         """
         from arcgis.geometry import Envelope
+
         if isinstance(extent, (dict, Envelope)):
             extent = dict(extent)
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError(
-                "Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -657,19 +663,15 @@ class ParcelFabricManager(object):
             "gdbVersion": gdb_version,
             "sessionId": session_id,
             "moment": moment,
-            'record': record,
-            'extent': extent,
-            "f": "json"
+            "record": record,
+            "extent": extent,
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def duplicate(self,
-                  parcels,
-                  parcel_type,
-                  record,
-                  parcel_subtype=None,
-                  moment=None):
+    def duplicate(self, parcels, parcel_type, record, parcel_subtype=None, moment=None):
         """
         `duplicate` allows for the cloning of parcels from a specific record.
 
@@ -719,21 +721,24 @@ class ParcelFabricManager(object):
             "gdbVersion": gdb_version,
             "sessionId": session_id,
             "moment": moment,
-            'record': record,
-            'moment': moment,
-            'parcels': parcels,
-            'targetParcelType': parcel_type,
-            'targetParcelSubtype': parcel_subtype,
-            "f": "json"
+            "record": record,
+            "moment": moment,
+            "parcels": parcels,
+            "targetParcelType": parcel_type,
+            "targetParcelSubtype": parcel_subtype,
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
-    def analyze_least_squares_adjustment(self,
-                                         analysis_type="CONSISTENCY_CHECK",
-                                         convergence_tolerance=0.05,
-                                         parcel_features=None,
-                                         future=False):
+    def analyze_least_squares_adjustment(
+        self,
+        analysis_type="CONSISTENCY_CHECK",
+        convergence_tolerance=0.05,
+        parcel_features=None,
+        future=False,
+    ):
         """
         .. note::
             Least Squares Adjustment functionality introduced at version 10.8.1
@@ -790,24 +795,28 @@ class ParcelFabricManager(object):
             "convergenceTolerance": convergence_tolerance,
             "parcelFeatures": parcel_features,
             "async": future,
-            "f": "json"
+            "f": "json",
         }
         if future:
             res = self._con.post(path=url, postdata=params)
-            f = self._run_async(self._status_via_url, con=self._con,
-                                url=res["statusUrl"], params={"f": "json"})
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
             return f
         else:
             res = self._con.post(url, params)
-            if 'success' in res:
+            if "success" in res:
                 return res
             return res
+
     # ----------------------------------------------------------------------
 
-    def apply_least_squares_adjustment(self,
-                                       movement_tolerance=0.05,
-                                       update_attributes=True,
-                                       future=False):
+    def apply_least_squares_adjustment(
+        self, movement_tolerance=0.05, update_attributes=True, future=False
+    ):
         """
         .. note::
             Least Squares Adjustment functionality introduced at version 10.8.1
@@ -851,32 +860,39 @@ class ParcelFabricManager(object):
             "movementTolerance": movement_tolerance,
             "updateAttributes": update_attributes,
             "async": future,
-            "f": "json"
+            "f": "json",
         }
         if future:
             res = self._con.post(path=url, postdata=params)
-            future = self._run_async(self._status_via_url, con=self._con,
-                                     url=res["statusUrl"], params={"f": "json"})
+            future = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
             return future
         else:
             res = self._con.post(url, params)
-            if 'success' in res:
+            if "success" in res:
                 return res
             return res
+
     # ----------------------------------------------------------------------
 
-    def divide(self,
-               divide_parcel_guid,
-               divide_parcel_type,
-               divide_record,
-               divide_option,
-               divide_number_of_parts,
-               divide_part_area,
-               divide_line_bearing,
-               divide_left_side,
-               divide_distribute_remainder,
-               default_area_unit,
-               divide_cogo_line_bearing=None):
+    def divide(
+        self,
+        divide_parcel_guid,
+        divide_parcel_type,
+        divide_record,
+        divide_option,
+        divide_number_of_parts,
+        divide_part_area,
+        divide_line_bearing,
+        divide_left_side,
+        divide_distribute_remainder,
+        default_area_unit,
+        divide_cogo_line_bearing=None,
+    ):
         """
         .. note::
             Divide functionality introduced at version 10.9.1
@@ -933,31 +949,49 @@ class ParcelFabricManager(object):
             "divideDistributeRemainder": divide_distribute_remainder,
             "defaultAreaUnit": default_area_unit,
             "divideCogoLineBearing": divide_cogo_line_bearing,
-            "f": "json"
+            "f": "json",
         }
         return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
 
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
+
         tp = concurrent.futures.ThreadPoolExecutor(1)
         future = tp.submit(fn=fn, **inputs)
         tp.shutdown(False)
         return future
+
     # ----------------------------------------------------------------------
 
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
         """
-        status_allowed = ['esriJobSubmitted', 'esriJobWaiting', 'esriJobExecuting', 'esriJobSucceeded',
-                          'esriJobFailed', 'esriJobTimedOut', 'esriJobCancelling', 'esriJobCancelled']
+        status_allowed = [
+            "esriJobSubmitted",
+            "esriJobWaiting",
+            "esriJobExecuting",
+            "esriJobSucceeded",
+            "esriJobFailed",
+            "esriJobTimedOut",
+            "esriJobCancelling",
+            "esriJobCancelled",
+        ]
         status = con.get(url, params)
-        while status['status'] in status_allowed and status["status"] != "esriJobSucceeded":
-            if status['status'] == 'esriJobSucceeded':
+        while (
+            status["status"] in status_allowed
+            and status["status"] != "esriJobSucceeded"
+        ):
+            if status["status"] == "esriJobSucceeded":
                 return status
-            elif status['status'] in ['esriJobFailed', 'esriJobTimedOut', 'esriJobCancelled']:
+            elif status["status"] in [
+                "esriJobFailed",
+                "esriJobTimedOut",
+                "esriJobCancelled",
+            ]:
                 break
             status = con.get(url, params)
         return status
