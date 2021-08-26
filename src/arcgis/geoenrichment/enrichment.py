@@ -143,7 +143,7 @@ class NamedArea(object):
     @property
     def __studyarea__(self):
         return {
-            "sourceCountry": self._country.properties.id,
+            "sourceCountry": self._country.properties.iso3,
             "layer": self._currlvl,
             "ids": [self._areaid],
         }
@@ -214,7 +214,7 @@ class NamedArea(object):
 
     def _fetch_subgeographies(self, name):
         df = standard_geography_query(
-            source_country=self._country.properties.id,
+            source_country=self._country.properties.iso3,
             layers=[self._currlvl],
             ids=[self._areaid],
             return_sub_geography=True,
