@@ -60,8 +60,6 @@ def _call_method_by_source(fn) -> callable:
             f"_{fn_name}_gis" if isinstance(src, GIS) else f"_{fn_name}_local"
         )
 
-        print(f"fn_nm_to_call: {fn_nm_to_call}")
-
         # get the function if it is implemented
         if fn_nm_to_call not in globals().keys():
             src_nm = (

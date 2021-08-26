@@ -3,7 +3,7 @@ from pathlib import Path
 from arcgis.features import GeoAccessor
 import pandas as pd
 
-from .agol import gis
+from .agol import gis_agol
 
 csv_pth = Path(__file__).parent.parent / 'geoenrich_data' / 'seattle_block_group.csv'
 block_group_df = pd.read_csv(csv_pth)

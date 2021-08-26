@@ -2,28 +2,28 @@ from arcgis.gis import GIS
 import pytest
 
 from ..geoenrichment_country_tests import *
-from ..geoenrich_data import gis
+from ..geoenrich_data import gis_agol
 
 @pytest.fixture
 def usa():
-    return Country.get('USA', gis=gis)
+    return Country.get('USA', gis=gis_agol)
 
 
 def test_usa_agol() -> None:
-    usa_test(gis)
+    usa_test(gis_agol)
 
 
 def test_get_usa_agol() -> None:
-    get_usa_test(gis)
+    get_usa_test(gis_agol)
 
 
 def test_test_get_can_agol() -> None:
-    get_can_test(gis)
+    get_can_test(gis_agol)
 
 
 def test_get_usa_2019_agol() -> None:
     with pytest.warns(Warning):
-        get_usa_2019_test(gis)
+        get_usa_2019_test(gis_agol)
 
 
 def test_dataset_agol(usa) -> None:
