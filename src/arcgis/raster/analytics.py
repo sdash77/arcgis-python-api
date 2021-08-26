@@ -3285,16 +3285,15 @@ def create_image_collection(
                                             | {"name": "cloud_shadow_count", "type": "Long"}]}
 
     ------------------                   --------------------------------------------------------------------
-    md_to_upload                         Optional string. Provide value for md_to_upload parameter to publish hosted 
-                                         dynamic imagery layer by uploading an existing mosaic dataset.
-                                         It accepts path to an existing mosaic dataset.
+    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+                                         as a hosted dynamic imagery layer.
 
-                                         In order to publish an exisiting mosaic dataset, specify the input data of the mosaic dataset
-                                         as a value to the input_rasters parameters so that it can be uploaded to ArcGIS 
-                                         Online.
+                                         To publish an existing mosaic dataset, specify the path to the input 
+                                         data of the mosaic to the input_rasters parameter. 
+                                         The data will be uploaded to ArcGIS Online.
 
-                                         raster_type_name parameter can be set to None as it is not required to publish
-                                         imagery layer from a mosaic dataset.
+                                         raster_type_name parameter can be set to None as it is not required to 
+                                         publish an imagery layer from a mosaic dataset
 
                                          Option available only on ArcGIS online
 
