@@ -7,6 +7,9 @@ HAS_BACKEND_SET = False
 ARCGIS_ENABLE_TF_BACKEND = os.environ.get("ARCGIS_ENABLE_TF_BACKEND") == "1"
 _LAMBDA_TEXT_CLASSIFICATION = os.environ.get("_LAMBDA_TEXT_CLASSIFICATION") == "1"
 
+if os.environ.get('TF_CPP_MIN_LOG_LEVEL', None) is None:
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+
 HAS_TENSORFLOW = False
 tf_import_exception = None
 
