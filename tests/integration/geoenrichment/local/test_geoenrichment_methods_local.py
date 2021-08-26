@@ -1,10 +1,21 @@
+import pandas as pd
 import pytest
+
+from arcgis.gis import GIS
 
 from ..geoenrichment_methods_tests import *
 
+gis = GIS('pro')
+
 
 def test_get_countries_local():
-    get_countries()
+    res = get_countries()
+    assert isinstance(res, list)
+
+
+def test_get_countries_local_df():
+    res = get_countries(as_df=True)
+    assert isinstance(res, pd.DataFrame)
 
 
 def test_enrich_iterable_str_address_local():
