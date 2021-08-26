@@ -3828,7 +3828,7 @@ def create_image_collection(
 
         landsat_mosaic  = create_image_collection(image_collection = "landsat_image_collection",
                                                   input_rasters=[r"C:\data\landsat_data_folder"],
-                                                  raster_type_name = None,
+                                                  raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
                                                   md_to_upload=r"C:\data\md.gdb\landsat",
                                                   gis=gis)
