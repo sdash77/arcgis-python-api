@@ -1,5 +1,6 @@
 import os
 import tempfile
+import random
 import traceback
 import json
 import warnings
@@ -14,6 +15,11 @@ try:
     import shap
 except:
     HAS_SHAP = False
+
+try:
+    import pandas as pd
+except:
+    pass
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -768,17 +774,14 @@ class FullyConnectedNetwork(ArcGISModel):
         :returns: dataframe
         """
         self._check_requisites()
+        min_size = len(self._data._validation_indexes)
+        if min_size < rows:
+            min_size = rows
 
-        validation_dataframe = self._data._dataframe.loc[
-            self._data._validation_indexes
-        ].reset_index(drop=True)
-
-        if rows > len(validation_dataframe):
-            rows = len(validation_dataframe)
-
-        rows_df = validation_dataframe.loc[:rows].copy()
-
+        sample_indexes = random.sample(self._data._validation_indexes, min_size)
+        rows_df = self._data._dataframe.iloc[sample_indexes]
         predictions = self._df_predict(rows_df)
+        pd.options.mode.chained_assignment = None
         rows_df["prediction_results"] = predictions
 
         return rows_df
@@ -792,7 +795,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if not HAS_NUMPY:
             raise Exception("This function requires numpy.")
 
-        validation_dataframe = self._data._dataframe.loc[
+        validation_dataframe = self._data._dataframe.iloc[
             self._data._validation_indexes
         ].reset_index(drop=True)
 

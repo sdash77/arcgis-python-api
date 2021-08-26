@@ -1,6 +1,7 @@
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+import datetime as _dt
 
 ########################################################################
 class LogManager(object):
@@ -197,9 +198,9 @@ class LogManager(object):
             "pageSize": 10000,
         }
         url = "{url}/query".format(url=self._url)
-        if start_time is not None and isinstance(start_time, datetime):
+        if start_time is not None and isinstance(start_time, _dt.datetime):
             params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        if end_time is not None and isinstance(end_time, datetime):
+        if end_time is not None and isinstance(end_time, _dt.datetime):
             params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
         if level.upper() in allowed_levels:
             params["level"] = level

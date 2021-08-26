@@ -141,7 +141,7 @@ class ModelExtension(ArcGISModel):
                 )
         if self._is_multispectral:
             model = _change_tail(model, data)
-        if not _isnotebook() and os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(
