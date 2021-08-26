@@ -627,19 +627,23 @@ def get_countries(gis: GIS = None, as_df: bool = False):
     """
     # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
     if gis is not None:
-        if gis._con._auth == 'PRO':
-            gis = 'local'
+        if gis._con._auth == "PRO":
+            gis = "local"
 
     # get the dataframe of available countries
     out_res = _business_analyst.BusinessAnalyst(gis).countries
 
     # if a dataframe is not desired, use the ISO3 codes to crate a list of Countries from the ISO3 codes
     if as_df is False:
-        if 'vintage' in out_res.columns:
-            out_res = [Country(cntry[1][0], gis=gis, year=cntry[1][1]) for cntry in
-                       out_res[['iso3', 'vintage']].iterrows()]
+        if "vintage" in out_res.columns:
+            out_res = [
+                Country(cntry[1][0], gis=gis, year=cntry[1][1])
+                for cntry in out_res[["iso3", "vintage"]].iterrows()
+            ]
         else:
-            out_res = [[Country(cntry[1], gis=gis) for cntry in out_res['iso3'].iteritems()]]
+            out_res = [
+                Country(cntry[1], gis=gis) for cntry in out_res["iso3"].iteritems()
+            ]
 
     return out_res
 
