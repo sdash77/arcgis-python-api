@@ -54,7 +54,7 @@ else:
         "pandas >=1",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19",
+        "keyring >=19,<=21.8.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
