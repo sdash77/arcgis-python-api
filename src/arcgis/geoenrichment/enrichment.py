@@ -315,13 +315,13 @@ class Country(object):
         **kwargs,
     ) -> None:
 
-        # instantiate a BA object instance
-        ba = _business_analyst.BusinessAnalyst(gis)
-
         # handle the caveat of using a GIS('Pro') input
         if gis is not None:
             if gis._con._auth == "PRO":
                 gis = "local"
+
+        # instantiate a BA object instance
+        ba = _business_analyst.BusinessAnalyst(gis)
 
         # pull the source out of the ba object since it takes care of all defaults and validation
         self._gis = ba.source
