@@ -256,17 +256,22 @@ class Country(object):
     """
     The Country object enables access to data and methods for a specific country. This
     class can reference country data and methods available using data accessed through
-    both a Web GIS and a `local` installation of ArcGIS Pro with the Business Analyst
-    extension and local country data installed.
+    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
+    extension and local country data installed. Specifying this source is accomplished
+    using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
+    (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
+    and will error if the specified country is not available locally. Available
+    countries can be discovered using the ``get_countries`` method.
 
     .. note::
-        Currently, when using the ``'local'`` GIS source, only the ``data_collections``
+        Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
         and ``enrich_variables`` properties to discover of available enrichment
         variables are supported.
+
     """
 
     @classmethod
-    def get(cls, name: str, gis: Union[str, GIS] = None, year: Union[str, int] = None):
+    def get(cls, name: str, gis: GIS = None, year: Union[str, int] = None):
         """
         Gets a reference to a particular country, given its name, or its
         two letter abbreviation or three letter ISO3 code.
@@ -277,27 +282,24 @@ class Country(object):
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
         ----------------  --------------------------------------------------------
-        gis               Optional ``arcgis.gis.GIS`` object instance or `local`
-                          keyword. This specifies what GIS country sources are
-                          available. If using a Web GIS, a ``GIS`` object
-                          instance must be used. If using `local`, the
-                          environment must have ArcGIS Pro installed with
-                          Business Analyst and data for the country.
+        gis               Optional ``arcgis.gis.GIS`` object instance. This
+                          specifies what GIS country sources are available based
+                          on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
+                          Enterprise) or ArcGIS Pro with the Business Analyst
+                          extension and at least one country data pack. If not
+                          explicitly specified, it will attempt to use ArcGIS Pro
+                          with Business Analyst and at least one local data pack
+                          installed. If all of the aforementioned critera are not
+                          met, it then tries to use an active GIS already created
+                          in the Python session. Finally, if neither of these
+                          (Pro or an active GIS) are available, a GIS object
+                          instance must be explicitly provided.
         ----------------  --------------------------------------------------------
         year              Optional integer explicitly specifying the vintage
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
         ================  ========================================================
-
-        .. note:
-            If a GIS source is not explicitly specified, the current environment
-            is searched to see if ArcGIS Pro (specifically ``arcpy``) is available.
-            If available, `local` is then used. However, if ``arcpy`` is not
-            available, the current execution environment is searched to see if
-            there is an active instance of a ``GIS`` object. If available, this is
-            used. If, however, neither of these is available, an exception will be
-            raised.
 
         :return:
             ``arcgis.geoenrichment.Country`` instance for the requested country.
@@ -308,13 +310,18 @@ class Country(object):
     def __init__(
         self,
         iso3: str,
-        gis: Union[str, GIS] = None,
+        gis: GIS = None,
         year: Union[str, int] = None,
         **kwargs,
     ) -> None:
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
+
+        # handle the caveat of using a GIS('Pro') input
+        if gis is not None:
+            if gis._con._auth == "PRO":
+                gis = "local"
 
         # pull the source out of the ba object since it takes care of all defaults and validation
         self._gis = ba.source
@@ -624,7 +631,7 @@ def get_countries(gis: GIS = None, as_df: bool = False):
                            of the aforementioned critera are not met, it then tries to use an
                            active GIS already created in the Python session. Finally, if
                            neither of these (Pro or an active GIS) are available, a GIS object
-                           instance must be explicitly provided. If
+                           instance must be explicitly provided.
 
     as_df                  Optional boolean specifying if a Pandas DataFrame output is desired.
                            If ```False`` (the default) a list of
