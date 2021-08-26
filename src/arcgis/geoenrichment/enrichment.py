@@ -13,7 +13,7 @@ from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
 
 from . import _business_analyst
-from ._business_analyst._utils import local_vs_gis
+from ._business_analyst._utils import local_vs_gis, local_business_analyst_avail, local_ba_data_avail
 from ._ge import _GeoEnrichment
 
 
@@ -45,11 +45,20 @@ def _call_method_by_source(fn) -> callable:
                     src = p
                     break
 
-        # if still nothing found, default to local
-        if src is None:
+        # if nothing found, interrogate the local session and see if the environment has everything for local
+        if src is None and local_business_analyst_avail() and local_ba_data_avail():
             src = "local"
 
-        # make sure a source was located
+        # otherwise, see if there is an active GIS instance in the session
+        elif src is None:
+
+            # have to do a late import to give chance to be populated
+            from arcgis.env import active_gis
+
+            if active_gis:
+                src = active_gis
+
+        # make sure a source was located or bingo out
         assert src is not None, (
             "The gis parameter must be pesent and populated with either a GIS instance or using "
             'the "local" keyword.'
