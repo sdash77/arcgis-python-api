@@ -11,6 +11,7 @@ import tempfile
 import types
 import traceback
 import copy
+import warnings
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
@@ -948,8 +949,6 @@ def prepare_tabulardata(
     ):
         raise Exception("No Features or Rasters found")
 
-    import warnings
-
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
 
@@ -1128,29 +1127,34 @@ def prepare_data(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    imagery_type            Optional string. Type of imagery used to export
+    imagery_type            **deprecated**
+                            Optional string. Type of imagery used to export
                             the training data, valid values are:
                                 - 'naip'
                                 - 'sentinel2'
                                 - 'landsat8'
                                 - 'ms' - any other type of imagery
     ---------------------   -------------------------------------------
-    bands                   Optional list. Bands of the imagery used to export
+    bands                   **deprecated**
+                            Optional list. Bands of the imagery used to export
                             training data.
                             For example ['r', 'g', 'b', 'nir', 'u']
                             where 'nir' is near infrared band and 'u' is a miscellaneous band.
     ---------------------   -------------------------------------------
-    rgb_bands               Optional list. Indices of red, green and blue bands
+    rgb_bands               **deprecated**
+                            Optional list. Indices of red, green and blue bands
                             in the imagery used to export the training data.
                             for example: [2, 1, 0]
     ---------------------   -------------------------------------------
-    extract_bands           Optional list. Indices of bands to be used for
+    extract_bands           **deprecated**
+                            Optional list. Indices of bands to be used for
                             training the model, same as in the imagery used to
                             export the training data.
                             for example: [3, 1, 0] where we will not be using
                             the band at index 2 to train our model.
     ---------------------   -------------------------------------------
-    norm_pct                Optional float. Percentage of training data to be
+    norm_pct                **deprecated**
+                            Optional float. Percentage of training data to be
                             used for calculating imagery statistics for
                             normalizing the data.
                             Default is 0.3 (30%) of data.
@@ -2403,8 +2407,6 @@ def prepare_data(
         data._imagery_type_b = imagery_type_b
         data.show_batch = types.MethodType(show_batch_img2img, data)
     else:
-        import warnings
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             data = (
@@ -2491,7 +2493,6 @@ def prepare_data(
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
-    import warnings
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
