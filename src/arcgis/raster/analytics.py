@@ -3826,7 +3826,7 @@ def create_image_collection(
         # Specify the actual source data path referenced by the uploaded mosaic dataset using input_rasters parameter. The data would be uploaded 
         # to the ArcGIS Online's user store from this path. 
 
-        landsat_mosaic  = create_image_collection(image_collection = "landsat_image_collection",
+        landsat_mosaic  = create_image_collection(image_collection="landsat_image_collection",
                                                   input_rasters=[r"C:\data\landsat_data_folder"],
                                                   raster_type_name=None,
                                                   context={"upload_properties":{"displayProgress":True}},
