@@ -3298,7 +3298,7 @@ def create_image_collection(
                                          Option available only on ArcGIS online
 
                                          Example:
-                                            "C:\\data\\temp\\uploaded.gdb\\test"
+                                            r"C:\data\temp\uploaded.gdb\test"
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -3827,10 +3827,10 @@ def create_image_collection(
         # to the ArcGIS Online's user store from this path. 
 
         landsat_mosaic  = create_image_collection(image_collection = "landsat_image_collection",
-                                                  input_rasters=["C:\\data\\landsat_data_folder"],
+                                                  input_rasters=[r"C:\data\landsat_data_folder"],
                                                   raster_type_name = None,
                                                   context={"upload_properties":{"displayProgress":True}},
-                                                  md_to_upload=r"C:\\data\\md.gdb\\landsat",
+                                                  md_to_upload=r"C:\data\md.gdb\landsat",
                                                   gis=gis)
 
     """
