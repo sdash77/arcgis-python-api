@@ -273,13 +273,17 @@ class LogManager(BaseServer):
         # for the next request to get the next set of records
         while max_records_return > 1:
             if has_more:
+                # get new start time from last item time
                 params["startTime"] = list(logs["logMessages"])[-1]["time"]
                 params["pageSize"] = max_records_return
                 max_records_return -= 5000
+                # new logs to query
                 new_logs = self._con.post(path=url, postdata=params)
                 has_more = new_logs["hasMore"]
+                # append new log messages to logs to return
                 for log_message in new_logs["logMessages"]:
                     logs["logMessages"].append(log_message)
+        # if export true then no values returned, file written to
         if export is True and out_path is not None:
 
             with open(file=out_path, mode="w") as f:
