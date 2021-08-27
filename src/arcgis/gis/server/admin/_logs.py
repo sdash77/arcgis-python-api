@@ -174,7 +174,7 @@ class LogManager(BaseServer):
         export=False,
         export_type="CSV",  # CSV or TAB
         out_path=None,
-        max_records_return=10000,
+        max_records_return=5000,
     ):
         """
         The query operation on the logs resource provides a way to
@@ -246,9 +246,9 @@ class LogManager(BaseServer):
             "f": "json",
             "sinceServerStart": since_server_start,
         }
-        if max_records_return >= 10000:
-            max_records_return -= 10000
-            params["pageSize"] = 10000
+        if max_records_return >= 5000:
+            max_records_return -= 5000
+            params["pageSize"] = 5000
         else:
             params["pageSize"] = max_records_return
         url = "{url}/query".format(url=self._url)
@@ -273,9 +273,9 @@ class LogManager(BaseServer):
         # for the next request to get the next set of records
         while max_records_return > 1:
             if has_more:
-                params["startTime"] = list(logs["logMessages"])[-1]
+                params["startTime"] = list(logs["logMessages"])[-1]["time"]
                 params["pageSize"] = max_records_return
-                max_records_return -= 10000
+                max_records_return -= 5000
                 new_logs = self._con.post(path=url, postdata=params)
                 has_more = new_logs["hasMore"]
                 for log_message in new_logs["logMessages"]:
