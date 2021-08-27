@@ -650,8 +650,7 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError(
-                "Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
