@@ -202,11 +202,13 @@ class Pix2Pix(ArcGISModel):
     def predict(self, path):
         """
         Predicts and display the image.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================
+
         """
         return predict(self, path)
 

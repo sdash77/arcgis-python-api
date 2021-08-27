@@ -24,55 +24,55 @@ except Exception as e:
 class Pix2PixHD(ArcGISModel):
 
     """
-     Creates a model object which generates fake images of type B from type A.
+    Creates a model object which generates fake images of type B from type A.
 
-     =====================   ===========================================
-     **Argument**            **Description**
-     ---------------------   -------------------------------------------
-     data                    Required fastai Databunch. Returned data object from
-                             `prepare_data` function.
-     ---------------------   -------------------------------------------
-     pretrained_path         Optional string. Path where pre-trained model is
-                             saved.
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    data                    Required fastai Databunch. Returned data object from
+                            `prepare_data` function.
+    ---------------------   -------------------------------------------
+    pretrained_path         Optional string. Path where pre-trained model is
+                            saved.
     =====================   ===========================================
 
-     **kwargs**
+    **kwargs**
 
-     =====================   ===========================================
-     n_gen_filters           Number of gen filters in first conv layer.
-     ---------------------   -------------------------------------------
-     gen_network             Selects model to use for generatpr.
-     ---------------------   -------------------------------------------
-     n_downsample_global     Number of downsampling layers in gen_network
-     ---------------------   -------------------------------------------
-     n_blocks_global         Number of residual blocks in the global
-                             generator network.
-     ---------------------   -------------------------------------------
-     n_local_enhancers       Number of local enhancers to use.
-     ---------------------   -------------------------------------------
-     n_blocks_local          number of residual blocks in the local
-                             enhancer network.
-     ---------------------   -------------------------------------------
-     norm                    instance normalization or batch normalization
-     ---------------------   -------------------------------------------
-     lsgan                   Use least square GAN, if True,
-                             use vanilla GAN.
-     ---------------------   -------------------------------------------
-     n_dscr_filters          number of discriminator filters in first conv layer.
-     ---------------------   -------------------------------------------
-     n_layers_dscr           only used if which_model_net_dscr==n_layers.
-     ---------------------   -------------------------------------------
-     n_dscr                  number of discriminators to use.
-     ---------------------   -------------------------------------------
-     feat_loss               if 'True', use discriminator
-                             feature matching loss.
-     ---------------------   -------------------------------------------
-     vgg_loss                if 'True', use VGG feature matching loss.
-     ---------------------   -------------------------------------------
-     lambda_feat             weight for feature matching loss.
-     =====================   ===========================================
+    =====================   ===========================================
+    n_gen_filters           Number of gen filters in first conv layer.
+    ---------------------   -------------------------------------------
+    gen_network             Selects model to use for generator.
+    ---------------------   -------------------------------------------
+    n_downsample_global     Number of downsampling layers in gen_network
+    ---------------------   -------------------------------------------
+    n_blocks_global         Number of residual blocks in the global
+                            generator network.
+    ---------------------   -------------------------------------------
+    n_local_enhancers       Number of local enhancers to use.
+    ---------------------   -------------------------------------------
+    n_blocks_local          number of residual blocks in the local
+                            enhancer network.
+    ---------------------   -------------------------------------------
+    norm                    instance normalization or batch normalization
+    ---------------------   -------------------------------------------
+    lsgan                   Use least square GAN, if True,
+                            use vanilla GAN.
+    ---------------------   -------------------------------------------
+    n_dscr_filters          number of discriminator filters in first conv layer.
+    ---------------------   -------------------------------------------
+    n_layers_dscr           only used if which_model_net_dscr==n_layers.
+    ---------------------   -------------------------------------------
+    n_dscr                  number of discriminators to use.
+    ---------------------   -------------------------------------------
+    feat_loss               if 'True', use discriminator
+                            feature matching loss.
+    ---------------------   -------------------------------------------
+    vgg_loss                if 'True', use VGG feature matching loss.
+    ---------------------   -------------------------------------------
+    lambda_feat             weight for feature matching loss.
+    =====================   ===========================================
 
-     :returns: `Pix2PixHD` Object
+    :returns: `Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -121,7 +121,7 @@ class Pix2PixHD(ArcGISModel):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates a Pix2Pix object from an Esri Model Definition (EMD) file.
+        Creates a Pix2PixHD object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -134,7 +134,7 @@ class Pix2PixHD(ArcGISModel):
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `Pix2Pix` Object
+        :returns: `Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -223,11 +223,13 @@ class Pix2PixHD(ArcGISModel):
     def predict(self, path):
         """
         Predicts and display the image.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================
+
         """
         return predict(self, path)
 
