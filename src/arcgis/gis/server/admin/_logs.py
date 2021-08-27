@@ -222,7 +222,7 @@ class LogManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         out_path               Optional string. The path to download the log file to.
         ------------------     --------------------------------------------------------------------
-        max_records_return     Optional int. The maximum amount of records to return. Default is 10000
+        max_records_return     Optional int. The maximum amount of records to return. Default is 5000
         ==================     ====================================================================
 
         :return:
