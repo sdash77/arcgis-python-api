@@ -905,7 +905,7 @@ class ParcelFabricManager(object):
         divide_parcel_type          Required Integer. Parameter representing the parcel type layer ID in 
                                     which the new, divided parcels will be created.
         --------------------------- --------------------------------------------------------------------
-        divide_record               Required String: Parameter for the unique identifier (guid) of the 
+        divide_record               Required String: Parameter for the unique identifier `guid` of the 
                                     record being used for the divide.
                                     If missing, no parcel history is created.
         --------------------------- --------------------------------------------------------------------
@@ -914,10 +914,14 @@ class ParcelFabricManager(object):
                                         - EqualArea
                                         - EqualWidth
         --------------------------- --------------------------------------------------------------------
-        divide_number_of_parts      Required Integer. The number parts into which the parcel will be divided.
+        divide_number_of_parts      Required Integer. The number parts into which the parcel will 
+                                    be divided.
         --------------------------- --------------------------------------------------------------------
         divide_part_area_or_width   Required Float. Area of each part (parcel fabric GDB units squared).
-                                    *This value is ignored when dividing by proportional area*
+                                    
+                                    .. note::
+                                        This value is ignored when dividing by proportional area. A
+                                        default value of 0 will be applied.
         --------------------------- --------------------------------------------------------------------
         divide_line_bearing         Required Float. The direction (in decimal degrees) of the line 
                                     used to divide the parcel.
@@ -928,14 +932,20 @@ class ParcelFabricManager(object):
                                     divided starts from the rightmost edge of the parcel and any remainder 
                                     area will be to the left of the divided parts.
 
-                                    This parameter is used for the `EqualArea` and `EqualWidth` 
-                                    divide options. For the `ProportionalArea` divide option, a default 
-                                    value of true or false can be used.
+                                    This parameter is required for the `EqualArea` and `EqualWidth` 
+                                    divide options. 
+                                    
+                                    .. note::
+                                        This value is ignored when dividing by proportional area. A
+                                        default value of `False` will be applied.
         --------------------------- --------------------------------------------------------------------
         divide_distribute_remainder Required Boolean. Indicates whether to distribute or merge the 
                                     remainder area after the divide is performed. This parameter is used 
-                                    for the `EqualArea` and `EqualWidth` divide options. For the 
-                                    `ProportionalArea` divide option, a default value of false can be used.
+                                    for the `EqualArea` and `EqualWidth` divide options. 
+                                    
+                                    .. note::
+                                        This value is ignored when dividing by proportional area. A
+                                        default value of `False` will be applied.
         --------------------------- --------------------------------------------------------------------
         default_area_unit           Required Integer. The units in which area will be stored. The parameter 
                                     is specified as a domain code from the PF_AreaUnits parcel fabric 
@@ -947,7 +957,8 @@ class ParcelFabricManager(object):
 
         --------------------------- --------------------------------------------------------------------
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction 
-                                    (in decimal degrees) that will be stored in the COGO Direction field of the dividing lines.
+                                    (in decimal degrees) that will be stored in the COGO Direction field 
+                                    of the dividing lines.
         =========================== ====================================================================
 
         :returns: Dictionary
