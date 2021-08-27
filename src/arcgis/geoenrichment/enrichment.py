@@ -107,6 +107,7 @@ def _check_active_gis(gis=None):
 
     return gis
 
+
 BufferStudyArea = collections.namedtuple(
     "BufferStudyArea", "area radii units overlap travel_mode"
 )
@@ -247,7 +248,7 @@ class NamedArea(object):
             sub_geography_layer=self._level_mappings[name],
             return_geometry=True,
             as_featureset=False,
-            gis=self._country._gis
+            gis=self._country._gis,
         )
 
         places = {}
@@ -324,11 +325,7 @@ class Country(object):
 
     # noinspection PyMissingConstructor
     def __init__(
-        self,
-        iso3: str,
-        gis: GIS = None,
-        year: Union[str, int] = None,
-        **kwargs,
+        self, iso3: str, gis: GIS = None, year: Union[str, int] = None, **kwargs,
     ) -> None:
 
         # handle the caveat of using a GIS('Pro') input
