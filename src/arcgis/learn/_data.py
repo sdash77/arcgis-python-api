@@ -589,7 +589,29 @@ def merge_emd_and_stats(data_folders):
             with open(data_folder / "esri_accumulated_stats.json") as f:
                 stats_store[i] = json.load(f)
     emd_keys = list(emd_store.keys())
-    #
+    if len(emd_keys) == 0:
+        raise Exception("No valid 'esri_model_definition.emd' file found in the supplied folders.")
+
+    # Check for multi folder comptability
+    emd = emd_store[emd_keys[0]]
+    eas = stats_store[emd_keys[0]]
+    for k in emd_keys:
+        _emd = emd_store[k]
+        _eas = stats_store[k]
+        # Check MetaDataMode across folders
+        if emd['MetaDataMode'] != _emd['MetaDataMode']:
+            raise Exception(f"`Metadata format` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['MetaDataMode']} and {data_folders[k]} : {_emd['MetaDataMode']}.")
+        # Check NumBands across folders
+        if eas['NumBands'] != _eas['NumBands']:
+            raise Exception(f"`Number of bands` does not match for emd found at path {data_folders[emd_keys[0]]} : {eas['NumBands']} and {data_folders[k]} : {_eas['NumBands']}.")
+        # # Check TileSizeX across folders
+        # if emd['ImageWidth'] != _emd['ImageWidth']:
+        #     raise Exception(f"`Tile Size X` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['ImageWidth']} and {data_folders[k]} : {_emd['ImageWidth']}.")
+        # # Check TileSizeX across folders
+        # if emd['ImageHeight'] != _emd['ImageHeight']:
+        #     raise Exception(f"`Tile Size Y` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['ImageHeight']} and {data_folders[k]} : {_emd['ImageHeight']}.")
+
+    # Raise Warnings for mismatch across folders
     for i, k in enumerate(emd_keys[:-1]):
         if "BandNames" in emd_store[k].get("InputRastersProps", {}):
             props_matched = (
@@ -1271,6 +1293,8 @@ def prepare_data(
     eas = None
     images_df = kwargs.get("images_df", None)
     if isinstance(path, (list, tuple)):
+        if len(path) == 0:
+            raise Exception(f"The value supplied for parameter `path` should contain at least one folder path if the value is an instance of list or tuple.")
         data_folders = [Path(x) for x in path]
         emd, eas, path = merge_emd_and_stats(data_folders)
         if working_dir is None:
