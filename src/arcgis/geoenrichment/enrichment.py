@@ -49,18 +49,19 @@ def _call_method_by_source(fn) -> callable:
                     src = p
                     break
 
-        # if nothing found, interrogate the local session and see if the environment has everything for local
-        if src is None and local_business_analyst_avail() and local_ba_data_avail():
-            src = "local"
-
+        # TODO: Swap the precedence of these once all methods are implemented
         # otherwise, see if there is an active GIS instance in the session
-        elif src is None:
+        if src is None:
 
             # have to do a late import to give chance to be populated
             from arcgis.env import active_gis
 
             if active_gis:
                 src = active_gis
+
+        # if nothing found, interrogate the local session and see if the environment has everything for local
+        elif src is None and local_business_analyst_avail() and local_ba_data_avail():
+            src = "local"
 
         # make sure a source was located or bingo out
         assert src is not None, (
@@ -91,6 +92,20 @@ def _call_method_by_source(fn) -> callable:
 
     return wrapped
 
+
+def _check_active_gis(gis=None):
+    """Helper function to get an active gis if no gis already declared in session."""
+    # prioritize local active_gis
+    if gis is None:
+
+        # late import to get the active gis
+        from arcgis.env import active_gis
+
+        # if an active_gis is
+        if active_gis:
+            gis = active_gis
+
+    return gis
 
 BufferStudyArea = collections.namedtuple(
     "BufferStudyArea", "area radii units overlap travel_mode"
@@ -232,6 +247,7 @@ class NamedArea(object):
             sub_geography_layer=self._level_mappings[name],
             return_geometry=True,
             as_featureset=False,
+            gis=self._country._gis
         )
 
         places = {}
@@ -287,13 +303,13 @@ class Country(object):
                           on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
                           Enterprise) or ArcGIS Pro with the Business Analyst
                           extension and at least one country data pack. If not
-                          explicitly specified, it will attempt to use ArcGIS Pro
-                          with Business Analyst and at least one local data pack
-                          installed. If all of the aforementioned critera are not
-                          met, it then tries to use an active GIS already created
-                          in the Python session. Finally, if neither of these
-                          (Pro or an active GIS) are available, a GIS object
-                          instance must be explicitly provided.
+                          explicitly specified, it tries to use an active GIS
+                          already created in the Python session. If an active
+                          GIS is not available, it then tries to use local
+                          resources, ArcGIS Pro with Business and at least one
+                          country dataset installed locally. Finally, if
+                          neither of these (Pro or an active GIS) are available,
+                          a GIS object instance must be explicitly provided.
         ----------------  --------------------------------------------------------
         year              Optional integer explicitly specifying the vintage
                           (year) of data to use. This option is only available
@@ -319,6 +335,9 @@ class Country(object):
         if gis is not None:
             if gis._con._auth == "PRO":
                 gis = "local"
+
+        # prioritize active_gis
+        gis = _check_active_gis(gis)
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
@@ -622,16 +641,18 @@ def get_countries(gis: GIS = None, as_df: bool = False):
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    gis                    Optional ``arcgis.gis.GIS`` object instance. This specifies what GIS
-                           country sources are available based on the GIS source, a Web GIS
-                           (ArcGIS Online or ArcGIS Enterprise) or ArcGIS Pro with the Business
-                           Analyst extension and at least one country data pack. If not
-                           explicitly specified, it will attempt to use ArcGIS Pro with
-                           Business Analyst and at least one local data pack installed. If all
-                           of the aforementioned critera are not met, it then tries to use an
-                           active GIS already created in the Python session. Finally, if
-                           neither of these (Pro or an active GIS) are available, a GIS object
-                           instance must be explicitly provided.
+    gis                    Optional ``arcgis.gis.GIS`` object instance. This
+                           specifies what GIS country sources are available based
+                           on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
+                           Enterprise) or ArcGIS Pro with the Business Analyst
+                           extension and at least one country data pack. If not
+                           explicitly specified, it tries to use an active GIS
+                           already created in the Python session. If an active
+                           GIS is not available, it then tries to use local
+                           resources, ArcGIS Pro with Business and at least one
+                           country dataset installed locally. Finally, if
+                           neither of these (Pro or an active GIS) are available,
+                           a GIS object instance must be explicitly provided.
 
     as_df                  Optional boolean specifying if a Pandas DataFrame output is desired.
                            If ```False`` (the default) a list of
@@ -647,6 +668,9 @@ def get_countries(gis: GIS = None, as_df: bool = False):
     if gis is not None:
         if gis._con._auth == "PRO":
             gis = "local"
+
+    # prioritize active_gis
+    gis = _check_active_gis(gis)
 
     # get the dataframe of available countries
     out_res = _business_analyst.BusinessAnalyst(gis).countries
