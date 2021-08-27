@@ -65,7 +65,6 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
-    from ._utils.pix2pix import ImageTupleList2, prepare_data_ms_pix2pix
     from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
     import PIL
@@ -1315,6 +1314,8 @@ def prepare_data(
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
         dataset_type = "Pix2Pix"
+    elif dataset_type == "Export_Tiles" and os.path.exists(path / "labels"):
+        dataset_type = "Pix2Pix"
 
     # Change Detection data is exported as Classified_Tiles with 'images', 'images2' and 'labels' folders
     if dataset_type == "Classified_Tiles" and os.path.exists(path / "images2"):
@@ -1356,7 +1357,11 @@ def prepare_data(
             cyclegan_paths,
             folder_check_cyclegan,
         )
-        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
+        from ._data_utils.pix2pix_data import (
+            pix2pix_paths,
+            folder_check_pix2pix,
+            rgb_or_ms,
+        )
 
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
@@ -1386,6 +1391,7 @@ def prepare_data(
         files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
         msimage_list_a = ArcGISImageList(files_list_a)
         msimage_list_b = ArcGISImageList(files_list_b)
+
         img_type = "RGB"
         if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
             img_type = kwargs["imagery_type"] = "ms"
@@ -2180,36 +2186,30 @@ def prepare_data(
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms["size"] = img_size
+
     elif dataset_type == "Pix2Pix":
-        if _is_multispectral:
-            data = prepare_data_ms_pix2pix(
-                path, norm_pct, val_split_pct, seed, databunch_kwargs
-            )
-            data.show_batch = types.MethodType(show_batch_img2img, data)
-            data.n_channel = data.x[0].data[0].shape[0]
-            data._is_multispectral = _is_multispectral
-            data._imagery_type = _imagery_type
-            data._imagery_type_a = imagery_type_a
-            data._imagery_type_b = imagery_type_b
+        from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+        data = prepare_pix2pix_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            transforms=transforms,
+            resize_to=resize_to,
+            norm_pct=norm_pct,
+            _is_multispectral=_is_multispectral,
+            **kwargs,
+        )
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b
+        if data._is_multispectral:
+            # data._imagery_type = _imagery_type
             data._bands = _bands
-            data._norm_pct = norm_pct
+            # data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
-            data._image_space_used = _image_space_used
-            x_shape = data.train_ds[0][0].shape
-            data.chip_size = x_shape[-1]
-            if working_dir is not None:
-                data.path = Path(os.path.abspath(working_dir))
-            data._temp_folder = _prepare_working_dir(data.path)
-            return data
-        data = (
-            ImageTupleList2.from_folders(path, path_a, path_b)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_empty()
-        )
-        img_size = data.x[0].shape[-1]
-        if resize_to is None:
-            kwargs_transforms["size"] = img_size
+
+        return data
     elif dataset_type == "ObjectTracking":
         from ._utils.object_tracking_data import prepare_object_tracking_data
 
