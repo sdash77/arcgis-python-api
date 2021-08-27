@@ -64,12 +64,12 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
 
-    # EarlyStoppingCallback should run as one 
+    # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
     # and other callbacks can behave accordingly.
     # e.g: Do not checkpoint final model after early stopping.
     EarlyStoppingCallback._order = -10
-    
+
 except ImportError as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -293,10 +293,12 @@ class SaveModelCallback(TrackerCallback):
             return
 
         # do not save model after early stopping kicks in.
-        if not kwargs.get('stop_training', False):
+        if not kwargs.get("stop_training", False):
             current = self.get_monitor_value()
             # if a better checkpoint is found.
-            better_checkpoint = current is not None and self.operator(current, self.best)
+            better_checkpoint = current is not None and self.operator(
+                current, self.best
+            )
             if better_checkpoint:
                 self.best_epoch = epoch
                 self.learn._best_epoch = epoch
@@ -315,14 +317,14 @@ class SaveModelCallback(TrackerCallback):
                     compute_metrics=False,
                 )
             # every improvement
-            elif better_checkpoint: 
-                    self.remove_previous()
-                    self.model._save(
-                        f"{self.name}_epoch_{epoch}",
-                        zip_files=False,
-                        save_html=False,
-                        compute_metrics=False,
-                    )
+            elif better_checkpoint:
+                self.remove_previous()
+                self.model._save(
+                    f"{self.name}_epoch_{epoch}",
+                    zip_files=False,
+                    save_html=False,
+                    compute_metrics=False,
+                )
 
     def remove_previous(self):
         # to avoid creating multiple best checkpoints.
@@ -930,7 +932,9 @@ class ArcGISModel(object):
 
                 now = datetime.now()
                 if checkpoint != True and checkpoint != "all":
-                    raise Exception("Checkpoint can only be set to a boolean, or 'all'.")
+                    raise Exception(
+                        "Checkpoint can only be set to a boolean, or 'all'."
+                    )
                 every = "improvement" if checkpoint is True else "epoch"
                 save_callback_params = kwargs.get(
                     "save_callback_params", {"monitor": monitor, "every": every}

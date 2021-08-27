@@ -590,7 +590,9 @@ def merge_emd_and_stats(data_folders):
                 stats_store[i] = json.load(f)
     emd_keys = list(emd_store.keys())
     if len(emd_keys) == 0:
-        raise Exception("No valid 'esri_model_definition.emd' file found in the supplied folders.")
+        raise Exception(
+            "No valid 'esri_model_definition.emd' file found in the supplied folders."
+        )
 
     # Check for multi folder comptability
     emd = emd_store[emd_keys[0]]
@@ -599,11 +601,15 @@ def merge_emd_and_stats(data_folders):
         _emd = emd_store[k]
         _eas = stats_store[k]
         # Check MetaDataMode across folders
-        if emd['MetaDataMode'] != _emd['MetaDataMode']:
-            raise Exception(f"`Metadata format` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['MetaDataMode']} and {data_folders[k]} : {_emd['MetaDataMode']}.")
+        if emd["MetaDataMode"] != _emd["MetaDataMode"]:
+            raise Exception(
+                f"`Metadata format` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['MetaDataMode']} and {data_folders[k]} : {_emd['MetaDataMode']}."
+            )
         # Check NumBands across folders
-        if eas['NumBands'] != _eas['NumBands']:
-            raise Exception(f"`Number of bands` does not match for emd found at path {data_folders[emd_keys[0]]} : {eas['NumBands']} and {data_folders[k]} : {_eas['NumBands']}.")
+        if eas["NumBands"] != _eas["NumBands"]:
+            raise Exception(
+                f"`Number of bands` does not match for emd found at path {data_folders[emd_keys[0]]} : {eas['NumBands']} and {data_folders[k]} : {_eas['NumBands']}."
+            )
         # # Check TileSizeX across folders
         # if emd['ImageWidth'] != _emd['ImageWidth']:
         #     raise Exception(f"`Tile Size X` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['ImageWidth']} and {data_folders[k]} : {_emd['ImageWidth']}.")
@@ -1294,7 +1300,9 @@ def prepare_data(
     images_df = kwargs.get("images_df", None)
     if isinstance(path, (list, tuple)):
         if len(path) == 0:
-            raise Exception(f"The value supplied for parameter `path` should contain at least one folder path if the value is an instance of list or tuple.")
+            raise Exception(
+                f"The value supplied for parameter `path` should contain at least one folder path if the value is an instance of list or tuple."
+            )
         data_folders = [Path(x) for x in path]
         emd, eas, path = merge_emd_and_stats(data_folders)
         if working_dir is None:
@@ -1431,6 +1439,7 @@ def prepare_data(
             "CycleGAN",
             "Pix2Pix",
             "ChangeDetection",
+            "ObjectTracking",
         ]
         and has_esri_files
     ):
@@ -2235,9 +2244,25 @@ def prepare_data(
 
         return data
     elif dataset_type == "ObjectTracking":
-        from ._utils.object_tracking_data import prepare_object_tracking_data
+        from ._utils.object_tracking_data import (
+            prepare_object_tracking_data,
+            prepare_pro_data,
+        )
 
-        data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+        if has_esri_files:
+            emd_file = path / "esri_model_definition.emd"
+            emd = None
+            if emd_file.exists():
+                with open(emd_file) as f:
+                    emd = json.load(f)
+            data = None
+            if emd is not None and emd["MetaDataMode"] == "RCNN_Masks":
+                data = prepare_pro_data(path, batch_size, val_split_pct)
+            else:
+                raise Exception(f"Check MetaDataMode for the exported training data.")
+        else:
+            data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+
         data._is_multispectral = False
         data._extract_bands = None
         data._do_normalize = False
