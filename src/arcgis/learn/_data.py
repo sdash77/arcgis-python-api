@@ -1070,10 +1070,10 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    -For feature categorization use Labelled Tiles or ImageNet format.
+    -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
-    -For DeepSort, use ImageNet format
+    -For DeepSort, use Imagenet format
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1140,7 +1140,7 @@ def prepare_data(
                             A tuple should be of the form (height, width).
                             Resize the images to a given size.
                             Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles",
-                            "superres" and "ImageNet".First resizes the image to the given
+                            "superres" and "Imagenet".First resizes the image to the given
                             size and then crops images of size equal to chip_size.
                             Note: If resize_to is less than chip_size, the
                             resize_to is used as chip_size.
@@ -1433,7 +1433,6 @@ def prepare_data(
     if (
         dataset_type
         not in [
-            "Imagenet",
             "superres",
             "Export_Tiles",
             "CycleGAN",
@@ -1450,7 +1449,10 @@ def prepare_data(
         with open(path / "map.txt") as f:
             while True:
                 line = f.readline()
-                if len(line.split()) == 2:
+                min_split_vals = 2
+                if dataset_type == "Imagenet":
+                    min_split_vals = 1
+                if len(line.split()) >= min_split_vals:
                     break
         try:
             img_size = ArcGISMSImage.open_gdal(
@@ -1462,7 +1464,8 @@ def prepare_data(
             ).size[-1]
         if chip_size > img_size:
             chip_size = img_size
-        right = line.split()[1].split(".")[-1].lower()
+        if dataset_type != "Imagenet":
+            right = line.split()[1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
@@ -2470,10 +2473,10 @@ def prepare_data(
         # Inflating imagenet_stats by 255x should have also worked
         # But fastai transforms clip image value to 1 and
         # in fastai 1.0.60 transforms are applied before normalization
+
         data.train_ds.x._div = 255.0
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
-
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
     # Imagery type used while opening image chips
@@ -2502,6 +2505,7 @@ def prepare_data(
         "Pix2Pix",
         "ChangeDetection",
         "superres",
+        "Imagenet",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
