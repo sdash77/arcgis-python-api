@@ -916,6 +916,9 @@ class ParcelFabricManager(object):
         divide_number_of_parts      Required Integer. The number parts into which the parcel will 
                                     be divided.
         --------------------------- --------------------------------------------------------------------
+        divide_part_area            Required Float. Area of each part (parcel fabric GDB units squared).
+                                    **Deprecated**
+        --------------------------- --------------------------------------------------------------------
         divide_part_area_or_width   Required Float. Area of each part (parcel fabric GDB units squared).
                                     
                                     .. note::
@@ -983,6 +986,7 @@ class ParcelFabricManager(object):
             "record": divide_record,
             "divideOption": divide_option,
             "divideNumberOfParts": divide_number_of_parts,
+            # "dividePartArea": divide_part_area,
             "dividePartAreaOrWidth": divide_part_area_or_width,
             "divideLineBearing": divide_line_bearing,
             "divideLeftSide": divide_left_side,
