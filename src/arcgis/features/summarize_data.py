@@ -70,6 +70,7 @@ def aggregate_points(
 
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input pointLayer that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+                                             #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -105,7 +106,7 @@ def aggregate_points(
                                 minority_majority=True,
                                 percent_points=True,
                                 output_name="aggregated_permits",
-                                context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}')
+                                context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}', "overwrite":True)
 
     """
 
@@ -323,6 +324,7 @@ def summarize_nearby(
 
                                  #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_nearby_layer`` and ``summary_layer`` that intersect the bounding box will be analyzed.
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. Returns the number of credit for the operation.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
@@ -446,6 +448,7 @@ def summarize_center_and_dispersion(
 
                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                            #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
@@ -579,6 +582,7 @@ def summarize_within(
 
                                              #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_within_layer`` and the ``Summary_layer`` that intersect the bounding box will be summarized.
                                              #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
@@ -738,6 +742,8 @@ def join_features(
                                                                                                      #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be analyzed.
 
                                                                                                      #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                                                                                     #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------

@@ -78,6 +78,7 @@ def enrich_layer(
 
                                                                               #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                               #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+                                                                              #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------     --------------------------------------------------------------------

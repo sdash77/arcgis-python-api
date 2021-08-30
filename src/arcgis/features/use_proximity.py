@@ -166,6 +166,7 @@ def connect_origins_to_destinations(
                                               bounding box will be analyzed.
                                            #. Output Spatial Reference (outSR)-If the output is a feature service, the spatial reference will be the same as originsLayer. Setting outSR for feature services has no effect.
                                               If the output is a feature collection, the features will be in the spatial reference of the outSRvalue or the spatial reference of originsLayer when outSR is not specified.
+                                           #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
@@ -418,6 +419,8 @@ def create_buffers(
                                     that intersect the bounding box will be analyzed.
 
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -439,7 +442,7 @@ def create_buffers(
                                  ring_type='Rings',
                                  end_type='Flat',
                                  output_name='create_buffers',
-                                 context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
+                                 context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}, "overwrite":True})
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -617,6 +620,8 @@ def create_drive_time_areas(
                                     that intersect the bounding box will be analyzed.
 
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                 #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -872,6 +877,8 @@ def find_nearest(
                                     that intersect the bounding box will be analyzed.
 
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1187,6 +1194,8 @@ def plan_routes(
 
                                     #. Output Spatial Reference (``outSR``)-If the output is a feature service, the spatial reference will be the same as ``stops_layer``. Setting outSR for feature services has no effect.
                                        If the output is a feature collection, the features will be in the spatial reference of the outSR value or the spatial reference of ``stops_layer`` when outSR is not specified.
+                                    
+                                    #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ----------------------------    --------------------------------------------------------------------------------------------------
     gis                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------------------    --------------------------------------------------------------------------------------------------

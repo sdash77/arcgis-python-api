@@ -53,6 +53,7 @@ def generate_tessellation(
 
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -166,7 +167,7 @@ def dissolve_boundaries(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
                                              .. code-block:: python
 
                                                 # Example Usage
@@ -175,7 +176,8 @@ def dissolve_boundaries(
                                                                       "ymin": -9187921.892449,
                                                                       "xmax": 3174104.927313,
                                                                       "ymax": -9175500.875353},
-                                                           "outSR": {"wkid": 3857}}
+                                                           "outSR": {"wkid": 3857}},
+                                                           "overwrite": True
     ------------------------------------     -------------------------------------------------------------------------------------
     gis                                      Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     -------------------------------------------------------------------------------------
@@ -380,6 +382,7 @@ def merge_layers(
 
                       #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the ``input_layer`` and the ``merge_layer`` that intersect the bounding box will be merged into the output layer.
                       #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                      #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
@@ -503,8 +506,9 @@ def overlay_layers(
     ----------------  ---------------------------------------------------------------
     context           Optional string. Context contains additional settings that affect task execution. For ``overlay_layers``, there are two settings.
 
-                      #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
+                      #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
                       #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                      #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------

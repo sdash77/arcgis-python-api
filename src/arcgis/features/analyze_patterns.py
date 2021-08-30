@@ -186,7 +186,7 @@ def summarize_center_and_dispersion(
                             feature service name.
     --------------------    ---------------------------------------------------------
     context                 Optional string. Additional settings such as processing
-                            extent and output spatial reference.
+                            extent and output spatial reference and overwrite.
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -293,6 +293,7 @@ def find_point_clusters(
 
                             #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                            #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -401,6 +402,7 @@ def find_hot_spots(
 
                                                                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
                                                                            #. Output Spatial Reference (``outSR``) - the data will be projected into the output spatial reference prior to analysis.
+                                                                           #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------------------------------------    ---------------------------------------------------------
     gis                                                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------------------------    ---------------------------------------------------------
@@ -557,6 +559,8 @@ def find_outliers(
                                                                         #. Extent (extent) a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
 
                                                                         #. Output Spatial Reference (outSR) the data will be projected into the output spatial reference prior to analysis.
+
+                                                                        #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -741,7 +745,7 @@ def interpolate_points(
     output_name                  Optional string. If provided, the method will create a feature service of the results.
                                  You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
     ---------------------------  -------------------------------------------------------------------------------------------
-    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    context                      Optional string. Additional settings such as processing extent and output spatial reference and overwrite.
     ---------------------------  -------------------------------------------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------  -------------------------------------------------------------------------------------------

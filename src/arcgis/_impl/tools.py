@@ -756,7 +756,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
     @property
     def _tools(self):
         return self.properties.tasks
-    
+
     # ----------------------------------------------------------------------
     def _output_name_dict(self, output_name, overwrite):
         if output_name and isinstance(output_name, str):
@@ -777,6 +777,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         else:
             output_name = None
         return output_name
+
     # ----------------------------------------------------------------------
     def aggregate_points(
         self,

@@ -252,6 +252,7 @@ def find_existing_locations(
 
                                              #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the input_layers that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (``outSR``)-the output features will be projected into the output spatial reference.
+                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
@@ -522,6 +523,7 @@ def derive_new_locations(
 
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layers that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR)
+                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
@@ -649,6 +651,7 @@ def find_similar_locations(
                              #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features
                                 in the ``input_layer`` that intersect the bounding box will be analyzed.
                              #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -----------------------  -------------------------------------------------------------------------------------------
     estimate                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------  -------------------------------------------------------------------------------------------
@@ -725,6 +728,7 @@ def find_centroids(
 
                       #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``input_layer`` that intersect the bounding box will be buffered.
                       #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                      #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the number of credits to run the operation will be returned.
     ----------------  ---------------------------------------------------------------
@@ -988,7 +992,7 @@ def choose_best_facilities(
 
                                              #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be enriched.
                                              #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-
+                                             #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------    ---------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not
                                              specified, the active GIS is used.
@@ -1195,6 +1199,8 @@ def create_viewshed(
                                     that intersect the bounding box will be analyzed.
 
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1315,6 +1321,8 @@ def create_watersheds(
                                     that intersect the bounding box will be analyzed.
 
                                  #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+
+                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1434,9 +1442,10 @@ def trace_downstream(
     -------------------------------------    ---------------------------------------------------------
     context                                  Optional string. Context contains additional settings that affect task execution. For ``trace_downstream``, there are two settings.
 
-                                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those points
+                                             #. Extent (``extent``) - a bounding box that defines the analysis area. Only those points
                                                 in the ``input_layer`` that intersect the bounding box will have a downstream trace generated.
                                              #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
+                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
