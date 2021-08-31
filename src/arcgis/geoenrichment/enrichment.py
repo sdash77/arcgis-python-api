@@ -1,3 +1,4 @@
+from functools import lru_cache
 import collections
 from functools import wraps
 import re
@@ -19,6 +20,16 @@ from ._business_analyst._utils import (
     local_ba_data_avail,
 )
 from ._ge import _GeoEnrichment
+
+
+@lru_cache
+def _check_active_gis(gis=None):
+    """Helper function to get an active gis if no gis already declared in session."""
+    # prioritize active_gis
+    if gis is not None and env.active_gis is not None:
+        gis = env.active_gis
+
+    return gis
 
 
 def _call_method_by_source(fn) -> callable:
@@ -50,16 +61,16 @@ def _call_method_by_source(fn) -> callable:
                     break
 
         # TODO: Swap the precedence of these once all methods are implemented
-        # otherwise, see if there is an active GIS instance in the session
-        if src is None and env.active_gis is not None:
-            src = env.active_gis
+        # check if active gis is in session
+        src = _check_active_gis(src)
 
         # if nothing found, interrogate the local session and see if the environment has everything for local
-        elif src is None and local_business_analyst_avail() and local_ba_data_avail():
+        if src is None and local_business_analyst_avail() and local_ba_data_avail():
             src = "local"
 
         # make sure a source was located or bingo out
-        src_msg = "The gis parameter needs to be populated with a valid GIS instance."
+        src_msg = ("The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
+                   "object in the session.")
         assert src is not None, src_msg
 
         # build function name to call
@@ -316,8 +327,7 @@ class Country(object):
                 gis = "local"
 
         # prioritize active_gis
-        if gis is not None and env.active_gis is not None:
-            gis = env.active_gis
+        gis = _check_active_gis(gis)
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
