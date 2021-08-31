@@ -66,11 +66,21 @@ def aggregate_points(
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. Output Features Name (str). Optional parameter.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For Aggregate Points, there are two settings.
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. For aggregate_points, there are three settings.
 
-                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input pointLayer that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
-                                             #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                    
+                                                    .. code-block:: python
+                                                    # Example Usage
+
+                                                    context = {"extent": {"xmin": 3164569.408035,
+                                                                            "ymin": -9187921.892449,
+                                                                            "xmax": 3174104.927313,
+                                                                            "ymax": -9175500.875353},
+                                                                "outSR": {"wkid": 3857},
+                                                                "overwrite": True}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -106,7 +116,7 @@ def aggregate_points(
                                 minority_majority=True,
                                 percent_points=True,
                                 output_name="aggregated_permits",
-                                context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}', "overwrite":True)
+                                context={"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
 
@@ -320,11 +330,21 @@ def summarize_nearby(
     output_name                  Optional string. If provided, the task will create a feature service of the results. You define the name of the service.
                                  If ``output_name`` is not supplied, the task will return a feature collection.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
-    context                      Optional string. Context contains additional settings that affect task execution. For  ``summarize_nearby``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference. For summarize_nearby, there are three settings.
 
-                                 #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_nearby_layer`` and ``summary_layer`` that intersect the bounding box will be analyzed.
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    
+                                 .. code-block:: python
+                                    # Example Usage
+
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                            "ymin": -9187921.892449,
+                                                            "xmax": 3174104.927313,
+                                                            "ymax": -9175500.875353},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. Returns the number of credit for the operation.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
@@ -578,11 +598,21 @@ def summarize_within(
     output_name                              Optional string. If provided, the method will create a feature service of the results.
                                              You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
     -------------------------------------    ---------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For ``summarize_within``, there are two settings.
+    context                                  Optional dict. Additional settings such as processing extent and output spatial reference. For summarize_within, there are three settings.
 
-                                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_within_layer`` and the ``Summary_layer`` that intersect the bounding box will be summarized.
-                                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-                                             #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                
+                                             .. code-block:: python
+                                                # Example Usage
+
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                        "ymin": -9187921.892449,
+                                                                        "xmax": 3174104.927313,
+                                                                        "ymax": -9175500.875353},
+                                                            "outSR": {"wkid": 3857},
+                                                            "overwrite": True}
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
@@ -737,13 +767,21 @@ def join_features(
     output_name                                                                                      Optional string. If provided, the method will create a feature service of the results. You define the name of the service.
                                                                                                      If ``output_name`` is not supplied, the task will return a feature collection.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    context                                                                                          Optional string. Context contains additional settings that affect method execution. For ``join_features``, there are the following two settings:
+    context                                                                                          Optional dict. Additional settings such as processing extent and output spatial reference. For join_features, there are three settings.
 
-                                                                                                     #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be analyzed.
+                                                                                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                                                     - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                                        
+                                                                                                     .. code-block:: python
+                                                                                                        # Example Usage
 
-                                                                                                     #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-
-                                                                                                     #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                                                                                "ymin": -9187921.892449,
+                                                                                                                                "xmax": 3174104.927313,
+                                                                                                                                "ymax": -9175500.875353},
+                                                                                                                    "outSR": {"wkid": 3857},
+                                                                                                                    "overwrite": True}
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------

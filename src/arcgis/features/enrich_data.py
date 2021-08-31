@@ -74,11 +74,21 @@ def enrich_layer(
     output_name                                                               Optional string. If provided, the task will create a feature service of the results.
                                                                               You define the name of the service. If output_name is not supplied, the task will return a feature collection.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    context                                                                   Optional string. Context contains additional settings that affect task execution. For ``enrich_layer`` method, there are two settings.
+    context                                                                   Optional dict. Additional settings such as processing extent and output spatial reference. For enrich_layer, there are three settings.
 
-                                                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
-                                                                              #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                
+                                                                              .. code-block:: python
+                                                                                # Example Usage
+
+                                                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                                                        "ymin": -9187921.892449,
+                                                                                                        "xmax": 3174104.927313,
+                                                                                                        "ymax": -9175500.875353},
+                                                                                            "outSR": {"wkid": 3857},
+                                                                                            "overwrite": True}
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
