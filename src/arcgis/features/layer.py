@@ -2594,7 +2594,9 @@ class FeatureLayer(Layer):
                                     Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
                                     ===========     ===================================
 
-
+        ---------------------   --------------------------------------------------------------------------------------
+        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set to `True`,
+                                then edits can be applied asynchronously.
         =====================   ======================================================================================
 
         :returns:
