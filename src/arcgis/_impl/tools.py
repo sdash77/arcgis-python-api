@@ -846,7 +846,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
