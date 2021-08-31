@@ -78,7 +78,8 @@ def _call_method_by_source(fn) -> callable:
             src = "local"
 
         # make sure a source was located or bingo out
-        assert src is not None, "The gis parameter needs to be populated with a valid GIS instance."
+        src_msg = "The gis parameter needs to be populated with a valid GIS instance."
+        assert src is not None, src_msg
 
         # build function name to call
         fn_nm_to_call = (
