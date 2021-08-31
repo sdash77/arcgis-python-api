@@ -15,6 +15,7 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from arcgis.features._async import EditFeatureJob
 
 from .managers import (
     AttachmentManager,
@@ -2613,11 +2614,11 @@ class FeatureLayer(Layer):
             HAS_PANDAS = False
         if (
             future
-            and "advancedQueryCapabilities" in self.properties
+            and "advancedEditingCapabilities" in self.properties
             and "supportsAsyncApplyEdits"
-            in self.properties["advancedQueryCapabilities"]
+            in self.properties["advancedEditingCapabilities"]
         ):
-            future = self.properties["advancedQueryCapabilities"][
+            future = self.properties["advancedEditingCapabilities"][
                 "supportsAsyncApplyEdits"
             ]
         else:
@@ -2776,7 +2777,9 @@ class FeatureLayer(Layer):
                     self._status_via_url, *(self._con, res["statusUrl"], {"f": "json"})
                 )
                 executor.shutdown(False)
-                return future
+
+                return EditFeatureJob(future, self._con)
+                # return future
             return self._con.post_multipart(path=edit_url, postdata=params)
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
