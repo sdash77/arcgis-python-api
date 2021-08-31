@@ -1,4 +1,3 @@
-from functools import lru_cache
 import collections
 from functools import wraps
 import re
@@ -20,22 +19,6 @@ from ._business_analyst._utils import (
     local_ba_data_avail,
 )
 from ._ge import _GeoEnrichment
-
-
-@lru_cache
-def _check_active_gis(gis=None):
-    """Helper function to get an active gis if no gis already declared in session."""
-    # prioritize local active_gis
-    if gis is None:
-
-        # late import to get the active gis
-        from arcgis.env import active_gis
-
-        # if an active_gis is
-        if active_gis:
-            gis = active_gis
-
-    return gis
 
 
 def _call_method_by_source(fn) -> callable:
@@ -68,10 +51,8 @@ def _call_method_by_source(fn) -> callable:
 
         # TODO: Swap the precedence of these once all methods are implemented
         # otherwise, see if there is an active GIS instance in the session
-        if src is None:
-
-            # have to do a late import to give chance to be populated
-            src = _check_active_gis(src)
+        if src is None and env.active_gis is not None:
+            src = env.active_gis
 
         # if nothing found, interrogate the local session and see if the environment has everything for local
         elif src is None and local_business_analyst_avail() and local_ba_data_avail():
@@ -335,7 +316,8 @@ class Country(object):
                 gis = "local"
 
         # prioritize active_gis
-        gis = _check_active_gis(gis)
+        if gis is not None and env.active_gis is not None:
+            gis = env.active_gis
 
         # instantiate a BA object instance
         ba = _business_analyst.BusinessAnalyst(gis)
