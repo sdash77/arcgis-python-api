@@ -817,7 +817,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage count of points for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional bool
             Returns the estimated number of credits for the current task.
@@ -1091,7 +1091,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
@@ -1212,7 +1212,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference and overwrite.
 
         Returns
@@ -1319,7 +1319,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name: Optional dict
         
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference and overwrite.
 
         Returns
@@ -1397,7 +1397,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The shape of the buffer at the end of buffered line features.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
@@ -1501,7 +1501,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -1622,7 +1622,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         estimate: Optional Boolean. Returns the number of credit for the operation.
 
@@ -1718,7 +1718,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -1791,7 +1791,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -1861,7 +1861,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of field names and statistical types that will be used to summarize the output. Supported statistics include: Sum, Mean, Min, Max, and Stddev.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -1946,7 +1946,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to calculate the area.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -2034,7 +2034,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV, SHAPEFILE
         output_name : Optional string
             Additional properties such as output name of the item
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -2126,7 +2126,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         estimate: Optional Boolean. Returns the number of credit for the operation.
 
@@ -2263,7 +2263,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             A list of expressions. Each expression should be a dictionary that includes an operator (and/or), the index of layer in input_layers, and either a 'where' clause or a spatial relationship. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -2343,7 +2343,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the credit usage for the current task.
@@ -2465,7 +2465,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
             Additional properties such as output feature service name
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
@@ -2594,7 +2594,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
           Values: Miles | Feet | Kilometers | Meters
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
@@ -2787,7 +2787,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -2961,7 +2961,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -3085,7 +3085,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         output_name : Optional string
             Additional properties such as output feature service name.
 
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         estimate: Optional bool
@@ -3177,7 +3177,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             An array of values that describe how fields from the mergeLayer are to be modified.  By default all fields from both inputs will be carried across to the output.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional Boolean
             Returns the number of credit for the operation.
@@ -3255,7 +3255,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both).
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
 
         Returns
@@ -3363,7 +3363,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
         point_barrier_layer: Optional FeatureSet/FeatureLayer
 
@@ -3609,7 +3609,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional bool
             Returns the estimated number of credits for the operation.
@@ -3725,7 +3725,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         output_name : Optional string
 
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -3841,7 +3841,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
         output_name : Optional string
             Additional properties such as output feature service name.
-        context : Optional string
+        context: Optional dict
             Additional settings such as processing extent, output spatial reference, and overwrite.
         estimate: Optional bool
             Returns the estimated number of credits for the operation.
@@ -13762,7 +13762,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -14515,7 +14515,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -14600,7 +14600,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -14670,7 +14670,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns
@@ -14739,7 +14739,7 @@ class _GeoanalyticsTools(_AsyncService):
 
         datastore : Optional string
             One of the following: ['BDS', 'GDB']
-        context : Optional string
+        context: Optional dict
 
 
         Returns

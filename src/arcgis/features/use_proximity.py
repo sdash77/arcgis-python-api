@@ -160,13 +160,20 @@ def connect_origins_to_destinations(
     output_name                            Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer. If output_name is not supplied,
                                            the task will return a feature collection.
     -----------------------------------    ---------------------------------------------------------
-    context                                Optional string. Additional settings such as processing extent and output spatial reference. For calculate_density, there are two settings.
+    context                                Optional dict. Additional settings such as processing extent and output spatial reference. For connect_origins_to_destinations, there are three settings.
+                                            - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                            - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            
+                                            .. code-block:: python
+                                            # Example Usage
 
-                                           #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the origins_layer and destinations_layer that intersect the
-                                              bounding box will be analyzed.
-                                           #. Output Spatial Reference (outSR)-If the output is a feature service, the spatial reference will be the same as originsLayer. Setting outSR for feature services has no effect.
-                                              If the output is a feature collection, the features will be in the spatial reference of the outSRvalue or the spatial reference of originsLayer when outSR is not specified.
-                                           #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                    "ymin": -9187921.892449,
+                                                                    "xmax": 3174104.927313,
+                                                                    "ymax": -9175500.875353},
+                                                            "outSR": {"wkid": 3857},
+                                                            "overwrite": True}
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
@@ -413,14 +420,21 @@ def create_buffers(
     -------------------------    ---------------------------------------------------------
     output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_buffers``, there are two settings.
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_buffers``, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                
+                                .. code-block:: python
+                                # Example Usage
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-
-                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -442,7 +456,7 @@ def create_buffers(
                                  ring_type='Rings',
                                  end_type='Flat',
                                  output_name='create_buffers',
-                                 context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}, "overwrite":True})
+                                 context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -614,14 +628,20 @@ def create_drive_time_areas(
     -------------------------    ---------------------------------------------------------
     output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_drive_time_areas``, there are two settings.
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_drive_time_areas``, there are three settings.
+                                - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                
+                                .. code-block:: python
+                                # Example Usage
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
-
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-
-                                 #. Overwrite a Feature Layer (overwrite) if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                        "ymin": -9187921.892449,
+                                                        "xmax": 3174104.927313,
+                                                        "ymax": -9175500.875353},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -871,14 +891,21 @@ def find_nearest(
     -------------------------    ---------------------------------------------------------
     output_name                  Optional string. Output feature layer collection. If not provided, a feature collection is returned.
     -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. For ``find_nearest``, there are two settings.
+    context                      Optional dict. Additional settings such as processing extent and output spatial reference. For find_nearest, there are three settings.
 
-                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
-                                    that intersect the bounding box will be analyzed.
+                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    
+                                 .. code-block:: python
+                                    # Example Usage
 
-                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
-
-                                 #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                    context = {"extent": {"xmin": 3164569.408035,
+                                                            "ymin": -9187921.892449,
+                                                            "xmax": 3174104.927313,
+                                                            "ymax": -9175500.875353},
+                                                "outSR": {"wkid": 3857},
+                                                "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1188,14 +1215,21 @@ def plan_routes(
     output_name                     Optional string. If provided, the method will create a feature service of the results. You define
                                     the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    context                         Optional string. Context contains additional settings that affect task execution. For ``plan_routes``, there are two settings:
+    context                         Optional dict. Additional settings such as processing extent and output spatial reference. For plan_routes, there are three settings.
 
-                                    #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those points in the inputLayer, start_layer, and endLayer that are within the bounding box can be visited by routes.
+                                    - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                    - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                        
+                                    .. code-block:: python
+                                        # Example Usage
 
-                                    #. Output Spatial Reference (``outSR``)-If the output is a feature service, the spatial reference will be the same as ``stops_layer``. Setting outSR for feature services has no effect.
-                                       If the output is a feature collection, the features will be in the spatial reference of the outSR value or the spatial reference of ``stops_layer`` when outSR is not specified.
-                                    
-                                    #. Overwrite a Feature Layer (``overwrite``) - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                        context = {"extent": {"xmin": 3164569.408035,
+                                                                "ymin": -9187921.892449,
+                                                                "xmax": 3174104.927313,
+                                                                "ymax": -9175500.875353},
+                                                    "outSR": {"wkid": 3857},
+                                                    "overwrite": True}
     ----------------------------    --------------------------------------------------------------------------------------------------
     gis                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------------------    --------------------------------------------------------------------------------------------------
