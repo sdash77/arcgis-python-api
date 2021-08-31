@@ -1,3 +1,4 @@
+from functools import lru_cache
 import collections
 from functools import wraps
 import re
@@ -19,6 +20,22 @@ from ._business_analyst._utils import (
     local_ba_data_avail,
 )
 from ._ge import _GeoEnrichment
+
+
+@lru_cache
+def _check_active_gis(gis=None):
+    """Helper function to get an active gis if no gis already declared in session."""
+    # prioritize local active_gis
+    if gis is None:
+
+        # late import to get the active gis
+        from arcgis.env import active_gis
+
+        # if an active_gis is
+        if active_gis:
+            gis = active_gis
+
+    return gis
 
 
 def _call_method_by_source(fn) -> callable:
@@ -54,20 +71,14 @@ def _call_method_by_source(fn) -> callable:
         if src is None:
 
             # have to do a late import to give chance to be populated
-            from arcgis.env import active_gis
-
-            if active_gis:
-                src = active_gis
+            src = _check_active_gis(src)
 
         # if nothing found, interrogate the local session and see if the environment has everything for local
         elif src is None and local_business_analyst_avail() and local_ba_data_avail():
             src = "local"
 
         # make sure a source was located or bingo out
-        assert src is not None, (
-            "The gis parameter must be pesent and populated with either a GIS instance or using "
-            'the "local" keyword.'
-        )
+        assert src is not None, "The gis parameter needs to be populated with a valid GIS instance."
 
         # build function name to call
         fn_nm_to_call = (
@@ -79,7 +90,7 @@ def _call_method_by_source(fn) -> callable:
             src_nm = (
                 "Web GIS"
                 if isinstance(src, GIS)
-                else "local (ArcGIS Pro with Business Analayst)"
+                else "local (ArcGIS Pro with Business Analyst)"
             )
             raise NotImplementedError(
                 f"The {fn_name} function is not yet implemented with a {src_nm} source."
@@ -91,21 +102,6 @@ def _call_method_by_source(fn) -> callable:
         return fn_to_call(*args, **kwargs)
 
     return wrapped
-
-
-def _check_active_gis(gis=None):
-    """Helper function to get an active gis if no gis already declared in session."""
-    # prioritize local active_gis
-    if gis is None:
-
-        # late import to get the active gis
-        from arcgis.env import active_gis
-
-        # if an active_gis is
-        if active_gis:
-            gis = active_gis
-
-    return gis
 
 
 BufferStudyArea = collections.namedtuple(
