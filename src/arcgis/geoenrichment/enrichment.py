@@ -24,7 +24,7 @@ from ._ge import _GeoEnrichment
 def _check_active_gis(gis=None):
     """Helper function to get an active gis if no gis already declared in session."""
     # prioritize active_gis
-    if gis is not None and env.active_gis is not None:
+    if gis is None and env.active_gis is not None:
         gis = env.active_gis
 
     return gis
@@ -322,7 +322,7 @@ class Country(object):
     ) -> None:
 
         # handle the caveat of using a GIS('Pro') input
-        if gis is not None:
+        if isinstance(gis, GIS):
             if gis._con._auth == "PRO":
                 gis = "local"
 
@@ -655,7 +655,7 @@ def get_countries(gis: GIS = None, as_df: bool = False):
         DataFrame of available countries.
     """
     # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
-    if gis is not None:
+    if isinstance(gis, GIS):
         if gis._con._auth == "PRO":
             gis = "local"
 
