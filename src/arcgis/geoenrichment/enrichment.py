@@ -69,8 +69,10 @@ def _call_method_by_source(fn) -> callable:
             src = "local"
 
         # make sure a source was located or bingo out
-        src_msg = ("The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
-                   "object in the session.")
+        src_msg = (
+            "The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
+            "object in the session."
+        )
         assert src is not None, src_msg
 
         # build function name to call
