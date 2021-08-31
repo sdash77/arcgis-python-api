@@ -1,4 +1,3 @@
-from functools import lru_cache
 import collections
 from functools import wraps
 import re
@@ -22,7 +21,6 @@ from ._business_analyst._utils import (
 from ._ge import _GeoEnrichment
 
 
-@lru_cache
 def _check_active_gis(gis=None):
     """Helper function to get an active gis if no gis already declared in session."""
     # prioritize active_gis
