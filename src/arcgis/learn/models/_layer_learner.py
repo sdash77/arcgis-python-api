@@ -7,7 +7,6 @@ import warnings
 import math
 from pathlib import Path
 
-HAS_FASTAI = True
 import_exception = None
 
 import arcgis
@@ -29,14 +28,19 @@ try:
     from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
+
+    HAS_FASTAI = True
+
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
-HAS_NUMPY = True
+
 try:
     import numpy as np
+
+    HAS_NUMPY = True
 except:
     HAS_NUMPY = False
 
@@ -394,11 +398,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if explain:
             try:
                 import shap
-
-                HAS_SHAP = True
             except:
-                HAS_SHAP = False
-            if not HAS_SHAP:
                 warnings.warn(
                     "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
                 )

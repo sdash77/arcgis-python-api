@@ -14,12 +14,13 @@ from arcgis.features import FeatureLayer
 from arcgis.raster.analytics import copy_raster
 from .._utils.tabular_data import TabularDataObject, explain_prediction
 
-HAS_ML_DEPS = True
 
 try:
     import sklearn
     from sklearn import *
     import pandas as pd
+
+    HAS_ML_DEPS = True
 except:
     missing_deps_trace = traceback.format_exc()
     HAS_ML_DEPS = False
@@ -774,11 +775,7 @@ class MLModel(object):
         if explain:
             try:
                 import shap
-
-                HAS_SHAP = True
             except:
-                HAS_SHAP = False
-            if not HAS_SHAP:
                 warnings.warn(
                     "Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working."
                 )

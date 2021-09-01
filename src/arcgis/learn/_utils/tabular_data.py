@@ -11,7 +11,7 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_FASTAI = True
+
 try:
     from fastai.tabular import TabularList
     from fastai.tabular import TabularDataBunch
@@ -22,6 +22,8 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+
+    HAS_FASTAI = True
 
 except Exception as e:
     import_trace = traceback.format_exc()
@@ -1538,10 +1540,7 @@ def show_local_interpretation(
 ):
     try:
         import shap
-
-        HAS_SHAP = True
     except:
-        HAS_SHAP = False
         raise Exception(traceback.format_exc())
     feature_variables = (
         model._data._categorical_variables + model._data._continuous_variables
@@ -1704,10 +1703,7 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
 
     try:
         import shap
-
-        HAS_SHAP = True
     except:
-        HAS_SHAP = False
         raise Exception(traceback.format_exc())
 
     # explainer = shap.TreeExplainer(model._model)

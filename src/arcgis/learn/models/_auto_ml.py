@@ -12,7 +12,7 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-HAS_FASTAI = True
+
 HAS_AUTO_ML_DEPS = True
 import_exception = None
 
@@ -20,6 +20,8 @@ try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject
     from arcgis.learn._utils.common import _get_emd_path
+
+    HAS_FASTAI = True
 except:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
@@ -32,6 +34,7 @@ try:
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
+    )
     HAS_AUTO_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
@@ -115,17 +118,15 @@ class AutoML(object):
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
-            HAS_AUTOML = True
         except Exception as e:
             import_exception = "\n".join(
                 traceback.format_exception(type(e), e, e.__traceback__)
             )
-            HAS_AUTOML = False
-            
+            _raise_fastai_import_error(import_exception=import_exception)
+
         if not HAS_AUTO_ML_DEPS:
-             _raise_fastai_import_error(import_exception=import_exception)
-        if not HAS_AUTOML:
-             _raise_fastai_import_error(import_exception=import_exception)
+            _raise_fastai_import_error(import_exception=import_exception)
+
         self._data = data
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
@@ -400,6 +401,8 @@ class AutoML(object):
 
         :returns: `AutoML` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error(import_exception=import_exception)
         emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -618,6 +621,8 @@ class AutoML(object):
                 raster_columns.append((raster, categorical))
 
         with warnings.catch_warnings():
+            if not HAS_FASTAI:
+                _raise_fastai_import_error(import_exception=import_exception)
             warnings.simplefilter("ignore", UserWarning)
             (
                 processed_dataframe,
