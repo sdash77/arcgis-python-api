@@ -846,7 +846,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        overwrite = context.pop("overwrite", False) if context else False
+        overwrite = (
+            context.pop("overwrite", False) if context else False if context else False
+        )
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -948,7 +950,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1104,7 +1106,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1224,7 +1226,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -1328,7 +1330,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1407,7 +1409,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
         if estimate:
             params = {}
@@ -1514,7 +1516,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CalculateDensity"
 
         params = {}
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
@@ -1632,7 +1634,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1731,7 +1733,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1809,7 +1811,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1871,7 +1873,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -1961,7 +1963,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
 
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2139,7 +2141,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2207,7 +2209,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2280,7 +2282,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2364,7 +2366,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         task = "FindHotSpots"
@@ -2488,7 +2490,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2614,7 +2616,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2725,7 +2727,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2800,7 +2802,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2881,7 +2883,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -2982,7 +2984,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3101,7 +3103,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3191,7 +3193,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3268,7 +3270,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3387,7 +3389,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if point_barrier_layer:
@@ -3531,7 +3533,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3633,7 +3635,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3739,7 +3741,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -3857,7 +3859,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-        overwrite = context.pop("overwrite", False)
+        overwrite = context.pop("overwrite", False) if context else False
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
