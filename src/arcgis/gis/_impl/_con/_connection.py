@@ -20,8 +20,11 @@ if sys.platform == "win32":
     try:
         import certifi_win32
 
-        certifi_win32.generate_pem()
         certifi_win32.wincerts.where()
+
+        if certifi_win32.wincerts.verify_combined_pem() == False:
+            certifi_win32.generate_pem()
+
     except ImportError:
         pass
 

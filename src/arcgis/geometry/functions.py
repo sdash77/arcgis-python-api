@@ -6,11 +6,10 @@ from enum import Enum
 import arcgis.env
 
 
-from enum import Enum
-
-
 class AreaUnits(Enum):
-    """ """
+    """
+    Supported Geometry Service Area Units
+    """
 
     UNKNOWNAREAUNITS = {"areaUnit": "esriUnknownAreaUnits"}
     SQUAREINCHES = {"areaUnit": "esriSquareInches"}
@@ -513,8 +512,6 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    if isinstance(length_unit, LengthUnits):
-        length_unit = length_unit.value
 
     return gis._tools.geometry.difference(
         geometries, spatial_ref, geometry, future=future
@@ -565,6 +562,8 @@ def distance(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(distance_unit, LengthUnits):
+        distance_unit = distance_unit.value
     return gis._tools.geometry.distance(
         spatial_ref, geometry1, geometry2, distance_unit, geodesic, future=future
     )

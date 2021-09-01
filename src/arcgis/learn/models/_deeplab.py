@@ -343,7 +343,7 @@ class DeepLab(ArcGISModel):
                 pretrained=pretrained_backbone,
             )
 
-        if not _isnotebook() and os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(data, model, metrics=accuracy).to_distributed(
@@ -535,7 +535,7 @@ class DeepLab(ArcGISModel):
         return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
 

@@ -141,7 +141,7 @@ class ModelExtension(ArcGISModel):
                 )
         if self._is_multispectral:
             model = _change_tail(model, data)
-        if not _isnotebook() and os.name == "posix":
+        if not _isnotebook():
             _set_ddp_multigpu(self)
             if self._multigpu_training:
                 self.learn = Learner(
@@ -376,7 +376,7 @@ class ModelExtension(ArcGISModel):
             }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
         model_accuracy = self.learn.recorder.metrics[-1][0]

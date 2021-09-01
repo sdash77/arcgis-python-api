@@ -174,6 +174,20 @@ class GIS(object):
                         configuration, default authentication and similar. If `False`
                         the GIS class will ignore the `netrc` files defined on the
                         system.
+    ----------------    ---------------------------------------------------------------
+    proxy               Optional Dictionary.  If you need to use a proxy, you can
+                        configure individual requests with the proxy argument to any
+                        request method.  See ```Usage Exmaple 9: Using a Proxy``` for
+                        example usage.
+
+                        :Usage Example:
+
+
+                        {
+                            "http" : "http://10.343.10.22:111",
+                            "https" : "https://127.343.13.22:6443",
+                        }
+
     ================    ===============================================================
 
 
@@ -231,6 +245,15 @@ class GIS(object):
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
+
+    .. code-block:: python
+
+        # Usage Exmaple 9: Using a Proxy
+        proxy = {
+            'http': 'http://10.10.1.10:3128',
+            'https': 'http://10.10.1.10:1080',
+        }
+        gis = GIS(proxy=proxy)
 
     """
 
@@ -525,7 +548,8 @@ class GIS(object):
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
-            self._con._auth = "PRO"
+            if self._con._auth != "ANON":
+                self._con._auth = "PRO"
 
         if self._con._auth != "anon":
             me = self.users.me
@@ -2774,13 +2798,13 @@ class UserManager(object):
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
@@ -9399,7 +9423,30 @@ class User(dict):
 
     @property
     def folders(self):
-        """Gets the list of the user's folders"""
+        """
+        Gets the list of the user's folders
+
+        :return:
+            List of folders represented as dictionaries.
+            Dictionary keys include: username, folder id (id), title, and date created (created)
+
+         .. code-block:: python
+
+            # Example to get name of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["title"])
+
+            # Example to get id of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["id"])
+
+        """
         return self._portal.user_folders(self._user_id)
 
     def items(self, folder=None, max_items=100):
@@ -9436,6 +9483,18 @@ class User(dict):
                 print(f"{user.username} using {storage} bytes")
             except Exception as e:
                 print(f"{user.username} using {storage} bytes")
+
+        .. code-block:: python
+
+            # Example get items in each folder that is not root
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                items = user.items(folder=folder["title"])
+                for item in items:
+                    print(item, folder)
+
         """
 
         items = []
@@ -13427,7 +13486,7 @@ class _GISResource(object):
     @property
     def properties(self):
         """
-        The ``properties`` method retrieves and set properties of this object.
+        The ``properties`` property retrieves and set properties of this object.
         """
         if self._hydrated:
             return self._lazy_properties
