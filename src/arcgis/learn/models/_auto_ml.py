@@ -9,7 +9,6 @@ import math
 import time
 from pathlib import Path
 import traceback
-
 import arcgis
 from arcgis.features import FeatureLayer
 

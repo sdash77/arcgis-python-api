@@ -12,7 +12,6 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 from arcgis.raster.analytics import copy_raster
-
 from .._utils.tabular_data import TabularDataObject, explain_prediction
 
 HAS_ML_DEPS = True
@@ -775,6 +774,7 @@ class MLModel(object):
         if explain:
             try:
                 import shap
+
                 HAS_SHAP = True
             except:
                 HAS_SHAP = False

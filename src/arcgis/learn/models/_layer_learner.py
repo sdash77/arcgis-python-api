@@ -8,7 +8,7 @@ import math
 from pathlib import Path
 
 HAS_FASTAI = True
-import_exception=None
+import_exception = None
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -34,7 +34,6 @@ except Exception as e:
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
-
 HAS_NUMPY = True
 try:
     import numpy as np
@@ -395,6 +394,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if explain:
             try:
                 import shap
+
                 HAS_SHAP = True
             except:
                 HAS_SHAP = False

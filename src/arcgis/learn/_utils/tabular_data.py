@@ -22,7 +22,7 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
-    
+
 except Exception as e:
     import_trace = traceback.format_exc()
     HAS_FASTAI = False
@@ -1060,16 +1060,19 @@ class TabularDataObject(object):
                     else:
                         continuous_variables.append(field[1])
 
-        return dataframe, {
-            "dependent_variable": dependent_variable,
-            "categorical_variables": categorical_variables
-            if categorical_variables
-            else [],
-            "continuous_variables": continuous_variables
-            if continuous_variables
-            else [],
-            "index_data": index_data,
-        }
+        return (
+            dataframe,
+            {
+                "dependent_variable": dependent_variable,
+                "categorical_variables": categorical_variables
+                if categorical_variables
+                else [],
+                "continuous_variables": continuous_variables
+                if continuous_variables
+                else [],
+                "index_data": index_data,
+            },
+        )
 
     @staticmethod
     def _process_layer(
@@ -1159,9 +1162,10 @@ class TabularDataObject(object):
                             value = raster_value[0][0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
-                            start_x, start_y = xmin + (
-                                raster.mean_cell_width / 2
-                            ), ymin + (raster.mean_cell_height / 2)
+                            start_x, start_y = (
+                                xmin + (raster.mean_cell_width / 2),
+                                ymin + (raster.mean_cell_height / 2),
+                            )
                             values = []
                             while start_y < ymax:
                                 while start_x < xmax:
@@ -1534,6 +1538,7 @@ def show_local_interpretation(
 ):
     try:
         import shap
+
         HAS_SHAP = True
     except:
         HAS_SHAP = False
@@ -1699,6 +1704,7 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
 
     try:
         import shap
+
         HAS_SHAP = True
     except:
         HAS_SHAP = False

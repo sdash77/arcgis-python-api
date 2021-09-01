@@ -37,7 +37,6 @@ try:
 
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
     from fastai.basic_train import LearnerCallback
-
     from torch import nn
     import torch
     import numpy as np
@@ -1580,6 +1579,7 @@ class ArcGISModel(object):
 
     def _save_pytorch_tflite(self, name):
         import tensorflow as tf
+
         tf.get_logger().setLevel(logging.ERROR)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

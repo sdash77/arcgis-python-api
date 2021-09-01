@@ -23,6 +23,7 @@ def farthest_point_sample(pts, npoint):
         centroids: sampled pointcloud index, [B, npoint]
     """
     from torch_geometric.nn import fps
+
     device = pts.device
     B, N, C = pts.shape
 
@@ -49,6 +50,7 @@ def find_k_neighbor(rep_pts, pts, K, D):
     :return group_pts: K neighbor points(B, P, K, C)
     """
     from torch_geometric.nn import knn
+
     device = pts.device
     B, N, C = pts.shape
     _, N_rep, _ = rep_pts.shape
