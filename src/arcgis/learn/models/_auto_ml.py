@@ -30,8 +30,9 @@ try:
     from sklearn import *
     import numpy as np
     import pandas as pd
-except:
-    import_exception = traceback.format_exc()
+except Exception as e:
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
     HAS_AUTO_ML_DEPS = False
 
 HAS_FAST_PROGRESS = True
@@ -116,8 +117,12 @@ class AutoML(object):
         try:
             from supervised.automl import AutoML as base_AutoML
             HAS_AUTOML = True
-        except:
+        except Exception as e:
+            import_exception = "\n".join(
+                traceback.format_exception(type(e), e, e.__traceback__)
+            )
             HAS_AUTOML = False
+            
         if not HAS_AUTO_ML_DEPS:
              _raise_fastai_import_error(import_exception=import_exception)
         if not HAS_AUTOML:
@@ -398,7 +403,7 @@ class AutoML(object):
         """
         emd_path = _get_emd_path(emd_path)
         if not HAS_AUTO_ML_DEPS:
-            raise Exception(missing_deps_trace)
+            _raise_fastai_import_error(import_exception=import_exception)
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")

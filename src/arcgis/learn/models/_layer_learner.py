@@ -28,7 +28,7 @@ try:
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
-    from fastai.metrics import r2_scorezz
+    from fastai.metrics import r2_score
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
