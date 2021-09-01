@@ -99,5 +99,5 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert isinstance(self._gis.admin.datastores.stores, list)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -128,7 +128,7 @@ def trace(img, p, nbs, acc, buf):
         p = newp
         if c2 != 0:
             break
-    return (c1 - 10, c2 - 10, idx2rc(buf[:cur + 1], acc))
+    return (c1 - 10, c2 - 10, idx2rc(buf[: cur + 1], acc))
 
 
 @jit(nopython=True)  # parse the image then get the nodes and edges
@@ -149,6 +149,7 @@ def parse_struc(img, pts, nbs, acc):
                 edge = trace(img, p + dp, nbs, acc, buf)
                 edges.append(edge)
     return nodes, edges
+
 
 # use nodes and edges build a networkx graph
 
@@ -172,7 +173,7 @@ def buffer(ske):
 def mark_node(ske):
     buf = buffer(ske)
     nbs = neighbors(buf.shape)
-    acc = np.cumprod((1,)+buf.shape[::-1][:-1])[::-1]
+    acc = np.cumprod((1,) + buf.shape[::-1][:-1])[::-1]
     mark(buf, nbs)
     return buf
 
@@ -180,11 +181,12 @@ def mark_node(ske):
 def build_sknw(ske, multi=False):
     buf = buffer(ske)
     nbs = neighbors(buf.shape)
-    acc = np.cumprod((1,)+buf.shape[::-1][:-1])[::-1]
+    acc = np.cumprod((1,) + buf.shape[::-1][:-1])[::-1]
     mark(buf, nbs)
     pts = np.array(np.where(buf.ravel() == 2))[0]
     nodes, edges = parse_struc(buf, pts, nbs, acc)
     return build_graph(nodes, edges, multi)
+
 
 # draw the graph
 
@@ -196,44 +198,47 @@ def draw_graph(img, graph, cn=255, ce=128):
         eds = graph[s][e]
         if isinstance(graph, nx.MultiGraph):
             for i in eds:
-                pts = eds[i]['pts']
+                pts = eds[i]["pts"]
                 img[np.dot(pts, acc)] = ce
         else:
-            img[np.dot(eds['pts'], acc)] = ce
+            img[np.dot(eds["pts"], acc)] = ce
     for idx in graph.nodes():
-        pts = graph.nodes[idx]['pts']
+        pts = graph.nodes[idx]["pts"]
         img[np.dot(pts, acc)] = cn
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    img = np.array([
-        [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0, 0, 0],
-        [0, 0, 0, 0, 0, 1, 1, 1, 1],
-        [0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0]])
+    img = np.array(
+        [
+            [0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0],
+        ]
+    )
 
     node_img = mark_node(img)
     graph = build_sknw(img)
 
-    plt.imshow(node_img[1:-1, 1:-1], cmap='gray')
+    plt.imshow(node_img[1:-1, 1:-1], cmap="gray")
 
     # draw edges by pts
     for (s, e) in graph.edges():
-        ps = graph[s][e]['pts']
-        plt.plot(ps[:, 1], ps[:, 0], 'green')
+        ps = graph[s][e]["pts"]
+        plt.plot(ps[:, 1], ps[:, 0], "green")
 
     # draw node by o
     nodes = graph.nodes()
-    ps = np.array([nodes[i]['o'] for i in nodes])
-    plt.plot(ps[:, 1], ps[:, 0], 'r.')
+    ps = np.array([nodes[i]["o"] for i in nodes])
+    plt.plot(ps[:, 1], ps[:, 0], "r.")
 
     # title and show
-    plt.title('Build Graph')
+    plt.title("Build Graph")
     plt.show()

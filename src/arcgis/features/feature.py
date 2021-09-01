@@ -202,7 +202,7 @@ class Feature(object):
 
     @attributes.setter
     def attributes(self, value):
-        """ The ``attributes`` property gets and sets a feature's attributes"""
+        """The ``attributes`` property gets and sets a feature's attributes"""
         self._attributes = value
         self._dict["attributes"] = value
 
@@ -244,7 +244,7 @@ class Feature(object):
     @classmethod
     def from_json(cls, json_str):
         """
-        The ``from_dict`` method creates a :class:`~arcgis.features.Feature` object from a JSON string.
+        The ``from_json`` method creates a :class:`~arcgis.features.Feature` object from a JSON string.
 
         :returns:
             A :class:`~arcgis.features.Feature` from a JSON string"""
@@ -336,8 +336,6 @@ class FeatureSet(object):
         global_id_field_name=None,
     ):
         """Constructor"""
-        self._fields = fields
-
         self._has_z = has_z
         self._has_m = has_m
         self._geometry_type = geometry_type
@@ -349,7 +347,7 @@ class FeatureSet(object):
         # conversion of different inputs to a common list of feature objects
         if isinstance(features, str):
             # convert the featuresclass to a list of features
-            features = self._fc_to_features(dataset=features)
+            features, fields = self._fc_to_features(dataset=features)
             if features is None:
                 raise AttributeError(
                     "Feature class could not be converted to a feature set"
@@ -385,7 +383,7 @@ class FeatureSet(object):
                 raise AttributeError(
                     "FeatureSet requires a list of features (as dicts or Feature objects)"
                 )
-
+        self._fields = fields
         self._features = features
         if len(features) > 0:
             feat_geom = None
@@ -556,39 +554,54 @@ class FeatureSet(object):
                     "Error creating FeatureSet: {0} does not exist".format(dataset)
                 )
 
-            desc = arcpy.Describe(dataset)
-            fields = [
-                field.name
-                for field in arcpy.ListFields(dataset)
-                if field.type not in ["Geometry"]
-            ]
-            date_fields = [
-                field.name
-                for field in arcpy.ListFields(dataset)
-                if field.type == "Date"
-            ]
-            non_geom_fields = copy.deepcopy(fields)
+            desc = arcpy.da.Describe(dataset)
+            fields = []
+            date_fields = []
+            for field in desc["fields"]:
+                key = field.name
+                if field.type == "Date":
+                    field_type = "EsriFieldTypeDate"
+                    date_fields.append(key)
+                elif field.type == "Double":
+                    field_type = "EsriFieldTypeDouble"
+                elif field.type == "Integer":
+                    field_type = "EsriFieldTypeInteger"
+                else:
+                    field_type = "EsriFieldTypeString"
+                fields.append(
+                    {
+                        "name": key,
+                        "alias": key,
+                        "type": field_type,
+                        "sqlType": "sqlTypeOther",
+                    }
+                )
+            fields_names = [field["name"] for field in fields]
+            non_geom_fields = copy.deepcopy(fields_names)
             features = []
             if hasattr(desc, "shapeFieldName"):
                 fields.append("SHAPE@JSON")
             del desc
-            with arcpy.da.SearchCursor(dataset, fields) as rows:
+
+            with arcpy.da.SearchCursor(
+                dataset, fields_names
+            ) as rows:  # get field names here
                 for row in rows:
                     row = list(row)
                     for date_field in date_fields:
-                        if row[fields.index(date_field)] is not None:
-                            row[fields.index(date_field)] = int(
-                                (_date_handler(row[fields.index(date_field)]))
-                            )
+                        date_value = row[fields_names.index(date_field)]
+                        if date_value is not None:
+                            date_value = int(_date_handler(date_value))
+
                     template = {"attributes": dict(zip(non_geom_fields, row))}
                     if "SHAPE@JSON" in fields:
                         template["geometry"] = _ujson.loads(
                             row[fields.index("SHAPE@JSON")]
                         )
-
                     features.append(Feature.from_dict(template))
                     del row
-            return features
+            fields = fields if fields else None
+            return features, fields
         return None
         # ----------------------------------------------------------------------
 
@@ -827,23 +840,23 @@ class FeatureSet(object):
     @staticmethod
     def from_json(json_str):
         """
-         The ``from_json`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         JSON string.
+        The ``from_json`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        JSON string.
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
         """
         return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
     def from_dataframe(df):
         """
-         The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
+        The ``from_dataframe`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        Pandas' DataFrame or :class:`~arcgis.features.SpatialDataFrame`
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
-         """
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
 
         def _infer_type(df, col):
             """
@@ -937,11 +950,11 @@ class FeatureSet(object):
     @staticmethod
     def from_geojson(geojson):
         """
-         The ``from_geoJSON`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         GEO JSON  :class:`~arcgis.features.FeatureCollection` object
+        The ``from_geoJSON`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        GEO JSON  :class:`~arcgis.features.FeatureCollection` object
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
 
         """
         from warnings import warn
@@ -1095,11 +1108,11 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """
-         The ``from_dict`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
-         dictionary.
+        The ``from_dict`` method creates a :class:`~arcgis.features.FeatureSet` objects from a
+        dictionary.
 
-         :returns:
-            A :class:`~arcgis.features.FeatureSet` object
+        :returns:
+           A :class:`~arcgis.features.FeatureSet` object
         """
         features = []
         if "fields" in featureset_dict:
@@ -1586,14 +1599,19 @@ class FeatureCollection(Layer):
                 "esriGeometryMultipoint",
             ]:
                 symbol = {
+                    "type": "esriSMS",
+                    "color": [226, 29, 145, 158],
                     "angle": 0,
                     "xoffset": 0,
-                    "yoffset": 12,
-                    "type": "esriPMS",
-                    "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
-                    "contentType": "image/png",
-                    "width": 24,
-                    "height": 24,
+                    "yoffset": 0,
+                    "size": 12,
+                    "style": "esriSMSCircle",
+                    "outline": {
+                        "type": "esriSLS",
+                        "color": [0, 0, 0, 255],
+                        "width": 0.75,
+                        "style": "esriSLSSolid",
+                    },
                 }
 
         fc_layer_definition["drawingInfo"] = {

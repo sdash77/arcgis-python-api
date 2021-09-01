@@ -5,6 +5,7 @@ from tests.integration.workflow_manager.workflowmanager_setup import (
 )
 import re
 from pprint import pprint
+from arcgis.geometry import Geometry
 
 
 ###########################################################################
@@ -42,8 +43,9 @@ class TestWorkflowManager(unittest.TestCase):
         print("\n==================================================================")
 
     def create_diagram(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
         return self.connection.workflow_manager.create_diagram(
-            name="Test New Diagram123 " + str(datetime.datetime.now().timestamp()),
+            name="Test New Diagram123 " + uniqueness,
             display_grid=True,
             description="Test Description",
             active=True,
@@ -88,7 +90,59 @@ class TestWorkflowManager(unittest.TestCase):
             ],
         )
 
-    def create_job(self, count=1, template_name="Introduction to Workflow Manager"):
+    def create_diagram_robust(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        d_id = uniqueness[0:22]
+        return self.connection.workflow_manager.create_diagram(
+            name="Test New Diagram123 " + uniqueness,
+            diagram_id=d_id,
+            display_grid=True,
+            description="Test Description",
+            active=True,
+            annotations=[
+                {
+                    "position": "0,0,100,250",
+                    "color": "130, 202, 237",
+                    "outlineColor": "130, 202, 237",
+                    "labelColor": "black",
+                    "text": "test annotations",
+                }
+            ],
+            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            steps=[
+                {
+                    "action": {"actionType": "Manual"},
+                    "automatic": False,
+                    "canSkip": False,
+                    "color": "130, 202, 237",
+                    "description": "Start and end of a workflow",
+                    "helpText": "Start/End help text",
+                    "helpUrl": "Start/End help url",
+                    "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "labelColor": "black",
+                    "name": "Start/End",
+                    "outlineColor": "130, 202, 237",
+                    "paths": [
+                        {
+                            "assignedType": "Unassigned",
+                            "lineColor": "black",
+                            "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
+                            "notifications": [],
+                            "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                            "ports": ["BOTTOM", "TOP"],
+                        }
+                    ],
+                    "position": "0,0,100,50",
+                    "proceedNext": True,
+                    "shape": 3,
+                    "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                }
+            ],
+        )
+
+    def create_job(
+        self, count=1, template_name="Introduction to Workflow Manager", job_id=None
+    ):
         job_templates = self.connection.workflow_manager.job_templates
         job_template = {}
         for x in job_templates:
@@ -104,11 +158,11 @@ class TestWorkflowManager(unittest.TestCase):
             priority="High",
             description="hopefully this works...",
             owner=self.connection.portal_username,
-            group="Unassigned",
             assigned=self.connection.portal_username,
             complete=42,
             notes="testing notes",
             parent="",
+            job_id=job_id,
         )
 
     def create_job_template(self):
@@ -116,6 +170,138 @@ class TestWorkflowManager(unittest.TestCase):
 
         name = "Testing Template  " + uniqueness
         table_name = "testing_table_" + uniqueness
+        template_id = uniqueness[0:22]
+
+        diagrams = self.connection.workflow_manager.diagrams
+        diagram = {}
+        for gram in diagrams:
+            if gram.diagram_name == "Introduction to Workflow Manager":
+                diagram = gram
+                break
+
+        return self.connection.workflow_manager.create_job_template(
+            name=name,
+            id=template_id,
+            diagram_id=diagram.diagram_id,
+            diagram_name=diagram.diagram_name,
+            priority="high",
+            category="Functional Tests",
+            job_duration=5,
+            assigned_to=self.connection.portal_username,
+            default_due_date="2020-04-02T13:25:50Z",
+            default_start_date="2020-04-02T13:25:50Z",
+            start_date_type="CreationDate",
+            assigned_type="Unassigned",
+            description="Test Test test",
+            default_description="Test Test123",
+            state="Active",
+            last_updated_by="Abbie Admin",
+            last_updated_date="2020-04-02T13:25:50Z",
+            extended_property_table_definitions=[
+                {
+                    "tableName": table_name,
+                    "tableAlias": table_name,
+                    "tableOrder": 0,
+                    "relationshipType": "OneToOne",
+                    "extendedPropertyDefinitions": [
+                        {
+                            "propertyOrder": 0,
+                            "visible": True,
+                            "propertyName": "prop1",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop1",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 1,
+                            "visible": True,
+                            "propertyName": "prop2",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop2",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 2,
+                            "visible": True,
+                            "propertyName": "string",
+                            "editable": True,
+                            "domain": {
+                                "type": "codedValue",
+                                "codedValues": [
+                                    {"code": "123", "name": "123"},
+                                    {"code": "456", "name": "456"},
+                                ],
+                                "range": ["string"],
+                            },
+                            "dataType": "String",
+                            "propertyAlias": "string",
+                            "required": True,
+                            "fieldLength": 0,
+                        },
+                    ],
+                }
+            ],
+        )
+
+    def create_job_robust(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        template_name = "Testing Template  " + uniqueness
+        table_name = "testing_table_" + uniqueness
+
+        self.create_job_template_robust(
+            template_name=template_name, table_name=table_name
+        )
+
+        job_templates = self.connection.workflow_manager.job_templates
+        job_template = {}
+        for x in job_templates:
+            if x.job_template_name == template_name:
+                job_template = x
+
+        return self.connection.workflow_manager.jobs.create(
+            template=job_template.job_template_id,
+            count=1,
+            name="Test New Job123",
+            start="2020-04-02T13:25:50Z",
+            end="2020-04-02T13:25:50Z",
+            priority="High",
+            description="hopefully this works...",
+            owner=self.connection.portal_username,
+            assigned=self.connection.portal_username,
+            complete=42,
+            notes="testing notes",
+            parent="",
+            location={
+                "geometryType": "Polygon",
+                "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+            },
+            extended_properties=[
+                {"identifier": table_name + ".prop1", "value": "newly_created123"},
+                {"identifier": table_name + ".prop2", "value": "newly_created456"},
+                {"identifier": table_name + ".prop4", "value": "1"},
+            ],
+            related_properties=[
+                {
+                    "tableName": "related_props_table123",
+                    "entries": [
+                        {
+                            "properties": [
+                                {"propertyName": "rel_prop1", "value": "string"}
+                            ]
+                        }
+                    ],
+                }
+            ],
+        )
+
+    def create_job_template_robust(self, template_name, table_name):
+        name = template_name
+        table_name = table_name
 
         diagrams = self.connection.workflow_manager.diagrams
         diagram = {}
@@ -151,18 +337,41 @@ class TestWorkflowManager(unittest.TestCase):
                         {
                             "propertyOrder": 0,
                             "visible": True,
-                            "propertyName": "string",
+                            "propertyName": "prop1",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop1",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 1,
+                            "visible": True,
+                            "propertyName": "prop2",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop2",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 2,
+                            "visible": True,
+                            "propertyName": "prop4",
                             "editable": True,
                             "domain": {
                                 "type": "codedValue",
-                                "codedValues": [{"code": "string", "name": "string"}],
+                                "codedValues": [
+                                    {"code": "1", "name": "Uno"},
+                                    {"code": "2", "name": "Dos"},
+                                ],
                                 "range": ["string"],
                             },
-                            "dataType": "String",
-                            "propertyAlias": "string",
+                            "dataType": "Integer",
+                            "propertyAlias": "prop4",
                             "required": True,
-                            "fieldLength": 0,
-                        }
+                            "fieldLength": 50,
+                        },
                     ],
                 }
             ],
@@ -171,35 +380,6 @@ class TestWorkflowManager(unittest.TestCase):
     # endregion
 
     # region Users
-
-    def test_get_assignable_users(self):
-        # Act
-        assignable_users = self.connection.workflow_manager.assignable_users
-
-        # Assertions
-        self.assertIsInstance(assignable_users, list, "Incorrect return type")
-        self.assertEqual(
-            len(assignable_users), 1, "Incorrect number of items downloaded"
-        )
-        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
-
-    def test_get_valid_assignable_users(self):
-        # Arrange
-        valid_assignable_user = {
-            "email": "admin@mydomain.com",
-            "fullName": "Administrator",
-            "username": "admin",
-        }
-
-        # Act
-        assignable_users = self.connection.workflow_manager.assignable_users
-
-        # Assert
-        self.assertIsInstance(assignable_users, list, "Incorrect return type")
-        self.assertEqual(
-            len(assignable_users), 1, "Incorrect number of items downloaded"
-        )
-        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
 
     def test_get_users(self):
         # Act
@@ -351,7 +531,36 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
-    # region Groups
+    # region Assignable
+
+    def test_get_assignable_users(self):
+        # Act
+        assignable_users = self.connection.workflow_manager.assignable_users
+
+        # Assertions
+        self.assertIsInstance(assignable_users, list, "Incorrect return type")
+        self.assertEqual(
+            len(assignable_users), 1, "Incorrect number of items downloaded"
+        )
+        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
+
+    def test_get_valid_assignable_users(self):
+        # Arrange
+        valid_assignable_user = {
+            "email": "admin@mydomain.com",
+            "fullName": "Administrator",
+            "username": "admin",
+        }
+
+        # Act
+        assignable_users = self.connection.workflow_manager.assignable_users
+
+        # Assert
+        self.assertIsInstance(assignable_users, list, "Incorrect return type")
+        self.assertEqual(
+            len(assignable_users), 1, "Incorrect number of items downloaded"
+        )
+        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
 
     def test_get_assignable_groups(self):
         # Act
@@ -380,9 +589,13 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(groups[0], dict, "Incorrect type")
         self.assertTrue(found_group, "Does not contain default group")
 
+    # endregion
+
+    # region Groups
+
     def test_get_groups(self):
         # Act
-        groups = self.connection.workflow_manager.assignable_groups
+        groups = self.connection.workflow_manager.groups
 
         # Assertions
         self.assertIsInstance(groups, list, "Incorrect return type")
@@ -432,23 +645,91 @@ class TestWorkflowManager(unittest.TestCase):
                 "Expected error returned during test: " + testException.__str__()
             )
 
+    def test_update_group(self):
+        # Arrange
+        default_group_name = "Workflow Manager Admin " + self.connection.item_name
+        groups = self.connection.workflow_manager.groups
+
+        for group in groups:
+            if group["title"] == default_group_name:
+                break
+
+        add_roles = {"adds": {"roles": ["Workflow Designer"]}}
+        delete_roles = {"deletes": {"roles": ["Workflow Designer"]}}
+
+        # Act
+        self.connection.workflow_manager.update_group(group["id"], add_roles)
+        specific_group = self.connection.workflow_manager.group(group["id"])
+        has_role = "Workflow Designer" in specific_group.roles
+
+        self.connection.workflow_manager.update_group(group["id"], delete_roles)
+        specific_group = self.connection.workflow_manager.group(group["id"])
+        does_not_have_role = "Workflow Designer" not in specific_group.roles
+
+        # Assert
+        self.assertTrue(has_role, "Incorrectly updated group")
+        self.assertTrue(does_not_have_role, "Incorrect updated group")
+
+    def test_update_group_returns_not_found(self):
+        # Arrange
+        test_id = "bad_id_12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.update_group(test_id, {})
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
     # endregion
 
     # region Searches
-
-    def test_get_searches(self):
+    def test_get_searches_default(self):
         # Act
-        searches = self.connection.workflow_manager.searches
+        searches = self.connection.workflow_manager.searches()
 
         # Assertions
         self.assertIsInstance(searches, list, "Incorrect return type")
-        self.assertEqual(len(searches), 3, "Incorrect number of items downloaded")
+        self.assertIsInstance(searches[0], dict, "Incorrect type")
+
+    def test_get_searches_standard(self):
+        # Act
+        searches = self.connection.workflow_manager.searches("Standard")
+
+        # Assertions
+        self.assertIsInstance(searches, list, "Incorrect return type")
+        self.assertIsInstance(searches[0], dict, "Incorrect type")
+
+    def test_get_searches_charts(self):
+        # Act
+        searches = self.connection.workflow_manager.searches("Chart")
+
+        # Assertions
+        self.assertIsInstance(searches, list, "Incorrect return type")
+        self.assertIsInstance(searches[0], dict, "Incorrect type")
+
+    def test_get_searches_all(self):
+        # Act
+        searches = self.connection.workflow_manager.searches("All")
+
+        # Assertions
+        self.assertIsInstance(searches, list, "Incorrect return type")
         self.assertIsInstance(searches[0], dict, "Incorrect type")
 
     def test_get_valid_searches(self):
         # Arrange
         valid_search = {
             "definition": {
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
                 "fields": [
                     "assignedTo",
                     "jobName",
@@ -456,24 +737,48 @@ class TestWorkflowManager(unittest.TestCase):
                     "jobTemplateName",
                     "priority",
                     "dueDate",
+                    "jobStatus",
                 ],
                 "num": 50,
-                "q": "\"assignedType='User' AND closed=0 AND assignedTo='\" + $currentUser + \"' \"",
+                "q": "\"assignedType='User' AND closed=0 AND assignedTo='\" "
+                '+ $currentUser + "\' "',
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
                 "start": 0,
             },
             "name": "My Jobs",
             "searchId": "rrUF60TFQCe2K0vtgSsYpA",
+            "searchType": "Standard",
+            "sortIndex": 1000,
+        }
+
+        valid_chart = {
+            "searchId": "KPHh4-l1SaKRkO8eZLoeEA",
+            "name": "Job Type Chart",
+            "definition": {
+                "fields": ["job_template_name"],
+                "displayNames": ["Type"],
+                "sortFields": [{"field": "job_template_name", "sortOrder": "Asc"}],
+                "start": 0,
+                "num": 50,
+            },
+            "searchType": "Chart",
+            "colorRamp": "Default",
+            "sortIndex": 2000,
         }
 
         # Act
-        searches = self.connection.workflow_manager.searches
+        searches = self.connection.workflow_manager.searches("All")
         has_search = valid_search in searches
+        has_chart = valid_chart in searches
 
         # Assert
         self.assertIsInstance(searches, list, "Incorrect return type")
-        self.assertEqual(len(searches), 3, "Incorrect number of items downloaded")
         self.assertIsInstance(searches[0], dict, "Incorrect type")
         self.assertTrue(has_search, "Does not contain default search")
+        self.assertTrue(has_chart, "Does not contain default chart")
 
     def test_search_jobs_successfully_returns_with_default_fields(self):
         # Arrange
@@ -554,6 +859,183 @@ class TestWorkflowManager(unittest.TestCase):
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
             )
+
+    # region Create Saved Search
+
+    def test_create_saved_search(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        searchid = uniqueness[0:22]
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=searchid,
+        )
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(actual, searchid, "Incorrect return type")
+
+    def test_create_saved_search_chart(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        searchid = uniqueness[0:22]
+
+        # Act
+        actual = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "start": 0,
+                "fields": ["job_status"],
+                "displayNames": ["Status"],
+                "sortFields": [{"field": "job_status", "sortOrder": "Asc"}],
+            },
+            search_type="Chart",
+            color_ramp="Flower Field Inverse",
+            sort_index=2000,
+            search_id=searchid,
+        )
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(actual, searchid, "Incorrect return type")
+
+    # endregion
+
+    # region Delete Saved Search
+
+    def test_delete_saved_search(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        searchid = uniqueness[0:22]
+
+        # Act
+        search = self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "q": "closed=0",
+                "start": 0,
+                "num": 50,
+                "fields": [
+                    "assignedTo",
+                    "jobName",
+                    "currentStep",
+                    "jobTemplateName",
+                    "priority",
+                    "dueDate",
+                    "jobStatus",
+                ],
+                "displayNames": [
+                    "Assigned To",
+                    "Name",
+                    "Current Step",
+                    "Type",
+                    "Priority",
+                    "Due Date",
+                    "Status",
+                ],
+                "sortFields": [
+                    {"field": "jobName", "sortOrder": "Asc"},
+                    {"field": "priority", "sortOrder": "Asc"},
+                ],
+            },
+            search_type="Standard",
+            sort_index=5000,
+            search_id=searchid,
+        )
+
+        actual = self.connection.workflow_manager.saved_searches.delete(search)
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+
+    def test_delete_saved_search_returns_search_not_found(self):
+        # Arrange
+        test_id = "bad_id_12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.saved_searches.delete(test_id)
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Update Saved Search
+
+    def test_update_saved_search(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Search   " + uniqueness
+        searchid = uniqueness[0:22]
+
+        # Act
+        self.connection.workflow_manager.saved_searches.create(
+            name=name,
+            definition={
+                "start": 0,
+                "fields": ["job_status"],
+                "displayNames": ["Status"],
+                "sortFields": [{"field": "job_status", "sortOrder": "Asc"}],
+            },
+            search_type="Chart",
+            color_ramp="Flower Field Inverse",
+            sort_index=2000,
+            search_id=searchid,
+        )
+
+        search_lst = self.connection.workflow_manager.searches("All")
+        search = [x for x in search_lst if x["searchId"] == searchid][0]
+
+        search["colorRamp"] = "Default"
+        search["name"] = "Updated search  " + uniqueness
+
+        actual = self.connection.workflow_manager.saved_searches.update(search)
+
+        # Assert
+        self.assertIsInstance(actual, bool, "Incorrect return type")
+        self.assertTrue(actual, "Incorrectly updated search")
+
+    # endregion
 
     # endregion
 
@@ -745,6 +1227,35 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, list, "Incorrect return type")
         self.assertIsInstance(actual[0], str, "Incorrect return type")
 
+    def test_create_job_successfully_with_custom_id_returns(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        job_id = uniqueness[0:22]
+
+        # Act
+        actual = self.create_job(job_id=job_id)
+        job = self.connection.workflow_manager.job_manager.get(actual[0])
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertIsInstance(actual[0], str, "Incorrect return type")
+        self.assertEqual(job.job_id, job_id, "Incorrect job id")
+
+    def test_create_job_robust_successfully_returns(self):
+        # Arrange
+
+        # Act
+        actual = self.create_job_robust()
+        job = self.connection.workflow_manager.job_manager.get(actual[0])
+        location = job.location
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertIsInstance(actual[0], str, "Incorrect return type")
+        self.assertEqual(
+            location.geometry_type, "Polygon", "Incorrect return value for location"
+        )
+
     def test_create_multiple_job_successfully_returns(self):
         # Arrange
         job_templates = self.connection.workflow_manager.job_templates
@@ -782,7 +1293,70 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         job_id = self.create_job()[0]
         job = self.connection.workflow_manager.jobs.get(job_id)
+        a = job.location
         job.priority = "Updated"
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(
+            job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update"
+        )
+
+    def test_update_job_with_extended_properties_successfully_returns(self):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.priority = "Updated"
+        delattr(job, "related_properties")
+        delattr(job, "extended_properties")
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(
+            job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update"
+        )
+
+    def test_update_job_with_updated_extended_properties_successfully_returns(self):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.priority = "Updated"
+
+        table_name = job.extended_properties[0]["tableName"]
+        job.extended_properties = [
+            {"identifier": table_name + ".prop1", "value": "updated_123"},
+            {"identifier": table_name + ".prop2", "value": "updated_456"},
+        ]
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(
+            job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update"
+        )
+
+    def test_update_job_with_updated_extended_properties_with_domain_successfully_returns(
+        self,
+    ):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id)
+        job.priority = "Updated"
+
+        table_name = job.extended_properties[0]["tableName"]
+        job.extended_properties = [
+            {"identifier": table_name + ".prop1", "value": "updated_123"},
+            {"identifier": table_name + ".prop2", "value": "updated_456"},
+            {"identifier": table_name + ".prop4", "value": "2"},
+        ]
 
         # Act
         actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
@@ -861,25 +1435,144 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
-    # region Job Location
+    # region Delete Jobs
 
-    # TODO Re-implement Job Location Gets all location types
+    def test_delete_jobs(self):
+        # Arrange
+        id_list = self.create_job(count=3)
+
+        # Act
+        delete_jobs = self.connection.workflow_manager.jobs.delete(id_list)
+
+        # Assert
+        self.assertTrue(delete_jobs, "Incorrect return type")
+
+    def test_delete_jobs_returns_not_found(self):
+        # Arrange
+        test_id = "bad_id_12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.delete(test_id)
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
+    # region Job Location
 
     def test_get_job_location_returns_no_location_set(self):
         # Arrange
         test_id = self.create_job()[0]
 
-        default_job_location = {"geometry": "{}", "geometryType": "None"}
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
 
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
 
         # Assert
         self.assertEqual(
-            default_job_location["geometryType"],
-            str(job_location.geometryType),
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
             "Incorrect job location returned",
         )
+
+    def test_set_job_location_returns_true(self):
+        # Arrange
+        test_id = self.create_job()[0]
+
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
+        new_location = {
+            "geometryType": "Polygon",
+            "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],'
+            "[-2256822.369376309,6774572.424655061],"
+            "[-2935181.886149995,1973920.9766344912],"
+            "[-6848757.734349992,3330625.6782390587]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+        geo = Geometry(new_location["geometry"])
+
+        # Act
+        job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
+        new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+
+        # Assert
+        self.assertEqual(
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertEqual(
+            new_location["geometryType"],
+            str(new_job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertTrue(actual, "Did not return correct attachment")
+
+    def test_set_job_location_polyline_returns_true(self):
+        # Arrange
+        test_id = self.create_job()[0]
+
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
+        new_location = {
+            "geometryType": "Polyline",
+            "geometry": '{"paths":[[[-5283327.395069996,-1730934.0112043545],'
+            "[1500210.4448956922,1921738.3728870638],"
+            "[-10397060.1336323,4739512.983591061],"
+            "[-10449247.514693994,4739512.983591061]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+        geo = Geometry(new_location["geometry"])
+
+        # Act
+        job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
+        new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+
+        # Assert
+        self.assertEqual(
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertEqual(
+            new_location["geometryType"],
+            str(new_job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertTrue(actual, "Did not return correct attachment")
+
+    def test_set_job_location_point_returns_true(self):
+        # Arrange
+        test_id = self.create_job()[0]
+
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
+        new_location = {
+            "geometryType": "Multipoint",
+            "geometry": '{"spatialReference":{"latestWkid":3857,"wkid":102100},'
+            '"points":[[15067267.015569989,-2983278.2826283537]]}',
+        }
+        geo = Geometry(new_location["geometry"])
+        # Act
+        job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
+        new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+
+        # Assert
+        self.assertEqual(
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertEqual(
+            new_location["geometryType"],
+            str(new_job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertTrue(actual, "Did not return correct attachment")
 
     # endregion
 
@@ -910,6 +1603,49 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         try:
             self.connection.workflow_manager.jobs.get(job_id).get_attachment(
+                attachment_id
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    def test_job_linked_attachment_returns_successfully(self):
+        # Arrange
+        job_id = self.create_job()[0]
+        attachments = [
+            {"url": "linked text", "folder": "General", "alias": "linkedText"},
+            {"url": "https://www.esri.com", "folder": "General", "alias": "webpath"},
+            {
+                "url": "tests//integration//README.md",
+                "folder": "General",
+                "alias": "filepath",
+            },
+        ]
+
+        # Act
+        a_list = self.connection.workflow_manager.jobs.get(
+            job_id
+        ).add_linked_attachment(attachments)
+        job_attachments = self.connection.workflow_manager.jobs.get(job_id).attachments
+        text = job_attachments[0]["alias"]
+        url = job_attachments[1]["alias"]
+        file_path = job_attachments[2]["alias"]
+
+        # Arrange
+        self.assertIsInstance(a_list, list, "Incorrect return type")
+        self.assertEqual(text, "linkedText", "Did not return correct attachment")
+        self.assertEqual(file_path, "filepath", "Did not return correct attachment")
+        self.assertEqual(url, "webpath", "Did not return correct attachment")
+
+    def test_job_linked_attachment_returns_error(self):
+        # Arrange
+        job_id = "abcde12345"
+        attachment_id = "abcde12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.get(job_id).get_linked_attachment(
                 attachment_id
             )
         except Exception as testException:
@@ -1012,7 +1748,6 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         actual = self.connection.workflow_manager.jobs.get(test_id).history
-        print(actual)
 
         # Arrange
         self.assertIsInstance(actual, dict, "Incorrect return type")
@@ -1038,7 +1773,6 @@ class TestWorkflowManager(unittest.TestCase):
         job_id = self.create_job()[0]
         diagram = self.connection.workflow_manager.jobs.diagram(job_id)
         step_id = diagram.initial_step_id
-        print(self.connection.workflow_manager.users)
 
         actual = self.connection.workflow_manager.jobs.get(job_id).update_step(
             step_id=step_id,
@@ -1333,6 +2067,16 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertEqual(len(actual), 22, "Incorrect size")
 
+    def test_create_diagram_with_Custom_Id_successfully_returns(self):
+        # Arrange
+
+        # Act
+        actual = self.create_diagram_robust()
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(len(actual), 22, "Incorrect size")
+
     def test_create_diagram_returns_error(self):
         # Arrange
 
@@ -1506,6 +2250,35 @@ class TestWorkflowManager(unittest.TestCase):
             )
 
     # endregion
+
+    # endregion
+
+    # region Get Table Definitions
+
+    def test_table_definitions_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        template_name = "Testing Template  " + uniqueness
+        table_name = "testing_table_" + uniqueness
+
+        # Create Job Template with specific table
+        self.create_job_template_robust(
+            template_name=template_name, table_name=table_name
+        )
+
+        # Act
+        actual = self.connection.workflow_manager.table_definitions
+        contains_table = False
+        for table in actual:
+            b = table["tableName"]
+            if table["tableName"] == table_name:
+                contains_table = True
+                break
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertTrue(contains_table, "Incorrect return type")
 
     # endregion
 

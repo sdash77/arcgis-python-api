@@ -6,19 +6,32 @@ from .layers import *
 
 
 def shortcut(c_in, c_out):
-    return nn.Sequential(*[nn.Conv1d(c_in, c_out, kernel_size=1),
-                           nn.BatchNorm1d(c_out)])
+    return nn.Sequential(
+        *[nn.Conv1d(c_in, c_out, kernel_size=1), nn.BatchNorm1d(c_out)]
+    )
 
 
 class _TSInceptionBlock(nn.Module):
     def __init__(self, input, nb_filters=32, ks=40, bottleneck=32):
         super().__init__()
-        self.bottleneck = nn.Conv1d(input, bottleneck, 1) if bottleneck and input > 1 else noop
+        self.bottleneck = (
+            nn.Conv1d(input, bottleneck, 1) if bottleneck and input > 1 else noop
+        )
 
         kss = [ks // (2 ** i) for i in range(3)]
         kss = [ksi if ksi % 2 != 0 else ksi - 1 for ksi in kss]
 
-        self.conv_layers = nn.ModuleList([nn.Conv1d(bottleneck if (bottleneck > 1 and input > 1) else input, nb_filters, kernel_size=ks, padding=ks//2) for ks in kss])
+        self.conv_layers = nn.ModuleList(
+            [
+                nn.Conv1d(
+                    bottleneck if (bottleneck > 1 and input > 1) else input,
+                    nb_filters,
+                    kernel_size=ks,
+                    padding=ks // 2,
+                )
+                for ks in kss
+            ]
+        )
 
         self.maxpool = nn.MaxPool1d(3, stride=1, padding=1)
         self.conv = nn.Conv1d(input, nb_filters, kernel_size=1)
@@ -51,11 +64,16 @@ class _TSInceptionTime(nn.Module):
         res = 0
         for d in range(depth):
             inception_layers.append(
-                _TSInceptionBlock(input if d == 0 else nb_filters * 4, bottleneck=bottleneck if d > 0 else 0, ks=ks,
-                          nb_filters=nb_filters))
+                _TSInceptionBlock(
+                    input if d == 0 else nb_filters * 4,
+                    bottleneck=bottleneck if d > 0 else 0,
+                    ks=ks,
+                    nb_filters=nb_filters,
+                )
+            )
             if d % 3 == 2:
                 if res == 0:
-                    residual_layers.append(shortcut(input, nb_filters*4))
+                    residual_layers.append(shortcut(input, nb_filters * 4))
                 else:
                     residual_layers.append(shortcut(nb_filters * 4, nb_filters * 4))
 

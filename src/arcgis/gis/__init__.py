@@ -29,8 +29,9 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from arcgis._impl.common._utils import chunks as _chunks
+from cachetools import cached, TTLCache
 from ._impl import _portalpy
-
 from ._impl._jb import StatusJob
 
 _log = logging.getLogger(__name__)
@@ -173,6 +174,20 @@ class GIS(object):
                         configuration, default authentication and similar. If `False`
                         the GIS class will ignore the `netrc` files defined on the
                         system.
+    ----------------    ---------------------------------------------------------------
+    proxy               Optional Dictionary.  If you need to use a proxy, you can
+                        configure individual requests with the proxy argument to any
+                        request method.  See ```Usage Exmaple 9: Using a Proxy``` for
+                        example usage.
+
+                        :Usage Example:
+
+
+                        {
+                            "http" : "http://10.343.10.22:111",
+                            "https" : "https://127.343.13.22:6443",
+                        }
+
     ================    ===============================================================
 
 
@@ -230,6 +245,15 @@ class GIS(object):
 
         gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
                   referer="https")
+
+    .. code-block:: python
+
+        # Usage Exmaple 9: Using a Proxy
+        proxy = {
+            'http': 'http://10.10.1.10:3128',
+            'https': 'http://10.10.1.10:1080',
+        }
+        gis = GIS(proxy=proxy)
 
     """
 
@@ -411,6 +435,7 @@ class GIS(object):
                 client_secret=client_secret,
                 trust_env=kwargs.get("trust_env", None),
                 timeout=self._timeout,
+                proxy=kwargs.get("proxy", None),
             )
             if self._portal.is_kubernetes:
                 from .kubernetes._sharing import KbertnetesPy
@@ -430,6 +455,7 @@ class GIS(object):
                     custom_auth=custom_auth,
                     trust_env=kwargs.get("trust_env", None),
                     timeout=self._timeout,
+                    proxy=kwargs.get("proxy", None),
                 )
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -499,6 +525,7 @@ class GIS(object):
                         trust_env=kwargs.get("trust_env", None),
                         client_secret=client_secret,
                         timeout=self._timeout,
+                        proxy=kwargs.get("proxy", None),
                     )
                     self._portal = pp
         except:
@@ -521,7 +548,8 @@ class GIS(object):
 
         if self._url.lower() == "pro":
             self._url = self._portal.url
-            self._con._auth = "PRO"
+            if self._con._auth != "ANON":
+                self._con._auth = "PRO"
 
         if self._con._auth != "anon":
             me = self.users.me
@@ -906,10 +934,12 @@ class GIS(object):
             try:
                 from arcgis.gis.nb import NotebookServer
 
+                res = self._portal.con.post("portals/self/servers", {"f": "json"})
+
                 return [
-                    server
-                    for server in self.admin.servers.list()
-                    if isinstance(server, NotebookServer)
+                    NotebookServer(server["adminUrl"] + "/admin", self)
+                    for server in res["servers"]
+                    if server["serverFunction"].lower() == "notebookserver"
                 ]
             except:
                 return []
@@ -2768,13 +2798,13 @@ class UserManager(object):
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
                           the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
                           for full details.)
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
@@ -3467,9 +3497,12 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -3502,9 +3535,13 @@ class UserManager(object):
                         ul.append(user.username)
                     else:
                         ul.append(user)
-                params["users"] = ",".join(ul)
-                res = self._portal.con.post(url, params)
-                return any([r["status"] for r in res["results"]])
+                results = []
+                for chunk in _chunks(ul, n=25):
+                    params["users"] = ",".join(chunk)
+                    res = self._portal.con.post(url, params)
+                    results.extend([r["status"] for r in res["results"]])
+                return any(results)
+
             else:
                 raise ValueError("Invalid input: must be of type list.")
         return False
@@ -4450,6 +4487,22 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    # ----------------------------------------------------------------------
+    def check_url(self, url: str) -> Dict[str, Any]:
+        """
+        To verify a URL is accessible by the Organization, provide the `url` and
+        the system will check if the location is valid and reachable.  This
+        method is useful when checking service URLs or validating that URLs can
+        be reached.
+
+        :returns: Dict[str, Any]
+
+        """
+        curl = f"{self._gis._portal.resturl}portals/checkUrl"
+        params = {"f": "json", "url": url}
+        return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -4766,11 +4819,11 @@ class ContentManager(object):
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {"layers": [data._lyr_dict]}
             data = None
         elif _is_geoenabled(data) and hasattr(data, "spatial"):
-            fileType = "Feature Collection"
+            filetype = "Feature Collection"
             item_properties["text"] = {
                 "layers": [data.spatial.to_feature_collection()._lyr_dict]
             }
@@ -4784,6 +4837,8 @@ class ContentManager(object):
                 filetype = "GeoPackage"
             elif extn == ".CSV":
                 filetype = "CSV"
+            elif extn in [".XLSX", ".XLS"]:
+                filetype = "Microsoft Excel"
             elif extn == ".SD":
                 filetype = "Service Definition"
             elif title.upper().endswith(".GDB"):
@@ -5023,6 +5078,7 @@ class ContentManager(object):
 
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
+
         return gis._con.post(path=surl, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
@@ -9367,7 +9423,30 @@ class User(dict):
 
     @property
     def folders(self):
-        """Gets the list of the user's folders"""
+        """
+        Gets the list of the user's folders
+
+        :return:
+            List of folders represented as dictionaries.
+            Dictionary keys include: username, folder id (id), title, and date created (created)
+
+         .. code-block:: python
+
+            # Example to get name of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["title"])
+
+            # Example to get id of all folders
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                print(folder["id"])
+
+        """
         return self._portal.user_folders(self._user_id)
 
     def items(self, folder=None, max_items=100):
@@ -9404,6 +9483,18 @@ class User(dict):
                 print(f"{user.username} using {storage} bytes")
             except Exception as e:
                 print(f"{user.username} using {storage} bytes")
+
+        .. code-block:: python
+
+            # Example get items in each folder that is not root
+
+            user = User(gis, username)
+            folders = user.folders
+            for folder in folders:
+                items = user.items(folder=folder["title"])
+                for item in items:
+                    print(item, folder)
+
         """
 
         items = []
@@ -9500,6 +9591,9 @@ class Item(dict):
             self.tables = None
             self["layers"] = None
             self["tables"] = None
+
+    def __hash__(self):
+        return hash(tuple(frozenset(self)))
 
     # ----------------------------------------------------------------------
     @property
@@ -11120,6 +11214,7 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range="7D", as_df=True):
         """
 
@@ -11574,6 +11669,7 @@ class Item(dict):
         file_type=None,
         build_initial_cache=False,
         item_id=None,
+        geocode_service=None,
     ):
         """
         Publishes a hosted service based on an existing source item (this item).
@@ -11633,6 +11729,11 @@ class Item(dict):
                                during the `publish` process.
 
                                Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -------------------    ---------------------------------------------------------------
+        geocode_service        Optional Geocoder. When publishing a table of data, an optional
+                               `Geocoder` can be supplied in order to specify which service
+                               geocodes the information. If no geocoder is given, the first
+                               registered `Geocoder` is used.
         ===================    ===============================================================
 
 
@@ -11659,6 +11760,8 @@ class Item(dict):
         if file_type is None:
             if self["type"] == "GeoPackage":
                 fileType = "gpkg"
+            elif self["type"].lower().find("excel") > -1:
+                fileType = "excel"
             elif self["type"] == "Compact Tile Package":
                 fileType = "compactTilePackage"
             elif self["type"] == "Service Definition":
@@ -11668,7 +11771,7 @@ class Item(dict):
             elif self["type"] == "Feature Collection":
                 fileType = "featureCollection"
             elif self["type"] == "CSV":
-                fileType = "CSV"
+                fileType = "csv"
             elif self["type"] == "Shapefile":
                 fileType = "shapefile"
             elif self["type"] == "File Geodatabase":
@@ -11710,36 +11813,15 @@ class Item(dict):
                     "layerInfo": {"capabilities": "Query"},
                 }
 
-            elif fileType in ["CSV", "excel"] and not overwrite:
-                path = "content/features/analyze"
-
-                postdata = {
-                    "f": "pjson",
-                    "itemid": self.itemid,
-                    "filetype": "csv",
-                    "analyzeParameters": {
-                        "enableGlobalGeocoding": "true",
-                        "sourceLocale": "en-us",
-                        # "locationType":"address",
-                        "sourceCountry": "",
-                        "sourceCountryHint": "",
-                    },
-                }
-
-                if address_fields is not None:
-                    postdata["analyzeParameters"]["locationType"] = "address"
-
-                res = self._portal.con.post(path, postdata)
+            elif fileType in ["csv", "excel"] and not overwrite:
+                res = self._gis.content.analyze(item=self, file_type=fileType)
                 publish_parameters = res["publishParameters"]
-                if address_fields is not None:
-                    publish_parameters.update({"addressFields": address_fields})
-
-                # use csv title for service name, after replacing non-alphanumeric characters with _
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
 
             elif (
-                fileType in ["CSV", "shapefile", "fileGeodatabase"] and overwrite
+                fileType in ["csv", "shapefile", "fileGeodatabase", "excel"]
+                and overwrite
             ):  # need to construct full publishParameters
                 # find items with relationship 'Service2Data' in reverse direction - all feature services published using this data item
                 related_items = self.related_items("Service2Data", "reverse")
@@ -11766,14 +11848,14 @@ class Item(dict):
                         self.update(item_properties=update_params)
 
                     # if source file type is CSV or Excel, blend publish parameters with analysis results
-                    if fileType == "CSV":
+                    if fileType in ["csv", "excel"]:
                         publish_parameters_orig = publish_parameters
                         path = "content/features/analyze"
 
                         postdata = {
                             "f": "pjson",
                             "itemid": self.itemid,
-                            "filetype": "csv",
+                            "filetype": fileType,
                             "analyzeParameters": {
                                 "enableGlobalGeocoding": "true",
                                 "sourceLocale": "en-us",
@@ -11874,32 +11956,43 @@ class Item(dict):
                     "layerInfo": {"capabilities": "Query"},
                 }
 
-        elif (
-            fileType == "CSV" or fileType == "excel"
-        ):  # merge users passed-in publish parameters with analyze results
+        elif fileType in [
+            "csv",
+            "excel",
+        ]:  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
-            path = "content/features/analyze"
 
-            postdata = {
-                "f": "pjson",
-                "itemid": self.itemid,
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    # "locationType":"address",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                },
-            }
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
+            res = self._gis.content.analyze(item=self, file_type=fileType)
             publish_parameters = res["publishParameters"]
+
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters:
+                publish_parameters["layers"] = []
+            if "tables" not in publish_parameters:
+                publish_parameters["tables"] = []
+
+            # check if layers and tables key exist. If not, add empty array to avoid error in update
+            if "layers" not in publish_parameters_orig:
+                publish_parameters_orig["layers"] = []
+            if "tables" not in publish_parameters_orig:
+                publish_parameters_orig["tables"] = []
+
+            # update layers but layer index must match
+            # update the layers otherwise general update will overwrite nested dictionary
+            for idx, lyr in enumerate(publish_parameters["layers"]):
+                lyr.update(publish_parameters_orig["layers"][idx])
+            for idx, tbl in enumerate(publish_parameters["tables"]):
+                tbl.update(publish_parameters_orig["tables"][idx])
+
+            # delete since already updated and avoid overwritting
+            if "layers" in publish_parameters_orig:
+                del publish_parameters_orig["layers"]
+            if "tables" in publish_parameters_orig:
+                del publish_parameters_orig["tables"]
+
+            # do general update
             publish_parameters.update(publish_parameters_orig)
-        # params['overwrite'] = json.dumps(overwrite)
+
         ret = self._portal.publish_item(
             self.itemid,
             None,
@@ -11966,6 +12059,12 @@ class Item(dict):
             and output_type.lower() in ["sceneservice"]
         ):
             return Item(self._gis, ret[0]["serviceItemId"])
+        elif (
+            "success" in ret[0]
+            and ret[0]["success"] == False
+            and ret[0].get("error", None)
+        ):
+            raise Exception(ret[0].get("error"))
         elif not buildInitialCache and ret[0]["type"].lower() == "image service":
             return Item(self._gis, ret[0]["serviceItemId"])
         else:
@@ -12312,7 +12411,12 @@ class Item(dict):
                         raise Exception("Job cancelled.")
                     elif job_response.get("status") == "esriJobTimedOut":
                         raise Exception("Job timed out.")
-
+            elif (
+                not "jobId" in ret[0]
+                and "serviceItemId" in ret[0]
+                and ret[0]["type"] == "Map Service"
+            ):
+                return ret[0]["serviceItemId"]
             else:
                 raise Exception("No job results.")
         else:
@@ -13382,7 +13486,7 @@ class _GISResource(object):
     @property
     def properties(self):
         """
-        The ``properties`` method retrieves and set properties of this object.
+        The ``properties`` property retrieves and set properties of this object.
         """
         if self._hydrated:
             return self._lazy_properties

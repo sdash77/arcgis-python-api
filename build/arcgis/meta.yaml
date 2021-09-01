@@ -7,10 +7,11 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.9.0
+  version: 1.9.1
 requirements:
   build:
   - python
+  - cachetools
   - ujson >=3
   - setuptools
   - six
@@ -20,7 +21,7 @@ requirements:
   - pandas >=1
   - numpy >=1.16.2
   - matplotlib
-  - keyring >=19
+  - keyring >=19, <21.8.0
   - pytest
   - pyshp >=2
   - requests
@@ -35,6 +36,7 @@ requirements:
   run:
   - python
   - six
+  - cachetools
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
@@ -43,7 +45,7 @@ requirements:
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
-  - keyring >=19
+  - keyring >=19, <21.8.0
   - requests
   - requests-toolbelt
   - requests-kerberos
