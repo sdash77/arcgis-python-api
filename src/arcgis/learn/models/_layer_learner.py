@@ -8,24 +8,8 @@ import math
 from pathlib import Path
 
 HAS_FASTAI = True
-<<<<<<< HEAD
 import_exception=None
 
-=======
-HAS_SHAP = True
-import_exception = None
-
-try:
-    import shap
-except:
-    HAS_SHAP = False
-
-try:
-    import pandas as pd
-except:
-    pass
-
->>>>>>> 6bea394e0a583c63490b076ef9f9de3ab3207081
 import arcgis
 from arcgis.features import FeatureLayer
 
@@ -44,7 +28,7 @@ try:
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
-    from fastai.metrics import r2_score
+    from fastai.metrics import r2_scorezz
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -783,6 +767,10 @@ class FullyConnectedNetwork(ArcGISModel):
 
         :returns: dataframe
         """
+        try:
+            import pandas as pd
+        except:
+            raise Exception("This function requires pandas.")
         self._check_requisites()
         min_size = len(self._data._validation_indexes)
         if min_size < rows:
