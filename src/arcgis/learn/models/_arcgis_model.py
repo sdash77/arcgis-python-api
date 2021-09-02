@@ -206,7 +206,11 @@ def _set_multigpu_callback(model):
 
 
 def _set_ddp_multigpu(model):
-    parser = argparse.ArgumentParser()
+    try:
+        parser = argparse.ArgumentParser()
+    except IndexError:
+        model._multigpu_training = False
+        return
     parser.add_argument("--local_rank", type=int)
     args, unknown = parser.parse_known_args()
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
