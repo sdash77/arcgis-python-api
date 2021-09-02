@@ -138,9 +138,16 @@ class AGOLUsageReports(BasePortalAdmin):
             start_time = datetime.datetime.now()
         if isinstance(start_time, datetime.datetime) == False:
             raise ValueError("start_time and end_time must be datetime objects")
-        end_time = start_time - datetime.timedelta(days=1)
-        period = "1h"
-        if time_frame.lower() in ["7days", "week"]:
+        if time_frame.lower() == "today":
+            end_time = datetime.datetime(
+                year=start_time.year,
+                month=start_time.month,
+                day=start_time.day,
+                hour=0,
+                second=0,
+            )
+            period = "1h"
+        elif time_frame.lower() in ["7days", "week"]:
             end_time = start_time - datetime.timedelta(days=7)
             period = "1d"
         elif time_frame.lower() == "14days":
