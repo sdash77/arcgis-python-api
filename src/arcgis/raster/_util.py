@@ -740,7 +740,7 @@ def _ra_upload_allowed_extensions():
             vh2,vh3,vh4,vh5,vh6,vh7,vh8,vh9,vha,vhb,vhc,vhd,vhe,vhf,vhg,vhh,vhj,\
             view,vn1,vn2,vn3,vn4,vn5,vn6,vn7,vn8,vn9,vna,vnb,vnc,vnd,vne,vnf,vng,\
             vnh,vnj,vrt,vt1,vt2,vt3,vt4,vt5,vt6,vt7,vt8,vt9,vta,vtb,vtc,vtd,vte,\
-            vtf,vtg,vth,vtj,wo,xml,xpm,xyz".split(
+            vtf,vtg,vth,vtj,wo,xml,xpm,xyz,gdb".split(
         ","
     )
 
@@ -943,7 +943,7 @@ def _upload_imagery_agol(
         file_dict["file_name"] = file
         file_dict["single_image"] = single_image
         if os.path.exists(file):
-            if os.path.isdir(file):
+            if os.path.isdir(file) and not ".gdb" in file:
                 file_dict["is_dir"] = True
                 file_dict["basename_len"] = len(os.path.dirname(file))
                 file_dict["files_list"] = [
@@ -951,6 +951,16 @@ def _upload_imagery_agol(
                     for root, d_names, f_names in os.walk(file)
                     for f in f_names
                     if os.path.splitext(f)[1][1:].lower() in allowed_extensions
+                ]
+                if len(file_dict["files_list"]) == 0:
+                    to_upload = False
+            elif os.path.isdir(file) and ".gdb" in file:
+                file_dict["is_dir"] = True
+                file_dict["basename_len"] = len(os.path.dirname(file))
+                file_dict["files_list"] = [
+                    os.path.join(root, f)
+                    for root, d_names, f_names in os.walk(file)
+                    for f in f_names
                 ]
                 if len(file_dict["files_list"]) == 0:
                     to_upload = False
@@ -963,7 +973,6 @@ def _upload_imagery_agol(
 
             if to_upload:
                 file_list.append(file_dict)
-
     if len(file_list) == 0:
         raise RuntimeError("No supported files to upload")
 

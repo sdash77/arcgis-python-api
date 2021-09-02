@@ -65,7 +65,6 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
-    from ._utils.pix2pix import ImageTupleList2, prepare_data_ms_pix2pix
     from ._utils.cyclegan import show_batch as show_batch_img2img
     import random
     import PIL
@@ -590,7 +589,35 @@ def merge_emd_and_stats(data_folders):
             with open(data_folder / "esri_accumulated_stats.json") as f:
                 stats_store[i] = json.load(f)
     emd_keys = list(emd_store.keys())
-    #
+    if len(emd_keys) == 0:
+        raise Exception(
+            "No valid 'esri_model_definition.emd' file found in the supplied folders."
+        )
+
+    # Check for multi folder comptability
+    emd = emd_store[emd_keys[0]]
+    eas = stats_store[emd_keys[0]]
+    for k in emd_keys:
+        _emd = emd_store[k]
+        _eas = stats_store[k]
+        # Check MetaDataMode across folders
+        if emd["MetaDataMode"] != _emd["MetaDataMode"]:
+            raise Exception(
+                f"`Metadata format` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['MetaDataMode']} and {data_folders[k]} : {_emd['MetaDataMode']}."
+            )
+        # Check NumBands across folders
+        if eas["NumBands"] != _eas["NumBands"]:
+            raise Exception(
+                f"`Number of bands` does not match for emd found at path {data_folders[emd_keys[0]]} : {eas['NumBands']} and {data_folders[k]} : {_eas['NumBands']}."
+            )
+        # # Check TileSizeX across folders
+        # if emd['ImageWidth'] != _emd['ImageWidth']:
+        #     raise Exception(f"`Tile Size X` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['ImageWidth']} and {data_folders[k]} : {_emd['ImageWidth']}.")
+        # # Check TileSizeX across folders
+        # if emd['ImageHeight'] != _emd['ImageHeight']:
+        #     raise Exception(f"`Tile Size Y` does not match for emd found at path {data_folders[emd_keys[0]]} : {emd['ImageHeight']} and {data_folders[k]} : {_emd['ImageHeight']}.")
+
+    # Raise Warnings for mismatch across folders
     for i, k in enumerate(emd_keys[:-1]):
         if "BandNames" in emd_store[k].get("InputRastersProps", {}):
             props_matched = (
@@ -1043,10 +1070,10 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    -For feature categorization use Labelled Tiles or ImageNet format.
+    -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
-    -For DeepSort, use ImageNet format
+    -For DeepSort, use Imagenet format
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1113,7 +1140,7 @@ def prepare_data(
                             A tuple should be of the form (height, width).
                             Resize the images to a given size.
                             Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles",
-                            "superres" and "ImageNet".First resizes the image to the given
+                            "superres" and "Imagenet".First resizes the image to the given
                             size and then crops images of size equal to chip_size.
                             Note: If resize_to is less than chip_size, the
                             resize_to is used as chip_size.
@@ -1272,6 +1299,10 @@ def prepare_data(
     eas = None
     images_df = kwargs.get("images_df", None)
     if isinstance(path, (list, tuple)):
+        if len(path) == 0:
+            raise Exception(
+                f"The value supplied for parameter `path` should contain at least one folder path if the value is an instance of list or tuple."
+            )
         data_folders = [Path(x) for x in path]
         emd, eas, path = merge_emd_and_stats(data_folders)
         if working_dir is None:
@@ -1315,6 +1346,8 @@ def prepare_data(
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
         dataset_type = "Pix2Pix"
+    elif dataset_type == "Export_Tiles" and os.path.exists(path / "labels"):
+        dataset_type = "Pix2Pix"
 
     # Change Detection data is exported as Classified_Tiles with 'images', 'images2' and 'labels' folders
     if dataset_type == "Classified_Tiles" and os.path.exists(path / "images2"):
@@ -1356,7 +1389,11 @@ def prepare_data(
             cyclegan_paths,
             folder_check_cyclegan,
         )
-        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
+        from ._data_utils.pix2pix_data import (
+            pix2pix_paths,
+            folder_check_pix2pix,
+            rgb_or_ms,
+        )
 
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
@@ -1386,6 +1423,7 @@ def prepare_data(
         files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
         msimage_list_a = ArcGISImageList(files_list_a)
         msimage_list_b = ArcGISImageList(files_list_b)
+
         img_type = "RGB"
         if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
             img_type = kwargs["imagery_type"] = "ms"
@@ -1395,12 +1433,12 @@ def prepare_data(
     if (
         dataset_type
         not in [
-            "Imagenet",
             "superres",
             "Export_Tiles",
             "CycleGAN",
             "Pix2Pix",
             "ChangeDetection",
+            "ObjectTracking",
         ]
         and has_esri_files
     ):
@@ -1411,7 +1449,10 @@ def prepare_data(
         with open(path / "map.txt") as f:
             while True:
                 line = f.readline()
-                if len(line.split()) == 2:
+                min_split_vals = 2
+                if dataset_type == "Imagenet":
+                    min_split_vals = 1
+                if len(line.split()) >= min_split_vals:
                     break
         try:
             img_size = ArcGISMSImage.open_gdal(
@@ -1423,7 +1464,8 @@ def prepare_data(
             ).size[-1]
         if chip_size > img_size:
             chip_size = img_size
-        right = line.split()[1].split(".")[-1].lower()
+        if dataset_type != "Imagenet":
+            right = line.split()[1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
@@ -2180,40 +2222,50 @@ def prepare_data(
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms["size"] = img_size
+
     elif dataset_type == "Pix2Pix":
-        if _is_multispectral:
-            data = prepare_data_ms_pix2pix(
-                path, norm_pct, val_split_pct, seed, databunch_kwargs
-            )
-            data.show_batch = types.MethodType(show_batch_img2img, data)
-            data.n_channel = data.x[0].data[0].shape[0]
-            data._is_multispectral = _is_multispectral
-            data._imagery_type = _imagery_type
-            data._imagery_type_a = imagery_type_a
-            data._imagery_type_b = imagery_type_b
+        from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+        data = prepare_pix2pix_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            transforms=transforms,
+            resize_to=resize_to,
+            norm_pct=norm_pct,
+            _is_multispectral=_is_multispectral,
+            **kwargs,
+        )
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b
+        if data._is_multispectral:
+            # data._imagery_type = _imagery_type
             data._bands = _bands
-            data._norm_pct = norm_pct
+            # data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
-            data._image_space_used = _image_space_used
-            x_shape = data.train_ds[0][0].shape
-            data.chip_size = x_shape[-1]
-            if working_dir is not None:
-                data.path = Path(os.path.abspath(working_dir))
-            data._temp_folder = _prepare_working_dir(data.path)
-            return data
-        data = (
-            ImageTupleList2.from_folders(path, path_a, path_b)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_empty()
-        )
-        img_size = data.x[0].shape[-1]
-        if resize_to is None:
-            kwargs_transforms["size"] = img_size
-    elif dataset_type == "ObjectTracking":
-        from ._utils.object_tracking_data import prepare_object_tracking_data
 
-        data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+        return data
+    elif dataset_type == "ObjectTracking":
+        from ._utils.object_tracking_data import (
+            prepare_object_tracking_data,
+            prepare_pro_data,
+        )
+
+        if has_esri_files:
+            emd_file = path / "esri_model_definition.emd"
+            emd = None
+            if emd_file.exists():
+                with open(emd_file) as f:
+                    emd = json.load(f)
+            data = None
+            if emd is not None and emd["MetaDataMode"] == "RCNN_Masks":
+                data = prepare_pro_data(path, batch_size, val_split_pct)
+            else:
+                raise Exception(f"Check MetaDataMode for the exported training data.")
+        else:
+            data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+
         data._is_multispectral = False
         data._extract_bands = None
         data._do_normalize = False
@@ -2421,10 +2473,10 @@ def prepare_data(
         # Inflating imagenet_stats by 255x should have also worked
         # But fastai transforms clip image value to 1 and
         # in fastai 1.0.60 transforms are applied before normalization
+
         data.train_ds.x._div = 255.0
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
-
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
     # Imagery type used while opening image chips
@@ -2453,6 +2505,7 @@ def prepare_data(
         "Pix2Pix",
         "ChangeDetection",
         "superres",
+        "Imagenet",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:

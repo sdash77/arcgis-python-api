@@ -376,7 +376,7 @@ class ModelExtension(ArcGISModel):
             }
 
     def _get_model_metrics(self, **kwargs):
-        checkpoint = kwargs.get("checkpoint", True)
+        checkpoint = getattr(self, "_is_checkpointed", False)
         if not hasattr(self.learn, "recorder"):
             return 0.0
         model_accuracy = self.learn.recorder.metrics[-1][0]

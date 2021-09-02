@@ -140,6 +140,7 @@ class SiamMask(ArcGISModel):
             )
             model = Custom(anchors=self.anchors, pretrain=False)
             model = load_pretrain(model, file_path)
+            self.load(pretrained_path)
             self.learn = Learner(data=data, model=model)
             self._backend = "pytorch"
             self._data = data
