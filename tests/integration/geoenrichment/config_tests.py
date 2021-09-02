@@ -13,7 +13,7 @@ from arcgis.geoenrichment._business_analyst._utils import (
 from arcgis.gis import GIS
 import pytest
 
-dir_data = Path(__file__).parent.parent / 'geoenrich_data'
+dir_data = Path(__file__).parent / 'geoenrich_data'
 
 # load up the dotenv file
 if module_avail('dotenv'):
@@ -25,10 +25,14 @@ _src_lst = []
 _src_nm_lst = []
 
 # if the local environment is configured with arcpy (Pro), Business Analyst and local data
-# if avail_arcpy:
-#     if local_business_analyst_avail() and local_ba_data_avail():
-#         src_lst.append(GIS('Pro'))
-#         src_nm_lst.append('local')
+local_ba_avail = local_business_analyst_avail() and local_ba_data_avail()
+
+if local_ba_avail:
+    _src_lst.append(GIS('Pro'))
+    _src_nm_lst.append('local')
+else:
+    warn('Cannot test the Geoenrichment module using local resources since ArcGIS Pro with the Business Analyst '
+         'extension with at least one country\'s data is installed')
 
 # create an active connection to ArcGIS Online and add to the source list if possible
 _agol_url, _agol_user, _agol_pass = os.getenv('AGOL_URL'), os.getenv('AGOL_USERNAME'), os.getenv('AGOL_PASSWORD')

@@ -71,6 +71,7 @@ tests/integration/test-results/
 /*.wpu
 tests/geckodriver.log
 tests/.coverage*
+**/*.pytest_cache
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist
