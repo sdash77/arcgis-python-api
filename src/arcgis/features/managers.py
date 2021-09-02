@@ -2219,8 +2219,9 @@ class FeatureLayerCollectionManager(_GISResource):
                 "overwriteService": "on",
                 "useDescription": "on",
             }
-            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
-            fs_url = "%s" % feature_layer_item.layers[0].container._url
+            base_url = feature_layer_item.privateUrl
+            lyr_url_info = "%s/layers" % base_url
+            fs_url = "%s" % base_url
             layer_info = self._gis._con.get(lyr_url_info, {"f": "json"})
             [lyr.pop("fields") for lyr in layer_info["layers"]]
             [lyr.pop("fields") for lyr in layer_info["tables"]]
