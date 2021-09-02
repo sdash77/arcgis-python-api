@@ -98,7 +98,7 @@ def local_ba_data_avail() -> bool:
 
         # TODO: remove once bapy patched
         # addresses issue with bapy not being part of Notebook server docker image
-        if 'getLocalDatasets' in arcpy._ba.__dict__.keys() or module_avail('bapy'):
+        if "getLocalDatasets" in arcpy._ba.__dict__.keys() or module_avail("bapy"):
 
             # if data is available, there will be more than one dataset available
             avail = len(list(arcpy._ba.ListDatasets())) > 0
