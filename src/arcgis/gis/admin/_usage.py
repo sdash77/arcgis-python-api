@@ -122,8 +122,8 @@ class AGOLUsageReports(BasePortalAdmin):
                             None, the current time is used.
         ---------------     ----------------------------------------------------
         time_frame          optional string, is the timeframe report to create.
-                            Allowed values: today, week, 14days, 30days, 60days,
-                            90days, 6months, year
+                            Allowed values: today, week (default), 14days, 30days, 
+                            60days, 90days, 6months, year
         ---------------     ----------------------------------------------------
         export              optional boolean, if True, a csv is generated from
                             the request. If False, a Panda's dataframe is
@@ -139,13 +139,7 @@ class AGOLUsageReports(BasePortalAdmin):
         if isinstance(start_time, datetime.datetime) == False:
             raise ValueError("start_time and end_time must be datetime objects")
         if time_frame.lower() == "today":
-            end_time = datetime.datetime(
-                year=start_time.year,
-                month=start_time.month,
-                day=start_time.day,
-                hour=0,
-                second=0,
-            )
+            end_time = start_time - datetime.timedelta(days=1)
             period = "1h"
         elif time_frame.lower() in ["7days", "week"]:
             end_time = start_time - datetime.timedelta(days=7)
@@ -153,7 +147,7 @@ class AGOLUsageReports(BasePortalAdmin):
         elif time_frame.lower() == "14days":
             end_time = start_time - datetime.timedelta(days=14)
             period = "1d"
-        elif time_frame.lower() == "30days":
+        elif time_frame.lower() in ["month", "30days"]:
             end_time = start_time - datetime.timedelta(days=30)
             period = "1d"
         elif time_frame.lower() == "60days":
