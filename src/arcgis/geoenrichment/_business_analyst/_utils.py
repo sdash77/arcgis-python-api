@@ -81,6 +81,7 @@ def local_business_analyst_avail() -> bool:
 
         if arcpy.CheckExtension("Business"):
             avail = True
+
     return avail
 
 
@@ -91,7 +92,7 @@ def local_ba_data_avail() -> bool:
     """
     avail = False
 
-    if avail_arcpy is True:
+    if local_business_analyst_avail():
 
         # lazy load to avoid import issues
         import arcpy._ba
