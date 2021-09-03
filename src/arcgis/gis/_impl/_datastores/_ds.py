@@ -138,7 +138,7 @@ class PortalDataStore(object):
     @property
     def properties(self):
         """
-         The ``properties`` method retrieves the properties of the current :class:`~arcgis.gis.DataStore` object
+         The ``properties`` property retrieves the properties of the current :class:`~arcgis.gis.DataStore` object
 
          :returns:
             A list of the :class:`~arcgis.gis.DataStore` object properties
@@ -163,8 +163,8 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required :class:`~arcgis.gis.Item`/Item Id (as string). The item Id or Item of the data
-                               store to register with the server. Note that a data store can be
+        item                   Required :class:`~arcgis.gis.Item` object or Item Id (as string). The item Id or Item of
+                               the data store to register with the server. Note that a data store can be
                                registered on multiple servers.
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique id of the server you want to register
@@ -172,7 +172,8 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         bind                   Optional Boolean. Specifies whether to bind the data store item to
                                the federated server. For more information about binding a data
-                               store to additional federated servers, see the note below. The default value is `false`.
+                               store to additional federated servers, see the note below.
+                               The default value is `False`.
         ==================     ====================================================================
 
         .. code-block:: python
@@ -277,7 +278,7 @@ class PortalDataStore(object):
         :attr:`~arcgis.gis._impl._datastores._ds.PortalDataStore.publish_layers` method.
 
         .. note::
-            The ``layers`` method returns an array of tuples, with each tuple containing two
+            The ``layers`` method returns an list of tuples, with each tuple containing two
             objects: a layer and the dataset it was published from.
 
         ==================     ====================================================================
@@ -341,7 +342,7 @@ class PortalDataStore(object):
 
             # Usage Example
 
-            >>> datastore_manager.publish(config= {"required" : "dictionary"}, "server_name")
+            >>> datastore_manager.publish(config= {"required" : "dictionary"}, server_id= "server_name")
 
         :returns:
             A :class:`~arcgis.gis._impl._jb.StatusJob` object
@@ -386,7 +387,7 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The :class:`~arcgis.gis.DataStore` object to list all registered servers.
+        item                   Required Item. The DataStore :class:`~arcgis.gis.Item` object to list all registered servers.
         ==================     ====================================================================
 
         .. code-block:: python
@@ -427,7 +428,7 @@ class PortalDataStore(object):
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
         :class:`~arcgis.gis.DataStore` object onto your ArcGIS Server, resulting in at least one
         :attr:`~arcgis.gis.Layer` per dataset. It is quite similar to the
-        :attr:`~arcgis.gis._impl._datastores._ds.PortalDataStore.layers` method.
+        :attr:`~arcgis.gis._impl._datastores._ds.PortalDataStore.publish` method.
 
         .. note::
             When this operation is called for the first time, every parameter in
@@ -515,7 +516,7 @@ class PortalDataStore(object):
 
             # Usage Example
 
-            >>> datastore_manager.unregister(datastore_object1, "server_name")
+            >>> datastore_manager.unregister(datastore_object1, "server_id")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -539,7 +540,7 @@ class PortalDataStore(object):
 
         .. note::
             After a :class:`~arcgis.gis.Datastore` has been registered, there may be times in which
-            the :class:`~arcgis.gis.Datastore` object;s registration information may be changed. When
+            the :class:`~arcgis.gis.Datastore` object's registration information may be changed. When
             changes like these occur, the server will need to be updated with
             the newly configured information so that your users will still be
             able to access the data store items without interruption.
@@ -563,7 +564,7 @@ class PortalDataStore(object):
 
             # Usage Example
 
-            >>> datastore_manager.refresh_server(datastore_object1, "server_name")
+            >>> datastore_manager.refresh_server(datastore_object1, "server_id")
 
         :returns:
             A boolean indicating success (True), or failure (False)
