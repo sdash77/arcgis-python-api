@@ -646,8 +646,8 @@ class GIS(object):
     @_lazy_property
     def api_keys(self):
         """
-        The ``api_keys`` property returns the `APIKeyManager` which allows User to generate, manage
-        and modify API Keys for controlled application access.
+        The ``api_keys`` property returns an instance of  :class:`~arcgis.gis._impl.APIKeyManager` object which allows
+        the User to generate, manage and modify API Keys for controlled application access.
 
         .. note::
             **The API Key manager is only available for ArcGIS Online**
@@ -982,8 +982,8 @@ class GIS(object):
         return PropertyMap(self._get_properties(force=True))
 
     def update_properties(self, properties_dict):
-        """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method can be useful
-        for updating the utility services used by the GIS.
+        """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
+        can be useful for updating the utility services used by the GIS.
 
 
         ===============     ====================================================================
@@ -1241,8 +1241,7 @@ class GIS(object):
 
             # Usage Example
 
-            >>> gis = GIS(url="http://pythonplayground.esri.com/portal",
-                          username="user1", password="password1")
+            >>> gis = GIS(url="http://pythonplayground.esri.com/portal", username="user1", password="password1")
 
             >>> gis.map("Durham,NC")
 
@@ -1637,9 +1636,11 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
+        items                  Optional List<Item>. A set of items to export from the group.  If
+                               nothing is given, all items will be attempted to be exported.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
+        future                 Optional Boolean.  When True, the operation will return a Job object
+                               and return the results asynchronously.
         ==================     ====================================================================
 
         :returns:
@@ -1666,7 +1667,7 @@ class GroupMigrationManager(object):
             else:
                 return job.result()
         else:
-            raise Exception("Must be an administror to perform this action")
+            raise Exception("Must be an administrator to perform this action")
     #----------------------------------------------------------------------
     def load(self,
              epk_item,
@@ -1796,20 +1797,19 @@ class DatastoreManager(object):
     def config(self):
         """
        The ``config`` method retrieves and sets the data store configuration properties, which affect the behavior of
-       the data holdings of the server. The properties include `blockDataCopy`.
+       the data holdings of the server. The properties include ``blockDataCopy``. When this property is ``False``, or not
+       set at all, copying data to the site when publishing services from a client application is allowed. This is the
+       default behavior. When this property is ``True``, the client application is not allowed to copy data to the site
+       when publishing. Rather, the publisher is required to register data items through which the service being
+       published can reference data.
 
-       When this property is `False`, or not set at all, copying data to the site when publishing services from a
-       client application is allowed. This is the default behavior.
-
-        When this property is `True`, the client application is not allowed to copy data to the site when publishing.
-        Rather, the publisher is required to register data items through which the service being published can reference data.
-        Values: `True` | `False`
+       Values: ``True`` | ``False``
 
         .. note::
-            If you specify the property as `True`, users will not be able to publish ``geoprocessing services`` and
+            If you specify the property as ``True``, users will not be able to publish ``geoprocessing services`` and
             ``geocode services`` from composite locators. These service types require data to be copied to the server.
-            As a workaround, you can temporarily set the property to `False`, publish the service, and then set the
-            property back to `True`.
+            As a workaround, you can temporarily set the property to ``False``, publish the service, and then set the
+            property back to ``True``.
         """
         params = {"f": "json"}
         path = self._admin_url + "/data/config"
