@@ -1,5 +1,6 @@
 from arcgis._impl.common._isd import InsensitiveDict
 
+
 ###########################################################################
 class APIKey(object):
     """
@@ -185,16 +186,34 @@ class APIKeyManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def get(self, api_key):
+    def get(self, api_key=None, title=None):
         """
-        The ``get`` method retrieves an :class:`~arcgis.gis._impl.APIKey` object based on the Key Value.
+        The ``get`` method retrieves an :class:`~arcgis.gis._impl.APIKey`
+        object based on the Key Value or its title.
+
+        .. code-block:: python
+
+            # Usage Example - Getting API Key using key string
+
+            >>> gis.api_keys.get(api_key='key_string')
+
+            # Getting api key using key Item's title
+
+            >>> gis.api_keys.get(title='project1_key1')
 
         :return:
             An :class:`~arcgis.gis._impl.APIKey` object
         """
-        for key in self.keys:
-            if key.properties.apikey.lower() == api_key.lower():
-                return key
+        if api_key:
+            for key in self.keys:
+                if key.properties.apikey.lower() == api_key.lower():
+                    return key
+        elif title:
+            from arcgis.gis import Item
+            for key in self.keys:
+                i = Item(itemid = key.properties.itemid, gis=self._gis)
+                if title.lower() == i.title.lower():
+                    return key
         return None
 
     # ----------------------------------------------------------------------
