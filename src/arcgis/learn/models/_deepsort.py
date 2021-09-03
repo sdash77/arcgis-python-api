@@ -158,7 +158,7 @@ class DeepSort(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        return ["reid_v1, reid_v2"]
+        return ["reid_v1", "reid_v2"]
 
     @property
     def supported_backbones(self):
