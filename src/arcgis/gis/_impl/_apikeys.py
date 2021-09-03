@@ -5,6 +5,16 @@ class APIKey(object):
     """
     The ``APIKey`` class is a single instance of a registered access key for
     performing certain operations based on permissions.
+
+    Users can create an APIKey instance as shown below:
+
+    .. code-block:: python
+
+            # Getting from a list of keys
+            >>> key1 = gis.api_keys.keys[0]
+
+            # Getting a key using
+            >>> key2 = gis.api_keys.get('key_value')
     """
 
     _gis = None
@@ -27,7 +37,7 @@ class APIKey(object):
     @property
     def properties(self):
         """
-        The ``properties`` method retrieves the properties of the current APIKey object.
+        The ``properties`` property retrieves the properties of the current APIKey object.
 
         :returns:
             A dictionary containin the properties (if any) of the current APIKey object.
@@ -40,7 +50,7 @@ class APIKey(object):
     @property
     def apikey(self):
         """
-        The ``apikey`` method retrieves the API Key value for the current key.
+        The ``apikey`` property retrieves the API Key value for the current key.
         
         :returns:
             String
@@ -127,7 +137,8 @@ class APIKey(object):
 
             # Usage Example
 
-            >>> gis.APIKey.update(http_referers = ["https://foo.com", "https://bar.com"],
+            >>> key1 = gis.api_keys.keys[0]
+            >>> key1.update(http_referers = ["https://foo.com", "https://bar.com"],
             >>>                 privileges = ["portal:apikey:basemaps",
             >>>                               "portal:app:access:item:itemId",
             >>>                               "premium:user:geocode",
@@ -258,8 +269,9 @@ class APIKeyManager(object):
 
             # Usage Example
 
-            >>> gis.APIKeyManager.create(title ="title_name", tags = "tags, apiKey, Manager", http_referers = ["https://foo.com", "https://bar.com"],
-            >>>                           privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
+            >>> gis.api_keys.create(title ="title_name", tags = "tags, apiKey, Manager",
+            >>>                     http_referers = ["https://foo.com", "https://bar.com"],
+            >>>                     privleges = ["portal:apikey:basemaps", "portal:app:access:item:itemId",
             >>>                                        "premium:user:geocode", "premium:user:networkanalysis"])
 
         :returns:
@@ -332,7 +344,7 @@ class APIKeyManager(object):
     def keys(self):
         """
 
-        The ``keys`` method retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
+        The ``keys`` property retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
         Organization.
         
         :returns:
