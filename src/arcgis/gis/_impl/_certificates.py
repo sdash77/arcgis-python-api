@@ -65,7 +65,7 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.add(name="certificate_name",
+            >>> gis.admin.certificates.add(name="certificate_name",
             >>>                            domain = "domain_name",
             >>>                            certificate = "certificate_text")
 
@@ -92,7 +92,7 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     def get(self, cert_id):
         """
-        A ``get`` method retrieves the certificate information for a single certificate
+        The ``get`` method retrieves the certificate information for a single certificate
 
         ================  ===============================================================================
         **Parameter**     **Description**
@@ -104,7 +104,7 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.get(cert_id= "certificate_id")
+            >>> gis.admin.certificates.get(cert_id= "certificate_id")
 
         :returns:
             A Dictionary (if found), else None
@@ -149,7 +149,7 @@ class CertificateManager(object):
 
             # Usage Example
 
-            >>> gis.CertificateManager.delete(cert_id="certificate_id")
+            >>> gis.admin.certificates.delete(cert_id="certificate_id")
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -165,7 +165,7 @@ class CertificateManager(object):
     # ----------------------------------------------------------------------
     def update(self, cert_id, name=None, domain=None, certificate=None):
         """
-        The ``update`` operation allows organization
+        The ``update`` operation allows organization's
         administrators to update a registered custom X.509 HTTPS
         certificate.
 
@@ -178,14 +178,15 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         domain            Optional String. Server domain that the certificate is used for.
         ----------------  -------------------------------------------------------------------------------
-        certificate	  Optional String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
+        certificate	      Optional String. Base64-encoded certificate text, enclosed between `
+                          -----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
         .. code-block:: python
 
             # Usage Example
 
-            >>> gis.CertificateManager.update(cert_id ="certificate_id",
+            >>> gis.admin.certificates.update(cert_id ="certificate_id",
             >>>                               name = "certificate_name",
             >>>                               domain ="certificate_domain",
             >>>                               certificate = "certificate_text")
@@ -215,7 +216,7 @@ class CertificateManager(object):
     @property
     def certificates(self):
         """
-        The ``certificates`` method retrieves a list of certificates registered with the organization
+        The ``certificates`` property retrieves the list of certificates registered with the organization
 
         :returns:
             A List containing the information of registered certificates
