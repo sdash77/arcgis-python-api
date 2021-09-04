@@ -1984,6 +1984,7 @@ class DatastoreManager(object):
 
             # Usage Example
             >>> arcgis.geoanalytics.get_datastores.add_amazon_s3("bucket_name", "access_key", "access_secret", "region")
+
         :return:
             A :class:`~arcgis.gis.Datastore` object
 
@@ -2030,7 +2031,7 @@ class DatastoreManager(object):
         self, cloud_storage_name, account_key, account_name, container_name, folder=None
     ):
         """
-        The ``add_ms_azure_storage`` creates a cloud store for an Amazon or Microsoft Azure store.
+        The ``add_ms_azure_storage`` creates a cloud store with Microsoft Azure.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2275,13 +2276,11 @@ class DatastoreManager(object):
         """
         The ``get`` method retrieves the data :class:`~arcgis.gis.Item` object at the given path.
 
-
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Required string. The path for the data item.
         ===============     ====================================================================
-
 
         :return:
            The data item object if found, None otherwise.
@@ -2321,7 +2320,8 @@ class DatastoreManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> arcgis.geoanalytics.get_datastores.search(parentPath= "parent_path", ancestorPath= "ancestor_path", id="id")
+            >>> arcgis.geoanalytics.get_datastores.search(parentPath= "parent_path",
+            ancestorPath= "ancestor_path", id="id")
 
         :return:
            A list of data items matching the specified query.
@@ -2367,8 +2367,8 @@ class DatastoreManager(object):
 
     def validate(self):
         """
-        The ``validate`` method validates all items in the :class:`~arcgis.gis.Datastore`. In order for a data item to be registered and
-        used successfully within the GIS's data store, you need to make sure that the path
+        The ``validate`` method validates all items in the :class:`~arcgis.gis.Datastore`. In order for a data item
+        to be registered and used successfully within the GIS's data store, you need to make sure that the path
         (for file shares) or connection string (for databases) is accessible to every server
         node in the site. To validate all registered data items all
         at once, you can invoke this operation.
@@ -2648,12 +2648,12 @@ class UserManager(object):
             >>>gis.users.counts("Role", as_df=True)
         :returns:
             Pandas `DataFrame <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html>`_
-            if `as_df` is True. If False, the result is a list of dictionaries.
+            if ``as_df`` is True. If False, the result is a list of dictionaries.
 
 
         **Example as_df=True**
 
-        >>> df = gis.um.counts('user_type', True)
+        >>> df = gis.users.counts('user_type', True)
         >>> df
             count        key
          0     12  creatorUT
@@ -2664,7 +2664,7 @@ class UserManager(object):
         **Example as_df=False**
 
 
-        >>> df = gis.um.counts('user_type', False)
+        >>> df = gis.users.counts('user_type', False)
         >>> df
         [{'key': 'creatorUT', 'count': 12}, {'key': 'viewerUT', 'count': 2}]
 
@@ -3555,7 +3555,7 @@ class UserManager(object):
         :class:`~arcgis.gis.UserManager.disable_users` method, which disables rather than enables users.
 
         .. note::
-            The ``disable_users method is supported on ArcGIS REST API 6.4+.
+            The ``enable_users`` method is supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3566,7 +3566,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.enable_users([user1,user1234,user123, user1234])
+            >>> gis.users.enable_users(['user1','user1234','user123', 'user1234'])
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -3603,7 +3603,7 @@ class UserManager(object):
         :class:`~arcgis.gis.UserManager.enable_users` method, which enables rather than disables users.
 
         .. note::
-            The ``disable_users method is supported on ArcGIS REST API 6.4+.
+            The ``disable_users`` method is supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3615,7 +3615,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.disable_users([user1,user1234,user123, user1234])
+            >>> gis.users.disable_users(['user1','user1234', 'user123', 'user1234'])
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -4053,7 +4053,7 @@ class RoleManager(object):
 
     def exists(self, role_name):
         """
-        The ``exists`` mehtod checks to see if a :class:`~arcgis.gis.Role` object exists given the declared role name.
+        The ``exists`` method checks to see if a :class:`~arcgis.gis.Role` object exists given the declared role name.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -4947,7 +4947,7 @@ class ContentManager(object):
         --------------------------  ---------------------------------------------------------------------
         filename                    Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
         --------------------------  ---------------------------------------------------------------------
-        typeKeywords                Optional string. Provide a lists all sub-types, see URL below below for valid values.
+        typeKeywords                Optional string. Provide a lists all sub-types, see URL below for valid values.
         --------------------------  ---------------------------------------------------------------------
         description                 Optional string. Description of the item.
         --------------------------  ---------------------------------------------------------------------
