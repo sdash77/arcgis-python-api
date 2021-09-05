@@ -5980,8 +5980,8 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array of items to be deleted from
-                          the current user's content
+        items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array 
+                          of items to be deleted from the current user's content
         ================  ==========================================================================
 
         .. code-block:: python
@@ -6676,7 +6676,8 @@ class ContentManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.content.clone_items(items= ["item1", "item2", "item3", "item4", "item5"], folder ="/", owner = 'User1234')
+            >>> gis.content.clone_items(items= ["item1", "item2", "item3", "item4", "item5"],
+                                        folder ="/", owner = 'User1234')
 
         :return:
            A list of :class:`~arcgis.gis.Item` objects created during the clone.
@@ -6777,7 +6778,7 @@ class ContentManager(object):
         self, replace_item, new_item, replaced_service_name=None, replace_metadata=False
     ):
         """
-        The ``replace_service operation`` allows you to replace your production vector tile layers with staging ones.
+        The ``replace_service`` operation allows you to replace your production vector tile layers with staging ones.
         This operation allows you to perform quality control on a staging tile layer and to then replace the production
         tile layer with the staging with minimal downtime. This operation has the option to keep a backup of the
         production tile layer.
@@ -6827,7 +6828,8 @@ class ContentManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.content.replace_service(replace_item="9311d21a9a2047d19c0faaebd6f2cca6", new_item = "420554d21a9a2047d19c0faaebd6f2cca4")
+            >>> gis.content.replace_service(replace_item="9311d21a9a2047d19c0faaebd6f2cca6",
+                                            new_item = "420554d21a9a2047d19c0faaebd6f2cca4")
         :returns:
             A boolean indicating success (True), or failure (False)
         """
@@ -6969,7 +6971,8 @@ class ContentManager(object):
 
             # Usage Example
 
-            >>> gis.content.share_items(items=[item1, item2, item3], everyone=True, org=True, groups = ["Developers", "Engineers", "GIS_Analysts"])
+            >>> gis.content.share_items(items=[item1, item2, item3], everyone=True, org=True,
+                                        groups = ["Developers", "Engineers", "GIS_Analysts"])
 
         :returns:
             A dictionary of unshared :class:`~arcgis.gis.Item` objects
@@ -7143,7 +7146,7 @@ class CategorySchemaManager(object):
 
             # Usage Example
 
-            >>> arcgis.gis.ContentManager.categories.delete()
+            >>> gis.content.categories.delete()
 
         :returns:
             A boolean indicating success (True), or failure (False)
@@ -7190,17 +7193,14 @@ class CategorySchemaManager(object):
 
             # Usage Example
 
-            >>> arcgis.gis.ContentManager.categories.assign_to_items(items = [{
-            >>>                             "2678d3002eea4e4a825e3bdf10016e61": {
-            >>>                                     "categories": ["/Categories/Geology", "/Categories/Elevation"]
-            >>>                                                                  }
-            >>>                                                 }, {
-            >>>                             "c3ad4ed8bcf04d619537cfe252a1760d": {
-            >>>                                     "categories": ["/Categories/Geology", "/Categories/Land cover/Forest/Deciduous Forest"]
-            >>>                                                                 }
-            >>>                                                  }, {
-            >>>                             "9ced00fdce3e4b20bb4b05155acbe817": {"categories": []}
-            >>>                                                 }])
+            >>> gis.content.categories.assign_to_items(items = [{"2678d3002eea4e4a825e3bdf10016e61": {
+                                                                 "categories": ["/Categories/Geology",
+                                                                                "/Categories/Elevation"]}},
+                                                                {"c3ad4ed8bcf04d619537cfe252a1760d": {
+                                                                 "categories": ["/Categories/Geology",
+                                                                                "/Categories/Land cover/Forest/Deciduous Forest"]}},
+                                                                 {"9ced00fdce3e4b20bb4b05155acbe817": {
+                                                                 "categories": []}}])
 
         :returns:
             A `dict` of `item_id` : `status`, with `status` being
@@ -7271,7 +7271,7 @@ class ResourceManager(object):
 
             # Usage Example
 
-            >>> gis.Item.resources.export("file_name")
+            >>> Item.resources.export("file_name")
         :returns:
             A .zip file containing the data's resources
         """
@@ -7357,7 +7357,7 @@ class ResourceManager(object):
 
             # Usage Example
 
-            >>> gis.Item.resources.add("file_path", "folder_name", "file_name", access = "private")
+            >>> Item.resources.add("file_path", "folder_name", "file_name", access = "private")
 
         :return:
             Python dictionary in the following format (if successful):
@@ -7439,7 +7439,7 @@ class ResourceManager(object):
 
             # Usage Example
 
-            >>> gis.Item.resources.add("file_path", "folder_name", "file_name")
+            >>> Item.resources.add("file_path", "folder_name", "file_name")
 
         :return:
             If successful, a dictionary with  will be returned in the following format:
@@ -7558,7 +7558,7 @@ class ResourceManager(object):
 
             # Usage Example
 
-            >>> gis.Item.resources.get("file_path", try_json=True, out_folder="out_folder_name")
+            >>> Item.resources.get("file_path", try_json=True, out_folder="out_folder_name")
 
         :return:
            Path to the downloaded file if getting a binary file (like a jpeg or png file) or if
@@ -7602,7 +7602,7 @@ class ResourceManager(object):
 
             # Usage Example
 
-            >>> gis.Item.resources.remove("file_path")
+            >>> Item.resources.remove("file_path")
 
         :return:
             If successful, a boolean of True will be returned.
@@ -8033,7 +8033,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.add(usernames=["User1234","User5678"], admin="Admin9012")
+            >>> group.add_users(usernames=["User1234","User5678"], admin="Admin9012")
 
         :return:
            A dictionary containing the users that were not added to the group.
@@ -8646,15 +8646,8 @@ class Group(dict):
 
 class GroupApplication(object):
     """
-    The ``Group Application`` class represents a single group application on the GIS, either ArcGIS Online or
+    The ``GroupApplication`` class represents a single group application on the GIS, either ArcGIS Online or
     ArcGIS Enterprise.
-
-    .. code-block:: python
-
-            # Usage Example
-
-            >>> gis = GIS("pro")
-            >>> groupapplication = GroupApplication("www.url.com", gis)
     """
 
     _con = None
@@ -8698,7 +8691,7 @@ class GroupApplication(object):
     def accept(self):
         """
         The ``accept`` method is used to manage a :class:`~arcgis.gis.User` application. When a
-        :class:`~arcgis.gis.User` to join a :class:`~arcgis.gis.Group`, a
+        :class:`~arcgis.gis.User` applies to join a :class:`~arcgis.gis.Group`, a
         ``GroupApplication`` object is created. Group administrators choose to accept this application
         using the ``accept`` operation. This operation adds the applying user to the group then deletes the application.
         This operation also creates a notification for the user indicating that the user's group application was
@@ -8712,8 +8705,9 @@ class GroupApplication(object):
 
             # Usage Example
 
-            >>> groupapplication = GroupApplication("www.url.com", gis)
-            >>> groupapplication.accept()
+            >>> group1 = gis.groups.get('name')
+            >>> group_app = group1.applications[0]
+            >>> group_app.accept()
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -8742,7 +8736,7 @@ class GroupApplication(object):
 
             # Usage Example
 
-            >>> groupapplication = GroupApplication("www.url.com", gis)
+            >>> group_app = group.applications[0]
             >>> groupapplication.delete()
 
         :return:
@@ -8973,7 +8967,7 @@ class User(dict):
 
             # Usage Example
 
-            user.generate_direct_access_url(store_type="notebook")
+            >>> user.generate_direct_access_url(store_type="notebook")
 
         :returns: A string representing a direct access URL
 
