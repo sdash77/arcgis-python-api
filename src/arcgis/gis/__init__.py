@@ -9526,7 +9526,7 @@ class User(dict):
     @property
     def esri_access(self):
         """
-        The ``esri_access`` method will return a string describing the current user's Esri access.
+        The ``esri_access`` property will return a string describing the current user's Esri access.
         When setting, supply a ``boolean`` to enable or disable ``esri_access`` for that :class:`~arcgis.gis.User`
         object.
 
@@ -9649,6 +9649,7 @@ class User(dict):
             # Usage Example
 
             >>> gis = GIS("https://www.arcgis.com", "username1", "password123")
+            >>> user = gis.users.get('username')
             >>> user.link_account("User1234", gis)
 
         returns: A boolean indicating success (True) or failure (False).
@@ -9989,7 +9990,7 @@ class User(dict):
     def items(self, folder=None, max_items=100):
         """
         The ``item`` method provides a list of :class:`~arcgis.gis.Item` objects in the specified folder.
-        For content in the root folder, use he default value of None for the folder argument.
+        For content in the root folder, use the default value of None for the folder argument.
         For other folders, pass in the folder name as a string, or as a dictionary containing
         the folder ID, such as the dictionary obtained from the folders property.
 
