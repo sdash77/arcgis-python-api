@@ -1,13 +1,101 @@
-from ._ge import _GeoEnrichment
+import collections
+from functools import wraps
+import re
+from typing import Any, Union
+
 from arcgis import __version__
 from arcgis import env
+from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
-from arcgis._impl.common._mixins import PropertyMap
+from arcgis.gis import GIS
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
-import re
+import pandas as pd
 
-import collections
+from . import _business_analyst
+from ._business_analyst._utils import (
+    local_vs_gis,
+    local_business_analyst_avail,
+    local_ba_data_avail,
+)
+from ._ge import _GeoEnrichment
+
+
+def _check_active_gis(gis=None):
+    """Helper function to get an active gis if no gis already declared in session."""
+    # prioritize active_gis
+    if gis is None and env.active_gis is not None:
+        gis = env.active_gis
+
+    return gis
+
+
+def _call_method_by_source(fn) -> callable:
+    """Function flow control based on gis or source - 'local' versus GIS object instance."""
+
+    # get the method name - this will be used to redirect the function call
+    fn_name = fn.__name__
+
+    @wraps(fn)
+    def wrapped(*args, **kwargs) -> Any:
+
+        # try to pull out the source or gis caller
+        src = None
+        for param_src in ["source", "gis"]:
+            if param_src in kwargs.keys():
+                src = kwargs[param_src]
+                break
+
+        # if the source was not found in kwargs, look through the args
+        if src is None:
+            for p in args:
+                if isinstance(p, str):
+                    p = p.lower()
+                    if p == "local":
+                        src = p.lower()
+                        break
+                elif isinstance(p, GIS):
+                    src = p
+                    break
+
+        # TODO: Swap the precedence of these once all methods are implemented
+        # check if active gis is in session
+        src = _check_active_gis(src)
+
+        # if nothing found, interrogate the local session and see if the environment has everything for local
+        if src is None and local_business_analyst_avail() and local_ba_data_avail():
+            src = "local"
+
+        # make sure a source was located or bingo out
+        src_msg = (
+            "The gis parameter needs to be populated with a valid GIS instance since there is not an active GIS "
+            "object in the session."
+        )
+        assert src is not None, src_msg
+
+        # build function name to call
+        fn_nm_to_call = (
+            f"_{fn_name}_gis" if isinstance(src, GIS) else f"_{fn_name}_local"
+        )
+
+        # get the function if it is implemented
+        if fn_nm_to_call not in globals().keys():
+            src_nm = (
+                "Web GIS"
+                if isinstance(src, GIS)
+                else "local (ArcGIS Pro with Business Analyst)"
+            )
+            raise NotImplementedError(
+                f"The {fn_name} function is not yet implemented with a {src_nm} source."
+            )
+        else:
+            fn_to_call = globals()[fn_nm_to_call]
+
+        # invoke the function and return the result
+        return fn_to_call(*args, **kwargs)
+
+    return wrapped
+
 
 BufferStudyArea = collections.namedtuple(
     "BufferStudyArea", "area radii units overlap travel_mode"
@@ -43,6 +131,7 @@ class NamedArea(object):
     supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
     places within that level of geography. This allows for interactive selection of places using intellisense and a
     notation such as the following:
+
     .. code-block:: python
 
         # Usage Example
@@ -70,7 +159,7 @@ class NamedArea(object):
     @property
     def __studyarea__(self):
         return {
-            "sourceCountry": self._country.properties.id,
+            "sourceCountry": self._country.properties.iso3,
             "layer": self._currlvl,
             "ids": [self._areaid],
         }
@@ -141,13 +230,14 @@ class NamedArea(object):
 
     def _fetch_subgeographies(self, name):
         df = standard_geography_query(
-            source_country=self._country.properties.id,
+            source_country=self._country.properties.iso3,
             layers=[self._currlvl],
             ids=[self._areaid],
             return_sub_geography=True,
             sub_geography_layer=self._level_mappings[name],
             return_geometry=True,
             as_featureset=False,
+            gis=self._country._gis,
         )
 
         places = {}
@@ -168,97 +258,153 @@ class NamedArea(object):
         setattr(self, name, places)
 
 
-# ----------------------------------------------------------------------
 class Country(object):
     """
-    A country for which geoenrichment data is available. The Country class can be used
-    to discover the data collections, sub-geographies and available reports for a country.
+    The Country object enables access to data and methods for a specific country. This
+    class can reference country data and methods available using data accessed through
+    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
+    extension and local country data installed. Specifying this source is accomplished
+    using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
+    (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
+    and will error if the specified country is not available locally. Available
+    countries can be discovered using the ``get_countries`` method.
+
+    .. note::
+        Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
+        and ``enrich_variables`` properties to discover of available enrichment
+        variables are supported.
+
     """
 
     @classmethod
-    def get(cls, name):
+    def get(cls, name: str, gis: GIS = None, year: Union[str, int] = None):
         """
         Gets a reference to a particular country, given its name, or its
-        2 letter abbreviation or ISO3 code.
+        two letter abbreviation or three letter ISO3 code.
 
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        name              Required string. The country name or 2 letter/ISO3 code
+        name              Required string. The country name, two letter code or
+                          three letter ISO3 code identifying the country.
+        ----------------  --------------------------------------------------------
+        gis               Optional ``arcgis.gis.GIS`` object instance. This
+                          specifies what GIS country sources are available based
+                          on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
+                          Enterprise) or ArcGIS Pro with the Business Analyst
+                          extension and at least one country data pack. If not
+                          explicitly specified, it tries to use an active GIS
+                          already created in the Python session. If an active
+                          GIS is not available, it then tries to use local
+                          resources, ArcGIS Pro with Business and at least one
+                          country dataset installed locally. Finally, if
+                          neither of these (Pro or an active GIS) are available,
+                          a GIS object instance must be explicitly provided.
+        ----------------  --------------------------------------------------------
+        year              Optional integer explicitly specifying the vintage
+                          (year) of data to use. This option is only available
+                          when using a `'local'` GIS source, and will be
+                          ignored if used with a Web GIS source.
         ================  ========================================================
 
-        Returns the country
+        :return:
+            ``arcgis.geoenrichment.Country`` instance for the requested country.
         """
-        cs = get_countries()
-        if len(name) == 2:
-            return [c for c in cs if c.properties.id == name][0]
-        elif len(name) == 3:
-            return [c for c in cs if c.properties.abbr3 == name][0]
-        else:
-            cnames = [c for c in cs if c.properties.name.upper() == name.upper()]
-            if len(cnames) == 1:
-                return cnames[0]
-            else:
-                altnames = [
-                    c for c in cs if c.properties.altName.upper() == name.upper()
-                ]
-                if len(altnames) == 1:
-                    return altnames[0]
-                else:
-                    raise ValueError(
-                        "Unable to find country with the specified name, id, ISO 3 country code"
-                    )
+        return cls(name, gis, year)
 
     # noinspection PyMissingConstructor
-    def __init__(self, dictdata, gis, purl=None):
-        self._gis = gis
-        if self._gis._is_hosted_nb_home == False:
-            hs = dict(self._gis.properties["helperServices"])
-            if "geoenrichment" in hs:
-                self._base_url = hs["geoenrichment"]["url"]
+    def __init__(
+        self,
+        iso3: str,
+        gis: GIS = None,
+        year: Union[str, int] = None,
+        **kwargs,
+    ) -> None:
+
+        # handle the caveat of using a GIS('Pro') input
+        if isinstance(gis, GIS):
+            if gis._con._auth == "PRO":
+                gis = "local"
+
+        # prioritize active_gis
+        gis = _check_active_gis(gis)
+
+        # instantiate a BA object instance
+        ba = _business_analyst.BusinessAnalyst(gis)
+
+        # pull the source out of the ba object since it takes care of all defaults and validation
+        self._gis = ba.source
+
+        # stash for use later
+        self._ba_cntry = ba.get_country(iso3, year=year)
+
+        # legacy parameter support
+        portal_url = kwargs["purl"] if "purl" in kwargs else None
+
+        # if the source is a GIS set a few more properties
+        if isinstance(self._gis, GIS):
+
+            # get the helper services to work with
+            hlp_svcs = self._gis.properties["helperServices"]
+
+            # if ArcGIS Online hosted notebook environment
+            if portal_url is not None:
+                self._base_url = portal_url
+
+            # otherwise, get the url if available and roll back to AGOL in a pinch
             else:
-                self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
-        elif self._gis._is_hosted_nb_home and purl:
-            self._base_url = purl
-        else:
-            hs = dict(self._gis.properties["helperServices"])
-            if "geoenrichment" in hs:
-                self._base_url = hs["geoenrichment"]["url"]
-            else:
-                self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
+                if "geoenrichment" in hlp_svcs:
+                    self._base_url = hlp_svcs["geoenrichment"]["url"]
+                else:
+                    self._base_url = "http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver"
+
+            # if a hosted notebook environment, get the private service url if set
             if self._gis._is_hosted_nb_home:
-                self._base_url = self._validate_url(self._base_url)
-        self.properties = PropertyMap(dictdata)
-        self._dataset_id = self.properties.defaultDatasetID
+                res = self._gis._private_service_url(self._base_url)
+                self._base_url = (
+                    res["privateServiceUrl"]
+                    if "privateServiceUrl" in res
+                    else res["serviceUrl"]
+                )
 
-    # ----------------------------------------------------------------------
-    def _validate_url(self, url):
-        res = self._gis._private_service_url(url)
-        if "privateServiceUrl" in res:
-            return res["privateServiceUrl"]
-        else:
-            return res["serviceUrl"]
-        return url
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return "<%s name:%s>" % (type(self).__name__, self.properties.name)
+            # set the dataset_id to the default
+            self._dataset_id = self._ba_cntry.properties.default_dataset
 
     def __repr__(self):
-        return "<%s name:%s>" % (type(self).__name__, self.properties.name)
+        if self._gis == "local":
+            repr = (
+                f"<{type(self).__name__} - {self.properties.country_name} {self.properties.year} "
+                f"({self._gis.__repr__()})>"
+            )
+        else:
+            repr = f"<{type(self).__name__} - {self.properties.country_name} ({self._gis.__repr__()})>"
+        return repr
+
+    @property
+    def properties(self):
+        return self._ba_cntry.properties
 
     @_lazy_property
     def geometry(self):
-        lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
-        df = standard_geography_query(
-            source_country=self.properties.id,
-            layers=[lvlid],
-            ids=["01"],
-            return_sub_geography=False,
-            return_geometry=True,
-            as_featureset=False,
-        )
-        return Geometry(df.iloc[0]["SHAPE"])
+        if isinstance(self._gis, GIS):
+            lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
+            df = standard_geography_query(
+                source_country=self.properties.iso2,
+                layers=[lvlid],
+                ids=["01"],
+                return_sub_geography=False,
+                return_geometry=True,
+                as_featureset=False,
+                gis=self._gis,
+            )
+            geom = Geometry(df.iloc[0]["SHAPE"])
+
+        else:
+            raise NotImplementedError(
+                f"'geometry' not available using 'local' as the source."
+            )
+
+        return geom
 
     @_lazy_property
     def _geog_levels(self):
@@ -267,55 +413,77 @@ class Country(object):
         """
         params = {"f": "json"}
         url = self._base_url + "/Geoenrichment/standardgeographylevels/%s" % (
-            self.properties.id
+            self.properties.iso2
         )
         res = self._gis._con.post(url, params)
         return res["geographyLevels"][0]["datasets"]
 
     @property
+    @local_vs_gis
     def levels(self):
         """
         Returns levels of geography in this country, for the current dataset
         """
+        pass
+
+    def _levels_gis(self):
+        """GIS levels implementation."""
         dset = [d for d in self._geog_levels if d["datasetID"] == self._dataset_id][0]
-        return dset["levels"]
+        lvls = dset["levels"]
+        return lvls
 
     @property
     def dataset(self):
         """
         Returns the currently used dataset for this country
         """
-        return self._dataset_id
+        if isinstance(self._gis, GIS):
+            ds_id = self._dataset_id
+        else:
+            raise NotImplementedError(
+                f"'dataset' not available using 'local' as the source."
+            )
+        return ds_id
 
     @dataset.setter
     def dataset(self, value):
-        if value in self.properties.datasets:
-            self._dataset_id = value
-            try:
-                delattr(self, "_lazy_subgeographies")
-                delattr(self, "_lazy__geog_levels")
-            except:
-                pass
+        if isinstance(self._gis, GIS):
+            if value in self.properties.datasets:
+                self._dataset_id = value
+                try:
+                    delattr(self, "_lazy_subgeographies")
+                    delattr(self, "_lazy__geog_levels")
+                except:
+                    pass
+            else:
+                raise ValueError(
+                    "The specified dataset is not available in this country. Choose one of "
+                    + str(self.properties.datasets)
+                )
         else:
-            raise ValueError(
-                "The specified dataset is not available in this country. Choose one of "
-                + str(self.properties.datasets)
+            raise NotImplementedError(
+                f"'dataset' not available using 'local' as the source."
             )
 
     @_lazy_property
+    @local_vs_gis
     def data_collections(self):
         """
         Returns the supported data collections and analysis variables as a Pandas dataframe.
 
-        The dataframe is indexed by the data collection id(dataCollectionID) and contains columns for
-        analysis variables(analysisVariable)
+        The dataframe is indexed by the data collection id(``dataCollectionID``) and
+        contains columns for analysis variables(``analysisVariable``).
         """
+        pass
+
+    def _data_collections_gis(self):
+        """GIS implementation of data_collections"""
         import pandas as pd
 
         df = pd.json_normalize(
             (
                 _data_collections(
-                    country=self.properties.id,
+                    country=self.properties.iso2,
                     out_fields=[
                         "id",
                         "dataCollectionID",
@@ -341,30 +509,55 @@ class Country(object):
         df.set_index("dataCollectionID", inplace=True)
         return df
 
+    def _data_collections_local(self):
+        """Local implementation for data_collections"""
+        # get the variables and reorganize the dataframe to be as similar as possible to the existing online response
+        col_map = {
+            "data_collection": "dataCollectionID",
+            "enrich_name": "analysisVariable",
+        }
+        dc_df = self._ba_cntry.enrich_variables.rename(columns=col_map).set_index(
+            "dataCollectionID"
+        )
+        dc_df = dc_df[["analysisVariable", "alias"]].copy()
+        return dc_df
+
+    @property
+    def enrich_variables(self):
+        """
+        Pandas Dataframe of available geoenrichment variables.
+        """
+        return self._ba_cntry.enrich_variables
+
     @_lazy_property
+    @local_vs_gis
     def subgeographies(self):
         """
-            Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
-            supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
-            places within that level of geography. This allows for interactive selection of places using intellisense and a
-            notation such as the following:
+        Returns the named geographical places in this country, as NamedArea objects. Each named area has attributes for the
+        supported subgeography levels within it, and the value of those attributes are dictionaries containing the named
+        places within that level of geography. This allows for interactive selection of places using intellisense and a
+        notation such as the following:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                # Usage Example 1
+            # Usage Example 1
 
-                usa = Country.get('USA')
-                usa.subgeographies.states['California'].counties['San_Bernardino_County']
+            usa = Country.get('USA')
+            usa.subgeographies.states['California'].counties['San_Bernardino_County']
 
         .. code-block:: python
 
                 # Usage Example 2
 
                 india.named_places.states['Bihar'].districts['Aurangabad'].subdistricts['Barun']
-
         """
+        pass
+
+    def _subgeographies_gis(self):
+        """GIS implementation of subgeographies."""
         return NamedArea(self)
 
+    @local_vs_gis
     def search(self, query, layers=["*"]):
         """
         Searches this country for places that have the specified query string in their name.
@@ -384,12 +577,16 @@ class Country(object):
         :return:
             A list of named areas that match the query string
         """
+
+    def _search_gis(self, query, layers=["*"]):
+        """GIS search implementation."""
         df = standard_geography_query(
-            source_country=self.properties.id,
+            source_country=self.properties.iso2,
             geoquery=query,
             layers=layers,
             return_geometry=True,
             as_featureset=False,
+            gis=self._gis,
         )
 
         places = []
@@ -407,11 +604,14 @@ class Country(object):
         return places
 
     @_lazy_property
+    @local_vs_gis
     def reports(self):
         """Returns the available reports for this country as a Pandas dataframe"""
-        import pandas as pd
+        pass
 
-        rdf = _find_report(self.properties.id)
+    def _reports_gis(self):
+        """GIS implementation of reports."""
+        rdf = _find_report(self.properties.iso2)
         df = pd.json_normalize(rdf)
         df = df[
             ["reportID", "metadata.title", "metadata.categories", "formats"]
@@ -425,17 +625,62 @@ class Country(object):
         return df
 
 
-def get_countries(gis=None):
-    """Returns the countries for which there is GeoEnrichment data."""
-    if gis is None:
-        gis = env.active_gis
-    ge = _GeoEnrichment(gis=gis)
-    if gis._is_hosted_nb_home:
-        return [Country(c, gis, purl=ge._base_url) for c in ge.countries(as_df=False)]
-    else:
-        return [Country(c, gis, purl=None) for c in ge.countries(as_df=False)]
+def get_countries(gis: GIS = None, as_df: bool = False):
+    """
+    Retrieve available countries based on the GIS source being used.
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional ``arcgis.gis.GIS`` object instance. This
+                           specifies what GIS country sources are available based
+                           on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
+                           Enterprise) or ArcGIS Pro with the Business Analyst
+                           extension and at least one country data pack. If not
+                           explicitly specified, it tries to use an active GIS
+                           already created in the Python session. If an active
+                           GIS is not available, it then tries to use local
+                           resources, ArcGIS Pro with Business and at least one
+                           country dataset installed locally. Finally, if
+                           neither of these (Pro or an active GIS) are available,
+                           a GIS object instance must be explicitly provided.
+
+    as_df                  Optional boolean specifying if a Pandas DataFrame output is desired.
+                           If ```False`` (the default) a list of
+                           ``arcgis.geoenrichment.Country`` objects will be returned. If
+                           ``True`` a Pandas DataFrame of available countries is returned.
+    ==================     ====================================================================
+
+    :return:
+        Available countries as a list of ``arcgis.geoenrichment.Country`` objects or a Pandas
+        DataFrame of available countries.
+    """
+    # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
+    if isinstance(gis, GIS):
+        if gis._con._auth == "PRO":
+            gis = "local"
+
+    # prioritize active_gis
+    gis = _check_active_gis(gis)
+
+    # get the dataframe of available countries
+    out_res = _business_analyst.BusinessAnalyst(gis).countries
+
+    # if a dataframe is not desired, use the ISO3 codes to crate a list of Countries from the ISO3 codes
+    if as_df is False:
+        if "vintage" in out_res.columns:
+            out_res = [
+                Country(cntry[1][0], gis=gis, year=cntry[1][1])
+                for cntry in out_res[["iso3", "vintage"]].iterrows()
+            ]
+        else:
+            out_res = [
+                Country(cntry[1], gis=gis) for cntry in out_res["iso3"].iteritems()
+            ]
+
+    return out_res
 
 
+@_call_method_by_source
 def create_report(
     study_areas,
     report=None,
@@ -538,6 +783,23 @@ def create_report(
     out_folder             Optional string. Name of the save folder
     ==================     ====================================================================
     """
+    pass
+
+
+def _create_report_gis(
+    study_areas,
+    report=None,
+    export_format="pdf",
+    report_fields=None,
+    options=None,
+    return_type=None,
+    use_data=None,
+    in_sr=4326,
+    out_name=None,
+    out_folder=None,
+    gis=None,
+):
+    """GIS implementation of create report."""
     if gis is None:
         gis = env.active_gis
 
@@ -691,20 +953,25 @@ def _data_collections(
     )
 
 
-# ----------------------------------------------------------------------
+@_call_method_by_source
 def service_limits(gis=None):
     """
-    Returns a Pandas' DataFrame that describes the service's limitations for each input parameter.
+    Returns a Pandas' DataFrame describing limitations for each input parameter.
 
-    :returns: Pandas' DataFrame
+    :returns: Pandas DataFrame
     """
+    pass
+
+
+def _service_limits_gis(gis=None):
+    """Local implementation of service limits."""
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
     return ge.limits
 
 
-# ----------------------------------------------------------------------
+@_call_method_by_source
 def enrich(
     study_areas,
     data_collections=None,
@@ -718,7 +985,7 @@ def enrich(
     """
     Returns demographic and other requested information for the specified study areas.
     Study areas define the location of the point or area that you want to enrich
-    with additional information or creare reports about. If one or many points are input as
+    with additional information or create reports about. If one or many points are input as
     a study area, the method will create a 1-mile ring buffer around
     the point to collect and append enrichment data. You can optionally
     change the ring buffer size or create drive-time service areas
@@ -799,13 +1066,20 @@ def enrich(
 
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
-    import pandas as pd
-    from arcgis.features import (
-        SpatialDataFrame,
-        FeatureSet,
-        GeoAccessor,
-        GeoSeriesAccessor,
-    )
+    pass
+
+
+def _enrich_gis(
+    study_areas,
+    data_collections=None,
+    analysis_variables=None,
+    comparison_levels=None,
+    add_derivative_variables=None,
+    intersecting_geographies=None,
+    return_geometry=True,
+    gis=None,
+):
+    """GIS implementation of enrich."""
 
     def _chunks(l, n):
         """yield successive n-sized chunks from l."""
@@ -927,7 +1201,7 @@ def enrich(
                         "return_geometry": return_geometry,
                         "out_sr": env.out_spatial_reference,
                         "as_featureset": False,
-                    }
+                    },
                 )
 
                 concurrent_parts[idx] = f  # .append(f)
@@ -943,14 +1217,16 @@ def enrich(
             ]
             raise Exception(json.dumps(exceptions))
         if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
-            df = pd.concat(results)
-            if len(df) != len(study_areas):
-                if "OBJECTID" in df.columns:
+            enrich_res = pd.concat(results)
+            if len(enrich_res) != len(study_areas):
+                if "OBJECTID" in enrich_res.columns:
                     missing_q = study_areas.OBJECTID.isin(
-                        list(set(study_areas.OBJECTID) - set(df.OBJECTID))
+                        list(set(study_areas.OBJECTID) - set(enrich_res.OBJECTID))
                     )
 
-                    df = pd.concat([df, study_areas[missing_q]]).set_index(
+                    enrich_res = pd.concat(
+                        [enrich_res, study_areas[missing_q]]
+                    ).set_index(
                         keys=areas.index,
                         drop=True,
                         append=False,
@@ -958,8 +1234,8 @@ def enrich(
                         verify_integrity=False,
                     )
 
-            elif len(df) == len(study_areas):
-                df = df.set_index(
+            elif len(enrich_res) == len(study_areas):
+                enrich_res = enrich_res.set_index(
                     keys=areas.index,
                     drop=True,
                     append=False,
@@ -968,18 +1244,25 @@ def enrich(
                 )
 
         else:
-            df = pd.concat(results)
-        return df
+            enrich_res = pd.concat(results)
+
+        # set the spatial column
+        if return_geometry:
+            enrich_res.spatial.set_geometry("SHAPE")
+
     # no chunking, len < 100, or FeatureSet
-    return ge.enrich(
-        study_areas=areas,
-        data_collections=data_collections,
-        analysis_variables=analysis_variables,
-        add_derivative_variables=add_derivative_variables,
-        intersecting_geographies=intersecting_geographies,
-        return_geometry=return_geometry,
-        out_sr=env.out_spatial_reference,
-    )
+    else:
+        enrich_res = ge.enrich(
+            study_areas=areas,
+            data_collections=data_collections,
+            analysis_variables=analysis_variables,
+            add_derivative_variables=add_derivative_variables,
+            intersecting_geographies=intersecting_geographies,
+            return_geometry=return_geometry,
+            out_sr=env.out_spatial_reference,
+        )
+
+    return enrich_res
 
 
 # ----------------------------------------------------------------------
@@ -1112,9 +1395,6 @@ def find_businesses(
     gis=None,
 ):
     """
-
-
-
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
     string, spatial filter and business type. A business point will be selected if it matches
@@ -1170,6 +1450,7 @@ def find_businesses(
 
 
 # ----------------------------------------------------------------------
+@_call_method_by_source
 def standard_geography_query(
     source_country=None,
     country_dataset=None,
@@ -1305,6 +1586,28 @@ def standard_geography_query(
     :returns: Spatial or Pandas Dataframe on success, FeatureSet, or dictionary on failure.
 
     """
+    pass
+
+
+def _standard_geography_query_gis(
+    source_country=None,
+    country_dataset=None,
+    layers=None,
+    ids=None,
+    geoquery=None,
+    return_sub_geography=False,
+    sub_geography_layer=None,
+    sub_geography_query=None,
+    out_sr=4326,
+    return_geometry=False,
+    return_centroids=False,
+    generalization_level=0,
+    use_fuzzy_search=False,
+    feature_limit=1000,
+    as_featureset=False,
+    gis=None,
+):
+    """GIS implementation of standard_geography_query."""
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)

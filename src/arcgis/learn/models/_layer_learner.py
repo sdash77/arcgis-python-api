@@ -774,15 +774,11 @@ class FullyConnectedNetwork(ArcGISModel):
         :returns: dataframe
         """
         self._check_requisites()
-        min_size = len(
-            self._data._validation_indexes
-        )
+        min_size = len(self._data._validation_indexes)
         if min_size < rows:
             min_size = rows
 
-        sample_indexes = random.sample(
-            self._data._validation_indexes, min_size
-        )
+        sample_indexes = random.sample(self._data._validation_indexes, min_size)
         rows_df = self._data._dataframe.iloc[sample_indexes]
         predictions = self._df_predict(rows_df)
         pd.options.mode.chained_assignment = None
@@ -801,9 +797,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
         validation_dataframe = self._data._dataframe.iloc[
             self._data._validation_indexes
-        ].reset_index(
-            drop=True
-        )
+        ].reset_index(drop=True)
 
         predictions = np.array(self._df_predict(validation_dataframe))
         labels = validation_dataframe[self._data._dependent_variable]

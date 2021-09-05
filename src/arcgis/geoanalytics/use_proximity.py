@@ -25,6 +25,148 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
+def group_by_proximity(
+    input_layer,
+    spatial_relationship,
+    spatial_near_distance=None,
+    spatial_near_distance_unit=None,
+    temporal_relationship=None,
+    temporal_near_distance=None,
+    temporal_near_distance_unit=None,
+    output_name=None,
+    context=None,
+    gis=None,
+    future=False,
+):
+    """
+    The Group By Proximity tool groups features that are within spatial
+    proximity or spatiotemporal proximity of each other.
+
+    ===================================================================    =============================================================================
+    **Argument**                                                           **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_layer                                                            Required layer. The point, line, or polygon features to be grouped.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_relationship                                                   Required String. The type of relationship to group by.
+
+                                                                           Values: ```Intersects, Touches, NearGeodesic, NearPlanar```
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if
+                                                                           features are near one another. This is only applied if `NewGeodesic` or
+                                                                           `NewPlanar` is the selected `spatial_relationship`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified
+                                                                           in `spatial_near_distance`. The default value is Meters.
+
+                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_relationship                                                  Optional String. The type of temporal relationship to group by.
+
+                                                                           Values: Intersects | Near
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_near_distance                                                 Optional Float. A float value used for the temporal search distance to determine if features are near one another.
+
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_near_distance_unit                                            Optional String. The temporal unit to be used with the distance value specified in `temporal_near_distance`.
+
+                                                                           Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
+    ===================================================================    =============================================================================
+
+    :returns: Item when Future=False or GAJob when Future=True
+
+    """
+    input_features = _prevent_bds_item(input_layer)
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
+
+    if output_name is None:
+        output_service_name = _id_generator(prefix="Group_By_Proximity_")
+        output_name = output_service_name.replace(" ", "_")
+    else:
+        output_service_name = output_name.replace(" ", "_")
+    if context is not None:
+        output_datastore = context.get("dataStore", None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Group By Proximity",
+        output_datastore=output_datastore,
+    )
+
+    params = {
+        "input_features": input_features,
+        "spatial_relationship": spatial_relationship,
+        "spatial_near_distance": spatial_near_distance,
+        "spatial_near_distance_unit": spatial_near_distance_unit,
+        "temporal_relationship": temporal_relationship,
+        "temporal_near_distance": temporal_near_distance,
+        "temporal_near_distance_unit": temporal_near_distance_unit,
+        "output_name": output_name,
+        "context": context,
+        "gis": gis,
+        "future": True,
+    }
+
+    if output_service:
+        params["output_name"] = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
+    else:
+        params["output_name"] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+    kwargs = {}
+    for key, value in params.items():
+        if key != "field":
+            if value is not None:
+                kwargs[key] = value
+        elif key == "field" and value:
+            kwargs[key] = value
+    params = inspect_function_inputs(tbx.group_by_proximity, **kwargs)
+    params["future"] = True
+
+    try:
+        gpjob = tbx.group_by_proximity(**params)
+        if future:
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        gpjob.result()
+        return output_service
+    except Exception as e:
+        output_service.delete()
+        raise
+    return
+
+
 def trace_proximity_events(
     input_points,
     spatial_search_distance,

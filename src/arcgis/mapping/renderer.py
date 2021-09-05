@@ -448,13 +448,14 @@ def _ri_creator(**kwargs):
 # --------------------------------------------------------------------------
 def visual_variables(geometry_type, sdf_or_list, **kwargs):
     """
-    a function to create visual variables
+    The ``visual_variables`` function is used to create visual variables for the :class:`~arcgis.gis.GIS` object.
 
-    This operation allows developers to take a deep dive into developing custom renderer.
-    Here a user/developer can create transparancy, size information, and other rules to
+    ``visual_variables`` allows developers to take a deep dive into developing custom renderer.
+    Here a user/developer can create transparency, size information, and other rules to
     improve the overall feel and look of spatial information on a map.
 
-    Each type of information is detailed in the tables below.
+    .. note::
+        Each type of information is detailed in the tables below.
 
     ======================  =========================================================
     **optional variables**  **description**
@@ -576,8 +577,8 @@ def generate_renderer(
     ======================  =========================================================
     **Explicit Argument**   **Description**
     ----------------------  ---------------------------------------------------------
-    geometry_type           required string. The allowed values are: Point, Polyline,
-                            Polygon, or Raster. This required parameter is used to
+    geometry_type           required string. The allowed values are: ``Point``, ``Polyline``,
+                            ``Polygon``, or ``Raster``. This required parameter is used to
                             help ensure the requested renderer is valid for the
                             specific type of geometry.
 
