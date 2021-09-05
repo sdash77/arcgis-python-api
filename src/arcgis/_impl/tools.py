@@ -4450,7 +4450,9 @@ class _PackagingTools(object):
         if output_name is None:
             output_name = {}
             output_name["title"] = uuid.uuid4().hex
-        if gis is None:
+        if gis is None and self._gis:
+            gis = self._gis
+        elif gis is None and self._gis is None:
             gis = arcgis.env.active_gis
         if isinstance(map_item_id, arcgis.gis.Item):
             map_item_id = map_item_id.itemid
@@ -4482,8 +4484,10 @@ class _PackagingTools(object):
 
         """
         res = []
-        if gis is None:
+        if gis is None and self._gis:
             gis = self._gis
+        elif gis is None and self._gis is None:
+            gis = arcgis.env.active_gis
         if isinstance(packages, (tuple, list)):
             for package in packages:
                 if isinstance(package, Item):
@@ -7709,6 +7713,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         out_sr=None,
         context=None,
         future=False,
+        md_to_upload=None,
         **kwargs
     ):
 
@@ -7844,6 +7849,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
+        md_data_path = []
+        if md_to_upload is not None:
+            if isinstance(input_rasters, str):
+                md_data_path.append(os.path.dirname(input_rasters))
+            elif isinstance(input_rasters, list):
+                for ele in input_rasters:
+                    md_data_path.append(os.path.dirname(ele))
+
+            if raster_type_name is None:
+                raster_type_name = "mosaic_dataset"
+
         input_rasters, raster_type = self._build_param_dictionary(
             input_rasters=input_rasters,
             raster_type_name=raster_type_name,
@@ -7852,6 +7868,35 @@ class _RasterAnalysisTools(BaseAnalytics):
             use_input_rasters_by_ref=use_input_rasters_by_ref,
             upload_properties=upload_properties,
         )
+
+        mosaic_dataset_uploaded = md_to_upload
+        if md_to_upload is not None:
+            if gis._con._product == "AGOL":
+                from arcgis.raster._util import _upload_imagery_agol
+
+                if ".gdb" in md_to_upload:
+                    gdb_path = os.path.dirname(md_to_upload)
+                uploaded_list = _upload_imagery_agol(
+                    [gdb_path], gis, upload_properties=upload_properties
+                )
+                if len(uploaded_list) == 1:
+                    azure_upload_url = uploaded_list[0]
+                    mosaic_dataset_uploaded = (
+                        azure_upload_url
+                        + "/"
+                        + os.path.basename(gdb_path)
+                        + "/"
+                        + os.path.basename(md_to_upload)
+                    )
+
+            if len(md_data_path) == 1:
+                md_data_path = md_data_path[0]
+            input_rasters.update(
+                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_path}
+            )
+
+        if raster_type_name == "mosaic_dataset":
+            raster_type = None
 
         gpjob = self._tbx.create_image_collection(
             input_rasters=input_rasters,
@@ -10883,8 +10928,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         values = None
         if dimension_values is not None:
+            if isinstance(dimension_values, str):
+                if ";" in dimension_values:
+                    values = dimension_values.split(";")
+                elif "," in dimension_values:
+                    values = dimension_values.split(",")
+                else:
+                    values = dimension_values
             if isinstance(dimension_values, list):
-                values = ";".join(dimension_values)
+                values = dimension_values
 
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
@@ -15554,6 +15606,8 @@ class _GeometryService(_GISService):
            JSON as dictionary
         """
         url = self._url + "/areasAndLengths"
+        if isinstance(areaUnit, str):
+            areaUnit = {"areaUnit": areaUnit}
         params = {
             "f": "json",
             "lengthUnit": lengthUnit,

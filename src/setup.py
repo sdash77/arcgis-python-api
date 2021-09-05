@@ -54,13 +54,14 @@ else:
         "pandas >=1",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19",
+        "keyring >=19,<=21.8.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
         "python-certifi-win32",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
+        "geomet",
         "requests",
         "requests-oauthlib",
         "requests_toolbelt",
@@ -270,7 +271,9 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {"gp": ["dill"],},
+    "extras_require": {
+        "gp": ["dill"],
+    },
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],

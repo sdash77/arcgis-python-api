@@ -3109,6 +3109,7 @@ def create_image_collection(
     raster_type_params=None,
     out_sr=None,
     context=None,
+    md_to_upload=None,
     *,
     gis=None,
     future=False,
@@ -3167,7 +3168,11 @@ def create_image_collection(
                                          "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
                                          "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
                                          "ZY3-CRESDA"]         
-                                         
+
+                                         If an existing mosaic dataset is being published as a 
+                                         dynamic imagery layer using the md_to_upload parameter, the
+                                         raster_type_name parameter can be set to None as it is not required.
+
 
                                          Example:
                                             "QuickBird"
@@ -3270,6 +3275,30 @@ def create_image_collection(
                                             | "defineNodata":True,                                            
                                             | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
                                             | "buildOverview":True}
+
+                                         | The context parameter can be used to add new fields when creating \
+                                         the image collection.
+
+
+                                         Example:
+                                            | {"fields": [{"name": "cloud_cover", "type": "Long"},
+                                            | {"name": "cloud_shadow_count", "type": "Long"}]}
+
+    ------------------                   --------------------------------------------------------------------
+    md_to_upload                         Optional string. Path to the existing mosaic dataset to be published 
+                                         as a hosted dynamic imagery layer.
+
+                                         To publish an existing mosaic dataset, specify the path to the input 
+                                         data of the mosaic to the input_rasters parameter. 
+                                         The data will be uploaded to ArcGIS Online.
+
+                                         raster_type_name parameter can be set to None as it is not required to 
+                                         publish an imagery layer from a mosaic dataset
+
+                                         Option available only on ArcGIS online
+
+                                         Example:
+                                            "./data/temp_uploaded.gdb/test"
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -3792,6 +3821,18 @@ def create_image_collection(
                                                              context={"image_collection_properties":{"imageCollectionType":"Satellite"},"byref":True},
                                                              gis = gis)
 
+        # Usage Example 10: This example publishes an existing mosaic dataset as a dynamic imagery layer on ArcGIS Online. 
+
+        # Specify the actual source data path referenced by the uploaded mosaic dataset using input_rasters parameter. The data would be uploaded 
+        # to the ArcGIS Online's user store from this path. 
+
+        landsat_mosaic  = create_image_collection(image_collection="landsat_image_collection",
+                                                  input_rasters=[r"C:\data\landsat_data_folder"],
+                                                  raster_type_name=None,
+                                                  context={"upload_properties":{"displayProgress":True}},
+                                                  md_to_upload=r"C:\data\md.gdb\landsat",
+                                                  gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -3804,6 +3845,7 @@ def create_image_collection(
         out_sr=out_sr,
         context=context,
         future=future,
+        md_to_upload=md_to_upload,
         **kwargs
     )
 
@@ -6410,7 +6452,7 @@ def subset_multidimensional_raster(
     .. code-block:: python
 
         # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
-        values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
+        # values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
 
         subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr,
                                                        variables=["cceiling","ccover"],
@@ -6745,6 +6787,20 @@ def optimal_path_as_line(
 
     :return: Output Feature Layer Item
 
+    .. code-block:: python
+
+        # Usage Example 1: To calculate the optimal path from a source to a destination.
+
+        destination_data = gis.content.search("my_destination_data")[0].layers[0]
+        accumulation_raster = gis.content.search("my_accumulation_raster")[0].layers[0]
+        back_direction_raster = gis.content.search("my_back_direction_raster")[0].layers[0]
+
+        optimal_path_op = optimal_path_as_line(input_destination_data=destination_data,
+                                               input_distance_accumulation_raster=accumulation_raster,
+                                               input_back_direction_raster=back_direction_raster,
+                                               output_feature_name="optimal_path_feature",
+                                               gis=gis)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -6900,6 +6956,21 @@ def optimal_region_connections(
     ====================================     ====================================================================
 
     :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
+
+    .. code-block:: python
+
+        # Usage Example 1: To calculate the optimal connections between regions.
+
+        region_data = gis.content.search("my_region_data")[0].layers[0]
+        barrier_data = gis.content.search("my_barrier_data")[0].layers[0]
+        cost_raster = gis.content.search("my_cost_raster")[0].layers[0]
+
+        optimal_region_op = optimal_region_connections(input_region_data=region_data,
+                                                       input_barrier_data=barrier_data,
+                                                       input_cost_raster=cost_raster,
+                                                       output_optimal_lines_name="optimal_lines_feature",
+                                                       output_neighbor_connections_name="optimal_region_feature",
+                                                       gis=gis)
 
     """
 
@@ -7632,6 +7703,33 @@ def manage_multidimensional_raster(
     :return:
     output_raster : Imagery Layer URL
 
+    .. code-block:: python
+
+        # Usage Example 1: This example appends variables to a multidimensional raster dataset.
+
+        target_mdim_raster = gis.content.search("my_target_mdim_raster")[0].layers[0]
+        input_mdim_raster = gis.content.search("my_input_mdim_raster")[0].layers[0]
+        variables_to_add = ["variable_1", "variable_2"]
+
+        manage_mdim_op = manage_multidimensional_raster(target_multidimensional_raster=target_mdim_raster,
+                                                        manage_mode="APPEND_VARIABLES",
+                                                        variables=variables_to_add,
+                                                        input_multidimensional_rasters=[input_mdim_raster],
+                                                        gis=gis)
+
+        # Usage Example 2: This example adds the StdZ dimension to a multidimensional raster dataset.
+
+        target_mdim_raster = gis.content.search("my_target_mdim_raster")[0].layers[0]
+
+        manage_mdim_op = manage_multidimensional_raster(target_multidimensional_raster=target_mdim_raster,
+                                                        manage_mode="ADD_DIMENSION",
+                                                        variables="my_variable",
+                                                        dimension_name="StdZ",
+                                                        dimension_value="0",
+                                                        dimension_description="Depth",
+                                                        dimension_unit="m",
+                                                        gis=gis)
+
     """
 
     # task = "ManageMultidimensionalRaster"
@@ -7779,6 +7877,20 @@ def sample(
     ====================================     ====================================================================
 
     :return: Feature Layer or Table object
+
+    .. code-block:: python
+
+        # Usage Example 1: Create a table that shows values of cells from the raster(s) for defined locations.
+
+        raster_1 = gis.content.search("my_raster_1")[0].layers[0]
+        raster_2 = gis.content.search("my_raster_2")[0].layers[0]
+        rasters = [raster1, raster2]
+        location_data = gis.content.search("my_location_data")[0].layers[0]
+
+        sample_op = sample(input_rasters=rasters,
+                           input_location_data=location_data,
+                           output_name="sample_op_data",
+                           gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -8420,6 +8532,19 @@ def zonal_statistics_as_table(
     ====================================     ====================================================================
 
     :return: Feature Layer
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculate the values of a raster within defined zones.
+
+        zone_data = gis.content.search("my_zone_data")[0].layers[0]
+        value_raster = gis.content.search("my_value_raster")[0].layers[0]
+
+        zonal_stats_table = zonal_statistics_as_table(input_zone_raster_or_features=zone_data,
+                                                      input_value_raster=value_raster,
+                                                      zone_field="my_zone_field",
+                                                      output_name="my_zonal_stats_table",
+                                                      gis=gis)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
