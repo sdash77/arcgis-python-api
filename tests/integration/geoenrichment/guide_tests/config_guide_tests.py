@@ -4,7 +4,7 @@ from warnings import warn
 
 from arcgis.features import GeoAccessor
 from arcgis.geoenrichment import Country, enrich
-from arcgis.geoenrichment._business_analyst._utils import module_avail
+from arcgis.geoenrichment._business_analyst._utils import module_avail, local_business_analyst_avail
 from arcgis.gis import GIS
 import pytest
 
