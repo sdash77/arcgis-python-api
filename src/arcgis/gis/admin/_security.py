@@ -1144,7 +1144,7 @@ class EnterpriseUsers(BasePortalAdmin):
         if user_license and user_license.lower() in user_license_lu:
             user_license = user_license_lu[user_license.lower()]
         else:
-            user_license = user_license_lu['creator']
+            user_license = user_license_lu["creator"]
         if role.lower() in role_lu:
             role = role_lu[role.lower()]
 

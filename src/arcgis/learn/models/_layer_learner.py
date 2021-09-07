@@ -235,13 +235,13 @@ class FullyConnectedNetwork(ArcGISModel):
             os.mkdir(path)
 
         self.learn.export(os.path.join(path, os.path.basename(path) + "_exported.pth"))
-        #from IPython.utils import io
+        # from IPython.utils import io
 
-        #with io.capture_output() as captured:
+        # with io.capture_output() as captured:
         super().save(
-                path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
-            )
-        #print(captured.stdout)
+            path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
+        )
+        # print(captured.stdout)
         return Path(path)
 
     @property
