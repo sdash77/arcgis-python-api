@@ -4,12 +4,7 @@ from warnings import warn
 
 from arcgis.features import GeoAccessor
 from arcgis.geoenrichment import Country, enrich
-from arcgis.geoenrichment._business_analyst._utils import (
-    local_business_analyst_avail,
-    local_ba_data_avail,
-    avail_arcpy,
-    module_avail,
-)
+from arcgis.geoenrichment._business_analyst._utils import module_avail
 from arcgis.gis import GIS
 import pytest
 
@@ -25,7 +20,7 @@ _src_lst = []
 _src_nm_lst = []
 
 # if the local environment is configured with arcpy (Pro), Business Analyst and local data
-local_ba_avail = local_business_analyst_avail() and local_ba_data_avail()
+local_ba_avail = local_business_analyst_avail()
 
 # if local_ba_avail:
 #     _src_lst.append(GIS('Pro'))
