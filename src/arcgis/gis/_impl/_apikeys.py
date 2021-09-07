@@ -52,7 +52,7 @@ class APIKey(object):
     def apikey(self):
         """
         The ``apikey`` property retrieves the API Key value for the current key.
-        
+
         :returns:
             String
         """
@@ -73,7 +73,7 @@ class APIKey(object):
         """
         Resets the API Key for the Item. The call will return the information
         with the new API Key information.
-        
+
         :returns:
             A dictionary with the APIKey object information
 
@@ -210,8 +210,9 @@ class APIKeyManager(object):
                     return key
         elif title:
             from arcgis.gis import Item
+
             for key in self.keys:
-                i = Item(itemid = key.properties.itemid, gis=self._gis)
+                i = Item(itemid=key.properties.itemid, gis=self._gis)
                 if title.lower() == i.title.lower():
                     return key
         return None
@@ -365,7 +366,7 @@ class APIKeyManager(object):
 
         The ``keys`` property retrieves a tuple of :class:`~arcgis.gis._impl.APIKey` objects registered with the
         Organization.
-        
+
         :returns:
             A `tuple <https://docs.python.org/3/tutorial/datastructures.html#tuples-and-sequences>`_ of
             :class:`~arcgis.gis._impl.APIKey` objects
