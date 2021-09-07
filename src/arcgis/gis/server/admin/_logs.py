@@ -247,14 +247,9 @@ class LogManager(BaseServer):
             "sinceServerStart": since_server_start,
         }
         # set page size
-        if max_records_return >= 5000:
-            # start at 5000 and hasMore loop will continue until max_records number is met
-            max_records_return -= 5000
-            params["pageSize"] = 5000
-        else:
-            params["pageSize"] = max_records_return
-            # set to 0 else the hasMore loop will execute
-            max_records_return = 0
+        params["pageSize"] = max_records_return if max_records_return < 5000 else 5000
+        # if greater than 5000 then will enter hasMore loop else, correct number returned
+        max_records_return -= 5000
         url = "{url}/query".format(url=self._url)
         if start_time is not None and isinstance(start_time, datetime):
             params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
@@ -271,6 +266,7 @@ class LogManager(BaseServer):
         params["filter"] = qFilter
 
         logs = self._con.post(path=url, postdata=params)
+        # determine if more logs are available to query
         has_more = logs["hasMore"]
         # If the hasMore member of the response object is true,
         # pass the last item time as the startTime parameter
@@ -283,6 +279,7 @@ class LogManager(BaseServer):
                 params["pageSize"] = (
                     max_records_return if max_records_return <= 5000 else 5000
                 )
+                # decides if more records needed or not
                 max_records_return -= 5000
                 # new logs to query
                 new_logs = self._con.post(path=url, postdata=params)
