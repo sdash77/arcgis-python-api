@@ -235,13 +235,13 @@ class FullyConnectedNetwork(ArcGISModel):
             os.mkdir(path)
 
         self.learn.export(os.path.join(path, os.path.basename(path) + "_exported.pth"))
-        from IPython.utils import io
+        #from IPython.utils import io
 
-        with io.capture_output() as captured:
-            super().save(
+        #with io.capture_output() as captured:
+        super().save(
                 path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs
             )
-
+        #print(captured.stdout)
         return Path(path)
 
     @property
@@ -775,7 +775,7 @@ class FullyConnectedNetwork(ArcGISModel):
         """
         self._check_requisites()
         min_size = len(self._data._validation_indexes)
-        if min_size < rows:
+        if min_size > rows:
             min_size = rows
 
         sample_indexes = random.sample(self._data._validation_indexes, min_size)
