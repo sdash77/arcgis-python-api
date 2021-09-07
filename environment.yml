@@ -48,3 +48,4 @@ dependencies:
   - requests_ntlm
   - python-certifi-win32
   - cachetools
+  - black
