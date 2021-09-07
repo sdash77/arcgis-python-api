@@ -138,11 +138,11 @@ class PortalDataStore(object):
     @property
     def properties(self):
         """
-         The ``properties`` property retrieves the properties of the current :class:`~arcgis.gis.DataStore` object
+        The ``properties`` property retrieves the properties of the current :class:`~arcgis.gis.DataStore` object
 
-         :returns:
-            A list of the :class:`~arcgis.gis.DataStore` object properties
-         """
+        :returns:
+           A list of the :class:`~arcgis.gis.DataStore` object properties
+        """
         if self._properties is None:
             params = {"f": "json"}
             res = self._con.get(self._url, params)

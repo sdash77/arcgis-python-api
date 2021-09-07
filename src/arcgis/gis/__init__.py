@@ -1348,13 +1348,16 @@ class GIS(object):
 
         return mapwidget
 
+
 ###########################################################################
+
 
 class Datastore(dict):
     """
     The ``Datastore`` class represents a datastore (folder, database or bigdata fileshare) within the GIS's data store.
     See the :class:`~arcgis.gis.server.admin.administration.Datastore` for more information on datastores.
     """
+
     def __init__(self, datastore, path):
         dict.__init__(self)
         self._datastore = datastore
@@ -1363,8 +1366,7 @@ class Datastore(dict):
 
         self.datapath = path
 
-
-        params = { "f" : "json" }
+        params = {"f": "json"}
         path = self._admin_url + "/data/items" + self.datapath
 
         datadict = self._portal.con.post(path, params, verify_cert=False)
@@ -1373,17 +1375,23 @@ class Datastore(dict):
             self.__dict__.update(datadict)
             super(Datastore, self).update(datadict)
 
-    def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
+    def __getattr__(
+        self, name
+    ):  # support group attributes as group.access, group.owner, group.phone etc
         try:
             return dict.__getitem__(self, name)
         except:
-            raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
+            raise AttributeError(
+                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+            )
 
-    def __getitem__(self, k): # support group attributes as dictionary keys on this object, eg. group['owner']
+    def __getitem__(
+        self, k
+    ):  # support group attributes as dictionary keys on this object, eg. group['owner']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
-            params = { "f" : "json" }
+            params = {"f": "json"}
             path = self._admin_url + "/data/items" + self.datapath
 
             datadict = self._portal.con.post(path, params, verify_cert=False)
@@ -1404,10 +1412,12 @@ class Datastore(dict):
         """
         The ``manifest`` property retrieves or sets the manifest resource for bigdata fileshares, as a dictionary.
         """
-        data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
+        data_item_manifest_url = (
+            self._admin_url + "/data/items" + self.datapath + "/manifest"
+        )
 
         params = {
-            'f': 'json',
+            "f": "json",
         }
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
         return res
@@ -1417,20 +1427,22 @@ class Datastore(dict):
         """
         The ``manifest`` property updates the manifest resource for bigdata file shares.
         """
-        manifest_upload_url =  self._admin_url + '/data/items' + self.datapath + '/manifest/update'
+        manifest_upload_url = (
+            self._admin_url + "/data/items" + self.datapath + "/manifest/update"
+        )
 
         with _tempinput(json.dumps(value)) as tempfilename:
             # Build the files list (tuples)
             files = []
-            files.append(('manifest', tempfilename, os.path.basename(tempfilename)))
+            files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
 
-            postdata = {
-                'f' : 'pjson'
-            }
+            postdata = {"f": "pjson"}
 
-            resp = self._portal.con.post(manifest_upload_url, postdata, files, verify_cert=False)
+            resp = self._portal.con.post(
+                manifest_upload_url, postdata, files, verify_cert=False
+            )
 
-            if resp['status'] == 'success':
+            if resp["status"] == "success":
                 return True
             else:
                 print(str(resp))
@@ -1442,12 +1454,9 @@ class Datastore(dict):
         The ``ref_count`` property gets the total number of references to this data item that exists on the server.
         This property can be used to determine if this data item can be safely deleted or taken down for maintenance.
         """
-        data_item_manifest_url = self._admin_url + '/data/computeTotalRefCount'
+        data_item_manifest_url = self._admin_url + "/data/computeTotalRefCount"
 
-        params = {
-            'f': 'json',
-            'itemPath': self.datapath
-        }
+        params = {"f": "json", "itemPath": self.datapath}
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
         return res["totalRefCount"]
 
@@ -1464,16 +1473,12 @@ class Datastore(dict):
         :return:
            A boolean indicating success (True) or failure (False).
         """
-        params = {
-            "f" : "json" ,
-            "itempath" : self.datapath,
-            "force": True
-        }
+        params = {"f": "json", "itempath": self.datapath, "force": True}
         path = self._admin_url + "/data/unregisterItem"
 
         resp = self._portal.con.post(path, params, verify_cert=False)
         if resp:
-            return resp.get('success')
+            return resp.get("success")
         else:
             return False
 
@@ -1491,18 +1496,16 @@ class Datastore(dict):
         :returns:
            A boolean indicating success (True) or failure (False).
         """
-        params = {
-            "f" : "json" ,
-            "item" : item
-        }
-        path = self._admin_url +  "/data/items" + self.datapath +  "/edit"
+        params = {"f": "json", "item": item}
+        path = self._admin_url + "/data/items" + self.datapath + "/edit"
 
         resp = self._portal.con.post(path, params, verify_cert=False)
-        if resp ['status'] == 'success':
+        if resp["status"] == "success":
             return True
         else:
             return False
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def regenerate(self):
         """
         The ``regenerate`` method is used to regenerate the manifest for a big data file share. You can
@@ -1512,16 +1515,17 @@ class Datastore(dict):
         :returns:
             A boolean indicating success (True), or failure (False)
         """
-        url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
-        params = {'f' : 'json'}
+        url = self._admin_url + "/data/items" + self.datapath + "/manifest/regenerate"
+        params = {"f": "json"}
         res = self._portal.con.post(url, params)
         if isinstance(res, dict):
-            if 'success' in res:
-                return res['success']
-            if 'status' in res:
-                return res['status'] == 'success'
+            if "success" in res:
+                return res["success"]
+            if "status" in res:
+                return res["status"] == "success"
         return res
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def validate(self):
         """
         The ``validate`` method is used to validate that this data item's path (for file shares) or
@@ -1530,23 +1534,20 @@ class Datastore(dict):
         :returns:
            A boolean indicating success (True) or failure (False).
         """
-        params = { "f" : "json" }
+        params = {"f": "json"}
         path = self._admin_url + "/data/items" + self.datapath
 
         datadict = self._portal.con.post(path, params, verify_cert=False)
 
-        params = {
-            "f" : "json",
-            "item": datadict
-        }
+        params = {"f": "json", "item": datadict}
         path = self._admin_url + "/data/validateDataItem"
 
         res = self._portal.con.post(path, params, verify_cert=False)
         if isinstance(res, dict):
-            if 'success' in res:
-                return res['success']
-            if 'status' in res:
-                return res['status'] == 'success'
+            if "success" in res:
+                return res["success"]
+            if "status" in res:
+                return res["status"] == "success"
         return res
 
     @property
@@ -1557,19 +1558,24 @@ class Datastore(dict):
         :return:
             A dictionary
         """
-        data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest"
+        data_item_manifest_url = (
+            self._admin_url + "/data/items" + self.datapath + "/manifest"
+        )
 
         params = {
-            'f': 'json',
+            "f": "json",
         }
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
 
-        return res['datasets']
+        return res["datasets"]
+
+
 ###########################################################################
 class GroupMigrationManager(object):
     """
     The ``GroupMigrationManager`` class allows groups to export and import data to and from EPK files.
     """
+
     _con = None
     _gis = None
     _group = None
@@ -1580,20 +1586,23 @@ class GroupMigrationManager(object):
         self._group = group
         self._gis = group._gis
         self._con = group._gis._con
-    #----------------------------------------------------------------------
-    def _from_package(self,
-                      item,
-                      item_id_list=None,
-                      preview_only=False,
-                      run_async=False,
-                      overwrite=False,
-                      folder_id=None,
-                      folder_owner=None):
+
+    # ----------------------------------------------------------------------
+    def _from_package(
+        self,
+        item,
+        item_id_list=None,
+        preview_only=False,
+        run_async=False,
+        overwrite=False,
+        folder_id=None,
+        folder_owner=None,
+    ):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
         :returns: Boolean
         """
-        if self._gis.users.me.role == 'org_admin':
+        if self._gis.users.me.role == "org_admin":
             try_json = True
             if preview_only:
                 try_json = False
@@ -1601,51 +1610,50 @@ class GroupMigrationManager(object):
             if isinstance(item, Item):
                 item = item.itemid
             params = {
-                'f' : 'json',
+                "f": "json",
                 "itemId": item,
             }
             if item_id_list:
-                params['itemIdList'] = item_id_list
+                params["itemIdList"] = item_id_list
             if overwrite is not None:
-                params['overwriteExistingItems'] = overwrite
+                params["overwriteExistingItems"] = overwrite
             if preview_only:
-                params['previewOnly'] = preview_only
+                params["previewOnly"] = preview_only
             if run_async:
-                params['async'] = run_async
-            if folder_id and self._gis.version >= [8,4]:
-                params['folderId'] = folder_id
-            if folder_owner and self._gis.version >= [8,4]:
-                params['folderOwnerUsername'] = folder_owner
-            return self._con.post(url,
-                                  params,
-                                  try_json=try_json)
+                params["async"] = run_async
+            if folder_id and self._gis.version >= [8, 4]:
+                params["folderId"] = folder_id
+            if folder_owner and self._gis.version >= [8, 4]:
+                params["folderOwnerUsername"] = folder_owner
+            return self._con.post(url, params, try_json=try_json)
 
         else:
             raise Exception("Must be an administror to perform this action")
         pass
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def _status(self, job_id, key=None):
         """
         Checks the status of an export job
         """
         import time
+
         params = {}
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
-            params['f'] = 'json'
+            params["f"] = "json"
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete"]:
                 res = self._con.post(url, params)
-                if res['status'] == "failed":
+                if res["status"] == "failed":
                     raise Exception(res)
                 time.sleep(2)
             return res
         else:
             raise Exception(res)
-    #----------------------------------------------------------------------
-    def create(self,
-               items=None,
-               future:bool=True):
+
+    # ----------------------------------------------------------------------
+    def create(self, items=None, future: bool = True):
         """
         The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
         `EPK Items` are intended to migrate content from an enterprise deployment to a new
@@ -1672,36 +1680,45 @@ class GroupMigrationManager(object):
         :returns:
             :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
-        if self._gis.users.me.role == 'org_admin':
+        if self._gis.users.me.role == "org_admin":
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
                 items = ",".join([i.id if isinstance(i, Item) else i for i in items])
             else:
                 items = None
-            params = {
-                'itemIdList' : items
-            }
+            params = {"itemIdList": items}
 
-            params['async'] = json.dumps(True)
+            params["async"] = json.dumps(True)
             res = self._gis._con.post(url, params)
-            executor =  concurrent.futures.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+            executor = concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(
+                self._status, **{"job_id": res["jobId"], "key": res["key"]}
+            )
             executor.shutdown(False)
-            job = StatusJob(future=futureobj, op='Export Group Content', jobid=res['jobId'], gis=self._gis, notify=arcgis.env.verbose)
+            job = StatusJob(
+                future=futureobj,
+                op="Export Group Content",
+                jobid=res["jobId"],
+                gis=self._gis,
+                notify=arcgis.env.verbose,
+            )
             if future:
                 return job
             else:
                 return job.result()
         else:
             raise Exception("Must be an administrator to perform this action")
-    #----------------------------------------------------------------------
-    def load(self,
-             epk_item,
-             item_ids:list=None,
-             overwrite:bool=True,
-             future:bool=True,
-             folder_id:str=None,
-             folder_owner:str=None):
+
+    # ----------------------------------------------------------------------
+    def load(
+        self,
+        epk_item,
+        item_ids: list = None,
+        overwrite: bool = True,
+        future: bool = True,
+        folder_id: str = None,
+        folder_owner: str = None,
+    ):
         """
         The ``load`` method imports the EPK content into the current :class:`~arcgis.gis.Group`.
         .. note::
@@ -1735,22 +1752,28 @@ class GroupMigrationManager(object):
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
             item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
-        if isinstance(epk_item, Item) and \
-           epk_item.type == 'Export Package':
-            res = self._from_package(item=epk_item,
-                                     item_id_list=item_ids,
-                                      preview_only=False,
-                                      run_async=True,
-                                      overwrite=overwrite,
-                                      folder_id=folder_id,
-                                      folder_owner=folder_owner)
-            executor =  concurrent.futures.ThreadPoolExecutor(1)
-            futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+        if isinstance(epk_item, Item) and epk_item.type == "Export Package":
+            res = self._from_package(
+                item=epk_item,
+                item_id_list=item_ids,
+                preview_only=False,
+                run_async=True,
+                overwrite=overwrite,
+                folder_id=folder_id,
+                folder_owner=folder_owner,
+            )
+            executor = concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(
+                self._status, **{"job_id": res["jobId"], "key": res["key"]}
+            )
             executor.shutdown(False)
-            job = StatusJob(future=futureobj,
-                            op='Export Group Content',
-                            jobid=res['jobId'],
-                            gis=self._gis, notify=arcgis.env.verbose)
+            job = StatusJob(
+                future=futureobj,
+                op="Export Group Content",
+                jobid=res["jobId"],
+                gis=self._gis,
+                notify=arcgis.env.verbose,
+            )
             if future:
                 return job
             else:
@@ -1758,7 +1781,8 @@ class GroupMigrationManager(object):
         else:
             raise Exception(f"Invalid Item {epk_item.type}")
         return None
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def inspect(self, epk_item) -> dict:
         """
         The ``inspect`` method retrieves the contents of the EPK Package
@@ -1771,29 +1795,32 @@ class GroupMigrationManager(object):
         :returns:
             A dictionary containing the contents of the EPK Package
         """
-        if isinstance(epk_item, Item) and epk_item.type == 'Export Package':
+        if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
                 import time
+
                 self._from_package(epk_item.itemid, preview_only=True, run_async=False)
                 time.sleep(2)
             except:
                 pass
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/importPreview/{epk_item.itemid}"
-            params = {"f" : "json", "start" : 1, "num" : 25}
+            params = {"f": "json", "start": 1, "num": 25}
             res = self._con.post(url, params)
-            results = res['results']
-            while res['nextStart'] > 0:
-                params['start'] = res['nextStart']
+            results = res["results"]
+            while res["nextStart"] > 0:
+                params["start"] = res["nextStart"]
                 res = self._con.post(url, params)
-                results.extend(res['results'])
-                if res['nextStart'] == -1:
+                results.extend(res["results"])
+                if res["nextStart"] == -1:
                     break
-            res['results'] = results
+            res["results"] = results
             return res
 
         else:
             raise Exception("Invalid Item Type.")
         return None
+
+
 ###########################################################################
 class DatastoreManager(object):
     """
@@ -1822,20 +1849,20 @@ class DatastoreManager(object):
     @property
     def config(self):
         """
-       The ``config`` method retrieves and sets the data store configuration properties, which affect the behavior of
-       the data holdings of the server. The properties include ``blockDataCopy``. When this property is ``False``, or not
-       set at all, copying data to the site when publishing services from a client application is allowed. This is the
-       default behavior. When this property is ``True``, the client application is not allowed to copy data to the site
-       when publishing. Rather, the publisher is required to register data items through which the service being
-       published can reference data.
+        The ``config`` method retrieves and sets the data store configuration properties, which affect the behavior of
+        the data holdings of the server. The properties include ``blockDataCopy``. When this property is ``False``, or not
+        set at all, copying data to the site when publishing services from a client application is allowed. This is the
+        default behavior. When this property is ``True``, the client application is not allowed to copy data to the site
+        when publishing. Rather, the publisher is required to register data items through which the service being
+        published can reference data.
 
-       Values: ``True`` | ``False``
+        Values: ``True`` | ``False``
 
-        .. note::
-            If you specify the property as ``True``, users will not be able to publish ``geoprocessing services`` and
-            ``geocode services`` from composite locators. These service types require data to be copied to the server.
-            As a workaround, you can temporarily set the property to ``False``, publish the service, and then set the
-            property back to ``True``.
+         .. note::
+             If you specify the property as ``True``, users will not be able to publish ``geoprocessing services`` and
+             ``geocode services`` from composite locators. These service types require data to be copied to the server.
+             As a workaround, you can temporarily set the property to ``False``, publish the service, and then set the
+             property back to ``True``.
         """
         params = {"f": "json"}
         path = self._admin_url + "/data/config"
@@ -3947,7 +3974,7 @@ class UserManager(object):
     def me(self):
 
         """
-            The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
+        The ``me`` property retrieves the information of the logged in :class:`~arcgis.gis.User` object.
         """
 
         if self._me is None:
@@ -5312,7 +5339,6 @@ class ContentManager(object):
 
         return gis._con.post(path=surl, postdata=params, files=files)
 
-
     # ----------------------------------------------------------------------
     def create_service(
         self,
@@ -5711,7 +5737,6 @@ class ContentManager(object):
                 items["results"] = items["results"][:max_items]
             return items
 
-
     def _market_listings(
         self,
         query: str,
@@ -6009,7 +6034,7 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array 
+        items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array
                           of items to be deleted from the current user's content
         ================  ==========================================================================
 
@@ -6627,8 +6652,7 @@ class ContentManager(object):
         postdata = {"f": "pjson", "name": service_name, "type": service_type}
 
         res = self._portal.con.post(path, postdata)
-        return res['available']
-
+        return res["available"]
 
     def clone_items(
         self,
@@ -7330,7 +7354,6 @@ class ResourceManager(object):
             try_json=False,
         )
         return resources
-
 
     def add(
         self,
@@ -9215,7 +9238,6 @@ class User(dict):
         """The ``groups`` property retrieves a List of :class:`~arcgis.gis.Group` objects the current user belongs to."""
         return [Group(self._gis, group["id"]) for group in self["groups"]]
 
-
     def update_license_type(self, user_type):
         """
 
@@ -9277,7 +9299,9 @@ class User(dict):
                 return res["success"]
             return res
         else:
-            raise Exception("The operation delete_thumbnail is not supported on this portal.")
+            raise Exception(
+                "The operation delete_thumbnail is not supported on this portal."
+            )
 
     def reset(
         self,
@@ -9348,7 +9372,6 @@ class User(dict):
         if resp:
             return resp.get("success")
         return False
-
 
     def update(
         self,
@@ -10956,18 +10979,18 @@ class Item(dict):
 
     def download_thumbnail(self, save_folder=None):
         """
-       The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
+        The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
 
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        save_folder          Optional string. Folder location to download the item's thumbnail to.
-        ===============     ====================================================================
+         ===============     ====================================================================
+         **Argument**        **Description**
+         ---------------     --------------------------------------------------------------------
+         save_folder          Optional string. Folder location to download the item's thumbnail to.
+         ===============     ====================================================================
 
 
-        :return:
-          A file path, If the download was successful. None if the item does not have a thumbnail.
+         :return:
+           A file path, If the download was successful. None if the item does not have a thumbnail.
         """
         if self.thumbnail is None:
             self._hydrate()
@@ -11003,7 +11026,7 @@ class Item(dict):
         item's thumbnail rather than the bytes that make up the thumbnail for this item.
 
         :return:
-           The link to the item's thumbnail. """
+           The link to the item's thumbnail."""
 
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
@@ -11024,11 +11047,11 @@ class Item(dict):
     @property
     def metadata(self):
 
-        """ The ``metadata`` property gets and sets the item metadata for the specified item.
-            ``metadata`` returns None if the item does not have metadata.
+        """The ``metadata`` property gets and sets the item metadata for the specified item.
+        ``metadata`` returns None if the item does not have metadata.
 
-            .. note::
-                Items with metadata have 'Metadata' in their typeKeywords.
+        .. note::
+            Items with metadata have 'Metadata' in their typeKeywords.
 
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
@@ -11749,87 +11772,87 @@ class Item(dict):
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
 
         """
-        The ``update`` method updates an item in a Portal.
+         The ``update`` method updates an item in a Portal.
+
+         .. note::
+             The content can be a file (such as a layer package, geoprocessing package,
+             map package) or a URL (to an ArcGIS Server service, WMS service,
+             or an application).
+
+             To upload a package or other type of file,  a path or URL
+             to the file must be provided in the data argument.
+
+             For item_properties, pass in arguments for only the properties you want to be updated.
+             All other properties will be untouched.  For example, if you want to update only the
+             item's description, then only provide the description argument in item_properties.
+
+
+         ===============     ====================================================================
+         **Argument**        **Description**
+         ---------------     --------------------------------------------------------------------
+         item_properties     Required dictionary. See table below for the keys and values.
+         ---------------     --------------------------------------------------------------------
+         data                Optional string. Either a path or URL to the data.
+         ---------------     --------------------------------------------------------------------
+         thumbnail           Optional string. Either a path or URL to a thumbnail image.
+         ---------------     --------------------------------------------------------------------
+         metadata            Optional string. Either a path or URL to the metadata.
+         ===============     ====================================================================
+
+
+         *Key:Value Dictionary Options for Argument item_properties*
+
+
+         =================  =====================================================================
+         **Key**            **Value**
+         -----------------  ---------------------------------------------------------------------
+         type               Optional string. Indicates type of item, see the link below for valid values.
+         -----------------  ---------------------------------------------------------------------
+         typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
+         -----------------  ---------------------------------------------------------------------
+         description        Optional string. Description of the item.
+         -----------------  ---------------------------------------------------------------------
+         title              Optional string. Name label of the item.
+         -----------------  ---------------------------------------------------------------------
+         url                Optional string. URL to item that are based on URLs.
+         -----------------  ---------------------------------------------------------------------
+         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                            Used for searches on items.
+         -----------------  ---------------------------------------------------------------------
+         text               Optional string. For text based items such as Feature Collections & WebMaps
+         -----------------  ---------------------------------------------------------------------
+         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+         -----------------  ---------------------------------------------------------------------
+         extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+         -----------------  ---------------------------------------------------------------------
+         spatialReference   Optional string. Coordinate system that the item is in.
+         -----------------  ---------------------------------------------------------------------
+         accessInformation  Optional string. Information on the source of the content.
+         -----------------  ---------------------------------------------------------------------
+         licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+         -----------------  ---------------------------------------------------------------------
+         culture            Optional string. Locale, country and language information.
+         -----------------  ---------------------------------------------------------------------
+         access             Optional string. Valid values are private, shared, org, or public.
+         -----------------  ---------------------------------------------------------------------
+         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
+                            or not allowed (false).
+         =================  =====================================================================
+
 
         .. note::
-            The content can be a file (such as a layer package, geoprocessing package,
-            map package) or a URL (to an ArcGIS Server service, WMS service,
-            or an application).
+             See `Items and Item Types
+             <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
+             in the ArcGIS REST API documentation for more details.
 
-            To upload a package or other type of file,  a path or URL
-            to the file must be provided in the data argument.
+         .. code-block:: python
 
-            For item_properties, pass in arguments for only the properties you want to be updated.
-            All other properties will be untouched.  For example, if you want to update only the
-            item's description, then only provide the description argument in item_properties.
+             # Usage Example
 
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item_properties     Required dictionary. See table below for the keys and values.
-        ---------------     --------------------------------------------------------------------
-        data                Optional string. Either a path or URL to the data.
-        ---------------     --------------------------------------------------------------------
-        thumbnail           Optional string. Either a path or URL to a thumbnail image.
-        ---------------     --------------------------------------------------------------------
-        metadata            Optional string. Either a path or URL to the metadata.
-        ===============     ====================================================================
-
-
-        *Key:Value Dictionary Options for Argument item_properties*
-
-
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        type               Optional string. Indicates type of item, see the link below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        description        Optional string. Description of the item.
-        -----------------  ---------------------------------------------------------------------
-        title              Optional string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        url                Optional string. URL to item that are based on URLs.
-        -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                           Used for searches on items.
-        -----------------  ---------------------------------------------------------------------
-        text               Optional string. For text based items such as Feature Collections & WebMaps
-        -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-        -----------------  ---------------------------------------------------------------------
-        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
-        -----------------  ---------------------------------------------------------------------
-        spatialReference   Optional string. Coordinate system that the item is in.
-        -----------------  ---------------------------------------------------------------------
-        accessInformation  Optional string. Information on the source of the content.
-        -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Locale, country and language information.
-        -----------------  ---------------------------------------------------------------------
-        access             Optional string. Valid values are private, shared, org, or public.
-        -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                           or not allowed (false).
-        =================  =====================================================================
-
-
-       .. note::
-            See `Items and Item Types
-            <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
-            in the ArcGIS REST API documentation for more details.
-
-        .. code-block:: python
-
-            # Usage Example
-
-            item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
-                            tags = "Hurricanes, USA, Natural Disasters")
-        :return:
-           A boolean indicating success (True) or failure (False).
+             item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
+                             tags = "Hurricanes, USA, Natural Disasters")
+         :return:
+            A boolean indicating success (True) or failure (False).
         """
         # owner = self._gis.users.get(self.owner)
         owner = self._user_id
@@ -12253,7 +12276,7 @@ class Item(dict):
 
     def add_relationship(self, rel_item, rel_type):
 
-        """ The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
+        """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
 
         .. note::
             Note: Relationships are not tied to an item. Instead, they are directional links from an origin item
