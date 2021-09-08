@@ -62,7 +62,7 @@ class AOI(object):
                 self._base_url = self._validate_url(self._base_url)
 
     def _validate_url(self, url):
-        res = self._gis._private_service_url(url)
+        res = self.source._private_service_url(url)
         url = (
             res["privateServiceUrl"]
             if "privateServiceUrl" in res
