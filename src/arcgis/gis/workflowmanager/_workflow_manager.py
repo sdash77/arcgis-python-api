@@ -884,7 +884,7 @@ class WorkflowManager:
         Get all assignable users for a user in the workflow system
 
         :return:
-            A `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of the assignable :attr:`~arcgis.gis.workflowmanager.WorkflowManager.user` objects
+            A `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of the assignable :attr:`~assarcgis.gis.workflowmanager.WorkflowManager.user` objects
             
         """
         try:
@@ -1630,7 +1630,7 @@ class WorkflowManager:
 class SavedSearchesManager:
     """
     Represents a helper class for workflow manager saved searches. Accessible as the
-    :attr:`arcgis.gis.workflowmanager.WorkflowManager.saved_searches` property.
+    :attr:`~arcgis.gis.workflowmanager.WorkflowManager.saved_searches` property.
 
     ===============     ====================================================================
     **Argument**        **Description**
