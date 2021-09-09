@@ -2,6 +2,7 @@ import sys
 
 sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
+import os
 from arcgis.gis import GIS
 from arcgis.apps.tracker import LocationTrackingManager
 from arcgis.gis.server.sm import ServerManager
@@ -121,12 +122,12 @@ class TestPortalAdminManager(unittest.TestCase):
         """
         tests if receive login history
         """
-        # # ONLY AVAILABLE FOR AGO
-        # today = datetime.now()
-        # history = admin.history(start_date=today)
-        # assert isinstance(history, str)
-        # assert history
-        # assert history.delete()
+        if ent_admin._portal.is_arcgisonline:
+            today = datetime.now()
+            history = admin.history(start_date=today)
+            assert isinstance(history, str)
+            assert history
+            os.remove(history)
 
 
 if __name__ == "__main__":
