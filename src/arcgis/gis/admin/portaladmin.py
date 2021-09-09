@@ -47,7 +47,7 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
-        if kwargs.pop("is_admin", False):
+        if kwargs.pop("is_admin", True):
             super(PortalAdminManager, self).__init__(url=url, gis=gis, **kwargs)
             initialize = kwargs.pop("initialize", False)
             if isinstance(gis, Connection):
