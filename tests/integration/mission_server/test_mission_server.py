@@ -293,6 +293,8 @@ class TestMissionServerLOGS(unittest.TestCase):
             assert isinstance(logs, LogManager)
             res = logs.query()
             assert res is not None
+            messages = logs.query(level="*", max_records_return=10000)
+            assert len(messages["logMessages"]) == 10000
         else:
             raise Exception("No Mission Server to test with.")
 
