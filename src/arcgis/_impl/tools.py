@@ -774,8 +774,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "overwrite": overwrite,
                 }
             output_name = _lyr_dict
-        elif output_name and isinstance(output_name, dict):
-            return output_name
         else:
             output_name = None
         return output_name
