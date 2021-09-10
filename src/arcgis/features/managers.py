@@ -559,6 +559,7 @@ class SyncManager(object):
         sync_direction=None,
         target_type="client",
         transformations=None,
+        time_reference_unknown_client=False,
     ):
         """
             The create operation is performed on a feature layer collection resource. This operation
@@ -678,6 +679,27 @@ class SyncManager(object):
         transformations        Optional List. Introduced at 10.8. This parameter applies a datum
                                transformation on each layer when the spatial reference used in
                                geometry is different than the layer's spatial reference.
+        ------------------     --------------------------------------------------------------------
+        time_reference_         Setting timeReferenceUnknownClient as trueindicates that the client is
+        unknown_client          capable of working with data values that are not in UTC. If its not set 
+                                to true, and the service layer's datesInUnknownTimeZone property is true, 
+                                then an error is returned. The default is false
+
+                                Its possible to define a service's time zone of date fields as unknown. 
+                                Setting the time zone as unknown means that date values will be returned 
+                                as-is from the database, rather than as date values in UTC. Non-hosted feature 
+                                services can be set to use an unknown time zone using ArcGIS Server Manager. 
+                                Setting the time zones to unknown also sets the datesInUnknownTimeZone layer property 
+                                as true. Currently, hosted feature services do not support this setting. 
+                                This setting does not apply to editor tracking date fields which are 
+                                stored and returned in UTC even when the time zone is set to unknown.
+
+                                Most clients released prior to ArcGIS Enterprise 10.9 will not be able 
+                                to work with feature services that have an unknown time setting. 
+                                The timeReferenceUnknownClient parameter prevents these clients from working 
+                                with the service in order to avoid problems.. 
+                                Setting this parameter to true indicates that the client is capable of working with 
+                                unknown date values that are not in UTC.
         ==================     ====================================================================
 
 
@@ -720,6 +742,23 @@ class SyncManager(object):
             )
             geometry_filter = {"geometryType": "esriGeometryEnvelope"}
             geometry_filter.update({"geometry": extents_str})
+        # if version 10.2 and up then layer query with all
+        if self._fs._gis.version >= [10, 2]:
+            if not layer_queries:
+                layer_queries = {}
+                for layer in layers:
+                    layer_queries[str(layer)] = {"queryOption": "all"}
+        # if less than that version then use where: 'OBJECTID > 0' be careful with objectID name
+        # also add new parameter and .pop() if it is not correct version
+        else:
+            if not layer_queries:
+                layer_queries = {}
+                # must combine layers and tables to find correct name for objectIdField
+                lyr_tbls = self._fs.layers + self._fs.tables
+                for layer in layers:
+                    layer_queries[str(layer)] = {
+                        "where": lyr_tbls[layer].properties.objectIdField + " > 0"
+                    }
 
         return self._fs._create_replica(
             replica_name=replica_name,
@@ -740,6 +779,7 @@ class SyncManager(object):
             wait=wait,
             out_path=out_path,
             transformations=transformations,
+            time_reference_unknown_client=time_reference_unknown_client,
         )
 
     # ----------------------------------------------------------------------
