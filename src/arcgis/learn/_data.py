@@ -1186,7 +1186,7 @@ def prepare_data(
                             normalizing the data.
                             Default is 0.3 (30%) of data.
     ---------------------   -------------------------------------------
-    downsample_factor       Optional integer. Factor to downsample the images
+    downsample_factor       Optional float. Factor to downsample the images
                             for image SuperResolution.
                             for example: if value is 2 and image size 256x256,
                             it will create label images of size 128x128.
