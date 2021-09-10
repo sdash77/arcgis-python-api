@@ -650,7 +650,8 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError(
+                "Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -882,7 +883,7 @@ class ParcelFabricManager(object):
         divide_record,
         divide_option,
         divide_number_of_parts,
-        divide_part_area_or_width,
+        divide_part_area,
         divide_line_bearing,
         divide_left_side,
         divide_distribute_remainder,
@@ -916,11 +917,8 @@ class ParcelFabricManager(object):
         divide_number_of_parts      Required Integer. The number parts into which the parcel will 
                                     be divided.
         --------------------------- --------------------------------------------------------------------
-        divide_part_area            Required Float. Area of each part (parcel fabric GDB units squared).
-                                    **Deprecated**
-        --------------------------- --------------------------------------------------------------------
-        divide_part_area_or_width   Required Float. Area of each part (parcel fabric GDB units squared).
-                                    
+        divide_part_area            Required Float. Area (or width) of each part (parcel fabric GDB units squared).
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of 0 will be applied.
@@ -936,7 +934,7 @@ class ParcelFabricManager(object):
 
                                     This parameter is required for the `EqualArea` and `EqualWidth` 
                                     divide options. 
-                                    
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of `False` will be applied.
@@ -944,7 +942,7 @@ class ParcelFabricManager(object):
         divide_distribute_remainder Required Boolean. Indicates whether to distribute or merge the 
                                     remainder area after the divide is performed. This parameter is used 
                                     for the `EqualArea` and `EqualWidth` divide options. 
-                                    
+
                                     .. note::
                                         This value is ignored when dividing by proportional area. A
                                         default value of `False` will be applied.
@@ -968,8 +966,8 @@ class ParcelFabricManager(object):
 
         """
         if divide_option == "ProportionalArea":
-            if not divide_part_area_or_width:
-                divide_part_area_or_width = 0
+            if not divide_part_area:
+                divide_part_area = 0
             if not divide_left_side:
                 divide_left_side = False
             if not divide_distribute_remainder:
@@ -986,8 +984,7 @@ class ParcelFabricManager(object):
             "record": divide_record,
             "divideOption": divide_option,
             "divideNumberOfParts": divide_number_of_parts,
-            # "dividePartArea": divide_part_area,
-            "dividePartAreaOrWidth": divide_part_area_or_width,
+            "dividePartAreaOrWidth": divide_part_area,
             "divideLineBearing": divide_line_bearing,
             "divideLeftSide": divide_left_side,
             "divideDistributeRemainder": divide_distribute_remainder,
