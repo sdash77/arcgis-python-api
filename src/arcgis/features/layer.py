@@ -4526,7 +4526,7 @@ class FeatureLayerCollection(_GISResource):
         if transport_type is not None:
             params["transportType"] = transport_type
         # parameter added at version 10.9
-        if self._gis.version >= [10, 9]:
+        if self._gis.version >= [8, 4]:
             params["timeReferenceUnknownClient"] = time_reference_unknown_client
         if asynchronous:
             if wait:

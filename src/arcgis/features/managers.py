@@ -743,20 +743,10 @@ class SyncManager(object):
             geometry_filter = {"geometryType": "esriGeometryEnvelope"}
             geometry_filter.update({"geometry": extents_str})
         if not layer_queries:
+            # Assures correct number of record counts are returned
             layer_queries = {}
-            # if version 10.2 and up then layer query with all
-            if self._fs._gis.version >= [10, 2]:
-                for layer in layers:
-                    layer_queries[str(layer)] = {"queryOption": "all"}
-            # if less than that version then use where: 'OBJECTID > 0' be careful with objectID name
-            else:
-                # must combine layers and tables to find correct name for objectIdField
-                # lyr_tbls = self._fs.layers + self._fs.tables
-                for layer in layers:
-                    layer_queries[str(layer)] = {
-                        # "where": lyr_tbls[layer].properties.objectIdField + " > 0",
-                        "useGeometry": False,
-                    }
+            for layer in layers:
+                layer_queries[str(layer)] = {"queryOption": "all"}
 
         return self._fs._create_replica(
             replica_name=replica_name,
