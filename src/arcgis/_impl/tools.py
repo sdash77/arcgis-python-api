@@ -11013,8 +11013,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         values = None
         if dimension_values is not None:
+            if isinstance(dimension_values, str):
+                if ";" in dimension_values:
+                    values = dimension_values.split(";")
+                elif "," in dimension_values:
+                    values = dimension_values.split(",")
+                else:
+                    values = dimension_values
             if isinstance(dimension_values, list):
-                values = ";".join(dimension_values)
+                values = dimension_values
 
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
