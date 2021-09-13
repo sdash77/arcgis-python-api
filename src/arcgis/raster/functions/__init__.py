@@ -6630,6 +6630,8 @@ def compute_change(
     define_transition_colors=0,
     extent_type="IntersectionOf",
     cellsize_type="MaxOf",
+    from_class_name_field_name=None,
+    to_class_name_field_name=None,
 ):
 
     """
@@ -6679,6 +6681,16 @@ def compute_change(
     extent_type                              Optional string.  One of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
     ------------------------------------     --------------------------------------------------------------------
     cellsize_type                            Optional string. One of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+    ------------------------------------     --------------------------------------------------------------------
+    from_class_name_field_name               Optional string. A field that stores class names in the raster1.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
+    ------------------------------------     --------------------------------------------------------------------
+    to_class_name_field_name                 Optional string. A field that stores class names in the raster2.
+                                             The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
+                                             Use this parameter if the input does not contain these standard field names
+                                             Example: "CLASSES"
     ====================================     ====================================================================
 
     :return: Imagery layer
@@ -6803,6 +6815,16 @@ def compute_change(
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if in_cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    if from_class_name_field_name is not None:
+        template_dict["rasterFunctionArguments"][
+            "FromClassNameFieldName"
+        ] = from_class_name_field_name
+
+    if to_class_name_field_name is not None:
+        template_dict["rasterFunctionArguments"][
+            "ToClassNameFieldName"
+        ] = to_class_name_field_name
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
