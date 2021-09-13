@@ -3426,6 +3426,7 @@ class UserManager(object):
         must_approve=False,
         expiration="1 Day",
         validate_email=True,
+        message_text="",
     ):
         """
         The ``invite`` method invites a :class:`~arcgis.gis.User` object to an organization by email.
@@ -3454,6 +3455,9 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         validate_email    Optional boolean. If True (default) the Enterprise will ensure that the email
                           is properly formatted. If false, no check will occur
+        ----------------  -------------------------------------------------------------------------------
+        message_text      Optional string. Added to the message of the invitation and can provide further
+                          instructions, a welcome, or any other personalized text to the person invited.
         ================  ===============================================================================
 
         .. code-block:: python
@@ -3465,8 +3469,6 @@ class UserManager(object):
             A boolean indicating success (True), or faliure (False)
 
         """
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("This method is only for ArcGIS Online.")
         time_lookup = {
             "1 Day".upper(): 1440,
             "3 Days".upper(): 4320,
@@ -3479,9 +3481,11 @@ class UserManager(object):
             raise ValueError("Invalid expiration.")
 
         url = self._portal.resturl + "/portals/self/inviteByEmail"
-        msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (
+        msg = "You have been invited you to join an ArcGIS Organization, %s. " % (
             self._gis.properties["name"]
         )
+        if message_text:
+            msg = msg + "{text}".format(text=message_text)
         params = {
             "f": "json",
             "emails": email,
