@@ -180,9 +180,9 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            #if mode == "Explain":
+            # if mode == "Explain":
             #    explain_level = 2
-            #else:
+            # else:
             explain_level = 2
             self._model = base_AutoML(
                 mode=mode,
