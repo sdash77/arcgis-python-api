@@ -1243,15 +1243,20 @@ class ImageryLayer(Layer):
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
-        from arcgis.geometry._types import Point, Polygon
+        from arcgis.geometry._types import Point, Polygon, Envelope
+        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
-        elif isinstance(geometry, dict):
-            if "x" in geometry:
+        elif isinstance(from_geometry, (Envelope, PropertyMap)):
+            params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(from_geometry, dict):
+            if "x" in from_geometry:
                 params["geometryType"] = "esriGeometryPoint"
+            elif "xmin" in from_geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
             else:
                 params["geometryType"] = "esriGeometryPolygon"
 
@@ -2680,7 +2685,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def statistics(self, variable=None):
+    def statistics(self, variable=None, rendering_rule=None):
         """
         The ``statistics`` method retrieves the statistics of the raster.
 
@@ -2695,6 +2700,14 @@ class ImageryLayer(Layer):
                               each variable. If not specified, it will return statistics for the
                               whole image service. Eligible variable names can be queried from
                               multidimensional_info property of the Imagery Layer object.
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        Optional dict. Specifies the rendering rule for how the requested image should be rendered.
+
+                              In the context of accessing image service statistics resource,
+                              this parameter is used to retrieve statistics info in attached
+                              predefined raster function templates (inside a StatisticsHistogram function).
+
+                              This parameter is available from 10.9.1
         =================     ====================================================================
 
         :returns: A dictionary containing the statistics.
@@ -2715,14 +2728,22 @@ class ImageryLayer(Layer):
         if variable is not None:
             params["variable"] = variable
 
+        if rendering_rule is not None:
+            params["renderingRule"] = rendering_rule
+        elif self._fn is not None:
+            params["renderingRule"] = self._fn
+
         if self._datastore_raster:
             params["Raster"] = self._uri
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                del params["renderingRule"]
+                params["Raster"] = self._uri
 
         return self._con.post(
             path=url, postdata=params, token=self._token, timeout=None
         )
 
-    def get_histograms(self, variable=None):
+    def get_histograms(self, variable=None, rendering_rule=None):
         """
         The ``get_histograms`` method retrieves the histograms of each band in the :class:`~arcgis.raster.ImageryLayer`
         as a list of dictionaries corresponding to each band.
@@ -2747,6 +2768,14 @@ class ImageryLayer(Layer):
                               each variable. It will return histograms for the whole ImageryLayer
                               if not specified.
                               This parameter is available from 10.8.1
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        Optional dict. Specifies the rendering rule for how the requested image should be rendered.
+
+                              In the context of accessing image service histograms resource,
+                              this parameter is used to retrieve histograms info in attached
+                              predefined raster function templates (inside a StatisticsHistogram function).
+
+                              This parameter is available from 10.9.1
         =================     ====================================================================
 
         :returns: A list
@@ -2772,8 +2801,16 @@ class ImageryLayer(Layer):
             params = {"f": "json"}
             if variable is not None:
                 params["variable"] = variable
+            if rendering_rule is not None:
+                params["renderingRule"] = rendering_rule
+            elif self._fn is not None:
+                params["renderingRule"] = self._fn
+
             if self._datastore_raster:
                 params["Raster"] = self._uri
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                    del params["renderingRule"]
+                    params["Raster"] = self._uri
             hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
