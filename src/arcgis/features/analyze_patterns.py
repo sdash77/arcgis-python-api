@@ -92,8 +92,11 @@ def calculate_density(
                                                                 "ymin": -9187921.892449,
                                                                 "xmax": 3174104.927313,
                                                                 "ymax": -9175500.875353,
-                                                                "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                    "outSR": {"wkid": 3857},
+                                                                "spatialReference":{
+                                                                    "wkid":102100,
+                                                                    "latestWkid":3857
+                                                                    }},
+                                                    "outSR": {"wkid": 4326},
                                                     "overwrite": True}
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -207,8 +210,11 @@ def summarize_center_and_dispersion(
                                                         "ymin": -9187921.892449,
                                                         "xmax": 3174104.927313,
                                                         "ymax": -9175500.875353,
-                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                            "outSR": {"wkid": 3857},
+                                                        "spatialReference":{
+                                                            "wkid":102100,
+                                                            "latestWkid":3857
+                                                            }},
+                                            "outSR": {"wkid": 4326},
                                             "overwrite": True}
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
@@ -325,8 +331,11 @@ def find_point_clusters(
                                                         "ymin": -9187921.892449,
                                                         "xmax": 3174104.927313,
                                                         "ymax": -9175500.875353,
-                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                            "outSR": {"wkid": 3857},
+                                                        "spatialReference":{
+                                                            "wkid":102100,
+                                                            "latestWkid":3857
+                                                            }},
+                                            "outSR": {"wkid": 4326},
                                             "overwrite": True}
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
@@ -445,8 +454,11 @@ def find_hot_spots(
                                                                                                         "ymin": -9187921.892449,
                                                                                                         "xmax": 3174104.927313,
                                                                                                         "ymax": -9175500.875353,
-                                                                                                        "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                                                            "outSR": {"wkid": 3857},
+                                                                                                        "spatialReference":{
+                                                                                                            "wkid":102100,
+                                                                                                            "latestWkid":3857
+                                                                                                            }},
+                                                                                            "outSR": {"wkid": 4326},
                                                                                             "overwrite": True}
     -------------------------------------------------------------------    ---------------------------------------------------------
     gis                                                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -612,8 +624,11 @@ def find_outliers(
                                                                                                     "ymin": -9187921.892449,
                                                                                                     "xmax": 3174104.927313,
                                                                                                     "ymax": -9175500.875353,
-                                                                                                    "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                                                        "outSR": {"wkid": 3857},
+                                                                                                    "spatialReference":{
+                                                                                                        "wkid":102100,
+                                                                                                        "latestWkid":3857
+                                                                                                        }},
+                                                                                        "outSR": {"wkid": 4326},
                                                                                         "overwrite": True}
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
@@ -812,8 +827,11 @@ def interpolate_points(
                                                             "ymin": -9187921.892449,
                                                             "xmax": 3174104.927313,
                                                             "ymax": -9175500.875353,
-                                                            "spatialReference":{"wkid":102100,"latestWkid":3857}},
-                                                "outSR": {"wkid": 3857},
+                                                            "spatialReference":{
+                                                                "wkid":102100,
+                                                                "latestWkid":3857
+                                                                }},
+                                                "outSR": {"wkid": 4326},
                                                 "overwrite": True}
     ---------------------------  -------------------------------------------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
