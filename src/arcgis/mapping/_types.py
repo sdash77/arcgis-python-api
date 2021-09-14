@@ -3659,7 +3659,7 @@ class VectorTileLayer(Layer):
 
     @property
     def styles(self):
-        url = "{url}/styles".format(url=self._url)
+        url = "{url}/resources/styles".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
@@ -3722,17 +3722,6 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/info".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def offline_mode(self):
-        """
-        The ``offline_mode`` property retrieves the current mode set for offline_mode.
-
-        :returns:
-           True if currently enabled, False if currently disabled
-        """
-        return self.offline_mode
 
     # ----------------------------------------------------------------------
     def export_tiles(
