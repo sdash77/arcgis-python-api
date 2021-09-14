@@ -20,8 +20,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Error, Layer, _GISResource, Item
-from arcgis.gis.admin.agoladmin import AGOLAdminManager
-from arcgis.gis.admin.portaladmin import PortalAdminManager
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
 from arcgis.mapping.forms import FormCollection
@@ -3729,50 +3727,12 @@ class VectorTileLayer(Layer):
     @property
     def offline_mode(self):
         """
-        The ``offline_mode`` property retrieves the current mode of set for offline_mode.
+        The ``offline_mode`` property retrieves the current mode set for offline_mode.
 
         :returns:
            True if currently enabled, False if currently disabled
         """
         return self.offline_mode
-
-    # ----------------------------------------------------------------------
-    @offline_mode.setter
-    def offline_mode(self, value):
-        """gets/sets the offline mode property"""
-        if (
-            self._gis.user == self.owner
-            or isinstance(self._gis.admin, AGOLAdminManager)
-            or isinstance(self._gis.admin, PortalAdminManager)
-        ):
-            if self._gis._is_agol and self._gis.version >= [8, 4]:
-                # NEED TO CREATE THIS STYLE URL:
-                # https://sampleserver10.arcgisonline.com/arcgis/rest/admin/services/serviceName/VectorTileServer
-                url = ""
-                params = {
-                    "f": "json",
-                    "sourceItemId": 0,  # Id of soure item: need to use item and use vector_service_item.related_items(rel_type="Service2Data", direction="forward"),
-                    "serviceDefinition": {
-                        "exportTilesAllowed": value,
-                        "maxExportTilesCount": 100000,
-                    },
-                }
-                return self._con.post(path=url, params=params)
-            elif self._gis._is_agol == False:
-                params = {
-                    "f": "json",
-                    "runAsync": True,
-                    "services": {
-                        "serviceName": self.name,
-                        "type": "VectorTileServer",
-                        "capabilities": self.properties.capabilities,
-                        "properties": {"exportTilesAllowed": value,},
-                    },
-                }
-                # NEED TO CREATE THIS STYLE URL
-                # machine.domain.com/server/admin/services/Hosted/serviceName.VectorTileServer/edit
-                url = ""
-                return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def export_tiles(
