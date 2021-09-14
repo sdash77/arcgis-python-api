@@ -3751,7 +3751,7 @@ class VectorTileLayer(Layer):
                 url = ""
                 params = {
                     "f": "json",
-                    "sourceItemId": self.properties.serviceItemId,
+                    "sourceItemId": 0,  # Id of soure item: need to use item and use vector_service_item.related_items(rel_type="Service2Data", direction="forward"),
                     "serviceDefinition": {
                         "exportTilesAllowed": value,
                         "maxExportTilesCount": 100000,
