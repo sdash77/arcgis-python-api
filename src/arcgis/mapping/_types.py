@@ -5,8 +5,10 @@ import json
 import logging
 import os
 import tempfile
+import time
 from contextlib import contextmanager
 from re import search
+from typing import List
 from uuid import uuid4
 import datetime
 
@@ -17,7 +19,9 @@ from warnings import warn
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
-from arcgis.gis import Layer, _GISResource, Item
+from arcgis.gis import Error, Layer, _GISResource, Item
+from arcgis.gis.admin.agoladmin import AGOLAdminManager
+from arcgis.gis.admin.portaladmin import PortalAdminManager
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
 from arcgis.mapping.forms import FormCollection
@@ -3721,6 +3725,198 @@ class VectorTileLayer(Layer):
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
+    # ----------------------------------------------------------------------
+    @property
+    def offline_mode(self):
+        """
+        The ``offline_mode`` property retrieves the current mode of set for offline_mode.
+
+        :returns:
+           True if currently enabled, False if currently disabled
+        """
+        return self.offline_mode
+
+    # ----------------------------------------------------------------------
+    @offline_mode.setter
+    def offline_mode(self, value):
+        """gets/sets the offline mode property"""
+        if (
+            self._gis.user == self.owner
+            or isinstance(self._gis.admin, AGOLAdminManager)
+            or isinstance(self._gis.admin, PortalAdminManager)
+        ):
+            if self._gis._is_agol and self._gis.version >= [8, 4]:
+                url = "{url}/admin/services/{serviceName}/VectorTileServer/edit".format(
+                    url=self._gis._url, serviceName=self.properties.name
+                )
+                params = {
+                    "f": "json",
+                    "sourceItemId": self.properties.serviceItemId,
+                    "serviceDefinition": {
+                        "exportTilesAllowed": value,
+                        "maxExportTilesCount": 100000,
+                    },
+                }
+                return self._con.post(path=url, params=params)
+            elif self._gis._is_agol == False:
+                params = {
+                    "f": "json",
+                    "runAsync": True,
+                    "services": {
+                        "serviceName": self.name,
+                        "type": "VectorTileServer",
+                        "capabilities": self.properties.capabilities,
+                        "properties": {"exportTilesAllowed": value,},
+                    },
+                }
+                for data in self._gis._datastores:
+                    if "server" in self._gis._datastores[data]._admin_url:
+                        admin_server_url = self._gis._datastores[data]._admin_url
+                if admin_server_url:
+                    url = "{admin_url}/services/Hosted/{name}.VectorTileServer/edit".format(
+                        admin_url=admin_server_url, name=self.name
+                    )
+
+    # ----------------------------------------------------------------------
+    def export_tiles(
+        self,
+        levels=None,
+        export_extent=None,
+        polygon=None,
+        max_export_tile_count=10000,
+    ):
+        """
+        Export vector tile layer
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        levels              Required string.Specifies the tiled service levels to export. 
+                            The values should correspond to Level IDs. The values 
+                            can be comma-separated values or a range of values. 
+                            Ensure that the tiles are present at each specified level.
+
+                            .. code-block:: python
+                            # Example:
+                                
+                                //Comma-separated values
+                                levels=1,2,3,4,5,6,7,8,9
+
+                                //Ranged values
+                                levels=1-4, 7-9
+        ---------------     ----------------------------------------------------
+        export_extent       Dictionary of the extent (bounding box) of the vector 
+                            tile package to be exported. 
+                            The extent should be within the specified spatial reference. 
+                            The default value is the full extent of the tiled map service.
+
+                            .. code-block:: python
+                            # Example:
+                                
+                                {
+                                "xmin": -109.55, "ymin" : 25.76, 
+                                "xmax": -86.39, "ymax" : 49.94,
+                                "spatialReference": {"wkid": 4326}
+                                }
+        ---------------     ----------------------------------------------------
+        polygon             Introduced at 10.7. A JSON representation of a polygon, 
+                            containing an array of rings and a spatialReference.
+
+                            .. code-block:: python
+                            # Example:
+                                
+                                {
+                                "rings": [
+                                    [[6453,16815],[10653,16423],[14549,5204],[-7003,6939],[6453,16815]],
+                                    [[914,7992],[3140,11429],[1510,10525],[914,7992]]
+                                ],
+                                "spatialReference": {"wkid": 54004}
+                                }
+        ---------------     ----------------------------------------------------
+        max_export_tile_    Optional float. ``max_export_tile_count``sets the maximum amount of tiles 
+                count       to be exported from a single call.
+
+                              .. note::
+                                The default value is 100000.
+                            Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
+        ===============     ====================================================
+        :returns:
+            A path to downloaded file
+        """
+        if not self.properties.exportTilesAllowed:
+            raise Error(
+                "Export Tiles operation is not allowed for this service. Enable offline mode."
+            )
+        if not levels:
+            raise ValueError("Parameter levels is mandatory for this operation.")
+        params = {
+            "f": "json",
+            "exportBy": "levelId",
+            "maxExportTileCount": max_export_tile_count,
+            "levels": levels,
+        }
+        if export_extent:
+            params["exportExtent"] = export_extent
+        # parameter introduced at 10.7
+        if polygon and self.gis.version >= [7, 1]:
+            params["polygon"] = polygon
+
+        url = "{url}/exportTiles".format(url=self._url)
+        exportJob = self._con.get(path=url, params=params)
+
+        path = "%s/jobs/%s" % (url, exportJob["jobId"])
+
+        resp_params = {"f": "json"}
+        job_response = self._con.post(path, resp_params)
+
+        if "status" in job_response or "jobStatus" in job_response:
+            status = job_response.get("status") or job_response.get("jobStatus")
+            while not status == "esriJobSucceeded":
+                time.sleep(5)
+
+                job_response = self._con.post(path, params)
+                status = job_response.get("status") or job_response.get("jobStatus")
+                if status in [
+                    "esriJobFailed",
+                    "esriJobCancelling",
+                    "esriJobCancelled",
+                    "esriJobTimedOut",
+                ]:
+                    print(str(job_response["messages"]))
+                    raise Exception("Job Failed with status " + status)
+        else:
+            raise Exception("No job results.")
+
+        if "results" in job_response:
+
+            allResults = job_response["results"]
+
+            for k, v in allResults.items():
+                if k == "out_service_url":
+                    value = v.value
+                    params = {"f": "json"}
+                    gpRes = self._con.get(path=value, params=params)
+                    return gpRes["folders"]
+                else:
+                    return None
+        elif "output" in job_response:
+            allResults = job_response["output"]
+            if allResults["itemId"]:
+                return Item(gis=self._gis, itemid=allResults["itemId"])
+            else:
+                if self._gis._portal.is_arcgisonline:
+                    return [
+                        self._con.get(url, try_json=False, add_token=False)
+                        for url in allResults["outputUrl"]
+                    ]
+                else:
+                    return [
+                        self._con.get(url, try_json=False)
+                        for url in allResults["outputUrl"]
+                    ]
+        else:
+            raise Exception(job_response)
+
 
 ###########################################################################
 class MapImageLayerManager(_GISResource):
@@ -4831,10 +5027,7 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(
-            path=url,
-            postdata=params,
-        )
+        res = self._con.post(path=url, postdata=params,)
         return res
 
     # ----------------------------------------------------------------------
@@ -4880,11 +5073,7 @@ class MapImageLayer(Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(
-            kmlURL,
-            params,
-            out_folder=save_location,
-        )
+        return self._con.get(kmlURL, params, out_folder=save_location,)
 
     # ----------------------------------------------------------------------
     def export_map(
@@ -5333,7 +5522,6 @@ class MapImageLayer(Layer):
         :returns:
             A path to download file is asynchronous is ``False``. If ``True``, a dictionary is returned.
         """
-        import time
 
         params = {
             "f": "json",
