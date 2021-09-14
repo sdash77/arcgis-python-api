@@ -6481,6 +6481,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         image_collection_properties=None,
         use_input_rasters_by_ref=False,
         upload_properties=None,
+        task=None,
     ):
         gis = self._gis
         input_raster_specified = False
@@ -6532,12 +6533,26 @@ class _RasterAnalysisTools(BaseAnalytics):
                     single_image = False
                     if raster_type_name is None:
                         single_image = True
-                    uri_list = _upload_imagery_agol(
-                        upload_rasters_list,
-                        gis,
-                        upload_properties=upload_properties,
-                        single_image=single_image,
-                    )
+                    if (
+                        isinstance(raster_type_name, str)
+                    ) and raster_type_name == "mosaic_dataset":
+                        uri_list, md_data_info = _upload_imagery_agol(
+                            upload_rasters_list,
+                            gis,
+                            upload_properties=upload_properties,
+                            single_image=single_image,
+                            raster_type=raster_type_name,
+                            task=task,
+                        )
+                    else:
+                        uri_list = _upload_imagery_agol(
+                            upload_rasters_list,
+                            gis,
+                            upload_properties=upload_properties,
+                            single_image=single_image,
+                            raster_type=raster_type_name,
+                            task=task,
+                        )
                 else:
                     item_id_list = _upload_imagery_enterprise(
                         upload_rasters_list, raster_type_name, gis
@@ -6641,6 +6656,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
 
         raster_type_dict = json.dumps(raster_type_dict)
+        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
+            return input_rasters_dict, raster_type_dict, md_data_info
         return input_rasters_dict, raster_type_dict
 
     def _set_param(self, input_param):
@@ -7857,17 +7874,29 @@ class _RasterAnalysisTools(BaseAnalytics):
                 for ele in input_rasters:
                     md_data_path.append(os.path.dirname(ele))
 
-            if raster_type_name is None:
-                raster_type_name = "mosaic_dataset"
+            raster_type_name = "mosaic_dataset"
 
-        input_rasters, raster_type = self._build_param_dictionary(
-            input_rasters=input_rasters,
-            raster_type_name=raster_type_name,
-            raster_type_params=raster_type_params,
-            image_collection_properties=image_collection_properties,
-            use_input_rasters_by_ref=use_input_rasters_by_ref,
-            upload_properties=upload_properties,
-        )
+        md_data_info = []
+        if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
+            input_rasters, raster_type, md_data_info = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=None,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
+        else:
+            input_rasters, raster_type = self._build_param_dictionary(
+                input_rasters=input_rasters,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+                image_collection_properties=image_collection_properties,
+                use_input_rasters_by_ref=use_input_rasters_by_ref,
+                upload_properties=upload_properties,
+                task=task,
+            )
 
         mosaic_dataset_uploaded = md_to_upload
         if md_to_upload is not None:
@@ -7892,7 +7921,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if len(md_data_path) == 1:
                 md_data_path = md_data_path[0]
             input_rasters.update(
-                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_path}
+                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_info}
             )
 
         if raster_type_name == "mosaic_dataset":
@@ -10131,6 +10160,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         raster_type_name=None,
         raster_type_params=None,
+        md_to_upload=None,
         **kwargs
     ):
         """
@@ -10158,7 +10188,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
 
         task = "CopyRaster"
-
+        gis = self._gis
         upload_properties = None
         use_input_rasters_by_ref = None
         if context is not None:
@@ -10186,14 +10216,69 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_raster = self._layer_input(input_layer=input_raster)
 
         else:
-            input_raster, raster_type = self._build_param_dictionary(
-                input_rasters=input_raster,
-                raster_type_name=raster_type_name,
-                raster_type_params=raster_type_params,
-                image_collection_properties=None,
-                use_input_rasters_by_ref=use_input_rasters_by_ref,
-                upload_properties=upload_properties,
-            )
+            md_data_path = []
+            if md_to_upload is not None:
+                if isinstance(input_raster, str):
+                    md_data_path.append(os.path.dirname(input_raster))
+                elif isinstance(input_raster, list):
+                    for ele in input_raster:
+                        md_data_path.append(os.path.dirname(ele))
+
+                raster_type_name = "mosaic_dataset"
+            md_data_info = []
+            if (
+                isinstance(raster_type_name, str)
+            ) and raster_type_name == "mosaic_dataset":
+                input_raster, raster_type, md_data_info = self._build_param_dictionary(
+                    input_rasters=input_raster,
+                    raster_type_name=raster_type_name,
+                    raster_type_params=raster_type_params,
+                    image_collection_properties=None,
+                    use_input_rasters_by_ref=use_input_rasters_by_ref,
+                    upload_properties=upload_properties,
+                    task=task,
+                )
+            else:
+                input_raster, raster_type = self._build_param_dictionary(
+                    input_rasters=input_raster,
+                    raster_type_name=raster_type_name,
+                    raster_type_params=raster_type_params,
+                    image_collection_properties=None,
+                    use_input_rasters_by_ref=use_input_rasters_by_ref,
+                    upload_properties=upload_properties,
+                    task=task,
+                )
+
+            mosaic_dataset_uploaded = md_to_upload
+            if md_to_upload is not None:
+                if gis._con._product == "AGOL":
+                    from arcgis.raster._util import _upload_imagery_agol
+
+                    if ".gdb" in md_to_upload:
+                        gdb_path = os.path.dirname(md_to_upload)
+                    uploaded_list = _upload_imagery_agol(
+                        [gdb_path], gis, upload_properties=upload_properties
+                    )
+                    if len(uploaded_list) == 1:
+                        azure_upload_url = uploaded_list[0]
+                        mosaic_dataset_uploaded = (
+                            azure_upload_url
+                            + "/"
+                            + os.path.basename(gdb_path)
+                            + "/"
+                            + os.path.basename(md_to_upload)
+                        )
+
+                input_raster.update(
+                    {
+                        "mosaic_dataset": mosaic_dataset_uploaded,
+                        "data_path": md_data_info,
+                    }
+                )
+
+            if raster_type_name == "mosaic_dataset":
+                raster_type = None
+
             if isinstance(raster_type, str):
                 try:
                     raster_type = json.loads(raster_type)
