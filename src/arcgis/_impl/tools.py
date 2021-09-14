@@ -827,7 +827,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -942,7 +942,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1111,7 +1111,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1244,7 +1244,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1358,7 +1358,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1463,7 +1463,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1701,7 +1701,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1812,7 +1812,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1902,7 +1902,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -1976,7 +1976,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2078,7 +2078,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2268,7 +2268,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2348,7 +2348,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2433,7 +2433,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2529,7 +2529,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2665,7 +2665,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2803,7 +2803,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -2926,7 +2926,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3013,7 +3013,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3106,7 +3106,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3219,7 +3219,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3350,7 +3350,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3453,7 +3453,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         merge_layer = self._feature_input(merge_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3542,7 +3542,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3673,7 +3673,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if end_layer:
             end_layer = self._feature_input(end_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3829,7 +3829,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3943,7 +3943,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -4061,7 +4061,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -4192,7 +4192,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         summary_layer = self._feature_input(summary_layer)
 
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": output_name.replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
