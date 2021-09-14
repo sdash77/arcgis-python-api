@@ -240,7 +240,7 @@ def expand_classes_of_interest(classes_of_interest, inverse_remap_classes):
 def get_random_cluster_indexes(block_centers, block_size):
     """
     This clustering method will operate on block centers
-    as this will be less compute intesive as compared to the 
+    as this will be less compute intesive as compared to the
     points.
     DBScan algo is used for this where we set the eps value
     to be 3/2 times the block size. This makes sure not extra
@@ -2895,7 +2895,12 @@ def predict_h5(self, path, output_path, **kwargs):
     if "xyz" in features_to_keep:
         features_to_keep.remove("xyz")
     point_cloud_dataset = PointCloudDataset(
-        path, None, None, "", extra_features=features_to_keep, attributes=attributes,
+        path,
+        None,
+        None,
+        "",
+        extra_features=features_to_keep,
+        attributes=attributes,
     )
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
