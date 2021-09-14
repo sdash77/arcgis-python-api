@@ -8,7 +8,6 @@ import tempfile
 import time
 from contextlib import contextmanager
 from re import search
-from typing import List
 from uuid import uuid4
 import datetime
 
