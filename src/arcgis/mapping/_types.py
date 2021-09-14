@@ -3746,9 +3746,9 @@ class VectorTileLayer(Layer):
             or isinstance(self._gis.admin, PortalAdminManager)
         ):
             if self._gis._is_agol and self._gis.version >= [8, 4]:
-                url = "{url}/admin/services/{serviceName}/VectorTileServer/edit".format(
-                    url=self._gis._url, serviceName=self.properties.name
-                )
+                # NEED TO CREATE THIS STYLE URL:
+                # https://sampleserver10.arcgisonline.com/arcgis/rest/admin/services/serviceName/VectorTileServer
+                url = ""
                 params = {
                     "f": "json",
                     "sourceItemId": self.properties.serviceItemId,
@@ -3769,13 +3769,10 @@ class VectorTileLayer(Layer):
                         "properties": {"exportTilesAllowed": value,},
                     },
                 }
-                for data in self._gis._datastores:
-                    if "server" in self._gis._datastores[data]._admin_url:
-                        admin_server_url = self._gis._datastores[data]._admin_url
-                if admin_server_url:
-                    url = "{admin_url}/services/Hosted/{name}.VectorTileServer/edit".format(
-                        admin_url=admin_server_url, name=self.name
-                    )
+                # NEED TO CREATE THIS STYLE URL
+                # machine.domain.com/server/admin/services/Hosted/serviceName.VectorTileServer/edit
+                url = ""
+                return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def export_tiles(
