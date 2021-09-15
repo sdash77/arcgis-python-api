@@ -1091,7 +1091,7 @@ def enrich(
 
     .. note::
 
-        Please refer to the `Enrich REST endpoint documentation<https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+        Please refer to the `Enrich REST endpoint documentation <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
         for the format of `intersection_geographies` parameter.
 
     .. note::
