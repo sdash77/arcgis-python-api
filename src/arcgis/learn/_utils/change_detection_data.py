@@ -14,6 +14,7 @@ import json
 try:
     import torch
     from fastai.vision import open_image, open_mask, image2np
+    from fastai.vision.image import ImageSegment
     import matplotlib.pyplot as plt
     from torch.utils.data import Dataset, DataLoader
     from fastai.data_block import DataBunch
@@ -363,9 +364,13 @@ class ChangeDetectionDataset(Dataset):
                 self.after_list[idx], imagery_type=self.imagery_type
             )
         else:
-            image_before = open_image(self.before_list[idx])
-            image_after = open_image(self.after_list[idx])
-        change_label = open_mask(self.label_list[idx])
+            image_before = ArcGISMSImage.open(
+                self.before_list[idx], imagery_type=self.imagery_type, div=255
+            )
+            image_after = ArcGISMSImage.open(
+                self.after_list[idx], imagery_type=self.imagery_type, div=255
+            )
+        change_label = ImageSegment(ArcGISMSImage.open(self.label_list[idx]).data)
 
         assert (
             image_before.shape[1:] == image_after.shape[1:] == change_label.shape[1:]
@@ -924,8 +929,12 @@ def predict(
         image_after = image_after.apply_tfms([_scaling_tfm])
 
     else:
-        image_before = open_image(image_before)
-        image_after = open_image(image_after)
+        image_before = ArcGISMSImage.open(
+            image_before, imagery_type=self._data._imagery_type, div=255
+        )
+        image_after = ArcGISMSImage.open(
+            image_after, imagery_type=self._data._imagery_type, div=255
+        )
 
     assert image_before.shape == image_after.shape
     if crop_predict:

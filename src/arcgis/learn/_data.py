@@ -2065,7 +2065,7 @@ def prepare_data(
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path / "images"
         path_lr = path / "labels"
-        il = ImageList.from_folder(path_hr)
+        il = ArcGISImageList.from_folder(path_hr)
         hr_suffix = il.items[0].suffix
         img_size = il[0].shape[1]
         downsample_factor = kwargs.get("downsample_factor", None)
@@ -2098,7 +2098,7 @@ def prepare_data(
         data = (
             ImageImageListSR.from_folder(path_lr)
             .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_from_func(lambda x: path_hr / x.with_suffix(hr_suffix).name)
+            .label_from_func(lambda x: path_hr / x.with_suffix(hr_suffix).name, label_cls=ImageImageListSR.label_cls)
         )
         if resize_to is None:
             kwargs_transforms["size"] = img_size

@@ -359,12 +359,16 @@ class Pix2PixHDDataset(Dataset):
 
         else:
             if self.label_nc == False:
-                image_A = open_image(self.image_list_A[idx])
+                image_A = ArcGISMSImage.open(
+                    self.image_list_A[idx], imagery_type=self.imagery_type, div=255
+                )
             else:
-                image_A = open_mask(self.image_list_A[idx])
+                image_A = ImageSegment(ArcGISMSImage.open(self.image_list_A[idx]).data)
                 image_A = rescale_mask(image_A, self.mask_map)
 
-            image_B = open_image(self.image_list_B[idx])
+            image_B = ArcGISMSImage.open(
+                self.image_list_B[idx], imagery_type=self.imagery_type, div=255
+            )
 
         _resolve_tfms(self.train_tfms)
         _resolve_tfms(self.val_tfms)
@@ -658,9 +662,13 @@ def show_results(self, rows):
 def predict(self, img_path):
     img_path = Path(img_path)
     if self._data.label_nc == 0:
-        raw_img = open_image(img_path)
+        raw_img = ArcGISMSImage.open(
+            img_path,
+            imagery_type=self._data.imagery_type,
+            div=255
+        )
     else:
-        raw_img = open_mask(img_path)
+        raw_img = ImageSegment(ArcGISMSImage.open(img_path).data)
         raw_img = rescale_mask(raw_img, self._data.mask_map)
     raw_img = raw_img.resize(self._data.chip_size)
 
