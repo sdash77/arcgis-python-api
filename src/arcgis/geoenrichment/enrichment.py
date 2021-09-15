@@ -115,7 +115,7 @@ travel_mode: None or string, one of the supported travel modes when using networ
 def _pep8ify(name):
     """PEP8ify name"""
     if "." in name:
-        name = name[name.rfind(".") + 1 :]
+        name = name[name.rfind(".") + 1:]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
@@ -261,8 +261,8 @@ class NamedArea(object):
 class Country(object):
     """
     The Country object enables access to data and methods for a specific country. This
-    class can reference country data and methods available using data accessed through
-    both a Web GIS and a local installation of ArcGIS Pro with the Business Analyst
+    class references country data and methods available using data accessed through
+    either a Web GIS or a local installation of ArcGIS Pro with the Business Analyst
     extension and local country data installed. Specifying this source is accomplished
     using the ``gis`` parameter when instantiating. If using the keyword 'Pro'
     (``GIS('Pro')``), ``Country`` will try to use ArcGIS Pro with Business Analyst
@@ -271,7 +271,7 @@ class Country(object):
 
     .. note::
 
-        Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
+        Currently, when using a ``GIS('Pro')`` instance, only the ``data_collections``
         and ``enrich_variables`` properties to discover of available enrichment
         variables are supported.
 
@@ -1011,23 +1011,29 @@ def enrich(
     study_areas                   Required list, FeatureSet or SpatiallyEnabledDataFrame containing
                                   the input areas to be enriched.
 
-                                  study_areas can be a SpatiallyEnabledDataFrame, FeatureSet or a
-                                  lists of the following types:
+                                  ``study_areas`` can be a Spatially enabled Dataframe, Featureset
+                                  or a list of the following types:
+
                                   * addresses, points of interest, place names or other
-                                  supported locations as strings.
-                                  * dicts such as [{"address":{"Address":"380 New York St.",
-                                  "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                  "CountryCode":"USA"}}] for multiple field addresses
-                                  * arcgis.gis.Geometry instances
-                                  * BufferStudyArea instances. By default, one-mile ring
-                                  buffers are created around the points to collect and append
-                                  enrichment data. You can use BufferStudyArea to change the ring
-                                  buffer size or create drive-time service areas around the points.
-                                  * NamedArea instances to support standard geography. They are
-                                  obtained using Country.subgeographies()/search(). When
-                                  the NamedArea instances should be combined together (union), a list
-                                  of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas.
+                                    supported locations as strings.
+
+                                  * dictionaries such as ``[{"address":{"Address":"380 New York
+                                    St.", "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
+                                    "CountryCode":"USA"}}]`` for multiple field addresses
+
+                                  * ``arcgis.gis.Geometry`` instances
+
+                                  * ``BufferStudyArea`` instances. By default, one-mile ring
+                                    buffers are created around the points to collect and append
+                                    enrichment data. You can use ``BufferStudyArea`` to change the
+                                    ring buffer size or create drive-time service areas around the
+                                    points.
+
+                                  * ``NamedArea`` instances to support standard geography. They are
+                                    obtained using ``Country.subgeographies()/search()``. When
+                                    the ``NamedArea`` instances should be combined together (union),
+                                    a list of such NamedArea instances should constitute a study
+                                    area in the list of requested study areas.
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1040,7 +1046,7 @@ def enrich(
                                   analysis_variables parameter you can return a subset of variables
                                   enrichment attributes can describe various types of information such
                                   as demographic characteristics and geographic context of the
-                                  locations or areas submitted as input features in study_areas.
+                                  locations or areas submitted as input features in ``study_areas``.
     -------------------------     --------------------------------------------------------------------
     add_derivative_variables      Optional list. This parameter is used to specify an array of string
                                   values that describe what derivative variables to include in the
@@ -1063,17 +1069,19 @@ def enrich(
                                   the response.
     -------------------------     --------------------------------------------------------------------
     gis                           Optional GIS.  If None, the GIS object will be used from the
-                                  arcgis.env.active_gis.  This GIS object must be authenticated and
-                                  have the ability to consume credits
+                                  ``arcgis.env.active_gis``.  This GIS object must be authenticated
+                                  and have the ability to consume credits
     =========================     ====================================================================
 
-    Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
-    the format of intersection_geographies parameter.
+    .. note::
+
+        Please refer to the [Enrich REST endpoint documentation](https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27)
+        for the format of intersection_geographies parameter.
 
     .. note::
 
         Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
-        return_geometry=False
+        ``return_geometry=False``
 
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
