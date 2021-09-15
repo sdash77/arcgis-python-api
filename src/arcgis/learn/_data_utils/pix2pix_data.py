@@ -508,7 +508,6 @@ def prepare_pix2pix_data(
     _is_multispectral,
     **kwargs,
 ):
-
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
     flip_vert = kwargs.get("imagery_type", "satellite") != "oriented"
     split = kwargs.get("split", "random")
@@ -560,7 +559,9 @@ def show_batch(self, rows=4):
     fig, axes = plt.subplots(nrows=rows, ncols=2, squeeze=False, figsize=(20, rows * 5))
     top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     plt.subplots_adjust(top=top)
-    fig.suptitle("Input / Generated", fontsize=16)
+    # fig.suptitle("Input / Ground Truth", fontsize=16)
+    axes[0, 0].title.set_text("Input")
+    axes[0, 1].title.set_text("Target")
     img_idxs = [random.randint(0, len(self.train_ds) - 1) for k in range(rows)]
     for idx, im_idx in enumerate(img_idxs):
         self.train_ds.show(im_idx, axes[idx])
@@ -637,11 +638,14 @@ def show_results(self, rows):
     x_B = denormalize(x_B.cpu(), *self._data.norm_stats)
     activations = denormalize(activations.cpu(), *self._data.norm_stats)
     rows = min(rows, x_A.shape[0])
+
     fig, axs = plt.subplots(
         nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
     )
     plt.subplots_adjust(top=top)
-    fig.suptitle("Input / Label")
+    axs[0, 0].title.set_text("Input")
+    axs[0, 1].title.set_text("Target")
+    axs[0, 2].title.set_text("Prediction")
     for r in range(rows):
         if self._data._is_multispectral:
             display_row(

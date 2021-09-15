@@ -1346,7 +1346,11 @@ def prepare_data(
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
     if dataset_type == "Export_Tiles" and os.path.exists(path / "images2"):
         dataset_type = "Pix2Pix"
-    elif dataset_type == "Export_Tiles" and os.path.exists(path / "labels"):
+    elif (
+        dataset_type == "Export_Tiles"
+        and os.path.exists(path / "labels")
+        and (not os.path.exists(path / "esri_superres_labels_downsample_factor.txt"))
+    ):
         dataset_type = "Pix2Pix"
 
     # Change Detection data is exported as Classified_Tiles with 'images', 'images2' and 'labels' folders
