@@ -626,27 +626,29 @@ class Country(object):
 def get_countries(gis: GIS = None, as_df: bool = False):
     """
     Retrieve available countries based on the GIS source being used.
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional ``arcgis.gis.GIS`` object instance. This
-                           specifies what GIS country sources are available based
-                           on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
-                           Enterprise) or ArcGIS Pro with the Business Analyst
-                           extension and at least one country data pack. If not
-                           explicitly specified, it tries to use an active GIS
-                           already created in the Python session. If an active
-                           GIS is not available, it then tries to use local
-                           resources, ArcGIS Pro with Business and at least one
-                           country dataset installed locally. Finally, if
-                           neither of these (Pro or an active GIS) are available,
-                           a GIS object instance must be explicitly provided.
 
-    as_df                  Optional boolean specifying if a Pandas DataFrame output is desired.
-                           If ```False`` (the default) a list of
-                           ``arcgis.geoenrichment.Country`` objects will be returned. If
-                           ``True`` a Pandas DataFrame of available countries is returned.
-    ==================     ====================================================================
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    gis               Optional ``arcgis.gis.GIS`` object instance. This
+                      specifies what GIS country sources are available based
+                      on the GIS source, a Web GIS (ArcGIS Online or ArcGIS
+                      Enterprise) or ArcGIS Pro with the Business Analyst
+                      extension and at least one country data pack. If not
+                      explicitly specified, it tries to use an active GIS
+                      already created in the Python session. If an active
+                      GIS is not available, it then tries to use local
+                      resources, ArcGIS Pro with Business and at least one
+                      country dataset installed locally. Finally, if
+                      neither of these (Pro or an active GIS) are available,
+                      a GIS object instance must be explicitly provided.
+
+    as_df             Optional boolean specifying if a Pandas DataFrame output
+                      is desired. If ```False`` (the default) a list of
+                      ``arcgis.geoenrichment.Country`` objects will be
+                      returned. If ``True`` a Pandas DataFrame of available
+                      countries is returned.
+    ================  ========================================================
 
     :return:
         Available countries as a list of ``arcgis.geoenrichment.Country`` objects or a Pandas
