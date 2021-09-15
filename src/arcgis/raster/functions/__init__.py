@@ -112,11 +112,6 @@ def _clone_layer(
             newlyr = ImageryLayer(layer._url, layer._gis)
             newlyr._tiles_only = layer._tiles_only
 
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
     if layer._datastore_raster:
@@ -178,11 +173,6 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
             newlyr = ImageryLayer(layer._url, layer._gis)
             newlyr._tiles_only = layer._tiles_only
 
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
 
@@ -468,12 +458,21 @@ def arg_statistics(
     duration (number of bands) between a minimum and maximum value
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    stat_type               One of "max", "min", "median", "duration"
+    -----------------       ------------------------------------------------------
+    min_value               Double, required if stat_type is "duration"
+    -----------------       ------------------------------------------------------
+    max_value               Double, required if stat_type is "duration"
+    -----------------       ------------------------------------------------------
+    undefined_class         Int, required if stat_type is "min" or "max"
+    =================       ======================================================
 
-    :param rasters: the imagery layers filtered by where clause, spatial and temporal filters
-    :param stat_type: one of "max", "min", "median", "duration"
-    :param min_value: double, required if the type is duration
-    :param max_value: double, required if the type is duration
-    :param undefined_class: int, required if the type is maximum or minimum
     :return: the output raster with this function applied to it
     """
     # find oids given spatial and temporal filter and where clause
@@ -484,9 +483,7 @@ def arg_statistics(
 
     template_dict = {
         "rasterFunction": "ArgStatistics",
-        "rasterFunctionArguments": {
-            "Rasters": raster,
-        },
+        "rasterFunctionArguments": {"Rasters": raster,},
         "variableName": "Rasters",
     }
 
@@ -514,9 +511,15 @@ def arg_max(rasters, undefined_class=None, astype=None):
     within each input raster.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    undefined_class         Required int
+    =================       ======================================================
 
-    :param rasters: the imagery layers filtered by where clause, spatial and temporal filters
-    :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
     return arg_statistics(
@@ -530,9 +533,15 @@ def arg_min(rasters, undefined_class=None, astype=None):
     its minimum value.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    undefined_class         Required int
+    =================       ======================================================
 
-    :param rasters: the imagery layers filtered by where clause, spatial and temporal filters
-    :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
     return arg_statistics(
@@ -550,9 +559,15 @@ def arg_median(rasters, undefined_class=None, astype=None):
     array has n values, the median is the ith (0-based) value, where: i = ( (n-1) / 2 )
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    undefined_class         Required int
+    =================       ======================================================
 
-    :param rasters: the imagery layers filtered by where clause, spatial and temporal filters
-    :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
     return arg_statistics(
@@ -569,9 +584,15 @@ def duration(
     than or equal to min_value and less than or equal to max_value, and then returns its length.
 
     See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    undefined_class         Required int
+    =================       ======================================================
 
-    :param rasters: the imagery layers filtered by where clause, spatial and temporal filters
-    :param undefined_class: int, required
     :return: the output raster with this function applied to it
     """
     return arg_statistics(
@@ -594,12 +615,23 @@ def arithmetic(
 ):
     """
     The Arithmetic function performs an arithmetic operation between two rasters or a raster and a scalar, and vice versa.
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster1                The first image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    raster2                 The second image layer filtered by where clause, spatial, and
+                            temporal filters.
+    -----------------       ------------------------------------------------------
+    extent_type             One of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
+    -----------------       ------------------------------------------------------
+    cellsize_type           One of "FirstOf", "MinOf", "MaxOf", "MeanOf", "LastOf"
+    -----------------       ------------------------------------------------------
+    operation_type          Int. 
+                            1 = Plus, 2 = Minus, 3 = Multiply, 4 = Divide, 5 = Power, 6 = Mode
+    =================       ======================================================
 
-    :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-    :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-    :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-    :param operation_type: int 1 = Plus, 2 = Minus, 3 = Multiply, 4=Divide, 5=Power, 6=Mode
     :return: the output raster with this function applied to it
     """
 
@@ -641,88 +673,6 @@ def arithmetic(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-#
-#
-# def plus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 1)
-#
-# def minus(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Subtracts a raster or a scalar from another raster or a scaler
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 2)
-#
-# def multiply(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Multiplies two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 3)
-#
-# def divide(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Divides two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 4)
-#
-# def power(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 5)
-#
-# def mode(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#     """
-#     Adds two rasters or a raster and a scalar, and vice versa
-#
-#     :param raster1: the first raster- imagery layers filtered by where clause, spatial and temporal filters
-#     :param raster2: the 2nd raster - imagery layers filtered by where clause, spatial and temporal filters
-#     :param extent_type: one of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
-#     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
-#     :return: the output raster with this function applied to it
-#     """
-#
-#     return arithmetic(raster1, raster2, extent_type, cellsize_type, astype, 6)
-#
-
-
 def aspect(raster):
     """
     aspect identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
@@ -739,9 +689,7 @@ def aspect(raster):
 
     template_dict = {
         "rasterFunction": "Aspect",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -1363,18 +1311,26 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The input raster
+    -----------------       ------------------------------------------------------
+    colormap_name           String. Colormap name, if one of Random | NDVI | Elevation | Gray
+    -----------------       ------------------------------------------------------
+    colormap                | [
+                            | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                            | [<value2>, <red2>, <green2>, <blue2>]
+                            | ],
+    -----------------       ------------------------------------------------------
+    colorramp               Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                            or a color ramp object.
+                            For more information about colorramp object, see color ramp object at
+                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
+    -----------------       ------------------------------------------------------
+    astype                  Output pixel type
+    =================       ======================================================
 
-    :param raster: input raster
-    :param colormap_name: colormap name, if one of Random | NDVI | Elevation | Gray
-    :param colormap: | [
-                     | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-                     | [<value2>, <red2>, <green2>, <blue2>]
-                     | ],
-    :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object.
-                      For more information about colorramp object, see color ramp object at
-                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
-    :param astype: output pixel type
     :return: the colorized raster
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -1478,9 +1434,7 @@ def convolution(raster, kernel=None, astype=None):
 
     template_dict = {
         "rasterFunction": "Convolution",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -3797,6 +3751,7 @@ def stretch(
     compute_gamma=None,
     sigmoid_strength_level=None,
     astype=None,
+    colorramp=None,
 ):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
@@ -3831,6 +3786,10 @@ def stretch(
     :param compute_gamma: optional, applicable to any stretch type when "UseGamma" is "true"
     :param sigmoid_strength_level: int (1~6), applicable to Sigmoid
     :param astype: output pixel type
+    :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                      or a color ramp object.
+                      For more information about colorramp object, see color ramp object at
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :return: the output raster
 
     """
@@ -3890,7 +3849,11 @@ def stretch(
     if compute_gamma is not None or gamma is not None:
         template_dict["rasterFunctionArguments"]["UseGamma"] = True
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if colorramp:
+        raster = _clone_layer(layer, template_dict, raster_ra)
+        return colormap(raster=raster, colorramp=colorramp)
+    else:
+        return _clone_layer(layer, template_dict, raster_ra)
 
 
 def threshold(raster, astype=None):
@@ -4255,9 +4218,7 @@ def complex(raster):
 
     template_dict = {
         "rasterFunction": "Complex",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4282,9 +4243,7 @@ def colormap_to_rgb(raster):
 
     template_dict = {
         "rasterFunction": "ColormapToRGB",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4306,9 +4265,7 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 
     template_dict = {
         "rasterFunction": "StatisticsHistogram",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if statistics is not None:
@@ -4345,9 +4302,7 @@ def tasseled_cap(raster):
 
     template_dict = {
         "rasterFunction": "TasseledCap",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4368,9 +4323,7 @@ def identity(raster):
 
     template_dict = {
         "rasterFunction": "Identity",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -4396,9 +4349,7 @@ def colorspace_conversion(raster, conversion_type="rgb_to_hsv"):
 
     template_dict = {
         "rasterFunction": "ColorspaceConversion",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     template_dict["rasterFunctionArguments"]["ConversionType"] = conversion_types[
@@ -4424,9 +4375,7 @@ def grayscale(raster, conversion_parameters=None):
 
     template_dict = {
         "rasterFunction": "Grayscale",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if conversion_parameters is not None and isinstance(conversion_parameters, list):
@@ -4558,9 +4507,7 @@ def speckle(
 
     template_dict = {
         "rasterFunction": "Speckle",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     template_dict["rasterFunctionArguments"]["FilterType"] = filter_types[filter_type]
@@ -4907,9 +4854,7 @@ def lookup(raster, field=None):
 
     template_dict = {
         "rasterFunction": "Lookup",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if field is not None:
@@ -5547,9 +5492,7 @@ def aggregate_cells(
 
     template_dict = {
         "rasterFunction": "Aggregate",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if cell_factor is not None:
@@ -5678,9 +5621,7 @@ def generate_trend(
 
     template_dict = {
         "rasterFunction": "TrendAnalysis",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if dimension_name is not None:
@@ -5791,9 +5732,7 @@ def predict_using_trend(
 
     template_dict = {
         "rasterFunction": "Trend",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     dimension_definition_type_dict = {"BY_VALUE": 0, "BY_INTERVAL": 1}
@@ -5863,9 +5802,7 @@ def linear_spectral_unmixing(
 
     template_dict = {
         "rasterFunction": "SpectralUnmixing",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if spectral_profile_def is not None:
@@ -6096,9 +6033,7 @@ def s1_radiometric_calibration(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1RadiometricCalibration",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
@@ -6135,9 +6070,7 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
 
     template_dict = {
         "rasterFunction": "S1ThermalNoiseRemoval",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -6263,9 +6196,7 @@ def _simple_collection(raster, md_info=None):
 
     template_dict = {
         "rasterFunction": "SimpleCollection",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Rasters",
     }
 
@@ -7047,9 +6978,7 @@ def detect_change_using_change_analysis_raster(
 
     template_dict = {
         "rasterFunction": "DetectChange",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7205,9 +7134,7 @@ def trend_to_rgb(raster, model_type=0):
 
     template_dict = {
         "rasterFunction": "TrendToRGB",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7296,9 +7223,7 @@ def apparent_reflectance(
 
     template_dict = {
         "rasterFunction": "Reflectance",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
         "variableName": "Raster",
     }
 
@@ -7393,9 +7318,7 @@ def buffered(raster):
 
     template_dict = {
         "rasterFunction": "BufferedRaster",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     return _clone_layer(layer, template_dict, raster_ra)
@@ -7442,9 +7365,7 @@ def rasterize_features(
 
     template_dict = {
         "rasterFunction": "RasterizeFeatureClass",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if feature_class is not None:
@@ -7594,9 +7515,7 @@ def reproject(
 
     template_dict = {
         "rasterFunction": "Reproject",
-        "rasterFunctionArguments": {
-            "Raster": raster,
-        },
+        "rasterFunctionArguments": {"Raster": raster,},
     }
 
     if spatial_reference is not None:
@@ -8172,10 +8091,10 @@ class RFT:
                                                 )
                                         else:
                                             if (
-                                                "value" in element["arguments"]
-                                            ) and "arguments" in element["arguments"][
-                                                "value"
-                                            ]:
+                                                ("value" in element["arguments"])
+                                                and "arguments"
+                                                in element["arguments"]["value"]
+                                            ):
                                                 self._apply_argument(
                                                     element["arguments"]["value"][
                                                         "arguments"
