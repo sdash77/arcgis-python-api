@@ -1017,9 +1017,21 @@ def enrich(
                                   * addresses, points of interest, place names or other
                                     supported locations as strings.
 
-                                  * dictionaries such as ``[{"address":{"Address":"380 New York
-                                    St.", "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                    "CountryCode":"USA"}}]`` for multiple field addresses
+                                  * dictionaries such as
+                                  ```
+                                      [
+                                        {
+                                          "address": {
+                                            "Address":"380 New York St.",
+                                            "Admin1":"Redlands",
+                                            "Admin2":"CA",
+                                            "Postal":"92373",
+                                            "CountryCode":"USA"
+                                          }
+                                        }
+                                      ]
+                                  ```
+                                  for multiple field addresses
 
                                   * ``arcgis.gis.Geometry`` instances
 
