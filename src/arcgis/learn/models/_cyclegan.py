@@ -267,7 +267,8 @@ class CycleGAN(ArcGISModel):
 
     def compute_metrics(self):
         """
-        Computes Frechet Inception Distance (FID) on validation set.
+        Computes Frechet Inception Distance (FID) on validation set
+        for RGB imagery only.
         """
         fid_a = "None"
         fid_b = "None"
