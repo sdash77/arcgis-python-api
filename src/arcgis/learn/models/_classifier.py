@@ -260,6 +260,14 @@ class FeatureClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
@@ -267,6 +275,17 @@ class FeatureClassifier(ArcGISModel):
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
+        """
         from .._utils.image_classification import IC_show_results
 
         return_fig = kwargs.get("return_fig", False)
@@ -572,16 +591,20 @@ class FeatureClassifier(ArcGISModel):
             heatmap = False
         if self._data._dataset_type == "MultiLabeled_Tiles":
             try:
-                interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    interp.plot_multi_top_losses(num_examples, figsize=(5, 5))
             except IndexError:
                 from IPython.display import clear_output
 
                 clear_output(wait=True)
                 print("No mismatches found.")
             return
-        fig = interp.plot_top_losses(
-            num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fig = interp.plot_top_losses(
+                num_examples, figsize=(15, 15), heatmap=heatmap, return_fig=True
+            )
         # fastai way of calculating num nrows and ncols
         cols = math.ceil(math.sqrt(num_examples))
         rows = math.ceil(num_examples / cols)
