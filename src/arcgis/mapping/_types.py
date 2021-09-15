@@ -3774,15 +3774,14 @@ class VectorTileLayerManager(_GISResource):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
         if gis._is_agol and gis.version <= [8, 4]:
-            raise Warning("Manager not available. Update version of AGOL")
+            raise Warning("Manager not available. Update version of Enterprise")
         super(VectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
 
     # ----------------------------------------------------------------------
     def refresh(self):
         """
-        The ``refresh`` operation refreshes a service, which clears the web
-        server cache for the service.
+        The refresh operation clears and refreshes the service cache.
         """
         url = self._url + "/refresh"
         params = {"f": "json"}
@@ -3792,7 +3791,7 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(self):
         """
-        The rebuildCache operation update the vector tile layer cache to reflect 
+        The rebuild_cache operation update the vector tile layer cache to reflect 
         any changes made to the feature layer used to publish this vector tile layer. 
         The results of the operation is a response indicating success, which 
         redirects you to the Job Statistics page, or failure.
@@ -3804,6 +3803,10 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def swap(self, target_service_name):
         """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -3823,10 +3826,7 @@ class VectorTileLayerManager(_GISResource):
         """
         The status operation returns whether a service is started (available) or stopped.
         """
-        url = self._url + "/status"
-        params = {"f": "json"}
-        res = self._con.get(path=url, params=params)
-        return res
+        return self.properties.status
 
     # ----------------------------------------------------------------------
     def jobs(self):
@@ -3870,7 +3870,7 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
         """
-        The ``cancel`` operation supports cancelling a job while update
+        The cancel operation supports cancelling a job while update
         tiles is running from a hosted feature service. The result of this
         operation is a response indicating success or failure with error
         code and description.
@@ -3882,7 +3882,7 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
-        The updateTiles operation supports updating the cooking extent and 
+        The update_tiles operation supports updating the cooking extent and 
         cache levels in a hosted vector tile service. The results of the 
         operation is a response indicating success, which redirects you 
         to the Job Statistics page, or failure.
@@ -3972,12 +3972,11 @@ class VectorTileLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def edit_tile_service(
         self,
-        service_name=None,
+        source_item_id=None,
+        export_tiles_allowed=None,
         min_scale=None,
         max_scale=None,
-        source_item_id=None,
-        export_tiles_allowed=False,
-        max_export_tile_count=100000,
+        max_export_tile_count=None,
     ):
         """
         The edit operation enables editing the service exportTilesAllowed, 
@@ -3986,22 +3985,19 @@ class VectorTileLayerManager(_GISResource):
 
         =================     ======================================================
         **Argument**          **Description**
-        -----------------     ------------------------------------------------------
-        service_name          Required String. The name of the vector tile service
         -----------------     --------------------------------------------------
-        source_item_id        Required String. The Source Item ID is the GeoWarehouse Item ID of the tile service
+        source_item_id        Required String. The Source Item ID is the GeoWarehouse 
+                              Item ID of the tile service
         -----------------     ------------------------------------------------------
-        export_tiles_allowed  Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
+        export_tiles_allowed  Optional boolean. ``exports_tiles_allowed`` sets 
+                              the value to let users export tiles
         -----------------     ------------------------------------------------------
         min_scale             Optional float. Sets the services minimum scale for caching.
         -----------------     ------------------------------------------------------
         max_scale             Optional float. Sets the services maximum scale for caching.
         -----------------     ------------------------------------------------------
-        max_export_tile_      Optional float. ``max_export_tile_count``sets the maximum amount
+        max_export_tile_      Optional int. ``max_export_tile_count``sets the maximum amount
         count                 of tiles to be exported from a single call.
-
-                              .. note::
-                                The default value is 100000.
         =================     ======================================================
 
         .. code-block:: python
@@ -4032,15 +4028,24 @@ class VectorTileLayerManager(_GISResource):
                 params["serviceDefinition"]["minScale"] = float(min_scale)
             if max_scale:
                 params["serviceDefinition"]["maxScale"] = float(max_scale)
-            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
-            params["serviceDefinition"]["maxExportTilesCount"] = int(
+            params["serviceDefinition"]["exportTilesAllowed"] = (
+                export_tiles_allowed
+                if export_tiles_allowed
+                else self.proprerties.exportTilesAllowed
+            )
+            params["serviceDefinition"]["maxExportTilesCount"] = (
                 max_export_tile_count
+                if max_export_tile_count
+                else self.properties.maxExportTilesCount
             )
             params["sourceItemId"] = source_item_id
         elif self._gis._is_agol == False:
             params["runAsync"] = True
-            params["services"] = {"type": "VectorTileServer"}
-            params["services"]["capabilities"] = self.properties.capabilities
+            params["services"] = {
+                "type": "VectorTileServer",
+                "capabilities": "TilesOnly,Tilemap",
+                "serviceName": self.properties.name,
+            }
             params["services"]["properties"] = {
                 "exportTilesAllowed": export_tiles_allowed
             }
