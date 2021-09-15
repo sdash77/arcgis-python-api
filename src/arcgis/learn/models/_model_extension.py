@@ -470,7 +470,7 @@ class ModelExtension(ArcGISModel):
 
     def _per_class_metrics(self):
         """
-        Computer per class precision, recall and f1-score on validation set.
+        Computes per class precision, recall and f1-score on validation set.
         """
         try:
             self._check_requisites()

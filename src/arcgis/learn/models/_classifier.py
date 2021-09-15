@@ -260,6 +260,14 @@ class FeatureClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
@@ -267,6 +275,17 @@ class FeatureClassifier(ArcGISModel):
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
+        """
         from .._utils.image_classification import IC_show_results
 
         return_fig = kwargs.get("return_fig", False)
