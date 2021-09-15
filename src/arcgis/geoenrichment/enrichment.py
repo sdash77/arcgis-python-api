@@ -115,7 +115,7 @@ travel_mode: None or string, one of the supported travel modes when using networ
 def _pep8ify(name):
     """PEP8ify name"""
     if "." in name:
-        name = name[name.rfind(".") + 1:]
+        name = name[name.rfind(".") + 1 :]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
