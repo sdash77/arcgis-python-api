@@ -653,6 +653,13 @@ def get_countries(gis: GIS = None, as_df: bool = False):
     :return:
         Available countries as a list of ``arcgis.geoenrichment.Country`` objects or a Pandas
         DataFrame of available countries.
+
+    .. note::
+        The default output is a list of ``Country`` objects, but it is
+        much faster to run this using ``as_df=True``. Instead of a list
+        of ``Country`` objects, ``as_df=True`` returns a Pandas Dataframe
+        with a metadata for each country - much faster and more intuitive.
+
     """
     # preprocess the gis object to determine if a local (ArcGIS Pro) gis source
     if isinstance(gis, GIS):
