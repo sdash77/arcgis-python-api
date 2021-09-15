@@ -1018,7 +1018,9 @@ def enrich(
 
                                   * dictionaries for multiple field addresses
 
-                                  ``  [
+                                  .. code::
+
+                                      [
                                         {
                                           "address": {
                                             "Address":"380 New York St.",
@@ -1028,7 +1030,7 @@ def enrich(
                                             "CountryCode":"USA"
                                           }
                                         }
-                                    ]``
+                                      ]
 
                                   * ``arcgis.gis.Geometry`` instances
 
