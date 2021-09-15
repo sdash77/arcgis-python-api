@@ -270,6 +270,7 @@ class Country(object):
     countries can be discovered using the ``get_countries`` method.
 
     .. note::
+
         Currently, when using a `GIS('Pro')` instance, only the ``data_collections``
         and ``enrich_variables`` properties to discover of available enrichment
         variables are supported.
@@ -655,6 +656,7 @@ def get_countries(gis: GIS = None, as_df: bool = False):
         DataFrame of available countries.
 
     .. note::
+
         The default output is a list of ``Country`` objects, but it is
         much faster to run this using ``as_df=True``. Instead of a list
         of ``Country`` objects, ``as_df=True`` returns a Pandas Dataframe
@@ -1068,8 +1070,10 @@ def enrich(
     Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
     the format of intersection_geographies parameter.
 
-    Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
-    return_geometry=False
+    .. note::
+
+        Performance Tip: If you wish to speed up the operation and don't care about the geometries, set
+        return_geometry=False
 
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
