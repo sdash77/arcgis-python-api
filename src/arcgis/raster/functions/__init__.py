@@ -1311,6 +1311,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     Transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
     a color map. For more information, see Colormap function at
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm
+
     =================       ======================================================
     **Argument**            **Description**
     -----------------       ------------------------------------------------------
@@ -3769,27 +3770,47 @@ def stretch(
     Stretch type Sigmoid does not require other parameters.
 
     Optionally, set the SigmoidStrengthLevel (1 to 6) to adjust the curvature of Sigmoid curve used in color stretch.
+    
+    =================       ======================================================
+    **Argument**            **Description**
+    -----------------       ------------------------------------------------------
+    raster                  The input raster
+    -----------------       ------------------------------------------------------
+    stretch_type            Optional string. None | StdDev | Histogram | MinMax
+                            | PercentClip | 9 = Sigmoid
+    -----------------       ------------------------------------------------------
+    min                     Optional double
+    -----------------       ------------------------------------------------------
+    max                     Optional double
+    -----------------       ------------------------------------------------------
+    num_stddev              Optional double
+    -----------------       ------------------------------------------------------
+    statistics              Optional double. [<min1>, <max1>, <mean1>, <standardDeviation1>], 
+                            //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
+    -----------------       ------------------------------------------------------
+    dra                     Optional bool. Derive statistics from currest request,
+                            statistics paramater is ignored when DRA is True
+    -----------------       ------------------------------------------------------
+    min_percent             Optional double, applicable to PercentClip (e.g 0.25)
+    -----------------       ------------------------------------------------------
+    max_percent             Optional double, applicable to PercentClip (e.g 0.5)
+    -----------------       ------------------------------------------------------
+    gamma                   Optional array of doubles
+    -----------------       ------------------------------------------------------
+    compute_gamma           Optional bool, applicable to any stretch type when
+                            "UseGamma" is True.
+    -----------------       ------------------------------------------------------
+    sigmoid_strength_       Optional int (1~6), applicable to Sigmoid
+    level                   
+    -----------------       ------------------------------------------------------
+    astype                  Output pixel type
+    -----------------       ------------------------------------------------------
+    colorramp               Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                            or a color ramp object.
+                            For more information about colorramp object, see color ramp object at
+                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
+    =================       ======================================================
 
-
-    The arguments for the stretch function are as follows:
-
-    :param raster: input raster
-    :param stretch_type: str, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
-    :param min: double
-    :param max: double
-    :param num_stddev: double (e.g. 2.5)
-    :param statistics: double (e.g. 2.5)[<min1>, <max1>, <mean1>, <standardDeviation1>], //[double, double, double, double][<min2>, <max2>, <mean2>, <standardDeviation2>]],
-    :param dra: boolean. derive statistics from current request, Statistics parameter is ignored when DRA is true
-    :param min_percent: double (e.g. 0.25), applicable to PercentClip
-    :param max_percent: double (e.g. 0.5), applicable to PercentClip
-    :param gamma: array of doubles
-    :param compute_gamma: optional, applicable to any stretch type when "UseGamma" is "true"
-    :param sigmoid_strength_level: int (1~6), applicable to Sigmoid
-    :param astype: output pixel type
-    :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
-                      or a color ramp object.
-                      For more information about colorramp object, see color ramp object at
-                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :return: the output raster
 
     """
